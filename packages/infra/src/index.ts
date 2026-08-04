@@ -1,4 +1,4 @@
-export * from './firestore/admin-app';
+export * from './firebase/admin-app';
 export * from './firestore/repositories/tenant.repository';
 export * from './firestore/repositories/tenant-branding.repository';
 export * from './firestore/repositories/tenant-settings.repository';

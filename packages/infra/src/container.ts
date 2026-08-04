@@ -6,7 +6,7 @@ import {
   ResolveTenantByHostUseCase,
   UpdateTenantBrandingUseCase,
 } from '@vl6/domain';
-import { getAdminFirestore } from './firestore/admin-app';
+import { getAdminFirestore } from './firebase/admin-app';
 import { FirestoreRoleRepository } from './firestore/repositories/role.repository';
 import { FirestoreTenantRepository } from './firestore/repositories/tenant.repository';
 import { FirestoreTenantBrandingRepository } from './firestore/repositories/tenant-branding.repository';
