@@ -1,0 +1,92 @@
+# 7. Fluxo de Autenticação e API
+
+## 7.1 Resolução de Tenant (antes até de autenticar)
+
+```
+Requisição → Next.js Middleware
+   1. Lê host (domínio/subdomínio)
+   2. Resolve Tenant via cache (TanStack Query no server / KV) → fallback Firestore
+   3. Injeta tenantId resolvido em headers internos (x-tenant-id) para toda a árvore de rota
+   4. Se domínio não corresponder a nenhum tenant ativo → 404 institucional
+```
+
+## 7.2 Login (Web)
+
+```
+1. Usuário informa e-mail/senha (ou Google) na tela (auth)/login
+2. Firebase Authentication client SDK autentica → recebe ID Token (JWT, curta duração ~1h)
+3. ID Token é trocado por um cookie de sessão HttpOnly/Secure via Route Handler
+   (/api/v1/auth/login) usando Firebase Admin SDK (createSessionCookie)
+4. Cookie de sessão carrega Custom Claims: { tenantId, roleId, permissions[] }
+5. Middleware de rotas (member)/(admin) valida o cookie a cada navegação (verifySessionCookie)
+6. Usuário sem User.statusConta == 'active' é bloqueado com mensagem apropriada
+```
+
+Cookie de sessão (não o ID Token cru) é escolhido para as rotas de página
+porque permite validação em Server Components/Middleware sem round-trip ao
+client, e porque tem duração configurável mais longa (até 14 dias) com
+renovação silenciosa.
+
+## 7.3 Custom Claims — como e quando são atualizados
+
+Custom Claims (`tenantId`, `roleId`, `permissions`) são a fonte de verdade
+usada pelas Firestore Security Rules e pelo middleware. Eles **não** são
+atualizados a cada request — apenas quando:
+
+- Um usuário é criado (Cloud Function `onUserCreate` grava claims iniciais)
+- O papel (`roleId`) de um usuário muda (Cloud Function trigger em `users`)
+- As permissões de um `Role` mudam (Cloud Function recalcula claims de todos
+  os usuários daquele papel — operação em lote)
+
+Após atualização de claims, o client é forçado a renovar o token
+(`getIdToken(true)`) na próxima ação sensível, ou na próxima renovação
+natural do cookie de sessão.
+
+## 7.4 Autorização em cada camada (defesa em profundidade)
+
+```
+1. UI          — esconde ações que o usuário não pode executar (UX, não segurança)
+2. Server Action / Route Handler — valida permissão via caso de uso
+   (`RequirePermission(permissions, 'member:update')`) antes de chamar o repositório
+3. Firestore Security Rules — última linha de defesa, valida tenantId + permission claim
+```
+
+Nenhuma camada confia exclusivamente na anterior — a regra de segurança do
+Firestore é escrita como se a camada de aplicação não existisse.
+
+## 7.5 API REST pública (`/api/v1/*`)
+
+- Autenticação via **JWT Bearer** (não o cookie de sessão — a API é para
+  integrações externas/futuro app mobile).
+- Fluxo: `POST /api/v1/auth/login` (credenciais) → `{ accessToken (15min),
+  refreshToken (30 dias, armazenado hash no Firestore) }`.
+- `POST /api/v1/auth/refresh` troca um refresh token válido (e ainda não
+  revogado) por um novo par de tokens (rotação de refresh token — previne
+  replay).
+- `POST /api/v1/auth/logout` revoga o refresh token corrente.
+- **Rate limiting**: por IP + por `tenantId`, implementado com contador em
+  memória compartilhada (ex.: Upstash Redis) — 100 req/min de leitura, 20
+  req/min de escrita por padrão, configurável por rota.
+- Documentação **OpenAPI 3.1** gerada a partir dos schemas Zod
+  (`zod-to-openapi`), servida em `/api/v1/openapi.json` e visualizável via
+  Swagger UI em ambiente de desenvolvimento.
+
+## 7.6 MFA (preparado)
+
+`User.mfaHabilitado` e o suporte nativo do Firebase Auth a segundo fator
+(TOTP/SMS) ficam previstos no modelo desde o v1.0, com ativação de fato
+planejada para v1.2 (ver roadmap) — evita retrabalho de schema depois.
+
+## 7.7 Recuperação de senha
+
+Fluxo padrão do Firebase Auth (`sendPasswordResetEmail`), com template de
+e-mail customizado por tenant (usa `TenantBranding` para logotipo/cores no
+e-mail, renderizado via Cloud Function + serviço de e-mail transacional).
+
+## 7.8 Sessão — expiração e renovação
+
+- Cookie de sessão: 5 dias, renovado silenciosamente se o usuário estiver
+  ativo (rota intermediária `/api/v1/auth/refresh-session`).
+- Logout explícito revoga o cookie no Admin SDK (`revokeRefreshTokens`),
+  invalidando também qualquer sessão antiga do mesmo usuário — importante
+  para o caso "esqueci de sair no computador da Loja".
