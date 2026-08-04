@@ -1,0 +1,219 @@
+rules_version = '2';
+
+// Estratégia completa em docs/architecture/03-modelo-dados.md §3.4.
+// `tenantId` e `permissions` vêm de Custom Claims (docs/architecture/07 §7.3),
+// nunca lidos de outro documento Firestore — evita uma leitura extra por
+// avaliação de regra.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function tokenTenantId() {
+      return request.auth.token.tenantId;
+    }
+
+    function tokenPermissions() {
+      return request.auth.token.permissions;
+    }
+
+    function sameTenant(data) {
+      return isSignedIn() && data.tenantId == tokenTenantId();
+    }
+
+    // `perm` no formato "<recurso>:<acao>" — concede também se o papel tiver
+    // "<recurso>:manage" (implica todas as ações sobre o recurso).
+    function hasPermission(perm) {
+      return isSignedIn() &&
+        (perm in tokenPermissions() || (perm.split(':')[0] + ':manage') in tokenPermissions());
+    }
+
+    function isOwner(data, field) {
+      return isSignedIn() && data[field] == request.auth.uid;
+    }
+
+    function notSoftDeleted(data) {
+      return data.deletedAt == null;
+    }
+
+    // ---------------------------------------------------------------
+    // Tenancy
+    // ---------------------------------------------------------------
+    match /tenants/{tenantId} {
+      allow read: if isSignedIn() && tokenTenantId() == tenantId;
+      allow create: if hasPermission('tenant:create');
+      allow update: if sameTenant(resource.data) && hasPermission('tenant:manage');
+      allow delete: if false; // soft delete apenas, via update
+    }
+
+    match /tenantBranding/{id} {
+      allow read: if sameTenant(resource.data) || true; // branding é necessário antes do login (layout raiz)
+      allow write: if sameTenant(resource.data) && hasPermission('branding:manage');
+    }
+
+    match /tenantSettings/{id} {
+      allow read: if sameTenant(resource.data) || true; // idem — necessário para o site público
+      allow write: if sameTenant(resource.data) && hasPermission('tenant:manage');
+    }
+
+    // ---------------------------------------------------------------
+    // Identity & Access
+    // ---------------------------------------------------------------
+    match /users/{uid} {
+      allow read: if isSignedIn() && (request.auth.uid == uid || (sameTenant(resource.data) && hasPermission('user:read')));
+      allow create, update: if sameTenant(request.resource.data) && hasPermission('user:manage');
+      allow delete: if false;
+    }
+
+    match /roles/{id} {
+      allow read: if sameTenant(resource.data) && isSignedIn();
+      allow write: if sameTenant(request.resource.data) && hasPermission('role:manage')
+        && (resource == null || resource.data.sistemico == false || request.resource.data.permissoes == resource.data.permissoes);
+    }
+
+    // ---------------------------------------------------------------
+    // Membership
+    // ---------------------------------------------------------------
+    match /members/{id} {
+      allow read: if sameTenant(resource.data) && hasPermission('member:read');
+      allow create: if sameTenant(request.resource.data) && hasPermission('member:create');
+      allow update: if sameTenant(resource.data) &&
+        (hasPermission('member:update') || isOwner(resource.data, 'userId'));
+      allow delete: if false;
+    }
+
+    match /memberPositionHistory/{id} {
+      allow read: if sameTenant(resource.data) && hasPermission('member:read');
+      allow write: if sameTenant(request.resource.data) && hasPermission('member:update');
+    }
+
+    // ---------------------------------------------------------------
+    // Governance
+    // ---------------------------------------------------------------
+    match /boardTerms/{id} {
+      allow read: if sameTenant(resource.data) && hasPermission('boardTerm:read');
+      allow write: if sameTenant(request.resource.data) && hasPermission('boardTerm:manage');
+    }
+
+    match /boardPositionAssignments/{id} {
+      allow read: if sameTenant(resource.data) && hasPermission('boardTerm:read');
+      allow write: if sameTenant(request.resource.data) && hasPermission('boardTerm:manage');
+    }
+
+    match /committees/{id} {
+      allow read: if sameTenant(resource.data) && hasPermission('committee:read');
+      allow write: if sameTenant(request.resource.data) && hasPermission('committee:manage');
+    }
+
+    // ---------------------------------------------------------------
+    // Document Management & Library
+    // ---------------------------------------------------------------
+    match /fileCategories/{id} {
+      allow read: if sameTenant(resource.data) && hasPermission('file:read');
+      allow write: if sameTenant(request.resource.data) && hasPermission('file:manage');
+    }
+
+    match /files/{id} {
+      allow read: if sameTenant(resource.data) && hasPermission('file:read') && (resource.data.publicado == true || hasPermission('file:manage'));
+      allow create, update: if sameTenant(request.resource.data) && hasPermission('file:create');
+      allow delete: if false;
+    }
+
+    match /libraryCategories/{id} {
+      allow read: if sameTenant(resource.data) && hasPermission('libraryItem:read');
+      allow write: if sameTenant(request.resource.data) && hasPermission('libraryItem:manage');
+    }
+
+    match /libraryItems/{id} {
+      allow read: if sameTenant(resource.data) && hasPermission('libraryItem:read');
+      allow write: if sameTenant(request.resource.data) && hasPermission('libraryItem:manage');
+    }
+
+    match /libraryFavorites/{id} {
+      allow read, write: if isSignedIn() && isOwner(resource.data, 'userId');
+      allow create: if isSignedIn() && isOwner(request.resource.data, 'userId') && sameTenant(request.resource.data);
+    }
+
+    // ---------------------------------------------------------------
+    // Agenda
+    // ---------------------------------------------------------------
+    match /events/{id} {
+      allow read: if sameTenant(resource.data) && hasPermission('event:read');
+      allow write: if sameTenant(request.resource.data) && hasPermission('event:manage');
+    }
+
+    match /eventAttendance/{id} {
+      allow read: if sameTenant(resource.data) && (hasPermission('event:read') || isOwner(resource.data, 'memberId'));
+      allow create, update: if sameTenant(request.resource.data) &&
+        (hasPermission('event:manage') || isOwner(request.resource.data, 'memberId'));
+    }
+
+    // ---------------------------------------------------------------
+    // Content
+    // ---------------------------------------------------------------
+    match /news/{id} {
+      allow read: if sameTenant(resource.data) && hasPermission('news:read') && (resource.data.publicado == true || hasPermission('news:manage'));
+      allow write: if sameTenant(request.resource.data) && hasPermission('news:manage');
+    }
+
+    match /newsComments/{id} {
+      allow read: if sameTenant(resource.data) && hasPermission('news:read');
+      allow create: if sameTenant(request.resource.data) && hasPermission('news:read') && isOwner(request.resource.data, 'autorId');
+      allow update, delete: if sameTenant(resource.data) && hasPermission('news:manage');
+    }
+
+    match /announcements/{id} {
+      allow read: if sameTenant(resource.data) && hasPermission('announcement:read') && (resource.data.publicado == true || hasPermission('announcement:manage'));
+      allow write: if sameTenant(request.resource.data) && hasPermission('announcement:manage');
+    }
+
+    // ---------------------------------------------------------------
+    // Gallery
+    // ---------------------------------------------------------------
+    match /galleryAlbums/{id} {
+      allow read: if sameTenant(resource.data) && hasPermission('gallery:read');
+      allow write: if sameTenant(request.resource.data) && hasPermission('gallery:manage');
+    }
+
+    match /galleryMedia/{id} {
+      allow read: if sameTenant(resource.data) && hasPermission('gallery:read');
+      allow write: if sameTenant(request.resource.data) && hasPermission('gallery:manage');
+    }
+
+    // ---------------------------------------------------------------
+    // Audit — write exclusivamente via Cloud Function (Admin SDK ignora
+    // Security Rules), nunca pelo client. Ver docs/architecture/06 §6.7.
+    // ---------------------------------------------------------------
+    match /auditLogs/{id} {
+      allow read: if sameTenant(resource.data) && hasPermission('auditLog:read');
+      allow write: if false;
+    }
+
+    // ---------------------------------------------------------------
+    // Notification — sempre privado ao próprio destinatário
+    // ---------------------------------------------------------------
+    match /notifications/{id} {
+      allow read, update: if isSignedIn() && isOwner(resource.data, 'destinatarioId');
+      allow create, delete: if false; // criadas via Cloud Function
+    }
+
+    match /notificationPreferences/{id} {
+      allow read, write: if isSignedIn() && isOwner(resource.data, 'userId');
+    }
+
+    // ---------------------------------------------------------------
+    // Public Site (CMS institucional)
+    // ---------------------------------------------------------------
+    match /publicPages/{id} {
+      allow read: if resource.data.publicado == true || (sameTenant(resource.data) && hasPermission('tenant:manage'));
+      allow write: if sameTenant(request.resource.data) && hasPermission('tenant:manage');
+    }
+
+    match /links/{id} {
+      allow read: if sameTenant(resource.data) && isSignedIn();
+      allow write: if sameTenant(request.resource.data) && hasPermission('tenant:manage');
+    }
+  }
+}

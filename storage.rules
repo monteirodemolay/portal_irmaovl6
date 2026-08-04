@@ -1,0 +1,47 @@
+rules_version = '2';
+
+// Layout de paths: /tenants/{tenantId}/<área>/... — o tenantId no path
+// sempre precisa bater com o Custom Claim do usuário autenticado.
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function sameTenant(tenantId) {
+      return isSignedIn() && request.auth.token.tenantId == tenantId;
+    }
+
+    function hasPermission(perm) {
+      return isSignedIn() &&
+        (perm in request.auth.token.permissions ||
+          (perm.split(':')[0] + ':manage') in request.auth.token.permissions);
+    }
+
+    // Brasão, logotipo, favicon — só quem administra o branding da Loja.
+    match /tenants/{tenantId}/branding/{allPaths=**} {
+      allow read: if true; // precisa ser público: usado no site institucional/e-mails
+      allow write: if sameTenant(tenantId) && hasPermission('branding:manage');
+    }
+
+    // Foto de perfil do próprio Irmão.
+    match /tenants/{tenantId}/members/{memberId}/avatar/{allPaths=**} {
+      allow read: if sameTenant(tenantId);
+      allow write: if sameTenant(tenantId) &&
+        (hasPermission('member:update') || request.auth.uid == memberId);
+    }
+
+    // Arquivos (documentos) e Biblioteca.
+    match /tenants/{tenantId}/files/{allPaths=**} {
+      allow read: if sameTenant(tenantId) && hasPermission('file:read');
+      allow write: if sameTenant(tenantId) && hasPermission('file:create');
+    }
+
+    // Galeria de fotos/vídeos.
+    match /tenants/{tenantId}/gallery/{allPaths=**} {
+      allow read: if sameTenant(tenantId) && hasPermission('gallery:read');
+      allow write: if sameTenant(tenantId) && hasPermission('gallery:manage');
+    }
+  }
+}
