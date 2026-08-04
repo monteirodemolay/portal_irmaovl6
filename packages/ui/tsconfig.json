@@ -1,0 +1,10 @@
+{
+  "extends": "@vl6/config/tsconfig/library.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "outDir": "lib",
+    "rootDir": "src",
+    "jsx": "react-jsx"
+  },
+  "include": ["src"]
+}
