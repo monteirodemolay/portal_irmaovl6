@@ -11,6 +11,12 @@ import { defineConfig, devices } from '@playwright/test';
  */
 export default defineConfig({
   testDir: './e2e',
+  // Next em dev mode compila cada rota sob demanda no primeiro acesso — o
+  // teste que primeiro passa por uma rota ainda não compilada paga esse
+  // custo (múltiplos segundos por rota), então o timeout padrão de 30s do
+  // Playwright é apertado demais para o primeiro teste da suíte.
+  timeout: 60_000,
+  expect: { timeout: 15_000 },
   fullyParallel: false,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
