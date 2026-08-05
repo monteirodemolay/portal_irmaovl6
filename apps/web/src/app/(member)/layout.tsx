@@ -13,6 +13,7 @@ const NAV_ITEMS = [
   { href: '/biblioteca', label: 'Biblioteca' },
   { href: '/arquivos', label: 'Arquivos' },
   { href: '/agenda', label: 'Agenda' },
+  { href: '/galeria', label: 'Galeria' },
   { href: '/downloads', label: 'Downloads' },
   { href: '/links-uteis', label: 'Links Úteis' },
   { href: '/avisos', label: 'Avisos' },

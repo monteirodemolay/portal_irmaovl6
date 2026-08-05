@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import {
   announcementSchema,
+  newsCommentSchema,
   newsSchema,
   type AnnouncementFormValues,
   type NewsFormValues,
@@ -138,6 +139,33 @@ export async function toggleAnnouncementPublishedAction(
   if (!result.ok) throw new Error(result.error.message);
 
   revalidatePath('/admin/avisos');
+}
+
+export async function createNewsCommentAction(
+  newsId: string,
+  slug: string,
+  _prevState: ContentActionState,
+  formData: FormData,
+): Promise<ContentActionState> {
+  const session = await requireSession();
+
+  let input;
+  try {
+    input = newsCommentSchema.parse({ texto: formData.get('texto') });
+  } catch {
+    return { error: 'Escreva um comentário antes de enviar.' };
+  }
+
+  const container = createServerContainer();
+  const result = await container.useCases.createNewsComment.execute(
+    session.authContext,
+    newsId,
+    input.texto,
+  );
+  if (!result.ok) return { error: result.error.message };
+
+  revalidatePath(`/noticias/${slug}`);
+  return { error: null };
 }
 
 export async function moderateNewsCommentAction(

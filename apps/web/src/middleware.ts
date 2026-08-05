@@ -14,6 +14,7 @@ const PROTECTED_PREFIXES = [
   '/arquivos',
   '/agenda',
   '/eventos',
+  '/galeria',
   '/downloads',
   '/links-uteis',
   '/admin',
