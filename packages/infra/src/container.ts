@@ -176,7 +176,11 @@ export function createServerContainer() {
       positionHistoryRepository: repositories.memberPositionHistory,
       clock,
     }),
-    searchMembers: new SearchMembersUseCase({ memberRepository: repositories.member }),
+    searchMembers: new SearchMembersUseCase({
+      memberRepository: repositories.member,
+      boardTermRepository: repositories.boardTerm,
+      boardPositionAssignmentRepository: repositories.boardPositionAssignment,
+    }),
     softDeleteMember: new SoftDeleteMemberUseCase({ memberRepository: repositories.member, clock }),
 
     createBoardTerm: new CreateBoardTermUseCase({
