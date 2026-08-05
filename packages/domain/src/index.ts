@@ -130,3 +130,13 @@ export * from './modules/notification/use-cases/mark-notification-as-read.use-ca
 export * from './modules/notification/use-cases/update-notification-preference.use-case';
 export * from './modules/notification/use-cases/create-link.use-case';
 export * from './modules/notification/use-cases/list-links.use-case';
+
+// Gallery
+export * from './modules/gallery/entities/gallery-album.entity';
+export * from './modules/gallery/entities/gallery-media.entity';
+export * from './modules/gallery/repositories/gallery-album.repository';
+export * from './modules/gallery/repositories/gallery-media.repository';
+export * from './modules/gallery/use-cases/create-gallery-album.use-case';
+export * from './modules/gallery/use-cases/list-gallery-albums.use-case';
+export * from './modules/gallery/use-cases/add-gallery-media.use-case';
+export * from './modules/gallery/use-cases/list-gallery-media.use-case';
