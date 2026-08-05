@@ -76,3 +76,17 @@ export * from './modules/audit/entities/audit-log.entity';
 export * from './modules/audit/repositories/audit-log.repository';
 export * from './modules/audit/use-cases/record-audit-entry.use-case';
 export * from './modules/audit/use-cases/list-audit-log.use-case';
+
+// Document Management
+export * from './modules/document-management/entities/file-asset.entity';
+export * from './modules/document-management/entities/file-category.entity';
+export * from './modules/document-management/repositories/file-asset.repository';
+export * from './modules/document-management/repositories/file-category.repository';
+export * from './modules/document-management/use-cases/create-file-category.use-case';
+export * from './modules/document-management/use-cases/list-file-categories.use-case';
+export * from './modules/document-management/use-cases/create-file-asset.use-case';
+export * from './modules/document-management/use-cases/update-file-asset.use-case';
+export * from './modules/document-management/use-cases/publish-file-asset.use-case';
+export * from './modules/document-management/use-cases/list-file-assets.use-case';
+export * from './modules/document-management/use-cases/record-file-interaction.use-case';
+export * from './modules/document-management/use-cases/soft-delete-file-asset.use-case';
