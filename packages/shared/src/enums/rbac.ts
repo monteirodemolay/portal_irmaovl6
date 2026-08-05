@@ -28,6 +28,7 @@ export const RESOURCE_KEYS = [
   'news',
   'announcement',
   'gallery',
+  'link',
   'user',
   'role',
   'auditLog',
@@ -73,6 +74,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<RoleKey, PermissionKey[]> = {
     'news:manage',
     'announcement:manage',
     'gallery:manage',
+    'link:manage',
     'user:manage',
     'role:manage',
     'auditLog:read',
@@ -102,6 +104,9 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<RoleKey, PermissionKey[]> = {
     'gallery:read',
     'gallery:create',
     'gallery:update',
+    'link:read',
+    'link:create',
+    'link:update',
   ],
   secretario: [
     'tenant:read',
@@ -132,6 +137,9 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<RoleKey, PermissionKey[]> = {
     'gallery:read',
     'gallery:create',
     'gallery:update',
+    'link:read',
+    'link:create',
+    'link:update',
   ],
   tesoureiro: [
     'tenant:read',
@@ -159,6 +167,9 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<RoleKey, PermissionKey[]> = {
     'gallery:read',
     'gallery:create',
     'gallery:update',
+    'link:read',
+    'link:create',
+    'link:update',
   ],
   comissao: [
     'member:read',
@@ -182,6 +193,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<RoleKey, PermissionKey[]> = {
     'news:read',
     'announcement:read',
     'gallery:read',
+    'link:read',
   ],
   visitante: ['news:read', 'event:read', 'gallery:read'],
 };

@@ -115,3 +115,18 @@ export * from './modules/agenda/use-cases/create-event.use-case';
 export * from './modules/agenda/use-cases/list-upcoming-events.use-case';
 export * from './modules/agenda/use-cases/confirm-attendance.use-case';
 export * from './modules/agenda/use-cases/list-event-attendees.use-case';
+
+// Notification
+export * from './modules/notification/entities/notification.entity';
+export * from './modules/notification/entities/notification-preference.entity';
+export * from './modules/notification/entities/link.entity';
+export * from './modules/notification/repositories/notification.repository';
+export * from './modules/notification/repositories/notification-preference.repository';
+export * from './modules/notification/repositories/link.repository';
+export * from './modules/notification/services/notification-gateway';
+export * from './modules/notification/use-cases/notify-recipient.use-case';
+export * from './modules/notification/use-cases/list-my-notifications.use-case';
+export * from './modules/notification/use-cases/mark-notification-as-read.use-case';
+export * from './modules/notification/use-cases/update-notification-preference.use-case';
+export * from './modules/notification/use-cases/create-link.use-case';
+export * from './modules/notification/use-cases/list-links.use-case';
