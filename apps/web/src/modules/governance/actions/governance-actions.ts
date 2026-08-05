@@ -65,3 +65,65 @@ export async function assignBoardPositionAction(
   revalidatePath(`/admin/gestoes/${gestaoId}`);
   return { error: null };
 }
+
+export async function createCommitteeAction(
+  gestaoId: string,
+  _prevState: GovernanceActionState,
+  formData: FormData,
+): Promise<GovernanceActionState> {
+  const session = await requireSession();
+
+  const nome = String(formData.get('nome') ?? '');
+  const descricao = String(formData.get('descricao') ?? '') || null;
+  const membrosIds = formData.getAll('membrosIds').map(String);
+  if (!nome) {
+    return { error: 'Informe o nome da comissão.' };
+  }
+
+  const container = createServerContainer();
+  const result = await container.useCases.createCommittee.execute(session.authContext, {
+    gestaoId,
+    nome,
+    descricao,
+    membrosIds,
+  });
+  if (!result.ok) {
+    return { error: result.error.message };
+  }
+
+  revalidatePath(`/admin/gestoes/${gestaoId}`);
+  return { error: null };
+}
+
+export async function updateCommitteeAction(
+  committeeId: string,
+  gestaoId: string,
+  _prevState: GovernanceActionState,
+  formData: FormData,
+): Promise<GovernanceActionState> {
+  const session = await requireSession();
+
+  const nome = String(formData.get('nome') ?? '');
+  const descricao = String(formData.get('descricao') ?? '') || null;
+  const membrosIds = formData.getAll('membrosIds').map(String);
+  if (!nome) {
+    return { error: 'Informe o nome da comissão.' };
+  }
+
+  const container = createServerContainer();
+  const result = await container.useCases.updateCommittee.execute(
+    session.authContext,
+    committeeId,
+    {
+      nome,
+      descricao,
+      membrosIds,
+    },
+  );
+  if (!result.ok) {
+    return { error: result.error.message };
+  }
+
+  revalidatePath(`/admin/gestoes/${gestaoId}`);
+  return { error: null };
+}

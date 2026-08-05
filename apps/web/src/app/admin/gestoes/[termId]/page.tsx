@@ -4,6 +4,9 @@ import { createServerContainer } from '@vl6/infra';
 import { Badge, Card, CardContent, CardHeader, CardTitle } from '@vl6/ui';
 import { requirePagePermission } from '@/lib/auth/require-permission';
 import { AssignPositionForm } from '@/modules/governance/components/assign-position-form';
+import { CommitteeForm } from '@/modules/governance/components/committee-form';
+import { EditCommitteeDialog } from '@/modules/governance/components/edit-committee-dialog';
+import { createCommitteeAction } from '@/modules/governance/actions/governance-actions';
 
 function formatDate(date: Date): string {
   return new Intl.DateTimeFormat('pt-BR').format(new Date(date));
@@ -21,11 +24,13 @@ export default async function BoardTermDetailPage({
   const term = await container.repositories.boardTerm.findById(termId);
   if (!term || term.tenantId !== session.authContext.tenantId) notFound();
 
-  const [assignments, membersPage] = await Promise.all([
+  const [assignments, membersPage, committees] = await Promise.all([
     container.repositories.boardPositionAssignment.listByGestao(termId),
     container.useCases.searchMembers.execute(session.authContext, {}, { limit: 500 }),
+    container.useCases.listCommitteesByGestao.execute(session.authContext, termId),
   ]);
   const membersById = new Map(membersPage.items.map((m) => [m.id, m]));
+  const createCommittee = createCommitteeAction.bind(null, termId);
 
   return (
     <div className="flex flex-col gap-8">
@@ -67,6 +72,41 @@ export default async function BoardTermDetailPage({
             );
           })}
         </div>
+      </div>
+
+      <div className="flex flex-col gap-3">
+        <h2 className="font-display text-lg font-semibold">Comissões</h2>
+        {committees.length === 0 ? (
+          <p className="text-muted text-sm">Nenhuma comissão criada nesta gestão ainda.</p>
+        ) : (
+          <div className="grid grid-cols-2 gap-3">
+            {committees.map((committee) => (
+              <Card key={committee.id}>
+                <CardHeader className="flex-row items-center justify-between gap-2 space-y-0">
+                  <CardTitle className="text-base">{committee.nome}</CardTitle>
+                  <EditCommitteeDialog
+                    committee={committee}
+                    gestaoId={termId}
+                    members={membersPage.items}
+                  />
+                </CardHeader>
+                <CardContent className="text-muted flex flex-col gap-2 text-sm">
+                  {committee.descricao && <p>{committee.descricao}</p>}
+                  <p>{committee.membrosIds.length} membro(s)</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+
+        <Card className="max-w-lg">
+          <CardHeader>
+            <CardTitle>Nova Comissão</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <CommitteeForm action={createCommittee} members={membersPage.items} />
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
