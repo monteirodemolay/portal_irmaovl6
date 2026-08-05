@@ -4,7 +4,7 @@ import { randomUUID } from 'node:crypto';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { fileAssetSchema, fileCategorySchema } from '@vl6/shared';
-import { createServerContainer, FirebaseStorageAdapter } from '@vl6/infra';
+import { createServerContainer, VercelBlobStorageAdapter } from '@vl6/infra';
 import { requireSession } from '@/lib/auth/require-session';
 
 export interface DocumentManagementActionState {
@@ -65,7 +65,7 @@ export async function createFileAssetAction(
   }
 
   const buffer = Buffer.from(await file.arrayBuffer());
-  const storage = new FirebaseStorageAdapter();
+  const storage = new VercelBlobStorageAdapter();
   const path = `tenants/${session.authContext.tenantId}/files/${randomUUID()}-${file.name}`;
   const upload = await storage.upload({
     path,

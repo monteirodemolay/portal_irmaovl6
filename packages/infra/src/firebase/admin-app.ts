@@ -1,7 +1,6 @@
 import { cert, getApps, initializeApp, type App } from 'firebase-admin/app';
 import { getAuth, type Auth } from 'firebase-admin/auth';
 import { getFirestore, type Firestore } from 'firebase-admin/firestore';
-import { getStorage, type Storage } from 'firebase-admin/storage';
 
 /**
  * Inicialização única do Admin SDK (server-only — nunca importado por
@@ -28,7 +27,6 @@ function buildApp(): App {
 
 let firestoreInstance: Firestore | null = null;
 let authInstance: Auth | null = null;
-let storageInstance: Storage | null = null;
 
 export function getAdminFirestore(): Firestore {
   if (!firestoreInstance) {
@@ -42,11 +40,4 @@ export function getAdminAuth(): Auth {
     authInstance = getAuth(buildApp());
   }
   return authInstance;
-}
-
-export function getAdminStorage(): Storage {
-  if (!storageInstance) {
-    storageInstance = getStorage(buildApp());
-  }
-  return storageInstance;
 }

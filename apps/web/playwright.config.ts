@@ -11,12 +11,15 @@ import { defineConfig, devices } from '@playwright/test';
  */
 export default defineConfig({
   testDir: './e2e',
-  // Next em dev mode compila cada rota sob demanda no primeiro acesso — o
-  // teste que primeiro passa por uma rota ainda não compilada paga esse
-  // custo (múltiplos segundos por rota), então o timeout padrão de 30s do
-  // Playwright é apertado demais para o primeiro teste da suíte.
+  // Aquece /, /login e /dashboard antes da suíte real começar — ver
+  // e2e/global-setup.ts. Reduz a variância do primeiro teste que loga,
+  // mas cada rota nova ainda compila sob demanda no seu primeiro acesso
+  // (ex.: /admin/irmaos/novo), então os timeouts abaixo continuam
+  // generosos de propósito — dev mode do Next, não representativo do
+  // tempo de resposta em produção (já compilada).
   timeout: 90_000,
   expect: { timeout: 20_000 },
+  globalSetup: './e2e/global-setup.ts',
   fullyParallel: false,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,

@@ -12,44 +12,44 @@ módulo de negócio) ou dentro de `apps/web/src/modules/<modulo>/components`
 
 ## 5.2 Layout (`components/layout`)
 
-| Componente | Responsabilidade |
-|---|---|
-| `AppSidebar` | Navegação lateral, itens dirigidos por RBAC + `modulosHabilitados` do tenant |
-| `AppHeader` | Busca global, seletor de tema, `NotificationCenter`, menu do usuário |
-| `AppFooter` | Rodapé institucional configurável (`FooterConfig` do tenant) |
-| `Breadcrumb` | Trilha de navegação, derivada da rota atual |
-| `PublicHeader` / `PublicFooter` | Variante do site público (não logado) |
+| Componente                      | Responsabilidade                                                             |
+| ------------------------------- | ---------------------------------------------------------------------------- |
+| `AppSidebar`                    | Navegação lateral, itens dirigidos por RBAC + `modulosHabilitados` do tenant |
+| `AppHeader`                     | Busca global, seletor de tema, `NotificationCenter`, menu do usuário         |
+| `AppFooter`                     | Rodapé institucional configurável (`FooterConfig` do tenant)                 |
+| `Breadcrumb`                    | Trilha de navegação, derivada da rota atual                                  |
+| `PublicHeader` / `PublicFooter` | Variante do site público (não logado)                                        |
 
 ## 5.3 Exibição de dados (`components/data-display`)
 
-| Componente | Responsabilidade |
-|---|---|
-| `DataTable` | Tabela genérica (TanStack Table por baixo): ordenação, seleção, ações em massa, estado vazio, densidade |
-| `Card` / `StatCard` | Cartão de conteúdo / cartão de métrica para dashboards |
-| `Timeline` | Linha do tempo (histórico de cargos, auditoria) |
-| `Charts` | Wrapper fino sobre biblioteca de gráficos (barras, linha, pizza) para dashboards |
-| `Pagination` | Paginação client-side e cursor-based (server) |
-| `EmptyState` | Estado vazio padronizado com ilustração + call-to-action |
+| Componente          | Responsabilidade                                                                                        |
+| ------------------- | ------------------------------------------------------------------------------------------------------- |
+| `DataTable`         | Tabela genérica (TanStack Table por baixo): ordenação, seleção, ações em massa, estado vazio, densidade |
+| `Card` / `StatCard` | Cartão de conteúdo / cartão de métrica para dashboards                                                  |
+| `Timeline`          | Linha do tempo (histórico de cargos, auditoria)                                                         |
+| `Charts`            | Wrapper fino sobre biblioteca de gráficos (barras, linha, pizza) para dashboards                        |
+| `Pagination`        | Paginação client-side e cursor-based (server)                                                           |
+| `EmptyState`        | Estado vazio padronizado com ilustração + call-to-action                                                |
 
 ## 5.4 Feedback (`components/feedback`)
 
-| Componente | Responsabilidade |
-|---|---|
-| `Modal` | Diálogo modal (confirmação, formulário curto) |
-| `Drawer` | Painel lateral (detalhe de registro, formulário longo) |
-| `NotificationCenter` | Sino de notificações, lista + marcar como lida |
-| `ConfirmDialog` | Confirmação de ações destrutivas (soft delete) |
+| Componente           | Responsabilidade                                       |
+| -------------------- | ------------------------------------------------------ |
+| `Modal`              | Diálogo modal (confirmação, formulário curto)          |
+| `Drawer`             | Painel lateral (detalhe de registro, formulário longo) |
+| `NotificationCenter` | Sino de notificações, lista + marcar como lida         |
+| `ConfirmDialog`      | Confirmação de ações destrutivas (soft delete)         |
 
 ## 5.5 Formulários (`components/forms`)
 
-| Componente | Responsabilidade |
-|---|---|
-| `FormField` | Wrapper de `react-hook-form` + label + erro + descrição, único ponto de estilo de campo |
-| `DatePicker` / `DateRangePicker` | Seleção de datas (agenda, filtros) |
-| `FileUploader` | Upload com progresso, preview, drag-and-drop → Firebase Storage |
-| `RichTextEditor` | Editor WYSIWYG para Notícias/Páginas institucionais |
-| `SearchInput` | Campo de busca com debounce |
-| `ImageCropper` | Recorte de foto de perfil / brasão / logotipo |
+| Componente                       | Responsabilidade                                                                        |
+| -------------------------------- | --------------------------------------------------------------------------------------- |
+| `FormField`                      | Wrapper de `react-hook-form` + label + erro + descrição, único ponto de estilo de campo |
+| `DatePicker` / `DateRangePicker` | Seleção de datas (agenda, filtros)                                                      |
+| `FileUploader`                   | Upload com progresso, preview, drag-and-drop → Vercel Blob                              |
+| `RichTextEditor`                 | Editor WYSIWYG para Notícias/Páginas institucionais                                     |
+| `SearchInput`                    | Campo de busca com debounce                                                             |
+| `ImageCropper`                   | Recorte de foto de perfil / brasão / logotipo                                           |
 
 ## 5.6 Específicos de domínio (exemplos por módulo)
 

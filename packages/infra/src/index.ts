@@ -1,5 +1,6 @@
 export * from './firebase/admin-app';
-export * from './firebase/storage-adapter';
+export * from './storage-types';
+export * from './vercel/blob-storage-adapter';
 export * from './firestore/repositories/tenant.repository';
 export * from './firestore/repositories/tenant-branding.repository';
 export * from './firestore/repositories/tenant-settings.repository';

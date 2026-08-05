@@ -163,8 +163,8 @@ portal-irmao-vl6/
 │   │       │   ├── client.ts / admin.ts
 │   │       │   ├── converters/                          # FirestoreDataConverter por entidade
 │   │       │   └── repositories/                          # TenantRepository, MemberRepository... (implementam packages/domain)
-│   │       ├── storage/
-│   │       │   └── firebase-storage.adapter.ts
+│   │       ├── vercel/
+│   │       │   └── blob-storage-adapter.ts               # Vercel Blob — ver doc 01, decisão de trocar o Firebase Storage
 │   │       └── mappers/
 │   │
 │   ├── ui/                                          # Design System
@@ -204,7 +204,6 @@ portal-irmao-vl6/
 │
 ├── firestore.rules
 ├── firestore.indexes.json
-├── storage.rules
 ├── firebase.json
 ├── turbo.json
 ├── pnpm-workspace.yaml
@@ -233,12 +232,12 @@ prática, que a arquitetura não degrade com o tempo.
 
 ## 2.2 Convenção de nomenclatura
 
-| Item | Convenção | Exemplo |
-|---|---|---|
-| Pastas | kebab-case | `document-management/` |
-| Componentes React | PascalCase | `MemberCard.tsx` |
-| Hooks | camelCase com prefixo `use` | `useMembers.ts` |
-| Casos de uso | PascalCase + verbo | `RegisterMember.ts` |
-| Interfaces de repositório | prefixo `I` | `IMemberRepository.ts` |
-| Coleções Firestore | camelCase plural | `memberPositionHistory` |
-| Rotas de API | kebab-case, versionadas | `/api/v1/members` |
+| Item                      | Convenção                   | Exemplo                 |
+| ------------------------- | --------------------------- | ----------------------- |
+| Pastas                    | kebab-case                  | `document-management/`  |
+| Componentes React         | PascalCase                  | `MemberCard.tsx`        |
+| Hooks                     | camelCase com prefixo `use` | `useMembers.ts`         |
+| Casos de uso              | PascalCase + verbo          | `RegisterMember.ts`     |
+| Interfaces de repositório | prefixo `I`                 | `IMemberRepository.ts`  |
+| Coleções Firestore        | camelCase plural            | `memberPositionHistory` |
+| Rotas de API              | kebab-case, versionadas     | `/api/v1/members`       |

@@ -10,6 +10,7 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
+    "@vercel/blob": "^2.6.1",
     "@vl6/domain": "workspace:*",
     "@vl6/shared": "workspace:*",
     "firebase-admin": "^13.0.2"
