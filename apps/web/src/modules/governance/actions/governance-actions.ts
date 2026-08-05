@@ -1,0 +1,67 @@
+'use server';
+
+import { revalidatePath } from 'next/cache';
+import { redirect } from 'next/navigation';
+import type { BoardPositionKey } from '@vl6/shared';
+import { createServerContainer } from '@vl6/infra';
+import { requireSession } from '@/lib/auth/require-session';
+
+export interface GovernanceActionState {
+  error: string | null;
+}
+
+export async function createBoardTermAction(
+  _prevState: GovernanceActionState,
+  formData: FormData,
+): Promise<GovernanceActionState> {
+  const session = await requireSession();
+
+  const nome = String(formData.get('nome') ?? '');
+  const periodoInicio = new Date(String(formData.get('periodoInicio')));
+  const periodoFim = new Date(String(formData.get('periodoFim')));
+  if (!nome || Number.isNaN(periodoInicio.getTime()) || Number.isNaN(periodoFim.getTime())) {
+    return { error: 'Preencha nome e as duas datas do período.' };
+  }
+
+  const container = createServerContainer();
+  const result = await container.useCases.createBoardTerm.execute(session.authContext, {
+    nome,
+    periodoInicio,
+    periodoFim,
+  });
+  if (!result.ok) {
+    return { error: result.error.message };
+  }
+
+  revalidatePath('/admin/gestoes');
+  redirect(`/admin/gestoes/${result.value.id}`);
+}
+
+export async function assignBoardPositionAction(
+  gestaoId: string,
+  _prevState: GovernanceActionState,
+  formData: FormData,
+): Promise<GovernanceActionState> {
+  const session = await requireSession();
+
+  const cargo = String(formData.get('cargo')) as BoardPositionKey;
+  const memberId = String(formData.get('memberId'));
+  const ordem = Number(formData.get('ordem') ?? 1);
+  if (!cargo || !memberId) {
+    return { error: 'Selecione o cargo e o Irmão.' };
+  }
+
+  const container = createServerContainer();
+  const result = await container.useCases.assignBoardPosition.execute(session.authContext, {
+    gestaoId,
+    cargo,
+    memberId,
+    ordem,
+  });
+  if (!result.ok) {
+    return { error: result.error.message };
+  }
+
+  revalidatePath(`/admin/gestoes/${gestaoId}`);
+  return { error: null };
+}
