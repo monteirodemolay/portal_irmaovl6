@@ -1,5 +1,4 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { z } from 'zod';
 import { logger } from '@vl6/shared';
 import { getAdminAuth, createServerContainer } from '@vl6/infra';
 import { getClientIp } from '@/lib/api/get-client-ip';
@@ -13,8 +12,8 @@ import {
   SESSION_COOKIE_NAME,
 } from '@/lib/auth/session';
 import { getCurrentTenant } from '@/lib/tenant/get-current-tenant';
+import { loginBodySchema } from './schema';
 
-const bodySchema = z.object({ idToken: z.string().min(1) });
 const ROUTE = 'POST /api/v1/auth/login';
 
 // Alvo clássico de força bruta — o limite mais apertado da API. Por IP (não
@@ -36,7 +35,7 @@ export const POST = withApiLogging(ROUTE, async (request: NextRequest) => {
     return rateLimitResponse(limit);
   }
 
-  const parsed = bodySchema.safeParse(await parseJsonBody(request));
+  const parsed = loginBodySchema.safeParse(await parseJsonBody(request));
   if (!parsed.success) {
     return NextResponse.json({ error: 'invalid_request' }, { status: 400 });
   }

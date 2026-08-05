@@ -10,6 +10,21 @@ const nextConfig: NextConfig = {
       bodySizeLimit: '10mb',
     },
   },
+  // Hardening da API REST (docs/architecture/10-roadmap.md v1.3) — cabeçalhos
+  // que não fazem sentido forçar no site/app (ex.: X-Frame-Options quebraria
+  // qualquer futuro embed), mas são apropriados para respostas de API pura.
+  async headers() {
+    return [
+      {
+        source: '/api/v1/:path*',
+        headers: [
+          { key: 'X-Content-Type-Options', value: 'nosniff' },
+          { key: 'X-Frame-Options', value: 'DENY' },
+          { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+        ],
+      },
+    ];
+  },
 };
 
 /**

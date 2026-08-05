@@ -1,20 +1,11 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { z } from 'zod';
 import { logger } from '@vl6/shared';
 import { getClientIp } from '@/lib/api/get-client-ip';
 import { parseJsonBody } from '@/lib/api/parse-json-body';
 import { rateLimitResponse } from '@/lib/api/rate-limit-response';
 import { RateLimiter } from '@/lib/api/rate-limiter';
 import { withApiLogging } from '@/lib/api/with-api-logging';
-
-const bodySchema = z.object({
-  name: z.enum(['CLS', 'FCP', 'INP', 'LCP', 'TTFB']),
-  value: z.number(),
-  rating: z.enum(['good', 'needs-improvement', 'poor']),
-  id: z.string(),
-  navigationType: z.string(),
-  path: z.string(),
-});
+import { webVitalsBodySchema } from './schema';
 
 // Generoso o bastante pra uma sessão real (até 5 métricas por página ×
 // várias navegações) sem abrir margem pra inundar os logs.
@@ -35,7 +26,7 @@ export const POST = withApiLogging('POST /api/v1/web-vitals', async (request: Ne
     return rateLimitResponse(limit);
   }
 
-  const parsed = bodySchema.safeParse(await parseJsonBody(request));
+  const parsed = webVitalsBodySchema.safeParse(await parseJsonBody(request));
   if (!parsed.success) {
     return NextResponse.json({ error: 'invalid_request' }, { status: 400 });
   }

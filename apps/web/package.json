@@ -13,6 +13,7 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
+    "@asteasolutions/zod-to-openapi": "^7.3.4",
     "@hookform/resolvers": "^3.9.1",
     "@sentry/nextjs": "^10.69.0",
     "@tanstack/react-query": "^5.62.11",
@@ -29,6 +30,7 @@
     "react-dom": "^19.0.0",
     "react-hook-form": "^7.54.2",
     "server-only": "^0.0.1",
+    "swagger-ui-dist": "^5.32.12",
     "zod": "^3.24.1"
   },
   "devDependencies": {
@@ -40,6 +42,7 @@
     "@types/react-dom": "^19.0.2",
     "@vl6/config": "workspace:*",
     "autoprefixer": "^10.4.20",
+    "openapi3-ts": "^4.6.1",
     "postcss": "^8.4.49",
     "tailwindcss": "^3.4.17",
     "typescript": "^5.7.3",
