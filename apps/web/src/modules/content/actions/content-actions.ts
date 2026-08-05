@@ -139,3 +139,21 @@ export async function toggleAnnouncementPublishedAction(
 
   revalidatePath('/admin/avisos');
 }
+
+export async function moderateNewsCommentAction(
+  newsId: string,
+  commentId: string,
+  aprovar: boolean,
+): Promise<void> {
+  const session = await requireSession();
+  const container = createServerContainer();
+  const result = await container.useCases.moderateNewsComment.execute(
+    session.authContext,
+    commentId,
+    aprovar,
+  );
+  if (!result.ok) throw new Error(result.error.message);
+
+  revalidatePath(`/admin/noticias/${newsId}`);
+  revalidatePath(`/noticias`);
+}
