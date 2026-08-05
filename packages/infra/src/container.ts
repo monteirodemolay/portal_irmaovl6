@@ -1,4 +1,5 @@
 import {
+  AddGalleryMediaUseCase,
   AddLibraryItemUseCase,
   AssignBoardPositionUseCase,
   AssignRoleUseCase,
@@ -11,8 +12,10 @@ import {
   CreateEventUseCase,
   CreateFileAssetUseCase,
   CreateFileCategoryUseCase,
+  CreateGalleryAlbumUseCase,
   CreateLibraryCategoryUseCase,
   CreateLinkUseCase,
+  CreateNewsCommentUseCase,
   CreateNewsUseCase,
   CreateTenantUseCase,
   GetActiveBoardUseCase,
@@ -26,20 +29,27 @@ import {
   ListAllLibraryItemsUseCase,
   ListAllLinksUseCase,
   ListAllNewsUseCase,
+  ListApprovedNewsCommentsUseCase,
   ListAuditLogUseCase,
   ListBoardTermsUseCase,
+  ListCommitteesByGestaoUseCase,
   ListEventAttendeesUseCase,
   ListFileCategoriesUseCase,
+  ListGalleryAlbumsUseCase,
+  ListGalleryMediaByAlbumUseCase,
   ListLibraryCategoriesUseCase,
   ListLibraryItemsByCategoryUseCase,
+  ListMyCommitteesUseCase,
   ListMyFavoritesUseCase,
   ListMyNotificationsUseCase,
+  ListPendingNewsCommentsUseCase,
   ListPublishedFilesByCategoryUseCase,
   ListPublishedNewsUseCase,
   ListRolesUseCase,
   ListUpcomingEventsUseCase,
   ListUsersUseCase,
   MarkNotificationAsReadUseCase,
+  ModerateNewsCommentUseCase,
   NotifyRecipientUseCase,
   PublishAnnouncementUseCase,
   PublishFileAssetUseCase,
@@ -55,6 +65,7 @@ import {
   SoftDeleteFileAssetUseCase,
   SoftDeleteMemberUseCase,
   ToggleLibraryFavoriteUseCase,
+  UpdateCommitteeUseCase,
   UpdateFileAssetUseCase,
   UpdateMemberSituationUseCase,
   UpdateMemberUseCase,
@@ -73,12 +84,15 @@ import { FirestoreEventRepository } from './firestore/repositories/event.reposit
 import { FirestoreEventAttendanceRepository } from './firestore/repositories/event-attendance.repository';
 import { FirestoreFileAssetRepository } from './firestore/repositories/file-asset.repository';
 import { FirestoreFileCategoryRepository } from './firestore/repositories/file-category.repository';
+import { FirestoreGalleryAlbumRepository } from './firestore/repositories/gallery-album.repository';
+import { FirestoreGalleryMediaRepository } from './firestore/repositories/gallery-media.repository';
 import { FirestoreLibraryCategoryRepository } from './firestore/repositories/library-category.repository';
 import { FirestoreLibraryFavoriteRepository } from './firestore/repositories/library-favorite.repository';
 import { FirestoreLibraryItemRepository } from './firestore/repositories/library-item.repository';
 import { FirestoreLinkRepository } from './firestore/repositories/link.repository';
 import { FirestoreMemberPositionHistoryRepository } from './firestore/repositories/member-position-history.repository';
 import { FirestoreMemberRepository } from './firestore/repositories/member.repository';
+import { FirestoreNewsCommentRepository } from './firestore/repositories/news-comment.repository';
 import { FirestoreNewsRepository } from './firestore/repositories/news.repository';
 import { FirestoreNotificationRepository } from './firestore/repositories/notification.repository';
 import { FirestoreNotificationPreferenceRepository } from './firestore/repositories/notification-preference.repository';
@@ -125,6 +139,9 @@ export function createServerContainer() {
     notification: new FirestoreNotificationRepository(db),
     notificationPreference: new FirestoreNotificationPreferenceRepository(db),
     link: new FirestoreLinkRepository(db),
+    galleryAlbum: new FirestoreGalleryAlbumRepository(db),
+    galleryMedia: new FirestoreGalleryMediaRepository(db),
+    newsComment: new FirestoreNewsCommentRepository(db),
   };
 
   const clock = new SystemClock();
@@ -213,6 +230,18 @@ export function createServerContainer() {
       clock,
       idGenerator,
     }),
+    listCommitteesByGestao: new ListCommitteesByGestaoUseCase({
+      committeeRepository: repositories.committee,
+    }),
+    listMyCommittees: new ListMyCommitteesUseCase({
+      committeeRepository: repositories.committee,
+      memberRepository: repositories.member,
+    }),
+    updateCommittee: new UpdateCommitteeUseCase({
+      committeeRepository: repositories.committee,
+      memberRepository: repositories.member,
+      clock,
+    }),
 
     createNews: new CreateNewsUseCase({ newsRepository: repositories.news, clock, idGenerator }),
     updateNews: new UpdateNewsUseCase({ newsRepository: repositories.news, clock }),
@@ -233,6 +262,22 @@ export function createServerContainer() {
     }),
     listAllAnnouncements: new ListAllAnnouncementsUseCase({
       announcementRepository: repositories.announcement,
+    }),
+    createNewsComment: new CreateNewsCommentUseCase({
+      newsCommentRepository: repositories.newsComment,
+      newsRepository: repositories.news,
+      clock,
+      idGenerator,
+    }),
+    moderateNewsComment: new ModerateNewsCommentUseCase({
+      newsCommentRepository: repositories.newsComment,
+      clock,
+    }),
+    listApprovedNewsComments: new ListApprovedNewsCommentsUseCase({
+      newsCommentRepository: repositories.newsComment,
+    }),
+    listPendingNewsComments: new ListPendingNewsCommentsUseCase({
+      newsCommentRepository: repositories.newsComment,
     }),
 
     recordAuditEntry: new RecordAuditEntryUseCase({
@@ -358,6 +403,24 @@ export function createServerContainer() {
     createLink: new CreateLinkUseCase({ linkRepository: repositories.link, clock, idGenerator }),
     listActiveLinks: new ListActiveLinksUseCase({ linkRepository: repositories.link }),
     listAllLinks: new ListAllLinksUseCase({ linkRepository: repositories.link }),
+
+    createGalleryAlbum: new CreateGalleryAlbumUseCase({
+      galleryAlbumRepository: repositories.galleryAlbum,
+      clock,
+      idGenerator,
+    }),
+    listGalleryAlbums: new ListGalleryAlbumsUseCase({
+      galleryAlbumRepository: repositories.galleryAlbum,
+    }),
+    addGalleryMedia: new AddGalleryMediaUseCase({
+      galleryMediaRepository: repositories.galleryMedia,
+      galleryAlbumRepository: repositories.galleryAlbum,
+      clock,
+      idGenerator,
+    }),
+    listGalleryMediaByAlbum: new ListGalleryMediaByAlbumUseCase({
+      galleryMediaRepository: repositories.galleryMedia,
+    }),
   };
 
   return { db, repositories, useCases };
