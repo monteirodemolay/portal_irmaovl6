@@ -1,7 +1,10 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { z } from 'zod';
 import { logger } from '@vl6/shared';
+import { getClientIp } from '@/lib/api/get-client-ip';
 import { parseJsonBody } from '@/lib/api/parse-json-body';
+import { rateLimitResponse } from '@/lib/api/rate-limit-response';
+import { RateLimiter } from '@/lib/api/rate-limiter';
 import { withApiLogging } from '@/lib/api/with-api-logging';
 
 const bodySchema = z.object({
@@ -13,6 +16,10 @@ const bodySchema = z.object({
   path: z.string(),
 });
 
+// Generoso o bastante pra uma sessão real (até 5 métricas por página ×
+// várias navegações) sem abrir margem pra inundar os logs.
+const webVitalsRateLimiter = new RateLimiter();
+
 /**
  * Recebe as métricas Core Web Vitals reportadas por
  * `src/lib/observability/web-vitals-reporter.tsx` e as grava como log
@@ -22,6 +29,12 @@ const bodySchema = z.object({
  * não deste endpoint.
  */
 export const POST = withApiLogging('POST /api/v1/web-vitals', async (request: NextRequest) => {
+  const ip = getClientIp(request);
+  const limit = webVitalsRateLimiter.check(ip, { limit: 120, windowMs: 60 * 1000 });
+  if (!limit.allowed) {
+    return rateLimitResponse(limit);
+  }
+
   const parsed = bodySchema.safeParse(await parseJsonBody(request));
   if (!parsed.success) {
     return NextResponse.json({ error: 'invalid_request' }, { status: 400 });

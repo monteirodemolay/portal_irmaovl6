@@ -4,10 +4,17 @@ import PDFDocument from 'pdfkit';
 import { hasPermission } from '@vl6/domain';
 import type { BoardPositionKey } from '@vl6/shared';
 import { createServerContainer } from '@vl6/infra';
+import { rateLimitResponse } from '@/lib/api/rate-limit-response';
+import { RateLimiter } from '@/lib/api/rate-limiter';
 import { withApiLogging } from '@/lib/api/with-api-logging';
 import { getCurrentSession } from '@/lib/auth/get-current-session';
 
 export const runtime = 'nodejs';
+
+// Chave por uid (não por IP): é uma operação autenticada e cara (Firestore
+// + geração de arquivo), então o que importa limitar é quantas exportações
+// o mesmo Irmão dispara, não quantas vêm do mesmo escritório/NAT.
+const exportRateLimiter = new RateLimiter();
 
 /** Exportação Excel/PDF do Cadastro de Irmãos — docs/architecture/10-roadmap.md, v1.2. */
 export const GET = withApiLogging(
@@ -17,6 +24,12 @@ export const GET = withApiLogging(
     if (!session) {
       return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
     }
+
+    const limit = exportRateLimiter.check(session.user.id, { limit: 10, windowMs: 60 * 1000 });
+    if (!limit.allowed) {
+      return rateLimitResponse(limit);
+    }
+
     if (!hasPermission(session.authContext, 'member:read')) {
       return NextResponse.json({ error: 'forbidden' }, { status: 403 });
     }

@@ -2,7 +2,10 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { z } from 'zod';
 import { logger } from '@vl6/shared';
 import { getAdminAuth, createServerContainer } from '@vl6/infra';
+import { getClientIp } from '@/lib/api/get-client-ip';
 import { parseJsonBody } from '@/lib/api/parse-json-body';
+import { rateLimitResponse } from '@/lib/api/rate-limit-response';
+import { RateLimiter } from '@/lib/api/rate-limiter';
 import { withApiLogging } from '@/lib/api/with-api-logging';
 import {
   createSessionCookie,
@@ -14,12 +17,25 @@ import { getCurrentTenant } from '@/lib/tenant/get-current-tenant';
 const bodySchema = z.object({ idToken: z.string().min(1) });
 const ROUTE = 'POST /api/v1/auth/login';
 
+// Alvo clássico de força bruta — o limite mais apertado da API. Por IP (não
+// por e-mail): o ID Token já provou posse da conta no Firebase Auth antes
+// de chegar aqui, então o risco real é tentativa repetida contra tenants
+// diferentes ou contas diferentes a partir da mesma origem.
+const loginRateLimiter = new RateLimiter();
+
 /**
  * Troca o ID Token do Firebase Authentication (client) por um cookie de
  * sessão HttpOnly e roda o pós-processamento de login do domínio —
  * docs/architecture/07-fluxo-autenticacao.md §7.2.
  */
 export const POST = withApiLogging(ROUTE, async (request: NextRequest) => {
+  const ip = getClientIp(request);
+  const limit = loginRateLimiter.check(ip, { limit: 10, windowMs: 5 * 60 * 1000 });
+  if (!limit.allowed) {
+    logger.warn('Rate limit atingido em login', { route: ROUTE, ip });
+    return rateLimitResponse(limit);
+  }
+
   const parsed = bodySchema.safeParse(await parseJsonBody(request));
   if (!parsed.success) {
     return NextResponse.json({ error: 'invalid_request' }, { status: 400 });
