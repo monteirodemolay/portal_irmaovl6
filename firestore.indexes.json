@@ -72,7 +72,54 @@
         { "fieldPath": "tenantId", "order": "ASCENDING" },
         { "fieldPath": "categoriaId", "order": "ASCENDING" },
         { "fieldPath": "publicado", "order": "ASCENDING" },
+        { "fieldPath": "deletedAt", "order": "ASCENDING" },
         { "fieldPath": "ordem", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "files",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "tenantId", "order": "ASCENDING" },
+        { "fieldPath": "deletedAt", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "fileCategories",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "tenantId", "order": "ASCENDING" },
+        { "fieldPath": "deletedAt", "order": "ASCENDING" },
+        { "fieldPath": "ordem", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "libraryCategories",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "tenantId", "order": "ASCENDING" },
+        { "fieldPath": "deletedAt", "order": "ASCENDING" },
+        { "fieldPath": "ordem", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "libraryItems",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "tenantId", "order": "ASCENDING" },
+        { "fieldPath": "categoriaId", "order": "ASCENDING" },
+        { "fieldPath": "deletedAt", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "libraryItems",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "tenantId", "order": "ASCENDING" },
+        { "fieldPath": "deletedAt", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
       ]
     },
     {
@@ -80,8 +127,36 @@
       "queryScope": "COLLECTION",
       "fields": [
         { "fieldPath": "tenantId", "order": "ASCENDING" },
-        { "fieldPath": "dataInicio", "order": "ASCENDING" },
-        { "fieldPath": "tipo", "order": "ASCENDING" }
+        { "fieldPath": "deletedAt", "order": "ASCENDING" },
+        { "fieldPath": "dataInicio", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "events",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "tenantId", "order": "ASCENDING" },
+        { "fieldPath": "deletedAt", "order": "ASCENDING" },
+        { "fieldPath": "dataInicio", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "links",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "tenantId", "order": "ASCENDING" },
+        { "fieldPath": "deletedAt", "order": "ASCENDING" },
+        { "fieldPath": "ativo", "order": "ASCENDING" },
+        { "fieldPath": "ordem", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "links",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "tenantId", "order": "ASCENDING" },
+        { "fieldPath": "deletedAt", "order": "ASCENDING" },
+        { "fieldPath": "ordem", "order": "ASCENDING" }
       ]
     },
     {
@@ -146,7 +221,7 @@
       "fields": [
         { "fieldPath": "tenantId", "order": "ASCENDING" },
         { "fieldPath": "destinatarioId", "order": "ASCENDING" },
-        { "fieldPath": "lida", "order": "ASCENDING" },
+        { "fieldPath": "deletedAt", "order": "ASCENDING" },
         { "fieldPath": "createdAt", "order": "DESCENDING" }
       ]
     }

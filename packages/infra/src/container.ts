@@ -1,35 +1,65 @@
 import {
+  AddLibraryItemUseCase,
   AssignBoardPositionUseCase,
   AssignRoleUseCase,
   AuthenticateUserUseCase,
   BootstrapTenantAdminUseCase,
+  ConfirmAttendanceUseCase,
   CreateAnnouncementUseCase,
   CreateBoardTermUseCase,
   CreateCommitteeUseCase,
+  CreateEventUseCase,
+  CreateFileAssetUseCase,
+  CreateFileCategoryUseCase,
+  CreateLibraryCategoryUseCase,
+  CreateLinkUseCase,
   CreateNewsUseCase,
   CreateTenantUseCase,
   GetActiveBoardUseCase,
   GetPublicBoardUseCase,
   InviteUserUseCase,
   ListActiveAnnouncementsUseCase,
+  ListActiveLinksUseCase,
   ListAllAnnouncementsUseCase,
+  ListAllEventsUseCase,
+  ListAllFileAssetsUseCase,
+  ListAllLinksUseCase,
   ListAllNewsUseCase,
   ListAuditLogUseCase,
   ListBoardTermsUseCase,
+  ListEventAttendeesUseCase,
+  ListFileCategoriesUseCase,
+  ListLibraryCategoriesUseCase,
+  ListLibraryItemsByCategoryUseCase,
+  ListMyFavoritesUseCase,
+  ListMyNotificationsUseCase,
+  ListPublishedFilesByCategoryUseCase,
   ListPublishedNewsUseCase,
   ListRolesUseCase,
+  ListUpcomingEventsUseCase,
   ListUsersUseCase,
+  MarkNotificationAsReadUseCase,
+  NotifyRecipientUseCase,
   PublishAnnouncementUseCase,
+  PublishFileAssetUseCase,
   PublishNewsUseCase,
   RecordAuditEntryUseCase,
+  RecordFileDownloadUseCase,
+  RecordFileViewUseCase,
+  RecordLibraryDownloadUseCase,
+  RecordLibraryViewUseCase,
   RegisterMemberUseCase,
   ResolveTenantByHostUseCase,
   SearchMembersUseCase,
+  SoftDeleteFileAssetUseCase,
   SoftDeleteMemberUseCase,
+  ToggleLibraryFavoriteUseCase,
+  UpdateFileAssetUseCase,
   UpdateMemberSituationUseCase,
   UpdateMemberUseCase,
   UpdateMyProfileUseCase,
   UpdateNewsUseCase,
+  UpdateNotificationPreferenceUseCase,
   UpdateTenantBrandingUseCase,
 } from '@vl6/domain';
 import { getAdminFirestore } from './firebase/admin-app';
@@ -38,9 +68,19 @@ import { FirestoreAuditLogRepository } from './firestore/repositories/audit-log.
 import { FirestoreBoardPositionAssignmentRepository } from './firestore/repositories/board-position-assignment.repository';
 import { FirestoreBoardTermRepository } from './firestore/repositories/board-term.repository';
 import { FirestoreCommitteeRepository } from './firestore/repositories/committee.repository';
+import { FirestoreEventRepository } from './firestore/repositories/event.repository';
+import { FirestoreEventAttendanceRepository } from './firestore/repositories/event-attendance.repository';
+import { FirestoreFileAssetRepository } from './firestore/repositories/file-asset.repository';
+import { FirestoreFileCategoryRepository } from './firestore/repositories/file-category.repository';
+import { FirestoreLibraryCategoryRepository } from './firestore/repositories/library-category.repository';
+import { FirestoreLibraryFavoriteRepository } from './firestore/repositories/library-favorite.repository';
+import { FirestoreLibraryItemRepository } from './firestore/repositories/library-item.repository';
+import { FirestoreLinkRepository } from './firestore/repositories/link.repository';
 import { FirestoreMemberPositionHistoryRepository } from './firestore/repositories/member-position-history.repository';
 import { FirestoreMemberRepository } from './firestore/repositories/member.repository';
 import { FirestoreNewsRepository } from './firestore/repositories/news.repository';
+import { FirestoreNotificationRepository } from './firestore/repositories/notification.repository';
+import { FirestoreNotificationPreferenceRepository } from './firestore/repositories/notification-preference.repository';
 import { FirestoreRoleRepository } from './firestore/repositories/role.repository';
 import { FirestoreTenantRepository } from './firestore/repositories/tenant.repository';
 import { FirestoreTenantBrandingRepository } from './firestore/repositories/tenant-branding.repository';
@@ -48,6 +88,7 @@ import { FirestoreTenantSettingsRepository } from './firestore/repositories/tena
 import { FirestoreUserRepository } from './firestore/repositories/user.repository';
 import { SystemClock } from './adapters/system-clock';
 import { FirestoreIdGenerator } from './adapters/firestore-id-generator';
+import { NoopNotificationGateway } from './adapters/noop-notification-gateway';
 
 /**
  * Composition root do servidor — instancia repositórios Firestore reais e os
@@ -73,10 +114,21 @@ export function createServerContainer() {
     news: new FirestoreNewsRepository(db),
     announcement: new FirestoreAnnouncementRepository(db),
     auditLog: new FirestoreAuditLogRepository(db),
+    fileCategory: new FirestoreFileCategoryRepository(db),
+    fileAsset: new FirestoreFileAssetRepository(db),
+    libraryCategory: new FirestoreLibraryCategoryRepository(db),
+    libraryItem: new FirestoreLibraryItemRepository(db),
+    libraryFavorite: new FirestoreLibraryFavoriteRepository(db),
+    event: new FirestoreEventRepository(db),
+    eventAttendance: new FirestoreEventAttendanceRepository(db),
+    notification: new FirestoreNotificationRepository(db),
+    notificationPreference: new FirestoreNotificationPreferenceRepository(db),
+    link: new FirestoreLinkRepository(db),
   };
 
   const clock = new SystemClock();
   const idGenerator = new FirestoreIdGenerator(db);
+  const notificationGateway = new NoopNotificationGateway();
 
   const useCases = {
     createTenant: new CreateTenantUseCase({
@@ -184,6 +236,120 @@ export function createServerContainer() {
       idGenerator,
     }),
     listAuditLog: new ListAuditLogUseCase({ auditLogRepository: repositories.auditLog }),
+
+    createFileCategory: new CreateFileCategoryUseCase({
+      fileCategoryRepository: repositories.fileCategory,
+      clock,
+      idGenerator,
+    }),
+    listFileCategories: new ListFileCategoriesUseCase({
+      fileCategoryRepository: repositories.fileCategory,
+    }),
+    createFileAsset: new CreateFileAssetUseCase({
+      fileAssetRepository: repositories.fileAsset,
+      clock,
+      idGenerator,
+    }),
+    updateFileAsset: new UpdateFileAssetUseCase({
+      fileAssetRepository: repositories.fileAsset,
+      clock,
+    }),
+    publishFileAsset: new PublishFileAssetUseCase({
+      fileAssetRepository: repositories.fileAsset,
+      clock,
+    }),
+    listAllFileAssets: new ListAllFileAssetsUseCase({
+      fileAssetRepository: repositories.fileAsset,
+    }),
+    listPublishedFilesByCategory: new ListPublishedFilesByCategoryUseCase({
+      fileAssetRepository: repositories.fileAsset,
+    }),
+    recordFileView: new RecordFileViewUseCase({ fileAssetRepository: repositories.fileAsset }),
+    recordFileDownload: new RecordFileDownloadUseCase({
+      fileAssetRepository: repositories.fileAsset,
+    }),
+    softDeleteFileAsset: new SoftDeleteFileAssetUseCase({
+      fileAssetRepository: repositories.fileAsset,
+      clock,
+    }),
+
+    createLibraryCategory: new CreateLibraryCategoryUseCase({
+      libraryCategoryRepository: repositories.libraryCategory,
+      clock,
+      idGenerator,
+    }),
+    listLibraryCategories: new ListLibraryCategoriesUseCase({
+      libraryCategoryRepository: repositories.libraryCategory,
+    }),
+    addLibraryItem: new AddLibraryItemUseCase({
+      libraryItemRepository: repositories.libraryItem,
+      fileAssetRepository: repositories.fileAsset,
+      clock,
+      idGenerator,
+    }),
+    listLibraryItemsByCategory: new ListLibraryItemsByCategoryUseCase({
+      libraryItemRepository: repositories.libraryItem,
+    }),
+    toggleLibraryFavorite: new ToggleLibraryFavoriteUseCase({
+      favoriteRepository: repositories.libraryFavorite,
+      clock,
+      idGenerator,
+    }),
+    listMyFavorites: new ListMyFavoritesUseCase({
+      favoriteRepository: repositories.libraryFavorite,
+    }),
+    recordLibraryView: new RecordLibraryViewUseCase({
+      libraryItemRepository: repositories.libraryItem,
+      fileAssetRepository: repositories.fileAsset,
+    }),
+    recordLibraryDownload: new RecordLibraryDownloadUseCase({
+      libraryItemRepository: repositories.libraryItem,
+      fileAssetRepository: repositories.fileAsset,
+    }),
+
+    createEvent: new CreateEventUseCase({
+      eventRepository: repositories.event,
+      clock,
+      idGenerator,
+    }),
+    listUpcomingEvents: new ListUpcomingEventsUseCase({
+      eventRepository: repositories.event,
+      clock,
+    }),
+    listAllEvents: new ListAllEventsUseCase({ eventRepository: repositories.event }),
+    confirmAttendance: new ConfirmAttendanceUseCase({
+      eventRepository: repositories.event,
+      attendanceRepository: repositories.eventAttendance,
+      memberRepository: repositories.member,
+      clock,
+      idGenerator,
+    }),
+    listEventAttendees: new ListEventAttendeesUseCase({
+      attendanceRepository: repositories.eventAttendance,
+    }),
+
+    notifyRecipient: new NotifyRecipientUseCase({
+      notificationRepository: repositories.notification,
+      notificationPreferenceRepository: repositories.notificationPreference,
+      notificationGateway,
+      clock,
+      idGenerator,
+    }),
+    listMyNotifications: new ListMyNotificationsUseCase({
+      notificationRepository: repositories.notification,
+    }),
+    markNotificationAsRead: new MarkNotificationAsReadUseCase({
+      notificationRepository: repositories.notification,
+      clock,
+    }),
+    updateNotificationPreference: new UpdateNotificationPreferenceUseCase({
+      preferenceRepository: repositories.notificationPreference,
+      clock,
+      idGenerator,
+    }),
+    createLink: new CreateLinkUseCase({ linkRepository: repositories.link, clock, idGenerator }),
+    listActiveLinks: new ListActiveLinksUseCase({ linkRepository: repositories.link }),
+    listAllLinks: new ListAllLinksUseCase({ linkRepository: repositories.link }),
   };
 
   return { db, repositories, useCases };

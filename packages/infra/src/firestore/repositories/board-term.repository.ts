@@ -3,12 +3,15 @@ import type { BoardTerm, IBoardTermRepository } from '@vl6/domain';
 import { createEntityConverter } from '../converters/entity.converter';
 
 const COLLECTION = 'boardTerms';
+const DATE_FIELDS = ['periodoInicio', 'periodoFim'] as const;
 
 export class FirestoreBoardTermRepository implements IBoardTermRepository {
   private readonly collection;
 
   constructor(private readonly db: Firestore) {
-    this.collection = db.collection(COLLECTION).withConverter(createEntityConverter<BoardTerm>());
+    this.collection = db
+      .collection(COLLECTION)
+      .withConverter(createEntityConverter<BoardTerm>(DATE_FIELDS));
   }
 
   async findById(id: string): Promise<BoardTerm | null> {

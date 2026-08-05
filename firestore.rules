@@ -212,8 +212,8 @@ service cloud.firestore {
     }
 
     match /links/{id} {
-      allow read: if sameTenant(resource.data) && isSignedIn();
-      allow write: if sameTenant(request.resource.data) && hasPermission('tenant:manage');
+      allow read: if sameTenant(resource.data) && hasPermission('link:read');
+      allow write: if sameTenant(request.resource.data) && hasPermission('link:create');
     }
   }
 }

@@ -3,6 +3,7 @@ import type { IMemberPositionHistoryRepository, MemberPositionHistory } from '@v
 import { createEntityConverter } from '../converters/entity.converter';
 
 const COLLECTION = 'memberPositionHistory';
+const DATE_FIELDS = ['dataInicio', 'dataFim'] as const;
 
 export class FirestoreMemberPositionHistoryRepository implements IMemberPositionHistoryRepository {
   private readonly collection;
@@ -10,7 +11,7 @@ export class FirestoreMemberPositionHistoryRepository implements IMemberPosition
   constructor(private readonly db: Firestore) {
     this.collection = db
       .collection(COLLECTION)
-      .withConverter(createEntityConverter<MemberPositionHistory>());
+      .withConverter(createEntityConverter<MemberPositionHistory>(DATE_FIELDS));
   }
 
   async findActiveByMemberId(memberId: string): Promise<MemberPositionHistory | null> {

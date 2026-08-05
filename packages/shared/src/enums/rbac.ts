@@ -149,6 +149,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<RoleKey, PermissionKey[]> = {
     'file:read',
     'libraryItem:read',
     'event:read',
+    'link:read',
   ],
   diretoria: [
     'tenant:read',
@@ -181,6 +182,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<RoleKey, PermissionKey[]> = {
     'event:read',
     'event:create',
     'event:update',
+    'link:read',
   ],
   irmao: [
     'tenant:read',

@@ -9,12 +9,15 @@ import type {
 import { createEntityConverter } from '../converters/entity.converter';
 
 const COLLECTION = 'members';
+const DATE_FIELDS = ['dataNascimento', 'dataIniciacao', 'dataElevacao', 'dataExaltacao'] as const;
 
 export class FirestoreMemberRepository implements IMemberRepository {
   private readonly collection;
 
   constructor(private readonly db: Firestore) {
-    this.collection = db.collection(COLLECTION).withConverter(createEntityConverter<Member>());
+    this.collection = db
+      .collection(COLLECTION)
+      .withConverter(createEntityConverter<Member>(DATE_FIELDS));
   }
 
   async findById(id: string): Promise<Member | null> {

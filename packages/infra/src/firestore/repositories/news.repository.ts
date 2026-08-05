@@ -3,12 +3,15 @@ import type { INewsRepository, News, PageRequest, PageResult } from '@vl6/domain
 import { createEntityConverter } from '../converters/entity.converter';
 
 const COLLECTION = 'news';
+const DATE_FIELDS = ['dataPublicacao'] as const;
 
 export class FirestoreNewsRepository implements INewsRepository {
   private readonly collection;
 
   constructor(private readonly db: Firestore) {
-    this.collection = db.collection(COLLECTION).withConverter(createEntityConverter<News>());
+    this.collection = db
+      .collection(COLLECTION)
+      .withConverter(createEntityConverter<News>(DATE_FIELDS));
   }
 
   async findById(id: string): Promise<News | null> {

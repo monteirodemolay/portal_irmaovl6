@@ -3,6 +3,7 @@ import type { Announcement, IAnnouncementRepository } from '@vl6/domain';
 import { createEntityConverter } from '../converters/entity.converter';
 
 const COLLECTION = 'announcements';
+const DATE_FIELDS = ['dataPublicacao', 'dataExpiracao'] as const;
 
 export class FirestoreAnnouncementRepository implements IAnnouncementRepository {
   private readonly collection;
@@ -10,7 +11,7 @@ export class FirestoreAnnouncementRepository implements IAnnouncementRepository 
   constructor(private readonly db: Firestore) {
     this.collection = db
       .collection(COLLECTION)
-      .withConverter(createEntityConverter<Announcement>());
+      .withConverter(createEntityConverter<Announcement>(DATE_FIELDS));
   }
 
   async findById(id: string): Promise<Announcement | null> {
