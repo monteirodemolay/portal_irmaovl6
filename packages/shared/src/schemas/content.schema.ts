@@ -22,3 +22,8 @@ export const announcementSchema = z.object({
   dataExpiracao: z.coerce.date().nullable(),
 });
 export type AnnouncementFormValues = z.infer<typeof announcementSchema>;
+
+export const newsCommentSchema = z.object({
+  texto: z.string().min(1).max(1000),
+});
+export type NewsCommentFormValues = z.infer<typeof newsCommentSchema>;
