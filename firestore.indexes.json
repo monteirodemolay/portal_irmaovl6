@@ -1,26 +1,6 @@
 {
   "indexes": [
     {
-      "collectionGroup": "tenants",
-      "queryScope": "COLLECTION",
-      "fields": [{ "fieldPath": "subdominio", "order": "ASCENDING" }]
-    },
-    {
-      "collectionGroup": "tenants",
-      "queryScope": "COLLECTION",
-      "fields": [{ "fieldPath": "dominio", "order": "ASCENDING" }]
-    },
-    {
-      "collectionGroup": "tenantBranding",
-      "queryScope": "COLLECTION",
-      "fields": [{ "fieldPath": "tenantId", "order": "ASCENDING" }]
-    },
-    {
-      "collectionGroup": "tenantSettings",
-      "queryScope": "COLLECTION",
-      "fields": [{ "fieldPath": "tenantId", "order": "ASCENDING" }]
-    },
-    {
       "collectionGroup": "users",
       "queryScope": "COLLECTION",
       "fields": [
