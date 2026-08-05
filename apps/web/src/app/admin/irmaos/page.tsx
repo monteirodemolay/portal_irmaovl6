@@ -38,6 +38,10 @@ export default async function MembersPage({
   const session = await requirePagePermission('member:read');
   const filters = await searchParams;
 
+  const exportQuery = new URLSearchParams(
+    Object.entries(filters).filter((entry): entry is [string, string] => Boolean(entry[1])),
+  ).toString();
+
   const container = createServerContainer();
   const page = await container.useCases.searchMembers.execute(
     session.authContext,
@@ -80,9 +84,17 @@ export default async function MembersPage({
           <h1 className="font-display text-2xl font-semibold">Cadastro de Irmãos</h1>
           <p className="text-muted">{page.items.length} Irmãos encontrados</p>
         </div>
-        <Button asChild>
-          <Link href="/admin/irmaos/novo">Novo Irmão</Link>
-        </Button>
+        <div className="flex gap-2">
+          <Button asChild variant="outline">
+            <a href={`/api/v1/admin/members/export?${exportQuery}&format=xlsx`}>Exportar Excel</a>
+          </Button>
+          <Button asChild variant="outline">
+            <a href={`/api/v1/admin/members/export?${exportQuery}&format=pdf`}>Exportar PDF</a>
+          </Button>
+          <Button asChild>
+            <Link href="/admin/irmaos/novo">Novo Irmão</Link>
+          </Button>
+        </div>
       </div>
 
       <form className="grid grid-cols-2 gap-3 md:grid-cols-4">
