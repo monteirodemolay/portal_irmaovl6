@@ -273,6 +273,13 @@ export class InMemoryNewsRepository implements INewsRepository {
   async findById(id: string) {
     return this.byId.get(id) ?? null;
   }
+  async findPublishedBySlug(tenantId: string, slug: string) {
+    return (
+      [...this.byId.values()].find(
+        (n) => n.tenantId === tenantId && n.slug === slug && n.publicado,
+      ) ?? null
+    );
+  }
   async existsBySlug(tenantId: string, slug: string) {
     return [...this.byId.values()].some((n) => n.tenantId === tenantId && n.slug === slug);
   }

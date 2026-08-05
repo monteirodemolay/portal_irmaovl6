@@ -3,7 +3,9 @@ import { SESSION_COOKIE_NAME } from './lib/auth/session-constants';
 
 export const TENANT_HOST_HEADER = 'x-tenant-host';
 
-const PROTECTED_PREFIXES = ['/dashboard', '/perfil', '/admin'];
+// /noticias fica de fora: notícias publicadas são conteúdo público (o papel
+// Visitante tem `news:read` — docs/architecture/08 §8.2), acessível sem login.
+const PROTECTED_PREFIXES = ['/dashboard', '/perfil', '/diretoria', '/avisos', '/admin'];
 
 /**
  * Roda em Edge runtime — por isso não usa o Admin SDK aqui (incompatível

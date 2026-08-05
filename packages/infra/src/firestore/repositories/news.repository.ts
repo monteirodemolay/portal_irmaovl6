@@ -16,6 +16,16 @@ export class FirestoreNewsRepository implements INewsRepository {
     return snap.exists ? snap.data()! : null;
   }
 
+  async findPublishedBySlug(tenantId: string, slug: string): Promise<News | null> {
+    const snap = await this.collection
+      .where('tenantId', '==', tenantId)
+      .where('slug', '==', slug)
+      .where('publicado', '==', true)
+      .limit(1)
+      .get();
+    return snap.empty ? null : snap.docs[0]!.data();
+  }
+
   async existsBySlug(tenantId: string, slug: string): Promise<boolean> {
     const snap = await this.collection
       .where('tenantId', '==', tenantId)

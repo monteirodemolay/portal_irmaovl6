@@ -9,6 +9,9 @@ export default [
     rules: {
       ...nextPlugin.configs.recommended.rules,
       ...nextPlugin.configs['core-web-vitals'].rules,
+      // Capa de notícia vem de URL arbitrária (sem otimização configurada
+      // ainda) — next/image exigiria largura/altura fixas que não temos.
+      '@next/next/no-img-element': 'off',
     },
   },
 ];
