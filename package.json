@@ -35,5 +35,10 @@
     "*.{ts,tsx,md,json,css}": [
       "prettier --write"
     ]
+  },
+  "pnpm": {
+    "overrides": {
+      "zod": "^3.24.1"
+    }
   }
 }

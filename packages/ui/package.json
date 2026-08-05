@@ -7,7 +7,8 @@
   "types": "./src/index.ts",
   "scripts": {
     "lint": "eslint . --max-warnings 0",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "test": "vitest run"
   },
   "peerDependencies": {
     "react": "^19.0.0"
@@ -22,8 +23,15 @@
     "tailwind-merge": "^2.6.0"
   },
   "devDependencies": {
+    "@testing-library/jest-dom": "^7.0.0",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.3",
     "@types/react": "^19.0.2",
+    "@vitejs/plugin-react": "^4.3.4",
     "@vl6/config": "workspace:*",
-    "typescript": "^5.7.3"
+    "jsdom": "^30.0.1",
+    "react-dom": "^19.0.0",
+    "typescript": "^5.7.3",
+    "vitest": "^2.1.8"
   }
 }
