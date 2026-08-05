@@ -12,6 +12,7 @@
  * FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099 (não precisa de credenciais).
  */
 import type { AuthContext } from '@vl6/domain';
+import { computeUserClaims } from '@vl6/domain';
 import { createServerContainer, getAdminAuth } from '@vl6/infra';
 
 async function main() {
@@ -39,7 +40,7 @@ async function main() {
     numero: '6',
     potencia: process.env.TENANT_POTENCIA ?? 'GLEG',
     dominio: null,
-    subdominio: 'vl6',
+    subdominio: process.env.TENANT_SUBDOMINIO ?? 'vl6',
     endereco: null,
     telefone: null,
     whatsapp: null,
@@ -68,6 +69,19 @@ async function main() {
   if (!adminResult.ok) {
     console.error(`Falha ao criar o admin: ${adminResult.error.message}`);
     process.exit(1);
+  }
+
+  // Fora do emulador, `onUserWritten` (functions/src/triggers/on-user-written.ts)
+  // sincroniza os Custom Claims a partir da escrita no Firestore. Este script
+  // não roda com o emulador de Functions (só auth+firestore — ver
+  // `pnpm test:e2e` na raiz), então replica o mesmo cálculo aqui para o admin
+  // seed já nascer com as claims propagadas.
+  const adminRole = await container.repositories.role.findById(adminResult.value.roleId);
+  if (adminRole) {
+    await getAdminAuth().setCustomUserClaims(
+      authUser.uid,
+      computeUserClaims(adminResult.value, adminRole),
+    );
   }
 
   console.log('\nSeed concluído.');

@@ -1,7 +1,7 @@
 'use client';
 
 import { getApps, initializeApp, type FirebaseOptions } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
+import { connectAuthEmulator, getAuth } from 'firebase/auth';
 
 const firebaseConfig: FirebaseOptions = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -12,5 +12,16 @@ const firebaseConfig: FirebaseOptions = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
+const isNewApp = getApps().length === 0;
 export const firebaseApp = getApps()[0] ?? initializeApp(firebaseConfig);
 export const firebaseAuth = getAuth(firebaseApp);
+
+/**
+ * Conecta ao Firebase Auth Emulator quando `NEXT_PUBLIC_USE_FIREBASE_EMULATOR`
+ * está setada — usado pelos testes E2E (Playwright + `firebase emulators:exec`,
+ * ver apps/web/e2e/), nunca em produção. `isNewApp` evita reconectar em
+ * Fast Refresh (o SDK lança se `connectAuthEmulator` for chamado 2x).
+ */
+if (isNewApp && process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === 'true') {
+  connectAuthEmulator(firebaseAuth, 'http://127.0.0.1:9099', { disableWarnings: true });
+}
