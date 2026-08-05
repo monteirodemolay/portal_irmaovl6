@@ -3,9 +3,10 @@ import { SESSION_COOKIE_NAME } from './lib/auth/session-constants';
 
 export const TENANT_HOST_HEADER = 'x-tenant-host';
 
-// /noticias fica de fora: notícias publicadas são conteúdo público (o papel
-// Visitante tem `news:read` — docs/architecture/08 §8.2), acessível sem login.
-const PROTECTED_PREFIXES = ['/dashboard', '/perfil', '/diretoria', '/avisos', '/admin'];
+// /noticias e /diretoria ficam de fora: são conteúdo institucional público
+// (site público), acessíveis sem login mesmo quando também linkados a
+// partir da Área do Irmão.
+const PROTECTED_PREFIXES = ['/dashboard', '/perfil', '/avisos', '/admin'];
 
 /**
  * Roda em Edge runtime — por isso não usa o Admin SDK aqui (incompatível

@@ -9,7 +9,7 @@ export default async function HomePage() {
   const { tenant } = current;
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-3xl flex-col items-center justify-center gap-6 px-6 text-center">
+    <main className="mx-auto flex max-w-3xl flex-col items-center gap-6 px-6 py-24 text-center">
       {tenant.dominio === null && (
         <span className="border-border text-muted rounded-sm border px-3 py-1 font-mono text-xs">
           Ambiente de desenvolvimento — subdomínio {tenant.subdominio}
@@ -17,13 +17,16 @@ export default async function HomePage() {
       )}
       <h1 className="font-display text-balance text-4xl font-semibold">{tenant.nome}</h1>
       <p className="text-muted max-w-xl">
-        Loja nº {tenant.numero} — {tenant.potencia}. O site institucional completo (história,
-        diretoria pública, galeria e notícias) chega nas próximas versões — ver
-        docs/architecture/10-roadmap.md.
+        Loja nº {tenant.numero} — {tenant.potencia}.
       </p>
-      <Button asChild>
-        <Link href="/login">Área do Irmão</Link>
-      </Button>
+      <div className="flex gap-3">
+        <Button asChild>
+          <Link href="/nossa-loja">Conheça a Loja</Link>
+        </Button>
+        <Button asChild variant="outline">
+          <Link href="/login">Área do Irmão</Link>
+        </Button>
+      </div>
     </main>
   );
 }
