@@ -26,6 +26,9 @@ export * from './modules/identity-access/services/compute-user-claims';
 export * from './modules/identity-access/use-cases/authenticate-user.use-case';
 export * from './modules/identity-access/use-cases/assign-role.use-case';
 export * from './modules/identity-access/use-cases/bootstrap-tenant-admin.use-case';
+export * from './modules/identity-access/use-cases/invite-user.use-case';
+export * from './modules/identity-access/use-cases/list-users.use-case';
+export * from './modules/identity-access/use-cases/list-roles.use-case';
 
 // Membership
 export * from './modules/membership/entities/member.entity';

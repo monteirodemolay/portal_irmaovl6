@@ -25,6 +25,11 @@ export class FirestoreUserRepository implements IUserRepository {
     return snap.empty ? null : snap.docs[0]!.data();
   }
 
+  async listByTenant(tenantId: string): Promise<User[]> {
+    const snap = await this.collection.where('tenantId', '==', tenantId).get();
+    return snap.docs.map((doc) => doc.data());
+  }
+
   async create(user: User): Promise<void> {
     await this.collection.doc(user.id).set(user);
   }

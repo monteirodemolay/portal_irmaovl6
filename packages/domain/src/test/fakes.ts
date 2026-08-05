@@ -129,6 +129,9 @@ export class InMemoryUserRepository implements IUserRepository {
       [...this.byId.values()].find((u) => u.tenantId === tenantId && u.email === email) ?? null
     );
   }
+  async listByTenant(tenantId: string) {
+    return [...this.byId.values()].filter((u) => u.tenantId === tenantId);
+  }
   async create(user: User) {
     this.byId.set(user.id, user);
   }
