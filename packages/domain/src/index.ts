@@ -105,3 +105,13 @@ export * from './modules/library/use-cases/list-library-items.use-case';
 export * from './modules/library/use-cases/toggle-library-favorite.use-case';
 export * from './modules/library/use-cases/list-my-favorites.use-case';
 export * from './modules/library/use-cases/record-library-interaction.use-case';
+
+// Agenda
+export * from './modules/agenda/entities/event.entity';
+export * from './modules/agenda/entities/event-attendance.entity';
+export * from './modules/agenda/repositories/event.repository';
+export * from './modules/agenda/repositories/event-attendance.repository';
+export * from './modules/agenda/use-cases/create-event.use-case';
+export * from './modules/agenda/use-cases/list-upcoming-events.use-case';
+export * from './modules/agenda/use-cases/confirm-attendance.use-case';
+export * from './modules/agenda/use-cases/list-event-attendees.use-case';
