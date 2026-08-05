@@ -1,4 +1,5 @@
 import type { INotificationGateway, Notification } from '@vl6/domain';
+import { logger } from '@vl6/shared';
 
 /**
  * Implementação provisória de `INotificationGateway` — os canais externos
@@ -8,8 +9,9 @@ import type { INotificationGateway, Notification } from '@vl6/domain';
  */
 export class NoopNotificationGateway implements INotificationGateway {
   async send(notification: Notification): Promise<void> {
-    console.warn(
-      `[NoopNotificationGateway] envio via '${notification.canal}' ainda não implementado (notificação ${notification.id}).`,
-    );
+    logger.warn('Canal de notificação ainda não implementado', {
+      canal: notification.canal,
+      notificationId: notification.id,
+    });
   }
 }

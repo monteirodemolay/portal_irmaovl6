@@ -15,3 +15,4 @@ export * from './schemas/library.schema';
 export * from './schemas/agenda.schema';
 export * from './schemas/notification.schema';
 export * from './schemas/gallery.schema';
+export * from './observability/logger';

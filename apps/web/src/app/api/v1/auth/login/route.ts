@@ -1,6 +1,8 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { z } from 'zod';
+import { logger } from '@vl6/shared';
 import { getAdminAuth, createServerContainer } from '@vl6/infra';
+import { withApiLogging } from '@/lib/api/with-api-logging';
 import {
   createSessionCookie,
   SESSION_COOKIE_MAX_AGE_MS,
@@ -9,13 +11,14 @@ import {
 import { getCurrentTenant } from '@/lib/tenant/get-current-tenant';
 
 const bodySchema = z.object({ idToken: z.string().min(1) });
+const ROUTE = 'POST /api/v1/auth/login';
 
 /**
  * Troca o ID Token do Firebase Authentication (client) por um cookie de
  * sessão HttpOnly e roda o pós-processamento de login do domínio —
  * docs/architecture/07-fluxo-autenticacao.md §7.2.
  */
-export async function POST(request: NextRequest) {
+export const POST = withApiLogging(ROUTE, async (request: NextRequest) => {
   const parsed = bodySchema.safeParse(await request.json());
   if (!parsed.success) {
     return NextResponse.json({ error: 'invalid_request' }, { status: 400 });
@@ -30,6 +33,10 @@ export async function POST(request: NextRequest) {
     .verifyIdToken(parsed.data.idToken)
     .catch(() => null);
   if (!decoded) {
+    logger.warn('Tentativa de login com ID Token inválido', {
+      route: ROUTE,
+      tenantId: current.tenant.id,
+    });
     return NextResponse.json({ error: 'invalid_token' }, { status: 401 });
   }
 
@@ -40,6 +47,12 @@ export async function POST(request: NextRequest) {
   });
 
   if (!result.ok) {
+    logger.warn('Login negado', {
+      route: ROUTE,
+      tenantId: current.tenant.id,
+      uid: decoded.uid,
+      errorCode: result.error.code,
+    });
     return NextResponse.json(
       { error: result.error.code, message: result.error.message },
       { status: 403 },
@@ -56,4 +69,4 @@ export async function POST(request: NextRequest) {
     maxAge: SESSION_COOKIE_MAX_AGE_MS / 1000,
   });
   return response;
-}
+});

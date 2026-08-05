@@ -7,13 +7,15 @@
   "types": "./src/index.ts",
   "scripts": {
     "lint": "eslint . --max-warnings 0",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "test": "vitest run"
   },
   "dependencies": {
     "zod": "^3.24.1"
   },
   "devDependencies": {
     "@vl6/config": "workspace:*",
-    "typescript": "^5.7.3"
+    "typescript": "^5.7.3",
+    "vitest": "^2.1.9"
   }
 }
