@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import { brandingToCssVariables, cssVariablesToStyleString } from '@vl6/ui';
 import { getCurrentTenant } from '@/lib/tenant/get-current-tenant';
 import { ServiceWorkerRegister } from '@/lib/pwa/service-worker-register';
+import { WebVitalsReporter } from '@/lib/observability/web-vitals-reporter';
 import { Providers } from './providers';
 import './globals.css';
 
@@ -66,6 +67,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body>
         <Providers>{children}</Providers>
         <ServiceWorkerRegister />
+        <WebVitalsReporter />
       </body>
     </html>
   );
