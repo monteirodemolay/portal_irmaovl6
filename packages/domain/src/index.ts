@@ -90,3 +90,18 @@ export * from './modules/document-management/use-cases/publish-file-asset.use-ca
 export * from './modules/document-management/use-cases/list-file-assets.use-case';
 export * from './modules/document-management/use-cases/record-file-interaction.use-case';
 export * from './modules/document-management/use-cases/soft-delete-file-asset.use-case';
+
+// Library
+export * from './modules/library/entities/library-category.entity';
+export * from './modules/library/entities/library-item.entity';
+export * from './modules/library/entities/library-favorite.entity';
+export * from './modules/library/repositories/library-category.repository';
+export * from './modules/library/repositories/library-item.repository';
+export * from './modules/library/repositories/library-favorite.repository';
+export * from './modules/library/use-cases/create-library-category.use-case';
+export * from './modules/library/use-cases/list-library-categories.use-case';
+export * from './modules/library/use-cases/add-library-item.use-case';
+export * from './modules/library/use-cases/list-library-items.use-case';
+export * from './modules/library/use-cases/toggle-library-favorite.use-case';
+export * from './modules/library/use-cases/list-my-favorites.use-case';
+export * from './modules/library/use-cases/record-library-interaction.use-case';

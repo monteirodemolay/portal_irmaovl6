@@ -41,6 +41,16 @@
       "queryScope": "COLLECTION",
       "fields": [
         { "fieldPath": "tenantId", "order": "ASCENDING" },
+        { "fieldPath": "deletedAt", "order": "ASCENDING" },
+        { "fieldPath": "nomeCompleto", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "members",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "tenantId", "order": "ASCENDING" },
+        { "fieldPath": "deletedAt", "order": "ASCENDING" },
         { "fieldPath": "situacao", "order": "ASCENDING" },
         { "fieldPath": "nomeCompleto", "order": "ASCENDING" }
       ]
@@ -50,8 +60,9 @@
       "queryScope": "COLLECTION",
       "fields": [
         { "fieldPath": "tenantId", "order": "ASCENDING" },
+        { "fieldPath": "deletedAt", "order": "ASCENDING" },
         { "fieldPath": "grau", "order": "ASCENDING" },
-        { "fieldPath": "cargoAtualId", "order": "ASCENDING" }
+        { "fieldPath": "nomeCompleto", "order": "ASCENDING" }
       ]
     },
     {
@@ -79,7 +90,17 @@
       "fields": [
         { "fieldPath": "tenantId", "order": "ASCENDING" },
         { "fieldPath": "publicado", "order": "ASCENDING" },
+        { "fieldPath": "deletedAt", "order": "ASCENDING" },
         { "fieldPath": "dataPublicacao", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "news",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "tenantId", "order": "ASCENDING" },
+        { "fieldPath": "deletedAt", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
       ]
     },
     {
@@ -88,8 +109,26 @@
       "fields": [
         { "fieldPath": "tenantId", "order": "ASCENDING" },
         { "fieldPath": "publicado", "order": "ASCENDING" },
-        { "fieldPath": "destacar", "order": "DESCENDING" },
-        { "fieldPath": "dataPublicacao", "order": "DESCENDING" }
+        { "fieldPath": "deletedAt", "order": "ASCENDING" },
+        { "fieldPath": "dataExpiracao", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "announcements",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "tenantId", "order": "ASCENDING" },
+        { "fieldPath": "deletedAt", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "boardTerms",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "tenantId", "order": "ASCENDING" },
+        { "fieldPath": "deletedAt", "order": "ASCENDING" },
+        { "fieldPath": "periodoInicio", "order": "DESCENDING" }
       ]
     },
     {

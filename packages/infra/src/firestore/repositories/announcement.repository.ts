@@ -26,11 +26,13 @@ export class FirestoreAnnouncementRepository implements IAnnouncementRepository 
       this.collection
         .where('tenantId', '==', tenantId)
         .where('publicado', '==', true)
+        .where('deletedAt', '==', null)
         .where('dataExpiracao', '==', null)
         .get(),
       this.collection
         .where('tenantId', '==', tenantId)
         .where('publicado', '==', true)
+        .where('deletedAt', '==', null)
         .where('dataExpiracao', '>=', Timestamp.fromDate(at))
         .get(),
     ]);
@@ -46,6 +48,7 @@ export class FirestoreAnnouncementRepository implements IAnnouncementRepository 
     const snap = await this.collection
       .where('tenantId', '==', tenantId)
       .where('destacar', '==', true)
+      .where('deletedAt', '==', null)
       .get();
     return snap.docs.map((doc) => doc.data());
   }
@@ -53,6 +56,7 @@ export class FirestoreAnnouncementRepository implements IAnnouncementRepository 
   async listAll(tenantId: string): Promise<Announcement[]> {
     const snap = await this.collection
       .where('tenantId', '==', tenantId)
+      .where('deletedAt', '==', null)
       .orderBy('createdAt', 'desc')
       .get();
     return snap.docs.map((doc) => doc.data());

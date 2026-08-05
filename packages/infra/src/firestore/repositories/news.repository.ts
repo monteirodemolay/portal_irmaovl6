@@ -39,12 +39,16 @@ export class FirestoreNewsRepository implements INewsRepository {
     const query = this.collection
       .where('tenantId', '==', tenantId)
       .where('publicado', '==', true)
+      .where('deletedAt', '==', null)
       .orderBy('dataPublicacao', 'desc');
     return this.paginate(query, page);
   }
 
   async listAll(tenantId: string, page: PageRequest): Promise<PageResult<News>> {
-    const query = this.collection.where('tenantId', '==', tenantId).orderBy('createdAt', 'desc');
+    const query = this.collection
+      .where('tenantId', '==', tenantId)
+      .where('deletedAt', '==', null)
+      .orderBy('createdAt', 'desc');
     return this.paginate(query, page);
   }
 

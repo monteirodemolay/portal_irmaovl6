@@ -24,13 +24,16 @@ export class FirestoreBoardTermRepository implements IBoardTermRepository {
       .limit(5)
       .get();
 
-    const candidate = snap.docs.map((doc) => doc.data()).find((term) => term.periodoFim >= at);
+    const candidate = snap.docs
+      .map((doc) => doc.data())
+      .find((term) => term.periodoFim >= at && term.deletedAt === null);
     return candidate ?? null;
   }
 
   async listByTenant(tenantId: string): Promise<BoardTerm[]> {
     const snap = await this.collection
       .where('tenantId', '==', tenantId)
+      .where('deletedAt', '==', null)
       .orderBy('periodoInicio', 'desc')
       .get();
     return snap.docs.map((doc) => doc.data());

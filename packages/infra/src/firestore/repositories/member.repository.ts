@@ -52,6 +52,7 @@ export class FirestoreMemberRepository implements IMemberRepository {
   async search(filters: MemberSearchFilters, page: PageRequest): Promise<PageResult<Member>> {
     let query: Query<Member> = this.collection
       .where('tenantId', '==', filters.tenantId)
+      .where('deletedAt', '==', null)
       .orderBy('nomeCompleto');
 
     if (filters.grau) query = query.where('grau', '==', filters.grau);
