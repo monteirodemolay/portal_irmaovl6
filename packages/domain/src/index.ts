@@ -55,6 +55,8 @@ export * from './modules/governance/use-cases/get-active-board.use-case';
 export * from './modules/governance/use-cases/get-public-board.use-case';
 export * from './modules/governance/use-cases/list-board-terms.use-case';
 export * from './modules/governance/use-cases/create-committee.use-case';
+export * from './modules/governance/use-cases/list-committees.use-case';
+export * from './modules/governance/use-cases/update-committee.use-case';
 
 // Content
 export * from './modules/content/entities/news.entity';
