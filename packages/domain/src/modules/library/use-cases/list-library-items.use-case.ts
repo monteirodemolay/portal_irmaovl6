@@ -15,3 +15,13 @@ export class ListLibraryItemsByCategoryUseCase {
     return this.deps.libraryItemRepository.listByCategory(ctx.tenantId, categoriaId);
   }
 }
+
+/** Listagem administrativa (todas as categorias) — requer `libraryItem:read`. */
+export class ListAllLibraryItemsUseCase {
+  constructor(private readonly deps: ListLibraryItemsDeps) {}
+
+  async execute(ctx: AuthContext): Promise<LibraryItem[]> {
+    requirePermission(ctx, 'libraryItem:read');
+    return this.deps.libraryItemRepository.listByTenant(ctx.tenantId);
+  }
+}

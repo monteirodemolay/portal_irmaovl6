@@ -6,7 +6,7 @@ import {
   updateNewsAction,
 } from '@/modules/content/actions/content-actions';
 import { NewsForm } from '@/modules/content/components/news-form';
-import { PublishToggleButton } from '@/modules/content/components/publish-toggle-button';
+import { PublishToggleButton } from '@/components/admin/publish-toggle-button';
 
 export default async function EditNewsPage({ params }: { params: Promise<{ newsId: string }> }) {
   const session = await requirePagePermission('news:update');

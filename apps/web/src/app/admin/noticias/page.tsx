@@ -4,7 +4,7 @@ import type { News } from '@vl6/domain';
 import { Badge, Button, DataTable, EmptyState, type DataTableColumn } from '@vl6/ui';
 import { requirePagePermission } from '@/lib/auth/require-permission';
 import { toggleNewsPublishedAction } from '@/modules/content/actions/content-actions';
-import { PublishToggleButton } from '@/modules/content/components/publish-toggle-button';
+import { PublishToggleButton } from '@/components/admin/publish-toggle-button';
 
 export default async function NewsPage() {
   const session = await requirePagePermission('news:read');

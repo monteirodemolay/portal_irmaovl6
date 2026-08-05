@@ -23,6 +23,7 @@ import {
   ListAllAnnouncementsUseCase,
   ListAllEventsUseCase,
   ListAllFileAssetsUseCase,
+  ListAllLibraryItemsUseCase,
   ListAllLinksUseCase,
   ListAllNewsUseCase,
   ListAuditLogUseCase,
@@ -288,6 +289,9 @@ export function createServerContainer() {
       idGenerator,
     }),
     listLibraryItemsByCategory: new ListLibraryItemsByCategoryUseCase({
+      libraryItemRepository: repositories.libraryItem,
+    }),
+    listAllLibraryItems: new ListAllLibraryItemsUseCase({
       libraryItemRepository: repositories.libraryItem,
     }),
     toggleLibraryFavorite: new ToggleLibraryFavoriteUseCase({
