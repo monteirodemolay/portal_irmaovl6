@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { z } from 'zod';
 import { logger } from '@vl6/shared';
 import { getAdminAuth, createServerContainer } from '@vl6/infra';
+import { parseJsonBody } from '@/lib/api/parse-json-body';
 import { withApiLogging } from '@/lib/api/with-api-logging';
 import {
   createSessionCookie,
@@ -19,7 +20,7 @@ const ROUTE = 'POST /api/v1/auth/login';
  * docs/architecture/07-fluxo-autenticacao.md §7.2.
  */
 export const POST = withApiLogging(ROUTE, async (request: NextRequest) => {
-  const parsed = bodySchema.safeParse(await request.json());
+  const parsed = bodySchema.safeParse(await parseJsonBody(request));
   if (!parsed.success) {
     return NextResponse.json({ error: 'invalid_request' }, { status: 400 });
   }

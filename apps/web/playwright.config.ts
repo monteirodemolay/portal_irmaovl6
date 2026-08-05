@@ -15,8 +15,8 @@ export default defineConfig({
   // teste que primeiro passa por uma rota ainda não compilada paga esse
   // custo (múltiplos segundos por rota), então o timeout padrão de 30s do
   // Playwright é apertado demais para o primeiro teste da suíte.
-  timeout: 60_000,
-  expect: { timeout: 15_000 },
+  timeout: 90_000,
+  expect: { timeout: 20_000 },
   fullyParallel: false,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
