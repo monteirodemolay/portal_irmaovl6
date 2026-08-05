@@ -26,13 +26,39 @@ import type { ICommitteeRepository } from '../modules/governance/repositories/co
 import type { BoardPositionKey } from '@vl6/shared';
 import type { News } from '../modules/content/entities/news.entity';
 import type { Announcement } from '../modules/content/entities/announcement.entity';
+import type { NewsComment } from '../modules/content/entities/news-comment.entity';
 import type { INewsRepository } from '../modules/content/repositories/news.repository';
 import type { IAnnouncementRepository } from '../modules/content/repositories/announcement.repository';
+import type { INewsCommentRepository } from '../modules/content/repositories/news-comment.repository';
 import type { AuditLog } from '../modules/audit/entities/audit-log.entity';
 import type {
   IAuditLogRepository,
   AuditLogFilters,
 } from '../modules/audit/repositories/audit-log.repository';
+import type { FileAsset } from '../modules/document-management/entities/file-asset.entity';
+import type { IFileAssetRepository } from '../modules/document-management/repositories/file-asset.repository';
+import type { LibraryItem } from '../modules/library/entities/library-item.entity';
+import type { LibraryCategory } from '../modules/library/entities/library-category.entity';
+import type { LibraryFavorite } from '../modules/library/entities/library-favorite.entity';
+import type { ILibraryItemRepository } from '../modules/library/repositories/library-item.repository';
+import type { ILibraryCategoryRepository } from '../modules/library/repositories/library-category.repository';
+import type { ILibraryFavoriteRepository } from '../modules/library/repositories/library-favorite.repository';
+import type { Link } from '../modules/notification/entities/link.entity';
+import type { Notification } from '../modules/notification/entities/notification.entity';
+import type { NotificationPreference } from '../modules/notification/entities/notification-preference.entity';
+import type { ILinkRepository } from '../modules/notification/repositories/link.repository';
+import type { INotificationRepository } from '../modules/notification/repositories/notification.repository';
+import type { INotificationPreferenceRepository } from '../modules/notification/repositories/notification-preference.repository';
+import type { Event } from '../modules/agenda/entities/event.entity';
+import type { EventAttendance } from '../modules/agenda/entities/event-attendance.entity';
+import type { IEventRepository } from '../modules/agenda/repositories/event.repository';
+import type { IEventAttendanceRepository } from '../modules/agenda/repositories/event-attendance.repository';
+import type { FileCategory } from '../modules/document-management/entities/file-category.entity';
+import type { IFileCategoryRepository } from '../modules/document-management/repositories/file-category.repository';
+import type { GalleryAlbum } from '../modules/gallery/entities/gallery-album.entity';
+import type { GalleryMedia } from '../modules/gallery/entities/gallery-media.entity';
+import type { IGalleryAlbumRepository } from '../modules/gallery/repositories/gallery-album.repository';
+import type { IGalleryMediaRepository } from '../modules/gallery/repositories/gallery-media.repository';
 
 export class FixedClock implements IClock {
   constructor(private readonly fixed: Date = new Date('2026-01-01T00:00:00Z')) {}
@@ -327,6 +353,30 @@ export class InMemoryAnnouncementRepository implements IAnnouncementRepository {
   }
 }
 
+export class InMemoryNewsCommentRepository implements INewsCommentRepository {
+  private readonly byId = new Map<string, NewsComment>();
+
+  async findById(id: string) {
+    return this.byId.get(id) ?? null;
+  }
+  async listApprovedByNews(newsId: string) {
+    return [...this.byId.values()].filter(
+      (c) => c.newsId === newsId && c.moderado && c.deletedAt === null,
+    );
+  }
+  async listPendingByTenant(tenantId: string) {
+    return [...this.byId.values()].filter(
+      (c) => c.tenantId === tenantId && !c.moderado && c.deletedAt === null,
+    );
+  }
+  async create(comment: NewsComment) {
+    this.byId.set(comment.id, comment);
+  }
+  async update(comment: NewsComment) {
+    this.byId.set(comment.id, comment);
+  }
+}
+
 export class InMemoryAuditLogRepository implements IAuditLogRepository {
   private readonly entries: AuditLog[] = [];
 
@@ -341,5 +391,278 @@ export class InMemoryAuditLogRepository implements IAuditLogRepository {
         (!filters.entidadeId || e.entidadeId === filters.entidadeId),
     );
     return { items: items.slice(0, page.limit), nextCursor: null, hasMore: false };
+  }
+}
+
+export class InMemoryFileAssetRepository implements IFileAssetRepository {
+  private readonly byId = new Map<string, FileAsset>();
+
+  async findById(id: string) {
+    return this.byId.get(id) ?? null;
+  }
+  async listPublishedByCategory(
+    tenantId: string,
+    categoriaId: string,
+    page: PageRequest,
+  ): Promise<PageResult<FileAsset>> {
+    const items = [...this.byId.values()].filter(
+      (f) => f.tenantId === tenantId && f.categoriaId === categoriaId && f.publicado,
+    );
+    return { items: items.slice(0, page.limit), nextCursor: null, hasMore: false };
+  }
+  async listAll(tenantId: string, page: PageRequest): Promise<PageResult<FileAsset>> {
+    const items = [...this.byId.values()].filter((f) => f.tenantId === tenantId);
+    return { items: items.slice(0, page.limit), nextCursor: null, hasMore: false };
+  }
+  async create(file: FileAsset) {
+    this.byId.set(file.id, file);
+  }
+  async update(file: FileAsset) {
+    this.byId.set(file.id, file);
+  }
+  async incrementDownloads(id: string) {
+    const file = this.byId.get(id);
+    if (file) this.byId.set(id, { ...file, contagemDownloads: file.contagemDownloads + 1 });
+  }
+  async incrementViews(id: string) {
+    const file = this.byId.get(id);
+    if (file) this.byId.set(id, { ...file, contagemVisualizacoes: file.contagemVisualizacoes + 1 });
+  }
+}
+
+export class InMemoryFileCategoryRepository implements IFileCategoryRepository {
+  private readonly byId = new Map<string, FileCategory>();
+
+  async findById(id: string) {
+    return this.byId.get(id) ?? null;
+  }
+  async listByTenant(tenantId: string) {
+    return [...this.byId.values()].filter((c) => c.tenantId === tenantId && c.deletedAt === null);
+  }
+  async create(category: FileCategory) {
+    this.byId.set(category.id, category);
+  }
+  async update(category: FileCategory) {
+    this.byId.set(category.id, category);
+  }
+}
+
+export class InMemoryGalleryAlbumRepository implements IGalleryAlbumRepository {
+  private readonly byId = new Map<string, GalleryAlbum>();
+
+  async findById(id: string) {
+    return this.byId.get(id) ?? null;
+  }
+  async listByTenant(tenantId: string, categoria?: string) {
+    return [...this.byId.values()].filter(
+      (a) =>
+        a.tenantId === tenantId &&
+        a.deletedAt === null &&
+        (categoria === undefined || a.categoria === categoria),
+    );
+  }
+  async create(album: GalleryAlbum) {
+    this.byId.set(album.id, album);
+  }
+  async update(album: GalleryAlbum) {
+    this.byId.set(album.id, album);
+  }
+}
+
+export class InMemoryGalleryMediaRepository implements IGalleryMediaRepository {
+  private readonly byId = new Map<string, GalleryMedia>();
+
+  async findById(id: string) {
+    return this.byId.get(id) ?? null;
+  }
+  async listByAlbum(albumId: string) {
+    return [...this.byId.values()].filter((m) => m.albumId === albumId && m.deletedAt === null);
+  }
+  async create(media: GalleryMedia) {
+    this.byId.set(media.id, media);
+  }
+  async update(media: GalleryMedia) {
+    this.byId.set(media.id, media);
+  }
+}
+
+export class InMemoryLibraryItemRepository implements ILibraryItemRepository {
+  private readonly byId = new Map<string, LibraryItem>();
+
+  async findById(id: string) {
+    return this.byId.get(id) ?? null;
+  }
+  async listByCategory(tenantId: string, categoriaId: string) {
+    return [...this.byId.values()].filter(
+      (i) => i.tenantId === tenantId && i.categoriaId === categoriaId,
+    );
+  }
+  async listByTenant(tenantId: string) {
+    return [...this.byId.values()].filter((i) => i.tenantId === tenantId);
+  }
+  async create(item: LibraryItem) {
+    this.byId.set(item.id, item);
+  }
+  async update(item: LibraryItem) {
+    this.byId.set(item.id, item);
+  }
+  async incrementDownloads(id: string) {
+    const item = this.byId.get(id);
+    if (item) this.byId.set(id, { ...item, contagemDownloads: item.contagemDownloads + 1 });
+  }
+  async incrementViews(id: string) {
+    const item = this.byId.get(id);
+    if (item) this.byId.set(id, { ...item, contagemVisualizacoes: item.contagemVisualizacoes + 1 });
+  }
+}
+
+export class InMemoryLibraryCategoryRepository implements ILibraryCategoryRepository {
+  private readonly byId = new Map<string, LibraryCategory>();
+
+  async findById(id: string) {
+    return this.byId.get(id) ?? null;
+  }
+  async listByTenant(tenantId: string) {
+    return [...this.byId.values()].filter((c) => c.tenantId === tenantId);
+  }
+  async create(category: LibraryCategory) {
+    this.byId.set(category.id, category);
+  }
+  async update(category: LibraryCategory) {
+    this.byId.set(category.id, category);
+  }
+}
+
+export class InMemoryLibraryFavoriteRepository implements ILibraryFavoriteRepository {
+  private readonly byId = new Map<string, LibraryFavorite>();
+
+  async findByUserAndItem(userId: string, libraryItemId: string) {
+    return (
+      [...this.byId.values()].find(
+        (f) => f.userId === userId && f.libraryItemId === libraryItemId,
+      ) ?? null
+    );
+  }
+  async listByUser(tenantId: string, userId: string) {
+    return [...this.byId.values()].filter((f) => f.tenantId === tenantId && f.userId === userId);
+  }
+  async create(favorite: LibraryFavorite) {
+    this.byId.set(favorite.id, favorite);
+  }
+  async delete(id: string) {
+    this.byId.delete(id);
+  }
+}
+
+export class InMemoryLinkRepository implements ILinkRepository {
+  private readonly byId = new Map<string, Link>();
+
+  async findById(id: string) {
+    return this.byId.get(id) ?? null;
+  }
+  async listActive(tenantId: string) {
+    return [...this.byId.values()].filter((l) => l.tenantId === tenantId && l.ativo);
+  }
+  async listAll(tenantId: string) {
+    return [...this.byId.values()].filter((l) => l.tenantId === tenantId);
+  }
+  async create(link: Link) {
+    this.byId.set(link.id, link);
+  }
+  async update(link: Link) {
+    this.byId.set(link.id, link);
+  }
+}
+
+export class InMemoryNotificationRepository implements INotificationRepository {
+  private readonly byId = new Map<string, Notification>();
+
+  async findById(id: string) {
+    return this.byId.get(id) ?? null;
+  }
+  async listByRecipient(
+    tenantId: string,
+    destinatarioId: string,
+    page: PageRequest,
+  ): Promise<PageResult<Notification>> {
+    const items = [...this.byId.values()].filter(
+      (n) => n.tenantId === tenantId && n.destinatarioId === destinatarioId,
+    );
+    return { items: items.slice(0, page.limit), nextCursor: null, hasMore: false };
+  }
+  async countUnreadByRecipient(tenantId: string, destinatarioId: string) {
+    return [...this.byId.values()].filter(
+      (n) => n.tenantId === tenantId && n.destinatarioId === destinatarioId && !n.lida,
+    ).length;
+  }
+  async create(notification: Notification) {
+    this.byId.set(notification.id, notification);
+  }
+  async update(notification: Notification) {
+    this.byId.set(notification.id, notification);
+  }
+}
+
+export class InMemoryNotificationPreferenceRepository implements INotificationPreferenceRepository {
+  private readonly byId = new Map<string, NotificationPreference>();
+
+  async findByUserId(tenantId: string, userId: string) {
+    return (
+      [...this.byId.values()].find((p) => p.tenantId === tenantId && p.userId === userId) ?? null
+    );
+  }
+  async create(preference: NotificationPreference) {
+    this.byId.set(preference.id, preference);
+  }
+  async update(preference: NotificationPreference) {
+    this.byId.set(preference.id, preference);
+  }
+}
+
+export class InMemoryEventRepository implements IEventRepository {
+  private readonly byId = new Map<string, Event>();
+
+  async findById(id: string) {
+    return this.byId.get(id) ?? null;
+  }
+  async listUpcoming(tenantId: string, from: Date, page: PageRequest): Promise<PageResult<Event>> {
+    const items = [...this.byId.values()].filter(
+      (e) => e.tenantId === tenantId && e.dataInicio >= from,
+    );
+    return { items: items.slice(0, page.limit), nextCursor: null, hasMore: false };
+  }
+  async listAll(tenantId: string, page: PageRequest): Promise<PageResult<Event>> {
+    const items = [...this.byId.values()].filter((e) => e.tenantId === tenantId);
+    return { items: items.slice(0, page.limit), nextCursor: null, hasMore: false };
+  }
+  async create(event: Event) {
+    this.byId.set(event.id, event);
+  }
+  async update(event: Event) {
+    this.byId.set(event.id, event);
+  }
+}
+
+export class InMemoryEventAttendanceRepository implements IEventAttendanceRepository {
+  private readonly byId = new Map<string, EventAttendance>();
+
+  async findByEventAndMember(eventId: string, memberId: string) {
+    return (
+      [...this.byId.values()].find((a) => a.eventId === eventId && a.memberId === memberId) ?? null
+    );
+  }
+  async listByEvent(eventId: string) {
+    return [...this.byId.values()].filter((a) => a.eventId === eventId);
+  }
+  async countConfirmedByEvent(eventId: string) {
+    return [...this.byId.values()].filter(
+      (a) => a.eventId === eventId && a.statusPresenca === 'confirmado',
+    ).length;
+  }
+  async create(attendance: EventAttendance) {
+    this.byId.set(attendance.id, attendance);
+  }
+  async update(attendance: EventAttendance) {
+    this.byId.set(attendance.id, attendance);
   }
 }
