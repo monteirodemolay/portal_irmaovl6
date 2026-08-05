@@ -109,3 +109,15 @@ export async function softDeleteFileAssetAction(fileId: string): Promise<void> {
 
   revalidatePath('/admin/arquivos');
 }
+
+export async function recordFileViewAction(fileId: string): Promise<void> {
+  const session = await requireSession();
+  const container = createServerContainer();
+  await container.useCases.recordFileView.execute(session.authContext, fileId);
+}
+
+export async function recordFileDownloadAction(fileId: string): Promise<void> {
+  const session = await requireSession();
+  const container = createServerContainer();
+  await container.useCases.recordFileDownload.execute(session.authContext, fileId);
+}

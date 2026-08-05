@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { eventSchema } from '@vl6/shared';
+import type { AttendanceResponse } from '@vl6/domain';
 import { createServerContainer } from '@vl6/infra';
 import { requireSession } from '@/lib/auth/require-session';
 
@@ -39,4 +40,21 @@ export async function createEventAction(
 
   revalidatePath('/admin/agenda');
   redirect('/admin/agenda');
+}
+
+export async function confirmAttendanceAction(
+  eventId: string,
+  resposta: AttendanceResponse,
+): Promise<void> {
+  const session = await requireSession();
+  const container = createServerContainer();
+  const result = await container.useCases.confirmAttendance.execute(
+    session.authContext,
+    eventId,
+    resposta,
+  );
+  if (!result.ok) throw new Error(result.error.message);
+
+  revalidatePath('/agenda');
+  revalidatePath(`/eventos/${eventId}`);
 }

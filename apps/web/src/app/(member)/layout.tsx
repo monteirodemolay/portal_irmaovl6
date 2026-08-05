@@ -1,13 +1,20 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
+import { createServerContainer } from '@vl6/infra';
 import { Avatar, AvatarFallback } from '@vl6/ui';
 import { getCurrentSession } from '@/lib/auth/get-current-session';
 import { LogoutButton } from '@/modules/identity-access/components/logout-button';
+import { NotificationCenter } from '@/modules/notification/components/notification-center';
 
 const NAV_ITEMS = [
   { href: '/dashboard', label: 'Dashboard' },
   { href: '/perfil', label: 'Meu Perfil' },
   { href: '/diretoria', label: 'Diretoria' },
+  { href: '/biblioteca', label: 'Biblioteca' },
+  { href: '/arquivos', label: 'Arquivos' },
+  { href: '/agenda', label: 'Agenda' },
+  { href: '/downloads', label: 'Downloads' },
+  { href: '/links-uteis', label: 'Links Úteis' },
   { href: '/avisos', label: 'Avisos' },
   { href: '/noticias', label: 'Notícias' },
 ];
@@ -18,6 +25,15 @@ export default async function MemberLayout({ children }: { children: React.React
     redirect('/login');
   }
 
+  const container = createServerContainer();
+  const [notificationsPage, unreadCount] = await Promise.all([
+    container.useCases.listMyNotifications.execute(session.authContext, { limit: 20 }),
+    container.repositories.notification.countUnreadByRecipient(
+      session.authContext.tenantId,
+      session.authContext.uid,
+    ),
+  ]);
+
   const initials = session.user.email.slice(0, 2).toUpperCase();
 
   return (
@@ -25,7 +41,7 @@ export default async function MemberLayout({ children }: { children: React.React
       <header className="border-border flex items-center justify-between border-b px-6 py-3">
         <div className="flex items-center gap-6">
           <span className="font-display text-lg font-semibold">Portal do Irmão</span>
-          <nav className="flex gap-4">
+          <nav className="flex flex-wrap gap-4">
             {NAV_ITEMS.map((item) => (
               <Link
                 key={item.href}
@@ -38,6 +54,7 @@ export default async function MemberLayout({ children }: { children: React.React
           </nav>
         </div>
         <div className="flex items-center gap-3">
+          <NotificationCenter notifications={notificationsPage.items} unreadCount={unreadCount} />
           <Avatar>
             <AvatarFallback>{initials}</AvatarFallback>
           </Avatar>

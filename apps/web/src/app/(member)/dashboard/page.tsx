@@ -35,11 +35,6 @@ export default async function DashboardPage() {
           </div>
         </CardContent>
       </Card>
-
-      <p className="text-muted text-sm">
-        Os módulos de Biblioteca, Arquivos, Agenda e Diretoria chegam em v1.0/v1.1 — ver
-        docs/architecture/10-roadmap.md.
-      </p>
     </div>
   );
 }

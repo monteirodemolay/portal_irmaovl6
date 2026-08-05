@@ -60,3 +60,24 @@ export async function addLibraryItemAction(
   revalidatePath('/admin/biblioteca');
   redirect('/admin/biblioteca');
 }
+
+export async function toggleLibraryFavoriteAction(libraryItemId: string): Promise<void> {
+  const session = await requireSession();
+  const container = createServerContainer();
+  await container.useCases.toggleLibraryFavorite.execute(session.authContext, libraryItemId);
+
+  revalidatePath('/biblioteca');
+  revalidatePath('/downloads');
+}
+
+export async function recordLibraryViewAction(libraryItemId: string): Promise<void> {
+  const session = await requireSession();
+  const container = createServerContainer();
+  await container.useCases.recordLibraryView.execute(session.authContext, libraryItemId);
+}
+
+export async function recordLibraryDownloadAction(libraryItemId: string): Promise<void> {
+  const session = await requireSession();
+  const container = createServerContainer();
+  await container.useCases.recordLibraryDownload.execute(session.authContext, libraryItemId);
+}

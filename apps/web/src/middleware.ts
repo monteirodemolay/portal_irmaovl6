@@ -6,7 +6,18 @@ export const TENANT_HOST_HEADER = 'x-tenant-host';
 // /noticias e /diretoria ficam de fora: são conteúdo institucional público
 // (site público), acessíveis sem login mesmo quando também linkados a
 // partir da Área do Irmão.
-const PROTECTED_PREFIXES = ['/dashboard', '/perfil', '/avisos', '/admin'];
+const PROTECTED_PREFIXES = [
+  '/dashboard',
+  '/perfil',
+  '/avisos',
+  '/biblioteca',
+  '/arquivos',
+  '/agenda',
+  '/eventos',
+  '/downloads',
+  '/links-uteis',
+  '/admin',
+];
 
 /**
  * Roda em Edge runtime — por isso não usa o Admin SDK aqui (incompatível
