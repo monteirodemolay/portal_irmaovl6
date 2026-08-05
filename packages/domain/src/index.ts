@@ -4,6 +4,7 @@ export * from './shared/result';
 export * from './shared/pagination';
 export * from './shared/auth-context';
 export * from './shared/ports';
+export * from './shared/address';
 
 // Tenancy
 export * from './modules/tenancy/entities/tenant.entity';
@@ -25,3 +26,50 @@ export * from './modules/identity-access/services/compute-user-claims';
 export * from './modules/identity-access/use-cases/authenticate-user.use-case';
 export * from './modules/identity-access/use-cases/assign-role.use-case';
 export * from './modules/identity-access/use-cases/bootstrap-tenant-admin.use-case';
+
+// Membership
+export * from './modules/membership/entities/member.entity';
+export * from './modules/membership/entities/member-position-history.entity';
+export * from './modules/membership/repositories/member.repository';
+export * from './modules/membership/repositories/member-position-history.repository';
+export * from './modules/membership/use-cases/register-member.use-case';
+export * from './modules/membership/use-cases/update-member.use-case';
+export * from './modules/membership/use-cases/update-my-profile.use-case';
+export * from './modules/membership/use-cases/update-member-situation.use-case';
+export * from './modules/membership/use-cases/search-members.use-case';
+export * from './modules/membership/use-cases/soft-delete-member.use-case';
+
+// Governance
+export * from './modules/governance/entities/board-term.entity';
+export * from './modules/governance/entities/board-position-assignment.entity';
+export * from './modules/governance/entities/committee.entity';
+export * from './modules/governance/repositories/board-term.repository';
+export * from './modules/governance/repositories/board-position-assignment.repository';
+export * from './modules/governance/repositories/committee.repository';
+export * from './modules/governance/use-cases/create-board-term.use-case';
+export * from './modules/governance/use-cases/assign-board-position.use-case';
+export * from './modules/governance/use-cases/get-active-board.use-case';
+export * from './modules/governance/use-cases/get-public-board.use-case';
+export * from './modules/governance/use-cases/list-board-terms.use-case';
+export * from './modules/governance/use-cases/create-committee.use-case';
+
+// Content
+export * from './modules/content/entities/news.entity';
+export * from './modules/content/entities/announcement.entity';
+export * from './modules/content/repositories/news.repository';
+export * from './modules/content/repositories/announcement.repository';
+export * from './modules/content/use-cases/create-news.use-case';
+export * from './modules/content/use-cases/update-news.use-case';
+export * from './modules/content/use-cases/publish-news.use-case';
+export * from './modules/content/use-cases/list-published-news.use-case';
+export * from './modules/content/use-cases/list-all-news.use-case';
+export * from './modules/content/use-cases/create-announcement.use-case';
+export * from './modules/content/use-cases/publish-announcement.use-case';
+export * from './modules/content/use-cases/list-active-announcements.use-case';
+export * from './modules/content/use-cases/list-all-announcements.use-case';
+
+// Audit
+export * from './modules/audit/entities/audit-log.entity';
+export * from './modules/audit/repositories/audit-log.repository';
+export * from './modules/audit/use-cases/record-audit-entry.use-case';
+export * from './modules/audit/use-cases/list-audit-log.use-case';

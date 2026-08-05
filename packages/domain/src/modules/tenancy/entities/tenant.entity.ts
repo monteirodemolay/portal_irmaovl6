@@ -1,14 +1,7 @@
 import type { BaseEntity } from '../../../shared/base-entity';
+import type { Address } from '../../../shared/address';
 
-export interface Address {
-  logradouro: string;
-  numero: string;
-  bairro: string;
-  cidade: string;
-  estado: string;
-  pais: string;
-  cep: string;
-}
+export type { Address };
 
 /**
  * Representa uma Loja instalada na plataforma. `id === tenantId` sempre —
