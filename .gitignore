@@ -5,7 +5,8 @@ node_modules/
 # Build outputs
 .next/
 dist/
-lib/
+/packages/*/lib/
+/functions/lib/
 .turbo/
 
 # Env
