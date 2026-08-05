@@ -24,6 +24,7 @@ const NAV_ITEMS: AdminNavItem[] = [
   { href: '/admin/arquivos', label: 'Arquivos', permission: 'file:read' },
   { href: '/admin/biblioteca', label: 'Biblioteca', permission: 'libraryItem:read' },
   { href: '/admin/agenda', label: 'Agenda / Eventos', permission: 'event:read' },
+  { href: '/admin/galeria', label: 'Galeria', permission: 'gallery:read' },
 ];
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
