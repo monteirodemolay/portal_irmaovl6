@@ -92,6 +92,9 @@ export class InMemoryTenantRepository implements ITenantRepository {
   async existsBySubdomain(subdomain: string) {
     return [...this.byId.values()].some((t) => t.subdominio === subdomain);
   }
+  async listAll() {
+    return [...this.byId.values()];
+  }
   async create(tenant: Tenant) {
     this.byId.set(tenant.id, tenant);
   }

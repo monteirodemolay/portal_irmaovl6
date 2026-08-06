@@ -21,6 +21,8 @@ export * from './modules/tenancy/use-cases/update-tenant-branding.use-case';
 export * from './modules/tenancy/use-cases/resolve-tenant-by-host.use-case';
 export * from './modules/tenancy/use-cases/request-domain-verification.use-case';
 export * from './modules/tenancy/use-cases/verify-domain.use-case';
+export * from './modules/tenancy/use-cases/list-all-tenants.use-case';
+export * from './modules/tenancy/use-cases/set-tenant-active.use-case';
 
 // Identity & Access
 export * from './modules/identity-access/entities/user.entity';

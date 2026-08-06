@@ -31,6 +31,12 @@ export class FirestoreTenantRepository implements ITenantRepository {
     return !snap.empty;
   }
 
+  /** Sem filtro de tenantId de propósito — só `ListAllTenantsUseCase` chama isto. */
+  async listAll(): Promise<Tenant[]> {
+    const snap = await this.collection.orderBy('createdAt', 'desc').get();
+    return snap.docs.map((doc) => doc.data());
+  }
+
   async create(tenant: Tenant): Promise<void> {
     await this.collection.doc(tenant.id).set(tenant);
   }
