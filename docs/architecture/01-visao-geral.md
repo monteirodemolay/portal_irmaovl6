@@ -118,8 +118,11 @@ request.auth.token.tenantId` como última linha de defesa.
 ## 1.7 Decisões que ficam registradas aqui (para não se perderem depois)
 
 1. Idioma do **código** (identificadores, coleções, tipos): inglês.
-   Idioma da **interface** (labels, textos institucionais): português, mas
-   **configurável por tenant** via tabela de traduções (preparação i18n).
+   Idioma da **interface**: português por padrão, mas **configurável por
+   tenant** (`TenantSettings.idiomaPadrao`, `pt-BR` | `en`) via dicionário
+   estático em `apps/web/src/lib/i18n/` — mecanismo real desde v2.0, mas
+   cobrindo hoje uma fatia representativa da UI (navegação, login,
+   Integrações, Configurações), não 100% das telas ainda.
 2. Todos os módulos de conteúdo (Notícias, Avisos, Biblioteca, Arquivos,
    Galeria) compartilham um pipeline comum de **publicação** (rascunho →
    publicado → arquivado) definido uma única vez no domínio compartilhado.

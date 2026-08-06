@@ -5,6 +5,7 @@ import { useFormStatus } from 'react-dom';
 import type { PermissionKey } from '@vl6/shared';
 import { Button, Input } from '@vl6/ui';
 import { FormField } from '@/components/forms/form-field';
+import { useDictionary } from '@/lib/i18n/dictionary-context';
 import { createApiKeyAction, type CreateApiKeyActionState } from '../actions/api-key-actions';
 
 const INITIAL_STATE: CreateApiKeyActionState = { error: null, plainTextKey: null };
@@ -15,11 +16,12 @@ export function CreateApiKeyForm({
   availablePermissions: readonly PermissionKey[];
 }) {
   const [state, formAction] = useActionState(createApiKeyAction, INITIAL_STATE);
+  const { integrations: t } = useDictionary();
 
   if (state.plainTextKey) {
     return (
       <div className="border-accent/40 bg-accent/10 flex flex-col gap-3 rounded border p-4 text-sm">
-        <p>Chave criada. Copie agora — ela não é mostrada de novo:</p>
+        <p>{t.keyCreatedNotice}</p>
         <p className="break-all rounded border bg-white/60 p-2 font-mono text-xs">
           {state.plainTextKey}
         </p>
@@ -29,16 +31,14 @@ export function CreateApiKeyForm({
 
   return (
     <form action={formAction} className="flex max-w-lg flex-col gap-4">
-      <FormField
-        label="Nome da chave"
-        htmlFor="nome"
-        description='Ex.: "Sistema de folha de pagamento"'
-      >
+      <FormField label={t.formNameLabel} htmlFor="nome" description={t.formNameDescription}>
         <Input id="nome" name="nome" required />
       </FormField>
 
       <fieldset className="flex flex-col gap-2">
-        <legend className="font-display mb-1 text-sm font-semibold">Permissões</legend>
+        <legend className="font-display mb-1 text-sm font-semibold">
+          {t.formPermissionsLegend}
+        </legend>
         {availablePermissions.map((permission) => (
           <label key={permission} className="flex items-center gap-2 text-sm">
             <input type="checkbox" name="permissoes" value={permission} />
@@ -55,9 +55,10 @@ export function CreateApiKeyForm({
 
 function SubmitButton() {
   const { pending } = useFormStatus();
+  const { integrations: t } = useDictionary();
   return (
     <Button type="submit" disabled={pending} size="sm" className="w-fit">
-      {pending ? 'Criando…' : 'Criar chave'}
+      {pending ? t.formSubmitting : t.formSubmit}
     </Button>
   );
 }

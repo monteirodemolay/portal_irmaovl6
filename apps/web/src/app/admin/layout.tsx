@@ -1,32 +1,33 @@
 import Link from 'next/link';
 import { hasPermission } from '@vl6/domain';
-import type { PermissionKey } from '@vl6/shared';
+import { DEFAULT_LOCALE, type PermissionKey } from '@vl6/shared';
 import { Avatar, AvatarFallback } from '@vl6/ui';
 import { requireSession } from '@/lib/auth/require-session';
 import { getCurrentTenant } from '@/lib/tenant/get-current-tenant';
+import { getDictionary, type Dictionary } from '@/lib/i18n/get-dictionary';
 import { LogoutButton } from '@/modules/identity-access/components/logout-button';
 
 interface AdminNavItem {
   href: string;
-  label: string;
+  labelKey: keyof Dictionary['nav'];
   permission: PermissionKey;
 }
 
 const NAV_ITEMS: AdminNavItem[] = [
-  { href: '/admin', label: 'Dashboard', permission: 'tenant:read' },
-  { href: '/admin/loja', label: 'Gestão da Loja', permission: 'branding:read' },
-  { href: '/admin/irmaos', label: 'Cadastro de Irmãos', permission: 'member:read' },
-  { href: '/admin/gestoes', label: 'Gestões / Diretoria', permission: 'boardTerm:read' },
-  { href: '/admin/usuarios', label: 'Usuários', permission: 'user:read' },
-  { href: '/admin/permissoes', label: 'Permissões', permission: 'role:read' },
-  { href: '/admin/avisos', label: 'Avisos', permission: 'announcement:read' },
-  { href: '/admin/noticias', label: 'Notícias', permission: 'news:read' },
-  { href: '/admin/arquivos', label: 'Arquivos', permission: 'file:read' },
-  { href: '/admin/biblioteca', label: 'Biblioteca', permission: 'libraryItem:read' },
-  { href: '/admin/agenda', label: 'Agenda / Eventos', permission: 'event:read' },
-  { href: '/admin/galeria', label: 'Galeria', permission: 'gallery:read' },
-  { href: '/admin/integracoes', label: 'Integrações', permission: 'tenant:manage' },
-  { href: '/admin/configuracoes', label: 'Configurações', permission: 'tenant:read' },
+  { href: '/admin', labelKey: 'dashboard', permission: 'tenant:read' },
+  { href: '/admin/loja', labelKey: 'storeManagement', permission: 'branding:read' },
+  { href: '/admin/irmaos', labelKey: 'memberRegistry', permission: 'member:read' },
+  { href: '/admin/gestoes', labelKey: 'boards', permission: 'boardTerm:read' },
+  { href: '/admin/usuarios', labelKey: 'users', permission: 'user:read' },
+  { href: '/admin/permissoes', labelKey: 'permissions', permission: 'role:read' },
+  { href: '/admin/avisos', labelKey: 'announcements', permission: 'announcement:read' },
+  { href: '/admin/noticias', labelKey: 'news', permission: 'news:read' },
+  { href: '/admin/arquivos', labelKey: 'files', permission: 'file:read' },
+  { href: '/admin/biblioteca', labelKey: 'library', permission: 'libraryItem:read' },
+  { href: '/admin/agenda', labelKey: 'agenda', permission: 'event:read' },
+  { href: '/admin/galeria', labelKey: 'gallery', permission: 'gallery:read' },
+  { href: '/admin/integracoes', labelKey: 'integrations', permission: 'tenant:manage' },
+  { href: '/admin/configuracoes', labelKey: 'settings', permission: 'tenant:read' },
 ];
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -35,6 +36,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     hasPermission(session.authContext, item.permission),
   );
   const initials = session.user.email.slice(0, 2).toUpperCase();
+  const dictionary = getDictionary(current?.locale ?? DEFAULT_LOCALE);
 
   return (
     <div className="grid min-h-screen grid-cols-[240px_1fr]">
@@ -43,7 +45,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           <p className="font-display text-sm font-semibold">
             {current?.tenant.nome ?? 'Portal do Irmão'}
           </p>
-          <p className="text-muted text-xs">Painel Administrativo</p>
+          <p className="text-muted text-xs">{dictionary.nav.adminPanelTitle}</p>
         </div>
         <nav className="flex flex-1 flex-col gap-0.5 p-3">
           {visibleItems.map((item) => (
@@ -52,7 +54,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
               href={item.href}
               className="text-foreground hover:bg-background rounded px-3 py-2 text-sm"
             >
-              {item.label}
+              {dictionary.nav[item.labelKey]}
             </Link>
           ))}
         </nav>

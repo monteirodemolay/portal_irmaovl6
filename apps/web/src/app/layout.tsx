@@ -1,8 +1,10 @@
 import type { Metadata, Viewport } from 'next';
 import { cookies, headers } from 'next/headers';
 import { notFound } from 'next/navigation';
+import { DEFAULT_LOCALE } from '@vl6/shared';
 import { brandingToCssVariables, cssVariablesToStyleString } from '@vl6/ui';
 import { getCurrentTenant } from '@/lib/tenant/get-current-tenant';
+import { getDictionary } from '@/lib/i18n/get-dictionary';
 import { ServiceWorkerRegister } from '@/lib/pwa/service-worker-register';
 import { WebVitalsReporter } from '@/lib/observability/web-vitals-reporter';
 import { PATHNAME_HEADER, PLATFORM_ROUTE_PREFIX } from '@/middleware';
@@ -66,10 +68,12 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const styleString = current
     ? cssVariablesToStyleString(brandingToCssVariables(current.branding))
     : '';
+  const locale = current?.locale ?? DEFAULT_LOCALE;
+  const dictionary = getDictionary(locale);
 
   return (
     <html
-      lang="pt-BR"
+      lang={locale}
       data-theme={
         themePreference === 'dark' || themePreference === 'light' ? themePreference : undefined
       }
@@ -79,7 +83,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <style dangerouslySetInnerHTML={{ __html: `:root { ${styleString} }` }} />
       </head>
       <body>
-        <Providers>{children}</Providers>
+        <Providers dictionary={dictionary}>{children}</Providers>
         <ServiceWorkerRegister />
         <WebVitalsReporter />
       </body>

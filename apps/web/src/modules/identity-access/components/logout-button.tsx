@@ -4,9 +4,11 @@ import { useRouter } from 'next/navigation';
 import { signOut } from 'firebase/auth';
 import { Button } from '@vl6/ui';
 import { firebaseAuth } from '@/lib/firebase/client';
+import { useDictionary } from '@/lib/i18n/dictionary-context';
 
 export function LogoutButton() {
   const router = useRouter();
+  const dictionary = useDictionary();
 
   async function handleLogout() {
     await fetch('/api/v1/auth/logout', { method: 'POST' });
@@ -17,7 +19,7 @@ export function LogoutButton() {
 
   return (
     <Button variant="outline" size="sm" onClick={handleLogout}>
-      Sair
+      {dictionary.nav.logout}
     </Button>
   );
 }

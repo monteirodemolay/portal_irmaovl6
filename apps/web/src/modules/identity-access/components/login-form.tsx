@@ -15,10 +15,12 @@ import {
 import { loginSchema, type LoginInput } from '@vl6/shared';
 import { Button, Input } from '@vl6/ui';
 import { firebaseAuth } from '@/lib/firebase/client';
+import { useDictionary } from '@/lib/i18n/dictionary-context';
 
 export function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const dictionary = useDictionary();
   const [serverError, setServerError] = useState<string | null>(null);
   const [mfaResolver, setMfaResolver] = useState<MultiFactorResolver | null>(null);
   const [mfaCode, setMfaCode] = useState('');
@@ -41,7 +43,7 @@ export function LoginForm() {
 
     if (!response.ok) {
       const body = (await response.json()) as { message?: string };
-      setServerError(body.message ?? 'Não foi possível entrar. Tente novamente.');
+      setServerError(body.message ?? dictionary.login.errorGeneric);
       return;
     }
 
@@ -68,7 +70,7 @@ export function LoginForm() {
         setMfaResolver(getMultiFactorResolver(firebaseAuth, error as MultiFactorError));
         return;
       }
-      setServerError('E-mail ou senha inválidos.');
+      setServerError(dictionary.login.errorInvalidCredentials);
     }
   }
 
@@ -76,7 +78,7 @@ export function LoginForm() {
     if (!mfaResolver) return;
     const hint = mfaResolver.hints.find((h) => h.factorId === TotpMultiFactorGenerator.FACTOR_ID);
     if (!hint) {
-      setServerError('Nenhum segundo fator TOTP encontrado para esta conta.');
+      setServerError(dictionary.login.errorNoTotpFactor);
       return;
     }
 
@@ -87,7 +89,7 @@ export function LoginForm() {
       const credential = await mfaResolver.resolveSignIn(assertion);
       await finishLogin(credential);
     } catch {
-      setServerError('Código inválido. Verifique o app autenticador e tente novamente.');
+      setServerError(dictionary.login.errorInvalidMfaCode);
     } finally {
       setIsVerifyingMfa(false);
     }
@@ -98,7 +100,7 @@ export function LoginForm() {
       <div className="flex w-full max-w-sm flex-col gap-4">
         <div className="flex flex-col gap-1.5">
           <label htmlFor="mfaCode" className="text-sm font-medium">
-            Código do app autenticador
+            {dictionary.login.mfaCodeLabel}
           </label>
           <Input
             id="mfaCode"
@@ -116,7 +118,7 @@ export function LoginForm() {
           disabled={isVerifyingMfa || mfaCode.length !== 6}
           onClick={onSubmitMfa}
         >
-          {isVerifyingMfa ? 'Verificando…' : 'Confirmar'}
+          {isVerifyingMfa ? dictionary.login.mfaVerifying : dictionary.login.mfaConfirm}
         </Button>
       </div>
     );
@@ -126,7 +128,7 @@ export function LoginForm() {
     <form onSubmit={handleSubmit(onSubmit)} className="flex w-full max-w-sm flex-col gap-4">
       <div className="flex flex-col gap-1.5">
         <label htmlFor="email" className="text-sm font-medium">
-          E-mail
+          {dictionary.login.email}
         </label>
         <Input id="email" type="email" autoComplete="email" {...register('email')} />
         {errors.email && <p className="text-sm text-red-600">{errors.email.message}</p>}
@@ -134,7 +136,7 @@ export function LoginForm() {
 
       <div className="flex flex-col gap-1.5">
         <label htmlFor="password" className="text-sm font-medium">
-          Senha
+          {dictionary.login.password}
         </label>
         <Input
           id="password"
@@ -148,7 +150,7 @@ export function LoginForm() {
       {serverError && <p className="text-sm text-red-600">{serverError}</p>}
 
       <Button type="submit" disabled={isSubmitting}>
-        {isSubmitting ? 'Entrando…' : 'Entrar'}
+        {isSubmitting ? dictionary.login.submitting : dictionary.login.submit}
       </Button>
     </form>
   );

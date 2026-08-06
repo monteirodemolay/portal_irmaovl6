@@ -1,0 +1,74 @@
+/**
+ * Dicionário-fonte (pt-BR) — define o shape que todo outro idioma precisa
+ * seguir (`satisfies Dictionary` nos demais arquivos deste diretório).
+ * Cobre hoje uma fatia representativa da UI (navegação, login, painel de
+ * Integrações, Configurações) — não é 100% das telas ainda, ver
+ * docs/architecture/07-fluxo-autenticacao.md §7.9.
+ */
+export const dictionary = {
+  nav: {
+    dashboard: 'Dashboard',
+    storeManagement: 'Gestão da Loja',
+    memberRegistry: 'Cadastro de Irmãos',
+    boards: 'Gestões / Diretoria',
+    users: 'Usuários',
+    permissions: 'Permissões',
+    announcements: 'Avisos',
+    news: 'Notícias',
+    files: 'Arquivos',
+    library: 'Biblioteca',
+    agenda: 'Agenda / Eventos',
+    gallery: 'Galeria',
+    integrations: 'Integrações',
+    settings: 'Configurações',
+    adminPanelTitle: 'Painel Administrativo',
+    logout: 'Sair',
+  },
+  login: {
+    subtitle: 'Acesse com seu e-mail e senha cadastrados.',
+    email: 'E-mail',
+    password: 'Senha',
+    submit: 'Entrar',
+    submitting: 'Entrando…',
+    mfaCodeLabel: 'Código do app autenticador',
+    mfaConfirm: 'Confirmar',
+    mfaVerifying: 'Verificando…',
+    errorGeneric: 'Não foi possível entrar. Tente novamente.',
+    errorInvalidCredentials: 'E-mail ou senha inválidos.',
+    errorNoTotpFactor: 'Nenhum segundo fator TOTP encontrado para esta conta.',
+    errorInvalidMfaCode: 'Código inválido. Verifique o app autenticador e tente novamente.',
+  },
+  integrations: {
+    pageTitle: 'Integrações',
+    newKeyCardTitle: 'Nova API Key',
+    newKeyCardDescriptionPrefix: 'Credencial para um sistema externo consumir a',
+    newKeyCardDescriptionLink: 'API REST pública',
+    newKeyCardDescriptionSuffix: 'sem login de usuário.',
+    issuedKeysTitle: 'Chaves emitidas',
+    noKeysYet: 'Nenhuma chave criada ainda.',
+    tableName: 'Nome',
+    tablePrefix: 'Prefixo',
+    tableLastUsed: 'Último uso',
+    tableStatus: 'Status',
+    never: 'Nunca',
+    active: 'Ativa',
+    revoked: 'Revogada',
+    revokeButton: 'Revogar',
+    formNameLabel: 'Nome da chave',
+    formNameDescription: 'Ex.: "Sistema de folha de pagamento"',
+    formPermissionsLegend: 'Permissões',
+    formSubmit: 'Criar chave',
+    formSubmitting: 'Criando…',
+    keyCreatedNotice: 'Chave criada. Copie agora — ela não é mostrada de novo:',
+  },
+  settings: {
+    pageTitle: 'Configurações',
+    languageCardTitle: 'Idioma',
+    languageCardDescription: 'Idioma da interface para todos os usuários desta Loja.',
+    languageLabel: 'Idioma padrão',
+    saveButton: 'Salvar',
+    saving: 'Salvando…',
+  },
+};
+
+export type Dictionary = typeof dictionary;

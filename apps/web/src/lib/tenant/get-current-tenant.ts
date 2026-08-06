@@ -2,12 +2,15 @@ import 'server-only';
 import { cache } from 'react';
 import { headers } from 'next/headers';
 import { createServerContainer } from '@vl6/infra';
-import type { Tenant, TenantBranding } from '@vl6/domain';
+import type { Tenant, TenantBranding, TenantSettings } from '@vl6/domain';
+import { DEFAULT_LOCALE, isLocale, type Locale } from '@vl6/shared';
 import { TENANT_HOST_HEADER } from '@/middleware';
 
 export interface CurrentTenant {
   tenant: Tenant;
   branding: TenantBranding;
+  settings: TenantSettings | null;
+  locale: Locale;
 }
 
 /**
@@ -28,12 +31,15 @@ export const getCurrentTenant = cache(async (): Promise<CurrentTenant | null> =>
     return null;
   }
 
-  const branding = await container.repositories.tenantBranding.findByTenantId(
-    tenantResult.value.id,
-  );
+  const [branding, settings] = await Promise.all([
+    container.repositories.tenantBranding.findByTenantId(tenantResult.value.id),
+    container.repositories.tenantSettings.findByTenantId(tenantResult.value.id),
+  ]);
   if (!branding) {
     return null;
   }
 
-  return { tenant: tenantResult.value, branding };
+  const locale = settings && isLocale(settings.idiomaPadrao) ? settings.idiomaPadrao : DEFAULT_LOCALE;
+
+  return { tenant: tenantResult.value, branding, settings, locale };
 });

@@ -81,6 +81,7 @@ import {
   UpdateNewsUseCase,
   UpdateNotificationPreferenceUseCase,
   UpdateTenantBrandingUseCase,
+  UpdateTenantSettingsUseCase,
   VerifyDomainUseCase,
 } from '@vl6/domain';
 import { withAudit } from './audit/with-audit';
@@ -187,6 +188,10 @@ export function createServerContainer() {
     }),
     updateTenantBranding: new UpdateTenantBrandingUseCase({
       brandingRepository: repositories.tenantBranding,
+      clock,
+    }),
+    updateTenantSettings: new UpdateTenantSettingsUseCase({
+      settingsRepository: repositories.tenantSettings,
       clock,
     }),
     resolveTenantByHost: new ResolveTenantByHostUseCase({ tenantRepository: repositories.tenant }),
