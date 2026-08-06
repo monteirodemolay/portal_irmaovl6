@@ -61,6 +61,7 @@ import {
   RecordLibraryDownloadUseCase,
   RecordLibraryViewUseCase,
   RegisterMemberUseCase,
+  RequestDomainVerificationUseCase,
   ResolveTenantByHostUseCase,
   SearchMembersUseCase,
   SoftDeleteFileAssetUseCase,
@@ -74,8 +75,10 @@ import {
   UpdateNewsUseCase,
   UpdateNotificationPreferenceUseCase,
   UpdateTenantBrandingUseCase,
+  VerifyDomainUseCase,
 } from '@vl6/domain';
 import { withAudit } from './audit/with-audit';
+import { NodeDnsResolver } from './dns/node-dns-resolver';
 import { getAdminFirestore } from './firebase/admin-app';
 import { FirestoreAnnouncementRepository } from './firestore/repositories/announcement.repository';
 import { FirestoreAuditLogRepository } from './firestore/repositories/audit-log.repository';
@@ -101,6 +104,7 @@ import { FirestoreNotificationPreferenceRepository } from './firestore/repositor
 import { FirestoreRoleRepository } from './firestore/repositories/role.repository';
 import { FirestoreTenantRepository } from './firestore/repositories/tenant.repository';
 import { FirestoreTenantBrandingRepository } from './firestore/repositories/tenant-branding.repository';
+import { FirestoreTenantDomainVerificationRepository } from './firestore/repositories/tenant-domain-verification.repository';
 import { FirestoreTenantSettingsRepository } from './firestore/repositories/tenant-settings.repository';
 import { FirestoreUserRepository } from './firestore/repositories/user.repository';
 import { SystemClock } from './adapters/system-clock';
@@ -129,6 +133,7 @@ export function createServerContainer() {
     tenant: new FirestoreTenantRepository(db),
     tenantBranding: new FirestoreTenantBrandingRepository(db),
     tenantSettings: new FirestoreTenantSettingsRepository(db),
+    tenantDomainVerification: new FirestoreTenantDomainVerificationRepository(db),
     user: withAudit(new FirestoreUserRepository(db), 'users', auditDeps),
     role: withAudit(new FirestoreRoleRepository(db), 'roles', auditDeps),
     member: withAudit(new FirestoreMemberRepository(db), 'members', auditDeps),
@@ -159,6 +164,7 @@ export function createServerContainer() {
   };
 
   const notificationGateway = new NoopNotificationGateway();
+  const dnsResolver = new NodeDnsResolver();
 
   const useCases = {
     createTenant: new CreateTenantUseCase({
@@ -174,6 +180,17 @@ export function createServerContainer() {
       clock,
     }),
     resolveTenantByHost: new ResolveTenantByHostUseCase({ tenantRepository: repositories.tenant }),
+    requestDomainVerification: new RequestDomainVerificationUseCase({
+      domainVerificationRepository: repositories.tenantDomainVerification,
+      clock,
+      idGenerator,
+    }),
+    verifyDomain: new VerifyDomainUseCase({
+      domainVerificationRepository: repositories.tenantDomainVerification,
+      tenantRepository: repositories.tenant,
+      dnsResolver,
+      clock,
+    }),
     authenticateUser: new AuthenticateUserUseCase({ userRepository: repositories.user, clock }),
     assignRole: new AssignRoleUseCase({
       userRepository: repositories.user,

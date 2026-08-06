@@ -10,12 +10,17 @@ export * from './shared/address';
 export * from './modules/tenancy/entities/tenant.entity';
 export * from './modules/tenancy/entities/tenant-branding.entity';
 export * from './modules/tenancy/entities/tenant-settings.entity';
+export * from './modules/tenancy/entities/tenant-domain-verification.entity';
 export * from './modules/tenancy/repositories/tenant.repository';
 export * from './modules/tenancy/repositories/tenant-branding.repository';
 export * from './modules/tenancy/repositories/tenant-settings.repository';
+export * from './modules/tenancy/repositories/tenant-domain-verification.repository';
+export * from './modules/tenancy/services/dns-resolver';
 export * from './modules/tenancy/use-cases/create-tenant.use-case';
 export * from './modules/tenancy/use-cases/update-tenant-branding.use-case';
 export * from './modules/tenancy/use-cases/resolve-tenant-by-host.use-case';
+export * from './modules/tenancy/use-cases/request-domain-verification.use-case';
+export * from './modules/tenancy/use-cases/verify-domain.use-case';
 
 // Identity & Access
 export * from './modules/identity-access/entities/user.entity';

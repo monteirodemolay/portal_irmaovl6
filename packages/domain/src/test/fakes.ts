@@ -5,6 +5,8 @@ import type { TenantSettings } from '../modules/tenancy/entities/tenant-settings
 import type { ITenantRepository } from '../modules/tenancy/repositories/tenant.repository';
 import type { ITenantBrandingRepository } from '../modules/tenancy/repositories/tenant-branding.repository';
 import type { ITenantSettingsRepository } from '../modules/tenancy/repositories/tenant-settings.repository';
+import type { TenantDomainVerification } from '../modules/tenancy/entities/tenant-domain-verification.entity';
+import type { ITenantDomainVerificationRepository } from '../modules/tenancy/repositories/tenant-domain-verification.repository';
 import type { Role } from '../modules/identity-access/entities/role.entity';
 import type { User } from '../modules/identity-access/entities/user.entity';
 import type { IRoleRepository } from '../modules/identity-access/repositories/role.repository';
@@ -95,6 +97,23 @@ export class InMemoryTenantRepository implements ITenantRepository {
   }
   async update(tenant: Tenant) {
     this.byId.set(tenant.id, tenant);
+  }
+}
+
+export class InMemoryTenantDomainVerificationRepository implements ITenantDomainVerificationRepository {
+  private readonly byId = new Map<string, TenantDomainVerification>();
+
+  async findByDomain(domain: string) {
+    return this.byId.get(domain) ?? null;
+  }
+  async findByTenantId(tenantId: string) {
+    return [...this.byId.values()].find((entry) => entry.tenantId === tenantId) ?? null;
+  }
+  async create(entry: TenantDomainVerification) {
+    this.byId.set(entry.id, entry);
+  }
+  async update(entry: TenantDomainVerification) {
+    this.byId.set(entry.id, entry);
   }
 }
 

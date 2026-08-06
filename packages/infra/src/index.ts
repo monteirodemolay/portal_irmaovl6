@@ -6,6 +6,8 @@ export * from './vercel/blob-storage-adapter';
 export * from './vercel/put-backup-blob';
 export * from './firestore/repositories/tenant.repository';
 export * from './firestore/repositories/tenant-branding.repository';
+export * from './firestore/repositories/tenant-domain-verification.repository';
+export * from './dns/node-dns-resolver';
 export * from './firestore/repositories/tenant-settings.repository';
 export * from './firestore/repositories/user.repository';
 export * from './firestore/repositories/role.repository';

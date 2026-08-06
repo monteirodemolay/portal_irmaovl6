@@ -55,6 +55,13 @@ service cloud.firestore {
       allow delete: if false; // soft delete apenas, via update
     }
 
+    match /tenantDomainVerifications/{domain} {
+      allow read: if sameTenant(resource.data) && hasPermission('tenant:manage');
+      allow create: if sameTenant(request.resource.data) && hasPermission('tenant:manage');
+      allow update: if sameTenant(resource.data) && hasPermission('tenant:manage');
+      allow delete: if false;
+    }
+
     match /tenantBranding/{id} {
       allow read: if sameTenant(resource.data) || true; // branding é necessário antes do login (layout raiz)
       allow write: if sameTenant(resource.data) && hasPermission('branding:manage');

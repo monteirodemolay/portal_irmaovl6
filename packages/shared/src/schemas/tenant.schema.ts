@@ -1,5 +1,12 @@
 import { z } from 'zod';
 
+const DOMAIN_REGEX =
+  /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+$/i;
+export const domainSchema = z.string().regex(DOMAIN_REGEX);
+
+export const requestDomainVerificationSchema = z.object({ domain: domainSchema });
+export type RequestDomainVerificationInput = z.infer<typeof requestDomainVerificationSchema>;
+
 export const addressSchema = z.object({
   logradouro: z.string().min(1),
   numero: z.string().min(1),
@@ -14,10 +21,7 @@ export const createTenantSchema = z.object({
   nome: z.string().min(3).max(150),
   numero: z.string().min(1).max(10),
   potencia: z.string().min(1).max(150),
-  dominio: z
-    .string()
-    .regex(/^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+$/i)
-    .nullable(),
+  dominio: domainSchema.nullable(),
   subdominio: z
     .string()
     .regex(/^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/i)
