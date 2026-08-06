@@ -16,6 +16,15 @@ export const SYSTEM_ROLE_KEYS = [
 ] as const;
 export type RoleKey = (typeof SYSTEM_ROLE_KEYS)[number];
 
+// `super_admin` não pertence a nenhum tenant (docs/architecture/08 §8.3) —
+// vive sozinho sob `PLATFORM_TENANT_ID`, nunca no seed de fábrica de uma
+// Loja. Os outros 8 são os papéis de fábrica criados por `CreateTenantUseCase`.
+export const TENANT_SYSTEM_ROLE_KEYS = SYSTEM_ROLE_KEYS.filter((key) => key !== 'super_admin');
+
+// tenantId sentinela do Administrador Geral (cross-tenant, uso interno da
+// plataforma) — nunca um documento real na coleção `tenants`.
+export const PLATFORM_TENANT_ID = 'platform';
+
 export const RESOURCE_KEYS = [
   'tenant',
   'branding',

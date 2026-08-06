@@ -5,12 +5,14 @@
   "type": "module",
   "scripts": {
     "seed-tenant": "tsx seed-tenant.ts",
+    "seed-platform-admin": "tsx seed-platform-admin.ts",
     "lint": "eslint . --max-warnings 0",
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
     "@vl6/domain": "workspace:*",
-    "@vl6/infra": "workspace:*"
+    "@vl6/infra": "workspace:*",
+    "@vl6/shared": "workspace:*"
   },
   "devDependencies": {
     "@vl6/config": "workspace:*",

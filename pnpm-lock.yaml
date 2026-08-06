@@ -306,6 +306,9 @@ importers:
       '@vl6/infra':
         specifier: workspace:*
         version: link:../packages/infra
+      '@vl6/shared':
+        specifier: workspace:*
+        version: link:../packages/shared
     devDependencies:
       '@types/node':
         specifier: ^22.10.5

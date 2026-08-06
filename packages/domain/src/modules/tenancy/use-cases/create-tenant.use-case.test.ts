@@ -48,7 +48,7 @@ function buildUseCase() {
 }
 
 describe('CreateTenantUseCase', () => {
-  it('cria o tenant, o branding padrão, as settings padrão e os 9 papéis de fábrica', async () => {
+  it('cria o tenant, o branding padrão, as settings padrão e os 8 papéis de fábrica', async () => {
     const { useCase, brandingRepository, settingsRepository, roleRepository } = buildUseCase();
 
     const result = await useCase.execute(superAdminCtx, validInput);
@@ -64,8 +64,9 @@ describe('CreateTenantUseCase', () => {
     expect(settings?.idiomaPadrao).toBe('pt-BR');
 
     const roles = await roleRepository.listByTenant(result.value.id);
-    expect(roles).toHaveLength(9);
+    expect(roles).toHaveLength(8);
     expect(roles.map((r) => r.chave)).toContain('admin');
+    expect(roles.map((r) => r.chave)).not.toContain('super_admin');
   });
 
   it('rejeita subdomínio duplicado', async () => {

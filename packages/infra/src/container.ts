@@ -4,6 +4,7 @@ import {
   AssignBoardPositionUseCase,
   AssignRoleUseCase,
   AuthenticateUserUseCase,
+  BootstrapPlatformAdminUseCase,
   BootstrapTenantAdminUseCase,
   ConfirmAttendanceUseCase,
   CreateAnnouncementUseCase,
@@ -172,6 +173,12 @@ export function createServerContainer() {
       userRepository: repositories.user,
       roleRepository: repositories.role,
       clock,
+    }),
+    bootstrapPlatformAdmin: new BootstrapPlatformAdminUseCase({
+      userRepository: repositories.user,
+      roleRepository: repositories.role,
+      clock,
+      idGenerator,
     }),
     inviteUser: new InviteUserUseCase({
       userRepository: repositories.user,

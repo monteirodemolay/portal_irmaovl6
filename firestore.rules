@@ -19,8 +19,15 @@ service cloud.firestore {
       return request.auth.token.permissions;
     }
 
+    // Administrador Geral (`super_admin`, docs/architecture/08 §8.3) — não
+    // pertence a nenhuma Loja, vive sob o tenantId sentinela `platform`
+    // (`PLATFORM_TENANT_ID` em packages/shared). Cross-tenant por definição.
+    function isSuperAdmin() {
+      return isSignedIn() && tokenTenantId() == 'platform';
+    }
+
     function sameTenant(data) {
-      return isSignedIn() && data.tenantId == tokenTenantId();
+      return isSignedIn() && (data.tenantId == tokenTenantId() || isSuperAdmin());
     }
 
     // `perm` no formato "<recurso>:<acao>" — concede também se o papel tiver
@@ -42,7 +49,7 @@ service cloud.firestore {
     // Tenancy
     // ---------------------------------------------------------------
     match /tenants/{tenantId} {
-      allow read: if isSignedIn() && tokenTenantId() == tenantId;
+      allow read: if isSignedIn() && (tokenTenantId() == tenantId || isSuperAdmin());
       allow create: if hasPermission('tenant:create');
       allow update: if sameTenant(resource.data) && hasPermission('tenant:manage');
       allow delete: if false; // soft delete apenas, via update

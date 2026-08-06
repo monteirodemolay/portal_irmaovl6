@@ -1,7 +1,7 @@
 import {
   DEFAULT_ROLE_PERMISSIONS,
   DEFAULT_TENANT_BRANDING,
-  SYSTEM_ROLE_KEYS,
+  TENANT_SYSTEM_ROLE_KEYS,
   type CreateTenantInput,
 } from '@vl6/shared';
 import type { AuthContext } from '../../../shared/auth-context';
@@ -29,9 +29,11 @@ export interface CreateTenantDeps {
 /**
  * Provisiona uma nova Loja na plataforma: cria o `Tenant`, o `TenantBranding`
  * padrão (paleta seed — docs/architecture/09), as `TenantSettings` padrão e
- * o conjunto de 9 papéis de fábrica com a matriz RBAC de
- * docs/architecture/08-permissoes-rbac.md §8.2. Restrito a `tenant:create`,
- * concedido apenas ao papel `super_admin` (operação da plataforma).
+ * o conjunto de 8 papéis de fábrica com a matriz RBAC de
+ * docs/architecture/08-permissoes-rbac.md §8.2 (`super_admin` fica de fora —
+ * é cross-tenant, provisionado uma única vez via `BootstrapPlatformAdminUseCase`,
+ * nunca por Loja). Restrito a `tenant:create`, concedido apenas ao papel
+ * `super_admin` (operação da plataforma).
  */
 export class CreateTenantUseCase {
   constructor(private readonly deps: CreateTenantDeps) {}
@@ -104,7 +106,7 @@ export class CreateTenantUseCase {
     await this.deps.settingsRepository.create(settings);
 
     await Promise.all(
-      SYSTEM_ROLE_KEYS.map((chave) => {
+      TENANT_SYSTEM_ROLE_KEYS.map((chave) => {
         const role: Role = {
           id: this.deps.idGenerator.next(),
           tenantId,
