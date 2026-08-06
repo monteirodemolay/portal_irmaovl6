@@ -190,8 +190,10 @@ service cloud.firestore {
     }
 
     // ---------------------------------------------------------------
-    // Audit — write exclusivamente via Cloud Function (Admin SDK ignora
-    // Security Rules), nunca pelo client. Ver docs/architecture/06 §6.7.
+    // Audit — write exclusivamente via Admin SDK (ignora Security Rules),
+    // dentro da própria Server Action que faz a escrita de negócio
+    // (withAudit, packages/infra), nunca pelo client. Ver docs/architecture
+    // /06 §6.7.
     // ---------------------------------------------------------------
     match /auditLogs/{id} {
       allow read: if sameTenant(resource.data) && hasPermission('auditLog:read');

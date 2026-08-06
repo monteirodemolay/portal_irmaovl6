@@ -184,19 +184,6 @@ portal-irmao-vl6/
 │       ├── tsconfig/
 │       └── tailwind/
 │
-├── functions/                                    # Firebase Cloud Functions (2nd gen)
-│   └── src/
-│       ├── triggers/
-│       │   ├── on-file-uploaded.ts                   # gera thumbnail, extrai metadados
-│       │   ├── on-member-written.ts                   # grava AuditLog automaticamente
-│       │   └── on-announcement-published.ts           # dispara notificações
-│       ├── scheduled/
-│       │   ├── daily-backup-export.ts
-│       │   └── birthday-reminder.ts
-│       ├── http/
-│       │   └── webhook-handlers.ts
-│       └── index.ts
-│
 ├── docs/
 │   ├── architecture/                              # este diretório
 │   └── openapi/

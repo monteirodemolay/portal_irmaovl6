@@ -14,18 +14,18 @@ dezenas de milhares de documentos/arquivos por tenant.
 
 ## 1.2 Princípios Arquiteturais
 
-| Princípio                 | Como é aplicado                                                                                                                                                                                                                       |
-| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Clean Architecture**    | Código organizado em camadas (`domain` → `application` → `infrastructure` → `presentation`), com dependências sempre apontando para dentro. O domínio não conhece Next.js, React ou Firebase.                                         |
-| **SOLID**                 | Cada caso de uso tem responsabilidade única; dependências são injetadas via interfaces (repositórios, gateways); extensão por composição, não por modificação.                                                                        |
-| **DDD**                   | O sistema é dividido em **Bounded Contexts** (módulos de negócio), cada um com sua própria linguagem ubíqua, entidades e regras — ver §1.5.                                                                                           |
-| **Repository Pattern**    | Toda persistência é acessada por interfaces `I*Repository` definidas no domínio; implementações concretas (Firestore) vivem na infraestrutura e são injetáveis/mocáveis.                                                              |
-| **Service Layer**         | Regras de negócio que orquestram múltiplos repositórios ficam em _application services_ (casos de uso), nunca em componentes React ou route handlers.                                                                                 |
-| **Componentização**       | UI construída com componentes pequenos, tipados, sem lógica de negócio embutida (dumb components) + hooks/containers que conectam com a camada de aplicação.                                                                          |
-| **Escalabilidade**        | Modelo de dados desnormalizado onde necessário, paginação obrigatória em listagens, cache via TanStack Query, Cloud Functions para processamento assíncrono (thumbnails, notificações, auditoria), CDN para assets estáticos e mídia. |
-| **Segurança**             | RBAC completo, Firestore Security Rules como segunda camada de defesa (nunca confiar só no client), auditoria imutável, soft delete, rate limiting na API.                                                                            |
-| **Performance**           | Server Components por padrão, Client Components só onde há interatividade, `next/image`, lazy loading, code splitting por módulo/rota.                                                                                                |
-| **Organização de código** | Monorepo com pacotes compartilhados versionados, convenções de nomenclatura únicas, lint/format/commit hooks obrigatórios.                                                                                                            |
+| Princípio                 | Como é aplicado                                                                                                                                                                               |
+| ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Clean Architecture**    | Código organizado em camadas (`domain` → `application` → `infrastructure` → `presentation`), com dependências sempre apontando para dentro. O domínio não conhece Next.js, React ou Firebase. |
+| **SOLID**                 | Cada caso de uso tem responsabilidade única; dependências são injetadas via interfaces (repositórios, gateways); extensão por composição, não por modificação.                                |
+| **DDD**                   | O sistema é dividido em **Bounded Contexts** (módulos de negócio), cada um com sua própria linguagem ubíqua, entidades e regras — ver §1.5.                                                   |
+| **Repository Pattern**    | Toda persistência é acessada por interfaces `I*Repository` definidas no domínio; implementações concretas (Firestore) vivem na infraestrutura e são injetáveis/mocáveis.                      |
+| **Service Layer**         | Regras de negócio que orquestram múltiplos repositórios ficam em _application services_ (casos de uso), nunca em componentes React ou route handlers.                                         |
+| **Componentização**       | UI construída com componentes pequenos, tipados, sem lógica de negócio embutida (dumb components) + hooks/containers que conectam com a camada de aplicação.                                  |
+| **Escalabilidade**        | Modelo de dados desnormalizado onde necessário, paginação obrigatória em listagens, cache via TanStack Query, Vercel Cron para jobs agendados, CDN para assets estáticos e mídia.             |
+| **Segurança**             | RBAC completo, Firestore Security Rules como segunda camada de defesa (nunca confiar só no client), auditoria imutável, soft delete, rate limiting na API.                                    |
+| **Performance**           | Server Components por padrão, Client Components só onde há interatividade, `next/image`, lazy loading, code splitting por módulo/rota.                                                        |
+| **Organização de código** | Monorepo com pacotes compartilhados versionados, convenções de nomenclatura únicas, lint/format/commit hooks obrigatórios.                                                                    |
 
 ## 1.3 Stack Tecnológica
 
@@ -45,7 +45,7 @@ dezenas de milhares de documentos/arquivos por tenant.
 - **Firebase Authentication** (e-mail/senha, Google, futura expansão SSO)
 - **Firestore** (banco principal, modelagem multi-tenant — ver doc 03)
 - **Vercel Blob** (arquivos, mídia, thumbnails) — o Firebase Storage passou a exigir o plano Blaze mesmo para o bucket padrão; como o app já roda na Vercel, reaproveitar a mesma infraestrutura evitou um terceiro provedor pago. `UploadFileInput`/`UploadFileResult` em `packages/infra` mantêm a troca de provedor isolada de duas chamadas na camada de apresentação.
-- **Firebase Cloud Functions** (2nd gen, Node 20) — jobs assíncronos, triggers de auditoria, geração de thumbnails, envio de notificações, webhooks
+- **Vercel Cron** (`apps/web/vercel.json`) — jobs agendados (aniversários, backup diário); sem Firebase Cloud Functions no stack — exigem plano Blaze, e todo o processamento assíncrono que dependia delas (sync de Custom Claims, auditoria automática) foi reescrito como código de aplicação (`packages/infra` — `syncUserClaims`, `withAudit`) rodando dentro das próprias Server Actions/rotas, ver doc 06 §6.6/6.7 e doc 07 §7.3.
 - **API REST** própria (Next.js Route Handlers) documentada em **OpenAPI 3.1**, autenticada via **JWT + Refresh Token**, com **rate limiting**
 
 ### Qualidade / Tooling
@@ -61,16 +61,15 @@ dezenas de milhares de documentos/arquivos por tenant.
 Optamos por **monorepo com pnpm + Turborepo** em vez de um único projeto Next.js
 monolítico "achatado". Motivo: o domínio de negócio (entidades, regras, casos de
 uso) deve poder ser testado, versionado e potencialmente reutilizado (ex.: em
-Cloud Functions, em um futuro app mobile) **sem depender do framework web**.
+um futuro app mobile) **sem depender do framework web**.
 
 ```
-apps/web            → Next.js 15 (site público + área do irmão + painel admin)
+apps/web            → Next.js 15 (site público + área do irmão + painel admin + rotas /api/cron/*)
 packages/domain      → Entidades, value objects, casos de uso, interfaces de repositório (zero deps de framework)
 packages/infra       → Implementações Firestore/Storage dos repositórios do domínio
 packages/ui          → Design system (componentes Shadcn customizados, tokens, ícones)
 packages/config      → Presets compartilhados (eslint, tsconfig, tailwind)
 packages/shared      → Utilitários puros, tipos compartilhados (ex.: enums de RBAC)
-functions/           → Firebase Cloud Functions (usa packages/domain e packages/infra)
 ```
 
 Isso é o que torna o produto "vendável": `packages/domain` nunca sabe o que é

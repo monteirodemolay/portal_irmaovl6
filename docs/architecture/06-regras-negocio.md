@@ -56,7 +56,7 @@
 
 - `slug` de `News` é único por tenant, gerado a partir do título e editável.
 - Publicação segue o pipeline padrão: `draft → active (publicado=true) →
-  archived`. Nenhum conteúdo pula etapas via API pública.
+archived`. Nenhum conteúdo pula etapas via API pública.
 - `NewsComments` passam por moderação (`moderado = false` por padrão);
   comentário só aparece publicamente após aprovação por um papel com
   permissão `news:manage`.
@@ -69,9 +69,10 @@
 ## 6.6 Identity & Access (RBAC) — ver detalhamento completo na doc 08
 
 - Todo `User` possui exatamente um `Role` ativo.
-- Mudança de `Role` de um usuário dispara Cloud Function que atualiza os
-  Custom Claims do Firebase Auth (`tenantId`, `permissions`) — necessário
-  para refletir imediatamente nas Security Rules.
+- Mudança de `Role` de um usuário chama `syncUserClaims` (`packages/infra`,
+  explicitamente na Server Action que faz a troca) que atualiza os Custom
+  Claims do Firebase Auth (`tenantId`, `permissions`) — necessário para
+  refletir imediatamente nas Security Rules.
 - Papéis `sistemico = true` (Administrador Geral, Administrador, Irmão,
   Visitante) não podem ser excluídos nem ter permissões básicas removidas
   pela UI — apenas papéis customizados criados pelo tenant são totalmente
@@ -79,10 +80,12 @@
 
 ## 6.7 Audit (Auditoria)
 
-- Toda escrita (`create`, `update`, `delete`/soft-delete, `restore`) em
-  entidades de negócio dispara, via Cloud Function trigger no Firestore, a
-  gravação de um `AuditLog` com valor anterior e novo (diff), IP e
-  dispositivo capturados no momento da requisição original.
+- Toda escrita (`create`, `update`, `delete`/soft-delete, `restore`) nas 8
+  entidades de negócio auditadas dispara, via `withAudit` (`packages/infra`
+  — decorator aplicado aos repositórios em `createServerContainer`, não
+  precisa de chamada manual em cada caso de uso), a gravação de um
+  `AuditLog` com valor anterior e novo (diff). IP e dispositivo ficam
+  `null` por enquanto (não capturados na Server Action de origem).
 - `AuditLog` é **imutável**: não existe caso de uso de update/delete para
   essa coleção em nenhuma camada.
 - Login, logout e alterações de permissão também geram `AuditLog`

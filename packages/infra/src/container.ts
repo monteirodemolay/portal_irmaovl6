@@ -75,6 +75,7 @@ import {
   UpdateNotificationPreferenceUseCase,
   UpdateTenantBrandingUseCase,
 } from '@vl6/domain';
+import { withAudit } from './audit/with-audit';
 import { getAdminFirestore } from './firebase/admin-app';
 import { FirestoreAnnouncementRepository } from './firestore/repositories/announcement.repository';
 import { FirestoreAuditLogRepository } from './firestore/repositories/audit-log.repository';
@@ -116,20 +117,32 @@ import { NoopNotificationGateway } from './adapters/noop-notification-gateway';
 export function createServerContainer() {
   const db = getAdminFirestore();
 
+  const clock = new SystemClock();
+  const idGenerator = new FirestoreIdGenerator(db);
+  const auditLogRepository = new FirestoreAuditLogRepository(db);
+  const auditDeps = { auditLogRepository, clock, idGenerator };
+
+  // As 8 coleções que a extinta Cloud Function `onEntityAudited` cobria
+  // (docs/architecture/06 §6.7) — `withAudit` registra create/update/
+  // delete/restore automaticamente, sem cada caso de uso precisar lembrar.
   const repositories = {
     tenant: new FirestoreTenantRepository(db),
     tenantBranding: new FirestoreTenantBrandingRepository(db),
     tenantSettings: new FirestoreTenantSettingsRepository(db),
-    user: new FirestoreUserRepository(db),
-    role: new FirestoreRoleRepository(db),
-    member: new FirestoreMemberRepository(db),
+    user: withAudit(new FirestoreUserRepository(db), 'users', auditDeps),
+    role: withAudit(new FirestoreRoleRepository(db), 'roles', auditDeps),
+    member: withAudit(new FirestoreMemberRepository(db), 'members', auditDeps),
     memberPositionHistory: new FirestoreMemberPositionHistoryRepository(db),
-    boardTerm: new FirestoreBoardTermRepository(db),
-    boardPositionAssignment: new FirestoreBoardPositionAssignmentRepository(db),
-    committee: new FirestoreCommitteeRepository(db),
-    news: new FirestoreNewsRepository(db),
-    announcement: new FirestoreAnnouncementRepository(db),
-    auditLog: new FirestoreAuditLogRepository(db),
+    boardTerm: withAudit(new FirestoreBoardTermRepository(db), 'boardTerms', auditDeps),
+    boardPositionAssignment: withAudit(
+      new FirestoreBoardPositionAssignmentRepository(db),
+      'boardPositionAssignments',
+      auditDeps,
+    ),
+    committee: withAudit(new FirestoreCommitteeRepository(db), 'committees', auditDeps),
+    news: withAudit(new FirestoreNewsRepository(db), 'news', auditDeps),
+    announcement: withAudit(new FirestoreAnnouncementRepository(db), 'announcements', auditDeps),
+    auditLog: auditLogRepository,
     fileCategory: new FirestoreFileCategoryRepository(db),
     fileAsset: new FirestoreFileAssetRepository(db),
     libraryCategory: new FirestoreLibraryCategoryRepository(db),
@@ -145,8 +158,6 @@ export function createServerContainer() {
     newsComment: new FirestoreNewsCommentRepository(db),
   };
 
-  const clock = new SystemClock();
-  const idGenerator = new FirestoreIdGenerator(db);
   const notificationGateway = new NoopNotificationGateway();
 
   const useCases = {

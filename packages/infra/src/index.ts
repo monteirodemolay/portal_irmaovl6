@@ -1,3 +1,4 @@
+export * from './audit/with-audit';
 export * from './firebase/admin-app';
 export * from './firebase/sync-user-claims';
 export * from './storage-types';
