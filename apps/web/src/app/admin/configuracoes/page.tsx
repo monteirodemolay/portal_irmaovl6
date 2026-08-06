@@ -4,6 +4,7 @@ import { DEFAULT_LOCALE } from '@vl6/shared';
 import { requireSession } from '@/lib/auth/require-session';
 import { getCurrentTenant } from '@/lib/tenant/get-current-tenant';
 import { getDictionary } from '@/lib/i18n/get-dictionary';
+import { ChangePasswordForm } from '@/modules/identity-access/components/change-password-form';
 import { MfaEnrollmentPanel } from '@/modules/identity-access/components/mfa-enrollment-panel';
 import { LanguageSettingsForm } from '@/modules/tenancy/components/language-settings-form';
 
@@ -29,6 +30,16 @@ export default async function AdminSettingsPage() {
           </CardContent>
         </Card>
       )}
+
+      <Card className="max-w-lg">
+        <CardHeader>
+          <CardTitle>Senha</CardTitle>
+          <CardDescription>Troque sua senha de acesso a qualquer momento.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ChangePasswordForm />
+        </CardContent>
+      </Card>
 
       <Card className="max-w-lg">
         <CardHeader>

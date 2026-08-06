@@ -8,7 +8,9 @@ export class FirestoreUserRepository implements IUserRepository {
   private readonly collection;
 
   constructor(private readonly db: Firestore) {
-    this.collection = db.collection(COLLECTION).withConverter(createEntityConverter<User>());
+    this.collection = db
+      .collection(COLLECTION)
+      .withConverter(createEntityConverter<User>(['ultimoLogin']));
   }
 
   async findById(uid: string): Promise<User | null> {

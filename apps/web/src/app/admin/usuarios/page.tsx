@@ -3,6 +3,18 @@ import { Badge, Card, CardContent, CardHeader, CardTitle, Select } from '@vl6/ui
 import { requirePagePermission } from '@/lib/auth/require-permission';
 import { assignRoleAction } from '@/modules/identity-access/actions/user-actions';
 import { InviteUserForm } from '@/modules/identity-access/components/invite-user-form';
+import { ResetPasswordButton } from '@/modules/identity-access/components/reset-password-button';
+import { ToggleUserStatusButton } from '@/modules/identity-access/components/toggle-user-status-button';
+
+const STATUS_VARIANT = { active: 'success', pending: 'warning', blocked: 'destructive' } as const;
+const STATUS_LABEL = { active: 'Ativa', pending: 'Pendente', blocked: 'Bloqueada' } as const;
+
+function formatLastLogin(date: Date | null): string {
+  if (!date) return 'Nunca';
+  return new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' }).format(
+    new Date(date),
+  );
+}
 
 export default async function UsersPage() {
   const session = await requirePagePermission('user:read');
@@ -32,19 +44,35 @@ export default async function UsersPage() {
             <tr className="border-border border-b">
               <th className="text-muted px-4 py-3 text-left font-mono text-xs uppercase">E-mail</th>
               <th className="text-muted px-4 py-3 text-left font-mono text-xs uppercase">Status</th>
+              <th className="text-muted px-4 py-3 text-left font-mono text-xs uppercase">MFA</th>
+              <th className="text-muted px-4 py-3 text-left font-mono text-xs uppercase">
+                Último login
+              </th>
               <th className="text-muted px-4 py-3 text-left font-mono text-xs uppercase">Papel</th>
+              <th className="px-4 py-3" />
             </tr>
           </thead>
           <tbody>
             {users.map((user) => {
               const boundAssignRole = assignRoleAction.bind(null, user.id);
+              const isSelf = user.id === session.authContext.uid;
               return (
                 <tr key={user.id} className="border-border border-b last:border-0">
                   <td className="px-4 py-3">{user.email}</td>
                   <td className="px-4 py-3">
-                    <Badge variant={user.statusConta === 'active' ? 'success' : 'warning'}>
-                      {user.statusConta}
+                    <Badge variant={STATUS_VARIANT[user.statusConta]}>
+                      {STATUS_LABEL[user.statusConta]}
                     </Badge>
+                  </td>
+                  <td className="px-4 py-3">
+                    {user.mfaHabilitado ? (
+                      <Badge variant="accent">Ativo</Badge>
+                    ) : (
+                      <span className="text-muted text-xs">—</span>
+                    )}
+                  </td>
+                  <td className="text-muted px-4 py-3 text-xs">
+                    {formatLastLogin(user.ultimoLogin)}
                   </td>
                   <td className="px-4 py-3">
                     <form action={boundAssignRole} className="flex items-center gap-2">
@@ -59,6 +87,14 @@ export default async function UsersPage() {
                         salvar
                       </button>
                     </form>
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center justify-end gap-1">
+                      <ResetPasswordButton userId={user.id} email={user.email} />
+                      {!isSelf && (
+                        <ToggleUserStatusButton userId={user.id} statusConta={user.statusConta} />
+                      )}
+                    </div>
                   </td>
                 </tr>
               );

@@ -1,6 +1,8 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import { hasPermission } from '@vl6/domain';
+import type { UserAccountStatus } from '@vl6/domain';
 import { createServerContainer, getAdminAuth, syncUserClaims } from '@vl6/infra';
 import { requireSession } from '@/lib/auth/require-session';
 
@@ -83,6 +85,72 @@ export async function assignRoleAction(userId: string, formData: FormData): Prom
   if (role) {
     await syncUserClaims(result.value, role);
   }
+
+  revalidatePath('/admin/usuarios');
+}
+
+export interface ResetPasswordActionState {
+  error: string | null;
+  temporaryPassword: string | null;
+}
+
+/**
+ * Gera uma nova senha temporária para um usuário existente e a define
+ * diretamente no Firebase Auth (`updateUser`) — mesmo padrão de
+ * `inviteUserAction`: sem serviço de e-mail transacional, a senha é
+ * mostrada uma única vez para o Administrador repassar com segurança.
+ */
+export async function resetUserPasswordAction(
+  userId: string,
+  _prevState: ResetPasswordActionState,
+  _formData: FormData,
+): Promise<ResetPasswordActionState> {
+  const session = await requireSession();
+  if (!hasPermission(session.authContext, 'user:manage')) {
+    return { error: 'Permissão ausente: user:manage.', temporaryPassword: null };
+  }
+
+  const container = createServerContainer();
+  const user = await container.repositories.user.findById(userId);
+  if (!user || user.tenantId !== session.authContext.tenantId) {
+    return { error: 'Usuário não encontrado.', temporaryPassword: null };
+  }
+
+  const temporaryPassword = generateTemporaryPassword();
+  await getAdminAuth()
+    .updateUser(userId, { password: temporaryPassword })
+    .catch((error: unknown) => {
+      throw error instanceof Error ? error : new Error('Falha ao redefinir a senha.');
+    });
+
+  revalidatePath('/admin/usuarios');
+  return { error: null, temporaryPassword };
+}
+
+/**
+ * Bloqueia/reativa um usuário — persiste `statusConta` (fonte de verdade
+ * checada em cada login por `AuthenticateUserUseCase`/`getCurrentSession`)
+ * e também desabilita a conta no Firebase Auth como segunda camada de
+ * defesa (impede inclusive a troca de senha/token refresh de uma sessão
+ * já aberta).
+ */
+export async function setUserStatusAction(
+  userId: string,
+  statusConta: UserAccountStatus,
+  _formData: FormData,
+): Promise<void> {
+  const session = await requireSession();
+
+  const container = createServerContainer();
+  const result = await container.useCases.setUserStatus.execute(session.authContext, {
+    userId,
+    statusConta,
+  });
+  if (!result.ok) {
+    throw new Error(result.error.message);
+  }
+
+  await getAdminAuth().updateUser(userId, { disabled: statusConta === 'blocked' });
 
   revalidatePath('/admin/usuarios');
 }

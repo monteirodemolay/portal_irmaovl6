@@ -70,6 +70,7 @@ import {
   RevokeApiKeyUseCase,
   SearchMembersUseCase,
   SetTenantActiveUseCase,
+  SetUserStatusUseCase,
   SoftDeleteFileAssetUseCase,
   SoftDeleteMemberUseCase,
   ToggleLibraryFavoriteUseCase,
@@ -214,6 +215,7 @@ export function createServerContainer() {
       roleRepository: repositories.role,
       clock,
     }),
+    setUserStatus: new SetUserStatusUseCase({ userRepository: repositories.user, clock }),
     bootstrapTenantAdmin: new BootstrapTenantAdminUseCase({
       userRepository: repositories.user,
       roleRepository: repositories.role,
