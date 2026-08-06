@@ -7,7 +7,10 @@ Requisição → Next.js Middleware
    1. Lê host (domínio/subdomínio)
    2. Resolve Tenant via cache (TanStack Query no server / KV) → fallback Firestore
    3. Injeta tenantId resolvido em headers internos (x-tenant-id) para toda a árvore de rota
-   4. Se domínio não corresponder a nenhum tenant ativo → 404 institucional
+   4. Se domínio não corresponder a nenhum tenant ativo:
+      - Com sessão autenticada válida → resolve pelo tenantId da própria sessão (login unificado, §7.2)
+      - Sem sessão → 404 institucional nas páginas que exigem tenant (site público);
+        /login segue funcionando sem marca de nenhuma Loja específica
 ```
 
 ## 7.2 Login (Web)
@@ -26,6 +29,22 @@ Cookie de sessão (não o ID Token cru) é escolhido para as rotas de página
 porque permite validação em Server Components/Middleware sem round-trip ao
 client, e porque tem duração configurável mais longa (até 14 dias) com
 renovação silenciosa.
+
+**Login unificado, domínio por Loja (v2.0).** A tela `/login` é a mesma
+para todo mundo, em qualquer domínio — inclusive o domínio compartilhado
+padrão (ex.: `*.vercel.app`), usado como "portão" quando a pessoa não
+lembra/não tem o domínio específico da própria Loja. Se o host da
+requisição resolve a uma Loja (domínio próprio ou subdomínio dela),
+`POST /api/v1/auth/login` exige que a conta pertença a ela (mantém o
+isolamento entre Lojas mesmo com domínio próprio configurado). Se o host
+não resolve a nenhuma Loja, `AuthenticateUserUseCase` confia direto no
+`User.tenantId` já persistido — nunca em algo vindo do cliente. Depois do
+login, `getCurrentTenant()` (§7.1) passa a resolver pela sessão em vez do
+host, então as páginas autenticadas (`/admin`, `/dashboard`) mostram a
+marca certa da Loja da pessoa mesmo estando no domínio compartilhado. O
+destino pós-login (`/plataforma`, `/admin` ou `/dashboard`) é calculado
+por papel — ver `resolvePostLoginDestination`,
+`apps/web/src/lib/auth/resolve-post-login-destination.ts`.
 
 ## 7.3 Custom Claims — como e quando são atualizados
 

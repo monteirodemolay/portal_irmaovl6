@@ -78,6 +78,17 @@ describe('AuthenticateUserUseCase', () => {
     expect(result.ok).toBe(true);
   });
 
+  it('login unificado (tenantId nulo) confia no tenant do próprio usuário', async () => {
+    const { useCase, userRepository } = buildUseCase();
+    await userRepository.create(buildUser({ tenantId: 't2' }));
+
+    const result = await useCase.execute({ uid: 'user-1', tenantId: null });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value.tenantId).toBe('t2');
+  });
+
   it('retorna conflict quando a conta está bloqueada', async () => {
     const { useCase, userRepository } = buildUseCase();
     await userRepository.create(buildUser({ statusConta: 'blocked' }));

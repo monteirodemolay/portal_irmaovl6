@@ -41,32 +41,31 @@ export const POST = withApiLogging(ROUTE, async (request: NextRequest) => {
     return NextResponse.json({ error: 'invalid_request' }, { status: 400 });
   }
 
+  // Host próprio de uma Loja: exige que a conta pertença a ela. Host que
+  // não resolve (ex.: domínio compartilhado da Vercel, usado como portão
+  // de login unificado — docs/architecture/07 §7.9): confia no tenant do
+  // próprio usuário, resolvido dentro de `authenticateUser`.
   const current = await getCurrentTenant();
-  if (!current) {
-    return NextResponse.json({ error: 'tenant_not_found' }, { status: 404 });
-  }
+  const hostTenantId = current?.tenant.id ?? null;
 
   const decoded = await getAdminAuth()
     .verifyIdToken(parsed.data.idToken)
     .catch(() => null);
   if (!decoded) {
-    logger.warn('Tentativa de login com ID Token inválido', {
-      route: ROUTE,
-      tenantId: current.tenant.id,
-    });
+    logger.warn('Tentativa de login com ID Token inválido', { route: ROUTE, hostTenantId });
     return NextResponse.json({ error: 'invalid_token' }, { status: 401 });
   }
 
   const container = createServerContainer();
   const result = await container.useCases.authenticateUser.execute({
     uid: decoded.uid,
-    tenantId: current.tenant.id,
+    tenantId: hostTenantId,
   });
 
   if (!result.ok) {
     logger.warn('Login negado', {
       route: ROUTE,
-      tenantId: current.tenant.id,
+      hostTenantId,
       uid: decoded.uid,
       errorCode: result.error.code,
     });

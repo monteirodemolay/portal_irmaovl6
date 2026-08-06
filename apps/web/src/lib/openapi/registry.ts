@@ -79,8 +79,9 @@ registry.registerPath({
     },
     400: errorResponse('Corpo da requisição inválido.'),
     401: errorResponse('ID Token inválido ou expirado.'),
-    403: errorResponse('Conta bloqueada, pendente, ou sem vínculo com este tenant.'),
-    404: errorResponse('Nenhum tenant resolvido para o host da requisição.'),
+    403: errorResponse(
+      'Conta bloqueada, pendente, ou (quando o host resolve a uma Loja específica) sem vínculo com ela.',
+    ),
     429: rateLimitedResponse,
   },
 });

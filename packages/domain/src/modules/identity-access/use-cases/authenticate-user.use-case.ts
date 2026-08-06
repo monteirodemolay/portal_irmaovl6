@@ -13,7 +13,16 @@ import type { IUserRepository } from '../repositories/user.repository';
 
 export interface AuthenticateUserInput {
   uid: string;
-  tenantId: string;
+  /**
+   * Tenant resolvido pelo host da requisição, ou `null` quando o host não
+   * resolve a nenhuma Loja específica (login unificado — docs/architecture
+   * /07 §7.1: domínio compartilhado, ex. o domínio padrão da Vercel, serve
+   * de "portão" pra qualquer Loja). Com `null`, confia direto no
+   * `User.tenantId` já persistido em vez de exigir bater com o host —
+   * `tenantId` nunca vem de input de cliente de qualquer forma, só do
+   * documento do próprio usuário.
+   */
+  tenantId: string | null;
 }
 
 export interface AuthenticateUserDeps {
@@ -26,10 +35,12 @@ export interface AuthenticateUserDeps {
  * (a verificação de credencial em si é responsabilidade do provedor de
  * identidade, fora do domínio — ver docs/architecture/07 §7.2). Este caso de
  * uso resolve a conta `User` correspondente, garante que pertence ao tenant
- * do host acessado e que está ativa, e registra o último login. Exceção: o
+ * do host acessado (quando o host resolveu algum) e que está ativa, e
+ * registra o último login. Duas exceções à checagem de tenant: o
  * Administrador Geral (`tenantId === PLATFORM_TENANT_ID`, docs/architecture
- * /08 §8.3) não pertence a nenhum host de Loja — pode logar a partir de
- * qualquer domínio, é redirecionado para /plataforma pela UI.
+ * /08 §8.3), que não pertence a nenhum host de Loja; e login unificado
+ * (`input.tenantId === null`), onde não há host de Loja específico pra
+ * comparar — confia no tenant do próprio usuário.
  */
 export class AuthenticateUserUseCase {
   constructor(private readonly deps: AuthenticateUserDeps) {}
@@ -39,7 +50,11 @@ export class AuthenticateUserUseCase {
     if (!user) {
       return err(new NotFoundError('User', input.uid));
     }
-    if (user.tenantId !== input.tenantId && user.tenantId !== PLATFORM_TENANT_ID) {
+    if (
+      input.tenantId !== null &&
+      user.tenantId !== input.tenantId &&
+      user.tenantId !== PLATFORM_TENANT_ID
+    ) {
       return err(new ForbiddenError('tenant:read'));
     }
     if (user.statusConta === 'blocked') {
