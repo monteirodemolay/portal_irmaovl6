@@ -2,6 +2,7 @@ export * from './firebase/admin-app';
 export * from './firebase/sync-user-claims';
 export * from './storage-types';
 export * from './vercel/blob-storage-adapter';
+export * from './vercel/put-backup-blob';
 export * from './firestore/repositories/tenant.repository';
 export * from './firestore/repositories/tenant-branding.repository';
 export * from './firestore/repositories/tenant-settings.repository';
