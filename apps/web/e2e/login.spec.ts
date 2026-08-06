@@ -4,14 +4,16 @@ const email = process.env.ADMIN_EMAIL ?? 'e2e-admin@vl6.test';
 const password = process.env.ADMIN_PASSWORD ?? 'SenhaForte123!';
 
 test.describe('Login', () => {
-  test('entra com credenciais válidas e chega ao dashboard', async ({ page }) => {
+  test('entra com credenciais válidas e a Administradora da Loja cai direto no painel', async ({
+    page,
+  }) => {
     await page.goto('/login');
     await page.getByLabel('E-mail').fill(email);
     await page.getByLabel('Senha').fill(password);
     await page.getByRole('button', { name: 'Entrar' }).click();
 
-    await expect(page).toHaveURL(/\/dashboard/);
-    await expect(page.getByRole('heading', { name: /Olá,/ })).toBeVisible();
+    await expect(page).toHaveURL(/\/admin/);
+    await expect(page.getByRole('heading', { name: 'Painel Administrativo' })).toBeVisible();
   });
 
   test('mostra erro com senha inválida', async ({ page }) => {
@@ -24,14 +26,12 @@ test.describe('Login', () => {
     await expect(page).toHaveURL(/\/login/);
   });
 
-  test('acessa o painel administrativo depois de logar', async ({ page }) => {
-    await page.goto('/login');
+  test('respeita o redirect explícito mesmo com destino padrão diferente', async ({ page }) => {
+    await page.goto('/login?redirect=/perfil');
     await page.getByLabel('E-mail').fill(email);
     await page.getByLabel('Senha').fill(password);
     await page.getByRole('button', { name: 'Entrar' }).click();
-    await expect(page).toHaveURL(/\/dashboard/);
 
-    await page.goto('/admin');
-    await expect(page.getByRole('heading', { name: 'Painel Administrativo' })).toBeVisible();
+    await expect(page).toHaveURL(/\/perfil/);
   });
 });

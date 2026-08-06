@@ -6,6 +6,7 @@ import { parseJsonBody } from '@/lib/api/parse-json-body';
 import { rateLimitResponse } from '@/lib/api/rate-limit-response';
 import { RateLimiter } from '@/lib/api/rate-limiter';
 import { withApiLogging } from '@/lib/api/with-api-logging';
+import { resolvePostLoginDestination } from '@/lib/auth/resolve-post-login-destination';
 import {
   createSessionCookie,
   SESSION_COOKIE_MAX_AGE_MS,
@@ -75,8 +76,14 @@ export const POST = withApiLogging(ROUTE, async (request: NextRequest) => {
     );
   }
 
+  const role = await container.repositories.role.findById(result.value.roleId);
+  const redirectTo = resolvePostLoginDestination(result.value.tenantId, role);
+
   const sessionCookie = await createSessionCookie(parsed.data.idToken);
-  const response = NextResponse.json({ user: { uid: result.value.id, email: result.value.email } });
+  const response = NextResponse.json({
+    user: { uid: result.value.id, email: result.value.email },
+    redirectTo,
+  });
   response.cookies.set(SESSION_COOKIE_NAME, sessionCookie, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',

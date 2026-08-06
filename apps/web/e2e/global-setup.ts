@@ -4,7 +4,7 @@ import { ADMIN_EMAIL, ADMIN_PASSWORD } from './helpers';
 /**
  * Roda uma vez, antes de qualquer teste, e força o Next (dev mode) a
  * compilar as rotas mais usadas — `/`, `/login`, `POST /api/v1/auth/login`,
- * `/dashboard`. Sem isso, o primeiro teste da suíte a chamar
+ * `/admin`. Sem isso, o primeiro teste da suíte a chamar
  * `loginAsAdmin()` paga esse custo de compilação sob demanda e estoura o
  * timeout de asserção, um problema que só cresce conforme o app ganha mais
  * dependências/instrumentação (visto com Sentry, depois com @vercel/blob).
@@ -27,7 +27,7 @@ export default async function globalSetup(config: FullConfig): Promise<void> {
   await page.getByLabel('E-mail').fill(ADMIN_EMAIL);
   await page.getByLabel('Senha').fill(ADMIN_PASSWORD);
   await page.getByRole('button', { name: 'Entrar' }).click();
-  await page.waitForURL(/\/dashboard/, { timeout: 90_000 });
+  await page.waitForURL(/\/admin/, { timeout: 90_000 });
 
   await browser.close();
 }

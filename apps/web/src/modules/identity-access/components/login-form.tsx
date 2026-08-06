@@ -47,7 +47,8 @@ export function LoginForm() {
       return;
     }
 
-    router.replace(searchParams.get('redirect') ?? '/dashboard');
+    const body = (await response.json()) as { redirectTo: string };
+    router.replace(searchParams.get('redirect') ?? body.redirectTo);
     router.refresh();
   }
 

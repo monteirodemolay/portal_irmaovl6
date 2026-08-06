@@ -11,5 +11,5 @@ export async function loginAsAdmin(page: Page): Promise<void> {
   await page.getByLabel('E-mail').fill(ADMIN_EMAIL);
   await page.getByLabel('Senha').fill(ADMIN_PASSWORD);
   await page.getByRole('button', { name: 'Entrar' }).click();
-  await expect(page).toHaveURL(/\/dashboard/);
+  await expect(page).toHaveURL(/\/admin/);
 }

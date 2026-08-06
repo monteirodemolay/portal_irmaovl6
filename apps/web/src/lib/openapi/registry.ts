@@ -68,7 +68,12 @@ registry.registerPath({
       description: 'Login bem-sucedido — cookie de sessão definido na resposta.',
       content: {
         'application/json': {
-          schema: z.object({ user: z.object({ uid: z.string(), email: z.string() }) }),
+          schema: z.object({
+            user: z.object({ uid: z.string(), email: z.string() }),
+            redirectTo: z
+              .string()
+              .describe('Destino sugerido pra UI redirecionar após o login, calculado a partir do papel do usuário.'),
+          }),
         },
       },
     },
