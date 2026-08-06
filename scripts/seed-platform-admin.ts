@@ -10,8 +10,7 @@
  *   pnpm tsx scripts/seed-platform-admin.ts
  */
 import type { AuthContext } from '@vl6/domain';
-import { computeUserClaims } from '@vl6/domain';
-import { createServerContainer, getAdminAuth } from '@vl6/infra';
+import { createServerContainer, getAdminAuth, syncUserClaims } from '@vl6/infra';
 import { PLATFORM_TENANT_ID } from '@vl6/shared';
 
 async function main() {
@@ -47,11 +46,9 @@ async function main() {
     process.exit(1);
   }
 
-  // Mesma replicação manual de `onUserWritten` que scripts/seed-tenant.ts
-  // faz — Functions não roda neste fluxo de seed.
   const role = await container.repositories.role.findById(result.value.roleId);
   if (role) {
-    await getAdminAuth().setCustomUserClaims(authUser.uid, computeUserClaims(result.value, role));
+    await syncUserClaims(result.value, role);
   }
 
   console.log('\nSeed concluído.');

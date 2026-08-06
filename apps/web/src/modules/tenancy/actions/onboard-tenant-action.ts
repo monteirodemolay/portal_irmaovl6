@@ -1,9 +1,8 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { computeUserClaims } from '@vl6/domain';
 import { createTenantSchema, TENANT_MODULE_KEYS } from '@vl6/shared';
-import { createServerContainer, getAdminAuth } from '@vl6/infra';
+import { createServerContainer, getAdminAuth, syncUserClaims } from '@vl6/infra';
 import { requireSession } from '@/lib/auth/require-session';
 
 export interface OnboardTenantActionState {
@@ -21,11 +20,10 @@ function generateTemporaryPassword(): string {
  * Provisiona uma nova Loja de ponta a ponta a partir do painel do
  * Administrador Geral: `Tenant` + branding/settings padrão + papéis de
  * fábrica (`CreateTenantUseCase`), depois a primeira conta `User` (papel
- * `admin`, `BootstrapTenantAdminUseCase`). Sem Cloud Functions implantadas
- * (docs/architecture/10-roadmap.md, plano Spark), replica manualmente o
- * cálculo de Custom Claims que `onUserWritten` faria — mesmo padrão de
- * scripts/seed-tenant.ts — para o Administrador da Loja nova já nascer
- * com permissões propagadas.
+ * `admin`, `BootstrapTenantAdminUseCase`) e o sync de Custom Claims
+ * (`syncUserClaims` — sem Cloud Functions implantadas, plano Spark, não há
+ * trigger fazendo isso sozinho) para o Administrador da Loja nova já
+ * nascer com permissões propagadas.
  */
 export async function onboardTenantAction(
   _prevState: OnboardTenantActionState,
@@ -93,10 +91,7 @@ export async function onboardTenantAction(
 
   const adminRole = await container.repositories.role.findById(adminResult.value.roleId);
   if (adminRole) {
-    await getAdminAuth().setCustomUserClaims(
-      authUser.uid,
-      computeUserClaims(adminResult.value, adminRole),
-    );
+    await syncUserClaims(adminResult.value, adminRole);
   }
 
   revalidatePath('/plataforma');

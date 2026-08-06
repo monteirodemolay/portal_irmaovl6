@@ -1,7 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { createServerContainer, getAdminAuth } from '@vl6/infra';
+import { createServerContainer, getAdminAuth, syncUserClaims } from '@vl6/infra';
 import { requireSession } from '@/lib/auth/require-session';
 
 export interface InviteUserActionState {
@@ -19,6 +19,9 @@ function generateTemporaryPassword(): string {
  * (docs/architecture/10-roadmap.md — v1.1+), a senha é mostrada uma única
  * vez na tela para o Administrador repassar ao Irmão com segurança; ele
  * pode trocá-la a qualquer momento pelo fluxo de recuperação de senha.
+ *
+ * Sem Cloud Functions implantadas (plano Spark), não há `onUserWritten`
+ * sincronizando Custom Claims sozinho — chama `syncUserClaims` aqui.
  */
 export async function inviteUserAction(
   _prevState: InviteUserActionState,
@@ -53,10 +56,16 @@ export async function inviteUserAction(
     return { error: result.error.message, temporaryPassword: null };
   }
 
+  const role = await container.repositories.role.findById(roleId);
+  if (role) {
+    await syncUserClaims(result.value, role);
+  }
+
   revalidatePath('/admin/usuarios');
   return { error: null, temporaryPassword };
 }
 
+/** Sem `onUserWritten` (ver `inviteUserAction`), sincroniza claims aqui após trocar o papel. */
 export async function assignRoleAction(userId: string, formData: FormData): Promise<void> {
   const session = await requireSession();
   const roleId = String(formData.get('roleId') ?? '');
@@ -68,6 +77,11 @@ export async function assignRoleAction(userId: string, formData: FormData): Prom
   });
   if (!result.ok) {
     throw new Error(result.error.message);
+  }
+
+  const role = await container.repositories.role.findById(roleId);
+  if (role) {
+    await syncUserClaims(result.value, role);
   }
 
   revalidatePath('/admin/usuarios');

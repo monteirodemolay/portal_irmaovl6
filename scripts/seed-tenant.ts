@@ -12,8 +12,7 @@
  * FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099 (não precisa de credenciais).
  */
 import type { AuthContext } from '@vl6/domain';
-import { computeUserClaims } from '@vl6/domain';
-import { createServerContainer, getAdminAuth } from '@vl6/infra';
+import { createServerContainer, getAdminAuth, syncUserClaims } from '@vl6/infra';
 
 async function main() {
   const adminEmail = process.env.ADMIN_EMAIL;
@@ -71,17 +70,12 @@ async function main() {
     process.exit(1);
   }
 
-  // Fora do emulador, `onUserWritten` (functions/src/triggers/on-user-written.ts)
-  // sincroniza os Custom Claims a partir da escrita no Firestore. Este script
-  // não roda com o emulador de Functions (só auth+firestore — ver
-  // `pnpm test:e2e` na raiz), então replica o mesmo cálculo aqui para o admin
-  // seed já nascer com as claims propagadas.
+  // Sem Cloud Functions implantadas (plano Spark), não há trigger
+  // sincronizando os Custom Claims sozinho — chama syncUserClaims aqui para
+  // o admin seed já nascer com as claims propagadas.
   const adminRole = await container.repositories.role.findById(adminResult.value.roleId);
   if (adminRole) {
-    await getAdminAuth().setCustomUserClaims(
-      authUser.uid,
-      computeUserClaims(adminResult.value, adminRole),
-    );
+    await syncUserClaims(adminResult.value, adminRole);
   }
 
   console.log('\nSeed concluído.');

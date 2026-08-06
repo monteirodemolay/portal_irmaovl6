@@ -33,10 +33,20 @@ Custom Claims (`tenantId`, `roleId`, `permissions`) são a fonte de verdade
 usada pelas Firestore Security Rules e pelo middleware. Eles **não** são
 atualizados a cada request — apenas quando:
 
-- Um usuário é criado (Cloud Function `onUserCreate` grava claims iniciais)
-- O papel (`roleId`) de um usuário muda (Cloud Function trigger em `users`)
-- As permissões de um `Role` mudam (Cloud Function recalcula claims de todos
-  os usuários daquele papel — operação em lote)
+- Um usuário é criado (`syncUserClaims`, chamado explicitamente por toda
+  Server Action que cria conta — `inviteUserAction`, `bootstrapTenantAdmin`,
+  `bootstrapPlatformAdmin`, o onboarding de nova Loja)
+- O papel (`roleId`) de um usuário muda (`syncUserClaims` em
+  `assignRoleAction`)
+- As permissões de um `Role` mudam (ainda não implementado — não há UI de
+  edição de papel `sistemico` hoje; quando existir, precisa recalcular
+  claims de todos os usuários daquele papel em lote)
+
+Sem plano Blaze, não há Cloud Functions implantadas — os dois primeiros
+casos eram originalmente um trigger `onUserWritten`, substituído por
+chamada explícita de `syncUserClaims` (`packages/infra`) em cada caminho de
+escrita, já que toda escrita em `users` passa por Server Actions/scripts
+sob nosso controle (nunca client direto).
 
 Após atualização de claims, o client é forçado a renovar o token
 (`getIdToken(true)`) na próxima ação sensível, ou na próxima renovação
@@ -59,7 +69,7 @@ Firestore é escrita como se a camada de aplicação não existisse.
 - Autenticação via **JWT Bearer** (não o cookie de sessão — a API é para
   integrações externas/futuro app mobile).
 - Fluxo: `POST /api/v1/auth/login` (credenciais) → `{ accessToken (15min),
-  refreshToken (30 dias, armazenado hash no Firestore) }`.
+refreshToken (30 dias, armazenado hash no Firestore) }`.
 - `POST /api/v1/auth/refresh` troca um refresh token válido (e ainda não
   revogado) por um novo par de tokens (rotação de refresh token — previne
   replay).
