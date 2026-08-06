@@ -26,6 +26,12 @@ export class ConflictError extends DomainError {
   }
 }
 
+export class ValidationError extends DomainError {
+  constructor(message: string) {
+    super('validation', message);
+  }
+}
+
 export type Result<T, E extends DomainError = DomainError> =
   { ok: true; value: T } | { ok: false; error: E };
 

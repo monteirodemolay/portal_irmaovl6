@@ -11,6 +11,8 @@ export * from './dns/node-dns-resolver';
 export * from './firestore/repositories/tenant-settings.repository';
 export * from './firestore/repositories/user.repository';
 export * from './firestore/repositories/role.repository';
+export * from './firestore/repositories/api-key.repository';
+export * from './security/node-api-key-generator';
 export * from './firestore/repositories/member.repository';
 export * from './firestore/repositories/member-position-history.repository';
 export * from './firestore/repositories/board-term.repository';

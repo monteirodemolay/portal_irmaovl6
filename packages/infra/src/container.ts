@@ -3,11 +3,13 @@ import {
   AddLibraryItemUseCase,
   AssignBoardPositionUseCase,
   AssignRoleUseCase,
+  AuthenticateApiKeyUseCase,
   AuthenticateUserUseCase,
   BootstrapPlatformAdminUseCase,
   BootstrapTenantAdminUseCase,
   ConfirmAttendanceUseCase,
   CreateAnnouncementUseCase,
+  CreateApiKeyUseCase,
   CreateBoardTermUseCase,
   CreateCommitteeUseCase,
   CreateEventUseCase,
@@ -31,6 +33,7 @@ import {
   ListAllLinksUseCase,
   ListAllNewsUseCase,
   ListAllTenantsUseCase,
+  ListApiKeysUseCase,
   ListApprovedNewsCommentsUseCase,
   ListAuditLogUseCase,
   ListBoardTermsUseCase,
@@ -64,6 +67,7 @@ import {
   RegisterMemberUseCase,
   RequestDomainVerificationUseCase,
   ResolveTenantByHostUseCase,
+  RevokeApiKeyUseCase,
   SearchMembersUseCase,
   SetTenantActiveUseCase,
   SoftDeleteFileAssetUseCase,
@@ -82,7 +86,9 @@ import {
 import { withAudit } from './audit/with-audit';
 import { NodeDnsResolver } from './dns/node-dns-resolver';
 import { getAdminFirestore } from './firebase/admin-app';
+import { NodeApiKeyGenerator } from './security/node-api-key-generator';
 import { FirestoreAnnouncementRepository } from './firestore/repositories/announcement.repository';
+import { FirestoreApiKeyRepository } from './firestore/repositories/api-key.repository';
 import { FirestoreAuditLogRepository } from './firestore/repositories/audit-log.repository';
 import { FirestoreBoardPositionAssignmentRepository } from './firestore/repositories/board-position-assignment.repository';
 import { FirestoreBoardTermRepository } from './firestore/repositories/board-term.repository';
@@ -163,10 +169,12 @@ export function createServerContainer() {
     galleryAlbum: new FirestoreGalleryAlbumRepository(db),
     galleryMedia: new FirestoreGalleryMediaRepository(db),
     newsComment: new FirestoreNewsCommentRepository(db),
+    apiKey: new FirestoreApiKeyRepository(db),
   };
 
   const notificationGateway = new NoopNotificationGateway();
   const dnsResolver = new NodeDnsResolver();
+  const apiKeyGenerator = new NodeApiKeyGenerator();
 
   const useCases = {
     createTenant: new CreateTenantUseCase({
@@ -219,6 +227,19 @@ export function createServerContainer() {
     }),
     listUsers: new ListUsersUseCase({ userRepository: repositories.user }),
     listRoles: new ListRolesUseCase({ roleRepository: repositories.role }),
+    createApiKey: new CreateApiKeyUseCase({
+      apiKeyRepository: repositories.apiKey,
+      apiKeyGenerator,
+      clock,
+      idGenerator,
+    }),
+    listApiKeys: new ListApiKeysUseCase({ apiKeyRepository: repositories.apiKey }),
+    revokeApiKey: new RevokeApiKeyUseCase({ apiKeyRepository: repositories.apiKey, clock }),
+    authenticateApiKey: new AuthenticateApiKeyUseCase({
+      apiKeyRepository: repositories.apiKey,
+      apiKeyGenerator,
+      clock,
+    }),
 
     registerMember: new RegisterMemberUseCase({
       memberRepository: repositories.member,

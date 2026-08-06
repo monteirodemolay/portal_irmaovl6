@@ -81,6 +81,13 @@ refreshToken (30 dias, armazenado hash no Firestore) }`.
   (`zod-to-openapi`), servida em `/api/v1/openapi.json` e visualizável via
   Swagger UI em ambiente de desenvolvimento.
 
+> Nota de implementação: o design acima (par access/refresh JWT) é o
+> desenho original da API. O que existe hoje para rotas consumidas pelo
+> próprio app é sessão via cookie HttpOnly (`POST /api/v1/auth/login` troca
+> um ID Token do Firebase por esse cookie — ver §7.2). Rotas pensadas para
+> **integrações de terceiros** (nunca um usuário humano), como `GET
+/api/v1/members`, usam em vez disso uma **API Key** (§7.9).
+
 ## 7.6 MFA (preparado)
 
 `User.mfaHabilitado` e o suporte nativo do Firebase Auth a segundo fator
@@ -100,3 +107,24 @@ e-mail, renderizado via Cloud Function + serviço de e-mail transacional).
 - Logout explícito revoga o cookie no Admin SDK (`revokeRefreshTokens`),
   invalidando também qualquer sessão antiga do mesmo usuário — importante
   para o caso "esqueci de sair no computador da Loja".
+
+## 7.9 API Keys para integrações de terceiros (v2.0)
+
+- Emitidas em `/admin/integracoes` (permissão `tenant:manage`) — o
+  Administrador da Loja escolhe um nome e um subconjunto das suas próprias
+  permissões (`ApiKey.permissoes`); nunca pode exceder o que o próprio
+  emissor tem (`CreateApiKeyUseCase`).
+- O valor em texto puro (`vl6_live_<...>`) só é mostrado uma vez, na
+  criação — persiste-se apenas `keyHash` (SHA-256) e um `keyPrefix` (para
+  exibição na listagem).
+- Autenticação: header `Authorization: Bearer <chave>`. O handler resolve
+  um `AuthContext` sintético via `AuthenticateApiKeyUseCase` — `roleId:
+'api-key'`, `permissions` fixadas na emissão — sem sessão de usuário
+  envolvida (`resolveApiKeyContext`, `apps/web/src/lib/api/`).
+- Revogação é soft-delete (`ApiKeyRepository.update` com `deletedAt`
+  setado) — chamadas subsequentes com a chave revogada recebem 401.
+- Rate limit por `apiKey.id` (não por IP): cada integração tem sua própria
+  cota, independente de outras rodando atrás do mesmo IP/CDN.
+- `GET /api/v1/members` é a primeira rota deste tipo — autenticada só por
+  API Key, sem fallback de cookie de sessão (deliberado: nunca um humano
+  logado deveria bater nela).

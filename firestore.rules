@@ -87,6 +87,15 @@ service cloud.firestore {
         && (resource == null || resource.data.sistemico == false || request.resource.data.permissoes == resource.data.permissoes);
     }
 
+    // API Keys — sempre criadas/lidas via Admin SDK (Server Actions), nunca
+    // pelo client direto; regra aqui é só defesa em profundidade.
+    match /apiKeys/{id} {
+      allow read: if sameTenant(resource.data) && hasPermission('tenant:manage');
+      allow create: if sameTenant(request.resource.data) && hasPermission('tenant:manage');
+      allow update: if sameTenant(resource.data) && hasPermission('tenant:manage');
+      allow delete: if false;
+    }
+
     // ---------------------------------------------------------------
     // Membership
     // ---------------------------------------------------------------

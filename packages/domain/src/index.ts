@@ -27,9 +27,12 @@ export * from './modules/tenancy/use-cases/set-tenant-active.use-case';
 // Identity & Access
 export * from './modules/identity-access/entities/user.entity';
 export * from './modules/identity-access/entities/role.entity';
+export * from './modules/identity-access/entities/api-key.entity';
 export * from './modules/identity-access/repositories/user.repository';
 export * from './modules/identity-access/repositories/role.repository';
+export * from './modules/identity-access/repositories/api-key.repository';
 export * from './modules/identity-access/services/compute-user-claims';
+export * from './modules/identity-access/services/api-key-generator';
 export * from './modules/identity-access/use-cases/authenticate-user.use-case';
 export * from './modules/identity-access/use-cases/assign-role.use-case';
 export * from './modules/identity-access/use-cases/bootstrap-platform-admin.use-case';
@@ -37,6 +40,10 @@ export * from './modules/identity-access/use-cases/bootstrap-tenant-admin.use-ca
 export * from './modules/identity-access/use-cases/invite-user.use-case';
 export * from './modules/identity-access/use-cases/list-users.use-case';
 export * from './modules/identity-access/use-cases/list-roles.use-case';
+export * from './modules/identity-access/use-cases/create-api-key.use-case';
+export * from './modules/identity-access/use-cases/list-api-keys.use-case';
+export * from './modules/identity-access/use-cases/revoke-api-key.use-case';
+export * from './modules/identity-access/use-cases/authenticate-api-key.use-case';
 
 // Membership
 export * from './modules/membership/entities/member.entity';

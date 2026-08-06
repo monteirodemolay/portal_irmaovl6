@@ -9,8 +9,14 @@ import type { TenantDomainVerification } from '../modules/tenancy/entities/tenan
 import type { ITenantDomainVerificationRepository } from '../modules/tenancy/repositories/tenant-domain-verification.repository';
 import type { Role } from '../modules/identity-access/entities/role.entity';
 import type { User } from '../modules/identity-access/entities/user.entity';
+import type { ApiKey } from '../modules/identity-access/entities/api-key.entity';
 import type { IRoleRepository } from '../modules/identity-access/repositories/role.repository';
 import type { IUserRepository } from '../modules/identity-access/repositories/user.repository';
+import type { IApiKeyRepository } from '../modules/identity-access/repositories/api-key.repository';
+import type {
+  GeneratedApiKey,
+  IApiKeyGenerator,
+} from '../modules/identity-access/services/api-key-generator';
 import type { Member } from '../modules/membership/entities/member.entity';
 import type { MemberPositionHistory } from '../modules/membership/entities/member-position-history.entity';
 import type {
@@ -164,6 +170,37 @@ export class InMemoryRoleRepository implements IRoleRepository {
   }
   async update(role: Role) {
     this.byId.set(role.id, role);
+  }
+}
+
+export class InMemoryApiKeyRepository implements IApiKeyRepository {
+  private readonly byId = new Map<string, ApiKey>();
+  async findById(id: string) {
+    return this.byId.get(id) ?? null;
+  }
+  async findByHash(keyHash: string) {
+    return [...this.byId.values()].find((k) => k.keyHash === keyHash) ?? null;
+  }
+  async listByTenant(tenantId: string) {
+    return [...this.byId.values()].filter((k) => k.tenantId === tenantId);
+  }
+  async create(apiKey: ApiKey) {
+    this.byId.set(apiKey.id, apiKey);
+  }
+  async update(apiKey: ApiKey) {
+    this.byId.set(apiKey.id, apiKey);
+  }
+}
+
+export class FakeApiKeyGenerator implements IApiKeyGenerator {
+  private counter = 0;
+  generate(): GeneratedApiKey {
+    this.counter += 1;
+    const plainText = `vl6_test_${this.counter}`;
+    return { plainText, prefix: plainText.slice(0, 12), hash: this.hash(plainText) };
+  }
+  hash(plainText: string): string {
+    return `hash(${plainText})`;
   }
 }
 

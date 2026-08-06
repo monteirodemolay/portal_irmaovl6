@@ -2,6 +2,7 @@ import { extendZodWithOpenApi, OpenApiGeneratorV31, OpenAPIRegistry } from '@ast
 import type { OpenAPIObject } from 'openapi3-ts/oas31';
 import { z } from 'zod';
 import { loginBodySchema } from '@/app/api/v1/auth/login/schema';
+import { listMembersQuerySchema, listMembersResponseSchema } from '@/app/api/v1/members/schema';
 import { webVitalsBodySchema } from '@/app/api/v1/web-vitals/schema';
 import { SESSION_COOKIE_NAME } from '@/lib/auth/session-constants';
 
@@ -28,6 +29,13 @@ registry.registerComponent('securitySchemes', 'sessionCookie', {
   name: SESSION_COOKIE_NAME,
   description:
     'Cookie de sessão HttpOnly emitido por POST /api/v1/auth/login. Definido automaticamente pelo navegador em requisições same-origin.',
+});
+
+registry.registerComponent('securitySchemes', 'apiKeyAuth', {
+  type: 'http',
+  scheme: 'bearer',
+  description:
+    'API Key emitida em Gestão da Loja → Integrações (docs/architecture/10-roadmap.md v2.0) — pensada para integrações de terceiros servidor-a-servidor, nunca um usuário humano. Escopo de permissões fixado na emissão.',
 });
 
 const errorResponseSchema = z.object({ error: z.string() }).openapi('ErrorResponse');
@@ -115,6 +123,25 @@ registry.registerPath({
     },
     401: errorResponse('Sessão ausente ou inválida.'),
     403: errorResponse('Sem a permissão member:read.'),
+    429: rateLimitedResponse,
+  },
+});
+
+registry.registerPath({
+  method: 'get',
+  path: '/api/v1/members',
+  summary: 'Lista o Cadastro de Irmãos — para integrações de terceiros',
+  tags: ['Integrações'],
+  security: [{ apiKeyAuth: [] }],
+  request: { query: listMembersQuerySchema },
+  responses: {
+    200: {
+      description: 'Página de Irmãos.',
+      content: { 'application/json': { schema: listMembersResponseSchema } },
+    },
+    400: errorResponse('Parâmetros de busca inválidos.'),
+    401: errorResponse('API Key ausente, inválida ou revogada.'),
+    403: errorResponse('A API Key não tem a permissão member:read.'),
     429: rateLimitedResponse,
   },
 });
