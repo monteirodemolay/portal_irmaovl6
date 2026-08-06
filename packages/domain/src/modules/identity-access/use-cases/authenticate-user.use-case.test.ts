@@ -69,6 +69,15 @@ describe('AuthenticateUserUseCase', () => {
     expect(result.error.code).toBe('forbidden');
   });
 
+  it('permite login do Administrador Geral mesmo sem bater com o tenant do host', async () => {
+    const { useCase, userRepository } = buildUseCase();
+    await userRepository.create(buildUser({ tenantId: 'platform' }));
+
+    const result = await useCase.execute({ uid: 'user-1', tenantId: 't1' });
+
+    expect(result.ok).toBe(true);
+  });
+
   it('retorna conflict quando a conta está bloqueada', async () => {
     const { useCase, userRepository } = buildUseCase();
     await userRepository.create(buildUser({ statusConta: 'blocked' }));

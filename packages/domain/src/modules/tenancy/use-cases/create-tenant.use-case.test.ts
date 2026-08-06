@@ -80,12 +80,20 @@ describe('CreateTenantUseCase', () => {
     expect(result.error.code).toBe('conflict');
   });
 
-  it('rejeita quem não tem permissão tenant:create', async () => {
+  it('rejeita quem não é do tenant platform, mesmo com tenant:manage', async () => {
     const { useCase } = buildUseCase();
-    const ctxSemPermissao: AuthContext = { ...superAdminCtx, permissions: [] };
+    // Administrador de Loja comum: tem tenant:manage (implica tenant:create
+    // em hasPermission), mas não é o Administrador Geral — não pode criar
+    // Lojas para outros tenants (ver requirePlatformAdmin).
+    const ctxAdminDeLoja: AuthContext = {
+      uid: 'admin-vl6',
+      tenantId: 't1',
+      roleId: 'role-admin',
+      permissions: ['tenant:manage'],
+    };
 
-    await expect(useCase.execute(ctxSemPermissao, validInput)).rejects.toThrow(
-      'Permissão ausente: tenant:create.',
+    await expect(useCase.execute(ctxAdminDeLoja, validInput)).rejects.toThrow(
+      'Permissão ausente: platform:admin.',
     );
   });
 });

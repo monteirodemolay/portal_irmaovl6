@@ -3,6 +3,8 @@ import { expect } from '@playwright/test';
 
 export const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? 'e2e-admin@vl6.test';
 export const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD ?? 'SenhaForte123!';
+export const PLATFORM_ADMIN_EMAIL = process.env.PLATFORM_ADMIN_EMAIL ?? 'e2e-plataforma@vl6.test';
+export const PLATFORM_ADMIN_PASSWORD = process.env.PLATFORM_ADMIN_PASSWORD ?? 'SenhaForte123!';
 
 export async function loginAsAdmin(page: Page): Promise<void> {
   await page.goto('/login');

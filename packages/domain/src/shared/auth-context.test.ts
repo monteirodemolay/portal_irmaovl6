@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { ForbiddenError } from './result';
-import { hasPermission, requirePermission, type AuthContext } from './auth-context';
+import {
+  hasPermission,
+  requirePermission,
+  requirePlatformAdmin,
+  type AuthContext,
+} from './auth-context';
 
 const ctx = (permissions: AuthContext['permissions']): AuthContext => ({
   uid: 'u1',
@@ -30,5 +35,21 @@ describe('requirePermission', () => {
 
   it('não lança quando a permissão está presente', () => {
     expect(() => requirePermission(ctx(['member:manage']), 'member:update')).not.toThrow();
+  });
+});
+
+describe('requirePlatformAdmin', () => {
+  it('lança ForbiddenError para tenantId comum, mesmo com tenant:manage', () => {
+    expect(() => requirePlatformAdmin(ctx(['tenant:manage']))).toThrow(ForbiddenError);
+  });
+
+  it('não lança quando tenantId é o sentinela platform', () => {
+    const platformCtx: AuthContext = {
+      uid: 'u1',
+      tenantId: 'platform',
+      roleId: 'r1',
+      permissions: [],
+    };
+    expect(() => requirePlatformAdmin(platformCtx)).not.toThrow();
   });
 });

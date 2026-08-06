@@ -58,12 +58,17 @@ describe('BootstrapPlatformAdminUseCase', () => {
     expect(roles).toHaveLength(1);
   });
 
-  it('rejeita quem não tem permissão tenant:create', async () => {
+  it('rejeita quem não é do tenant platform, mesmo com tenant:manage', async () => {
     const { useCase } = buildUseCase();
-    const ctxSemPermissao: AuthContext = { ...ctx, permissions: [] };
+    const ctxAdminDeLoja: AuthContext = {
+      uid: 'admin-vl6',
+      tenantId: 't1',
+      roleId: 'role-admin',
+      permissions: ['tenant:manage'],
+    };
 
     await expect(
-      useCase.execute(ctxSemPermissao, { uid: 'uid-firebase-1', email: 'geral@vl6.app' }),
-    ).rejects.toThrow('Permissão ausente: tenant:create.');
+      useCase.execute(ctxAdminDeLoja, { uid: 'uid-firebase-1', email: 'geral@vl6.app' }),
+    ).rejects.toThrow('Permissão ausente: platform:admin.');
   });
 });

@@ -1,4 +1,4 @@
-import type { PermissionKey } from '@vl6/shared';
+import { PLATFORM_TENANT_ID, type PermissionKey } from '@vl6/shared';
 import { ForbiddenError } from './result';
 
 /**
@@ -26,5 +26,22 @@ export function hasPermission(ctx: AuthContext, permission: PermissionKey): bool
 export function requirePermission(ctx: AuthContext, permission: PermissionKey): void {
   if (!hasPermission(ctx, permission)) {
     throw new ForbiddenError(permission);
+  }
+}
+
+/**
+ * Lança `ForbiddenError` se a sessão não for do Administrador Geral
+ * (`super_admin`, docs/architecture/08 §8.3). Usado em vez de
+ * `requirePermission` para ações genuinamente cross-tenant (criar Loja,
+ * bootstrap do próprio Admin Geral): `tenant:manage` — que todo
+ * Administrador de Loja tem — já implica `tenant:create` em
+ * `hasPermission` (regra de "manage implica todas as ações do recurso"),
+ * então checar a permissão sozinha deixaria qualquer Administrador de Loja
+ * criar novas Lojas. `tenantId` vem de Custom Claims (só o Admin SDK
+ * grava), então não é forjável pelo client.
+ */
+export function requirePlatformAdmin(ctx: AuthContext): void {
+  if (ctx.tenantId !== PLATFORM_TENANT_ID) {
+    throw new ForbiddenError('platform:admin');
   }
 }

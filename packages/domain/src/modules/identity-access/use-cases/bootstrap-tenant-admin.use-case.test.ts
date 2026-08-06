@@ -62,17 +62,25 @@ describe('BootstrapTenantAdminUseCase', () => {
     expect(persisted).not.toBeNull();
   });
 
-  it('rejeita quem não tem permissão tenant:create', async () => {
-    const { useCase } = buildUseCase();
-    const ctxSemPermissao: AuthContext = { ...ctx, permissions: [] };
+  it('rejeita quem não é do tenant platform, mesmo com tenant:manage', async () => {
+    const { useCase, roleRepository } = buildUseCase();
+    await roleRepository.create(buildAdminRole());
+    // Administrador da própria Loja t1 não pode se auto-nomear via este
+    // caso de uso — nem tentando apontar para o próprio tenantId.
+    const ctxAdminDeLoja: AuthContext = {
+      uid: 'admin-vl6',
+      tenantId: 't1',
+      roleId: 'role-admin',
+      permissions: ['tenant:manage'],
+    };
 
     await expect(
-      useCase.execute(ctxSemPermissao, {
+      useCase.execute(ctxAdminDeLoja, {
         uid: 'uid-firebase-1',
         tenantId: 't1',
         email: 'admin@vl6.org.br',
       }),
-    ).rejects.toThrow('Permissão ausente: tenant:create.');
+    ).rejects.toThrow('Permissão ausente: platform:admin.');
   });
 
   it('retorna not_found quando o tenant não tem papel admin no seed', async () => {

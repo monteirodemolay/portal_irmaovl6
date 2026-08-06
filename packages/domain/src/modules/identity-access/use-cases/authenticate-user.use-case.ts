@@ -1,3 +1,4 @@
+import { PLATFORM_TENANT_ID } from '@vl6/shared';
 import type { IClock } from '../../../shared/ports';
 import {
   ConflictError,
@@ -25,7 +26,10 @@ export interface AuthenticateUserDeps {
  * (a verificação de credencial em si é responsabilidade do provedor de
  * identidade, fora do domínio — ver docs/architecture/07 §7.2). Este caso de
  * uso resolve a conta `User` correspondente, garante que pertence ao tenant
- * do host acessado e que está ativa, e registra o último login.
+ * do host acessado e que está ativa, e registra o último login. Exceção: o
+ * Administrador Geral (`tenantId === PLATFORM_TENANT_ID`, docs/architecture
+ * /08 §8.3) não pertence a nenhum host de Loja — pode logar a partir de
+ * qualquer domínio, é redirecionado para /plataforma pela UI.
  */
 export class AuthenticateUserUseCase {
   constructor(private readonly deps: AuthenticateUserDeps) {}
@@ -35,7 +39,7 @@ export class AuthenticateUserUseCase {
     if (!user) {
       return err(new NotFoundError('User', input.uid));
     }
-    if (user.tenantId !== input.tenantId) {
+    if (user.tenantId !== input.tenantId && user.tenantId !== PLATFORM_TENANT_ID) {
       return err(new ForbiddenError('tenant:read'));
     }
     if (user.statusConta === 'blocked') {

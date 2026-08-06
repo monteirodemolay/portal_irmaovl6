@@ -11,9 +11,14 @@ export ADMIN_PASSWORD="${ADMIN_PASSWORD:-SenhaForte123!}"
 # "localhost" para o middleware resolver o tenant pelo host que o
 # Playwright de fato usa (127.0.0.1:3100) — ver ResolveTenantByHostUseCase.
 export TENANT_SUBDOMINIO="localhost"
+export PLATFORM_ADMIN_EMAIL="${PLATFORM_ADMIN_EMAIL:-e2e-plataforma@vl6.test}"
+export PLATFORM_ADMIN_PASSWORD="${PLATFORM_ADMIN_PASSWORD:-SenhaForte123!}"
 
 echo "==> Seed do tenant/admin de E2E"
 pnpm --filter @vl6/scripts run seed-tenant
+
+echo "==> Seed do Administrador Geral de E2E"
+pnpm --filter @vl6/scripts run seed-platform-admin
 
 echo "==> Rodando Playwright"
 pnpm --filter @vl6/web exec playwright test

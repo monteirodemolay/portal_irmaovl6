@@ -2,6 +2,12 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { SESSION_COOKIE_NAME } from './lib/auth/session-constants';
 
 export const TENANT_HOST_HEADER = 'x-tenant-host';
+export const PATHNAME_HEADER = 'x-pathname';
+
+// Prefixo das rotas do Administrador Geral (cross-tenant, docs/architecture
+// /08 §8.3) — únicas que o layout raiz renderiza mesmo sem tenant resolvido
+// pelo host (ver PLATFORM_ROUTE_PREFIX em app/layout.tsx).
+export const PLATFORM_ROUTE_PREFIX = '/plataforma';
 
 // /noticias e /diretoria ficam de fora: são conteúdo institucional público
 // (site público), acessíveis sem login mesmo quando também linkados a
@@ -18,6 +24,7 @@ const PROTECTED_PREFIXES = [
   '/downloads',
   '/links-uteis',
   '/admin',
+  PLATFORM_ROUTE_PREFIX,
 ];
 
 /**
@@ -33,6 +40,7 @@ export function middleware(request: NextRequest) {
   const host = request.headers.get('host') ?? '';
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set(TENANT_HOST_HEADER, host);
+  requestHeaders.set(PATHNAME_HEADER, request.nextUrl.pathname);
 
   const isProtected = PROTECTED_PREFIXES.some((prefix) =>
     request.nextUrl.pathname.startsWith(prefix),

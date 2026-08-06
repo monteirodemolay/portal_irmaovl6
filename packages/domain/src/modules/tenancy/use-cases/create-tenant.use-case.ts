@@ -5,7 +5,7 @@ import {
   type CreateTenantInput,
 } from '@vl6/shared';
 import type { AuthContext } from '../../../shared/auth-context';
-import { requirePermission } from '../../../shared/auth-context';
+import { requirePlatformAdmin } from '../../../shared/auth-context';
 import type { IClock, IIdGenerator } from '../../../shared/ports';
 import { ConflictError, err, ok, type Result } from '../../../shared/result';
 import type { Role } from '../../identity-access/entities/role.entity';
@@ -33,13 +33,14 @@ export interface CreateTenantDeps {
  * docs/architecture/08-permissoes-rbac.md §8.2 (`super_admin` fica de fora —
  * é cross-tenant, provisionado uma única vez via `BootstrapPlatformAdminUseCase`,
  * nunca por Loja). Restrito a `tenant:create`, concedido apenas ao papel
- * `super_admin` (operação da plataforma).
+ * `super_admin` (operação da plataforma) — `tenant:manage`, que todo
+ * Administrador de Loja tem, NÃO basta (ver `requirePlatformAdmin`).
  */
 export class CreateTenantUseCase {
   constructor(private readonly deps: CreateTenantDeps) {}
 
   async execute(ctx: AuthContext, input: CreateTenantInput): Promise<Result<Tenant>> {
-    requirePermission(ctx, 'tenant:create');
+    requirePlatformAdmin(ctx);
 
     const subdomainTaken = await this.deps.tenantRepository.existsBySubdomain(input.subdominio);
     if (subdomainTaken) {

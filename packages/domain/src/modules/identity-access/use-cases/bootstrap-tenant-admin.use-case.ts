@@ -1,5 +1,5 @@
 import type { AuthContext } from '../../../shared/auth-context';
-import { requirePermission } from '../../../shared/auth-context';
+import { requirePlatformAdmin } from '../../../shared/auth-context';
 import type { IClock } from '../../../shared/ports';
 import { NotFoundError, err, ok, type Result } from '../../../shared/result';
 import type { User } from '../entities/user.entity';
@@ -21,15 +21,17 @@ export interface BootstrapTenantAdminDeps {
 /**
  * Cria a primeira conta `User` (papel `admin`) de um tenant recém-criado.
  * Existe para resolver o problema do "primeiro usuário": ninguém no tenant
- * novo tem `user:manage` ainda para convidar alguém. Por isso é restrito à
- * mesma permissão de `tenant:create` (só `super_admin`, no fluxo de
- * onboarding), nunca exposto como auto-cadastro público.
+ * novo tem `user:manage` ainda para convidar alguém. Só o Administrador
+ * Geral pode chamar (`requirePlatformAdmin` — `input.tenantId` é escolhido
+ * pelo chamador, então `tenant:manage` de um Administrador de Loja não
+ * poderia bastar aqui: deixaria qualquer Loja criar um admin em outra),
+ * nunca exposto como auto-cadastro público.
  */
 export class BootstrapTenantAdminUseCase {
   constructor(private readonly deps: BootstrapTenantAdminDeps) {}
 
   async execute(ctx: AuthContext, input: BootstrapTenantAdminInput): Promise<Result<User>> {
-    requirePermission(ctx, 'tenant:create');
+    requirePlatformAdmin(ctx);
 
     const adminRole = await this.deps.roleRepository.findByKey(input.tenantId, 'admin');
     if (!adminRole) {

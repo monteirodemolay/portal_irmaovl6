@@ -1,12 +1,22 @@
 import type { Metadata, Viewport } from 'next';
-import { cookies } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 import { notFound } from 'next/navigation';
 import { brandingToCssVariables, cssVariablesToStyleString } from '@vl6/ui';
 import { getCurrentTenant } from '@/lib/tenant/get-current-tenant';
 import { ServiceWorkerRegister } from '@/lib/pwa/service-worker-register';
 import { WebVitalsReporter } from '@/lib/observability/web-vitals-reporter';
+import { PATHNAME_HEADER, PLATFORM_ROUTE_PREFIX } from '@/middleware';
 import { Providers } from './providers';
 import './globals.css';
+
+// As rotas /plataforma (Administrador Geral, docs/architecture/08 §8.3) são
+// cross-tenant por definição — nunca dependem do tenant resolvido pelo host.
+// O layout raiz não pode 404 nelas nem vestir a marca de uma Loja qualquer
+// que porventura responda por esse domínio.
+async function isPlatformRoute(): Promise<boolean> {
+  const headerList = await headers();
+  return (headerList.get(PATHNAME_HEADER) ?? '').startsWith(PLATFORM_ROUTE_PREFIX);
+}
 
 export async function generateMetadata(): Promise<Metadata> {
   const current = await getCurrentTenant();
@@ -42,16 +52,20 @@ export async function generateViewport(): Promise<Viewport> {
 }
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const isPlatform = await isPlatformRoute();
   const current = await getCurrentTenant();
-  if (!current) {
+  if (!current && !isPlatform) {
     notFound();
   }
 
   const cookieStore = await cookies();
   const themePreference = cookieStore.get('theme')?.value;
 
-  const cssVars = brandingToCssVariables(current.branding);
-  const styleString = cssVariablesToStyleString(cssVars);
+  // Sem tenant (rota /plataforma), fica nos tokens padrão de globals.css —
+  // o Administrador Geral não veste a marca de nenhuma Loja específica.
+  const styleString = current
+    ? cssVariablesToStyleString(brandingToCssVariables(current.branding))
+    : '';
 
   return (
     <html

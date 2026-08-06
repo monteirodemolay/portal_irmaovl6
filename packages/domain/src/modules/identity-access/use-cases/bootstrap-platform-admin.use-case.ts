@@ -1,6 +1,6 @@
 import { DEFAULT_ROLE_PERMISSIONS, PLATFORM_TENANT_ID } from '@vl6/shared';
 import type { AuthContext } from '../../../shared/auth-context';
-import { requirePermission } from '../../../shared/auth-context';
+import { requirePlatformAdmin } from '../../../shared/auth-context';
 import type { IClock, IIdGenerator } from '../../../shared/ports';
 import { ok, type Result } from '../../../shared/result';
 import type { Role } from '../entities/role.entity';
@@ -32,7 +32,7 @@ export class BootstrapPlatformAdminUseCase {
   constructor(private readonly deps: BootstrapPlatformAdminDeps) {}
 
   async execute(ctx: AuthContext, input: BootstrapPlatformAdminInput): Promise<Result<User>> {
-    requirePermission(ctx, 'tenant:create');
+    requirePlatformAdmin(ctx);
 
     const now = this.deps.clock.now();
 
