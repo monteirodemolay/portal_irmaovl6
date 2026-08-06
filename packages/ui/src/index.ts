@@ -17,4 +17,24 @@ export * from './components/dialog';
 // Reexporte nomeado (não `export *`) — vários ícones do Lucide colidem com
 // nomes de componentes deste barrel (ex.: `Badge`). Adicione aqui só os
 // ícones realmente usados por algum consumidor.
-export { WifiOff, ICON_SIZE_DEFAULT, ICON_SIZE_LARGE, ICON_STROKE_WIDTH } from './icons';
+export {
+  WifiOff,
+  Megaphone,
+  CalendarDays,
+  BookOpen,
+  FileText,
+  Users,
+  Image,
+  Quote,
+  ShieldCheck,
+  Sparkles,
+  Handshake,
+  GraduationCap,
+  ChevronRight,
+  MapPin,
+  Clock,
+  Compass,
+  ICON_SIZE_DEFAULT,
+  ICON_SIZE_LARGE,
+  ICON_STROKE_WIDTH,
+} from './icons';

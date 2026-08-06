@@ -1,8 +1,9 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { createServerContainer } from '@vl6/infra';
-import { Avatar, AvatarFallback } from '@vl6/ui';
+import { Avatar, AvatarFallback, Compass } from '@vl6/ui';
 import { getCurrentSession } from '@/lib/auth/get-current-session';
+import { getCurrentTenant } from '@/lib/tenant/get-current-tenant';
 import { LogoutButton } from '@/modules/identity-access/components/logout-button';
 import { NotificationCenter } from '@/modules/notification/components/notification-center';
 
@@ -27,43 +28,61 @@ export default async function MemberLayout({ children }: { children: React.React
   }
 
   const container = createServerContainer();
-  const [notificationsPage, unreadCount] = await Promise.all([
+  const [notificationsPage, unreadCount, current] = await Promise.all([
     container.useCases.listMyNotifications.execute(session.authContext, { limit: 20 }),
     container.repositories.notification.countUnreadByRecipient(
       session.authContext.tenantId,
       session.authContext.uid,
     ),
+    getCurrentTenant(),
   ]);
 
   const initials = session.user.email.slice(0, 2).toUpperCase();
+  const crestUrl = current?.branding.brasaoUrl ?? current?.branding.logotipoUrl ?? null;
 
   return (
-    <div className="min-h-screen">
-      <header className="border-border flex items-center justify-between border-b px-6 py-3">
-        <div className="flex items-center gap-6">
-          <span className="font-display text-lg font-semibold">Portal do Irmão</span>
-          <nav className="flex flex-wrap gap-4">
+    <div className="bg-background min-h-screen">
+      <header className="bg-primary sticky top-0 z-10 shadow-md">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-6 py-3">
+          <div className="flex items-center gap-3">
+            {crestUrl ? (
+              <img src={crestUrl} alt="" className="h-10 w-10 rounded-full object-cover" />
+            ) : (
+              <span className="bg-accent/15 text-accent flex h-10 w-10 items-center justify-center rounded-full">
+                <Compass size={22} strokeWidth={1.75} />
+              </span>
+            )}
+            <div className="leading-tight">
+              <p className="font-display text-base font-semibold text-white">
+                {current?.tenant.nome ?? 'Portal do Irmão'}
+              </p>
+              <p className="text-xs text-white/60">Área do Irmão</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 text-white">
+            <NotificationCenter notifications={notificationsPage.items} unreadCount={unreadCount} />
+            <Avatar>
+              <AvatarFallback className="bg-accent text-primary-dark">{initials}</AvatarFallback>
+            </Avatar>
+            <span className="hidden text-sm text-white/70 sm:inline">{session.user.email}</span>
+            <LogoutButton className="border-white/30 text-white hover:bg-white/10" />
+          </div>
+        </div>
+        <nav className="border-t border-white/10 px-6 py-2">
+          <div className="mx-auto flex max-w-6xl flex-wrap gap-1">
             {NAV_ITEMS.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
-                className="text-muted hover:text-foreground text-sm"
+                className="hover:text-accent rounded px-3 py-1.5 text-sm text-white/75 transition-colors hover:bg-white/10"
               >
                 {item.label}
               </Link>
             ))}
-          </nav>
-        </div>
-        <div className="flex items-center gap-3">
-          <NotificationCenter notifications={notificationsPage.items} unreadCount={unreadCount} />
-          <Avatar>
-            <AvatarFallback>{initials}</AvatarFallback>
-          </Avatar>
-          <span className="text-muted text-sm">{session.user.email}</span>
-          <LogoutButton />
-        </div>
+          </div>
+        </nav>
       </header>
-      <main className="mx-auto max-w-4xl px-6 py-10">{children}</main>
+      <main className="mx-auto max-w-6xl px-6 py-10">{children}</main>
     </div>
   );
 }

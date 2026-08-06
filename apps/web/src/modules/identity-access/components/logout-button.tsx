@@ -6,7 +6,7 @@ import { Button } from '@vl6/ui';
 import { firebaseAuth } from '@/lib/firebase/client';
 import { useDictionary } from '@/lib/i18n/dictionary-context';
 
-export function LogoutButton() {
+export function LogoutButton({ className }: { className?: string }) {
   const router = useRouter();
   const dictionary = useDictionary();
 
@@ -18,7 +18,7 @@ export function LogoutButton() {
   }
 
   return (
-    <Button variant="outline" size="sm" onClick={handleLogout}>
+    <Button variant="outline" size="sm" onClick={handleLogout} className={className}>
       {dictionary.nav.logout}
     </Button>
   );
