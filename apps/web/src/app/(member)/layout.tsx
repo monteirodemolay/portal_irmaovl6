@@ -38,7 +38,8 @@ export default async function MemberLayout({ children }: { children: React.React
   ]);
 
   const initials = session.user.email.slice(0, 2).toUpperCase();
-  const crestUrl = current?.branding.brasaoUrl ?? current?.branding.logotipoUrl ?? null;
+  const crestUrl = current?.branding.brasaoUrl ?? null;
+  const wordmarkUrl = current?.branding.logotipoUrl ?? null;
 
   return (
     <div className="bg-background min-h-screen">
@@ -52,12 +53,24 @@ export default async function MemberLayout({ children }: { children: React.React
                 <Compass size={22} strokeWidth={1.75} />
               </span>
             )}
-            <div className="leading-tight">
-              <p className="font-display text-base font-semibold text-white">
-                {current?.tenant.nome ?? 'Portal do Irmão'}
-              </p>
-              <p className="text-xs text-white/60">Área do Irmão</p>
-            </div>
+            {wordmarkUrl ? (
+              <>
+                <span className="h-8 w-px bg-white/20" />
+                <img
+                  src={wordmarkUrl}
+                  alt={current?.tenant.nome ?? 'Portal do Irmão'}
+                  className="h-7"
+                />
+                <span className="sr-only">Área do Irmão</span>
+              </>
+            ) : (
+              <div className="leading-tight">
+                <p className="font-display text-base font-semibold text-white">
+                  {current?.tenant.nome ?? 'Portal do Irmão'}
+                </p>
+                <p className="text-xs text-white/60">Área do Irmão</p>
+              </div>
+            )}
           </div>
           <div className="flex items-center gap-3 text-white">
             <NotificationCenter notifications={notificationsPage.items} unreadCount={unreadCount} />
