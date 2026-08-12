@@ -17,45 +17,53 @@ Ações (`ActionKey`): `create`, `read`, `update`, `delete`, `publish`,
 
 ## 8.2 Matriz de papéis padrão × permissões
 
-`✔` = todas as ações (`manage`) · `R` = somente leitura · `RW` = ler/criar/editar
-(sem excluir/publicar) · `–` = sem acesso
+Só 3 níveis de fábrica — `admin`/`membro` são o seed de toda Loja nova,
+`super_admin` é cross-tenant e nunca pertence a uma Loja específica (§8.3).
+`✔` = todas as ações (`manage`) · `R` = somente leitura · `–` = sem acesso.
 
-| Recurso | Admin Geral | Administrador | Venerável Mestre | Secretário | Tesoureiro | Diretoria | Comissão | Irmão | Visitante |
-|---|---|---|---|---|---|---|---|---|---|
-| tenant (config da Loja) | ✔ (todas) | ✔ (própria) | R | R | R | R | – | – | – |
-| branding | ✔ | ✔ | R | – | – | – | – | – | – |
-| member | ✔ | ✔ | RW | RW | R | R | – | R (próprio: RW) | – |
-| boardTerm / committee | ✔ | ✔ | ✔ | RW | R | R | R (própria) | R | – |
-| file | ✔ | ✔ | RW | RW | R | RW | RW (própria) | R | – |
-| libraryItem | ✔ | ✔ | RW | RW | R | R | R | R | – |
-| event | ✔ | ✔ | RW | RW | R | RW | RW | R + confirmar presença | R (públicos) |
-| news | ✔ | ✔ | RW | RW | – | R | – | R | R (públicas) |
-| announcement | ✔ | ✔ | RW | RW | – | R | – | R | – |
-| gallery | ✔ | ✔ | RW | RW | – | RW | – | R | R (públicas) |
-| user | ✔ | ✔ (do tenant) | – | – | – | – | – | – | – |
-| role | ✔ | ✔ (do tenant) | – | – | – | – | – | – | – |
-| auditLog | ✔ | R (do tenant) | – | – | – | – | – | – | – |
+| Recurso                 | Admin Geral (`super_admin`) | Administrador da Loja (`admin`) | Membro (`membro`) |
+| ----------------------- | --------------------------- | ------------------------------- | ----------------- |
+| tenant (config da Loja) | ✔ (todas)                   | ✔ (própria)                     | R                 |
+| branding                | ✔                           | ✔                               | –                 |
+| member                  | ✔                           | ✔                               | R                 |
+| boardTerm / committee   | ✔                           | ✔                               | R                 |
+| file                    | ✔                           | ✔                               | R                 |
+| libraryItem             | ✔                           | ✔                               | R                 |
+| event                   | ✔                           | ✔                               | R                 |
+| news                    | ✔                           | ✔                               | R                 |
+| announcement            | ✔                           | ✔                               | R                 |
+| gallery                 | ✔                           | ✔                               | R                 |
+| link                    | ✔                           | ✔                               | R                 |
+| user                    | ✔                           | ✔ (do tenant)                   | –                 |
+| role                    | ✔                           | ✔ (do tenant)                   | –                 |
+| auditLog                | ✔                           | R (do tenant)                   | –                 |
 
 > A matriz acima é a configuração **padrão de fábrica** de cada novo tenant
 > (seed inicial). O Administrador do tenant pode, a partir do Painel de
 > Permissões, criar variações — a matriz não é hardcoded no código, é dado
-> em `roles.permissoes`.
+> em `roles.permissoes`. Uma Loja que precise de um nível intermediário
+> (ex.: alguém que só publica Notícias, sem gerenciar Usuários) cria um
+> papel customizado (`sistemico = false`) com o subconjunto de permissões
+> que fizer sentido — não é um papel de fábrica.
 
 ## 8.3 Regras específicas
 
 - **Administrador Geral** (`super_admin`) é papel de operação da plataforma
   (não pertence a um tenant específico) — usado para suporte/onboarding de
   novas Lojas, nunca atribuído a Irmãos comuns.
-- **Irmão** tem RW sobre seu **próprio** registro `member` (perfil), mas
-  apenas leitura sobre os demais — regra avaliada por caso de uso
-  (`isOwnRecord`), não apenas pela permissão genérica.
-- **Visitante** é o único papel com acesso ao **site público** sem sessão
-  autenticada — tecnicamente nem precisa de `User`; é o "papel" implícito de
-  quem não está logado, usado para decidir o que é servido nas rotas
-  `(public)`.
-- **Comissão** só enxerga/edita os recursos vinculados à(s) comissão(ões) às
-  quais o Irmão pertence (`committee.membrosIds` contém o `memberId` do
-  usuário) — permissão de escopo, não apenas de recurso.
+- **Cargo institucional ≠ papel de acesso.** Venerável Mestre, Secretário,
+  Tesoureiro etc. são `BoardPositionKey` (packages/shared/src/enums/
+  governance.ts) — atributo de uma gestão (`BoardTerm`/
+  `BoardPositionAssignment`), sem relação nenhuma com o `RoleKey` do login.
+  Um Secretário em exercício pode ser só `membro` no sistema, ou receber
+  `admin` se quem administra a Loja decidir dar acesso administrativo — a
+  ocupação do cargo não muda automaticamente o papel de acesso.
+- **Membro** tem só leitura em todo recurso; não há RW nem sobre o próprio
+  registro `member` nesta fase (perfil é editado por quem tem `admin`).
+- Não existe mais papel implícito para visitante anônimo: a plataforma
+  inteira exige sessão autenticada (docs/architecture/07 §7.1) — não há
+  rota funcional acessível sem login além de `/login` e a recuperação de
+  senha.
 
 ## 8.4 Onde a permissão é verificada (recap da doc 07 §7.4)
 

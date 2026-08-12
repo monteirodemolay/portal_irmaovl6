@@ -1,5 +1,6 @@
 import Link from 'next/link';
-import { hasPermission } from '@vl6/domain';
+import { notFound } from 'next/navigation';
+import { hasPermission, type Role } from '@vl6/domain';
 import { DEFAULT_LOCALE, type PermissionKey } from '@vl6/shared';
 import { Avatar, AvatarFallback } from '@vl6/ui';
 import { requireSession } from '@/lib/auth/require-session';
@@ -30,8 +31,27 @@ const NAV_ITEMS: AdminNavItem[] = [
   { href: '/admin/configuracoes', labelKey: 'settings', permission: 'tenant:read' },
 ];
 
+/**
+ * `/admin/*` é reservado a Administrador da Loja e Administrador Geral —
+ * um Membro nunca deveria enxergar nada aqui, mesmo digitando a URL
+ * direto. Checar só permissão por recurso não bastava: o papel `membro`
+ * tem várias permissões `:read` (as mesmas que sustentam a leitura na
+ * Área do Irmão), então sem este gate ele conseguiria ler boa parte do
+ * painel administrativo — só não conseguiria escrever. Mesmo critério de
+ * "papel de administração" usado em `resolvePostLoginDestination`.
+ */
+function isAdminTier(role: Role | null): boolean {
+  if (!role) return false;
+  if (role.sistemico) return role.chave === 'admin' || role.chave === 'super_admin';
+  return role.permissoes.some((permission) => !permission.endsWith(':read'));
+}
+
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const [session, current] = await Promise.all([requireSession(), getCurrentTenant()]);
+  if (!isAdminTier(session.role)) {
+    notFound();
+  }
+
   const visibleItems = NAV_ITEMS.filter((item) =>
     hasPermission(session.authContext, item.permission),
   );

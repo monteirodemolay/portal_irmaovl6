@@ -7,7 +7,7 @@ function buildRole(overrides: Partial<Role> = {}): Role {
     id: 'role-1',
     tenantId: 't1',
     nome: 'Irmão',
-    chave: 'irmao',
+    chave: 'membro',
     permissoes: ['news:read'],
     sistemico: true,
     createdAt: new Date('2025-01-01'),
@@ -24,7 +24,7 @@ function buildRole(overrides: Partial<Role> = {}): Role {
 describe('resolvePostLoginDestination', () => {
   it('manda o Administrador Geral pra /plataforma, sem olhar o papel', () => {
     expect(resolvePostLoginDestination('platform', null)).toBe('/plataforma');
-    expect(resolvePostLoginDestination('platform', buildRole({ chave: 'irmao' }))).toBe(
+    expect(resolvePostLoginDestination('platform', buildRole({ chave: 'membro' }))).toBe(
       '/plataforma',
     );
   });
@@ -33,23 +33,17 @@ describe('resolvePostLoginDestination', () => {
     expect(resolvePostLoginDestination('t1', null)).toBe('/dashboard');
   });
 
-  it.each(['admin', 'veneravel_mestre', 'secretario', 'tesoureiro', 'diretoria'])(
-    'papel de fábrica "%s" vai pro /admin',
-    (chave) => {
-      expect(resolvePostLoginDestination('t1', buildRole({ chave, sistemico: true }))).toBe(
-        '/admin',
-      );
-    },
-  );
+  it('papel de fábrica "admin" vai pro /admin', () => {
+    expect(resolvePostLoginDestination('t1', buildRole({ chave: 'admin', sistemico: true }))).toBe(
+      '/admin',
+    );
+  });
 
-  it.each(['irmao', 'visitante', 'comissao'])(
-    'papel de fábrica "%s" vai pra Área do Irmão',
-    (chave) => {
-      expect(resolvePostLoginDestination('t1', buildRole({ chave, sistemico: true }))).toBe(
-        '/dashboard',
-      );
-    },
-  );
+  it('papel de fábrica "membro" vai pra Área do Irmão', () => {
+    expect(
+      resolvePostLoginDestination('t1', buildRole({ chave: 'membro', sistemico: true })),
+    ).toBe('/dashboard');
+  });
 
   it('papel customizado só de leitura vai pra Área do Irmão', () => {
     const role = buildRole({

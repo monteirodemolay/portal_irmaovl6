@@ -1,5 +1,19 @@
 # 7. Fluxo de Autenticação e API
 
+## 7.0 Plataforma privada
+
+Não existe visitante anônimo nem conteúdo público nesta fase — toda a
+plataforma exige sessão autenticada. As únicas exceções são `/login`, a
+recuperação de senha do Firebase Auth e `/offline` (fallback do Service
+Worker, precisa funcionar sem rede nem sessão — vive fora do grupo de
+rotas `(public)`, em `app/offline/`). Qualquer outra rota, inclusive as do
+grupo `(public)` (`/`, `/nossa-loja`, `/contato`, `/diretoria`, `/noticias`),
+redireciona pra `/login` sem sessão válida — guard duplo, no middleware
+(`PROTECTED_PREFIXES`, Edge, checa só presença do cookie) e no layout de
+cada grupo (`requireSession()`/`requirePagePermission()`, Node.js runtime,
+valida o cookie de verdade). O nome do grupo `(public)` ficou como está por
+não ser refatoração cosmética trocar — nada lá é público hoje.
+
 ## 7.1 Resolução de Tenant (antes até de autenticar)
 
 ```
@@ -9,8 +23,9 @@ Requisição → Next.js Middleware
    3. Injeta tenantId resolvido em headers internos (x-tenant-id) para toda a árvore de rota
    4. Se domínio não corresponder a nenhum tenant ativo:
       - Com sessão autenticada válida → resolve pelo tenantId da própria sessão (login unificado, §7.2)
-      - Sem sessão → 404 institucional nas páginas que exigem tenant (site público);
-        /login segue funcionando sem marca de nenhuma Loja específica
+      - Sem sessão → redireciona pra /login (§7.0) nas páginas que exigem
+        tenant; /login em si segue funcionando sem marca de nenhuma Loja
+        específica
 ```
 
 ## 7.2 Login (Web)

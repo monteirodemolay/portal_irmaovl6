@@ -3,22 +3,17 @@
 // constantes descrevem apenas o *seed* de papéis padrão (`sistemico = true`)
 // e o vocabulário fechado de recursos/ações que compõe uma PermissionKey.
 
-export const SYSTEM_ROLE_KEYS = [
-  'super_admin',
-  'admin',
-  'veneravel_mestre',
-  'secretario',
-  'tesoureiro',
-  'diretoria',
-  'comissao',
-  'irmao',
-  'visitante',
-] as const;
+export const SYSTEM_ROLE_KEYS = ['super_admin', 'admin', 'membro'] as const;
 export type RoleKey = (typeof SYSTEM_ROLE_KEYS)[number];
 
 // `super_admin` não pertence a nenhum tenant (docs/architecture/08 §8.3) —
 // vive sozinho sob `PLATFORM_TENANT_ID`, nunca no seed de fábrica de uma
-// Loja. Os outros 8 são os papéis de fábrica criados por `CreateTenantUseCase`.
+// Loja. Os outros 2 (`admin`, `membro`) são os papéis de fábrica criados
+// por `CreateTenantUseCase`. Cargo institucional (Venerável Mestre,
+// Secretário, Tesoureiro etc. — `BoardPositionKey`, packages/shared/src/
+// enums/governance.ts) é um conceito à parte, sem relação com o papel de
+// acesso do usuário: um Secretário pode ser `membro` ou receber `admin`,
+// conforme decisão de quem administra a Loja.
 export const TENANT_SYSTEM_ROLE_KEYS = SYSTEM_ROLE_KEYS.filter((key) => key !== 'super_admin');
 
 // tenantId sentinela do Administrador Geral (cross-tenant, uso interno da
@@ -68,6 +63,12 @@ export function isPermissionKey(value: string): value is PermissionKey {
  * Seed de fábrica aplicado a todo novo tenant — ver matriz completa em
  * docs/architecture/08-permissoes-rbac.md §8.2. `manage` implica todas as
  * ações sobre o recurso; papéis sem entrada para um recurso não têm acesso.
+ * Só 3 níveis: `super_admin` (Administrador Geral, cross-tenant — todas as
+ * ações sobre tudo), `admin` (Administrador da Loja — todas as ações
+ * dentro do próprio tenant) e `membro` (Irmão — só leitura). Quem precisa
+ * de mais que leitura sem ser Administrador da Loja recebe `admin` mesmo;
+ * não há nível intermediário de fábrica (tenants podem criar papéis
+ * customizados com `sistemico = false` se precisarem de um).
  */
 export const DEFAULT_ROLE_PERMISSIONS: Record<RoleKey, PermissionKey[]> = {
   super_admin: [...RESOURCE_KEYS.map((resource) => `${resource}:manage` as PermissionKey)],
@@ -88,112 +89,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<RoleKey, PermissionKey[]> = {
     'role:manage',
     'auditLog:read',
   ],
-  veneravel_mestre: [
-    'tenant:read',
-    'branding:read',
-    'member:read',
-    'member:update',
-    'boardTerm:manage',
-    'committee:manage',
-    'file:read',
-    'file:create',
-    'file:update',
-    'libraryItem:read',
-    'libraryItem:create',
-    'libraryItem:update',
-    'event:read',
-    'event:create',
-    'event:update',
-    'news:read',
-    'news:create',
-    'news:update',
-    'announcement:read',
-    'announcement:create',
-    'announcement:update',
-    'gallery:read',
-    'gallery:create',
-    'gallery:update',
-    'link:read',
-    'link:create',
-    'link:update',
-  ],
-  secretario: [
-    'tenant:read',
-    'member:read',
-    'member:create',
-    'member:update',
-    'boardTerm:read',
-    'boardTerm:create',
-    'boardTerm:update',
-    'committee:read',
-    'committee:create',
-    'committee:update',
-    'file:read',
-    'file:create',
-    'file:update',
-    'libraryItem:read',
-    'libraryItem:create',
-    'libraryItem:update',
-    'event:read',
-    'event:create',
-    'event:update',
-    'news:read',
-    'news:create',
-    'news:update',
-    'announcement:read',
-    'announcement:create',
-    'announcement:update',
-    'gallery:read',
-    'gallery:create',
-    'gallery:update',
-    'link:read',
-    'link:create',
-    'link:update',
-  ],
-  tesoureiro: [
-    'tenant:read',
-    'member:read',
-    'boardTerm:read',
-    'committee:read',
-    'file:read',
-    'libraryItem:read',
-    'event:read',
-    'link:read',
-  ],
-  diretoria: [
-    'tenant:read',
-    'member:read',
-    'boardTerm:read',
-    'committee:read',
-    'file:read',
-    'file:create',
-    'file:update',
-    'libraryItem:read',
-    'event:read',
-    'event:create',
-    'event:update',
-    'news:read',
-    'announcement:read',
-    'gallery:read',
-    'gallery:create',
-    'gallery:update',
-    'link:read',
-    'link:create',
-    'link:update',
-  ],
-  comissao: [
-    'member:read',
-    'committee:read',
-    'file:read',
-    'file:create',
-    'file:update',
-    'libraryItem:read',
-    'event:read',
-    'event:create',
-    'event:update',
-    'link:read',
-  ],
-  irmao: [
+  membro: [
     'tenant:read',
     'member:read',
     'boardTerm:read',
@@ -206,5 +102,4 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<RoleKey, PermissionKey[]> = {
     'gallery:read',
     'link:read',
   ],
-  visitante: ['news:read', 'event:read', 'gallery:read'],
 };

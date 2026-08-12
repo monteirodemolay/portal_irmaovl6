@@ -24,18 +24,21 @@ export interface BaseEntity {
 }
 
 // packages/domain/src/shared/result.ts
-export type Result<T, E = DomainError> =
-  | { ok: true; value: T }
-  | { ok: false; error: E };
+export type Result<T, E = DomainError> = { ok: true; value: T } | { ok: false; error: E };
 
 export class DomainError extends Error {
-  constructor(public code: string, message: string) { super(message); }
+  constructor(
+    public code: string,
+    message: string,
+  ) {
+    super(message);
+  }
 }
 
 // packages/domain/src/shared/pagination.ts
 export interface PageRequest {
   cursor?: string;
-  limit: number;               // obrigatório, máx. definido por módulo (padrão 20)
+  limit: number; // obrigatório, máx. definido por módulo (padrão 20)
 }
 export interface PageResult<T> {
   items: T[];
@@ -48,22 +51,27 @@ export interface PageResult<T> {
 
 ```ts
 export type RoleKey =
-  | 'super_admin'      // Administrador Geral (cross-tenant, uso interno da plataforma)
-  | 'admin'            // Administrador (da Loja)
-  | 'veneravel_mestre'
-  | 'secretario'
-  | 'tesoureiro'
-  | 'diretoria'
-  | 'comissao'
-  | 'irmao'
-  | 'visitante';
+  | 'super_admin' // Administrador Geral (cross-tenant, uso interno da plataforma)
+  | 'admin' // Administrador da Loja
+  | 'membro'; // Irmão — só leitura
 
 export type PermissionKey = `${ResourceKey}:${ActionKey}`;
 export type ActionKey = 'create' | 'read' | 'update' | 'delete' | 'publish' | 'export' | 'manage';
 export type ResourceKey =
-  | 'tenant' | 'branding' | 'member' | 'boardTerm' | 'committee' | 'file'
-  | 'libraryItem' | 'event' | 'news' | 'announcement' | 'gallery'
-  | 'user' | 'role' | 'auditLog';
+  | 'tenant'
+  | 'branding'
+  | 'member'
+  | 'boardTerm'
+  | 'committee'
+  | 'file'
+  | 'libraryItem'
+  | 'event'
+  | 'news'
+  | 'announcement'
+  | 'gallery'
+  | 'user'
+  | 'role'
+  | 'auditLog';
 
 export interface Role extends BaseEntity {
   nome: string;
@@ -87,7 +95,7 @@ export interface User extends BaseEntity {
 ```ts
 export type MemberDegree = 'aprendiz' | 'companheiro' | 'mestre';
 export type MemberSituation =
-  | 'regular' | 'irregular' | 'remido' | 'inativo' | 'falecido' | 'transferido';
+  'regular' | 'irregular' | 'remido' | 'inativo' | 'falecido' | 'transferido';
 
 export interface Address {
   logradouro: string;
@@ -147,9 +155,19 @@ export interface MemberPositionHistory extends BaseEntity {
 
 ```ts
 export type BoardPositionKey =
-  | 'veneravel_mestre' | 'primeiro_vigilante' | 'segundo_vigilante' | 'orador'
-  | 'secretario' | 'tesoureiro' | 'chanceler' | 'hospitaleiro'
-  | 'mestre_harmonia' | 'mestre_cerimonias' | 'diacono' | 'experto' | 'cobridor';
+  | 'veneravel_mestre'
+  | 'primeiro_vigilante'
+  | 'segundo_vigilante'
+  | 'orador'
+  | 'secretario'
+  | 'tesoureiro'
+  | 'chanceler'
+  | 'hospitaleiro'
+  | 'mestre_harmonia'
+  | 'mestre_cerimonias'
+  | 'diacono'
+  | 'experto'
+  | 'cobridor';
 
 export interface BoardTerm extends BaseEntity {
   nome: string;
@@ -209,7 +227,8 @@ export interface LibraryItem extends BaseEntity {
 ## 4.6 Agenda
 
 ```ts
-export type EventKind = 'sessao' | 'evento' | 'curso' | 'palestra' | 'confraternizacao' | 'aniversario';
+export type EventKind =
+  'sessao' | 'evento' | 'curso' | 'palestra' | 'confraternizacao' | 'aniversario';
 
 export interface Event extends BaseEntity {
   tipo: EventKind;

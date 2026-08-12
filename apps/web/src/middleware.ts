@@ -9,9 +9,10 @@ export const PATHNAME_HEADER = 'x-pathname';
 // pelo host (ver PLATFORM_ROUTE_PREFIX em app/layout.tsx).
 export const PLATFORM_ROUTE_PREFIX = '/plataforma';
 
-// /noticias e /diretoria ficam de fora: são conteúdo institucional público
-// (site público), acessíveis sem login mesmo quando também linkados a
-// partir da Área do Irmão.
+// Toda a plataforma exige login — só /login, a recuperação de senha e
+// /offline (fallback do Service Worker, precisa funcionar sem sessão)
+// ficam de fora. `/` sozinho não entra num prefixo de string (bateria com
+// tudo), por isso é comparado à parte logo abaixo.
 const PROTECTED_PREFIXES = [
   '/dashboard',
   '/perfil',
@@ -23,6 +24,10 @@ const PROTECTED_PREFIXES = [
   '/galeria',
   '/downloads',
   '/links-uteis',
+  '/nossa-loja',
+  '/contato',
+  '/diretoria',
+  '/noticias',
   '/admin',
   PLATFORM_ROUTE_PREFIX,
 ];
@@ -42,9 +47,9 @@ export function middleware(request: NextRequest) {
   requestHeaders.set(TENANT_HOST_HEADER, host);
   requestHeaders.set(PATHNAME_HEADER, request.nextUrl.pathname);
 
-  const isProtected = PROTECTED_PREFIXES.some((prefix) =>
-    request.nextUrl.pathname.startsWith(prefix),
-  );
+  const isProtected =
+    request.nextUrl.pathname === '/' ||
+    PROTECTED_PREFIXES.some((prefix) => request.nextUrl.pathname.startsWith(prefix));
   const hasSessionCookie = request.cookies.has(SESSION_COOKIE_NAME);
 
   if (isProtected && !hasSessionCookie) {
