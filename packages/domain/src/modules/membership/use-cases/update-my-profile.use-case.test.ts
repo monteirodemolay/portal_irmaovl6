@@ -37,6 +37,8 @@ const baseMember: Member = {
   profissao: null,
   empresa: null,
   estadoCivil: null,
+  conjugeNome: null,
+  conjugeDataNascimento: null,
   biografia: null,
   redesSociais: { instagram: null, facebook: null, linkedin: null },
   observacoes: null,
@@ -57,6 +59,8 @@ const input: MemberSelfEditValues = {
   profissao: 'Engenheiro',
   empresa: null,
   estadoCivil: null,
+  conjugeNome: null,
+  conjugeDataNascimento: null,
   biografia: 'Biografia atualizada.',
   redesSociais: { instagram: null, facebook: null, linkedin: null },
 };

@@ -3,6 +3,7 @@ import { Badge, Card, CardContent, CardHeader, CardTitle } from '@vl6/ui';
 import { requireSession } from '@/lib/auth/require-session';
 import { getCurrentTenant } from '@/lib/tenant/get-current-tenant';
 import { SelfProfileForm } from '@/modules/membership/components/self-profile-form';
+import { listUsedProfessions } from '@/modules/membership/lib/list-used-professions';
 import { MemberAvatar } from '@/components/membership/member-avatar';
 import { MemberDegreeBadge } from '@/components/membership/member-degree-badge';
 
@@ -15,9 +16,10 @@ export default async function ProfilePage() {
   const [session, current] = await Promise.all([requireSession(), getCurrentTenant()]);
 
   const container = createServerContainer();
-  const [member, myCommittees] = await Promise.all([
+  const [member, myCommittees, customProfessions] = await Promise.all([
     container.repositories.member.findByUserId(session.authContext.tenantId, session.user.id),
     container.useCases.listMyCommittees.execute(session.authContext),
+    listUsedProfessions(container, session.authContext),
   ]);
 
   return (
@@ -76,7 +78,7 @@ export default async function ProfilePage() {
             </CardContent>
           </Card>
 
-          <SelfProfileForm member={member} />
+          <SelfProfileForm member={member} customProfessions={customProfessions} />
         </>
       ) : (
         <Card className="max-w-md">

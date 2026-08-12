@@ -3,7 +3,12 @@
 import { randomUUID } from 'node:crypto';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
-import { memberSchema, type MemberFormValues, type MemberSituation } from '@vl6/shared';
+import {
+  memberSchema,
+  normalizeConjugeFields,
+  type MemberFormValues,
+  type MemberSituation,
+} from '@vl6/shared';
 import {
   createServerContainer,
   getAdminAuth,
@@ -16,6 +21,7 @@ import { generateTemporaryPassword } from '@/lib/auth/generate-temporary-passwor
 import { requireSession } from '@/lib/auth/require-session';
 import type { CurrentSession } from '@/lib/auth/get-current-session';
 import { getCurrentTenant } from '@/lib/tenant/get-current-tenant';
+import { resolveProfissaoFromFormData } from '@/lib/membership/professions';
 
 export interface MemberActionState {
   error: string | null;
@@ -86,9 +92,11 @@ async function parseMemberForm(
     situacao: formData.get('situacao'),
     lojaId: formData.get('lojaId'),
     potencia: formData.get('potencia'),
-    profissao: formData.get('profissao') || null,
+    profissao: resolveProfissaoFromFormData(formData),
     empresa: formData.get('empresa') || null,
     estadoCivil: formData.get('estadoCivil') || null,
+    conjugeNome: formData.get('conjugeNome') || null,
+    conjugeDataNascimento: formData.get('conjugeDataNascimento') || null,
     biografia: formData.get('biografia') || null,
     redesSociais: {
       instagram: formData.get('instagram') || null,
@@ -98,7 +106,7 @@ async function parseMemberForm(
     observacoes: formData.get('observacoes') || null,
   };
 
-  return memberSchema.parse(raw);
+  return normalizeConjugeFields(memberSchema.parse(raw));
 }
 
 type PortalAccessResult =

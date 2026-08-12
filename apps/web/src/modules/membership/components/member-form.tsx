@@ -3,12 +3,17 @@
 import Link from 'next/link';
 import { useActionState, useState } from 'react';
 import { useFormStatus } from 'react-dom';
-import { MEMBER_DEGREES } from '@vl6/shared';
+import { MARITAL_STATUSES, MEMBER_DEGREES, type MaritalStatus } from '@vl6/shared';
 import type { Member, Role } from '@vl6/domain';
 import { Button, Input, Select, Textarea } from '@vl6/ui';
 import { FormField } from '@/components/forms/form-field';
 import { MemberAvatar } from '@/components/membership/member-avatar';
 import { MEMBER_DEGREE_LABELS } from '@/lib/membership/member-degree-label';
+import {
+  MARITAL_STATUS_LABELS,
+  maritalStatusHasSpouse,
+} from '@/lib/membership/marital-status-label';
+import { COMMON_PROFESSIONS, OTHER_PROFESSION_VALUE } from '@/lib/membership/professions';
 import type { MemberActionState } from '../actions/member-actions';
 
 export interface MemberFormProps {
@@ -16,6 +21,8 @@ export interface MemberFormProps {
   member?: Member;
   /** Só usada no cadastro (member === undefined) — seção "Acesso ao Portal". */
   roles?: Role[];
+  /** Profissões já usadas no tenant que não estão na lista pré-definida. */
+  customProfessions?: string[];
 }
 
 function toDateInputValue(date: Date | null | undefined): string {
@@ -52,7 +59,7 @@ function PhotoField({ nome, fotoUrl }: { nome: string; fotoUrl: string | null })
   );
 }
 
-export function MemberForm({ action, member, roles }: MemberFormProps) {
+export function MemberForm({ action, member, roles, customProfessions = [] }: MemberFormProps) {
   const [state, formAction] = useActionState<MemberActionState, FormData>(action, {
     error: null,
     memberId: null,
@@ -60,6 +67,15 @@ export function MemberForm({ action, member, roles }: MemberFormProps) {
   });
   const defaultRoleId = roles?.find((r) => r.chave === 'membro')?.id ?? roles?.[0]?.id;
   const [grau, setGrau] = useState(member?.grau ?? 'aprendiz');
+  const [estadoCivil, setEstadoCivil] = useState<MaritalStatus | ''>(member?.estadoCivil ?? '');
+
+  const professionOptions = [...COMMON_PROFESSIONS, ...customProfessions];
+  const initialProfissaoSelect = member?.profissao
+    ? professionOptions.includes(member.profissao)
+      ? member.profissao
+      : OTHER_PROFESSION_VALUE
+    : '';
+  const [profissaoSelect, setProfissaoSelect] = useState(initialProfissaoSelect);
 
   return (
     <form action={formAction} className="flex max-w-3xl flex-col gap-8">
@@ -234,14 +250,72 @@ export function MemberForm({ action, member, roles }: MemberFormProps) {
         <h2 className="font-display text-lg font-semibold">Perfil</h2>
         <div className="grid grid-cols-2 gap-4">
           <FormField label="Profissão" htmlFor="profissao">
-            <Input id="profissao" name="profissao" defaultValue={member?.profissao ?? ''} />
+            <Select
+              id="profissao"
+              name="profissao"
+              value={profissaoSelect}
+              onChange={(event) => setProfissaoSelect(event.target.value)}
+            >
+              <option value="">Selecione</option>
+              {professionOptions.map((profissao) => (
+                <option key={profissao} value={profissao}>
+                  {profissao}
+                </option>
+              ))}
+              <option value={OTHER_PROFESSION_VALUE}>Outra</option>
+            </Select>
           </FormField>
+          {profissaoSelect === OTHER_PROFESSION_VALUE && (
+            <FormField label="Qual profissão?" htmlFor="profissaoOutra">
+              <Input
+                id="profissaoOutra"
+                name="profissaoOutra"
+                required
+                defaultValue={
+                  member?.profissao && !professionOptions.includes(member.profissao)
+                    ? member.profissao
+                    : ''
+                }
+              />
+            </FormField>
+          )}
           <FormField label="Empresa" htmlFor="empresa">
             <Input id="empresa" name="empresa" defaultValue={member?.empresa ?? ''} />
           </FormField>
           <FormField label="Estado civil" htmlFor="estadoCivil">
-            <Input id="estadoCivil" name="estadoCivil" defaultValue={member?.estadoCivil ?? ''} />
+            <Select
+              id="estadoCivil"
+              name="estadoCivil"
+              value={estadoCivil}
+              onChange={(event) => setEstadoCivil(event.target.value as MaritalStatus)}
+            >
+              <option value="">Selecione</option>
+              {MARITAL_STATUSES.map((status) => (
+                <option key={status} value={status}>
+                  {MARITAL_STATUS_LABELS[status]}
+                </option>
+              ))}
+            </Select>
           </FormField>
+          {maritalStatusHasSpouse(estadoCivil || null) && (
+            <>
+              <FormField label="Nome da cônjuge" htmlFor="conjugeNome">
+                <Input
+                  id="conjugeNome"
+                  name="conjugeNome"
+                  defaultValue={member?.conjugeNome ?? ''}
+                />
+              </FormField>
+              <FormField label="Data de nascimento da cônjuge" htmlFor="conjugeDataNascimento">
+                <Input
+                  id="conjugeDataNascimento"
+                  name="conjugeDataNascimento"
+                  type="date"
+                  defaultValue={toDateInputValue(member?.conjugeDataNascimento)}
+                />
+              </FormField>
+            </>
+          )}
           <FormField label="Instagram" htmlFor="instagram">
             <Input
               id="instagram"

@@ -10,6 +10,7 @@ import {
 import { MemberForm } from '@/modules/membership/components/member-form';
 import { DeleteMemberButton } from '@/modules/membership/components/delete-member-button';
 import { AccessCard } from '@/modules/membership/components/access-card';
+import { listUsedProfessions } from '@/modules/membership/lib/list-used-professions';
 import { MemberAvatar } from '@/components/membership/member-avatar';
 import { MemberDegreeBadge } from '@/components/membership/member-degree-badge';
 
@@ -34,9 +35,10 @@ export default async function EditMemberPage({
   const member = await container.repositories.member.findById(memberId);
   if (!member || member.deletedAt) notFound();
 
-  const [roles, accessUser] = await Promise.all([
+  const [roles, accessUser, customProfessions] = await Promise.all([
     container.useCases.listRoles.execute(session.authContext),
     member.userId ? container.repositories.user.findById(member.userId) : Promise.resolve(null),
+    listUsedProfessions(container, session.authContext),
   ]);
   const isSelf = accessUser?.id === session.authContext.uid;
 
@@ -92,7 +94,7 @@ export default async function EditMemberPage({
         </Card>
       </div>
 
-      <MemberForm action={boundUpdate} member={member} />
+      <MemberForm action={boundUpdate} member={member} customProfessions={customProfessions} />
     </div>
   );
 }

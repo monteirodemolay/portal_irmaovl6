@@ -1,4 +1,4 @@
-import type { MemberDegree, MemberSituation } from '@vl6/shared';
+import type { MaritalStatus, MemberDegree, MemberSituation } from '@vl6/shared';
 import type { BaseEntity } from '../../../shared/base-entity';
 import type { Address } from '../../../shared/address';
 
@@ -31,7 +31,10 @@ export interface Member extends BaseEntity {
   potencia: string;
   profissao: string | null;
   empresa: string | null;
-  estadoCivil: string | null;
+  estadoCivil: MaritalStatus | null;
+  /** Só faz sentido quando `estadoCivil` implica cônjuge — ver `MARITAL_STATUSES_WITH_SPOUSE`. */
+  conjugeNome: string | null;
+  conjugeDataNascimento: Date | null;
   biografia: string | null;
   redesSociais: SocialLinks;
   observacoes: string | null;

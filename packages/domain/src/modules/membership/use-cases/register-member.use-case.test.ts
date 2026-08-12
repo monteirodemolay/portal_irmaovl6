@@ -40,6 +40,8 @@ const input: MemberFormValues = {
   profissao: null,
   empresa: null,
   estadoCivil: null,
+  conjugeNome: null,
+  conjugeDataNascimento: null,
   biografia: null,
   redesSociais: { instagram: null, facebook: null, linkedin: null },
   observacoes: null,

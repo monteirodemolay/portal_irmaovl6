@@ -9,7 +9,13 @@ import type {
 import { createEntityConverter } from '../converters/entity.converter';
 
 const COLLECTION = 'members';
-const DATE_FIELDS = ['dataNascimento', 'dataIniciacao', 'dataElevacao', 'dataExaltacao'] as const;
+const DATE_FIELDS = [
+  'dataNascimento',
+  'dataIniciacao',
+  'dataElevacao',
+  'dataExaltacao',
+  'conjugeDataNascimento',
+] as const;
 
 export class FirestoreMemberRepository implements IMemberRepository {
   private readonly collection;
