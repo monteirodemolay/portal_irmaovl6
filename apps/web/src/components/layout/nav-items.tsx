@@ -28,7 +28,13 @@ const ICON_STROKE = 1.75;
 // é conteúdo autoral do Portal (não espelha o site), mas a Loja sinalizou
 // que as publicações vão continuar saindo pelo site institucional — o
 // admin de Notícias (`/admin/noticias`) segue existindo, só não fica
-// linkado aqui; revisitar se um dia isso mudar.
+// linkado aqui; revisitar se um dia isso mudar. `/admin/usuarios` segue o
+// mesmo padrão: cadastro de Irmão e acesso ao Portal foram unificados em
+// `/admin/irmaos` (foto, grau, datas e "Acesso ao Portal" no mesmo
+// formulário — docs/architecture/06), então o fluxo normal nunca mais
+// passa por Usuários. A rota continua existindo só para o caso excepcional
+// de uma conta de acesso sem Member (ex.: convite avulso técnico), por
+// isso some da navegação em vez de ser removida.
 const PORTAL_ITEMS = [
   { href: '/dashboard', label: 'Início', icon: LayoutDashboard },
   { href: '/perfil', label: 'Meu Perfil', icon: UserCircle },
@@ -57,7 +63,6 @@ const ADMIN_ITEMS: AdminNavItemDef[] = [
   },
   { href: '/admin/irmaos', labelKey: 'memberRegistry', icon: Users, permission: 'member:read' },
   { href: '/admin/gestoes', labelKey: 'boards', icon: ShieldCheck, permission: 'boardTerm:read' },
-  { href: '/admin/usuarios', labelKey: 'users', icon: UserCircle, permission: 'user:read' },
   { href: '/admin/permissoes', labelKey: 'permissions', icon: Settings, permission: 'role:read' },
   {
     href: '/admin/avisos',

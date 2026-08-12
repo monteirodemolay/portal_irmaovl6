@@ -7,9 +7,16 @@ import {
   MEMBER_SITUATIONS,
 } from '@vl6/shared';
 import { createServerContainer } from '@vl6/infra';
+import { hasPermission } from '@vl6/domain';
 import type { Member } from '@vl6/domain';
 import { Badge, Button, DataTable, EmptyState, Input, Select, type DataTableColumn } from '@vl6/ui';
 import { requirePagePermission } from '@/lib/auth/require-permission';
+import { MemberAvatar } from '@/components/membership/member-avatar';
+import { MEMBER_DEGREE_LABELS } from '@/lib/membership/member-degree-label';
+import {
+  USER_STATUS_LABEL,
+  USER_STATUS_VARIANT,
+} from '@/modules/identity-access/user-status-labels';
 
 const SITUATION_VARIANT: Record<
   (typeof MEMBER_SITUATIONS)[number],
@@ -43,38 +50,72 @@ export default async function MembersPage({
   ).toString();
 
   const container = createServerContainer();
-  const page = await container.useCases.searchMembers.execute(
-    session.authContext,
-    {
-      nome: filters.nome || undefined,
-      grau: filters.grau || undefined,
-      situacao: filters.situacao || undefined,
-      cidade: filters.cidade || undefined,
-      cim: filters.cim || undefined,
-      cargo: (filters.cargo || undefined) as BoardPositionKey | undefined,
-    },
-    { limit: 50 },
-  );
+  const [page, users, roles] = await Promise.all([
+    container.useCases.searchMembers.execute(
+      session.authContext,
+      {
+        nome: filters.nome || undefined,
+        grau: filters.grau || undefined,
+        situacao: filters.situacao || undefined,
+        cidade: filters.cidade || undefined,
+        cim: filters.cim || undefined,
+        cargo: (filters.cargo || undefined) as BoardPositionKey | undefined,
+      },
+      { limit: 50 },
+    ),
+    hasPermission(session.authContext, 'user:read')
+      ? container.useCases.listUsers.execute(session.authContext)
+      : Promise.resolve([]),
+    hasPermission(session.authContext, 'role:read')
+      ? container.useCases.listRoles.execute(session.authContext)
+      : Promise.resolve([]),
+  ]);
+  const usersByMemberId = new Map(users.filter((u) => u.memberId).map((u) => [u.memberId, u]));
+  const rolesById = new Map(roles.map((r) => [r.id, r]));
 
   const columns: DataTableColumn<Member>[] = [
     {
       key: 'nome',
       header: 'Nome',
       cell: (m) => (
-        <Link href={`/admin/irmaos/${m.id}`} className="block hover:underline">
-          <p className="font-medium">{m.nomeCompleto}</p>
-          {m.nomeMaconico && <p className="text-muted text-xs">{m.nomeMaconico}</p>}
+        <Link href={`/admin/irmaos/${m.id}`} className="flex items-center gap-2 hover:underline">
+          <MemberAvatar fotoUrl={m.fotoUrl} nome={m.nomeCompleto} className="h-8 w-8" />
+          <div>
+            <p className="font-medium">{m.nomeCompleto}</p>
+            {m.nomeMaconico && <p className="text-muted text-xs">{m.nomeMaconico}</p>}
+          </div>
         </Link>
       ),
     },
     { key: 'matricula', header: 'Matrícula', cell: (m) => m.matricula },
-    { key: 'grau', header: 'Grau', cell: (m) => m.grau },
+    { key: 'grau', header: 'Grau', cell: (m) => MEMBER_DEGREE_LABELS[m.grau] },
     {
       key: 'situacao',
       header: 'Situação',
       cell: (m) => <Badge variant={SITUATION_VARIANT[m.situacao]}>{m.situacao}</Badge>,
     },
-    { key: 'email', header: 'E-mail', cell: (m) => m.email },
+    {
+      key: 'acesso',
+      header: 'Acesso',
+      cell: (m) => {
+        const user = usersByMemberId.get(m.id);
+        if (!user) return <span className="text-muted text-xs">Sem acesso</span>;
+        return (
+          <Badge variant={USER_STATUS_VARIANT[user.statusConta]}>
+            {USER_STATUS_LABEL[user.statusConta]}
+          </Badge>
+        );
+      },
+    },
+    {
+      key: 'papel',
+      header: 'Papel',
+      cell: (m) => {
+        const user = usersByMemberId.get(m.id);
+        if (!user) return <span className="text-muted text-xs">—</span>;
+        return rolesById.get(user.roleId)?.nome ?? '—';
+      },
+    },
   ];
 
   return (

@@ -8,7 +8,6 @@ import {
   Card,
   ChevronRight,
   Clock,
-  Compass,
   Download,
   FileText,
   Image as GalleryIcon,
@@ -21,6 +20,8 @@ import { getCurrentSession } from '@/lib/auth/get-current-session';
 import { roleDisplayLabel } from '@/lib/auth/role-display-label';
 import { resolveMemberDisplayName } from '@/lib/membership/resolve-display-name';
 import { getCurrentTenant } from '@/lib/tenant/get-current-tenant';
+import { MemberAvatar } from '@/components/membership/member-avatar';
+import { MemberDegreeBadge } from '@/components/membership/member-degree-badge';
 
 // Sem tile de Diretoria: mesmos dados da página pública do site
 // institucional, sem nada exclusivo do Portal — docs/architecture/07 §7.0.
@@ -95,7 +96,6 @@ export default async function DashboardPage() {
   ]);
 
   const displayName = resolveMemberDisplayName(member, session.user.email);
-  const crestUrl = current.branding.brasaoUrl;
 
   return (
     <div className="flex flex-col gap-8">
@@ -115,18 +115,21 @@ export default async function DashboardPage() {
         </div>
 
         <div className="relative flex items-center gap-4 self-center rounded-[14px] border border-white/15 bg-white/[0.08] p-4 backdrop-blur-sm">
-          {crestUrl ? (
-            <img src={crestUrl} alt="" className="h-14 w-14 shrink-0 rounded-full object-cover" />
-          ) : (
-            <span className="bg-accent/15 text-accent flex h-14 w-14 shrink-0 items-center justify-center rounded-full">
-              <Compass size={26} strokeWidth={1.75} />
-            </span>
-          )}
+          <MemberAvatar
+            fotoUrl={member?.fotoUrl ?? null}
+            nome={displayName}
+            className="h-14 w-14 shrink-0 ring-2 ring-white/20"
+          />
           <div className="min-w-0">
             <p className="font-display truncate text-lg font-semibold text-white">{displayName}</p>
             <p className="truncate text-xs text-white/70">
               {roleDisplayLabel(session.role)} · {current.tenant.nome}
             </p>
+            {member && (
+              <div className="mt-2">
+                <MemberDegreeBadge grau={member.grau} compact />
+              </div>
+            )}
             <Button asChild variant="accent" size="sm" className="mt-2.5">
               <Link href="/perfil">Ver meu perfil</Link>
             </Button>

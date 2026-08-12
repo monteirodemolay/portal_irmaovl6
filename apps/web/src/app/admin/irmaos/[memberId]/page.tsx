@@ -9,6 +9,9 @@ import {
 } from '@/modules/membership/actions/member-actions';
 import { MemberForm } from '@/modules/membership/components/member-form';
 import { DeleteMemberButton } from '@/modules/membership/components/delete-member-button';
+import { AccessCard } from '@/modules/membership/components/access-card';
+import { MemberAvatar } from '@/components/membership/member-avatar';
+import { MemberDegreeBadge } from '@/components/membership/member-degree-badge';
 
 const SITUATION_LABELS: Record<(typeof MEMBER_SITUATIONS)[number], string> = {
   regular: 'Regular',
@@ -24,12 +27,18 @@ export default async function EditMemberPage({
 }: {
   params: Promise<{ memberId: string }>;
 }) {
-  await requirePagePermission('member:update');
+  const session = await requirePagePermission('member:update');
   const { memberId } = await params;
 
   const container = createServerContainer();
   const member = await container.repositories.member.findById(memberId);
   if (!member || member.deletedAt) notFound();
+
+  const [roles, accessUser] = await Promise.all([
+    container.useCases.listRoles.execute(session.authContext),
+    member.userId ? container.repositories.user.findById(member.userId) : Promise.resolve(null),
+  ]);
+  const isSelf = accessUser?.id === session.authContext.uid;
 
   const boundUpdate = updateMemberAction.bind(null, memberId);
   const boundUpdateSituation = updateMemberSituationAction.bind(null, memberId);
@@ -37,29 +46,51 @@ export default async function EditMemberPage({
   return (
     <div className="flex flex-col gap-8">
       <div className="flex items-center justify-between">
-        <h1 className="font-display text-2xl font-semibold">{member.nomeCompleto}</h1>
+        <div className="flex items-center gap-3">
+          <MemberAvatar fotoUrl={member.fotoUrl} nome={member.nomeCompleto} className="h-12 w-12" />
+          <div className="flex flex-col gap-1">
+            <h1 className="font-display text-2xl font-semibold">{member.nomeCompleto}</h1>
+            <MemberDegreeBadge grau={member.grau} compact />
+          </div>
+        </div>
         <DeleteMemberButton memberId={member.id} memberName={member.nomeCompleto} />
       </div>
 
-      <Card className="max-w-sm">
-        <CardHeader>
-          <CardTitle>Situação</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form action={boundUpdateSituation} className="flex items-end gap-2">
-            <Select name="situacao" defaultValue={member.situacao} className="flex-1">
-              {MEMBER_SITUATIONS.map((s) => (
-                <option key={s} value={s}>
-                  {SITUATION_LABELS[s]}
-                </option>
-              ))}
-            </Select>
-            <Button type="submit" variant="outline" size="sm">
-              Atualizar
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>Situação</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form action={boundUpdateSituation} className="flex items-end gap-2">
+              <Select name="situacao" defaultValue={member.situacao} className="flex-1">
+                {MEMBER_SITUATIONS.map((s) => (
+                  <option key={s} value={s}>
+                    {SITUATION_LABELS[s]}
+                  </option>
+                ))}
+              </Select>
+              <Button type="submit" variant="outline" size="sm">
+                Atualizar
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Acesso ao Portal</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <AccessCard
+              memberId={member.id}
+              roles={roles}
+              accessUser={accessUser}
+              isSelf={isSelf}
+            />
+          </CardContent>
+        </Card>
+      </div>
 
       <MemberForm action={boundUpdate} member={member} />
     </div>

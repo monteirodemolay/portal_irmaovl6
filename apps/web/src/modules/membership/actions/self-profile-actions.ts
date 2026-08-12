@@ -19,7 +19,6 @@ export async function updateMyProfileAction(
   try {
     input = memberSelfEditSchema.parse({
       nomeMaconico: formData.get('nomeMaconico') || null,
-      fotoUrl: null,
       telefone: formData.get('telefone') || null,
       whatsapp: formData.get('whatsapp') || null,
       endereco: formData.get('cep')

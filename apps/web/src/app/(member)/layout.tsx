@@ -59,6 +59,7 @@ export default async function MemberLayout({ children }: { children: React.React
       topbarRight={
         <TopbarUser
           displayName={displayName}
+          fotoUrl={member?.fotoUrl ?? null}
           roleLabel={roleDisplayLabel(session.role)}
           email={session.user.email}
           notifications={notificationsPage.items}

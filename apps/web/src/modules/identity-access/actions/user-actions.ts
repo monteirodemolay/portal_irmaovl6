@@ -84,6 +84,7 @@ export async function assignRoleAction(userId: string, formData: FormData): Prom
   }
 
   revalidatePath('/admin/usuarios');
+  revalidatePath('/admin/irmaos/[memberId]', 'page');
 }
 
 export interface ResetPasswordActionState {
@@ -121,6 +122,7 @@ export async function resetUserPasswordAction(
     });
 
   revalidatePath('/admin/usuarios');
+  revalidatePath('/admin/irmaos/[memberId]', 'page');
   return { error: null, temporaryPassword };
 }
 
@@ -150,4 +152,5 @@ export async function setUserStatusAction(
   await getAdminAuth().updateUser(userId, { disabled: statusConta === 'blocked' });
 
   revalidatePath('/admin/usuarios');
+  revalidatePath('/admin/irmaos/[memberId]', 'page');
 }

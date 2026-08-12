@@ -5,9 +5,10 @@ import { assignRoleAction } from '@/modules/identity-access/actions/user-actions
 import { InviteUserForm } from '@/modules/identity-access/components/invite-user-form';
 import { ResetPasswordButton } from '@/modules/identity-access/components/reset-password-button';
 import { ToggleUserStatusButton } from '@/modules/identity-access/components/toggle-user-status-button';
-
-const STATUS_VARIANT = { active: 'success', pending: 'warning', blocked: 'destructive' } as const;
-const STATUS_LABEL = { active: 'Ativa', pending: 'Pendente', blocked: 'Bloqueada' } as const;
+import {
+  USER_STATUS_LABEL as STATUS_LABEL,
+  USER_STATUS_VARIANT as STATUS_VARIANT,
+} from '@/modules/identity-access/user-status-labels';
 
 function formatLastLogin(date: Date | null): string {
   if (!date) return 'Nunca';
@@ -27,11 +28,18 @@ export default async function UsersPage() {
 
   return (
     <div className="flex flex-col gap-8">
-      <h1 className="font-display text-2xl font-semibold">Usuários</h1>
+      <div>
+        <h1 className="font-display text-2xl font-semibold">Usuários de Sistema</h1>
+        <p className="text-muted mt-1 max-w-2xl text-sm">
+          Cadastro e acesso ao Portal de um Irmão são feitos juntos em{' '}
+          <span className="font-medium">Irmãos</span>. Esta tela é exceção: só para criar uma conta
+          de acesso sem um cadastro de Irmão vinculado (ex.: uso técnico).
+        </p>
+      </div>
 
       <Card className="max-w-sm">
         <CardHeader>
-          <CardTitle>Convidar usuário</CardTitle>
+          <CardTitle>Convidar usuário sem cadastro de Irmão</CardTitle>
         </CardHeader>
         <CardContent>
           <InviteUserForm roles={roles} />

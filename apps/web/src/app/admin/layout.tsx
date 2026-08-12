@@ -60,6 +60,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       topbarRight={
         <TopbarUser
           displayName={displayName}
+          fotoUrl={member?.fotoUrl ?? null}
           roleLabel={roleDisplayLabel(session.role)}
           email={session.user.email}
           notifications={notificationsPage.items}

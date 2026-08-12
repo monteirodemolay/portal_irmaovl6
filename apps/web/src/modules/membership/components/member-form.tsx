@@ -1,35 +1,65 @@
 'use client';
 
 import Link from 'next/link';
-import { useActionState } from 'react';
+import { useActionState, useState } from 'react';
 import { useFormStatus } from 'react-dom';
 import { MEMBER_DEGREES } from '@vl6/shared';
-import type { Member } from '@vl6/domain';
+import type { Member, Role } from '@vl6/domain';
 import { Button, Input, Select, Textarea } from '@vl6/ui';
 import { FormField } from '@/components/forms/form-field';
+import { MemberAvatar } from '@/components/membership/member-avatar';
+import { MEMBER_DEGREE_LABELS } from '@/lib/membership/member-degree-label';
 import type { MemberActionState } from '../actions/member-actions';
 
 export interface MemberFormProps {
   action: (state: MemberActionState, formData: FormData) => Promise<MemberActionState>;
   member?: Member;
+  /** Só usada no cadastro (member === undefined) — seção "Acesso ao Portal". */
+  roles?: Role[];
 }
-
-const DEGREE_LABELS: Record<(typeof MEMBER_DEGREES)[number], string> = {
-  aprendiz: 'Aprendiz',
-  companheiro: 'Companheiro',
-  mestre: 'Mestre',
-};
 
 function toDateInputValue(date: Date | null | undefined): string {
   return date ? new Date(date).toISOString().slice(0, 10) : '';
 }
 
-export function MemberForm({ action, member }: MemberFormProps) {
+function PhotoField({ nome, fotoUrl }: { nome: string; fotoUrl: string | null }) {
+  const [preview, setPreview] = useState<string | null>(null);
+
+  return (
+    <div className="flex items-center gap-4">
+      <MemberAvatar fotoUrl={preview ?? fotoUrl} nome={nome || 'Irmão'} className="h-16 w-16" />
+      <div className="flex flex-col gap-1">
+        <label
+          htmlFor="foto"
+          className="text-primary w-fit cursor-pointer text-sm font-medium hover:underline"
+        >
+          {fotoUrl ? 'Alterar foto' : 'Selecionar foto'}
+        </label>
+        <input
+          id="foto"
+          name="foto"
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          className="hidden"
+          onChange={(event) => {
+            const file = event.target.files?.[0];
+            setPreview(file ? URL.createObjectURL(file) : null);
+          }}
+        />
+        <p className="text-muted text-xs">JPG, PNG ou WEBP — até 5 MB.</p>
+      </div>
+    </div>
+  );
+}
+
+export function MemberForm({ action, member, roles }: MemberFormProps) {
   const [state, formAction] = useActionState<MemberActionState, FormData>(action, {
     error: null,
     memberId: null,
     temporaryPassword: null,
   });
+  const defaultRoleId = roles?.find((r) => r.chave === 'membro')?.id ?? roles?.[0]?.id;
+  const [grau, setGrau] = useState(member?.grau ?? 'aprendiz');
 
   return (
     <form action={formAction} className="flex max-w-3xl flex-col gap-8">
@@ -53,8 +83,23 @@ export function MemberForm({ action, member }: MemberFormProps) {
         </div>
       )}
 
+      {!member && !state.error && !state.temporaryPassword && state.memberId && (
+        <div className="border-accent/40 bg-accent/10 flex flex-col gap-2 rounded border p-4 text-sm">
+          <p>
+            Irmão cadastrado sem acesso ao Portal. Ative o acesso quando quiser, pela tela do Irmão.
+          </p>
+          <Link
+            href={`/admin/irmaos/${state.memberId}`}
+            className="text-accent w-fit text-sm font-medium hover:underline"
+          >
+            Ver cadastro do Irmão
+          </Link>
+        </div>
+      )}
+
       <section className="flex flex-col gap-4">
         <h2 className="font-display text-lg font-semibold">Identificação</h2>
+        <PhotoField nome={member?.nomeCompleto ?? ''} fotoUrl={member?.fotoUrl ?? null} />
         <div className="grid grid-cols-2 gap-4">
           <FormField label="Nome completo" htmlFor="nomeCompleto">
             <Input
@@ -133,10 +178,16 @@ export function MemberForm({ action, member }: MemberFormProps) {
             <Input id="matricula" name="matricula" required defaultValue={member?.matricula} />
           </FormField>
           <FormField label="Grau" htmlFor="grau">
-            <Select id="grau" name="grau" required defaultValue={member?.grau ?? 'aprendiz'}>
+            <Select
+              id="grau"
+              name="grau"
+              required
+              value={grau}
+              onChange={(event) => setGrau(event.target.value as typeof grau)}
+            >
               {MEMBER_DEGREES.map((degree) => (
                 <option key={degree} value={degree}>
-                  {DEGREE_LABELS[degree]}
+                  {MEMBER_DEGREE_LABELS[degree]}
                 </option>
               ))}
             </Select>
@@ -154,6 +205,7 @@ export function MemberForm({ action, member }: MemberFormProps) {
               id="dataIniciacao"
               name="dataIniciacao"
               type="date"
+              required
               defaultValue={toDateInputValue(member?.dataIniciacao)}
             />
           </FormField>
@@ -162,6 +214,7 @@ export function MemberForm({ action, member }: MemberFormProps) {
               id="dataElevacao"
               name="dataElevacao"
               type="date"
+              required={grau === 'companheiro' || grau === 'mestre'}
               defaultValue={toDateInputValue(member?.dataElevacao)}
             />
           </FormField>
@@ -170,6 +223,7 @@ export function MemberForm({ action, member }: MemberFormProps) {
               id="dataExaltacao"
               name="dataExaltacao"
               type="date"
+              required={grau === 'mestre'}
               defaultValue={toDateInputValue(member?.dataExaltacao)}
             />
           </FormField>
@@ -217,6 +271,34 @@ export function MemberForm({ action, member }: MemberFormProps) {
           <Textarea id="observacoes" name="observacoes" defaultValue={member?.observacoes ?? ''} />
         </FormField>
       </section>
+
+      {!member && roles && roles.length > 0 && (
+        <section className="border-border flex flex-col gap-4 rounded-lg border p-4">
+          <h2 className="font-display text-lg font-semibold">Acesso ao Portal</h2>
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              name="criarAcesso"
+              defaultChecked
+              className="accent-primary h-4 w-4"
+            />
+            Criar acesso ao Portal para este Irmão
+          </label>
+          <FormField label="Perfil de acesso" htmlFor="roleId">
+            <Select id="roleId" name="roleId" defaultValue={defaultRoleId}>
+              {roles.map((role) => (
+                <option key={role.id} value={role.id}>
+                  {role.nome}
+                </option>
+              ))}
+            </Select>
+          </FormField>
+          <p className="text-muted text-xs">
+            O usuário de acesso é o próprio e-mail do Irmão; a senha inicial é gerada
+            automaticamente e mostrada uma única vez após salvar.
+          </p>
+        </section>
+      )}
 
       {state.error && <p className="text-sm text-red-600">{state.error}</p>}
 
