@@ -3,48 +3,25 @@ import { hasPermission } from '@vl6/domain';
 import {
   Badge,
   BookOpen,
+  Button,
   CalendarDays,
   Card,
   ChevronRight,
   Clock,
+  Compass,
   FileText,
-  GraduationCap,
-  Handshake,
   Image as GalleryIcon,
   MapPin,
   Megaphone,
-  Quote,
-  ShieldCheck,
-  Sparkles,
+  Newspaper,
   Users,
 } from '@vl6/ui';
 import { EVENT_KIND_LABELS } from '@vl6/shared';
 import { createServerContainer } from '@vl6/infra';
 import { getCurrentSession } from '@/lib/auth/get-current-session';
+import { roleDisplayLabel } from '@/lib/auth/role-display-label';
+import { resolveMemberDisplayName } from '@/lib/membership/resolve-display-name';
 import { getCurrentTenant } from '@/lib/tenant/get-current-tenant';
-
-/**
- * Frases rotativas puramente decorativas — sem entidade de domínio própria
- * (não é conteúdo editorial da Loja, é só o "quote of the day" do
- * dashboard). Escolhida deterministicamente pelo dia do ano, então é
- * estável ao longo do dia em vez de mudar a cada reload.
- */
-const QUOTES = [
-  'A Maçonaria não faz dos homens melhores do que são, mas os faz melhores do que poderiam ser.',
-  'Fazei o bem por amor ao próprio bem.',
-  'A união faz a força; a fraternidade a torna duradoura.',
-  'O verdadeiro templo do Maçom é o coração dos seus semelhantes.',
-  'Trabalhar é orar; a Loja é a escola da virtude.',
-];
-
-function quoteOfTheDay(): string {
-  const dayOfYear = Math.floor(
-    (Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86_400_000,
-  );
-  return (
-    QUOTES[dayOfYear % QUOTES.length] ?? 'Que a Virtude, a Luz e a Graça estejam sempre conosco.'
-  );
-}
 
 const QUICK_ACCESS = [
   {
@@ -80,29 +57,6 @@ const QUICK_ACCESS = [
   },
 ] as const;
 
-const VALUE_PROPS = [
-  {
-    label: 'Acesso Restrito e Seguro',
-    description: 'Conteúdo exclusivo para Irmãos da Loja.',
-    icon: ShieldCheck,
-  },
-  {
-    label: 'Tradição e Modernidade',
-    description: 'Unindo os valores da Ordem com a tecnologia.',
-    icon: Sparkles,
-  },
-  {
-    label: 'União e Fraternidade',
-    description: 'Fortalecendo os laços entre Irmãos.',
-    icon: Handshake,
-  },
-  {
-    label: 'Conhecimento Contínuo',
-    description: 'Estudo, reflexão e evolução constante.',
-    icon: GraduationCap,
-  },
-] as const;
-
 function formatEventDate(date: Date): { day: string; month: string; time: string } {
   const d = new Date(date);
   return {
@@ -125,39 +79,62 @@ export default async function DashboardPage() {
     session.user.id,
   );
 
-  const [announcements, upcomingEvents] = await Promise.all([
+  const [announcements, upcomingEvents, recentNews] = await Promise.all([
     hasPermission(session.authContext, 'announcement:read')
       ? container.useCases.listActiveAnnouncements.execute(session.authContext.tenantId)
       : Promise.resolve([]),
     hasPermission(session.authContext, 'event:read')
       ? container.useCases.listUpcomingEvents.execute(session.authContext, { limit: 3 })
       : Promise.resolve({ items: [], nextCursor: null, hasMore: false }),
+    hasPermission(session.authContext, 'news:read')
+      ? container.useCases.listPublishedNews.execute(session.authContext.tenantId, { limit: 3 })
+      : Promise.resolve({ items: [], nextCursor: null, hasMore: false }),
   ]);
 
-  const displayName = member?.nomeMaconico ?? member?.nomeCompleto?.split(' ')[0] ?? 'Irmão';
+  const displayName = resolveMemberDisplayName(member, session.user.email);
+  const crestUrl = current.branding.brasaoUrl;
 
   return (
-    <div className="flex flex-col gap-10">
-      <section className="bg-primary relative overflow-hidden rounded-lg px-8 py-10 text-white shadow-md">
+    <div className="flex flex-col gap-8">
+      <section className="from-primary to-primary-dark relative grid gap-6 overflow-hidden rounded-[18px] bg-gradient-to-br px-7 py-8 text-white shadow-md lg:grid-cols-[1.35fr_0.65fr] lg:px-9 lg:py-9">
         <div className="bg-accent/10 absolute -right-16 -top-16 h-64 w-64 rounded-full blur-3xl" />
-        <div className="relative flex flex-col gap-2">
-          <p className="text-accent text-sm font-medium uppercase tracking-wide">
+        <div className="relative flex flex-col justify-center gap-3">
+          <p className="text-accent text-xs font-semibold uppercase tracking-widest">
             {current.tenant.nome}
           </p>
-          <h1 className="font-display text-3xl font-semibold sm:text-4xl">
-            Seja bem-vindo, <span className="text-accent italic">{displayName}!</span>
+          <h1 className="font-display text-3xl font-semibold leading-[1.1] sm:text-4xl">
+            Bem-vindo ao Portal do Irmão
           </h1>
-          <p className="max-w-xl text-white/70">
-            Que a Virtude, a Luz e a Graça estejam sempre conosco. Aqui você acompanha avisos,
-            eventos, arquivos e tudo o que move a nossa Oficina.
+          <p className="max-w-xl text-sm text-white/70">
+            Um ambiente reservado para acompanhar os conteúdos, avisos, eventos, documentos e
+            informações da {current.tenant.nome}.
           </p>
+        </div>
+
+        <div className="relative flex items-center gap-4 self-center rounded-[14px] border border-white/15 bg-white/[0.08] p-4 backdrop-blur-sm">
+          {crestUrl ? (
+            <img src={crestUrl} alt="" className="h-14 w-14 shrink-0 rounded-full object-cover" />
+          ) : (
+            <span className="bg-accent/15 text-accent flex h-14 w-14 shrink-0 items-center justify-center rounded-full">
+              <Compass size={26} strokeWidth={1.75} />
+            </span>
+          )}
+          <div className="min-w-0">
+            <p className="font-display truncate text-lg font-semibold text-white">{displayName}</p>
+            <p className="truncate text-xs text-white/70">
+              {roleDisplayLabel(session.role)} · {current.tenant.nome}
+            </p>
+            <Button asChild variant="accent" size="sm" className="mt-2.5">
+              <Link href="/perfil">Ver meu perfil</Link>
+            </Button>
+          </div>
         </div>
       </section>
 
-      <section className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
+      <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
         {QUICK_ACCESS.map((item) => (
           <Link key={item.href} href={item.href}>
-            <Card className="hover:border-accent group flex h-full flex-col gap-3 p-4 transition-colors">
+            <Card className="hover:border-accent group flex h-full min-h-[112px] flex-col gap-3 p-4 shadow-none transition-colors">
               <span className="bg-accent/15 text-accent flex h-10 w-10 items-center justify-center rounded-full">
                 <item.icon size={20} strokeWidth={1.75} />
               </span>
@@ -174,37 +151,8 @@ export default async function DashboardPage() {
         ))}
       </section>
 
-      <section className="grid grid-cols-1 gap-6 lg:grid-cols-[1.2fr_1fr_1fr]">
-        <Card className="flex flex-col gap-4 p-5">
-          <div className="flex items-center justify-between">
-            <h2 className="font-display text-lg font-semibold">Avisos Recentes</h2>
-            <Link href="/avisos" className="text-accent text-xs font-medium hover:underline">
-              Ver todos
-            </Link>
-          </div>
-          {announcements.length === 0 ? (
-            <p className="text-muted text-sm">Nenhum aviso no momento.</p>
-          ) : (
-            <ul className="flex flex-col gap-3">
-              {announcements.slice(0, 3).map((announcement) => (
-                <li
-                  key={announcement.id}
-                  className="border-border flex gap-3 border-b pb-3 last:border-0 last:pb-0"
-                >
-                  <span className="bg-accent/15 text-accent mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full">
-                    <Megaphone size={16} strokeWidth={1.75} />
-                  </span>
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-medium">{announcement.titulo}</p>
-                    <p className="text-muted line-clamp-1 text-xs">{announcement.descricao}</p>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </Card>
-
-        <Card className="flex flex-col gap-4 p-5">
+      <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <Card className="flex flex-col gap-4 p-5 shadow-none">
           <div className="flex items-center justify-between">
             <h2 className="font-display text-lg font-semibold">Próximos Eventos</h2>
             <Link href="/agenda" className="text-accent text-xs font-medium hover:underline">
@@ -242,25 +190,75 @@ export default async function DashboardPage() {
           )}
         </Card>
 
-        <Card className="bg-primary flex flex-col justify-between gap-4 p-5 text-white">
-          <Quote size={28} className="text-accent" />
-          <p className="font-display text-sm italic leading-relaxed">"{quoteOfTheDay()}"</p>
-          <p className="text-accent text-right text-xs uppercase tracking-wide">Frase do dia</p>
+        <Card className="flex flex-col gap-4 p-5 shadow-none">
+          <div className="flex items-center justify-between">
+            <h2 className="font-display text-lg font-semibold">Avisos Recentes</h2>
+            <Link href="/avisos" className="text-accent text-xs font-medium hover:underline">
+              Ver todos
+            </Link>
+          </div>
+          {announcements.length === 0 ? (
+            <p className="text-muted text-sm">Nenhum aviso no momento.</p>
+          ) : (
+            <ul className="flex flex-col gap-3">
+              {announcements.slice(0, 3).map((announcement) => (
+                <li
+                  key={announcement.id}
+                  className="border-border flex gap-3 border-b pb-3 last:border-0 last:pb-0"
+                >
+                  <span className="bg-accent/15 text-accent mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full">
+                    <Megaphone size={16} strokeWidth={1.75} />
+                  </span>
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium">{announcement.titulo}</p>
+                    <p className="text-muted line-clamp-1 text-xs">{announcement.descricao}</p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
         </Card>
       </section>
 
-      <section className="border-border grid grid-cols-1 gap-6 border-t pt-8 sm:grid-cols-2 lg:grid-cols-4">
-        {VALUE_PROPS.map((item) => (
-          <div key={item.label} className="flex items-start gap-3">
-            <span className="bg-accent/15 text-accent flex h-9 w-9 shrink-0 items-center justify-center rounded-full">
-              <item.icon size={18} strokeWidth={1.75} />
-            </span>
-            <div>
-              <p className="text-sm font-semibold">{item.label}</p>
-              <p className="text-muted text-xs">{item.description}</p>
-            </div>
+      <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <Card className="flex flex-col gap-4 p-5 shadow-none">
+          <div className="flex items-center justify-between">
+            <h2 className="font-display text-lg font-semibold">Últimas Publicações</h2>
+            <Link href="/noticias" className="text-accent text-xs font-medium hover:underline">
+              Ver todas
+            </Link>
           </div>
-        ))}
+          {recentNews.items.length === 0 ? (
+            <p className="text-muted text-sm">Nenhuma publicação recente.</p>
+          ) : (
+            <ul className="flex flex-col gap-3">
+              {recentNews.items.map((news) => (
+                <li
+                  key={news.id}
+                  className="border-border flex gap-3 border-b pb-3 last:border-0 last:pb-0"
+                >
+                  <span className="bg-accent/15 text-accent mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full">
+                    <Newspaper size={16} strokeWidth={1.75} />
+                  </span>
+                  <Link href={`/noticias/${news.slug}`} className="min-w-0">
+                    <p className="truncate text-sm font-medium">{news.titulo}</p>
+                    <p className="text-muted line-clamp-1 text-xs">{news.categoria}</p>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Card>
+
+        <Card className="flex flex-col gap-4 p-5 shadow-none">
+          <div className="flex items-center justify-between">
+            <h2 className="font-display text-lg font-semibold">Arquivos Recentes</h2>
+            <Link href="/arquivos" className="text-accent text-xs font-medium hover:underline">
+              Ver todos
+            </Link>
+          </div>
+          <p className="text-muted text-sm">Nenhum arquivo recente.</p>
+        </Card>
       </section>
     </div>
   );
