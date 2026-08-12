@@ -4,6 +4,7 @@ import { DEFAULT_LOCALE } from '@vl6/shared';
 import { AppShell } from '@/components/layout/app-shell';
 import { buildNavSections } from '@/components/layout/nav-items';
 import { SidebarBrand } from '@/components/layout/sidebar-brand';
+import { SidebarInstitutionalLink } from '@/components/layout/sidebar-institutional-link';
 import { TopbarUser } from '@/components/layout/topbar-user';
 import { getCurrentSession } from '@/lib/auth/get-current-session';
 import { roleDisplayLabel } from '@/lib/auth/role-display-label';
@@ -42,6 +43,11 @@ export default async function MemberLayout({ children }: { children: React.React
         />
       }
       sections={buildNavSections(session.authContext, session.role, dictionary)}
+      sidebarFooter={
+        current?.tenant.site && (
+          <SidebarInstitutionalLink siteUrl={current.tenant.site} tenantName={tenantName} />
+        )
+      }
       topbarLeft={
         <div className="hidden leading-tight sm:block">
           <p className="text-muted text-[11px] font-medium uppercase tracking-wide">

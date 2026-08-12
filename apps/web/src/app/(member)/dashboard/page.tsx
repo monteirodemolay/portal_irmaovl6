@@ -9,12 +9,11 @@ import {
   ChevronRight,
   Clock,
   Compass,
+  Download,
   FileText,
   Image as GalleryIcon,
   MapPin,
   Megaphone,
-  Newspaper,
-  Users,
 } from '@vl6/ui';
 import { EVENT_KIND_LABELS } from '@vl6/shared';
 import { createServerContainer } from '@vl6/infra';
@@ -23,6 +22,8 @@ import { roleDisplayLabel } from '@/lib/auth/role-display-label';
 import { resolveMemberDisplayName } from '@/lib/membership/resolve-display-name';
 import { getCurrentTenant } from '@/lib/tenant/get-current-tenant';
 
+// Sem tile de Diretoria: mesmos dados da página pública do site
+// institucional, sem nada exclusivo do Portal — docs/architecture/07 §7.0.
 const QUICK_ACCESS = [
   {
     href: '/avisos',
@@ -48,12 +49,17 @@ const QUICK_ACCESS = [
     description: 'Estudos ao alcance do Irmão.',
     icon: BookOpen,
   },
-  { href: '/diretoria', label: 'Diretoria', description: 'Conheça a atual gestão.', icon: Users },
   {
     href: '/galeria',
     label: 'Galeria',
     description: 'Registros de momentos especiais.',
     icon: GalleryIcon,
+  },
+  {
+    href: '/downloads',
+    label: 'Downloads',
+    description: 'Materiais liberados para baixar.',
+    icon: Download,
   },
 ] as const;
 
@@ -79,15 +85,12 @@ export default async function DashboardPage() {
     session.user.id,
   );
 
-  const [announcements, upcomingEvents, recentNews] = await Promise.all([
+  const [announcements, upcomingEvents] = await Promise.all([
     hasPermission(session.authContext, 'announcement:read')
       ? container.useCases.listActiveAnnouncements.execute(session.authContext.tenantId)
       : Promise.resolve([]),
     hasPermission(session.authContext, 'event:read')
       ? container.useCases.listUpcomingEvents.execute(session.authContext, { limit: 3 })
-      : Promise.resolve({ items: [], nextCursor: null, hasMore: false }),
-    hasPermission(session.authContext, 'news:read')
-      ? container.useCases.listPublishedNews.execute(session.authContext.tenantId, { limit: 3 })
       : Promise.resolve({ items: [], nextCursor: null, hasMore: false }),
   ]);
 
@@ -151,7 +154,7 @@ export default async function DashboardPage() {
         ))}
       </section>
 
-      <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+      <section className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <Card className="flex flex-col gap-4 p-5 shadow-none">
           <div className="flex items-center justify-between">
             <h2 className="font-display text-lg font-semibold">Próximos Eventos</h2>
@@ -213,37 +216,6 @@ export default async function DashboardPage() {
                     <p className="truncate text-sm font-medium">{announcement.titulo}</p>
                     <p className="text-muted line-clamp-1 text-xs">{announcement.descricao}</p>
                   </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </Card>
-      </section>
-
-      <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <Card className="flex flex-col gap-4 p-5 shadow-none">
-          <div className="flex items-center justify-between">
-            <h2 className="font-display text-lg font-semibold">Últimas Publicações</h2>
-            <Link href="/noticias" className="text-accent text-xs font-medium hover:underline">
-              Ver todas
-            </Link>
-          </div>
-          {recentNews.items.length === 0 ? (
-            <p className="text-muted text-sm">Nenhuma publicação recente.</p>
-          ) : (
-            <ul className="flex flex-col gap-3">
-              {recentNews.items.map((news) => (
-                <li
-                  key={news.id}
-                  className="border-border flex gap-3 border-b pb-3 last:border-0 last:pb-0"
-                >
-                  <span className="bg-accent/15 text-accent mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full">
-                    <Newspaper size={16} strokeWidth={1.75} />
-                  </span>
-                  <Link href={`/noticias/${news.slug}`} className="min-w-0">
-                    <p className="truncate text-sm font-medium">{news.titulo}</p>
-                    <p className="text-muted line-clamp-1 text-xs">{news.categoria}</p>
-                  </Link>
                 </li>
               ))}
             </ul>

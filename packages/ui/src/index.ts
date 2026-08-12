@@ -19,6 +19,9 @@ export * from './components/dialog';
 // ícones realmente usados por algum consumidor.
 export {
   WifiOff,
+  ArrowLeft,
+  ArrowUpRight,
+  Download,
   Megaphone,
   CalendarDays,
   BookOpen,

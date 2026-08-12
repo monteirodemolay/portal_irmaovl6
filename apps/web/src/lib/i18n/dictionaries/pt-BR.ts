@@ -26,6 +26,7 @@ export const dictionary = {
   },
   login: {
     subtitle: 'Acesse com seu e-mail e senha cadastrados.',
+    accessRestricted: 'Acesso Restrito',
     email: 'E-mail',
     password: 'Senha',
     submit: 'Entrar',
@@ -37,6 +38,13 @@ export const dictionary = {
     errorInvalidCredentials: 'E-mail ou senha inválidos.',
     errorNoTotpFactor: 'Nenhum segundo fator TOTP encontrado para esta conta.',
     errorInvalidMfaCode: 'Código inválido. Verifique o app autenticador e tente novamente.',
+    forgotPasswordLink: 'Esqueci minha senha',
+    forgotPasswordSubmit: 'Enviar link de recuperação',
+    forgotPasswordSubmitting: 'Enviando…',
+    forgotPasswordSuccess: 'Se este e-mail estiver cadastrado, enviamos um link de recuperação.',
+    forgotPasswordError: 'Não foi possível enviar o link. Verifique o e-mail e tente novamente.',
+    backToLogin: 'Voltar ao login',
+    visitInstitutionalSite: 'Visitar site institucional',
   },
   integrations: {
     pageTitle: 'Integrações',

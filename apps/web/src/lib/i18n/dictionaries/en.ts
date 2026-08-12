@@ -21,6 +21,7 @@ export const dictionary = {
   },
   login: {
     subtitle: 'Sign in with your registered email and password.',
+    accessRestricted: 'Restricted Access',
     email: 'Email',
     password: 'Password',
     submit: 'Sign in',
@@ -32,6 +33,13 @@ export const dictionary = {
     errorInvalidCredentials: 'Invalid email or password.',
     errorNoTotpFactor: 'No TOTP second factor found for this account.',
     errorInvalidMfaCode: 'Invalid code. Check your authenticator app and try again.',
+    forgotPasswordLink: 'Forgot my password',
+    forgotPasswordSubmit: 'Send recovery link',
+    forgotPasswordSubmitting: 'Sending…',
+    forgotPasswordSuccess: 'If this email is registered, we sent a recovery link.',
+    forgotPasswordError: 'Could not send the link. Check the email and try again.',
+    backToLogin: 'Back to login',
+    visitInstitutionalSite: 'Visit institutional site',
   },
   integrations: {
     pageTitle: 'Integrations',

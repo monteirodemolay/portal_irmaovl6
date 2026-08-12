@@ -19,6 +19,8 @@ export interface AppShellNavSection {
 export interface AppShellProps {
   brand: React.ReactNode;
   sections: AppShellNavSection[];
+  /** Link discreto pro site institucional, rodapé da sidebar (docs/architecture/07 §7.0). */
+  sidebarFooter?: React.ReactNode;
   topbarLeft: React.ReactNode;
   topbarRight: React.ReactNode;
   children: React.ReactNode;
@@ -33,7 +35,14 @@ export interface AppShellProps {
  * o conteúdo em si (brand/sections/topbar) é montado no servidor e injetado
  * via props/children, então nenhuma consulta ao Firestore roda no client.
  */
-export function AppShell({ brand, sections, topbarLeft, topbarRight, children }: AppShellProps) {
+export function AppShell({
+  brand,
+  sections,
+  sidebarFooter,
+  topbarLeft,
+  topbarRight,
+  children,
+}: AppShellProps) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -89,6 +98,7 @@ export function AppShell({ brand, sections, topbarLeft, topbarRight, children }:
       <aside className="from-primary to-primary-dark sticky top-0 hidden h-screen flex-col overflow-hidden border-r border-white/10 bg-gradient-to-b lg:flex">
         <div className="border-b border-white/10 px-5 py-5">{brand}</div>
         {renderNav()}
+        {sidebarFooter && <div className="border-t border-white/10 px-5 py-4">{sidebarFooter}</div>}
       </aside>
 
       <div className="min-w-0">
@@ -130,6 +140,9 @@ export function AppShell({ brand, sections, topbarLeft, topbarRight, children }:
               </button>
             </div>
             {renderNav()}
+            {sidebarFooter && (
+              <div className="border-t border-white/10 px-5 py-4">{sidebarFooter}</div>
+            )}
           </div>
         </div>
       )}

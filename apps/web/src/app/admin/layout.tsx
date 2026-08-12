@@ -4,6 +4,7 @@ import { DEFAULT_LOCALE } from '@vl6/shared';
 import { AppShell } from '@/components/layout/app-shell';
 import { buildNavSections } from '@/components/layout/nav-items';
 import { SidebarBrand } from '@/components/layout/sidebar-brand';
+import { SidebarInstitutionalLink } from '@/components/layout/sidebar-institutional-link';
 import { TopbarUser } from '@/components/layout/topbar-user';
 import { isAdminTier } from '@/lib/auth/is-admin-tier';
 import { requireSession } from '@/lib/auth/require-session';
@@ -43,6 +44,11 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         />
       }
       sections={buildNavSections(session.authContext, session.role, dictionary)}
+      sidebarFooter={
+        current?.tenant.site && (
+          <SidebarInstitutionalLink siteUrl={current.tenant.site} tenantName={tenantName} />
+        )
+      }
       topbarLeft={
         <div className="hidden leading-tight sm:block">
           <p className="text-muted text-[11px] font-medium uppercase tracking-wide">

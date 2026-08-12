@@ -45,8 +45,9 @@ export async function generateViewport(): Promise<Viewport> {
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   // Sem checagem de tenant aqui: `notFound()` chamado a partir do layout
   // raiz não consegue renderizar `app/not-found.tsx` corretamente (não há
-  // layout acima para prover o boundary) — o guard fica em cada grupo de
-  // rota que realmente exige tenant resolvido, ex. `(public)/layout.tsx`.
+  // layout acima para prover o boundary) — o guard de sessão fica em cada
+  // grupo de rota (`(member)/layout.tsx`, `admin/layout.tsx`) e em `/`
+  // (`app/page.tsx`), não existe mais grupo público (docs/architecture/07 §7.0).
   const current = await getCurrentTenant();
 
   const cookieStore = await cookies();

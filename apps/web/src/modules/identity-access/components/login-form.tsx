@@ -6,6 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import {
   getMultiFactorResolver,
+  sendPasswordResetEmail,
   signInWithEmailAndPassword,
   TotpMultiFactorGenerator,
   type MultiFactorError,
@@ -25,6 +26,23 @@ export function LoginForm() {
   const [mfaResolver, setMfaResolver] = useState<MultiFactorResolver | null>(null);
   const [mfaCode, setMfaCode] = useState('');
   const [isVerifyingMfa, setIsVerifyingMfa] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [forgotPasswordEmail, setForgotPasswordEmail] = useState('');
+  const [isSendingReset, setIsSendingReset] = useState(false);
+  const [resetFeedback, setResetFeedback] = useState<{ ok: boolean; message: string } | null>(null);
+
+  async function onSubmitForgotPassword() {
+    setIsSendingReset(true);
+    setResetFeedback(null);
+    try {
+      await sendPasswordResetEmail(firebaseAuth, forgotPasswordEmail);
+      setResetFeedback({ ok: true, message: dictionary.login.forgotPasswordSuccess });
+    } catch {
+      setResetFeedback({ ok: false, message: dictionary.login.forgotPasswordError });
+    } finally {
+      setIsSendingReset(false);
+    }
+  }
 
   const {
     register,
@@ -96,6 +114,49 @@ export function LoginForm() {
     }
   }
 
+  if (showForgotPassword) {
+    return (
+      <div className="flex w-full max-w-sm flex-col gap-4">
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="forgotPasswordEmail" className="text-sm font-medium">
+            {dictionary.login.email}
+          </label>
+          <Input
+            id="forgotPasswordEmail"
+            type="email"
+            autoComplete="email"
+            value={forgotPasswordEmail}
+            onChange={(e) => setForgotPasswordEmail(e.target.value)}
+          />
+        </div>
+        {resetFeedback && (
+          <p className={`text-sm ${resetFeedback.ok ? 'text-muted' : 'text-red-600'}`}>
+            {resetFeedback.message}
+          </p>
+        )}
+        <Button
+          type="button"
+          disabled={isSendingReset || !forgotPasswordEmail}
+          onClick={onSubmitForgotPassword}
+        >
+          {isSendingReset
+            ? dictionary.login.forgotPasswordSubmitting
+            : dictionary.login.forgotPasswordSubmit}
+        </Button>
+        <button
+          type="button"
+          onClick={() => {
+            setShowForgotPassword(false);
+            setResetFeedback(null);
+          }}
+          className="text-muted hover:text-foreground text-center text-sm underline"
+        >
+          {dictionary.login.backToLogin}
+        </button>
+      </div>
+    );
+  }
+
   if (mfaResolver) {
     return (
       <div className="flex w-full max-w-sm flex-col gap-4">
@@ -153,6 +214,14 @@ export function LoginForm() {
       <Button type="submit" disabled={isSubmitting}>
         {isSubmitting ? dictionary.login.submitting : dictionary.login.submit}
       </Button>
+
+      <button
+        type="button"
+        onClick={() => setShowForgotPassword(true)}
+        className="text-muted hover:text-foreground text-center text-sm underline"
+      >
+        {dictionary.login.forgotPasswordLink}
+      </button>
     </form>
   );
 }

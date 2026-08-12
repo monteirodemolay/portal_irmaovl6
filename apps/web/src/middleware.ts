@@ -11,8 +11,10 @@ export const PLATFORM_ROUTE_PREFIX = '/plataforma';
 
 // Toda a plataforma exige login — só /login, a recuperação de senha e
 // /offline (fallback do Service Worker, precisa funcionar sem sessão)
-// ficam de fora. `/` sozinho não entra num prefixo de string (bateria com
-// tudo), por isso é comparado à parte logo abaixo.
+// ficam de fora. Não existe mais site institucional dentro do Portal
+// (docs/architecture/07 §7.0) — isso é papel do www.vl6.com.br. `/`
+// sozinho não entra num prefixo de string (bateria com tudo), por isso é
+// comparado à parte logo abaixo.
 const PROTECTED_PREFIXES = [
   '/dashboard',
   '/perfil',
@@ -24,9 +26,6 @@ const PROTECTED_PREFIXES = [
   '/galeria',
   '/downloads',
   '/links-uteis',
-  '/nossa-loja',
-  '/contato',
-  '/diretoria',
   '/noticias',
   '/admin',
   PLATFORM_ROUTE_PREFIX,

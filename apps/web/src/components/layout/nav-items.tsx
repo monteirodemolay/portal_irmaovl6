@@ -4,6 +4,7 @@ import {
   BookOpen,
   Building2,
   CalendarDays,
+  Download,
   FileText,
   Image as GalleryIcon,
   LayoutDashboard,
@@ -21,6 +22,13 @@ import type { AppShellNavSection } from './app-shell';
 const ICON_SIZE = 18;
 const ICON_STROKE = 1.75;
 
+// Sem itens que só duplicam o site institucional (Nossa Loja, Diretoria
+// pública, Contato) — esse é o papel do www.vl6.com.br, não do Portal
+// (docs/architecture/07 §7.0). Notícias fica de fora da navegação por ora:
+// é conteúdo autoral do Portal (não espelha o site), mas a Loja sinalizou
+// que as publicações vão continuar saindo pelo site institucional — o
+// admin de Notícias (`/admin/noticias`) segue existindo, só não fica
+// linkado aqui; revisitar se um dia isso mudar.
 const PORTAL_ITEMS = [
   { href: '/dashboard', label: 'Início', icon: LayoutDashboard },
   { href: '/perfil', label: 'Meu Perfil', icon: UserCircle },
@@ -29,7 +37,7 @@ const PORTAL_ITEMS = [
   { href: '/biblioteca', label: 'Biblioteca', icon: BookOpen },
   { href: '/arquivos', label: 'Arquivos', icon: FileText },
   { href: '/galeria', label: 'Galeria', icon: GalleryIcon },
-  { href: '/noticias', label: 'Notícias', icon: Newspaper },
+  { href: '/downloads', label: 'Downloads', icon: Download },
 ] as const;
 
 interface AdminNavItemDef {
