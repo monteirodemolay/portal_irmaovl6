@@ -4,12 +4,15 @@ import { revalidatePath } from 'next/cache';
 import { memberSelfEditSchema, type MemberSelfEditValues } from '@vl6/shared';
 import { createServerContainer } from '@vl6/infra';
 import { requireSession } from '@/lib/auth/require-session';
-import type { MemberActionState } from './member-actions';
+
+export interface SelfProfileActionState {
+  error: string | null;
+}
 
 export async function updateMyProfileAction(
-  _prevState: MemberActionState,
+  _prevState: SelfProfileActionState,
   formData: FormData,
-): Promise<MemberActionState> {
+): Promise<SelfProfileActionState> {
   const session = await requireSession();
 
   let input: MemberSelfEditValues;

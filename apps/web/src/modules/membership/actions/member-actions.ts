@@ -3,12 +3,15 @@
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { memberSchema, type MemberFormValues, type MemberSituation } from '@vl6/shared';
-import { createServerContainer } from '@vl6/infra';
+import { createServerContainer, getAdminAuth, syncUserClaims } from '@vl6/infra';
+import { generateTemporaryPassword } from '@/lib/auth/generate-temporary-password';
 import { requireSession } from '@/lib/auth/require-session';
 import { getCurrentTenant } from '@/lib/tenant/get-current-tenant';
 
 export interface MemberActionState {
   error: string | null;
+  memberId: string | null;
+  temporaryPassword: string | null;
 }
 
 async function parseMemberForm(formData: FormData): Promise<MemberFormValues> {
@@ -55,13 +58,25 @@ async function parseMemberForm(formData: FormData): Promise<MemberFormValues> {
   return memberSchema.parse(raw);
 }
 
+const EMPTY_STATE: MemberActionState = { error: null, memberId: null, temporaryPassword: null };
+
+/**
+ * Cadastra o Irmão e, na mesma operação, a conta de acesso ao Portal —
+ * usuário é o e-mail do Irmão, senha inicial aleatória (mesmo padrão de
+ * `inviteUserAction`). Antes disso eram dois passos desconectados
+ * (cadastrar o Irmão em `/admin/irmaos/novo`, depois convidar um acesso em
+ * `/admin/usuarios` sem vínculo nenhum com o cadastro) — o Irmão nascia sem
+ * login e a Loja não conseguia terminar o cadastro. Papel de acesso
+ * sempre `membro` (cargo institucional não é papel de acesso — mudar isso
+ * é uma ação separada, em Usuários).
+ */
 export async function createMemberAction(
   _prevState: MemberActionState,
   formData: FormData,
 ): Promise<MemberActionState> {
   const session = await requireSession();
   const current = await getCurrentTenant();
-  if (!current) return { error: 'Tenant não encontrado.' };
+  if (!current) return { ...EMPTY_STATE, error: 'Tenant não encontrado.' };
 
   formData.set('lojaId', current.tenant.id);
   formData.set('potencia', current.tenant.potencia);
@@ -74,17 +89,73 @@ export async function createMemberAction(
   try {
     input = await parseMemberForm(formData);
   } catch {
-    return { error: 'Dados inválidos. Verifique os campos obrigatórios.' };
+    return { ...EMPTY_STATE, error: 'Dados inválidos. Verifique os campos obrigatórios.' };
   }
 
   const container = createServerContainer();
-  const result = await container.useCases.registerMember.execute(session.authContext, input);
-  if (!result.ok) {
-    return { error: result.error.message };
+  const memberResult = await container.useCases.registerMember.execute(session.authContext, input);
+  if (!memberResult.ok) {
+    return { ...EMPTY_STATE, error: memberResult.error.message };
+  }
+  const member = memberResult.value;
+
+  const membroRole = await container.repositories.role.findByKey(
+    session.authContext.tenantId,
+    'membro',
+  );
+  if (!membroRole) {
+    revalidatePath('/admin/irmaos');
+    return {
+      ...EMPTY_STATE,
+      memberId: member.id,
+      error:
+        'Irmão cadastrado, mas o papel "membro" não foi encontrado — crie o acesso manualmente em Usuários.',
+    };
   }
 
+  const temporaryPassword = generateTemporaryPassword();
+  const authUser = await getAdminAuth()
+    .createUser({ email: member.email, password: temporaryPassword })
+    .catch((error: unknown) => {
+      return error instanceof Error ? error.message : 'Falha ao criar a conta de acesso.';
+    });
+  if (typeof authUser === 'string') {
+    revalidatePath('/admin/irmaos');
+    return {
+      ...EMPTY_STATE,
+      memberId: member.id,
+      error: `Irmão cadastrado, mas o acesso não pôde ser criado: ${authUser}`,
+    };
+  }
+
+  const userResult = await container.useCases.inviteUser.execute(session.authContext, {
+    uid: authUser.uid,
+    email: member.email,
+    roleId: membroRole.id,
+    memberId: member.id,
+  });
+  if (!userResult.ok) {
+    revalidatePath('/admin/irmaos');
+    return {
+      ...EMPTY_STATE,
+      memberId: member.id,
+      error: `Irmão cadastrado, mas o acesso não pôde ser criado: ${userResult.error.message}`,
+    };
+  }
+
+  await Promise.all([
+    syncUserClaims(userResult.value, membroRole),
+    container.repositories.member.update({
+      ...member,
+      userId: authUser.uid,
+      updatedAt: new Date(),
+      updatedBy: session.authContext.uid,
+    }),
+  ]);
+
   revalidatePath('/admin/irmaos');
-  redirect(`/admin/irmaos/${result.value.id}`);
+  revalidatePath('/admin/usuarios');
+  return { error: null, memberId: member.id, temporaryPassword };
 }
 
 export async function updateMemberAction(
@@ -94,11 +165,11 @@ export async function updateMemberAction(
 ): Promise<MemberActionState> {
   const session = await requireSession();
   const current = await getCurrentTenant();
-  if (!current) return { error: 'Tenant não encontrado.' };
+  if (!current) return { ...EMPTY_STATE, error: 'Tenant não encontrado.' };
 
   const container = createServerContainer();
   const existing = await container.repositories.member.findById(memberId);
-  if (!existing) return { error: 'Irmão não encontrado.' };
+  if (!existing) return { ...EMPTY_STATE, error: 'Irmão não encontrado.' };
 
   formData.set('lojaId', current.tenant.id);
   formData.set('potencia', current.tenant.potencia);
@@ -110,7 +181,7 @@ export async function updateMemberAction(
   try {
     input = await parseMemberForm(formData);
   } catch {
-    return { error: 'Dados inválidos. Verifique os campos obrigatórios.' };
+    return { ...EMPTY_STATE, error: 'Dados inválidos. Verifique os campos obrigatórios.' };
   }
 
   const result = await container.useCases.updateMember.execute(
@@ -119,12 +190,12 @@ export async function updateMemberAction(
     input,
   );
   if (!result.ok) {
-    return { error: result.error.message };
+    return { ...EMPTY_STATE, error: result.error.message };
   }
 
   revalidatePath('/admin/irmaos');
   revalidatePath(`/admin/irmaos/${memberId}`);
-  return { error: null };
+  return { ...EMPTY_STATE, memberId };
 }
 
 export async function updateMemberSituationAction(

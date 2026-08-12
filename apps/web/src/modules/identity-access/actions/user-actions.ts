@@ -4,15 +4,12 @@ import { revalidatePath } from 'next/cache';
 import { hasPermission } from '@vl6/domain';
 import type { UserAccountStatus } from '@vl6/domain';
 import { createServerContainer, getAdminAuth, syncUserClaims } from '@vl6/infra';
+import { generateTemporaryPassword } from '@/lib/auth/generate-temporary-password';
 import { requireSession } from '@/lib/auth/require-session';
 
 export interface InviteUserActionState {
   error: string | null;
   temporaryPassword: string | null;
-}
-
-function generateTemporaryPassword(): string {
-  return crypto.randomUUID().replace(/-/g, '').slice(0, 12);
 }
 
 /**

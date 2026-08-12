@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useActionState } from 'react';
 import { useFormStatus } from 'react-dom';
 import { MEMBER_DEGREES } from '@vl6/shared';
@@ -24,10 +25,34 @@ function toDateInputValue(date: Date | null | undefined): string {
 }
 
 export function MemberForm({ action, member }: MemberFormProps) {
-  const [state, formAction] = useActionState<MemberActionState, FormData>(action, { error: null });
+  const [state, formAction] = useActionState<MemberActionState, FormData>(action, {
+    error: null,
+    memberId: null,
+    temporaryPassword: null,
+  });
 
   return (
     <form action={formAction} className="flex max-w-3xl flex-col gap-8">
+      {state.temporaryPassword && (
+        <div className="border-accent/40 bg-accent/10 flex flex-col gap-2 rounded border p-4 text-sm">
+          <p>
+            Irmão cadastrado e acesso ao Portal criado. Usuário: e-mail do Irmão. Senha temporária —
+            copie agora, ela não é mostrada de novo:
+          </p>
+          <p className="break-all rounded border bg-white/60 p-2 font-mono text-xs">
+            {state.temporaryPassword}
+          </p>
+          {state.memberId && (
+            <Link
+              href={`/admin/irmaos/${state.memberId}`}
+              className="text-accent w-fit text-sm font-medium hover:underline"
+            >
+              Ver cadastro do Irmão
+            </Link>
+          )}
+        </div>
+      )}
+
       <section className="flex flex-col gap-4">
         <h2 className="font-display text-lg font-semibold">Identificação</h2>
         <div className="grid grid-cols-2 gap-4">

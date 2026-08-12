@@ -5,13 +5,16 @@ import { useFormStatus } from 'react-dom';
 import type { Member } from '@vl6/domain';
 import { Button, Input, Textarea } from '@vl6/ui';
 import { FormField } from '@/components/forms/form-field';
-import { updateMyProfileAction } from '../actions/self-profile-actions';
-import type { MemberActionState } from '../actions/member-actions';
+import {
+  updateMyProfileAction,
+  type SelfProfileActionState,
+} from '../actions/self-profile-actions';
 
 export function SelfProfileForm({ member }: { member: Member }) {
-  const [state, formAction] = useActionState<MemberActionState, FormData>(updateMyProfileAction, {
-    error: null,
-  });
+  const [state, formAction] = useActionState<SelfProfileActionState, FormData>(
+    updateMyProfileAction,
+    { error: null },
+  );
 
   return (
     <form action={formAction} className="flex max-w-2xl flex-col gap-6">
