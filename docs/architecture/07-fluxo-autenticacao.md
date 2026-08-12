@@ -4,15 +4,23 @@
 
 Não existe visitante anônimo nem conteúdo público nesta fase — toda a
 plataforma exige sessão autenticada. As únicas exceções são `/login`, a
-recuperação de senha do Firebase Auth e `/offline` (fallback do Service
-Worker, precisa funcionar sem rede nem sessão — vive fora do grupo de
-rotas `(public)`, em `app/offline/`). Qualquer outra rota, inclusive as do
-grupo `(public)` (`/`, `/nossa-loja`, `/contato`, `/diretoria`, `/noticias`),
-redireciona pra `/login` sem sessão válida — guard duplo, no middleware
+recuperação de senha do Firebase Auth (embutida no próprio `/login`,
+`sendPasswordResetEmail`) e `/offline` (fallback do Service Worker, precisa
+funcionar sem rede nem sessão). Qualquer outra rota redireciona pra
+`/login` sem sessão válida — guard duplo, no middleware
 (`PROTECTED_PREFIXES`, Edge, checa só presença do cookie) e no layout de
 cada grupo (`requireSession()`/`requirePagePermission()`, Node.js runtime,
-valida o cookie de verdade). O nome do grupo `(public)` ficou como está por
-não ser refatoração cosmética trocar — nada lá é público hoje.
+valida o cookie de verdade).
+
+**Sem site institucional dentro do Portal.** `vl6.com.br` (Wix, fora deste
+repositório) é o site público da Loja — história, notícias públicas,
+diretoria pública, contato, galeria pública. `portal.vl6.com.br` é só a
+área privada dos Irmãos; não reproduz esse conteúdo. Não existe mais grupo
+de rotas `(public)` — `app/page.tsx` (`/`) apenas decide destino por sessão
+(sem sessão → `/login`; com sessão → `resolvePostLoginDestination`, §7.2).
+Sidebar e tela de login trazem um link discreto de volta pro site
+institucional, lido de `Tenant.site` (nunca hardcoded) — populado
+manualmente por Loja hoje, sem UI de edição própria ainda.
 
 ## 7.1 Resolução de Tenant (antes até de autenticar)
 
