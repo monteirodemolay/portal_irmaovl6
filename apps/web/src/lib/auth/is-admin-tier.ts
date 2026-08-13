@@ -1,10 +1,10 @@
 import type { Role } from '@vl6/domain';
 
 /**
- * Mesmo critério usado por `resolvePostLoginDestination`: papel de fábrica
- * `admin`/`super_admin`, ou papel customizado com alguma permissão além de
- * leitura. Usado tanto pro gate de `/admin/*` quanto pra decidir se a
- * seção "Administração" aparece na sidebar — nunca escondida só por CSS.
+ * Papel de fábrica `admin`/`super_admin`, ou papel customizado com alguma
+ * permissão além de leitura. Usado tanto pro gate de `/admin/*` quanto pra
+ * decidir se a seção "Administração" aparece na sidebar — nunca escondida
+ * só por CSS.
  */
 export function isAdminTier(role: Role | null): boolean {
   if (!role) return false;

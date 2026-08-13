@@ -75,8 +75,7 @@ export const POST = withApiLogging(ROUTE, async (request: NextRequest) => {
     );
   }
 
-  const role = await container.repositories.role.findById(result.value.roleId);
-  const redirectTo = resolvePostLoginDestination(result.value.tenantId, role);
+  const redirectTo = resolvePostLoginDestination(result.value.tenantId);
 
   const sessionCookie = await createSessionCookie(parsed.data.idToken);
   const response = NextResponse.json({

@@ -40,7 +40,7 @@ test.describe('Onboarding de nova Loja (Administrador Geral)', () => {
     await page.getByLabel('E-mail').fill(process.env.ADMIN_EMAIL ?? 'e2e-admin@vl6.test');
     await page.getByLabel('Senha').fill(process.env.ADMIN_PASSWORD ?? 'SenhaForte123!');
     await page.getByRole('button', { name: 'Entrar' }).click();
-    await expect(page).toHaveURL(/\/admin/);
+    await expect(page).toHaveURL(/\/dashboard/);
 
     const response = await page.goto('/plataforma');
     expect(response?.status()).toBe(404);

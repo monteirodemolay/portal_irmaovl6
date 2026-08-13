@@ -4,13 +4,16 @@ import { ADMIN_EMAIL, ADMIN_PASSWORD } from './helpers';
 /**
  * Roda uma vez, antes de qualquer teste, e força o Next (dev mode) a
  * compilar as rotas mais usadas — `/`, `/login`, `POST /api/v1/auth/login`,
- * `/admin`. Sem isso, o primeiro teste da suíte a chamar
- * `loginAsAdmin()` paga esse custo de compilação sob demanda e estoura o
- * timeout de asserção, um problema que só cresce conforme o app ganha mais
- * dependências/instrumentação (visto com Sentry, depois com @vercel/blob).
- * `webServer` (playwright.config.ts) já garante que o servidor está de pé
- * antes disto rodar; o tenant/admin de E2E já foi semeado por
- * `scripts/run-e2e.sh` antes do Playwright ser invocado.
+ * `/dashboard`, `/admin` (pós-login sempre cai em `/dashboard`, mas boa
+ * parte da suíte navega pra `/admin/*` logo em seguida — ver
+ * `resolvePostLoginDestination`). Sem isso, o primeiro teste da suíte a
+ * chamar `loginAsAdmin()` ou navegar pro painel paga esse custo de
+ * compilação sob demanda e estoura o timeout de asserção, um problema que
+ * só cresce conforme o app ganha mais dependências/instrumentação (visto
+ * com Sentry, depois com @vercel/blob). `webServer` (playwright.config.ts)
+ * já garante que o servidor está de pé antes disto rodar; o tenant/admin
+ * de E2E já foi semeado por `scripts/run-e2e.sh` antes do Playwright ser
+ * invocado.
  */
 export default async function globalSetup(config: FullConfig): Promise<void> {
   const baseURL = config.projects[0]?.use?.baseURL ?? 'http://localhost:3100';
@@ -27,7 +30,8 @@ export default async function globalSetup(config: FullConfig): Promise<void> {
   await page.getByLabel('E-mail').fill(ADMIN_EMAIL);
   await page.getByLabel('Senha').fill(ADMIN_PASSWORD);
   await page.getByRole('button', { name: 'Entrar' }).click();
-  await page.waitForURL(/\/admin/, { timeout: 90_000 });
+  await page.waitForURL(/\/dashboard/, { timeout: 90_000 });
+  await page.goto(`${baseURL}/admin`, { timeout: 90_000 });
 
   await browser.close();
 }

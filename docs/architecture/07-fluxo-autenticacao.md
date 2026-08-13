@@ -65,8 +65,9 @@ não resolve a nenhuma Loja, `AuthenticateUserUseCase` confia direto no
 login, `getCurrentTenant()` (§7.1) passa a resolver pela sessão em vez do
 host, então as páginas autenticadas (`/admin`, `/dashboard`) mostram a
 marca certa da Loja da pessoa mesmo estando no domínio compartilhado. O
-destino pós-login (`/plataforma`, `/admin` ou `/dashboard`) é calculado
-por papel — ver `resolvePostLoginDestination`,
+destino pós-login é sempre a Área do Irmão (`/dashboard`), exceto pro
+Administrador Geral (`tenantId === platform`, cross-tenant), que cai em
+`/plataforma` — ver `resolvePostLoginDestination`,
 `apps/web/src/lib/auth/resolve-post-login-destination.ts`.
 
 ## 7.3 Custom Claims — como e quando são atualizados
