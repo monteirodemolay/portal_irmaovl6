@@ -14,9 +14,37 @@ import {
   type UserCredential,
 } from 'firebase/auth';
 import { loginSchema, type LoginInput } from '@vl6/shared';
-import { Button, Input } from '@vl6/ui';
+import { Button, Eye, EyeOff, Input, Lock, Mail } from '@vl6/ui';
 import { firebaseAuth } from '@/lib/firebase/client';
 import { useDictionary } from '@/lib/i18n/dictionary-context';
+
+type FieldIcon = React.ComponentType<{ size?: number; strokeWidth?: number; className?: string }>;
+
+/** Input com ícone à esquerda — envolve o `Input` do design system sem alterar seu contrato público. */
+function IconField({
+  icon: Icon,
+  className,
+  ...props
+}: React.InputHTMLAttributes<HTMLInputElement> & { icon: FieldIcon }) {
+  return (
+    <div className="relative">
+      <Icon
+        size={18}
+        strokeWidth={1.7}
+        className="text-muted pointer-events-none absolute left-4 top-1/2 -translate-y-1/2"
+      />
+      <Input className={`h-12 pl-11 ${className ?? ''}`} {...props} />
+    </div>
+  );
+}
+
+function FieldLabel({ htmlFor, children }: { htmlFor: string; children: React.ReactNode }) {
+  return (
+    <label htmlFor={htmlFor} className="text-foreground mb-2 block text-xs font-bold">
+      {children}
+    </label>
+  );
+}
 
 export function LoginForm() {
   const router = useRouter();
@@ -30,6 +58,9 @@ export function LoginForm() {
   const [forgotPasswordEmail, setForgotPasswordEmail] = useState('');
   const [isSendingReset, setIsSendingReset] = useState(false);
   const [resetFeedback, setResetFeedback] = useState<{ ok: boolean; message: string } | null>(null);
+  // Só alterna a visibilidade do valor já digitado (type do input) — não
+  // afeta validação, submissão nem nenhuma outra regra de autenticação.
+  const [showPassword, setShowPassword] = useState(false);
 
   async function onSubmitForgotPassword() {
     setIsSendingReset(true);
@@ -116,12 +147,11 @@ export function LoginForm() {
 
   if (showForgotPassword) {
     return (
-      <div className="flex w-full max-w-sm flex-col gap-4">
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor="forgotPasswordEmail" className="text-sm font-medium">
-            {dictionary.login.email}
-          </label>
-          <Input
+      <div className="flex w-full flex-col gap-4">
+        <div>
+          <FieldLabel htmlFor="forgotPasswordEmail">{dictionary.login.email}</FieldLabel>
+          <IconField
+            icon={Mail}
             id="forgotPasswordEmail"
             type="email"
             autoComplete="email"
@@ -136,6 +166,7 @@ export function LoginForm() {
         )}
         <Button
           type="button"
+          className="h-12 w-full text-sm font-bold"
           disabled={isSendingReset || !forgotPasswordEmail}
           onClick={onSubmitForgotPassword}
         >
@@ -159,13 +190,12 @@ export function LoginForm() {
 
   if (mfaResolver) {
     return (
-      <div className="flex w-full max-w-sm flex-col gap-4">
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor="mfaCode" className="text-sm font-medium">
-            {dictionary.login.mfaCodeLabel}
-          </label>
+      <div className="flex w-full flex-col gap-4">
+        <div>
+          <FieldLabel htmlFor="mfaCode">{dictionary.login.mfaCodeLabel}</FieldLabel>
           <Input
             id="mfaCode"
+            className="h-12 text-center text-lg tracking-[0.4em]"
             value={mfaCode}
             onChange={(e) => setMfaCode(e.target.value)}
             placeholder="000000"
@@ -177,6 +207,7 @@ export function LoginForm() {
         {serverError && <p className="text-sm text-red-600">{serverError}</p>}
         <Button
           type="button"
+          className="h-12 w-full text-sm font-bold"
           disabled={isVerifyingMfa || mfaCode.length !== 6}
           onClick={onSubmitMfa}
         >
@@ -187,41 +218,70 @@ export function LoginForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="flex w-full max-w-sm flex-col gap-4">
-      <div className="flex flex-col gap-1.5">
-        <label htmlFor="email" className="text-sm font-medium">
-          {dictionary.login.email}
-        </label>
-        <Input id="email" type="email" autoComplete="email" {...register('email')} />
-        {errors.email && <p className="text-sm text-red-600">{errors.email.message}</p>}
+    <form onSubmit={handleSubmit(onSubmit)} className="flex w-full flex-col gap-5">
+      <div>
+        <FieldLabel htmlFor="email">{dictionary.login.email}</FieldLabel>
+        <IconField
+          icon={Mail}
+          id="email"
+          type="email"
+          autoComplete="email"
+          placeholder="seu@email.com"
+          {...register('email')}
+        />
+        {errors.email && <p className="mt-1.5 text-sm text-red-600">{errors.email.message}</p>}
       </div>
 
-      <div className="flex flex-col gap-1.5">
-        <label htmlFor="password" className="text-sm font-medium">
-          {dictionary.login.password}
-        </label>
-        <Input
-          id="password"
-          type="password"
-          autoComplete="current-password"
-          {...register('password')}
-        />
-        {errors.password && <p className="text-sm text-red-600">{errors.password.message}</p>}
+      <div>
+        <FieldLabel htmlFor="password">{dictionary.login.password}</FieldLabel>
+        <div className="relative">
+          <IconField
+            icon={Lock}
+            className="pr-11"
+            id="password"
+            type={showPassword ? 'text' : 'password'}
+            autoComplete="current-password"
+            placeholder="Digite sua senha"
+            {...register('password')}
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword((value) => !value)}
+            aria-label={showPassword ? 'Ocultar senha' : 'Exibir senha'}
+            className="text-muted hover:bg-background hover:text-foreground absolute right-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-md transition-colors"
+          >
+            {showPassword ? (
+              <EyeOff size={18} strokeWidth={1.7} />
+            ) : (
+              <Eye size={18} strokeWidth={1.7} />
+            )}
+          </button>
+        </div>
+        {errors.password && (
+          <p className="mt-1.5 text-sm text-red-600">{errors.password.message}</p>
+        )}
+      </div>
+
+      <div className="-mt-1 flex justify-end">
+        <button
+          type="button"
+          onClick={() => setShowForgotPassword(true)}
+          className="text-accent hover:text-foreground text-xs font-semibold underline underline-offset-2"
+        >
+          {dictionary.login.forgotPasswordLink}
+        </button>
       </div>
 
       {serverError && <p className="text-sm text-red-600">{serverError}</p>}
 
-      <Button type="submit" disabled={isSubmitting}>
+      <Button
+        type="submit"
+        variant="primary"
+        disabled={isSubmitting}
+        className="h-[54px] w-full text-sm font-bold tracking-wide shadow-md"
+      >
         {isSubmitting ? dictionary.login.submitting : dictionary.login.submit}
       </Button>
-
-      <button
-        type="button"
-        onClick={() => setShowForgotPassword(true)}
-        className="text-muted hover:text-foreground text-center text-sm underline"
-      >
-        {dictionary.login.forgotPasswordLink}
-      </button>
     </form>
   );
 }
