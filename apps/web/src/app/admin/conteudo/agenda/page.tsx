@@ -22,7 +22,7 @@ export default async function AgendaPage() {
       key: 'titulo',
       header: 'Evento',
       cell: (event) => (
-        <Link href={`/admin/agenda/${event.id}`} className="font-medium hover:underline">
+        <Link href={`/admin/conteudo/agenda/${event.id}`} className="font-medium hover:underline">
           {event.titulo}
         </Link>
       ),
@@ -42,7 +42,7 @@ export default async function AgendaPage() {
       <div className="flex items-center justify-between">
         <h1 className="font-display text-2xl font-semibold">Agenda / Eventos</h1>
         <Button asChild>
-          <Link href="/admin/agenda/novo">Novo Evento</Link>
+          <Link href="/admin/conteudo/agenda/novo">Novo Evento</Link>
         </Button>
       </div>
 
@@ -55,7 +55,7 @@ export default async function AgendaPage() {
             title="Nenhum evento cadastrado"
             action={
               <Button asChild size="sm">
-                <Link href="/admin/agenda/novo">Novo Evento</Link>
+                <Link href="/admin/conteudo/agenda/novo">Novo Evento</Link>
               </Button>
             }
           />

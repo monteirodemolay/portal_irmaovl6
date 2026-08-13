@@ -52,7 +52,7 @@ export default async function AnnouncementsPage() {
       <div className="flex items-center justify-between">
         <h1 className="font-display text-2xl font-semibold">Avisos</h1>
         <Button asChild>
-          <Link href="/admin/avisos/novo">Novo Aviso</Link>
+          <Link href="/admin/conteudo/avisos/novo">Novo Aviso</Link>
         </Button>
       </div>
 
@@ -65,7 +65,7 @@ export default async function AnnouncementsPage() {
             title="Nenhum aviso cadastrado"
             action={
               <Button asChild size="sm">
-                <Link href="/admin/avisos/novo">Novo Aviso</Link>
+                <Link href="/admin/conteudo/avisos/novo">Novo Aviso</Link>
               </Button>
             }
           />

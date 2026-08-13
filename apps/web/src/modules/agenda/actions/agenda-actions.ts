@@ -38,8 +38,8 @@ export async function createEventAction(
   const result = await container.useCases.createEvent.execute(session.authContext, input);
   if (!result.ok) return { error: result.error.message };
 
-  revalidatePath('/admin/agenda');
-  redirect('/admin/agenda');
+  revalidatePath('/admin/conteudo/agenda');
+  redirect('/admin/conteudo/agenda');
 }
 
 export async function confirmAttendanceAction(

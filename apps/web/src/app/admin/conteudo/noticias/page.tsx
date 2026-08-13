@@ -17,7 +17,7 @@ export default async function NewsPage() {
       key: 'titulo',
       header: 'Título',
       cell: (n) => (
-        <Link href={`/admin/noticias/${n.id}`} className="font-medium hover:underline">
+        <Link href={`/admin/conteudo/noticias/${n.id}`} className="font-medium hover:underline">
           {n.titulo}
         </Link>
       ),
@@ -49,7 +49,7 @@ export default async function NewsPage() {
       <div className="flex items-center justify-between">
         <h1 className="font-display text-2xl font-semibold">Notícias</h1>
         <Button asChild>
-          <Link href="/admin/noticias/nova">Nova Notícia</Link>
+          <Link href="/admin/conteudo/noticias/nova">Nova Notícia</Link>
         </Button>
       </div>
 
@@ -62,7 +62,7 @@ export default async function NewsPage() {
             title="Nenhuma notícia cadastrada"
             action={
               <Button asChild size="sm">
-                <Link href="/admin/noticias/nova">Nova Notícia</Link>
+                <Link href="/admin/conteudo/noticias/nova">Nova Notícia</Link>
               </Button>
             }
           />

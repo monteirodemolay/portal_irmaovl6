@@ -9,7 +9,6 @@ import {
   Image as GalleryIcon,
   LayoutDashboard,
   Megaphone,
-  Newspaper,
   Settings,
   ShieldCheck,
   UserCircle,
@@ -24,17 +23,16 @@ const ICON_STROKE = 1.75;
 
 // Sem itens que só duplicam o site institucional (Nossa Loja, Diretoria
 // pública, Contato) — esse é o papel do www.vl6.com.br, não do Portal
-// (docs/architecture/07 §7.0). Notícias fica de fora da navegação por ora:
-// é conteúdo autoral do Portal (não espelha o site), mas a Loja sinalizou
-// que as publicações vão continuar saindo pelo site institucional — o
-// admin de Notícias (`/admin/noticias`) segue existindo, só não fica
-// linkado aqui; revisitar se um dia isso mudar. `/admin/usuarios` segue o
-// mesmo padrão: cadastro de Irmão e acesso ao Portal foram unificados em
+// (docs/architecture/07 §7.0). O admin foi reorganizado em áreas
+// consolidadas com abas internas (ver `area-tabs.ts`): Notícias, que antes
+// ficava de fora da sidebar pra não virar mais um item solto, agora está
+// visível como aba dentro de "Conteúdo" — o custo de poluir a sidebar flat
+// não existe mais depois da consolidação. `/admin/usuarios` ainda segue de
+// fora por ora: cadastro de Irmão e acesso ao Portal foram unificados em
 // `/admin/irmaos` (foto, grau, datas e "Acesso ao Portal" no mesmo
 // formulário — docs/architecture/06), então o fluxo normal nunca mais
-// passa por Usuários. A rota continua existindo só para o caso excepcional
-// de uma conta de acesso sem Member (ex.: convite avulso técnico), por
-// isso some da navegação em vez de ser removida.
+// passa por Usuários — mas essa rota volta a ficar visível como aba de
+// "Pessoas & Loja" na próxima fase da reorganização.
 const PORTAL_ITEMS = [
   { href: '/dashboard', label: 'Início', icon: LayoutDashboard },
   { href: '/perfil', label: 'Meu Perfil', icon: UserCircle },
@@ -82,13 +80,16 @@ const ADMIN_ITEMS: AdminNavItemDef[] = [
   { href: '/admin/gestoes', labelKey: 'boards', icon: ShieldCheck, permission: 'boardTerm:read' },
   { href: '/admin/permissoes', labelKey: 'permissions', icon: Settings, permission: 'role:read' },
   {
-    href: '/admin/avisos',
-    labelKey: 'announcements',
+    href: '/admin/conteudo',
+    labelKey: 'conteudo',
     icon: Megaphone,
-    permission: 'announcement:read',
+    // Visível se qualquer uma das 3 abas internas (Avisos/Notícias/Agenda —
+    // ver `area-tabs.ts`) estiver disponível pra sessão atual. Notícias
+    // volta a aparecer na navegação aqui (antes ficava de fora pra não
+    // poluir a sidebar flat — esse custo some ao virar aba de uma área já
+    // visível).
+    permission: ['announcement:read', 'news:read', 'event:read'],
   },
-  { href: '/admin/noticias', labelKey: 'news', icon: Newspaper, permission: 'news:read' },
-  { href: '/admin/agenda', labelKey: 'agenda', icon: CalendarDays, permission: 'event:read' },
   {
     href: '/admin/acervo',
     labelKey: 'acervo',

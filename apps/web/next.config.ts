@@ -55,6 +55,34 @@ const nextConfig: NextConfig = {
         destination: '/admin/acervo/galeria/:albumId',
         permanent: false,
       },
+      { source: '/admin/avisos', destination: '/admin/conteudo/avisos', permanent: false },
+      {
+        source: '/admin/avisos/novo',
+        destination: '/admin/conteudo/avisos/novo',
+        permanent: false,
+      },
+      { source: '/admin/noticias', destination: '/admin/conteudo/noticias', permanent: false },
+      {
+        source: '/admin/noticias/nova',
+        destination: '/admin/conteudo/noticias/nova',
+        permanent: false,
+      },
+      {
+        source: '/admin/noticias/:newsId',
+        destination: '/admin/conteudo/noticias/:newsId',
+        permanent: false,
+      },
+      { source: '/admin/agenda', destination: '/admin/conteudo/agenda', permanent: false },
+      {
+        source: '/admin/agenda/novo',
+        destination: '/admin/conteudo/agenda/novo',
+        permanent: false,
+      },
+      {
+        source: '/admin/agenda/:eventId',
+        destination: '/admin/conteudo/agenda/:eventId',
+        permanent: false,
+      },
     ];
   },
 };
