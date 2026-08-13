@@ -46,8 +46,19 @@
   }
 }
 
+/* Rede de segurança contra estouro horizontal — qualquer elemento que
+   ultrapasse a viewport por engano (ex.: barra de abas com overflow-x
+   próprio) nunca deve expandir a página inteira nem forçar o navegador
+   mobile a alargar a viewport de layout. Precisa estar no `html`, não só
+   no `body` — é o "initial containing block" que os navegadores mobile
+   usam para decidir a largura de layout. */
+html {
+  overflow-x: hidden;
+}
+
 body {
   background-color: hsl(var(--color-bg));
   color: hsl(var(--color-text));
   font-family: var(--font-body);
+  overflow-x: hidden;
 }

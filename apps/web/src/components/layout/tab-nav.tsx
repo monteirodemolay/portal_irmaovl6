@@ -27,7 +27,7 @@ export function TabNav({ items }: { items: TabNavItem[] }) {
   return (
     <nav
       aria-label="Sub-navegação"
-      className="border-border -mx-5 flex gap-1 overflow-x-auto border-b px-5 lg:mx-0 lg:px-0"
+      className="border-border block w-full max-w-full overflow-x-auto whitespace-nowrap border-b"
     >
       {items.map((item) => {
         const active = isTabActive(pathname, item.href);
@@ -37,7 +37,7 @@ export function TabNav({ items }: { items: TabNavItem[] }) {
             href={item.href}
             aria-current={active ? 'page' : undefined}
             className={cn(
-              'shrink-0 whitespace-nowrap border-b-2 px-3 py-3 text-sm font-medium transition-colors',
+              'mr-1 inline-block whitespace-nowrap border-b-2 px-3 py-3 text-sm font-medium transition-colors last:mr-0',
               active
                 ? 'border-primary text-primary'
                 : 'text-muted hover:text-foreground border-transparent',
