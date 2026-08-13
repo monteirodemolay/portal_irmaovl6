@@ -12,7 +12,7 @@ test.describe('Onboarding de nova Loja (Administrador Geral)', () => {
   test('cria uma Loja de ponta a ponta e mostra as credenciais do admin', async ({ page }) => {
     await page.goto('/login?redirect=/plataforma');
     await page.getByLabel('E-mail').fill(PLATFORM_ADMIN_EMAIL);
-    await page.getByLabel('Senha').fill(PLATFORM_ADMIN_PASSWORD);
+    await page.getByLabel('Senha', { exact: true }).fill(PLATFORM_ADMIN_PASSWORD);
     await page.getByRole('button', { name: 'Entrar' }).click();
     await expect(page).toHaveURL(/\/plataforma/);
 
@@ -38,7 +38,9 @@ test.describe('Onboarding de nova Loja (Administrador Geral)', () => {
   test('bloqueia quem não é Administrador Geral', async ({ page }) => {
     await page.goto('/login');
     await page.getByLabel('E-mail').fill(process.env.ADMIN_EMAIL ?? 'e2e-admin@vl6.test');
-    await page.getByLabel('Senha').fill(process.env.ADMIN_PASSWORD ?? 'SenhaForte123!');
+    await page
+      .getByLabel('Senha', { exact: true })
+      .fill(process.env.ADMIN_PASSWORD ?? 'SenhaForte123!');
     await page.getByRole('button', { name: 'Entrar' }).click();
     await expect(page).toHaveURL(/\/dashboard/);
 

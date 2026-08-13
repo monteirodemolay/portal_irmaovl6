@@ -41,7 +41,7 @@ test('admin cadastra um novo Irmão, ganha acesso ao Portal e o Irmão consegue 
   await page.getByRole('button', { name: 'Sair' }).click();
   await page.waitForURL(/\/login/);
   await page.getByLabel('E-mail').fill(email);
-  await page.getByLabel('Senha').fill(temporaryPassword.trim());
+  await page.getByLabel('Senha', { exact: true }).fill(temporaryPassword.trim());
   await page.getByRole('button', { name: 'Entrar' }).click();
   await page.waitForURL((url) => url.pathname === '/dashboard', { timeout: 30000 });
 });

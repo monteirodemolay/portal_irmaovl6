@@ -9,7 +9,7 @@ export const PLATFORM_ADMIN_PASSWORD = process.env.PLATFORM_ADMIN_PASSWORD ?? 'S
 export async function loginAsAdmin(page: Page): Promise<void> {
   await page.goto('/login');
   await page.getByLabel('E-mail').fill(ADMIN_EMAIL);
-  await page.getByLabel('Senha').fill(ADMIN_PASSWORD);
+  await page.getByLabel('Senha', { exact: true }).fill(ADMIN_PASSWORD);
   await page.getByRole('button', { name: 'Entrar' }).click();
   // Pós-login sempre cai na Área do Irmão, independente do papel — ver
   // resolvePostLoginDestination. Quem precisa do painel admin navega

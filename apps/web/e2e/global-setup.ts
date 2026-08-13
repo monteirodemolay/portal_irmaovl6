@@ -28,7 +28,7 @@ export default async function globalSetup(config: FullConfig): Promise<void> {
   await page.goto(`${baseURL}/`, { timeout: 90_000 });
   await page.goto(`${baseURL}/login`, { timeout: 90_000 });
   await page.getByLabel('E-mail').fill(ADMIN_EMAIL);
-  await page.getByLabel('Senha').fill(ADMIN_PASSWORD);
+  await page.getByLabel('Senha', { exact: true }).fill(ADMIN_PASSWORD);
   await page.getByRole('button', { name: 'Entrar' }).click();
   await page.waitForURL(/\/dashboard/, { timeout: 90_000 });
   await page.goto(`${baseURL}/admin`, { timeout: 90_000 });
