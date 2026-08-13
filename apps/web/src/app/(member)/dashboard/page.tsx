@@ -25,7 +25,7 @@ import { MemberDegreeBadge } from '@/components/membership/member-degree-badge';
 
 // Sem tile de Diretoria: mesmos dados da página pública do site
 // institucional, sem nada exclusivo do Portal — docs/architecture/07 §7.0.
-const QUICK_ACCESS = [
+const QUICK_LINKS = [
   {
     href: '/avisos',
     label: 'Avisos',
@@ -38,10 +38,17 @@ const QUICK_ACCESS = [
     description: 'Próximas sessões e eventos.',
     icon: CalendarDays,
   },
+] as const;
+
+// Arquivos, Biblioteca, Galeria e Downloads reunidos sob um único rótulo no
+// Dashboard, espelhando o agrupamento da sidebar (`nav-items.tsx`) — mesmo
+// racional: são um único espaço para o Irmão (Acervo Digital), ainda que
+// continuem sendo entidades/rotas separadas no domínio.
+const ACERVO_QUICK_LINKS = [
   {
     href: '/arquivos',
-    label: 'Arquivos',
-    description: 'Documentos e circulares oficiais.',
+    label: 'Documentos',
+    description: 'Circulares e documentos oficiais.',
     icon: FileText,
   },
   {
@@ -52,17 +59,39 @@ const QUICK_ACCESS = [
   },
   {
     href: '/galeria',
-    label: 'Galeria',
+    label: 'Fotografias',
     description: 'Registros de momentos especiais.',
     icon: GalleryIcon,
   },
   {
     href: '/downloads',
-    label: 'Downloads',
-    description: 'Materiais liberados para baixar.',
+    label: 'Favoritos',
+    description: 'Itens favoritados na Biblioteca.',
     icon: Download,
   },
 ] as const;
+
+type QuickLink = (typeof QUICK_LINKS)[number] | (typeof ACERVO_QUICK_LINKS)[number];
+
+function QuickLinkCard({ item }: { item: QuickLink }) {
+  return (
+    <Link href={item.href}>
+      <Card className="hover:border-accent group flex h-full min-h-[112px] flex-col gap-3 p-4 shadow-none transition-colors">
+        <span className="bg-accent/15 text-accent flex h-10 w-10 items-center justify-center rounded-full">
+          <item.icon size={20} strokeWidth={1.75} />
+        </span>
+        <div>
+          <p className="font-display text-sm font-semibold">{item.label}</p>
+          <p className="text-muted mt-0.5 text-xs">{item.description}</p>
+        </div>
+        <ChevronRight
+          size={16}
+          className="text-accent mt-auto opacity-0 transition-opacity group-hover:opacity-100"
+        />
+      </Card>
+    </Link>
+  );
+}
 
 function formatEventDate(date: Date): { day: string; month: string; time: string } {
   const d = new Date(date);
@@ -137,24 +166,22 @@ export default async function DashboardPage() {
         </div>
       </section>
 
-      <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-        {QUICK_ACCESS.map((item) => (
-          <Link key={item.href} href={item.href}>
-            <Card className="hover:border-accent group flex h-full min-h-[112px] flex-col gap-3 p-4 shadow-none transition-colors">
-              <span className="bg-accent/15 text-accent flex h-10 w-10 items-center justify-center rounded-full">
-                <item.icon size={20} strokeWidth={1.75} />
-              </span>
-              <div>
-                <p className="font-display text-sm font-semibold">{item.label}</p>
-                <p className="text-muted mt-0.5 text-xs">{item.description}</p>
-              </div>
-              <ChevronRight
-                size={16}
-                className="text-accent mt-auto opacity-0 transition-opacity group-hover:opacity-100"
-              />
-            </Card>
-          </Link>
-        ))}
+      <section className="flex flex-col gap-3">
+        <h2 className="font-display text-lg font-semibold">Acesso rápido</h2>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-2">
+          {QUICK_LINKS.map((item) => (
+            <QuickLinkCard key={item.href} item={item} />
+          ))}
+        </div>
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <h2 className="font-display text-lg font-semibold">Acervo Digital</h2>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {ACERVO_QUICK_LINKS.map((item) => (
+            <QuickLinkCard key={item.href} item={item} />
+          ))}
+        </div>
       </section>
 
       <section className="grid grid-cols-1 gap-4 lg:grid-cols-3">
@@ -227,12 +254,12 @@ export default async function DashboardPage() {
 
         <Card className="flex flex-col gap-4 p-5 shadow-none">
           <div className="flex items-center justify-between">
-            <h2 className="font-display text-lg font-semibold">Arquivos Recentes</h2>
+            <h2 className="font-display text-lg font-semibold">Documentos Recentes</h2>
             <Link href="/arquivos" className="text-accent text-xs font-medium hover:underline">
               Ver todos
             </Link>
           </div>
-          <p className="text-muted text-sm">Nenhum arquivo recente.</p>
+          <p className="text-muted text-sm">Nenhum documento recente.</p>
         </Card>
       </section>
     </div>

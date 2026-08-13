@@ -3,6 +3,7 @@ import type { FileAsset, LibraryCategory, LibraryItem } from '@vl6/domain';
 import { Badge, Card, CardContent, CardHeader, CardTitle, EmptyState } from '@vl6/ui';
 import { FILE_KIND_LABELS } from '@vl6/shared';
 import { requirePagePermission } from '@/lib/auth/require-permission';
+import { AcervoPageHeader } from '@/components/member/acervo-page-header';
 import { RecordingLink } from '@/components/member/recording-link';
 import { FavoriteButton } from '@/modules/library/components/favorite-button';
 
@@ -29,7 +30,10 @@ export default async function LibraryPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="font-display text-2xl font-semibold">Biblioteca</h1>
+      <AcervoPageHeader
+        title="Biblioteca"
+        description="Estudos e leituras selecionadas para o Irmão."
+      />
 
       {nonEmptyCategories.length === 0 ? (
         <EmptyState title="Nenhum item disponível na Biblioteca ainda" />

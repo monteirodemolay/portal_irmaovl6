@@ -2,6 +2,7 @@ import { createServerContainer } from '@vl6/infra';
 import { Badge, Card, CardContent, CardHeader, CardTitle, EmptyState } from '@vl6/ui';
 import { FILE_KIND_LABELS } from '@vl6/shared';
 import { requirePagePermission } from '@/lib/auth/require-permission';
+import { AcervoPageHeader } from '@/components/member/acervo-page-header';
 import { RecordingLink } from '@/components/member/recording-link';
 import { FavoriteButton } from '@/modules/library/components/favorite-button';
 
@@ -28,10 +29,7 @@ export default async function DownloadsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="font-display text-2xl font-semibold">Downloads</h1>
-        <p className="text-muted text-sm">Seus itens favoritados na Biblioteca.</p>
-      </div>
+      <AcervoPageHeader title="Favoritos" description="Seus itens favoritados na Biblioteca." />
 
       {rows.length === 0 ? (
         <EmptyState title="Você ainda não favoritou nenhum item da Biblioteca" />

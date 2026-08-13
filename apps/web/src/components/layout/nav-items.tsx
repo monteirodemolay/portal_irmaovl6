@@ -40,10 +40,21 @@ const PORTAL_ITEMS = [
   { href: '/perfil', label: 'Meu Perfil', icon: UserCircle },
   { href: '/agenda', label: 'Agenda', icon: CalendarDays },
   { href: '/avisos', label: 'Avisos', icon: Megaphone },
+] as const;
+
+// Arquivos, Biblioteca, Galeria e Downloads continuam sendo entidades e
+// rotas separadas no domínio (Biblioteca cataloga `FileAsset`s, nunca
+// duplica o binário — ver `LibraryItem`), mas para o Irmão elas formam um
+// único espaço: o Acervo Digital. Agrupá-las numa seção própria (em vez de
+// 4 itens soltos misturados com Agenda/Avisos) resolve a confusão de IA de
+// navegação identificada na auditoria, sem mexer no modelo de dados nem
+// nas rotas existentes. Rótulos alinhados aos títulos das próprias páginas
+// (`AcervoPageHeader`).
+const ACERVO_ITEMS = [
+  { href: '/arquivos', label: 'Documentos', icon: FileText },
   { href: '/biblioteca', label: 'Biblioteca', icon: BookOpen },
-  { href: '/arquivos', label: 'Arquivos', icon: FileText },
-  { href: '/galeria', label: 'Galeria', icon: GalleryIcon },
-  { href: '/downloads', label: 'Downloads', icon: Download },
+  { href: '/galeria', label: 'Fotografias', icon: GalleryIcon },
+  { href: '/downloads', label: 'Favoritos', icon: Download },
 ] as const;
 
 interface AdminNavItemDef {
@@ -100,11 +111,12 @@ function navContent(Icon: typeof LayoutDashboard, label: string) {
 
 /**
  * Monta as seções da sidebar compartilhada (`AppShell`) a partir da sessão
- * real — nunca escondidas só por CSS. "Portal" aparece pra qualquer
- * autenticado; "Administração" só pra Administrador da Loja/Geral, com
- * cada item ainda filtrado pela permissão específica (mesma regra de
- * `admin/layout.tsx`); "Sistema" só pro Administrador Geral, apontando pro
- * painel `/plataforma` que já existe — nenhuma tela nova inventada aqui.
+ * real — nunca escondidas só por CSS. "Portal" e "Acervo Digital" aparecem
+ * pra qualquer autenticado; "Administração" só pra Administrador da
+ * Loja/Geral, com cada item ainda filtrado pela permissão específica (mesma
+ * regra de `admin/layout.tsx`); "Sistema" só pro Administrador Geral,
+ * apontando pro painel `/plataforma` que já existe — nenhuma tela nova
+ * inventada aqui.
  */
 export function buildNavSections(
   authContext: AuthContext,
@@ -115,6 +127,13 @@ export function buildNavSections(
     {
       title: 'Portal',
       items: PORTAL_ITEMS.map((item) => ({
+        href: item.href,
+        content: navContent(item.icon, item.label),
+      })),
+    },
+    {
+      title: 'Acervo Digital',
+      items: ACERVO_ITEMS.map((item) => ({
         href: item.href,
         content: navContent(item.icon, item.label),
       })),

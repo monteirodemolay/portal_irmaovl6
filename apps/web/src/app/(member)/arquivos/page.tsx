@@ -3,6 +3,7 @@ import type { FileAsset, FileCategory } from '@vl6/domain';
 import { Badge, Card, CardContent, CardHeader, CardTitle, EmptyState } from '@vl6/ui';
 import { FILE_KIND_LABELS } from '@vl6/shared';
 import { requirePagePermission } from '@/lib/auth/require-permission';
+import { AcervoPageHeader } from '@/components/member/acervo-page-header';
 import { RecordingLink } from '@/components/member/recording-link';
 
 export default async function MemberFilesPage() {
@@ -21,7 +22,10 @@ export default async function MemberFilesPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="font-display text-2xl font-semibold">Arquivos</h1>
+      <AcervoPageHeader
+        title="Documentos"
+        description="Circulares, atas e documentos oficiais da Loja."
+      />
 
       {nonEmptyCategories.length === 0 ? (
         <EmptyState title="Nenhum arquivo publicado ainda" />
