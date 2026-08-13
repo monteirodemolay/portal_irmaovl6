@@ -1,6 +1,15 @@
 import { z } from 'zod';
 
 /**
+ * Versão vigente do termo de consentimento da Central — só existe uma
+ * versão na v1, então a política de "o que fazer com blocos publicados sob
+ * versão antiga" (docs/architecture) não precisa ser implementada ainda; o
+ * modelo append-only de `PublicationConsent` já suporta isso quando houver
+ * de fato uma v2.
+ */
+export const CENTRAL_CONSENT_TERM_VERSION = '2026-08-central-v1';
+
+/**
  * Formulário de edição do conteúdo da Central dos Irmãos VL6
  * (docs/architecture) — "cadastrar ≠ publicar": este schema só valida o
  * CONTEÚDO dos blocos, nunca a visibilidade (ver `publicationSettingsSchema`

@@ -47,6 +47,8 @@ export interface PublicationSettings extends BaseEntity {
   suspendedReason: string | null;
 }
 
-export function isCentralProfileVisible(settings: PublicationSettings | null): boolean {
+export function isCentralProfileVisible(
+  settings: PublicationSettings | null,
+): settings is PublicationSettings {
   return settings !== null && settings.profilePublished && settings.suspendedAt === null;
 }

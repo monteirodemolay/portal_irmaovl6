@@ -82,6 +82,15 @@ export * from './modules/central/entities/publication-consent.entity';
 export * from './modules/central/repositories/member-central-profile.repository';
 export * from './modules/central/repositories/publication-settings.repository';
 export * from './modules/central/repositories/publication-consent.repository';
+export * from './modules/central/dtos/public-member-profile.dto';
+export * from './modules/central/use-cases/update-central-profile.use-case';
+export * from './modules/central/use-cases/update-publication-settings.use-case';
+export * from './modules/central/use-cases/withdraw-from-directory.use-case';
+export * from './modules/central/use-cases/get-public-member-profile.use-case';
+export * from './modules/central/use-cases/search-directory.use-case';
+export * from './modules/central/use-cases/suspend-central-profile.use-case';
+export * from './modules/central/use-cases/reactivate-central-profile.use-case';
+export * from './modules/central/use-cases/list-central-profiles-admin-view.use-case';
 
 // Content
 export * from './modules/content/entities/news.entity';
