@@ -8,18 +8,25 @@ A arquitetura completa (visão geral, modelo de dados, RBAC, design system,
 roadmap de versões) está documentada em [`docs/architecture`](./docs/architecture/00-README.md).
 Este README cobre apenas como rodar o que já existe no repositório.
 
-## Estado atual: v0.1 (Fundação)
+## Estado atual
 
-Monorepo, camada de domínio (Tenancy + IdentityAccess), infraestrutura
-Firestore, design system inicial e o fluxo de autenticação completo (login,
-sessão, Custom Claims). Ainda **não há** telas de negócio (Biblioteca,
-Arquivos, Agenda etc.) — ver [roadmap](./docs/architecture/10-roadmap.md).
+Monorepo em Clean Architecture (domínio, infraestrutura e app separados),
+multi-tenant, com autenticação completa (login, sessão, Custom Claims, MFA)
+e os módulos de negócio da área do Irmão e do painel administrativo já
+implementados e funcionando contra Firestore real: Dashboard, Perfil,
+Agenda, Arquivos, Biblioteca, Avisos, Downloads, Galeria, Notícias, Links
+Úteis, além do `/admin` completo (Irmãos, Usuários, Permissões, Arquivos,
+Biblioteca, Agenda, Avisos, Notícias, Galeria, Gestões, Loja, Configurações,
+Integrações) e do painel `/plataforma` para o Administrador Geral
+(multi-tenant cross-tenant). Detalhes de cada módulo e o histórico de
+versões estão no [roadmap](./docs/architecture/10-roadmap.md).
 
 ## Stack
 
 Next.js 15 · React 19 · TypeScript · Tailwind CSS · Firebase (Auth,
-Firestore, Storage, Cloud Functions) · Zod · React Hook Form · TanStack
-Query · pnpm workspaces + Turborepo.
+Firestore) · Vercel Blob (upload de arquivos/mídia) · Vercel Cron
+(`/api/cron/*`, substitui Cloud Functions agendadas — sem plano Blaze) ·
+Zod · React Hook Form · TanStack Query · pnpm workspaces + Turborepo.
 
 ## Pré-requisitos
 
@@ -36,15 +43,17 @@ pnpm install
 cp apps/web/.env.example apps/web/.env.local
 ```
 
-`.env.local` precisa de duas seções:
+`.env.local` precisa de três seções:
 
 1. **Client SDK** (`NEXT_PUBLIC_FIREBASE_*`) — em Firebase Console → Configurações do projeto → Apps → SDK do Firebase.
 2. **Admin SDK** (`FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY`) — gere uma chave de conta de serviço em Configurações do projeto → Contas de serviço. Em produção (Cloud Run/App Hosting) deixe em branco e use Application Default Credentials.
+3. **Vercel Blob** (`BLOB_READ_WRITE_TOKEN`) — em Vercel → Storage → Blob, crie um Blob Store e copie o token (ou `vercel env pull` num projeto já conectado). **Obrigatório**: sem essa variável, todo upload de Arquivos/Biblioteca/Galeria/foto de Irmão falha.
 
 ## Rodando localmente
 
 ```bash
-# Emuladores do Firebase (Auth + Firestore + Storage + Functions)
+# Emuladores do Firebase (Auth + Firestore) — não há emulador de Storage
+# porque o storage de binários é o Vercel Blob, não o Firebase Storage.
 firebase emulators:start
 
 # Provisiona o tenant Verdadeira Luz nº 06 + primeiro Administrador
@@ -85,18 +94,26 @@ Ver a árvore completa e a explicação de cada camada em
 Resumo:
 
 ```
-apps/web        Next.js — site público, área do irmão, painel admin
+apps/web        Next.js — login, área do Irmão, painel admin e /plataforma
 packages/domain Entidades, casos de uso, interfaces de repositório (Clean Architecture)
-packages/infra  Implementações Firestore dos repositórios do domínio
+packages/infra  Implementações Firestore + Vercel Blob dos repositórios/storage do domínio
 packages/ui     Design system (tokens + componentes)
-packages/shared Enums e schemas Zod compartilhados
-functions/      Firebase Cloud Functions (sync de Custom Claims, etc.)
-scripts/        Scripts operacionais (seed do tenant inicial)
+packages/shared Enums, schemas Zod e logger compartilhados
+packages/config Presets de eslint/tailwind/tsconfig compartilhados
+scripts/        Scripts operacionais (seed do tenant inicial, seed do Administrador Geral)
 ```
+
+Não há `functions/` (Firebase Cloud Functions) neste repositório — o
+projeto roda no plano Spark (sem Cloud Functions/Blaze); tarefas antes
+pensadas como Functions viraram rotas em `apps/web/src/app/api/cron/*`
+acionadas por Vercel Cron (`apps/web/vercel.json`), protegidas por
+`CRON_SECRET`.
 
 ## Deploy
 
-Ainda não definido neste repositório — ver "Fora de escopo" no
-[roadmap](./docs/architecture/10-roadmap.md). `firebase.json` já cobre
-Firestore Rules/Indexes, Storage Rules e Cloud Functions; falta decidir o
-alvo de deploy do `apps/web` (Firebase App Hosting, Vercel ou Cloud Run).
+`apps/web` já está configurado para deploy na Vercel (`apps/web/vercel.json`
+define os crons de `/api/cron/*`). `firebase.json` cobre apenas Firestore
+(Rules/Indexes) e os emuladores de Auth/Firestore — não há Firebase
+Hosting, Storage nem Cloud Functions configurados, pois o storage de
+binários é o Vercel Blob (`BLOB_READ_WRITE_TOKEN`) e não há tarefas
+agendadas fora do Vercel Cron.

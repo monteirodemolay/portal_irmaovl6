@@ -5,10 +5,6 @@ import { FILE_KIND_LABELS } from '@vl6/shared';
 import { requirePagePermission } from '@/lib/auth/require-permission';
 import { RecordingLink } from '@/components/member/recording-link';
 import { FavoriteButton } from '@/modules/library/components/favorite-button';
-import {
-  recordLibraryDownloadAction,
-  recordLibraryViewAction,
-} from '@/modules/library/actions/library-actions';
 
 export default async function LibraryPage() {
   const session = await requirePagePermission('libraryItem:read');
@@ -80,18 +76,10 @@ function LibraryItemCard({
       <CardContent className="flex items-center justify-between gap-4">
         <div className="flex gap-4 text-sm">
           {item.permiteLeituraOnline && (
-            <RecordingLink
-              href={file.urlArquivo}
-              label="Ler online"
-              onRecord={recordLibraryViewAction.bind(null, item.id)}
-            />
+            <RecordingLink href={`/api/library-items/${item.id}`} label="Ler online" />
           )}
           {file.permitirDownload && (
-            <RecordingLink
-              href={file.urlArquivo}
-              label="Baixar"
-              onRecord={recordLibraryDownloadAction.bind(null, item.id)}
-            />
+            <RecordingLink href={`/api/library-items/${item.id}?mode=download`} label="Baixar" />
           )}
         </div>
         <FavoriteButton libraryItemId={item.id} favorited={favorited} />

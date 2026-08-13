@@ -2,7 +2,10 @@ import { describe, expect, it } from 'vitest';
 import type { AuthContext } from '../../../shared/auth-context';
 import type { FileAsset } from '../entities/file-asset.entity';
 import type { IFileAssetRepository } from '../repositories/file-asset.repository';
-import { RecordFileDownloadUseCase } from './record-file-interaction.use-case';
+import {
+  RecordFileDownloadUseCase,
+  RecordFileViewUseCase,
+} from './record-file-interaction.use-case';
 
 const ctx: AuthContext = { uid: 'u1', tenantId: 't1', roleId: 'r1', permissions: ['file:read'] };
 
@@ -38,12 +41,15 @@ function buildFile(overrides: Partial<FileAsset>): FileAsset {
 }
 
 class FakeFileAssetRepository implements Partial<IFileAssetRepository> {
-  constructor(private readonly file: FileAsset) {}
+  constructor(private readonly file: FileAsset | null) {}
   incrementCalls = 0;
   async findById() {
     return this.file;
   }
   async incrementDownloads() {
+    this.incrementCalls += 1;
+  }
+  async incrementViews() {
     this.incrementCalls += 1;
   }
 }
@@ -73,5 +79,47 @@ describe('RecordFileDownloadUseCase', () => {
 
     expect(result.ok).toBe(true);
     expect(repo.incrementCalls).toBe(1);
+  });
+});
+
+describe('RecordFileViewUseCase', () => {
+  it('incrementa o contador quando o arquivo pertence ao tenant do usuário', async () => {
+    const repo = new FakeFileAssetRepository(buildFile({ tenantId: 't1' }));
+    const useCase = new RecordFileViewUseCase({
+      fileAssetRepository: repo as unknown as IFileAssetRepository,
+    });
+
+    const result = await useCase.execute(ctx, 'file-1');
+
+    expect(result.ok).toBe(true);
+    expect(repo.incrementCalls).toBe(1);
+  });
+
+  it('rejeita arquivo de outro tenant sem incrementar o contador', async () => {
+    const repo = new FakeFileAssetRepository(buildFile({ tenantId: 'outro-tenant' }));
+    const useCase = new RecordFileViewUseCase({
+      fileAssetRepository: repo as unknown as IFileAssetRepository,
+    });
+
+    const result = await useCase.execute(ctx, 'file-1');
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error.code).toBe('not_found');
+    expect(repo.incrementCalls).toBe(0);
+  });
+
+  it('rejeita arquivo inexistente sem incrementar o contador', async () => {
+    const repo = new FakeFileAssetRepository(null);
+    const useCase = new RecordFileViewUseCase({
+      fileAssetRepository: repo as unknown as IFileAssetRepository,
+    });
+
+    const result = await useCase.execute(ctx, 'file-1');
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error.code).toBe('not_found');
+    expect(repo.incrementCalls).toBe(0);
   });
 });

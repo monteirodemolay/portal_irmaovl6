@@ -13,6 +13,12 @@ export class RecordFileViewUseCase {
 
   async execute(ctx: AuthContext, fileId: string): Promise<Result<void>> {
     requirePermission(ctx, 'file:read');
+
+    const file = await this.deps.fileAssetRepository.findById(fileId);
+    if (!file || file.tenantId !== ctx.tenantId) {
+      return err(new NotFoundError('FileAsset', fileId));
+    }
+
     await this.deps.fileAssetRepository.incrementViews(fileId);
     return ok(undefined);
   }

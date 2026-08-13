@@ -3,7 +3,10 @@
 import { randomUUID } from 'node:crypto';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
+import * as Sentry from '@sentry/nextjs';
 import {
+  errorToLogContext,
+  logger,
   memberSchema,
   normalizeConjugeFields,
   type MemberFormValues,
@@ -203,10 +206,21 @@ export async function createMemberAction(
   }
   const member = memberResult.value;
 
-  const fotoUrl =
-    fotoFile instanceof File && fotoFile.size > 0
-      ? await uploadMemberPhoto(fotoFile, session.authContext.tenantId, member.id)
-      : null;
+  let fotoUrl: string | null = null;
+  let fotoError: string | null = null;
+  if (fotoFile instanceof File && fotoFile.size > 0) {
+    try {
+      fotoUrl = await uploadMemberPhoto(fotoFile, session.authContext.tenantId, member.id);
+    } catch (error) {
+      logger.error('Falha ao enviar foto do Irmão para o storage', {
+        route: 'createMemberAction',
+        memberId: member.id,
+        ...errorToLogContext(error),
+      });
+      Sentry.captureException(error, { tags: { route: 'createMemberAction:foto' } });
+      fotoError = 'a foto não pôde ser enviada';
+    }
+  }
 
   const wantsAccess = formData.get('criarAcesso') === 'on';
   let temporaryPassword: string | null = null;
@@ -237,11 +251,16 @@ export async function createMemberAction(
   revalidatePath('/admin/irmaos');
   revalidatePath('/admin/usuarios');
 
-  if (accessError) {
+  const partialFailures = [
+    accessError && `o acesso não pôde ser criado: ${accessError}`,
+    fotoError,
+  ].filter((message): message is string => Boolean(message));
+
+  if (partialFailures.length > 0) {
     return {
       ...EMPTY_STATE,
       memberId: member.id,
-      error: `Irmão cadastrado, mas o acesso não pôde ser criado: ${accessError}`,
+      error: `Irmão cadastrado, mas ${partialFailures.join('; ')}.`,
     };
   }
   return { error: null, memberId: member.id, temporaryPassword };
@@ -271,7 +290,20 @@ export async function updateMemberAction(
   if (fotoFile instanceof File && fotoFile.size > 0) {
     const photoError = validatePhotoFile(fotoFile);
     if (photoError) return { ...EMPTY_STATE, error: photoError };
-    fotoUrl = await uploadMemberPhoto(fotoFile, session.authContext.tenantId, memberId);
+    try {
+      fotoUrl = await uploadMemberPhoto(fotoFile, session.authContext.tenantId, memberId);
+    } catch (error) {
+      logger.error('Falha ao enviar foto do Irmão para o storage', {
+        route: 'updateMemberAction',
+        memberId,
+        ...errorToLogContext(error),
+      });
+      Sentry.captureException(error, { tags: { route: 'updateMemberAction:foto' } });
+      return {
+        ...EMPTY_STATE,
+        error: 'Não foi possível enviar a foto. Tente novamente em instantes.',
+      };
+    }
   }
 
   let input: MemberFormValues;
