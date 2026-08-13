@@ -4,7 +4,7 @@ const email = process.env.ADMIN_EMAIL ?? 'e2e-admin@vl6.test';
 const password = process.env.ADMIN_PASSWORD ?? 'SenhaForte123!';
 
 test.describe('Login', () => {
-  test('entra com credenciais válidas e a Administradora da Loja cai direto no painel', async ({
+  test('entra com credenciais válidas e cai na Área do Irmão, independente do papel', async ({
     page,
   }) => {
     await page.goto('/login');
@@ -12,8 +12,8 @@ test.describe('Login', () => {
     await page.getByLabel('Senha').fill(password);
     await page.getByRole('button', { name: 'Entrar' }).click();
 
-    await expect(page).toHaveURL(/\/admin/);
-    await expect(page.getByRole('heading', { name: 'Painel Administrativo' })).toBeVisible();
+    await expect(page).toHaveURL(/\/dashboard/);
+    await expect(page.getByRole('heading', { name: 'Bem-vindo ao Portal do Irmão' })).toBeVisible();
   });
 
   test('mostra erro com senha inválida', async ({ page }) => {

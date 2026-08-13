@@ -1,65 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import type { Role } from '@vl6/domain';
 import { resolvePostLoginDestination } from './resolve-post-login-destination';
 
-function buildRole(overrides: Partial<Role> = {}): Role {
-  return {
-    id: 'role-1',
-    tenantId: 't1',
-    nome: 'Irmão',
-    chave: 'membro',
-    permissoes: ['news:read'],
-    sistemico: true,
-    createdAt: new Date('2025-01-01'),
-    updatedAt: new Date('2025-01-01'),
-    createdBy: 'seed',
-    updatedBy: 'seed',
-    deletedAt: null,
-    status: 'active',
-    ativo: true,
-    ...overrides,
-  };
-}
-
 describe('resolvePostLoginDestination', () => {
-  it('manda o Administrador Geral pra /plataforma, sem olhar o papel', () => {
-    expect(resolvePostLoginDestination('platform', null)).toBe('/plataforma');
-    expect(resolvePostLoginDestination('platform', buildRole({ chave: 'membro' }))).toBe(
-      '/plataforma',
-    );
+  it('manda o Administrador Geral pra /plataforma', () => {
+    expect(resolvePostLoginDestination('platform')).toBe('/plataforma');
   });
 
-  it('sem papel resolvido, cai na Área do Irmão', () => {
-    expect(resolvePostLoginDestination('t1', null)).toBe('/dashboard');
-  });
-
-  it('papel de fábrica "admin" vai pro /admin', () => {
-    expect(resolvePostLoginDestination('t1', buildRole({ chave: 'admin', sistemico: true }))).toBe(
-      '/admin',
-    );
-  });
-
-  it('papel de fábrica "membro" vai pra Área do Irmão', () => {
-    expect(
-      resolvePostLoginDestination('t1', buildRole({ chave: 'membro', sistemico: true })),
-    ).toBe('/dashboard');
-  });
-
-  it('papel customizado só de leitura vai pra Área do Irmão', () => {
-    const role = buildRole({
-      chave: 'observador',
-      sistemico: false,
-      permissoes: ['news:read', 'event:read'],
-    });
-    expect(resolvePostLoginDestination('t1', role)).toBe('/dashboard');
-  });
-
-  it('papel customizado com alguma permissão de escrita vai pro /admin', () => {
-    const role = buildRole({
-      chave: 'editor-noticias',
-      sistemico: false,
-      permissoes: ['news:read', 'news:create'],
-    });
-    expect(resolvePostLoginDestination('t1', role)).toBe('/admin');
+  it('manda qualquer Irmão de uma Loja pra Área do Irmão, independente do papel', () => {
+    expect(resolvePostLoginDestination('t1')).toBe('/dashboard');
   });
 });

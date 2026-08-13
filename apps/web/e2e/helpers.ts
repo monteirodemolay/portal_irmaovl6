@@ -11,5 +11,8 @@ export async function loginAsAdmin(page: Page): Promise<void> {
   await page.getByLabel('E-mail').fill(ADMIN_EMAIL);
   await page.getByLabel('Senha').fill(ADMIN_PASSWORD);
   await page.getByRole('button', { name: 'Entrar' }).click();
-  await expect(page).toHaveURL(/\/admin/);
+  // Pós-login sempre cai na Área do Irmão, independente do papel — ver
+  // resolvePostLoginDestination. Quem precisa do painel admin navega
+  // explicitamente pra lá depois deste helper.
+  await expect(page).toHaveURL(/\/dashboard/);
 }
