@@ -24,6 +24,7 @@ export const ADMIN_AREA_TABS: Record<AdminAreaKey, AreaTabDef[]> = {
     { href: '/admin/pessoas/usuarios', label: 'Usuários', permission: 'user:read' },
     { href: '/admin/pessoas/permissoes', label: 'Permissões', permission: 'role:read' },
     { href: '/admin/pessoas/loja', label: 'Loja', permission: 'branding:read' },
+    { href: '/admin/pessoas/central', label: 'Central VL6', permission: 'memberCentral:manage' },
   ],
   conteudo: [
     { href: '/admin/conteudo/avisos', label: 'Avisos', permission: 'announcement:read' },
