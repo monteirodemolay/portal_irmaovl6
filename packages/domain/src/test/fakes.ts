@@ -243,6 +243,9 @@ export class InMemoryMemberRepository implements IMemberRepository {
     const items = [...this.byId.values()].filter((m) => m.tenantId === filters.tenantId);
     return { items: items.slice(0, page.limit), nextCursor: null, hasMore: false };
   }
+  async countByTenant(tenantId: string) {
+    return [...this.byId.values()].filter((m) => m.tenantId === tenantId).length;
+  }
   async create(member: Member) {
     this.byId.set(member.id, member);
   }
@@ -399,6 +402,9 @@ export class InMemoryAnnouncementRepository implements IAnnouncementRepository {
   async listAll(tenantId: string) {
     return [...this.byId.values()].filter((a) => a.tenantId === tenantId);
   }
+  async countPublishedByTenant(tenantId: string) {
+    return [...this.byId.values()].filter((a) => a.tenantId === tenantId && a.publicado).length;
+  }
   async create(announcement: Announcement) {
     this.byId.set(announcement.id, announcement);
   }
@@ -468,6 +474,9 @@ export class InMemoryFileAssetRepository implements IFileAssetRepository {
     const items = [...this.byId.values()].filter((f) => f.tenantId === tenantId);
     return { items: items.slice(0, page.limit), nextCursor: null, hasMore: false };
   }
+  async countByTenant(tenantId: string) {
+    return [...this.byId.values()].filter((f) => f.tenantId === tenantId).length;
+  }
   async create(file: FileAsset) {
     this.byId.set(file.id, file);
   }
@@ -515,6 +524,10 @@ export class InMemoryGalleryAlbumRepository implements IGalleryAlbumRepository {
         (categoria === undefined || a.categoria === categoria),
     );
   }
+  async countByTenant(tenantId: string) {
+    return [...this.byId.values()].filter((a) => a.tenantId === tenantId && a.deletedAt === null)
+      .length;
+  }
   async create(album: GalleryAlbum) {
     this.byId.set(album.id, album);
   }
@@ -553,6 +566,9 @@ export class InMemoryLibraryItemRepository implements ILibraryItemRepository {
   }
   async listByTenant(tenantId: string) {
     return [...this.byId.values()].filter((i) => i.tenantId === tenantId);
+  }
+  async countByTenant(tenantId: string) {
+    return [...this.byId.values()].filter((i) => i.tenantId === tenantId).length;
   }
   async create(item: LibraryItem) {
     this.byId.set(item.id, item);
@@ -688,6 +704,10 @@ export class InMemoryEventRepository implements IEventRepository {
   async listAll(tenantId: string, page: PageRequest): Promise<PageResult<Event>> {
     const items = [...this.byId.values()].filter((e) => e.tenantId === tenantId);
     return { items: items.slice(0, page.limit), nextCursor: null, hasMore: false };
+  }
+  async countUpcomingByTenant(tenantId: string, from: Date) {
+    return [...this.byId.values()].filter((e) => e.tenantId === tenantId && e.dataInicio >= from)
+      .length;
   }
   async create(event: Event) {
     this.byId.set(event.id, event);

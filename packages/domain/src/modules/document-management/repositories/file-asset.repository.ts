@@ -9,6 +9,8 @@ export interface IFileAssetRepository {
     page: PageRequest,
   ): Promise<PageResult<FileAsset>>;
   listAll(tenantId: string, page: PageRequest): Promise<PageResult<FileAsset>>;
+  /** Total de arquivos (não excluídos) — usado pelo Painel administrativo. */
+  countByTenant(tenantId: string): Promise<number>;
   create(file: FileAsset): Promise<void>;
   update(file: FileAsset): Promise<void>;
   /** Incremento atômico — nunca via read-modify-write (docs/architecture/06 §6.3). */

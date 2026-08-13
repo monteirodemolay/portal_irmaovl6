@@ -15,6 +15,8 @@ export interface IMemberRepository {
   findByUserId(tenantId: string, userId: string): Promise<Member | null>;
   existsByCim(tenantId: string, cim: string): Promise<boolean>;
   search(filters: MemberSearchFilters, page: PageRequest): Promise<PageResult<Member>>;
+  /** Total de Irmãos cadastrados (não excluídos) — usado pelo Painel administrativo. */
+  countByTenant(tenantId: string): Promise<number>;
   create(member: Member): Promise<void>;
   update(member: Member): Promise<void>;
 }
