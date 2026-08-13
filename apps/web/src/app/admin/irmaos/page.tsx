@@ -87,7 +87,7 @@ export default async function MembersPage({
         </Link>
       ),
     },
-    { key: 'matricula', header: 'Matrícula', cell: (m) => m.matricula },
+    { key: 'matricula', header: 'Matrícula', cell: (m) => m.matricula ?? '—' },
     { key: 'grau', header: 'Grau', cell: (m) => MEMBER_DEGREE_LABELS[m.grau] },
     {
       key: 'situacao',

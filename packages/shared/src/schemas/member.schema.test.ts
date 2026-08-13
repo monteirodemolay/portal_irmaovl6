@@ -25,7 +25,7 @@ const BASE: Omit<MemberFormValues, 'grau' | 'dataIniciacao' | 'dataElevacao' | '
   observacoes: null,
 };
 
-describe('memberSchema — coerência de grau e datas maçônicas', () => {
+describe('memberSchema — cadastro simplificado (só nome e e-mail obrigatórios)', () => {
   it('aceita aprendiz só com data de iniciação', () => {
     const result = memberSchema.safeParse({
       ...BASE,
@@ -37,7 +37,7 @@ describe('memberSchema — coerência de grau e datas maçônicas', () => {
     expect(result.success).toBe(true);
   });
 
-  it('rejeita aprendiz sem data de iniciação', () => {
+  it('aceita aprendiz sem nenhuma data maçônica', () => {
     const result = memberSchema.safeParse({
       ...BASE,
       grau: 'aprendiz',
@@ -45,10 +45,10 @@ describe('memberSchema — coerência de grau e datas maçônicas', () => {
       dataElevacao: null,
       dataExaltacao: null,
     });
-    expect(result.success).toBe(false);
+    expect(result.success).toBe(true);
   });
 
-  it('rejeita companheiro sem data de elevação', () => {
+  it('aceita companheiro sem data de elevação', () => {
     const result = memberSchema.safeParse({
       ...BASE,
       grau: 'companheiro',
@@ -56,7 +56,7 @@ describe('memberSchema — coerência de grau e datas maçônicas', () => {
       dataElevacao: null,
       dataExaltacao: null,
     });
-    expect(result.success).toBe(false);
+    expect(result.success).toBe(true);
   });
 
   it('aceita companheiro com iniciação e elevação, sem exaltação', () => {
@@ -70,7 +70,7 @@ describe('memberSchema — coerência de grau e datas maçônicas', () => {
     expect(result.success).toBe(true);
   });
 
-  it('rejeita mestre sem data de exaltação', () => {
+  it('aceita mestre sem data de exaltação', () => {
     const result = memberSchema.safeParse({
       ...BASE,
       grau: 'mestre',
@@ -78,7 +78,19 @@ describe('memberSchema — coerência de grau e datas maçônicas', () => {
       dataElevacao: new Date('2021-01-01'),
       dataExaltacao: null,
     });
-    expect(result.success).toBe(false);
+    expect(result.success).toBe(true);
+  });
+
+  it('aceita cadastro sem matrícula', () => {
+    const result = memberSchema.safeParse({
+      ...BASE,
+      matricula: null,
+      grau: 'aprendiz',
+      dataIniciacao: null,
+      dataElevacao: null,
+      dataExaltacao: null,
+    });
+    expect(result.success).toBe(true);
   });
 
   it('aceita mestre com as três datas em ordem', () => {

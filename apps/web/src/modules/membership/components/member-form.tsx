@@ -185,13 +185,18 @@ export function MemberForm({ action, member, roles, customProfessions = [] }: Me
       </section>
 
       <section className="flex flex-col gap-4">
-        <h2 className="font-display text-lg font-semibold">Dados maçônicos</h2>
+        <div>
+          <h2 className="font-display text-lg font-semibold">Dados maçônicos</h2>
+          <p className="text-muted text-xs">
+            Opcional — pode ser preenchido depois, quando você tiver os dados em mãos.
+          </p>
+        </div>
         <div className="grid grid-cols-2 gap-4">
           <FormField label="CIM" htmlFor="cim">
             <Input id="cim" name="cim" defaultValue={member?.cim ?? ''} />
           </FormField>
           <FormField label="Matrícula" htmlFor="matricula">
-            <Input id="matricula" name="matricula" required defaultValue={member?.matricula} />
+            <Input id="matricula" name="matricula" defaultValue={member?.matricula ?? ''} />
           </FormField>
           <FormField label="Grau" htmlFor="grau">
             <Select
@@ -221,7 +226,6 @@ export function MemberForm({ action, member, roles, customProfessions = [] }: Me
               id="dataIniciacao"
               name="dataIniciacao"
               type="date"
-              required
               defaultValue={toDateInputValue(member?.dataIniciacao)}
             />
           </FormField>
@@ -230,7 +234,6 @@ export function MemberForm({ action, member, roles, customProfessions = [] }: Me
               id="dataElevacao"
               name="dataElevacao"
               type="date"
-              required={grau === 'companheiro' || grau === 'mestre'}
               defaultValue={toDateInputValue(member?.dataElevacao)}
             />
           </FormField>
@@ -239,7 +242,6 @@ export function MemberForm({ action, member, roles, customProfessions = [] }: Me
               id="dataExaltacao"
               name="dataExaltacao"
               type="date"
-              required={grau === 'mestre'}
               defaultValue={toDateInputValue(member?.dataExaltacao)}
             />
           </FormField>
@@ -270,7 +272,6 @@ export function MemberForm({ action, member, roles, customProfessions = [] }: Me
               <Input
                 id="profissaoOutra"
                 name="profissaoOutra"
-                required
                 defaultValue={
                   member?.profissao && !professionOptions.includes(member.profissao)
                     ? member.profissao

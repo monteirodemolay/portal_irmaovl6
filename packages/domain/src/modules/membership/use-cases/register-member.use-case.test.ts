@@ -94,6 +94,26 @@ describe('RegisterMemberUseCase', () => {
     expect(all).toBeNull();
   });
 
+  it('cadastra sem matrícula e permite outro Irmão também sem matrícula', async () => {
+    const { useCase, memberRepository } = buildUseCase();
+
+    const first = await useCase.execute(ctx, { ...input, matricula: null });
+    expect(first.ok).toBe(true);
+
+    const second = await useCase.execute(ctx, {
+      ...input,
+      email: 'outro@vl6.org.br',
+      matricula: null,
+    });
+
+    expect(second.ok).toBe(true);
+    if (!second.ok) return;
+    expect(second.value.matricula).toBeNull();
+
+    const stored = await memberRepository.findById('id-2');
+    expect(stored).not.toBeNull();
+  });
+
   it('rejeita CIM já em uso no tenant', async () => {
     const { useCase } = buildUseCase();
     await useCase.execute(ctx, { ...input, cim: 'CIM-1' });

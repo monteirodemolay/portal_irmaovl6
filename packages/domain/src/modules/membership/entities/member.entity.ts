@@ -23,7 +23,7 @@ export interface Member extends BaseEntity {
   dataElevacao: Date | null;
   dataExaltacao: Date | null;
   cim: string | null;
-  matricula: string;
+  matricula: string | null;
   grau: MemberDegree;
   cargoAtualId: string | null;
   situacao: MemberSituation;

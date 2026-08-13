@@ -15,7 +15,7 @@ export const memberResponseSchema = z.object({
   nomeCompleto: z.string(),
   nomeMaconico: z.string().nullable(),
   email: z.string(),
-  matricula: z.string(),
+  matricula: z.string().nullable(),
   grau: z.string(),
   situacao: z.string(),
   cim: z.string().nullable(),

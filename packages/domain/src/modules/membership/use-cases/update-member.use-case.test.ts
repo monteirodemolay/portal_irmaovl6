@@ -132,6 +132,18 @@ describe('UpdateMemberUseCase', () => {
     expect(result.error.code).toBe('not_found');
   });
 
+  it('permite remover a matrícula sem checar unicidade', async () => {
+    const { useCase, memberRepository } = buildUseCase();
+    await memberRepository.create(baseMember);
+    await memberRepository.create({ ...outroMember, matricula: null });
+
+    const result = await useCase.execute(ctx, 'member-1', { ...input, matricula: null });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value.matricula).toBeNull();
+  });
+
   it('rejeita troca para uma matrícula já usada por outro Irmão', async () => {
     const { useCase, memberRepository } = buildUseCase();
     await memberRepository.create(baseMember);

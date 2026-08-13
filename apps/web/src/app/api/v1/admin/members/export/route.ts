@@ -68,7 +68,7 @@ export const GET = withApiLogging(
         sheet.addRow({
           nome: member.nomeCompleto,
           nomeMaconico: member.nomeMaconico ?? '',
-          matricula: member.matricula,
+          matricula: member.matricula ?? '',
           grau: member.grau,
           situacao: member.situacao,
           email: member.email,
@@ -97,7 +97,7 @@ export const GET = withApiLogging(
     doc.fontSize(9);
     for (const member of page.items) {
       doc.text(
-        `${member.nomeCompleto} · Mat. ${member.matricula} · ${member.grau} · ${member.situacao} · ${member.email}`,
+        `${member.nomeCompleto} · Mat. ${member.matricula ?? '—'} · ${member.grau} · ${member.situacao} · ${member.email}`,
       );
     }
     doc.end();

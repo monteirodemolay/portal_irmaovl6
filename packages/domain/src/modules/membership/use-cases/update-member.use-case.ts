@@ -27,7 +27,7 @@ export class UpdateMemberUseCase {
       return err(new NotFoundError('Member', memberId));
     }
 
-    if (input.matricula !== current.matricula) {
+    if (input.matricula && input.matricula !== current.matricula) {
       const taken = await this.deps.memberRepository.existsByMatricula(
         ctx.tenantId,
         input.matricula,

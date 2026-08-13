@@ -90,7 +90,7 @@ async function parseMemberForm(
     dataElevacao: formData.get('dataElevacao') || null,
     dataExaltacao: formData.get('dataExaltacao') || null,
     cim: formData.get('cim') || null,
-    matricula: formData.get('matricula'),
+    matricula: formData.get('matricula') || null,
     grau: formData.get('grau'),
     situacao: formData.get('situacao'),
     lojaId: formData.get('lojaId'),
