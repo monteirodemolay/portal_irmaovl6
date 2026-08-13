@@ -83,6 +83,31 @@ const nextConfig: NextConfig = {
         destination: '/admin/conteudo/agenda/:eventId',
         permanent: false,
       },
+      { source: '/admin/irmaos', destination: '/admin/pessoas/irmaos', permanent: false },
+      {
+        source: '/admin/irmaos/novo',
+        destination: '/admin/pessoas/irmaos/novo',
+        permanent: false,
+      },
+      {
+        source: '/admin/irmaos/:memberId',
+        destination: '/admin/pessoas/irmaos/:memberId',
+        permanent: false,
+      },
+      { source: '/admin/usuarios', destination: '/admin/pessoas/usuarios', permanent: false },
+      { source: '/admin/gestoes', destination: '/admin/pessoas/gestoes', permanent: false },
+      {
+        source: '/admin/gestoes/nova',
+        destination: '/admin/pessoas/gestoes/nova',
+        permanent: false,
+      },
+      {
+        source: '/admin/gestoes/:termId',
+        destination: '/admin/pessoas/gestoes/:termId',
+        permanent: false,
+      },
+      { source: '/admin/permissoes', destination: '/admin/pessoas/permissoes', permanent: false },
+      { source: '/admin/loja', destination: '/admin/pessoas/loja', permanent: false },
     ];
   },
 };

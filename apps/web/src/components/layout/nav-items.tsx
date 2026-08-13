@@ -10,7 +10,6 @@ import {
   LayoutDashboard,
   Megaphone,
   Settings,
-  ShieldCheck,
   UserCircle,
   Users,
 } from '@vl6/ui';
@@ -23,16 +22,15 @@ const ICON_STROKE = 1.75;
 
 // Sem itens que só duplicam o site institucional (Nossa Loja, Diretoria
 // pública, Contato) — esse é o papel do www.vl6.com.br, não do Portal
-// (docs/architecture/07 §7.0). O admin foi reorganizado em áreas
-// consolidadas com abas internas (ver `area-tabs.ts`): Notícias, que antes
-// ficava de fora da sidebar pra não virar mais um item solto, agora está
-// visível como aba dentro de "Conteúdo" — o custo de poluir a sidebar flat
-// não existe mais depois da consolidação. `/admin/usuarios` ainda segue de
-// fora por ora: cadastro de Irmão e acesso ao Portal foram unificados em
-// `/admin/irmaos` (foto, grau, datas e "Acesso ao Portal" no mesmo
-// formulário — docs/architecture/06), então o fluxo normal nunca mais
-// passa por Usuários — mas essa rota volta a ficar visível como aba de
-// "Pessoas & Loja" na próxima fase da reorganização.
+// (docs/architecture/07 §7.0). O admin foi reorganizado em 5 áreas
+// consolidadas com abas internas (ver `area-tabs.ts`): Notícias e Usuários,
+// que antes ficavam de fora da sidebar pra não virarem mais um item solto,
+// agora estão visíveis como abas dentro de "Conteúdo" e "Pessoas & Loja"
+// respectivamente — o custo de poluir a sidebar flat não existe mais
+// depois da consolidação. Usuários continua sendo o caso excepcional
+// (conta de acesso sem Irmão vinculado — o fluxo normal de acesso é criado
+// dentro do cadastro de Irmãos, docs/architecture/06), só que agora visível
+// em vez de escondido.
 const PORTAL_ITEMS = [
   { href: '/dashboard', label: 'Início', icon: LayoutDashboard },
   { href: '/perfil', label: 'Meu Perfil', icon: UserCircle },
@@ -71,14 +69,17 @@ function hasAnyPermission(authContext: AuthContext, permission: PermissionKey | 
 const ADMIN_ITEMS: AdminNavItemDef[] = [
   { href: '/admin', labelKey: 'dashboard', icon: LayoutDashboard, permission: 'tenant:read' },
   {
-    href: '/admin/loja',
-    labelKey: 'storeManagement',
-    icon: Building2,
-    permission: 'branding:read',
+    href: '/admin/pessoas',
+    labelKey: 'pessoas',
+    icon: Users,
+    // Visível se qualquer uma das 5 abas internas (Irmãos/Usuários/Gestões/
+    // Permissões/Loja — ver `area-tabs.ts`) estiver disponível. Usuários
+    // volta a aparecer na navegação aqui pelo mesmo motivo de Notícias em
+    // "Conteúdo": o custo de item solto na sidebar flat some dentro de uma
+    // área já visível — mas a tela continua deixando claro que é o caso
+    // excepcional (conta de acesso sem Irmão vinculado), não o fluxo normal.
+    permission: ['member:read', 'user:read', 'boardTerm:read', 'role:read', 'branding:read'],
   },
-  { href: '/admin/irmaos', labelKey: 'memberRegistry', icon: Users, permission: 'member:read' },
-  { href: '/admin/gestoes', labelKey: 'boards', icon: ShieldCheck, permission: 'boardTerm:read' },
-  { href: '/admin/permissoes', labelKey: 'permissions', icon: Settings, permission: 'role:read' },
   {
     href: '/admin/conteudo',
     labelKey: 'conteudo',

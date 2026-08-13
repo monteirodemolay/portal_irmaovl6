@@ -78,7 +78,10 @@ export default async function MembersPage({
       key: 'nome',
       header: 'Nome',
       cell: (m) => (
-        <Link href={`/admin/irmaos/${m.id}`} className="flex items-center gap-2 hover:underline">
+        <Link
+          href={`/admin/pessoas/irmaos/${m.id}`}
+          className="flex items-center gap-2 hover:underline"
+        >
           <MemberAvatar fotoUrl={m.fotoUrl} nome={m.nomeCompleto} className="h-8 w-8" />
           <p className="font-medium">{m.nomeCompleto}</p>
         </Link>
@@ -130,7 +133,7 @@ export default async function MembersPage({
             <a href={`/api/v1/admin/members/export?${exportQuery}&format=pdf`}>Exportar PDF</a>
           </Button>
           <Button asChild>
-            <Link href="/admin/irmaos/novo">Novo Irmão</Link>
+            <Link href="/admin/pessoas/irmaos/novo">Novo Irmão</Link>
           </Button>
         </div>
       </div>
@@ -168,7 +171,7 @@ export default async function MembersPage({
             Filtrar
           </Button>
           <Button asChild variant="outline" size="sm">
-            <Link href="/admin/irmaos">Limpar</Link>
+            <Link href="/admin/pessoas/irmaos">Limpar</Link>
           </Button>
         </div>
       </form>
@@ -183,7 +186,7 @@ export default async function MembersPage({
             description="Cadastre o primeiro Irmão da Loja para começar."
             action={
               <Button asChild size="sm">
-                <Link href="/admin/irmaos/novo">Novo Irmão</Link>
+                <Link href="/admin/pessoas/irmaos/novo">Novo Irmão</Link>
               </Button>
             }
           />

@@ -33,8 +33,8 @@ export async function createBoardTermAction(
     return { error: result.error.message };
   }
 
-  revalidatePath('/admin/gestoes');
-  redirect(`/admin/gestoes/${result.value.id}`);
+  revalidatePath('/admin/pessoas/gestoes');
+  redirect(`/admin/pessoas/gestoes/${result.value.id}`);
 }
 
 export async function assignBoardPositionAction(
@@ -62,7 +62,7 @@ export async function assignBoardPositionAction(
     return { error: result.error.message };
   }
 
-  revalidatePath(`/admin/gestoes/${gestaoId}`);
+  revalidatePath(`/admin/pessoas/gestoes/${gestaoId}`);
   return { error: null };
 }
 
@@ -91,7 +91,7 @@ export async function createCommitteeAction(
     return { error: result.error.message };
   }
 
-  revalidatePath(`/admin/gestoes/${gestaoId}`);
+  revalidatePath(`/admin/pessoas/gestoes/${gestaoId}`);
   return { error: null };
 }
 
@@ -124,6 +124,6 @@ export async function updateCommitteeAction(
     return { error: result.error.message };
   }
 
-  revalidatePath(`/admin/gestoes/${gestaoId}`);
+  revalidatePath(`/admin/pessoas/gestoes/${gestaoId}`);
   return { error: null };
 }

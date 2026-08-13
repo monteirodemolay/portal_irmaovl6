@@ -90,7 +90,7 @@ export function MemberForm({ action, member, roles, customProfessions = [] }: Me
           </p>
           {state.memberId && (
             <Link
-              href={`/admin/irmaos/${state.memberId}`}
+              href={`/admin/pessoas/irmaos/${state.memberId}`}
               className="text-accent w-fit text-sm font-medium hover:underline"
             >
               Ver cadastro do Irmão
@@ -105,7 +105,7 @@ export function MemberForm({ action, member, roles, customProfessions = [] }: Me
             Irmão cadastrado sem acesso ao Portal. Ative o acesso quando quiser, pela tela do Irmão.
           </p>
           <Link
-            href={`/admin/irmaos/${state.memberId}`}
+            href={`/admin/pessoas/irmaos/${state.memberId}`}
             className="text-accent w-fit text-sm font-medium hover:underline"
           >
             Ver cadastro do Irmão

@@ -60,7 +60,7 @@ export async function inviteUserAction(
     await syncUserClaims(result.value, role);
   }
 
-  revalidatePath('/admin/usuarios');
+  revalidatePath('/admin/pessoas/usuarios');
   return { error: null, temporaryPassword };
 }
 
@@ -83,8 +83,8 @@ export async function assignRoleAction(userId: string, formData: FormData): Prom
     await syncUserClaims(result.value, role);
   }
 
-  revalidatePath('/admin/usuarios');
-  revalidatePath('/admin/irmaos/[memberId]', 'page');
+  revalidatePath('/admin/pessoas/usuarios');
+  revalidatePath('/admin/pessoas/irmaos/[memberId]', 'page');
 }
 
 export interface ResetPasswordActionState {
@@ -121,8 +121,8 @@ export async function resetUserPasswordAction(
       throw error instanceof Error ? error : new Error('Falha ao redefinir a senha.');
     });
 
-  revalidatePath('/admin/usuarios');
-  revalidatePath('/admin/irmaos/[memberId]', 'page');
+  revalidatePath('/admin/pessoas/usuarios');
+  revalidatePath('/admin/pessoas/irmaos/[memberId]', 'page');
   return { error: null, temporaryPassword };
 }
 
@@ -151,6 +151,6 @@ export async function setUserStatusAction(
 
   await getAdminAuth().updateUser(userId, { disabled: statusConta === 'blocked' });
 
-  revalidatePath('/admin/usuarios');
-  revalidatePath('/admin/irmaos/[memberId]', 'page');
+  revalidatePath('/admin/pessoas/usuarios');
+  revalidatePath('/admin/pessoas/irmaos/[memberId]', 'page');
 }
