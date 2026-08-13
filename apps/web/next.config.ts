@@ -25,6 +25,38 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  // Reorganização da IA administrativa (docs/architecture) — cada rota antiga
+  // do admin virou uma aba dentro de uma das 5 áreas consolidadas
+  // (`/admin/pessoas`, `/admin/conteudo`, `/admin/acervo`,
+  // `/admin/configuracoes`). `permanent: false` (307) enquanto a nova
+  // estrutura estabiliza — promover pra 308 depois (ver plano).
+  async redirects() {
+    return [
+      { source: '/admin/arquivos', destination: '/admin/acervo/arquivos', permanent: false },
+      {
+        source: '/admin/arquivos/novo',
+        destination: '/admin/acervo/arquivos/novo',
+        permanent: false,
+      },
+      { source: '/admin/biblioteca', destination: '/admin/acervo/biblioteca', permanent: false },
+      {
+        source: '/admin/biblioteca/novo',
+        destination: '/admin/acervo/biblioteca/novo',
+        permanent: false,
+      },
+      { source: '/admin/galeria', destination: '/admin/acervo/galeria', permanent: false },
+      {
+        source: '/admin/galeria/novo',
+        destination: '/admin/acervo/galeria/novo',
+        permanent: false,
+      },
+      {
+        source: '/admin/galeria/:albumId',
+        destination: '/admin/acervo/galeria/:albumId',
+        permanent: false,
+      },
+    ];
+  },
 };
 
 /**

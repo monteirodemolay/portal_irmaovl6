@@ -31,7 +31,7 @@ export async function createLibraryCategoryAction(
   const result = await container.useCases.createLibraryCategory.execute(session.authContext, input);
   if (!result.ok) return { error: result.error.message };
 
-  revalidatePath('/admin/biblioteca');
+  revalidatePath('/admin/acervo/biblioteca');
   return { error: null };
 }
 
@@ -57,8 +57,8 @@ export async function addLibraryItemAction(
   const result = await container.useCases.addLibraryItem.execute(session.authContext, input);
   if (!result.ok) return { error: result.error.message };
 
-  revalidatePath('/admin/biblioteca');
-  redirect('/admin/biblioteca');
+  revalidatePath('/admin/acervo/biblioteca');
+  redirect('/admin/acervo/biblioteca');
 }
 
 export async function toggleLibraryFavoriteAction(libraryItemId: string): Promise<void> {

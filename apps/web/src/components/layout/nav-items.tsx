@@ -61,7 +61,13 @@ interface AdminNavItemDef {
   href: string;
   labelKey: keyof Dictionary['nav'];
   icon: typeof LayoutDashboard;
-  permission: PermissionKey;
+  /** Array = visível se QUALQUER uma bater (item que agrega várias abas com recursos distintos). */
+  permission: PermissionKey | PermissionKey[];
+}
+
+function hasAnyPermission(authContext: AuthContext, permission: PermissionKey | PermissionKey[]) {
+  const permissions = Array.isArray(permission) ? permission : [permission];
+  return permissions.some((p) => hasPermission(authContext, p));
 }
 
 const ADMIN_ITEMS: AdminNavItemDef[] = [
@@ -82,15 +88,15 @@ const ADMIN_ITEMS: AdminNavItemDef[] = [
     permission: 'announcement:read',
   },
   { href: '/admin/noticias', labelKey: 'news', icon: Newspaper, permission: 'news:read' },
-  { href: '/admin/arquivos', labelKey: 'files', icon: FileText, permission: 'file:read' },
-  {
-    href: '/admin/biblioteca',
-    labelKey: 'library',
-    icon: BookOpen,
-    permission: 'libraryItem:read',
-  },
   { href: '/admin/agenda', labelKey: 'agenda', icon: CalendarDays, permission: 'event:read' },
-  { href: '/admin/galeria', labelKey: 'gallery', icon: GalleryIcon, permission: 'gallery:read' },
+  {
+    href: '/admin/acervo',
+    labelKey: 'acervo',
+    icon: GalleryIcon,
+    // Visível se qualquer uma das 3 abas internas (Arquivos/Biblioteca/
+    // Galeria — ver `area-tabs.ts`) estiver disponível pra sessão atual.
+    permission: ['file:read', 'libraryItem:read', 'gallery:read'],
+  },
   {
     href: '/admin/integracoes',
     labelKey: 'integrations',
@@ -142,7 +148,7 @@ export function buildNavSections(
 
   if (isAdminTier(role)) {
     const visibleAdminItems = ADMIN_ITEMS.filter((item) =>
-      hasPermission(authContext, item.permission),
+      hasAnyPermission(authContext, item.permission),
     );
     if (visibleAdminItems.length > 0) {
       sections.push({

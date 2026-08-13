@@ -83,7 +83,7 @@ export default async function FilesPage() {
         <div className="flex gap-2">
           <CreateFileCategoryDialog />
           <Button asChild>
-            <Link href="/admin/arquivos/novo">Novo Arquivo</Link>
+            <Link href="/admin/acervo/arquivos/novo">Novo Arquivo</Link>
           </Button>
         </div>
       </div>
@@ -97,7 +97,7 @@ export default async function FilesPage() {
             title="Nenhum arquivo cadastrado"
             action={
               <Button asChild size="sm">
-                <Link href="/admin/arquivos/novo">Novo Arquivo</Link>
+                <Link href="/admin/acervo/arquivos/novo">Novo Arquivo</Link>
               </Button>
             }
           />

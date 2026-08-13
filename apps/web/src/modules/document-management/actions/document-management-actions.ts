@@ -95,7 +95,7 @@ export async function createFileCategoryAction(
   const result = await container.useCases.createFileCategory.execute(session.authContext, input);
   if (!result.ok) return { error: result.error.message };
 
-  revalidatePath('/admin/arquivos');
+  revalidatePath('/admin/acervo/arquivos');
   return { error: null };
 }
 
@@ -174,8 +174,8 @@ export async function createFileAssetAction(
     return { error: result.error.message };
   }
 
-  revalidatePath('/admin/arquivos');
-  redirect('/admin/arquivos');
+  revalidatePath('/admin/acervo/arquivos');
+  redirect('/admin/acervo/arquivos');
 }
 
 export async function toggleFileAssetPublishedAction(
@@ -191,7 +191,7 @@ export async function toggleFileAssetPublishedAction(
   );
   if (!result.ok) throw new Error(result.error.message);
 
-  revalidatePath('/admin/arquivos');
+  revalidatePath('/admin/acervo/arquivos');
 }
 
 export async function softDeleteFileAssetAction(fileId: string): Promise<void> {
@@ -200,5 +200,5 @@ export async function softDeleteFileAssetAction(fileId: string): Promise<void> {
   const result = await container.useCases.softDeleteFileAsset.execute(session.authContext, fileId);
   if (!result.ok) throw new Error(result.error.message);
 
-  revalidatePath('/admin/arquivos');
+  revalidatePath('/admin/acervo/arquivos');
 }

@@ -48,7 +48,7 @@ export default async function LibraryPage() {
         <div className="flex gap-2">
           <CreateLibraryCategoryDialog categories={categories} />
           <Button asChild>
-            <Link href="/admin/biblioteca/novo">Adicionar à Biblioteca</Link>
+            <Link href="/admin/acervo/biblioteca/novo">Adicionar à Biblioteca</Link>
           </Button>
         </div>
       </div>
@@ -63,7 +63,7 @@ export default async function LibraryPage() {
             description="Cadastre um Arquivo primeiro e depois cadastre-o aqui para curadoria."
             action={
               <Button asChild size="sm">
-                <Link href="/admin/biblioteca/novo">Adicionar à Biblioteca</Link>
+                <Link href="/admin/acervo/biblioteca/novo">Adicionar à Biblioteca</Link>
               </Button>
             }
           />
