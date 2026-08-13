@@ -50,7 +50,14 @@ service cloud.firestore {
     // ---------------------------------------------------------------
     match /tenants/{tenantId} {
       allow read: if isSignedIn() && (tokenTenantId() == tenantId || isSuperAdmin());
-      allow create: if hasPermission('tenant:create');
+      // Criar uma Loja é uma operação do Administrador Geral, não de
+      // `tenant:manage` — todo Administrador de Loja já tem `tenant:manage`
+      // de fábrica, e `hasPermission` trata "<recurso>:manage" como
+      // implicando "<recurso>:create" (ver função acima), então checar só a
+      // permissão deixaria qualquer Administrador de Loja criar novas Lojas.
+      // Replica a mesma regra de `requirePlatformAdmin()` do backend
+      // (packages/domain/src/shared/auth-context.ts).
+      allow create: if isSuperAdmin();
       allow update: if sameTenant(resource.data) && hasPermission('tenant:manage');
       allow delete: if false; // soft delete apenas, via update
     }

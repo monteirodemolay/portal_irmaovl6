@@ -25,7 +25,6 @@ const baseMember: Member = {
   tenantId: 't1',
   userId: null,
   nomeCompleto: 'Fulano de Tal',
-  nomeMaconico: null,
   fotoUrl: null,
   email: 'fulano@vl6.org.br',
   telefone: null,
@@ -35,8 +34,7 @@ const baseMember: Member = {
   dataIniciacao: null,
   dataElevacao: null,
   dataExaltacao: null,
-  cim: null,
-  matricula: '123',
+  cim: '123',
   grau: 'mestre',
   cargoAtualId: null,
   situacao: 'regular',
@@ -59,11 +57,10 @@ const baseMember: Member = {
   ativo: true,
 };
 
-const outroMember: Member = { ...baseMember, id: 'member-2', matricula: '456' };
+const outroMember: Member = { ...baseMember, id: 'member-2', cim: '456' };
 
 const input: MemberFormValues = {
   nomeCompleto: 'Fulano de Tal Editado',
-  nomeMaconico: 'Fulano',
   fotoUrl: null,
   email: 'fulano@vl6.org.br',
   telefone: null,
@@ -73,8 +70,7 @@ const input: MemberFormValues = {
   dataIniciacao: null,
   dataElevacao: null,
   dataExaltacao: null,
-  cim: null,
-  matricula: '123',
+  cim: '123',
   grau: 'mestre',
   situacao: 'regular',
   lojaId: 't1',
@@ -99,7 +95,7 @@ function buildUseCase() {
 }
 
 describe('UpdateMemberUseCase', () => {
-  it('atualiza os dados do Irmão mantendo a matrícula', async () => {
+  it('atualiza os dados do Irmão', async () => {
     const { useCase, memberRepository } = buildUseCase();
     await memberRepository.create(baseMember);
 
@@ -108,7 +104,6 @@ describe('UpdateMemberUseCase', () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.value.nomeCompleto).toBe('Fulano de Tal Editado');
-    expect(result.value.nomeMaconico).toBe('Fulano');
     expect(result.value.updatedAt).toEqual(new Date('2026-06-01T00:00:00Z'));
 
     const stored = await memberRepository.findById('member-1');
@@ -132,12 +127,24 @@ describe('UpdateMemberUseCase', () => {
     expect(result.error.code).toBe('not_found');
   });
 
-  it('rejeita troca para uma matrícula já usada por outro Irmão', async () => {
+  it('permite limpar o CIM sem checar unicidade', async () => {
+    const { useCase, memberRepository } = buildUseCase();
+    await memberRepository.create(baseMember);
+    await memberRepository.create({ ...outroMember, cim: null });
+
+    const result = await useCase.execute(ctx, 'member-1', { ...input, cim: null });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value.cim).toBeNull();
+  });
+
+  it('rejeita troca para um CIM já usado por outro Irmão', async () => {
     const { useCase, memberRepository } = buildUseCase();
     await memberRepository.create(baseMember);
     await memberRepository.create(outroMember);
 
-    const result = await useCase.execute(ctx, 'member-1', { ...input, matricula: '456' });
+    const result = await useCase.execute(ctx, 'member-1', { ...input, cim: '456' });
 
     expect(result.ok).toBe(false);
     if (result.ok) return;

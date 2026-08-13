@@ -27,13 +27,10 @@ export class UpdateMemberUseCase {
       return err(new NotFoundError('Member', memberId));
     }
 
-    if (input.matricula !== current.matricula) {
-      const taken = await this.deps.memberRepository.existsByMatricula(
-        ctx.tenantId,
-        input.matricula,
-      );
+    if (input.cim && input.cim !== current.cim) {
+      const taken = await this.deps.memberRepository.existsByCim(ctx.tenantId, input.cim);
       if (taken) {
-        return err(new ConflictError(`Matrícula "${input.matricula}" já está em uso.`));
+        return err(new ConflictError(`CIM "${input.cim}" já está em uso.`));
       }
     }
 

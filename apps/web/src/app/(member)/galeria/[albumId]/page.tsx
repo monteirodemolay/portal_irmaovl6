@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import { createServerContainer } from '@vl6/infra';
 import { Badge, Card, EmptyState } from '@vl6/ui';
 import { requirePagePermission } from '@/lib/auth/require-permission';
+import { AcervoPageHeader } from '@/components/member/acervo-page-header';
 
 function formatDate(date: Date): string {
   return new Intl.DateTimeFormat('pt-BR').format(new Date(date));
@@ -26,12 +27,12 @@ export default async function MemberGalleryAlbumPage({
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="font-display text-2xl font-semibold">{album.titulo}</h1>
-        <p className="text-muted">
-          {album.categoria} · {formatDate(album.dataEvento)}
-        </p>
-      </div>
+      <AcervoPageHeader
+        title={album.titulo}
+        description={`${album.categoria} · ${formatDate(album.dataEvento)}`}
+        backHref="/galeria"
+        backLabel="Fotografias"
+      />
 
       {media.length === 0 ? (
         <EmptyState title="Nenhuma mídia neste álbum ainda" />

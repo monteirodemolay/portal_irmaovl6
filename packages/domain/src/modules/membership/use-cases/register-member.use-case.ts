@@ -13,8 +13,9 @@ export interface RegisterMemberDeps {
 }
 
 /**
- * Cadastra um novo Irmão. `matricula` é obrigatória e única por tenant;
- * `cim`, quando informado, também — docs/architecture/06-regras-negocio.md §6.1.
+ * Cadastra um novo Irmão. Cadastro simplificado: só `nomeCompleto` e `email`
+ * são obrigatórios (`memberSchema`). `cim`, quando informado, precisa ser
+ * único por tenant — docs/architecture/06-regras-negocio.md §6.1.
  */
 export class RegisterMemberUseCase {
   constructor(private readonly deps: RegisterMemberDeps) {}
@@ -22,13 +23,6 @@ export class RegisterMemberUseCase {
   async execute(ctx: AuthContext, input: MemberFormValues): Promise<Result<Member>> {
     requirePermission(ctx, 'member:create');
 
-    const matriculaTaken = await this.deps.memberRepository.existsByMatricula(
-      ctx.tenantId,
-      input.matricula,
-    );
-    if (matriculaTaken) {
-      return err(new ConflictError(`Matrícula "${input.matricula}" já está em uso.`));
-    }
     if (input.cim) {
       const cimTaken = await this.deps.memberRepository.existsByCim(ctx.tenantId, input.cim);
       if (cimTaken) {

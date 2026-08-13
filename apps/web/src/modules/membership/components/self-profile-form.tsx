@@ -44,9 +44,6 @@ export function SelfProfileForm({
   return (
     <form action={formAction} className="flex max-w-2xl flex-col gap-6">
       <div className="grid grid-cols-2 gap-4">
-        <FormField label="Nome maçônico" htmlFor="nomeMaconico">
-          <Input id="nomeMaconico" name="nomeMaconico" defaultValue={member.nomeMaconico ?? ''} />
-        </FormField>
         <FormField label="Telefone" htmlFor="telefone">
           <Input id="telefone" name="telefone" defaultValue={member.telefone ?? ''} />
         </FormField>

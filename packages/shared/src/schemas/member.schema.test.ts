@@ -3,15 +3,13 @@ import { memberSchema, normalizeConjugeFields, type MemberFormValues } from './m
 
 const BASE: Omit<MemberFormValues, 'grau' | 'dataIniciacao' | 'dataElevacao' | 'dataExaltacao'> = {
   nomeCompleto: 'Irmão de Teste',
-  nomeMaconico: null,
   fotoUrl: null,
   email: 'irmao@vl6.test',
   telefone: null,
   whatsapp: null,
   endereco: null,
   dataNascimento: null,
-  cim: null,
-  matricula: 'M-1',
+  cim: 'M-1',
   situacao: 'regular',
   lojaId: 'tenant-1',
   potencia: 'GOB',
@@ -25,7 +23,7 @@ const BASE: Omit<MemberFormValues, 'grau' | 'dataIniciacao' | 'dataElevacao' | '
   observacoes: null,
 };
 
-describe('memberSchema — coerência de grau e datas maçônicas', () => {
+describe('memberSchema — cadastro simplificado (só nome e e-mail obrigatórios)', () => {
   it('aceita aprendiz só com data de iniciação', () => {
     const result = memberSchema.safeParse({
       ...BASE,
@@ -37,7 +35,7 @@ describe('memberSchema — coerência de grau e datas maçônicas', () => {
     expect(result.success).toBe(true);
   });
 
-  it('rejeita aprendiz sem data de iniciação', () => {
+  it('aceita aprendiz sem nenhuma data maçônica', () => {
     const result = memberSchema.safeParse({
       ...BASE,
       grau: 'aprendiz',
@@ -45,10 +43,10 @@ describe('memberSchema — coerência de grau e datas maçônicas', () => {
       dataElevacao: null,
       dataExaltacao: null,
     });
-    expect(result.success).toBe(false);
+    expect(result.success).toBe(true);
   });
 
-  it('rejeita companheiro sem data de elevação', () => {
+  it('aceita companheiro sem data de elevação', () => {
     const result = memberSchema.safeParse({
       ...BASE,
       grau: 'companheiro',
@@ -56,7 +54,7 @@ describe('memberSchema — coerência de grau e datas maçônicas', () => {
       dataElevacao: null,
       dataExaltacao: null,
     });
-    expect(result.success).toBe(false);
+    expect(result.success).toBe(true);
   });
 
   it('aceita companheiro com iniciação e elevação, sem exaltação', () => {
@@ -70,7 +68,7 @@ describe('memberSchema — coerência de grau e datas maçônicas', () => {
     expect(result.success).toBe(true);
   });
 
-  it('rejeita mestre sem data de exaltação', () => {
+  it('aceita mestre sem data de exaltação', () => {
     const result = memberSchema.safeParse({
       ...BASE,
       grau: 'mestre',
@@ -78,7 +76,19 @@ describe('memberSchema — coerência de grau e datas maçônicas', () => {
       dataElevacao: new Date('2021-01-01'),
       dataExaltacao: null,
     });
-    expect(result.success).toBe(false);
+    expect(result.success).toBe(true);
+  });
+
+  it('aceita cadastro sem CIM', () => {
+    const result = memberSchema.safeParse({
+      ...BASE,
+      cim: null,
+      grau: 'aprendiz',
+      dataIniciacao: null,
+      dataElevacao: null,
+      dataExaltacao: null,
+    });
+    expect(result.success).toBe(true);
   });
 
   it('aceita mestre com as três datas em ordem', () => {

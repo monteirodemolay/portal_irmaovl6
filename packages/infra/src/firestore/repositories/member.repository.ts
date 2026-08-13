@@ -40,15 +40,6 @@ export class FirestoreMemberRepository implements IMemberRepository {
     return snap.empty ? null : snap.docs[0]!.data();
   }
 
-  async existsByMatricula(tenantId: string, matricula: string): Promise<boolean> {
-    const snap = await this.collection
-      .where('tenantId', '==', tenantId)
-      .where('matricula', '==', matricula)
-      .limit(1)
-      .get();
-    return !snap.empty;
-  }
-
   async existsByCim(tenantId: string, cim: string): Promise<boolean> {
     const snap = await this.collection
       .where('tenantId', '==', tenantId)

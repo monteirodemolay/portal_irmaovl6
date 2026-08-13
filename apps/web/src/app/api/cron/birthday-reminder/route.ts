@@ -53,7 +53,7 @@ export const GET = withApiLogging(ROUTE, async (request: NextRequest) => {
       const existing = await container.repositories.event.findById(eventId);
       if (existing) continue;
 
-      const nome = member.nomeMaconico ?? member.nomeCompleto;
+      const nome = member.nomeCompleto;
       const now = new Date();
       const event: Event = {
         id: eventId,

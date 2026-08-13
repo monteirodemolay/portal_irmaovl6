@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { createServerContainer } from '@vl6/infra';
 import { Card, CardContent, CardHeader, CardTitle, EmptyState } from '@vl6/ui';
 import { requirePagePermission } from '@/lib/auth/require-permission';
+import { AcervoPageHeader } from '@/components/member/acervo-page-header';
 
 function formatDate(date: Date): string {
   return new Intl.DateTimeFormat('pt-BR').format(new Date(date));
@@ -15,7 +16,7 @@ export default async function MemberGalleryPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="font-display text-2xl font-semibold">Galeria</h1>
+      <AcervoPageHeader title="Fotografias" description="Registros de sessões e eventos da Loja." />
 
       {albums.length === 0 ? (
         <EmptyState title="Nenhum álbum publicado ainda" />
