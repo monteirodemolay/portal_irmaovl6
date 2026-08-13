@@ -31,12 +31,22 @@ const ICON_STROKE = 1.75;
 // (conta de acesso sem Irmão vinculado — o fluxo normal de acesso é criado
 // dentro do cadastro de Irmãos, docs/architecture/06), só que agora visível
 // em vez de escondido.
-const PORTAL_ITEMS = [
+const PORTAL_ITEMS: Array<{
+  href: string;
+  label: string;
+  icon: typeof LayoutDashboard;
+  permission?: PermissionKey;
+}> = [
   { href: '/dashboard', label: 'Início', icon: LayoutDashboard },
   { href: '/perfil', label: 'Meu Perfil', icon: UserCircle },
   { href: '/agenda', label: 'Agenda', icon: CalendarDays },
   { href: '/avisos', label: 'Avisos', icon: Megaphone },
-] as const;
+  // Central dos Irmãos VL6 — diretório institucional privado e voluntário
+  // (docs/architecture). Só aparece pra quem tem `memberDirectory:read`
+  // (papel `membro`/`admin` de fábrica já têm; um papel customizado sem
+  // essa permissão simplesmente não vê o item).
+  { href: '/central', label: 'Central VL6', icon: Users, permission: 'memberDirectory:read' },
+];
 
 // Arquivos, Biblioteca, Galeria e Downloads continuam sendo entidades e
 // rotas separadas no domínio (Biblioteca cataloga `FileAsset`s, nunca
@@ -135,7 +145,9 @@ export function buildNavSections(
   const sections: AppShellNavSection[] = [
     {
       title: 'Portal',
-      items: PORTAL_ITEMS.map((item) => ({
+      items: PORTAL_ITEMS.filter(
+        (item) => !item.permission || hasPermission(authContext, item.permission),
+      ).map((item) => ({
         href: item.href,
         content: navContent(item.icon, item.label),
       })),
