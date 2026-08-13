@@ -153,7 +153,7 @@ e-mail, renderizado via Cloud Function + serviço de e-mail transacional).
 
 ## 7.9 API Keys para integrações de terceiros (v2.0)
 
-- Emitidas em `/admin/integracoes` (permissão `tenant:manage`) — o
+- Emitidas em `/admin/configuracoes/integracoes` (permissão `tenant:manage`) — o
   Administrador da Loja escolhe um nome e um subconjunto das suas próprias
   permissões (`ApiKey.permissoes`); nunca pode exceder o que o próprio
   emissor tem (`CreateApiKeyUseCase`).

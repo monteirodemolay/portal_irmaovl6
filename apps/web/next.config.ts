@@ -108,6 +108,16 @@ const nextConfig: NextConfig = {
       },
       { source: '/admin/permissoes', destination: '/admin/pessoas/permissoes', permanent: false },
       { source: '/admin/loja', destination: '/admin/pessoas/loja', permanent: false },
+      {
+        source: '/admin/integracoes',
+        destination: '/admin/configuracoes/integracoes',
+        permanent: false,
+      },
+      {
+        source: '/admin/configuracoes',
+        destination: '/admin/configuracoes/geral',
+        permanent: false,
+      },
     ];
   },
 };

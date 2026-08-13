@@ -100,12 +100,13 @@ const ADMIN_ITEMS: AdminNavItemDef[] = [
     permission: ['file:read', 'libraryItem:read', 'gallery:read'],
   },
   {
-    href: '/admin/integracoes',
-    labelKey: 'integrations',
+    href: '/admin/configuracoes',
+    labelKey: 'settings',
     icon: Settings,
-    permission: 'tenant:manage',
+    // "Geral" (idioma/senha/MFA) não exige permissão de página hoje — sempre
+    // visível a qualquer sessão admin, então este item nunca some.
+    permission: 'tenant:read',
   },
-  { href: '/admin/configuracoes', labelKey: 'settings', icon: Settings, permission: 'tenant:read' },
 ];
 
 function navContent(Icon: typeof LayoutDashboard, label: string) {
