@@ -80,14 +80,11 @@ export default async function MembersPage({
       cell: (m) => (
         <Link href={`/admin/irmaos/${m.id}`} className="flex items-center gap-2 hover:underline">
           <MemberAvatar fotoUrl={m.fotoUrl} nome={m.nomeCompleto} className="h-8 w-8" />
-          <div>
-            <p className="font-medium">{m.nomeCompleto}</p>
-            {m.nomeMaconico && <p className="text-muted text-xs">{m.nomeMaconico}</p>}
-          </div>
+          <p className="font-medium">{m.nomeCompleto}</p>
         </Link>
       ),
     },
-    { key: 'matricula', header: 'Matrícula', cell: (m) => m.matricula ?? '—' },
+    { key: 'cim', header: 'CIM', cell: (m) => m.cim ?? '—' },
     { key: 'grau', header: 'Grau', cell: (m) => MEMBER_DEGREE_LABELS[m.grau] },
     {
       key: 'situacao',

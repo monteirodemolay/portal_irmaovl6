@@ -7,13 +7,13 @@ test('admin cadastra um novo Irmão, ganha acesso ao Portal e o Irmão consegue 
   await loginAsAdmin(page);
 
   const nome = `Irmão E2E ${Date.now()}`;
-  const matricula = `E2E-${Date.now()}`;
-  const email = `${matricula.toLowerCase()}@vl6.test`;
+  const cim = `E2E-${Date.now()}`;
+  const email = `${cim.toLowerCase()}@vl6.test`;
 
   await page.goto('/admin/irmaos/novo');
   await page.getByLabel('Nome completo').fill(nome);
   await page.getByLabel('E-mail', { exact: true }).fill(email);
-  await page.getByLabel('Matrícula').fill(matricula);
+  await page.getByLabel('CIM').fill(cim);
   await page.getByLabel('Grau').selectOption('mestre');
   // Mestre exige as três datas maçônicas em ordem cronológica (validação de
   // coerência do memberSchema — docs/architecture/06).
@@ -55,13 +55,13 @@ test('admin cadastra Irmão sem acesso, ativa depois e consegue bloquear sem apa
   // do badge "Sem acesso"/"Ativa" na lista (Playwright faz match de texto
   // sem diferenciar maiúsculas/minúsculas por padrão).
   const nome = `Irmão Pendente ${Date.now()}`;
-  const matricula = `PD-${Date.now()}`;
-  const email = `${matricula.toLowerCase()}@vl6.test`;
+  const cim = `PD-${Date.now()}`;
+  const email = `${cim.toLowerCase()}@vl6.test`;
 
   await page.goto('/admin/irmaos/novo');
   await page.getByLabel('Nome completo').fill(nome);
   await page.getByLabel('E-mail', { exact: true }).fill(email);
-  await page.getByLabel('Matrícula').fill(matricula);
+  await page.getByLabel('CIM').fill(cim);
   await page.getByLabel('Data de iniciação').fill('2020-01-01');
   await page.getByLabel('Criar acesso ao Portal para este Irmão').uncheck();
   await page.getByRole('button', { name: 'Salvar' }).click();

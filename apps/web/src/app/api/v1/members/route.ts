@@ -49,9 +49,7 @@ export const GET = withApiLogging(ROUTE, async (request: NextRequest) => {
     items: page.items.map((member) => ({
       id: member.id,
       nomeCompleto: member.nomeCompleto,
-      nomeMaconico: member.nomeMaconico,
       email: member.email,
-      matricula: member.matricula,
       grau: member.grau,
       situacao: member.situacao,
       cim: member.cim,

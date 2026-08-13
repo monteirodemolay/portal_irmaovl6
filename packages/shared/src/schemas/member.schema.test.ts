@@ -3,15 +3,13 @@ import { memberSchema, normalizeConjugeFields, type MemberFormValues } from './m
 
 const BASE: Omit<MemberFormValues, 'grau' | 'dataIniciacao' | 'dataElevacao' | 'dataExaltacao'> = {
   nomeCompleto: 'Irmão de Teste',
-  nomeMaconico: null,
   fotoUrl: null,
   email: 'irmao@vl6.test',
   telefone: null,
   whatsapp: null,
   endereco: null,
   dataNascimento: null,
-  cim: null,
-  matricula: 'M-1',
+  cim: 'M-1',
   situacao: 'regular',
   lojaId: 'tenant-1',
   potencia: 'GOB',
@@ -81,10 +79,10 @@ describe('memberSchema — cadastro simplificado (só nome e e-mail obrigatório
     expect(result.success).toBe(true);
   });
 
-  it('aceita cadastro sem matrícula', () => {
+  it('aceita cadastro sem CIM', () => {
     const result = memberSchema.safeParse({
       ...BASE,
-      matricula: null,
+      cim: null,
       grau: 'aprendiz',
       dataIniciacao: null,
       dataElevacao: null,

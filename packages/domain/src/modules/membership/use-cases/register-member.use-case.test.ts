@@ -21,7 +21,6 @@ const readOnlyCtx: AuthContext = {
 
 const input: MemberFormValues = {
   nomeCompleto: 'Fulano de Tal',
-  nomeMaconico: null,
   fotoUrl: null,
   email: 'fulano@vl6.org.br',
   telefone: null,
@@ -31,8 +30,7 @@ const input: MemberFormValues = {
   dataIniciacao: null,
   dataElevacao: null,
   dataExaltacao: null,
-  cim: null,
-  matricula: '123',
+  cim: '123',
   grau: 'mestre',
   situacao: 'regular',
   lojaId: 't1',
@@ -58,7 +56,7 @@ function buildUseCase() {
 }
 
 describe('RegisterMemberUseCase', () => {
-  it('cadastra um novo Irmão com matrícula única', async () => {
+  it('cadastra um novo Irmão', async () => {
     const { useCase, memberRepository } = buildUseCase();
 
     const result = await useCase.execute(ctx, input);
@@ -66,7 +64,7 @@ describe('RegisterMemberUseCase', () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.value.id).toBe('id-1');
-    expect(result.value.matricula).toBe('123');
+    expect(result.value.cim).toBe('123');
     expect(result.value.tenantId).toBe('t1');
     expect(result.value.status).toBe('active');
 
@@ -80,35 +78,21 @@ describe('RegisterMemberUseCase', () => {
     await expect(useCase.execute(readOnlyCtx, input)).rejects.toThrow(ForbiddenError);
   });
 
-  it('rejeita matrícula já em uso no tenant', async () => {
-    const { useCase, memberRepository } = buildUseCase();
-    await useCase.execute(ctx, input);
-
-    const result = await useCase.execute(ctx, { ...input, email: 'outro@vl6.org.br' });
-
-    expect(result.ok).toBe(false);
-    if (result.ok) return;
-    expect(result.error.code).toBe('conflict');
-
-    const all = await memberRepository.findById('id-2');
-    expect(all).toBeNull();
-  });
-
-  it('cadastra sem matrícula e permite outro Irmão também sem matrícula', async () => {
+  it('cadastra sem CIM e permite outro Irmão também sem CIM', async () => {
     const { useCase, memberRepository } = buildUseCase();
 
-    const first = await useCase.execute(ctx, { ...input, matricula: null });
+    const first = await useCase.execute(ctx, { ...input, cim: null });
     expect(first.ok).toBe(true);
 
     const second = await useCase.execute(ctx, {
       ...input,
       email: 'outro@vl6.org.br',
-      matricula: null,
+      cim: null,
     });
 
     expect(second.ok).toBe(true);
     if (!second.ok) return;
-    expect(second.value.matricula).toBeNull();
+    expect(second.value.cim).toBeNull();
 
     const stored = await memberRepository.findById('id-2');
     expect(stored).not.toBeNull();
@@ -120,7 +104,7 @@ describe('RegisterMemberUseCase', () => {
 
     const result = await useCase.execute(ctx, {
       ...input,
-      matricula: '456',
+      email: 'outro@vl6.org.br',
       cim: 'CIM-1',
     });
 

@@ -17,7 +17,6 @@ const baseMember: Member = {
   tenantId: 't1',
   userId: 'user-1',
   nomeCompleto: 'Fulano de Tal',
-  nomeMaconico: null,
   fotoUrl: 'https://blob.example.com/foto.jpg',
   email: 'fulano@vl6.org.br',
   telefone: null,
@@ -27,8 +26,7 @@ const baseMember: Member = {
   dataIniciacao: null,
   dataElevacao: null,
   dataExaltacao: null,
-  cim: null,
-  matricula: '123',
+  cim: '123',
   grau: 'mestre',
   cargoAtualId: null,
   situacao: 'regular',
@@ -52,7 +50,6 @@ const baseMember: Member = {
 };
 
 const input: MemberSelfEditValues = {
-  nomeMaconico: 'Fulano',
   telefone: '11999999999',
   whatsapp: null,
   endereco: null,
@@ -83,7 +80,6 @@ describe('UpdateMyProfileUseCase', () => {
 
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    expect(result.value.nomeMaconico).toBe('Fulano');
     expect(result.value.profissao).toBe('Engenheiro');
     expect(result.value.biografia).toBe('Biografia atualizada.');
     expect(result.value.nomeCompleto).toBe('Fulano de Tal');

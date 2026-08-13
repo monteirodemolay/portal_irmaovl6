@@ -236,11 +236,6 @@ export class InMemoryMemberRepository implements IMemberRepository {
       [...this.byId.values()].find((m) => m.tenantId === tenantId && m.userId === userId) ?? null
     );
   }
-  async existsByMatricula(tenantId: string, matricula: string) {
-    return [...this.byId.values()].some(
-      (m) => m.tenantId === tenantId && m.matricula === matricula,
-    );
-  }
   async existsByCim(tenantId: string, cim: string) {
     return [...this.byId.values()].some((m) => m.tenantId === tenantId && m.cim === cim);
   }

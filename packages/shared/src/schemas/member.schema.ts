@@ -10,7 +10,6 @@ import { addressSchema } from './tenant.schema';
 
 const memberBaseSchema = z.object({
   nomeCompleto: z.string().min(3).max(150),
-  nomeMaconico: z.string().max(150).nullable(),
   fotoUrl: z.string().url().nullable(),
   email: z.string().email(),
   telefone: z.string().nullable(),
@@ -20,8 +19,8 @@ const memberBaseSchema = z.object({
   dataIniciacao: z.coerce.date().nullable(),
   dataElevacao: z.coerce.date().nullable(),
   dataExaltacao: z.coerce.date().nullable(),
+  /** Identificador único do Irmão na Loja — mesmo valor antes espalhado entre "matrícula" e "CIM". */
   cim: z.string().nullable(),
-  matricula: z.string().nullable(),
   grau: z.enum(MEMBER_DEGREES),
   situacao: z.enum(MEMBER_SITUATIONS),
   lojaId: z.string().min(1),
@@ -43,11 +42,10 @@ const memberBaseSchema = z.object({
 
 /**
  * Cadastro simplificado: só nome e e-mail são obrigatórios (`memberBaseSchema`
- * — `.min(3)`/`.email()`), todo o resto é opcional, incluindo matrícula e as
- * datas maçônicas. A única coerência que continua sendo validada é
- * cronológica — quando as datas são informadas, não podem estar fora de
- * ordem (elevação não pode anteceder iniciação, exaltação não pode
- * anteceder elevação).
+ * — `.min(3)`/`.email()`), todo o resto é opcional, incluindo CIM e as datas
+ * maçônicas. A única coerência que continua sendo validada é cronológica —
+ * quando as datas são informadas, não podem estar fora de ordem (elevação
+ * não pode anteceder iniciação, exaltação não pode anteceder elevação).
  */
 export const memberSchema = memberBaseSchema.superRefine((data, ctx) => {
   if (data.dataIniciacao && data.dataElevacao && data.dataElevacao < data.dataIniciacao) {
@@ -97,7 +95,6 @@ export function normalizeConjugeFields<
  * `UpdateMyProfileUseCase` nunca sobrescreva a foto já cadastrada.
  */
 export const memberSelfEditSchema = memberBaseSchema.pick({
-  nomeMaconico: true,
   telefone: true,
   whatsapp: true,
   endereco: true,

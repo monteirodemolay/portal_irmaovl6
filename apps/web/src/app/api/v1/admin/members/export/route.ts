@@ -56,23 +56,19 @@ export const GET = withApiLogging(
       const sheet = workbook.addWorksheet('Irmãos');
       sheet.columns = [
         { header: 'Nome', key: 'nome', width: 32 },
-        { header: 'Nome Maçônico', key: 'nomeMaconico', width: 24 },
-        { header: 'Matrícula', key: 'matricula', width: 14 },
+        { header: 'CIM', key: 'cim', width: 14 },
         { header: 'Grau', key: 'grau', width: 14 },
         { header: 'Situação', key: 'situacao', width: 14 },
         { header: 'E-mail', key: 'email', width: 28 },
-        { header: 'CIM', key: 'cim', width: 14 },
         { header: 'Cidade', key: 'cidade', width: 20 },
       ];
       for (const member of page.items) {
         sheet.addRow({
           nome: member.nomeCompleto,
-          nomeMaconico: member.nomeMaconico ?? '',
-          matricula: member.matricula ?? '',
+          cim: member.cim ?? '',
           grau: member.grau,
           situacao: member.situacao,
           email: member.email,
-          cim: member.cim ?? '',
           cidade: member.endereco?.cidade ?? '',
         });
       }
@@ -97,7 +93,7 @@ export const GET = withApiLogging(
     doc.fontSize(9);
     for (const member of page.items) {
       doc.text(
-        `${member.nomeCompleto} · Mat. ${member.matricula ?? '—'} · ${member.grau} · ${member.situacao} · ${member.email}`,
+        `${member.nomeCompleto} · CIM ${member.cim ?? '—'} · ${member.grau} · ${member.situacao} · ${member.email}`,
       );
     }
     doc.end();

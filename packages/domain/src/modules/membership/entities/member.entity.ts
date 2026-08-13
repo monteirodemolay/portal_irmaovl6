@@ -12,7 +12,6 @@ export interface SocialLinks {
 export interface Member extends BaseEntity {
   userId: string | null;
   nomeCompleto: string;
-  nomeMaconico: string | null;
   fotoUrl: string | null;
   email: string;
   telefone: string | null;
@@ -22,8 +21,8 @@ export interface Member extends BaseEntity {
   dataIniciacao: Date | null;
   dataElevacao: Date | null;
   dataExaltacao: Date | null;
+  /** Identificador único do Irmão na Loja. */
   cim: string | null;
-  matricula: string | null;
   grau: MemberDegree;
   cargoAtualId: string | null;
   situacao: MemberSituation;

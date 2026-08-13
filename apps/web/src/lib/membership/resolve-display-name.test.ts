@@ -8,7 +8,6 @@ function buildMember(overrides: Partial<Member> = {}): Member {
     tenantId: 't1',
     userId: 'uid-1',
     nomeCompleto: 'Luís Eduardo da Silva',
-    nomeMaconico: null,
     fotoUrl: null,
     email: 'luis@vl6.org.br',
     telefone: null,
@@ -18,8 +17,7 @@ function buildMember(overrides: Partial<Member> = {}): Member {
     dataIniciacao: null,
     dataElevacao: null,
     dataExaltacao: null,
-    cim: null,
-    matricula: '001',
+    cim: '001',
     grau: 'mestre',
     cargoAtualId: null,
     situacao: 'regular',
@@ -49,13 +47,7 @@ describe('resolveMemberDisplayName', () => {
     expect(resolveMemberDisplayName(null, 'admin@vl6.org.br')).toBe('admin@vl6.org.br');
   });
 
-  it('sem nome maçônico, usa o nome completo', () => {
+  it('com Member vinculado, usa o nome completo', () => {
     expect(resolveMemberDisplayName(buildMember(), 'luis@vl6.org.br')).toBe('Luís Eduardo da Silva');
-  });
-
-  it('com nome maçônico, ele tem prioridade', () => {
-    expect(
-      resolveMemberDisplayName(buildMember({ nomeMaconico: 'Irmão Luís' }), 'luis@vl6.org.br'),
-    ).toBe('Irmão Luís');
   });
 });

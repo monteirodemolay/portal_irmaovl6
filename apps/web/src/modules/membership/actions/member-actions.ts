@@ -69,7 +69,6 @@ async function parseMemberForm(
 ): Promise<MemberFormValues> {
   const raw = {
     nomeCompleto: formData.get('nomeCompleto'),
-    nomeMaconico: formData.get('nomeMaconico') || null,
     fotoUrl,
     email: formData.get('email'),
     telefone: formData.get('telefone') || null,
@@ -90,7 +89,6 @@ async function parseMemberForm(
     dataElevacao: formData.get('dataElevacao') || null,
     dataExaltacao: formData.get('dataExaltacao') || null,
     cim: formData.get('cim') || null,
-    matricula: formData.get('matricula') || null,
     grau: formData.get('grau'),
     situacao: formData.get('situacao'),
     lojaId: formData.get('lojaId'),

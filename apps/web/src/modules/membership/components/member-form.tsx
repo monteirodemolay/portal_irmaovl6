@@ -125,13 +125,6 @@ export function MemberForm({ action, member, roles, customProfessions = [] }: Me
               defaultValue={member?.nomeCompleto}
             />
           </FormField>
-          <FormField label="Nome maçônico" htmlFor="nomeMaconico">
-            <Input
-              id="nomeMaconico"
-              name="nomeMaconico"
-              defaultValue={member?.nomeMaconico ?? ''}
-            />
-          </FormField>
           <FormField label="E-mail" htmlFor="email">
             <Input id="email" name="email" type="email" required defaultValue={member?.email} />
           </FormField>
@@ -194,9 +187,6 @@ export function MemberForm({ action, member, roles, customProfessions = [] }: Me
         <div className="grid grid-cols-2 gap-4">
           <FormField label="CIM" htmlFor="cim">
             <Input id="cim" name="cim" defaultValue={member?.cim ?? ''} />
-          </FormField>
-          <FormField label="Matrícula" htmlFor="matricula">
-            <Input id="matricula" name="matricula" defaultValue={member?.matricula ?? ''} />
           </FormField>
           <FormField label="Grau" htmlFor="grau">
             <Select
