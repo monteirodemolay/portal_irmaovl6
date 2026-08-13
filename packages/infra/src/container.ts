@@ -105,12 +105,15 @@ import { FirestoreLibraryCategoryRepository } from './firestore/repositories/lib
 import { FirestoreLibraryFavoriteRepository } from './firestore/repositories/library-favorite.repository';
 import { FirestoreLibraryItemRepository } from './firestore/repositories/library-item.repository';
 import { FirestoreLinkRepository } from './firestore/repositories/link.repository';
+import { FirestoreMemberCentralProfileRepository } from './firestore/repositories/member-central-profile.repository';
 import { FirestoreMemberPositionHistoryRepository } from './firestore/repositories/member-position-history.repository';
 import { FirestoreMemberRepository } from './firestore/repositories/member.repository';
 import { FirestoreNewsCommentRepository } from './firestore/repositories/news-comment.repository';
 import { FirestoreNewsRepository } from './firestore/repositories/news.repository';
 import { FirestoreNotificationRepository } from './firestore/repositories/notification.repository';
 import { FirestoreNotificationPreferenceRepository } from './firestore/repositories/notification-preference.repository';
+import { FirestorePublicationConsentRepository } from './firestore/repositories/publication-consent.repository';
+import { FirestorePublicationSettingsRepository } from './firestore/repositories/publication-settings.repository';
 import { FirestoreRoleRepository } from './firestore/repositories/role.repository';
 import { FirestoreTenantRepository } from './firestore/repositories/tenant.repository';
 import { FirestoreTenantBrandingRepository } from './firestore/repositories/tenant-branding.repository';
@@ -172,6 +175,17 @@ export function createServerContainer() {
     galleryMedia: new FirestoreGalleryMediaRepository(db),
     newsComment: new FirestoreNewsCommentRepository(db),
     apiKey: new FirestoreApiKeyRepository(db),
+    memberCentralProfile: withAudit(
+      new FirestoreMemberCentralProfileRepository(db),
+      'memberCentralProfiles',
+      auditDeps,
+    ),
+    publicationSettings: withAudit(
+      new FirestorePublicationSettingsRepository(db),
+      'publicationSettings',
+      auditDeps,
+    ),
+    publicationConsent: new FirestorePublicationConsentRepository(db),
   };
 
   const notificationGateway = new NoopNotificationGateway();

@@ -41,6 +41,16 @@ service cloud.firestore {
       return isSignedIn() && data[field] == request.auth.uid;
     }
 
+    // Central dos Irmãos VL6 — as 3 coleções guardam `memberId` (id do
+    // documento `Member`), não um uid direto, então `isOwner()` não serve
+    // (ele compara `data[field] == request.auth.uid` literalmente). Resolve
+    // `memberId → userId` com uma leitura extra — mesmo trade-off já aceito
+    // em `withAudit` (packages/infra) por não termos Cloud Functions.
+    function isSelfCentralProfile(data) {
+      return isSignedIn() &&
+        get(/databases/$(database)/documents/members/$(data.memberId)).data.userId == request.auth.uid;
+    }
+
     function notSoftDeleted(data) {
       return data.deletedAt == null;
     }
@@ -246,6 +256,52 @@ service cloud.firestore {
     match /links/{id} {
       allow read: if sameTenant(resource.data) && hasPermission('link:read');
       allow write: if sameTenant(request.resource.data) && hasPermission('link:create');
+    }
+
+    // ---------------------------------------------------------------
+    // Central dos Irmãos VL6 — diretório institucional privado e
+    // voluntário. Leitura em client direto não é o caminho pretendido
+    // (sempre via Server Action, que já filtra campo a campo pelo Use
+    // Case) — estas regras são defesa em profundidade, não o canal real.
+    // ---------------------------------------------------------------
+    match /memberCentralProfiles/{id} {
+      allow read: if sameTenant(resource.data) &&
+        (hasPermission('memberDirectory:read') || hasPermission('memberCentral:manage'));
+      // Admin pode corrigir conteúdo administrativamente (memberCentral:manage),
+      // mas nunca decide visibilidade — isso vive só em publicationSettings.
+      allow create, update: if sameTenant(request.resource.data) &&
+        (isSelfCentralProfile(request.resource.data) || hasPermission('memberCentral:manage'));
+      allow delete: if false;
+    }
+
+    match /publicationSettings/{id} {
+      allow read: if sameTenant(resource.data) &&
+        (hasPermission('memberDirectory:read') || hasPermission('memberCentral:manage'));
+      // Só o titular cria (nunca um admin publica em nome de alguém).
+      allow create: if sameTenant(request.resource.data) && isSelfCentralProfile(request.resource.data);
+      // Duas metades que nunca se misturam numa mesma escrita: o titular
+      // mexe em profilePublished/blocks/contacts/externalLinks mas nunca em
+      // suspendedAt/By/Reason; a Administração (memberCentral:manage) é o
+      // oposto — só pode suspender/reativar, nunca ligar visibilidade.
+      allow update: if sameTenant(request.resource.data) && (
+        (isSelfCentralProfile(request.resource.data) &&
+          request.resource.data.suspendedAt == resource.data.suspendedAt &&
+          request.resource.data.suspendedBy == resource.data.suspendedBy &&
+          request.resource.data.suspendedReason == resource.data.suspendedReason) ||
+        (hasPermission('memberCentral:manage') &&
+          request.resource.data.profilePublished == resource.data.profilePublished &&
+          request.resource.data.blocks == resource.data.blocks &&
+          request.resource.data.contacts == resource.data.contacts &&
+          request.resource.data.externalLinks == resource.data.externalLinks)
+      );
+      allow delete: if false;
+    }
+
+    match /publicationConsents/{id} {
+      allow read: if sameTenant(resource.data) &&
+        (isSelfCentralProfile(resource.data) || hasPermission('memberCentral:manage'));
+      allow create: if sameTenant(request.resource.data) && isSelfCentralProfile(request.resource.data);
+      allow update, delete: if false; // append-only, igual auditLogs
     }
   }
 }
