@@ -67,6 +67,7 @@ export {
   Gift,
   LayoutGrid,
   CalendarPlus,
+  Pin,
   ICON_SIZE_DEFAULT,
   ICON_SIZE_LARGE,
   ICON_STROKE_WIDTH,

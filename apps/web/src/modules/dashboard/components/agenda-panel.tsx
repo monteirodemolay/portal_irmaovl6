@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import type { Event } from '@vl6/domain';
-import { Badge, Card, Clock, MapPin } from '@vl6/ui';
+import { Badge, CalendarDays, Card, Clock, MapPin } from '@vl6/ui';
 import { EVENT_KIND_LABELS } from '@vl6/shared';
 import { formatEventDate } from '../lib/format-event-date';
 import { DashboardSectionHeading } from './dashboard-section-heading';
@@ -8,7 +8,12 @@ import { DashboardSectionHeading } from './dashboard-section-heading';
 export function AgendaPanel({ events }: { events: Event[] }) {
   return (
     <Card className="flex flex-col gap-4 p-5 shadow-none">
-      <DashboardSectionHeading title="Agenda" href="/agenda" hrefLabel="Ver agenda" />
+      <DashboardSectionHeading
+        icon={CalendarDays}
+        title="Agenda"
+        href="/agenda"
+        hrefLabel="Ver agenda"
+      />
       {events.length === 0 ? (
         <p className="text-muted text-sm">Nenhum outro evento programado.</p>
       ) : (

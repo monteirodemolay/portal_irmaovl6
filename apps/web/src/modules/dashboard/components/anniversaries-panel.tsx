@@ -20,16 +20,12 @@ export function AnniversariesPanel({
 
   return (
     <Card className="border-accent/40 flex flex-col gap-4 p-5 shadow-none">
-      <div className="flex items-center gap-2.5">
-        <span className="bg-accent/15 text-accent flex h-8 w-8 shrink-0 items-center justify-center rounded-full">
-          <Gift size={16} strokeWidth={1.75} />
-        </span>
-        <DashboardSectionHeading
-          title="Esta semana na Loja"
-          href={showDirectoryLink ? '/central' : undefined}
-          hrefLabel="Ver diretório completo"
-        />
-      </div>
+      <DashboardSectionHeading
+        icon={Gift}
+        title="Esta semana na Loja"
+        href={showDirectoryLink ? '/central' : undefined}
+        hrefLabel="Ver diretório completo"
+      />
       <ul className="grid gap-3 sm:grid-cols-2">
         {entries.map((entry) => (
           <li key={`${entry.memberId}-${entry.kind}`} className="flex items-center gap-3">
