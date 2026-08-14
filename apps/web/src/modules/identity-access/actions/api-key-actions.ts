@@ -37,7 +37,7 @@ export async function createApiKeyAction(
     return { error: result.error.message, plainTextKey: null };
   }
 
-  revalidatePath('/admin/integracoes');
+  revalidatePath('/admin/configuracoes/integracoes');
   return { error: null, plainTextKey: result.value.plainTextKey };
 }
 
@@ -50,5 +50,5 @@ export async function revokeApiKeyAction(apiKeyId: string, _formData: FormData):
     throw new Error(result.error.message);
   }
 
-  revalidatePath('/admin/integracoes');
+  revalidatePath('/admin/configuracoes/integracoes');
 }

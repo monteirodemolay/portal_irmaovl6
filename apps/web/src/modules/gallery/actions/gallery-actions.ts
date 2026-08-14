@@ -40,8 +40,8 @@ export async function createGalleryAlbumAction(
   const result = await container.useCases.createGalleryAlbum.execute(session.authContext, input);
   if (!result.ok) return { error: result.error.message };
 
-  revalidatePath('/admin/galeria');
-  redirect(`/admin/galeria/${result.value.id}`);
+  revalidatePath('/admin/acervo/galeria');
+  redirect(`/admin/acervo/galeria/${result.value.id}`);
 }
 
 export async function addGalleryMediaAction(
@@ -102,6 +102,6 @@ export async function addGalleryMediaAction(
     return { error: result.error.message };
   }
 
-  revalidatePath(`/admin/galeria/${albumId}`);
+  revalidatePath(`/admin/acervo/galeria/${albumId}`);
   return { error: null };
 }

@@ -32,6 +32,15 @@ import type { IBoardTermRepository } from '../modules/governance/repositories/bo
 import type { IBoardPositionAssignmentRepository } from '../modules/governance/repositories/board-position-assignment.repository';
 import type { ICommitteeRepository } from '../modules/governance/repositories/committee.repository';
 import type { BoardPositionKey } from '@vl6/shared';
+import type { MemberCentralProfile } from '../modules/central/entities/member-central-profile.entity';
+import type { PublicationSettings } from '../modules/central/entities/publication-settings.entity';
+import type { PublicationConsent } from '../modules/central/entities/publication-consent.entity';
+import type { IMemberCentralProfileRepository } from '../modules/central/repositories/member-central-profile.repository';
+import type {
+  IPublicationSettingsRepository,
+  PublishedMemberRef,
+} from '../modules/central/repositories/publication-settings.repository';
+import type { IPublicationConsentRepository } from '../modules/central/repositories/publication-consent.repository';
 import type { News } from '../modules/content/entities/news.entity';
 import type { Announcement } from '../modules/content/entities/announcement.entity';
 import type { NewsComment } from '../modules/content/entities/news-comment.entity';
@@ -243,6 +252,9 @@ export class InMemoryMemberRepository implements IMemberRepository {
     const items = [...this.byId.values()].filter((m) => m.tenantId === filters.tenantId);
     return { items: items.slice(0, page.limit), nextCursor: null, hasMore: false };
   }
+  async countByTenant(tenantId: string) {
+    return [...this.byId.values()].filter((m) => m.tenantId === tenantId).length;
+  }
   async create(member: Member) {
     this.byId.set(member.id, member);
   }
@@ -399,6 +411,9 @@ export class InMemoryAnnouncementRepository implements IAnnouncementRepository {
   async listAll(tenantId: string) {
     return [...this.byId.values()].filter((a) => a.tenantId === tenantId);
   }
+  async countPublishedByTenant(tenantId: string) {
+    return [...this.byId.values()].filter((a) => a.tenantId === tenantId && a.publicado).length;
+  }
   async create(announcement: Announcement) {
     this.byId.set(announcement.id, announcement);
   }
@@ -468,6 +483,9 @@ export class InMemoryFileAssetRepository implements IFileAssetRepository {
     const items = [...this.byId.values()].filter((f) => f.tenantId === tenantId);
     return { items: items.slice(0, page.limit), nextCursor: null, hasMore: false };
   }
+  async countByTenant(tenantId: string) {
+    return [...this.byId.values()].filter((f) => f.tenantId === tenantId).length;
+  }
   async create(file: FileAsset) {
     this.byId.set(file.id, file);
   }
@@ -515,6 +533,10 @@ export class InMemoryGalleryAlbumRepository implements IGalleryAlbumRepository {
         (categoria === undefined || a.categoria === categoria),
     );
   }
+  async countByTenant(tenantId: string) {
+    return [...this.byId.values()].filter((a) => a.tenantId === tenantId && a.deletedAt === null)
+      .length;
+  }
   async create(album: GalleryAlbum) {
     this.byId.set(album.id, album);
   }
@@ -553,6 +575,9 @@ export class InMemoryLibraryItemRepository implements ILibraryItemRepository {
   }
   async listByTenant(tenantId: string) {
     return [...this.byId.values()].filter((i) => i.tenantId === tenantId);
+  }
+  async countByTenant(tenantId: string) {
+    return [...this.byId.values()].filter((i) => i.tenantId === tenantId).length;
   }
   async create(item: LibraryItem) {
     this.byId.set(item.id, item);
@@ -689,6 +714,10 @@ export class InMemoryEventRepository implements IEventRepository {
     const items = [...this.byId.values()].filter((e) => e.tenantId === tenantId);
     return { items: items.slice(0, page.limit), nextCursor: null, hasMore: false };
   }
+  async countUpcomingByTenant(tenantId: string, from: Date) {
+    return [...this.byId.values()].filter((e) => e.tenantId === tenantId && e.dataInicio >= from)
+      .length;
+  }
   async create(event: Event) {
     this.byId.set(event.id, event);
   }
@@ -718,5 +747,66 @@ export class InMemoryEventAttendanceRepository implements IEventAttendanceReposi
   }
   async update(attendance: EventAttendance) {
     this.byId.set(attendance.id, attendance);
+  }
+}
+
+export class InMemoryMemberCentralProfileRepository implements IMemberCentralProfileRepository {
+  private readonly byId = new Map<string, MemberCentralProfile>();
+
+  async findById(id: string) {
+    return this.byId.get(id) ?? null;
+  }
+  async findByMemberId(tenantId: string, memberId: string) {
+    return (
+      [...this.byId.values()].find((p) => p.tenantId === tenantId && p.memberId === memberId) ??
+      null
+    );
+  }
+  async create(profile: MemberCentralProfile) {
+    this.byId.set(profile.id, profile);
+  }
+  async update(profile: MemberCentralProfile) {
+    this.byId.set(profile.id, profile);
+  }
+}
+
+export class InMemoryPublicationSettingsRepository implements IPublicationSettingsRepository {
+  private readonly byId = new Map<string, PublicationSettings>();
+
+  async findById(id: string) {
+    return this.byId.get(id) ?? null;
+  }
+  async findByMemberId(tenantId: string, memberId: string) {
+    return (
+      [...this.byId.values()].find((s) => s.tenantId === tenantId && s.memberId === memberId) ??
+      null
+    );
+  }
+  async listPublishedByTenant(tenantId: string): Promise<PublishedMemberRef[]> {
+    return [...this.byId.values()]
+      .filter((s) => s.tenantId === tenantId && s.profilePublished && s.suspendedAt === null)
+      .map((s) => ({ memberId: s.memberId }));
+  }
+  async listByTenant(tenantId: string) {
+    return [...this.byId.values()].filter((s) => s.tenantId === tenantId);
+  }
+  async create(settings: PublicationSettings) {
+    this.byId.set(settings.id, settings);
+  }
+  async update(settings: PublicationSettings) {
+    this.byId.set(settings.id, settings);
+  }
+}
+
+export class InMemoryPublicationConsentRepository implements IPublicationConsentRepository {
+  private readonly entries: PublicationConsent[] = [];
+
+  async listByMemberId(tenantId: string, memberId: string) {
+    return this.entries
+      .filter((c) => c.tenantId === tenantId && c.memberId === memberId)
+      .sort((a, b) => b.acceptedAt.getTime() - a.acceptedAt.getTime());
+  }
+  async append(consent: PublicationConsent) {
+    this.entries.push(consent);
   }
 }

@@ -25,6 +25,101 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  // Reorganização da IA administrativa (docs/architecture) — cada rota antiga
+  // do admin virou uma aba dentro de uma das 5 áreas consolidadas
+  // (`/admin/pessoas`, `/admin/conteudo`, `/admin/acervo`,
+  // `/admin/configuracoes`). `permanent: false` (307) enquanto a nova
+  // estrutura estabiliza — promover pra 308 depois (ver plano).
+  async redirects() {
+    return [
+      { source: '/admin/arquivos', destination: '/admin/acervo/arquivos', permanent: false },
+      {
+        source: '/admin/arquivos/novo',
+        destination: '/admin/acervo/arquivos/novo',
+        permanent: false,
+      },
+      { source: '/admin/biblioteca', destination: '/admin/acervo/biblioteca', permanent: false },
+      {
+        source: '/admin/biblioteca/novo',
+        destination: '/admin/acervo/biblioteca/novo',
+        permanent: false,
+      },
+      { source: '/admin/galeria', destination: '/admin/acervo/galeria', permanent: false },
+      {
+        source: '/admin/galeria/novo',
+        destination: '/admin/acervo/galeria/novo',
+        permanent: false,
+      },
+      {
+        source: '/admin/galeria/:albumId',
+        destination: '/admin/acervo/galeria/:albumId',
+        permanent: false,
+      },
+      { source: '/admin/avisos', destination: '/admin/conteudo/avisos', permanent: false },
+      {
+        source: '/admin/avisos/novo',
+        destination: '/admin/conteudo/avisos/novo',
+        permanent: false,
+      },
+      { source: '/admin/noticias', destination: '/admin/conteudo/noticias', permanent: false },
+      {
+        source: '/admin/noticias/nova',
+        destination: '/admin/conteudo/noticias/nova',
+        permanent: false,
+      },
+      {
+        source: '/admin/noticias/:newsId',
+        destination: '/admin/conteudo/noticias/:newsId',
+        permanent: false,
+      },
+      { source: '/admin/agenda', destination: '/admin/conteudo/agenda', permanent: false },
+      {
+        source: '/admin/agenda/novo',
+        destination: '/admin/conteudo/agenda/novo',
+        permanent: false,
+      },
+      {
+        source: '/admin/agenda/:eventId',
+        destination: '/admin/conteudo/agenda/:eventId',
+        permanent: false,
+      },
+      { source: '/admin/irmaos', destination: '/admin/pessoas/irmaos', permanent: false },
+      {
+        source: '/admin/irmaos/novo',
+        destination: '/admin/pessoas/irmaos/novo',
+        permanent: false,
+      },
+      {
+        source: '/admin/irmaos/:memberId',
+        destination: '/admin/pessoas/irmaos/:memberId',
+        permanent: false,
+      },
+      { source: '/admin/usuarios', destination: '/admin/pessoas/usuarios', permanent: false },
+      { source: '/admin/gestoes', destination: '/admin/pessoas/gestoes', permanent: false },
+      {
+        source: '/admin/gestoes/nova',
+        destination: '/admin/pessoas/gestoes/nova',
+        permanent: false,
+      },
+      {
+        source: '/admin/gestoes/:termId',
+        destination: '/admin/pessoas/gestoes/:termId',
+        permanent: false,
+      },
+      { source: '/admin/permissoes', destination: '/admin/pessoas/permissoes', permanent: false },
+      { source: '/admin/loja', destination: '/admin/pessoas/loja', permanent: false },
+      {
+        source: '/admin/integracoes',
+        destination: '/admin/configuracoes/integracoes',
+        permanent: false,
+      },
+      {
+        source: '/admin/configuracoes',
+        destination: '/admin/configuracoes/geral',
+        permanent: false,
+      },
+    ];
+  },
 };
 
 /**

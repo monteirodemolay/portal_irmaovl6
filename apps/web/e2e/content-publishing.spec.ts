@@ -6,13 +6,13 @@ test('admin cria e publica uma Notícia, que aparece no site público', async ({
 
   const titulo = `Notícia E2E ${Date.now()}`;
 
-  await page.goto('/admin/noticias/nova');
+  await page.goto('/admin/conteudo/noticias/nova');
   await page.getByLabel('Título', { exact: true }).fill(titulo);
   await page.getByLabel('Categoria').fill('Institucional');
   await page.getByLabel('Conteúdo').fill('<p>Conteúdo de teste gerado pelo E2E.</p>');
   await page.getByRole('button', { name: 'Salvar' }).click();
 
-  await expect(page).toHaveURL(/\/admin\/noticias\/[^/]+$/);
+  await expect(page).toHaveURL(/\/admin\/conteudo\/noticias\/[^/]+$/);
   await page.getByRole('button', { name: 'Publicar' }).click();
   await expect(page.getByRole('button', { name: 'Despublicar' })).toBeVisible();
 

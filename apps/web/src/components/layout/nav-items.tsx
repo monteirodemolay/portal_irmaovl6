@@ -9,9 +9,7 @@ import {
   Image as GalleryIcon,
   LayoutDashboard,
   Megaphone,
-  Newspaper,
   Settings,
-  ShieldCheck,
   UserCircle,
   Users,
 } from '@vl6/ui';
@@ -24,23 +22,31 @@ const ICON_STROKE = 1.75;
 
 // Sem itens que só duplicam o site institucional (Nossa Loja, Diretoria
 // pública, Contato) — esse é o papel do www.vl6.com.br, não do Portal
-// (docs/architecture/07 §7.0). Notícias fica de fora da navegação por ora:
-// é conteúdo autoral do Portal (não espelha o site), mas a Loja sinalizou
-// que as publicações vão continuar saindo pelo site institucional — o
-// admin de Notícias (`/admin/noticias`) segue existindo, só não fica
-// linkado aqui; revisitar se um dia isso mudar. `/admin/usuarios` segue o
-// mesmo padrão: cadastro de Irmão e acesso ao Portal foram unificados em
-// `/admin/irmaos` (foto, grau, datas e "Acesso ao Portal" no mesmo
-// formulário — docs/architecture/06), então o fluxo normal nunca mais
-// passa por Usuários. A rota continua existindo só para o caso excepcional
-// de uma conta de acesso sem Member (ex.: convite avulso técnico), por
-// isso some da navegação em vez de ser removida.
-const PORTAL_ITEMS = [
+// (docs/architecture/07 §7.0). O admin foi reorganizado em 5 áreas
+// consolidadas com abas internas (ver `area-tabs.ts`): Notícias e Usuários,
+// que antes ficavam de fora da sidebar pra não virarem mais um item solto,
+// agora estão visíveis como abas dentro de "Conteúdo" e "Pessoas & Loja"
+// respectivamente — o custo de poluir a sidebar flat não existe mais
+// depois da consolidação. Usuários continua sendo o caso excepcional
+// (conta de acesso sem Irmão vinculado — o fluxo normal de acesso é criado
+// dentro do cadastro de Irmãos, docs/architecture/06), só que agora visível
+// em vez de escondido.
+const PORTAL_ITEMS: Array<{
+  href: string;
+  label: string;
+  icon: typeof LayoutDashboard;
+  permission?: PermissionKey;
+}> = [
   { href: '/dashboard', label: 'Início', icon: LayoutDashboard },
   { href: '/perfil', label: 'Meu Perfil', icon: UserCircle },
   { href: '/agenda', label: 'Agenda', icon: CalendarDays },
   { href: '/avisos', label: 'Avisos', icon: Megaphone },
-] as const;
+  // Central dos Irmãos VL6 — diretório institucional privado e voluntário
+  // (docs/architecture). Só aparece pra quem tem `memberDirectory:read`
+  // (papel `membro`/`admin` de fábrica já têm; um papel customizado sem
+  // essa permissão simplesmente não vê o item).
+  { href: '/central', label: 'Central VL6', icon: Users, permission: 'memberDirectory:read' },
+];
 
 // Arquivos, Biblioteca, Galeria e Downloads continuam sendo entidades e
 // rotas separadas no domínio (Biblioteca cataloga `FileAsset`s, nunca
@@ -61,43 +67,56 @@ interface AdminNavItemDef {
   href: string;
   labelKey: keyof Dictionary['nav'];
   icon: typeof LayoutDashboard;
-  permission: PermissionKey;
+  /** Array = visível se QUALQUER uma bater (item que agrega várias abas com recursos distintos). */
+  permission: PermissionKey | PermissionKey[];
+}
+
+function hasAnyPermission(authContext: AuthContext, permission: PermissionKey | PermissionKey[]) {
+  const permissions = Array.isArray(permission) ? permission : [permission];
+  return permissions.some((p) => hasPermission(authContext, p));
 }
 
 const ADMIN_ITEMS: AdminNavItemDef[] = [
   { href: '/admin', labelKey: 'dashboard', icon: LayoutDashboard, permission: 'tenant:read' },
   {
-    href: '/admin/loja',
-    labelKey: 'storeManagement',
-    icon: Building2,
-    permission: 'branding:read',
+    href: '/admin/pessoas',
+    labelKey: 'pessoas',
+    icon: Users,
+    // Visível se qualquer uma das 5 abas internas (Irmãos/Usuários/Gestões/
+    // Permissões/Loja — ver `area-tabs.ts`) estiver disponível. Usuários
+    // volta a aparecer na navegação aqui pelo mesmo motivo de Notícias em
+    // "Conteúdo": o custo de item solto na sidebar flat some dentro de uma
+    // área já visível — mas a tela continua deixando claro que é o caso
+    // excepcional (conta de acesso sem Irmão vinculado), não o fluxo normal.
+    permission: ['member:read', 'user:read', 'boardTerm:read', 'role:read', 'branding:read'],
   },
-  { href: '/admin/irmaos', labelKey: 'memberRegistry', icon: Users, permission: 'member:read' },
-  { href: '/admin/gestoes', labelKey: 'boards', icon: ShieldCheck, permission: 'boardTerm:read' },
-  { href: '/admin/permissoes', labelKey: 'permissions', icon: Settings, permission: 'role:read' },
   {
-    href: '/admin/avisos',
-    labelKey: 'announcements',
+    href: '/admin/conteudo',
+    labelKey: 'conteudo',
     icon: Megaphone,
-    permission: 'announcement:read',
+    // Visível se qualquer uma das 3 abas internas (Avisos/Notícias/Agenda —
+    // ver `area-tabs.ts`) estiver disponível pra sessão atual. Notícias
+    // volta a aparecer na navegação aqui (antes ficava de fora pra não
+    // poluir a sidebar flat — esse custo some ao virar aba de uma área já
+    // visível).
+    permission: ['announcement:read', 'news:read', 'event:read'],
   },
-  { href: '/admin/noticias', labelKey: 'news', icon: Newspaper, permission: 'news:read' },
-  { href: '/admin/arquivos', labelKey: 'files', icon: FileText, permission: 'file:read' },
   {
-    href: '/admin/biblioteca',
-    labelKey: 'library',
-    icon: BookOpen,
-    permission: 'libraryItem:read',
+    href: '/admin/acervo',
+    labelKey: 'acervo',
+    icon: GalleryIcon,
+    // Visível se qualquer uma das 3 abas internas (Arquivos/Biblioteca/
+    // Galeria — ver `area-tabs.ts`) estiver disponível pra sessão atual.
+    permission: ['file:read', 'libraryItem:read', 'gallery:read'],
   },
-  { href: '/admin/agenda', labelKey: 'agenda', icon: CalendarDays, permission: 'event:read' },
-  { href: '/admin/galeria', labelKey: 'gallery', icon: GalleryIcon, permission: 'gallery:read' },
   {
-    href: '/admin/integracoes',
-    labelKey: 'integrations',
+    href: '/admin/configuracoes',
+    labelKey: 'settings',
     icon: Settings,
-    permission: 'tenant:manage',
+    // "Geral" (idioma/senha/MFA) não exige permissão de página hoje — sempre
+    // visível a qualquer sessão admin, então este item nunca some.
+    permission: 'tenant:read',
   },
-  { href: '/admin/configuracoes', labelKey: 'settings', icon: Settings, permission: 'tenant:read' },
 ];
 
 function navContent(Icon: typeof LayoutDashboard, label: string) {
@@ -126,7 +145,9 @@ export function buildNavSections(
   const sections: AppShellNavSection[] = [
     {
       title: 'Portal',
-      items: PORTAL_ITEMS.map((item) => ({
+      items: PORTAL_ITEMS.filter(
+        (item) => !item.permission || hasPermission(authContext, item.permission),
+      ).map((item) => ({
         href: item.href,
         content: navContent(item.icon, item.label),
       })),
@@ -142,7 +163,7 @@ export function buildNavSections(
 
   if (isAdminTier(role)) {
     const visibleAdminItems = ADMIN_ITEMS.filter((item) =>
-      hasPermission(authContext, item.permission),
+      hasAnyPermission(authContext, item.permission),
     );
     if (visibleAdminItems.length > 0) {
       sections.push({

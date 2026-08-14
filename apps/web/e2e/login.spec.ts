@@ -9,7 +9,7 @@ test.describe('Login', () => {
   }) => {
     await page.goto('/login');
     await page.getByLabel('E-mail').fill(email);
-    await page.getByLabel('Senha').fill(password);
+    await page.getByLabel('Senha', { exact: true }).fill(password);
     await page.getByRole('button', { name: 'Entrar' }).click();
 
     await expect(page).toHaveURL(/\/dashboard/);
@@ -19,7 +19,7 @@ test.describe('Login', () => {
   test('mostra erro com senha inválida', async ({ page }) => {
     await page.goto('/login');
     await page.getByLabel('E-mail').fill(email);
-    await page.getByLabel('Senha').fill('senha-completamente-errada');
+    await page.getByLabel('Senha', { exact: true }).fill('senha-completamente-errada');
     await page.getByRole('button', { name: 'Entrar' }).click();
 
     await expect(page.getByText('E-mail ou senha inválidos.')).toBeVisible();
@@ -29,7 +29,7 @@ test.describe('Login', () => {
   test('respeita o redirect explícito mesmo com destino padrão diferente', async ({ page }) => {
     await page.goto('/login?redirect=/perfil');
     await page.getByLabel('E-mail').fill(email);
-    await page.getByLabel('Senha').fill(password);
+    await page.getByLabel('Senha', { exact: true }).fill(password);
     await page.getByRole('button', { name: 'Entrar' }).click();
 
     await expect(page).toHaveURL(/\/perfil/);

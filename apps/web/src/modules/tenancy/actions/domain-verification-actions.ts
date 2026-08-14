@@ -40,7 +40,7 @@ export async function requestDomainVerificationAction(
     return { ...EMPTY_STATE, error: result.error.message };
   }
 
-  revalidatePath('/admin/loja');
+  revalidatePath('/admin/pessoas/loja');
   return {
     error: null,
     domain: result.value.id,
@@ -67,7 +67,7 @@ export async function verifyDomainAction(
     return { ...EMPTY_STATE, error: result.error.message };
   }
 
-  revalidatePath('/admin/loja');
+  revalidatePath('/admin/pessoas/loja');
   return {
     error: result.value.verified
       ? null

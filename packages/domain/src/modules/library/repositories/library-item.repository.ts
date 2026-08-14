@@ -4,6 +4,8 @@ export interface ILibraryItemRepository {
   findById(id: string): Promise<LibraryItem | null>;
   listByCategory(tenantId: string, categoriaId: string): Promise<LibraryItem[]>;
   listByTenant(tenantId: string): Promise<LibraryItem[]>;
+  /** Total de itens da Biblioteca (não excluídos) — usado pelo Painel administrativo. */
+  countByTenant(tenantId: string): Promise<number>;
   create(item: LibraryItem): Promise<void>;
   update(item: LibraryItem): Promise<void>;
   incrementDownloads(id: string): Promise<void>;

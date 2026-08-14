@@ -10,7 +10,7 @@ test('admin cadastra um novo Irmão, ganha acesso ao Portal e o Irmão consegue 
   const cim = `E2E-${Date.now()}`;
   const email = `${cim.toLowerCase()}@vl6.test`;
 
-  await page.goto('/admin/irmaos/novo');
+  await page.goto('/admin/pessoas/irmaos/novo');
   await page.getByLabel('Nome completo').fill(nome);
   await page.getByLabel('E-mail', { exact: true }).fill(email);
   await page.getByLabel('CIM').fill(cim);
@@ -32,7 +32,7 @@ test('admin cadastra um novo Irmão, ganha acesso ao Portal e o Irmão consegue 
   await expect(page).toHaveURL(/\/admin\/irmaos\/[^/]+$/);
   await expect(page.getByRole('heading', { name: nome })).toBeVisible();
 
-  await page.goto('/admin/irmaos');
+  await page.goto('/admin/pessoas/irmaos');
   await expect(page.getByText(nome)).toBeVisible();
 
   // O Irmão consegue logar com o próprio e-mail e a senha temporária —
@@ -41,7 +41,7 @@ test('admin cadastra um novo Irmão, ganha acesso ao Portal e o Irmão consegue 
   await page.getByRole('button', { name: 'Sair' }).click();
   await page.waitForURL(/\/login/);
   await page.getByLabel('E-mail').fill(email);
-  await page.getByLabel('Senha').fill(temporaryPassword.trim());
+  await page.getByLabel('Senha', { exact: true }).fill(temporaryPassword.trim());
   await page.getByRole('button', { name: 'Entrar' }).click();
   await page.waitForURL((url) => url.pathname === '/dashboard', { timeout: 30000 });
 });
@@ -58,7 +58,7 @@ test('admin cadastra Irmão sem acesso, ativa depois e consegue bloquear sem apa
   const cim = `PD-${Date.now()}`;
   const email = `${cim.toLowerCase()}@vl6.test`;
 
-  await page.goto('/admin/irmaos/novo');
+  await page.goto('/admin/pessoas/irmaos/novo');
   await page.getByLabel('Nome completo').fill(nome);
   await page.getByLabel('E-mail', { exact: true }).fill(email);
   await page.getByLabel('CIM').fill(cim);
@@ -70,7 +70,7 @@ test('admin cadastra Irmão sem acesso, ativa depois e consegue bloquear sem apa
   // sem isso não há como saber se a Server Action já terminou.
   await expect(page.getByText('Irmão cadastrado sem acesso ao Portal.')).toBeVisible();
 
-  await page.goto('/admin/irmaos');
+  await page.goto('/admin/pessoas/irmaos');
   const row = page.locator('tr', { hasText: nome });
   await expect(row.getByText('Sem acesso', { exact: true })).toBeVisible();
 
@@ -81,7 +81,7 @@ test('admin cadastra Irmão sem acesso, ativa depois e consegue bloquear sem apa
   await page.getByRole('button', { name: 'Ativar acesso' }).click();
   await expect(page.getByText('Acesso criado.')).toBeVisible();
 
-  await page.goto('/admin/irmaos');
+  await page.goto('/admin/pessoas/irmaos');
   await expect(
     page.locator('tr', { hasText: nome }).getByText('Ativa', { exact: true }),
   ).toBeVisible();

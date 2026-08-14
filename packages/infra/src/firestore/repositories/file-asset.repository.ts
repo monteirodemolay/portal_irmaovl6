@@ -41,6 +41,15 @@ export class FirestoreFileAssetRepository implements IFileAssetRepository {
     return this.paginate(query, page);
   }
 
+  async countByTenant(tenantId: string): Promise<number> {
+    const snap = await this.collection
+      .where('tenantId', '==', tenantId)
+      .where('deletedAt', '==', null)
+      .count()
+      .get();
+    return snap.data().count;
+  }
+
   private async paginate(
     query: Query<FileAsset>,
     page: PageRequest,

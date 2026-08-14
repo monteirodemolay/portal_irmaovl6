@@ -49,8 +49,8 @@ export async function createNewsAction(
   const result = await container.useCases.createNews.execute(session.authContext, input);
   if (!result.ok) return { error: result.error.message };
 
-  revalidatePath('/admin/noticias');
-  redirect(`/admin/noticias/${result.value.id}`);
+  revalidatePath('/admin/conteudo/noticias');
+  redirect(`/admin/conteudo/noticias/${result.value.id}`);
 }
 
 export async function updateNewsAction(
@@ -78,8 +78,8 @@ export async function updateNewsAction(
   const result = await container.useCases.updateNews.execute(session.authContext, newsId, input);
   if (!result.ok) return { error: result.error.message };
 
-  revalidatePath('/admin/noticias');
-  revalidatePath(`/admin/noticias/${newsId}`);
+  revalidatePath('/admin/conteudo/noticias');
+  revalidatePath(`/admin/conteudo/noticias/${newsId}`);
   return { error: null };
 }
 
@@ -93,8 +93,8 @@ export async function toggleNewsPublishedAction(newsId: string, publicar: boolea
   );
   if (!result.ok) throw new Error(result.error.message);
 
-  revalidatePath('/admin/noticias');
-  revalidatePath(`/admin/noticias/${newsId}`);
+  revalidatePath('/admin/conteudo/noticias');
+  revalidatePath(`/admin/conteudo/noticias/${newsId}`);
 }
 
 export async function createAnnouncementAction(
@@ -121,8 +121,8 @@ export async function createAnnouncementAction(
   const result = await container.useCases.createAnnouncement.execute(session.authContext, input);
   if (!result.ok) return { error: result.error.message };
 
-  revalidatePath('/admin/avisos');
-  redirect('/admin/avisos');
+  revalidatePath('/admin/conteudo/avisos');
+  redirect('/admin/conteudo/avisos');
 }
 
 export async function toggleAnnouncementPublishedAction(
@@ -138,7 +138,7 @@ export async function toggleAnnouncementPublishedAction(
   );
   if (!result.ok) throw new Error(result.error.message);
 
-  revalidatePath('/admin/avisos');
+  revalidatePath('/admin/conteudo/avisos');
 }
 
 export async function createNewsCommentAction(
@@ -182,6 +182,6 @@ export async function moderateNewsCommentAction(
   );
   if (!result.ok) throw new Error(result.error.message);
 
-  revalidatePath(`/admin/noticias/${newsId}`);
+  revalidatePath(`/admin/conteudo/noticias/${newsId}`);
   revalidatePath(`/noticias`);
 }

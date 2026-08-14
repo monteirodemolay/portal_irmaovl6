@@ -63,6 +63,16 @@ export class FirestoreAnnouncementRepository implements IAnnouncementRepository 
     return snap.docs.map((doc) => doc.data());
   }
 
+  async countPublishedByTenant(tenantId: string): Promise<number> {
+    const snap = await this.collection
+      .where('tenantId', '==', tenantId)
+      .where('publicado', '==', true)
+      .where('deletedAt', '==', null)
+      .count()
+      .get();
+    return snap.data().count;
+  }
+
   async create(announcement: Announcement): Promise<void> {
     await this.collection.doc(announcement.id).set(announcement);
   }

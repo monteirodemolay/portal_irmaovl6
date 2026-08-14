@@ -85,6 +85,15 @@ export class FirestoreMemberRepository implements IMemberRepository {
     };
   }
 
+  async countByTenant(tenantId: string): Promise<number> {
+    const snap = await this.collection
+      .where('tenantId', '==', tenantId)
+      .where('deletedAt', '==', null)
+      .count()
+      .get();
+    return snap.data().count;
+  }
+
   async create(member: Member): Promise<void> {
     await this.collection.doc(member.id).set(member);
   }

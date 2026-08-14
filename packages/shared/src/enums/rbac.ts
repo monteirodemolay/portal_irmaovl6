@@ -36,6 +36,17 @@ export const RESOURCE_KEYS = [
   'user',
   'role',
   'auditLog',
+  // Central dos Irmãos VL6 (docs/architecture) — diretório institucional
+  // privado e voluntário. `memberDirectory` governa a navegação/leitura
+  // pública do diretório (perfis publicados de terceiros); `memberCentral`
+  // governa a escrita do conteúdo/configuração de publicação. Editar o
+  // PRÓPRIO perfil não usa um ActionKey "self" dedicado — segue o mesmo
+  // padrão já usado em `UpdateMyProfileUseCase`/`SetUserStatusUseCase`
+  // (checagem de posse dentro do Use Case, `member.userId === ctx.uid`),
+  // então `memberCentral:update` é suficiente tanto para o titular quanto
+  // — combinado com `memberCentral:manage` — para moderação administrativa.
+  'memberDirectory',
+  'memberCentral',
 ] as const;
 export type ResourceKey = (typeof RESOURCE_KEYS)[number];
 
@@ -88,6 +99,8 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<RoleKey, PermissionKey[]> = {
     'user:manage',
     'role:manage',
     'auditLog:read',
+    'memberDirectory:read',
+    'memberCentral:manage',
   ],
   membro: [
     'tenant:read',
@@ -101,5 +114,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<RoleKey, PermissionKey[]> = {
     'announcement:read',
     'gallery:read',
     'link:read',
+    'memberDirectory:read',
+    'memberCentral:update',
   ],
 };

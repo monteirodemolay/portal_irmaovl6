@@ -14,7 +14,7 @@ export default defineConfig({
   // Aquece /, /login e /dashboard antes da suíte real começar — ver
   // e2e/global-setup.ts. Reduz a variância do primeiro teste que loga,
   // mas cada rota nova ainda compila sob demanda no seu primeiro acesso
-  // (ex.: /admin/irmaos/novo), então os timeouts abaixo continuam
+  // (ex.: /admin/pessoas/irmaos/novo), então os timeouts abaixo continuam
   // generosos de propósito — dev mode do Next, não representativo do
   // tempo de resposta em produção (já compilada).
   timeout: 90_000,

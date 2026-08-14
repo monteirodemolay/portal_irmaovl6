@@ -246,8 +246,8 @@ export async function createMemberAction(
     });
   }
 
-  revalidatePath('/admin/irmaos');
-  revalidatePath('/admin/usuarios');
+  revalidatePath('/admin/pessoas/irmaos');
+  revalidatePath('/admin/pessoas/usuarios');
 
   const partialFailures = [
     accessError && `o acesso não pôde ser criado: ${accessError}`,
@@ -320,8 +320,8 @@ export async function updateMemberAction(
     return { ...EMPTY_STATE, error: result.error.message };
   }
 
-  revalidatePath('/admin/irmaos');
-  revalidatePath(`/admin/irmaos/${memberId}`);
+  revalidatePath('/admin/pessoas/irmaos');
+  revalidatePath(`/admin/pessoas/irmaos/${memberId}`);
   return { ...EMPTY_STATE, memberId };
 }
 
@@ -359,9 +359,9 @@ export async function activateMemberAccessAction(
     updatedBy: session.authContext.uid,
   });
 
-  revalidatePath('/admin/irmaos');
-  revalidatePath(`/admin/irmaos/${memberId}`);
-  revalidatePath('/admin/usuarios');
+  revalidatePath('/admin/pessoas/irmaos');
+  revalidatePath(`/admin/pessoas/irmaos/${memberId}`);
+  revalidatePath('/admin/pessoas/usuarios');
   return { error: null, memberId, temporaryPassword: accessResult.temporaryPassword };
 }
 
@@ -382,8 +382,8 @@ export async function updateMemberSituationAction(
     throw new Error(result.error.message);
   }
 
-  revalidatePath('/admin/irmaos');
-  revalidatePath(`/admin/irmaos/${memberId}`);
+  revalidatePath('/admin/pessoas/irmaos');
+  revalidatePath(`/admin/pessoas/irmaos/${memberId}`);
 }
 
 export async function softDeleteMemberAction(memberId: string): Promise<void> {
@@ -393,6 +393,6 @@ export async function softDeleteMemberAction(memberId: string): Promise<void> {
   if (!result.ok) {
     throw new Error(result.error.message);
   }
-  revalidatePath('/admin/irmaos');
-  redirect('/admin/irmaos');
+  revalidatePath('/admin/pessoas/irmaos');
+  redirect('/admin/pessoas/irmaos');
 }

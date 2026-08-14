@@ -30,6 +30,15 @@ export class FirestoreGalleryAlbumRepository implements IGalleryAlbumRepository 
     return snap.docs.map((doc) => doc.data());
   }
 
+  async countByTenant(tenantId: string): Promise<number> {
+    const snap = await this.collection
+      .where('tenantId', '==', tenantId)
+      .where('deletedAt', '==', null)
+      .count()
+      .get();
+    return snap.data().count;
+  }
+
   async create(album: GalleryAlbum): Promise<void> {
     await this.collection.doc(album.id).set(album);
   }

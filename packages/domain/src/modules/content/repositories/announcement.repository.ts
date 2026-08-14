@@ -5,6 +5,8 @@ export interface IAnnouncementRepository {
   listActive(tenantId: string, at?: Date): Promise<Announcement[]>;
   listHighlighted(tenantId: string): Promise<Announcement[]>;
   listAll(tenantId: string): Promise<Announcement[]>;
+  /** Total de avisos publicados (independente de expiração) — usado pelo Painel administrativo. */
+  countPublishedByTenant(tenantId: string): Promise<number>;
   create(announcement: Announcement): Promise<void>;
   update(announcement: Announcement): Promise<void>;
 }

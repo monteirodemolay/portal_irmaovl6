@@ -14,6 +14,7 @@ export * from './components/avatar';
 export * from './components/data-table';
 export * from './components/empty-state';
 export * from './components/dialog';
+export * from './components/tabs';
 // Reexporte nomeado (não `export *`) — vários ícones do Lucide colidem com
 // nomes de componentes deste barrel (ex.: `Badge`). Adicione aqui só os
 // ícones realmente usados por algum consumidor.
