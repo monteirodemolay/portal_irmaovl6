@@ -1,12 +1,15 @@
+import { hasPermission } from '@vl6/domain';
 import { createServerContainer } from '@vl6/infra';
 import { Badge } from '@vl6/ui';
 import { requirePagePermission } from '@/lib/auth/require-permission';
+import { SyncRolePermissionsButton } from '@/modules/identity-access/components/sync-role-permissions-button';
 
 export default async function PermissionsPage() {
   const session = await requirePagePermission('role:read');
 
   const container = createServerContainer();
   const roles = await container.useCases.listRoles.execute(session.authContext);
+  const canManage = hasPermission(session.authContext, 'role:manage');
 
   return (
     <div className="flex flex-col gap-6">
@@ -20,9 +23,12 @@ export default async function PermissionsPage() {
       <div className="flex flex-col gap-4">
         {roles.map((role) => (
           <div key={role.id} className="border-border bg-surface rounded-lg border p-4 shadow-sm">
-            <div className="mb-2 flex items-center gap-2">
-              <h2 className="font-display font-semibold">{role.nome}</h2>
-              {role.sistemico && <Badge variant="outline">papel do sistema</Badge>}
+            <div className="mb-2 flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <h2 className="font-display font-semibold">{role.nome}</h2>
+                {role.sistemico && <Badge variant="outline">papel do sistema</Badge>}
+              </div>
+              {role.sistemico && canManage && <SyncRolePermissionsButton roleId={role.id} />}
             </div>
             <div className="flex flex-wrap gap-1.5">
               {role.permissoes.length === 0 ? (
