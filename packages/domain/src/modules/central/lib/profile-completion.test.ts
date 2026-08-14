@@ -113,6 +113,19 @@ describe('calculateProfileCompletion', () => {
     expect(calculateProfileCompletion(member, null)).toBe(25);
   });
 
+  it('não lança erro em documento legado sem competencias/servicos/negocios (campos novos ausentes no Firestore)', () => {
+    // Firestore é schemaless — um MemberCentralProfile gravado antes da
+    // adição de `competencias`/`servicos` não tem essas chaves no documento
+    // (undefined, não []). Simula isso com cast, sem passar pelo builder.
+    const legacyProfile = {
+      ...buildProfile(),
+    } as MemberCentralProfile;
+    delete (legacyProfile as { competencias?: string[] }).competencias;
+    delete (legacyProfile as { servicos?: string[] }).servicos;
+
+    expect(() => calculateProfileCompletion(buildMember(), legacyProfile)).not.toThrow();
+  });
+
   it('conta "Empresa" preenchida por negócios OU por Member.empresa', () => {
     const memberComEmpresa = buildMember({ empresa: 'ACME' });
     expect(calculateProfileCompletion(memberComEmpresa, null)).toBe(10);

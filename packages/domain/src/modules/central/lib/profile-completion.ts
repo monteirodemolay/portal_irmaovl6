@@ -30,12 +30,18 @@ const COMPLETION_CATEGORIES: CompletionCategory[] = [
   },
   {
     weight: 15,
+    // `competencias`/`servicos` são campos novos — documentos gravados antes
+    // dessa mudança de schema não têm essas chaves no Firestore (schemaless:
+    // `undefined`, não `[]`), por isso o encadeamento precisa de `?.` também
+    // depois de `profile?.`, não só nele.
     filled: (_member, profile) =>
-      Boolean((profile?.competencias.length ?? 0) > 0 || (profile?.servicos.length ?? 0) > 0),
+      Boolean(
+        (profile?.competencias?.length ?? 0) > 0 || (profile?.servicos?.length ?? 0) > 0,
+      ),
   },
   {
     weight: 10,
-    filled: (member, profile) => Boolean((profile?.negocios.length ?? 0) > 0 || member.empresa),
+    filled: (member, profile) => Boolean((profile?.negocios?.length ?? 0) > 0 || member.empresa),
   },
   { weight: 15, filled: (member) => Boolean(member.telefone || member.whatsapp) },
   {
