@@ -20,9 +20,16 @@ function isTabActive(pathname: string, href: string): boolean {
  * `usePathname`, e o design system é framework-agnostic. Mesma regra de
  * "ativo" do `AppShell.isActive` — quem chama (`AreaTabNav`) já filtra
  * `items` pela permissão da sessão antes de passar aqui.
+ *
+ * Quando um `href` é prefixo de outro (ex.: `/irmaos` e `/irmaos/meu-espaco`),
+ * mais de um item bateria em `isTabActive` ao mesmo tempo — só o `href` mais
+ * específico (o mais longo) fica marcado como ativo.
  */
 export function TabNav({ items }: { items: TabNavItem[] }) {
   const pathname = usePathname();
+  const activeHref = items
+    .filter((item) => isTabActive(pathname, item.href))
+    .sort((a, b) => b.href.length - a.href.length)[0]?.href;
 
   return (
     <nav
@@ -30,7 +37,7 @@ export function TabNav({ items }: { items: TabNavItem[] }) {
       className="border-border block w-full max-w-full overflow-x-auto whitespace-nowrap border-b"
     >
       {items.map((item) => {
-        const active = isTabActive(pathname, item.href);
+        const active = item.href === activeHref;
         return (
           <Link
             key={item.href}

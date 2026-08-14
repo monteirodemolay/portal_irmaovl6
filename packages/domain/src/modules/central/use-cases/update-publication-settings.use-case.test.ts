@@ -68,6 +68,8 @@ const NO_BLOCKS = {
   profissional: false,
   empresa: false,
   informacoesMaconicas: false,
+  competencias: false,
+  servicos: false,
 };
 const NO_CONTACTS = { telefone: false, whatsapp: false, email: false };
 const NO_LINKS = {

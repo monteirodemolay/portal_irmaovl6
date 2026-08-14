@@ -27,7 +27,7 @@ function QuickAccessButton({ item }: { item: QuickAccessItem }) {
 // em vez de cada atalho virar seu próprio card grande e solto na tela.
 export function QuickAccessPanel({ showDirectoryLink }: { showDirectoryLink: boolean }) {
   const items: QuickAccessItem[] = [
-    ...(showDirectoryLink ? [{ href: '/central', label: 'Central dos Irmãos', icon: Users }] : []),
+    ...(showDirectoryLink ? [{ href: '/irmaos', label: 'Irmãos', icon: Users }] : []),
     { href: '/agenda', label: 'Agenda', icon: CalendarDays },
     { href: '/avisos', label: 'Avisos', icon: Megaphone },
     { href: '#acervo-vl6', label: 'Acervo VL6', icon: LayoutGrid },

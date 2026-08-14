@@ -118,6 +118,11 @@ const nextConfig: NextConfig = {
         destination: '/admin/configuracoes/geral',
         permanent: false,
       },
+      // Módulo "Irmãos" — unifica "Meu Perfil" (`/perfil`) e "Central VL6"
+      // (`/central`) num único item de menu com abas Diretório/Meu Espaço.
+      { source: '/perfil', destination: '/irmaos/meu-espaco', permanent: false },
+      { source: '/central', destination: '/irmaos', permanent: false },
+      { source: '/central/:memberId', destination: '/irmaos/:memberId', permanent: false },
     ];
   },
 };

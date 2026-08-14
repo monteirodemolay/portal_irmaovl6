@@ -17,7 +17,7 @@ export const PLATFORM_ROUTE_PREFIX = '/plataforma';
 // comparado à parte logo abaixo.
 const PROTECTED_PREFIXES = [
   '/dashboard',
-  '/perfil',
+  '/irmaos',
   '/avisos',
   '/biblioteca',
   '/arquivos',

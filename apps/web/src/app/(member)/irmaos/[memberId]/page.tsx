@@ -1,16 +1,27 @@
 import Link from 'next/link';
+import { hasPermission } from '@vl6/domain';
 import { createServerContainer } from '@vl6/infra';
-import { ArrowLeft, Card, CardContent } from '@vl6/ui';
-import { requirePagePermission } from '@/lib/auth/require-permission';
+import { ArrowLeft, Card, CardContent, EmptyState, Lock } from '@vl6/ui';
+import { requireSession } from '@/lib/auth/require-session';
 import { PublicMemberProfileView } from '@/modules/central/components/public-member-profile-view';
 
-export default async function CentralMemberProfilePage({
+export default async function IrmaoProfilePage({
   params,
 }: {
   params: Promise<{ memberId: string }>;
 }) {
-  const session = await requirePagePermission('memberDirectory:read');
+  const session = await requireSession();
   const { memberId } = await params;
+
+  if (!hasPermission(session.authContext, 'memberDirectory:read')) {
+    return (
+      <EmptyState
+        icon={<Lock size={22} strokeWidth={1.75} />}
+        title="Diretório indisponível"
+        description="Sua função não tem acesso ao Diretório dos Irmãos."
+      />
+    );
+  }
 
   const container = createServerContainer();
   const result = await container.useCases.getPublicMemberProfile.execute(
@@ -22,11 +33,11 @@ export default async function CentralMemberProfilePage({
   return (
     <div className="flex max-w-2xl flex-col gap-6">
       <Link
-        href="/central"
+        href="/irmaos"
         className="border-border bg-surface hover:border-primary hover:text-primary flex w-fit items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm transition-colors"
       >
         <ArrowLeft size={16} />
-        Voltar à Central
+        Voltar ao Diretório
       </Link>
 
       {profile ? (
@@ -34,7 +45,7 @@ export default async function CentralMemberProfilePage({
       ) : (
         <Card>
           <CardContent className="text-muted p-6 text-sm">
-            Este Irmão optou por não disponibilizar um perfil na Central dos Irmãos.
+            Este Irmão optou por não disponibilizar um perfil no Diretório.
           </CardContent>
         </Card>
       )}
