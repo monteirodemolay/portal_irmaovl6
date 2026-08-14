@@ -3,6 +3,7 @@ import {
   AddLibraryItemUseCase,
   AssignBoardPositionUseCase,
   AssignRoleUseCase,
+  SyncSystemRolePermissionsUseCase,
   AuthenticateApiKeyUseCase,
   AuthenticateUserUseCase,
   BootstrapPlatformAdminUseCase,
@@ -234,6 +235,10 @@ export function createServerContainer() {
     authenticateUser: new AuthenticateUserUseCase({ userRepository: repositories.user, clock }),
     assignRole: new AssignRoleUseCase({
       userRepository: repositories.user,
+      roleRepository: repositories.role,
+      clock,
+    }),
+    syncSystemRolePermissions: new SyncSystemRolePermissionsUseCase({
       roleRepository: repositories.role,
       clock,
     }),

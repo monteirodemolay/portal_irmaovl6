@@ -36,6 +36,7 @@ export * from './modules/identity-access/services/compute-user-claims';
 export * from './modules/identity-access/services/api-key-generator';
 export * from './modules/identity-access/use-cases/authenticate-user.use-case';
 export * from './modules/identity-access/use-cases/assign-role.use-case';
+export * from './modules/identity-access/use-cases/sync-system-role-permissions.use-case';
 export * from './modules/identity-access/use-cases/set-user-status.use-case';
 export * from './modules/identity-access/use-cases/bootstrap-platform-admin.use-case';
 export * from './modules/identity-access/use-cases/bootstrap-tenant-admin.use-case';

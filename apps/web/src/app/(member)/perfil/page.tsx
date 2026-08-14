@@ -63,21 +63,8 @@ export default async function ProfilePage() {
     listUsedProfessions(container, session.authContext),
   ]);
 
-  // DIAGNÓSTICO TEMPORÁRIO — captura e exibe qualquer exceção desta seção em
-  // vez de deixar o error boundary genérico engolir a mensagem em produção.
-  // Remover assim que o bug reportado em produção for identificado.
-  let centralProfile: Awaited<
-    ReturnType<typeof container.repositories.memberCentralProfile.findByMemberId>
-  > = null;
-  let publicationSettings: Awaited<
-    ReturnType<typeof container.repositories.publicationSettings.findByMemberId>
-  > = null;
-  let previewDto: ReturnType<typeof buildPublicMemberProfileDTO> | null = null;
-  let debugError: string | null = null;
-
-  try {
-    if (member) {
-      [centralProfile, publicationSettings] = await Promise.all([
+  const [centralProfile, publicationSettings] = member
+    ? await Promise.all([
         container.repositories.memberCentralProfile.findByMemberId(
           session.authContext.tenantId,
           member.id,
@@ -86,9 +73,11 @@ export default async function ProfilePage() {
           session.authContext.tenantId,
           member.id,
         ),
-      ]);
+      ])
+    : [null, null];
 
-      previewDto = buildPublicMemberProfileDTO(
+  const previewDto = member
+    ? buildPublicMemberProfileDTO(
         member,
         centralProfile,
         publicationSettings ?? {
@@ -101,21 +90,12 @@ export default async function ProfilePage() {
           createdBy: member.id,
           updatedBy: member.id,
         },
-      );
-    }
-  } catch (error) {
-    debugError = `${error instanceof Error ? (error.stack ?? error.message) : String(error)}\n\ncentralProfile=${JSON.stringify(centralProfile)}\npublicationSettings=${JSON.stringify(publicationSettings)}`;
-  }
+      )
+    : null;
 
   return (
     <div className="flex flex-col gap-6">
       <h1 className="font-display text-2xl font-semibold">Meu Perfil</h1>
-
-      {debugError && (
-        <pre className="max-w-full overflow-auto whitespace-pre-wrap rounded border border-red-400 bg-red-50 p-4 text-xs text-red-900">
-          {debugError}
-        </pre>
-      )}
 
       <Tabs defaultValue="cadastro">
         <TabsList>

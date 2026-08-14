@@ -87,6 +87,37 @@ export async function assignRoleAction(userId: string, formData: FormData): Prom
   revalidatePath('/admin/pessoas/irmaos/[memberId]', 'page');
 }
 
+/**
+ * Reaplica o seed de permissões (`DEFAULT_ROLE_PERMISSIONS`) a um papel do
+ * sistema já existente — necessário porque o seed só é consultado na
+ * criação do tenant; papéis criados antes de uma permissão nova existir
+ * (ex.: `memberCentral:update`, adicionada com a Central VL6) não a ganham
+ * sozinhos. Re-sincroniza os Custom Claims de todo usuário com esse papel
+ * em seguida — sem isso, quem já estava logado só veria a permissão nova
+ * depois de sair e entrar de novo.
+ */
+export async function syncRolePermissionsAction(roleId: string): Promise<void> {
+  const session = await requireSession();
+
+  const container = createServerContainer();
+  const result = await container.useCases.syncSystemRolePermissions.execute(
+    session.authContext,
+    roleId,
+  );
+  if (!result.ok) {
+    throw new Error(result.error.message);
+  }
+
+  const users = await container.repositories.user.listByTenant(session.authContext.tenantId);
+  await Promise.all(
+    users
+      .filter((user) => user.roleId === roleId)
+      .map((user) => syncUserClaims(user, result.value)),
+  );
+
+  revalidatePath('/admin/pessoas/permissoes');
+}
+
 export interface ResetPasswordActionState {
   error: string | null;
   temporaryPassword: string | null;
