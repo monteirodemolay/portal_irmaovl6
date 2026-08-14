@@ -10,7 +10,6 @@ import {
   LayoutDashboard,
   Megaphone,
   Settings,
-  UserCircle,
   Users,
 } from '@vl6/ui';
 import { isAdminTier } from '@/lib/auth/is-admin-tier';
@@ -38,14 +37,15 @@ const PORTAL_ITEMS: Array<{
   permission?: PermissionKey;
 }> = [
   { href: '/dashboard', label: 'Início', icon: LayoutDashboard },
-  { href: '/perfil', label: 'Meu Perfil', icon: UserCircle },
   { href: '/agenda', label: 'Agenda', icon: CalendarDays },
   { href: '/avisos', label: 'Avisos', icon: Megaphone },
-  // Central dos Irmãos VL6 — diretório institucional privado e voluntário
-  // (docs/architecture). Só aparece pra quem tem `memberDirectory:read`
-  // (papel `membro`/`admin` de fábrica já têm; um papel customizado sem
-  // essa permissão simplesmente não vê o item).
-  { href: '/central', label: 'Central VL6', icon: Users, permission: 'memberDirectory:read' },
+  // Módulo "Irmãos" (docs/architecture) — Diretório institucional privado e
+  // voluntário + "Meu Espaço" (autoatendimento), unificados em duas abas
+  // internas sob uma única rota. Sem `permission` aqui de propósito: "Meu
+  // Espaço" nunca teve gate (é o autoatendimento de qualquer autenticado);
+  // a aba "Diretório" checa `memberDirectory:read` sozinha e degrada com
+  // uma mensagem explicativa em vez de esconder o item inteiro do menu.
+  { href: '/irmaos', label: 'Irmãos', icon: Users },
 ];
 
 // Arquivos, Biblioteca, Galeria e Downloads continuam sendo entidades e

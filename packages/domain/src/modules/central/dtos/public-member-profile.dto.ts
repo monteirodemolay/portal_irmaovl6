@@ -1,6 +1,8 @@
+import type { AreaAtuacaoKey } from '@vl6/shared';
 import type { Member } from '../../membership/entities/member.entity';
 import type { MemberCentralProfile } from '../entities/member-central-profile.entity';
 import type { PublicationSettings } from '../entities/publication-settings.entity';
+import { resolveAreaAtuacao } from '../lib/resolve-area-atuacao';
 
 export interface PublicMemberProfileDTO {
   memberId: string;
@@ -10,11 +12,16 @@ export interface PublicMemberProfileDTO {
   apresentacao: { texto: string | null } | null;
   informacoesPessoais: { interesses: string | null; cidadeExibicao: string | null } | null;
   profissional: {
+    profissao: string | null;
     areaAtuacao: string | null;
+    areaAtuacaoKey: AreaAtuacaoKey | null;
     formacao: string | null;
     resumoProfissional: string | null;
   } | null;
   negocios: MemberCentralProfile['negocios'] | null;
+  empresaAtual: string | null;
+  competencias: string[] | null;
+  servicos: string[] | null;
   contatos: { telefone: string | null; whatsapp: string | null; email: string | null } | null;
   redes: {
     whatsapp: string | null;
@@ -60,12 +67,17 @@ export function buildPublicMemberProfileDTO(
       : null,
     profissional: blocks.profissional
       ? {
-          areaAtuacao: profile?.areaAtuacao ?? null,
+          profissao: member.profissao,
+          areaAtuacao: resolveAreaAtuacao(profile)?.label ?? null,
+          areaAtuacaoKey: resolveAreaAtuacao(profile)?.key ?? null,
           formacao: profile?.formacao ?? null,
           resumoProfissional: profile?.resumoProfissional ?? null,
         }
       : null,
     negocios: blocks.empresa ? (profile?.negocios ?? []) : null,
+    empresaAtual: blocks.empresa ? member.empresa : null,
+    competencias: blocks.competencias ? (profile?.competencias ?? []) : null,
+    servicos: blocks.servicos ? (profile?.servicos ?? []) : null,
     contatos:
       settings.contacts.telefone || settings.contacts.whatsapp || settings.contacts.email
         ? {

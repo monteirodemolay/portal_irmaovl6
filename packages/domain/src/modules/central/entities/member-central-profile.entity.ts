@@ -1,3 +1,4 @@
+import type { AreaAtuacaoKey } from '@vl6/shared';
 import type { BaseEntity } from '../../../shared/base-entity';
 
 export interface CentralBusinessEntry {
@@ -40,11 +41,18 @@ export interface MemberCentralProfile extends BaseEntity {
   interesses: string | null;
   cidadeExibicao: string | null;
 
-  areaAtuacao: string | null;
+  /** Taxonomia fechada (`AREA_ATUACAO_KEYS`) — `null` = não informado. */
+  areaAtuacao: AreaAtuacaoKey | null;
+  /** Texto livre, só usado quando `areaAtuacao === 'outra'`. */
+  areaAtuacaoOutra: string | null;
   formacao: string | null;
   resumoProfissional: string | null;
 
   negocios: CentralBusinessEntry[];
+
+  /** Tags curtas — máx. 10 cada (`memberCentralProfileSchema`). */
+  competencias: string[];
+  servicos: string[];
 
   lojasVisitadas: string | null;
   interessesMaconicos: string | null;

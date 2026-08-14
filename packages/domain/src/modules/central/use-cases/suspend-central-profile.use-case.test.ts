@@ -31,6 +31,8 @@ function buildSettings(): PublicationSettings {
       profissional: false,
       empresa: false,
       informacoesMaconicas: false,
+      competencias: false,
+      servicos: false,
     },
     contacts: { telefone: false, whatsapp: false, email: false },
     externalLinks: {

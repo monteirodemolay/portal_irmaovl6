@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { AREA_ATUACAO_KEYS } from '../enums/central';
 
 /**
  * Versão vigente do termo de consentimento da Central — só existe uma
@@ -37,19 +38,30 @@ export const centralExternalLinksSchema = z.object({
   site: z.string().max(300).nullable(),
 });
 
-export const memberCentralProfileSchema = z.object({
-  apresentacao: z.string().max(500).nullable(),
-  interesses: z.string().max(500).nullable(),
-  cidadeExibicao: z.string().max(150).nullable(),
-  areaAtuacao: z.string().max(150).nullable(),
-  formacao: z.string().max(200).nullable(),
-  resumoProfissional: z.string().max(1000).nullable(),
-  /** Limite de propósito — evita a Central virar um catálogo empresarial sem fim. */
-  negocios: z.array(centralBusinessEntrySchema).max(5),
-  lojasVisitadas: z.string().max(500).nullable(),
-  interessesMaconicos: z.string().max(500).nullable(),
-  externalLinks: centralExternalLinksSchema,
-});
+const tagSchema = z.string().min(1).max(60);
+
+export const memberCentralProfileSchema = z
+  .object({
+    apresentacao: z.string().max(500).nullable(),
+    interesses: z.string().max(500).nullable(),
+    cidadeExibicao: z.string().max(150).nullable(),
+    areaAtuacao: z.enum(AREA_ATUACAO_KEYS).nullable(),
+    areaAtuacaoOutra: z.string().max(150).nullable(),
+    formacao: z.string().max(200).nullable(),
+    resumoProfissional: z.string().max(1000).nullable(),
+    /** Limite de propósito — evita a Central virar um catálogo empresarial sem fim. */
+    negocios: z.array(centralBusinessEntrySchema).max(5),
+    /** Tags curtas — evita virar um currículo em forma de lista infinita. */
+    competencias: z.array(tagSchema).max(10),
+    servicos: z.array(tagSchema).max(10),
+    lojasVisitadas: z.string().max(500).nullable(),
+    interessesMaconicos: z.string().max(500).nullable(),
+    externalLinks: centralExternalLinksSchema,
+  })
+  .refine((v) => v.areaAtuacao !== 'outra' || Boolean(v.areaAtuacaoOutra?.trim()), {
+    message: 'Informe a área quando selecionar "Outra".',
+    path: ['areaAtuacaoOutra'],
+  });
 export type MemberCentralProfileValues = z.infer<typeof memberCentralProfileSchema>;
 
 const CENTRAL_BLOCK_KEYS = [
@@ -58,6 +70,8 @@ const CENTRAL_BLOCK_KEYS = [
   'profissional',
   'empresa',
   'informacoesMaconicas',
+  'competencias',
+  'servicos',
 ] as const;
 
 /**

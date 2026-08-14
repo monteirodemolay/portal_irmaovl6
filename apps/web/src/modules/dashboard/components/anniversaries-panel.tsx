@@ -23,7 +23,7 @@ export function AnniversariesPanel({
       <DashboardSectionHeading
         icon={Gift}
         title="Esta semana na Loja"
-        href={showDirectoryLink ? '/central' : undefined}
+        href={showDirectoryLink ? '/irmaos' : undefined}
         hrefLabel="Ver diretório completo"
       />
       <ul className="grid gap-3 sm:grid-cols-2">

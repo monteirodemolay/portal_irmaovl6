@@ -15,6 +15,7 @@ import {
   MessageCircle,
   Phone,
   Quote,
+  Sparkles,
   UserCircle,
 } from '@vl6/ui';
 import { MemberAvatar } from '@/components/membership/member-avatar';
@@ -112,11 +113,18 @@ export function PublicMemberProfileView({ profile }: { profile: PublicMemberProf
             )}
 
           {profile.profissional &&
-            (profile.profissional.areaAtuacao ||
+            (profile.profissional.profissao ||
+              profile.profissional.areaAtuacao ||
               profile.profissional.formacao ||
               profile.profissional.resumoProfissional) && (
               <Section title="Atuação profissional" icon={Briefcase}>
                 <dl className="flex flex-col gap-1 text-sm">
+                  {profile.profissional.profissao && (
+                    <div className="flex justify-between gap-4">
+                      <dt className="text-muted">Profissão</dt>
+                      <dd>{profile.profissional.profissao}</dd>
+                    </div>
+                  )}
                   {profile.profissional.areaAtuacao && (
                     <div className="flex justify-between gap-4">
                       <dt className="text-muted">Área</dt>
@@ -138,10 +146,26 @@ export function PublicMemberProfileView({ profile }: { profile: PublicMemberProf
               </Section>
             )}
 
-          {profile.negocios && profile.negocios.length > 0 && (
+          {((profile.competencias && profile.competencias.length > 0) ||
+            (profile.servicos && profile.servicos.length > 0)) && (
+            <Section title="Competências e serviços" icon={Sparkles}>
+              <div className="flex flex-wrap gap-1.5">
+                {[...(profile.competencias ?? []), ...(profile.servicos ?? [])].map((tag) => (
+                  <span key={tag} className="bg-background text-muted rounded-md px-2 py-1 text-xs">
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            </Section>
+          )}
+
+          {(profile.empresaAtual || (profile.negocios && profile.negocios.length > 0)) && (
             <Section title="Empresa" icon={Building2}>
               <div className="flex flex-col gap-3">
-                {profile.negocios.map((negocio) => (
+                {profile.empresaAtual && (
+                  <p className="text-sm font-medium">{profile.empresaAtual}</p>
+                )}
+                {profile.negocios?.map((negocio) => (
                   <div key={negocio.id} className="text-sm">
                     <p className="font-medium">{negocio.nomeEmpresa}</p>
                     {negocio.segmento && <p className="text-muted">{negocio.segmento}</p>}

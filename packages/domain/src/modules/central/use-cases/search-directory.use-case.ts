@@ -1,3 +1,4 @@
+import type { AreaAtuacaoKey } from '@vl6/shared';
 import type { AuthContext } from '../../../shared/auth-context';
 import { requirePermission } from '../../../shared/auth-context';
 import { ok, type Result } from '../../../shared/result';
@@ -5,6 +6,12 @@ import {
   buildPublicMemberProfileDTO,
   type PublicMemberProfileDTO,
 } from '../dtos/public-member-profile.dto';
+import {
+  computeAreaFacets,
+  computeDirectoryMetrics,
+  type AreaFacet,
+  type DirectoryMetrics,
+} from '../lib/directory-metrics';
 import type { IMemberCentralProfileRepository } from '../repositories/member-central-profile.repository';
 import type { IPublicationSettingsRepository } from '../repositories/publication-settings.repository';
 import type { IMemberRepository } from '../../membership/repositories/member.repository';
@@ -17,16 +24,31 @@ export interface SearchDirectoryDeps {
 
 export interface SearchDirectoryInput {
   termo?: string;
+  profissao?: string;
+  areaAtuacao?: AreaAtuacaoKey;
+  competencia?: string;
+  servico?: string;
+  empresa?: string;
+  cidade?: string;
+}
+
+export interface SearchDirectoryOutput {
+  items: PublicMemberProfileDTO[];
+  metrics: DirectoryMetrics;
+  areaFacets: AreaFacet[];
 }
 
 /**
  * Diretório/busca — só sobre perfis publicados (requisito central). Sem
  * full-text nativo no Firestore: mesma estratégia de `SearchMembersUseCase`
  * (filtro estruturado no repositório + filtro de texto em memória, no
- * servidor). Crítico: o filtro de texto roda sobre o DTO já publicado
- * (`areaAtuacao`/`negocios` só presentes quando o bloco está ligado), nunca
- * sobre `Member.profissao` bruto — um Irmão com profissão "Médico" mas
- * bloco profissional desligado não aparece buscando "médico".
+ * servidor). Crítico: todo filtro (texto livre ou estruturado) roda sobre o
+ * DTO já publicado, nunca sobre campo bruto de `Member`/`MemberCentralProfile`
+ * — um Irmão com profissão "Médico" mas bloco profissional desligado não
+ * aparece buscando "médico". `metrics`/`areaFacets` são computados sobre o
+ * conjunto COMPLETO de perfis publicados (antes de qualquer filtro), pra que
+ * os indicadores/cards de área do Diretório sempre reflitam o total, não o
+ * resultado da busca atual.
  */
 export class SearchDirectoryUseCase {
   constructor(private readonly deps: SearchDirectoryDeps) {}
@@ -34,7 +56,7 @@ export class SearchDirectoryUseCase {
   async execute(
     ctx: AuthContext,
     input: SearchDirectoryInput = {},
-  ): Promise<Result<PublicMemberProfileDTO[]>> {
+  ): Promise<Result<SearchDirectoryOutput>> {
     requirePermission(ctx, 'memberDirectory:read');
 
     const refs = await this.deps.publicationSettingsRepository.listPublishedByTenant(ctx.tenantId);
@@ -51,16 +73,25 @@ export class SearchDirectoryUseCase {
       }),
     );
 
-    let items = dtos.filter((dto): dto is PublicMemberProfileDTO => dto !== null);
+    const allItems = dtos.filter((dto): dto is PublicMemberProfileDTO => dto !== null);
+
+    const metrics = computeDirectoryMetrics(allItems);
+    const areaFacets = computeAreaFacets(allItems);
+
+    let items = allItems;
 
     const needle = input.termo?.trim().toLowerCase();
     if (needle) {
       items = items.filter((dto) => {
         const haystack = [
           dto.nomeCompleto,
+          dto.profissional?.profissao,
           dto.profissional?.areaAtuacao,
           dto.profissional?.resumoProfissional,
+          dto.empresaAtual,
           ...(dto.negocios?.map((n) => n.nomeEmpresa) ?? []),
+          ...(dto.competencias ?? []),
+          ...(dto.servicos ?? []),
         ]
           .filter((v): v is string => Boolean(v))
           .join(' ')
@@ -69,6 +100,47 @@ export class SearchDirectoryUseCase {
       });
     }
 
-    return ok(items);
+    if (input.profissao?.trim()) {
+      const needleProfissao = input.profissao.trim().toLowerCase();
+      items = items.filter((dto) =>
+        dto.profissional?.profissao?.toLowerCase().includes(needleProfissao),
+      );
+    }
+
+    if (input.areaAtuacao) {
+      items = items.filter((dto) => dto.profissional?.areaAtuacaoKey === input.areaAtuacao);
+    }
+
+    if (input.competencia?.trim()) {
+      const needleCompetencia = input.competencia.trim().toLowerCase();
+      items = items.filter((dto) =>
+        dto.competencias?.some((c) => c.toLowerCase() === needleCompetencia),
+      );
+    }
+
+    if (input.servico?.trim()) {
+      const needleServico = input.servico.trim().toLowerCase();
+      items = items.filter((dto) => dto.servicos?.some((s) => s.toLowerCase() === needleServico));
+    }
+
+    if (input.empresa?.trim()) {
+      const needleEmpresa = input.empresa.trim().toLowerCase();
+      items = items.filter((dto) => {
+        const empresas = [
+          dto.empresaAtual,
+          ...(dto.negocios?.map((n) => n.nomeEmpresa) ?? []),
+        ].filter((v): v is string => Boolean(v));
+        return empresas.some((e) => e.toLowerCase().includes(needleEmpresa));
+      });
+    }
+
+    if (input.cidade?.trim()) {
+      const needleCidade = input.cidade.trim().toLowerCase();
+      items = items.filter((dto) =>
+        dto.informacoesPessoais?.cidadeExibicao?.toLowerCase().includes(needleCidade),
+      );
+    }
+
+    return ok({ items, metrics, areaFacets });
   }
 }

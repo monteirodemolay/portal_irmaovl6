@@ -1,7 +1,13 @@
 import type { BaseEntity } from '../../../shared/base-entity';
 
 export type CentralBlockKey =
-  'apresentacao' | 'informacoesPessoais' | 'profissional' | 'empresa' | 'informacoesMaconicas';
+  | 'apresentacao'
+  | 'informacoesPessoais'
+  | 'profissional'
+  | 'empresa'
+  | 'informacoesMaconicas'
+  | 'competencias'
+  | 'servicos';
 
 export interface CentralContactVisibility {
   telefone: boolean;

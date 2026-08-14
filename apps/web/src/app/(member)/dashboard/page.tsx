@@ -108,7 +108,7 @@ export default async function DashboardPage() {
               </div>
             )}
             <Button asChild variant="accent" size="sm" className="mt-2.5">
-              <Link href="/perfil">Ver meu perfil</Link>
+              <Link href="/irmaos/meu-espaco">Ver meu perfil</Link>
             </Button>
           </div>
         </div>
