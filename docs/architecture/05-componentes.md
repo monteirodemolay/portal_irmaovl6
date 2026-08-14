@@ -7,18 +7,28 @@ módulo de negócio) ou dentro de `apps/web/src/modules/<modulo>/components`
 ## 5.1 Primitivos (`components/ui`) — base Shadcn customizada com os tokens da doc 09
 
 `Button`, `Input`, `Textarea`, `Select`, `Checkbox`, `RadioGroup`, `Switch`,
-`Badge`, `Avatar`, `Tooltip`, `Popover`, `DropdownMenu`, `Tabs`, `Accordion`,
+`Badge`, `Avatar`, `Tooltip`, `Popover`, `DropdownMenu`, `Accordion`,
 `Skeleton`, `Separator`, `Toast`.
+
+> Nem todo primitivo listado neste catálogo está implementado — é um
+> catálogo de referência, não um inventário exaustivo do que existe hoje em
+> `packages/ui`. `Tabs` (acessível, `role="tablist"`/`"tab"`/`"tabpanel"`,
+> navegação por seta/Home/End) **é real** — `packages/ui/src/components/tabs.tsx`,
+> usado em `/perfil` para separar "Meu Cadastro" de "Central VL6". `Checkbox`,
+> `RadioGroup`, `Switch`, `Tooltip`, `Popover`, `DropdownMenu`, `Accordion`,
+> `Skeleton`, `Separator` e `Toast` ainda não existem — formulários usam
+> `<input type="checkbox">` nativo estilizado onde precisam de um toggle.
 
 ## 5.2 Layout (`components/layout`)
 
-| Componente                      | Responsabilidade                                                             |
-| ------------------------------- | ---------------------------------------------------------------------------- |
-| `AppSidebar`                    | Navegação lateral, itens dirigidos por RBAC + `modulosHabilitados` do tenant |
-| `AppHeader`                     | Busca global, seletor de tema, `NotificationCenter`, menu do usuário         |
-| `AppFooter`                     | Rodapé institucional configurável (`FooterConfig` do tenant)                 |
-| `Breadcrumb`                    | Trilha de navegação, derivada da rota atual                                  |
-| `PublicHeader` / `PublicFooter` | Variante do site público (não logado)                                        |
+| Componente                      | Responsabilidade                                                                                                                                                                                                                                       |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `AppSidebar`                    | Navegação lateral, itens dirigidos por RBAC + `modulosHabilitados` do tenant                                                                                                                                                                           |
+| `AppHeader`                     | Busca global, seletor de tema, `NotificationCenter`, menu do usuário                                                                                                                                                                                   |
+| `AppFooter`                     | Rodapé institucional configurável (`FooterConfig` do tenant)                                                                                                                                                                                           |
+| `Breadcrumb`                    | **Não implementado** — não é requisito hoje; `topbarLeft` de `admin/layout.tsx` é estático, não uma trilha dinâmica                                                                                                                                    |
+| `TabNav`                        | **Real** — barra de abas horizontal dentro de uma área admin consolidada (`/admin/pessoas`, `/admin/conteudo`, `/admin/acervo`, `/admin/configuracoes`); `apps/web/src/components/layout/tab-nav.tsx` + `area-tabs.ts` (fonte única das abas por área) |
+| `PublicHeader` / `PublicFooter` | Variante do site público (não logado)                                                                                                                                                                                                                  |
 
 ## 5.3 Exibição de dados (`components/data-display`)
 
