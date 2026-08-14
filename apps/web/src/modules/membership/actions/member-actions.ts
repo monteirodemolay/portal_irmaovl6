@@ -4,10 +4,13 @@ import { randomUUID } from 'node:crypto';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import * as Sentry from '@sentry/nextjs';
+import ExcelJS from 'exceljs';
 import {
   errorToLogContext,
   logger,
   memberSchema,
+  MEMBER_DEGREES,
+  MEMBER_SITUATIONS,
   normalizeConjugeFields,
   type MemberFormValues,
   type MemberSituation,
@@ -71,7 +74,7 @@ async function parseMemberForm(
   const raw = {
     nomeCompleto: formData.get('nomeCompleto'),
     fotoUrl,
-    email: formData.get('email'),
+    email: formData.get('email') || null,
     telefone: formData.get('telefone') || null,
     whatsapp: formData.get('whatsapp') || null,
     endereco: formData.get('cep')
@@ -131,6 +134,13 @@ async function createPortalAccessForMember(
   member: Member,
   roleId: string,
 ): Promise<PortalAccessResult> {
+  if (!member.email) {
+    return {
+      ok: false,
+      error:
+        'Este Irmão ainda não tem e-mail cadastrado — peça para ele reivindicar o próprio acesso em "/reivindicar", ou informe um e-mail no cartão de Identificação primeiro.',
+    };
+  }
   if (!roleId) {
     return { ok: false, error: 'Selecione o papel de acesso.' };
   }
@@ -392,9 +402,6 @@ export async function updateMemberIdentityAction(
   if (formData.has('nomeCompleto') && !String(formData.get('nomeCompleto') ?? '').trim()) {
     return { error: 'Nome completo é obrigatório.' };
   }
-  if (formData.has('email') && !String(formData.get('email') ?? '').trim()) {
-    return { error: 'E-mail é obrigatório.' };
-  }
 
   let fotoUrl = current.fotoUrl;
   const fotoFile = formData.get('foto');
@@ -543,4 +550,160 @@ export async function softDeleteMemberAction(memberId: string): Promise<void> {
   }
   revalidatePath('/admin/pessoas/irmaos');
   redirect('/admin/pessoas/irmaos');
+}
+
+export interface ImportMembersRowResult {
+  linha: number;
+  nome: string;
+  status: 'criado' | 'erro';
+  motivo?: string;
+}
+
+export interface ImportMembersActionState {
+  error: string | null;
+  resultados: ImportMembersRowResult[] | null;
+}
+
+const IMPORT_EMPTY_STATE: ImportMembersActionState = { error: null, resultados: null };
+
+/** Acha o valor do enum que bate com `raw` ignorando maiúsculas/minúsculas — permite "Mestre" tanto quanto "mestre" na planilha. */
+function matchEnumCaseInsensitive<T extends string>(values: readonly T[], raw: string): T | null {
+  const lower = raw.toLowerCase();
+  return values.find((value) => value.toLowerCase() === lower) ?? null;
+}
+
+function cellText(row: ExcelJS.Row, column: number): string {
+  const value = row.getCell(column).value;
+  if (value === null || value === undefined) return '';
+  if (typeof value === 'object' && 'text' in value) return String(value.text ?? '').trim();
+  return String(value).trim();
+}
+
+/**
+ * Importa Irmãos em massa a partir do mesmo formato que
+ * `/api/v1/admin/members/export` escreve — Nome, CIM, Grau, Situação,
+ * E-mail, Cidade — usando a mesma biblioteca (`exceljs`), só na direção
+ * contrária. Cada linha vira uma chamada a `RegisterMemberUseCase`
+ * (docs/architecture/06 §6.1: mesma checagem de CIM único do cadastro
+ * manual), sequencial — nunca em paralelo, pra `existsByCim` pegar até
+ * duplicidade dentro da própria planilha. E-mail fica opcional: quando
+ * ausente, o Irmão nasce sem acesso ao Portal e pode reivindicar o
+ * próprio cadastro depois (`claimMemberAccountAction`). A coluna Cidade
+ * não é importada — precisa do endereço completo (`addressSchema` exige
+ * todos os campos), que a planilha não tem; fica pra ser preenchido
+ * depois no cadastro do Irmão.
+ */
+export async function importMembersAction(
+  _prevState: ImportMembersActionState,
+  formData: FormData,
+): Promise<ImportMembersActionState> {
+  const session = await requireSession();
+  const current = await getCurrentTenant();
+  if (!current) return { ...IMPORT_EMPTY_STATE, error: 'Tenant não encontrado.' };
+
+  const file = formData.get('planilha');
+  if (!(file instanceof File) || file.size === 0) {
+    return { ...IMPORT_EMPTY_STATE, error: 'Selecione um arquivo .xlsx.' };
+  }
+
+  const workbook = new ExcelJS.Workbook();
+  try {
+    await workbook.xlsx.load(await file.arrayBuffer());
+  } catch {
+    return {
+      ...IMPORT_EMPTY_STATE,
+      error: 'Não foi possível ler o arquivo. Confirme que é um .xlsx válido.',
+    };
+  }
+  const sheet = workbook.worksheets[0];
+  if (!sheet || sheet.rowCount < 2) {
+    return { ...IMPORT_EMPTY_STATE, error: 'A planilha está vazia.' };
+  }
+
+  const container = createServerContainer();
+  const resultados: ImportMembersRowResult[] = [];
+
+  for (let rowNumber = 2; rowNumber <= sheet.rowCount; rowNumber++) {
+    const row = sheet.getRow(rowNumber);
+    const nome = cellText(row, 1);
+    if (!nome) continue;
+
+    const cimRaw = cellText(row, 2);
+    const grauRaw = cellText(row, 3);
+    const situacaoRaw = cellText(row, 4);
+    const emailRaw = cellText(row, 5);
+
+    const grau = grauRaw ? matchEnumCaseInsensitive(MEMBER_DEGREES, grauRaw) : 'aprendiz';
+    if (!grau) {
+      resultados.push({
+        linha: rowNumber,
+        nome,
+        status: 'erro',
+        motivo: `Grau "${grauRaw}" inválido.`,
+      });
+      continue;
+    }
+    const situacao = situacaoRaw
+      ? matchEnumCaseInsensitive(MEMBER_SITUATIONS, situacaoRaw)
+      : 'regular';
+    if (!situacao) {
+      resultados.push({
+        linha: rowNumber,
+        nome,
+        status: 'erro',
+        motivo: `Situação "${situacaoRaw}" inválida.`,
+      });
+      continue;
+    }
+
+    let input: MemberFormValues;
+    try {
+      input = normalizeConjugeFields(
+        memberSchema.parse({
+          nomeCompleto: nome,
+          fotoUrl: null,
+          email: emailRaw || null,
+          telefone: null,
+          whatsapp: null,
+          endereco: null,
+          dataNascimento: null,
+          dataIniciacao: null,
+          dataElevacao: null,
+          dataExaltacao: null,
+          cim: cimRaw || null,
+          grau,
+          situacao,
+          lojaId: current.tenant.id,
+          potencia: current.tenant.potencia,
+          profissao: null,
+          empresa: null,
+          estadoCivil: null,
+          conjugeNome: null,
+          conjugeDataNascimento: null,
+          biografia: null,
+          redesSociais: { instagram: null, facebook: null, linkedin: null },
+          observacoes: null,
+        }),
+      );
+    } catch {
+      resultados.push({
+        linha: rowNumber,
+        nome,
+        status: 'erro',
+        motivo: emailRaw ? `E-mail "${emailRaw}" inválido.` : 'Dados inválidos.',
+      });
+      continue;
+    }
+
+    // Sequencial de propósito (não Promise.all): existsByCim precisa enxergar as linhas já gravadas.
+    const result = await container.useCases.registerMember.execute(session.authContext, input);
+    resultados.push(
+      result.ok
+        ? { linha: rowNumber, nome, status: 'criado' }
+        : { linha: rowNumber, nome, status: 'erro', motivo: result.error.message },
+    );
+  }
+
+  revalidatePath('/admin/pessoas/irmaos');
+  return { error: null, resultados };
 }

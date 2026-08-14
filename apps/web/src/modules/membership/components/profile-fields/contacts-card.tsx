@@ -31,8 +31,16 @@ export function ContactsCard({ member, action }: { member: Member; action: Profi
             <Input id="whatsapp" name="whatsapp" defaultValue={member.whatsapp ?? ''} />
           </FormField>
         </div>
-        <FormField label="E-mail" htmlFor="email" description="Vinculado à conta de acesso.">
-          <Input id="email" value={member.email} disabled />
+        <FormField
+          label="E-mail"
+          htmlFor="email"
+          description={
+            member.email
+              ? 'Vinculado à conta de acesso.'
+              : 'Ainda não cadastrado — o Irmão pode reivindicar o próprio acesso em "Reivindicar meu cadastro" na tela de login.'
+          }
+        >
+          <Input id="email" value={member.email ?? 'Sem e-mail cadastrado'} disabled />
         </FormField>
         {state.error && <p className="text-sm text-red-600">{state.error}</p>}
         <SubmitButton />

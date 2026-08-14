@@ -62,7 +62,7 @@ export function MemberIdentityCard({
             />
           </FormField>
           <FormField label="E-mail" htmlFor="email">
-            <Input id="email" name="email" type="email" required defaultValue={member.email} />
+            <Input id="email" name="email" type="email" defaultValue={member.email ?? ''} />
           </FormField>
         </div>
         {state.error && <p className="text-sm text-red-600">{state.error}</p>}

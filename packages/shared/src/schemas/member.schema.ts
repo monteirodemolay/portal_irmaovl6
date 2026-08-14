@@ -11,7 +11,8 @@ import { addressSchema } from './tenant.schema';
 const memberBaseSchema = z.object({
   nomeCompleto: z.string().min(3).max(150),
   fotoUrl: z.string().url().nullable(),
-  email: z.string().email(),
+  /** Opcional — Irmãos importados em massa podem não ter e-mail ainda (ver `ClaimMemberAccountUseCase`). */
+  email: z.string().email().nullable(),
   telefone: z.string().nullable(),
   whatsapp: z.string().nullable(),
   endereco: addressSchema.nullable(),

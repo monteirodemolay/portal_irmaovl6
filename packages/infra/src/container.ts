@@ -8,6 +8,7 @@ import {
   AuthenticateUserUseCase,
   BootstrapPlatformAdminUseCase,
   BootstrapTenantAdminUseCase,
+  ClaimMemberAccountUseCase,
   ConfirmAttendanceUseCase,
   CreateAnnouncementUseCase,
   CreateApiKeyUseCase,
@@ -283,6 +284,10 @@ export function createServerContainer() {
     }),
     updateMember: new UpdateMemberUseCase({ memberRepository: repositories.member, clock }),
     updateMyProfile: new UpdateMyProfileUseCase({ memberRepository: repositories.member, clock }),
+    claimMemberAccount: new ClaimMemberAccountUseCase({
+      memberRepository: repositories.member,
+      clock,
+    }),
     updateMemberSituation: new UpdateMemberSituationUseCase({
       memberRepository: repositories.member,
       positionHistoryRepository: repositories.memberPositionHistory,

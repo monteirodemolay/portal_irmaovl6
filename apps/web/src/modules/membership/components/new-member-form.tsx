@@ -70,6 +70,8 @@ export function NewMemberForm({ action, roles, customProfessions = [] }: NewMemb
   const defaultRoleId = roles.find((r) => r.chave === 'membro')?.id ?? roles[0]?.id;
   const [grau, setGrau] = useState('aprendiz' as (typeof MEMBER_DEGREES)[number]);
   const [estadoCivil, setEstadoCivil] = useState<MaritalStatus | ''>('');
+  const [email, setEmail] = useState('');
+  const [criarAcesso, setCriarAcesso] = useState(true);
 
   const professionOptions = [...COMMON_PROFESSIONS, ...customProfessions];
   const [profissaoSelect, setProfissaoSelect] = useState('');
@@ -117,8 +119,18 @@ export function NewMemberForm({ action, roles, customProfessions = [] }: NewMemb
           <FormField label="Nome completo" htmlFor="nomeCompleto">
             <Input id="nomeCompleto" name="nomeCompleto" required />
           </FormField>
-          <FormField label="E-mail" htmlFor="email">
-            <Input id="email" name="email" type="email" required />
+          <FormField
+            label="E-mail"
+            htmlFor="email"
+            description="Opcional — sem e-mail, o Irmão pode reivindicar o próprio acesso depois."
+          >
+            <Input
+              id="email"
+              name="email"
+              type="email"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+            />
           </FormField>
           <FormField label="Telefone" htmlFor="telefone">
             <Input id="telefone" name="telefone" />
@@ -274,13 +286,21 @@ export function NewMemberForm({ action, roles, customProfessions = [] }: NewMemb
             <input
               type="checkbox"
               name="criarAcesso"
-              defaultChecked
-              className="accent-primary h-4 w-4"
+              checked={criarAcesso && Boolean(email.trim())}
+              disabled={!email.trim()}
+              onChange={(event) => setCriarAcesso(event.target.checked)}
+              className="accent-primary h-4 w-4 disabled:opacity-50"
             />
             Criar acesso ao Portal para este Irmão
           </label>
+          {!email.trim() && (
+            <p className="text-muted text-xs">
+              Preencha o e-mail em Identificação pra poder criar o acesso agora — ou deixe em branco
+              e o próprio Irmão reivindica o acesso depois.
+            </p>
+          )}
           <FormField label="Perfil de acesso" htmlFor="roleId">
-            <Select id="roleId" name="roleId" defaultValue={defaultRoleId}>
+            <Select id="roleId" name="roleId" defaultValue={defaultRoleId} disabled={!email.trim()}>
               {roles.map((role) => (
                 <option key={role.id} value={role.id}>
                   {role.nome}

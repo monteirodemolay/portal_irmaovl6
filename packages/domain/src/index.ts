@@ -60,6 +60,7 @@ export * from './modules/membership/use-cases/update-member-situation.use-case';
 export * from './modules/membership/use-cases/search-members.use-case';
 export * from './modules/membership/use-cases/list-upcoming-anniversaries.use-case';
 export * from './modules/membership/use-cases/soft-delete-member.use-case';
+export * from './modules/membership/use-cases/claim-member-account.use-case';
 
 // Governance
 export * from './modules/governance/entities/board-term.entity';

@@ -5,6 +5,7 @@ import type {
   MemberSearchFilters,
   PageRequest,
   PageResult,
+  UnclaimedMember,
 } from '@vl6/domain';
 import { createEntityConverter } from '../converters/entity.converter';
 
@@ -47,6 +48,19 @@ export class FirestoreMemberRepository implements IMemberRepository {
       .limit(1)
       .get();
     return !snap.empty;
+  }
+
+  async findUnclaimedByTenant(tenantId: string): Promise<UnclaimedMember[]> {
+    const snap = await this.collection
+      .where('tenantId', '==', tenantId)
+      .where('userId', '==', null)
+      .where('deletedAt', '==', null)
+      .orderBy('nomeCompleto')
+      .get();
+    return snap.docs.map((doc) => {
+      const member = doc.data();
+      return { id: member.id, nomeCompleto: member.nomeCompleto };
+    });
   }
 
   async search(filters: MemberSearchFilters, page: PageRequest): Promise<PageResult<Member>> {
