@@ -103,7 +103,7 @@ export default async function ProfilePage() {
           <TabsTrigger value="central">Central VL6</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="cadastro" className="flex flex-col gap-6 pt-6">
+        <TabsContent value="cadastro" className="flex max-w-3xl flex-col gap-6 pt-6">
           {member ? (
             <>
               <Card>

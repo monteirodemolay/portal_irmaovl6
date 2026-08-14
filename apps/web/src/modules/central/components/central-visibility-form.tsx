@@ -1,14 +1,38 @@
 'use client';
 
-import { useActionState } from 'react';
+import { useActionState, useState } from 'react';
 import { useFormStatus } from 'react-dom';
 import type { PublicationSettings } from '@vl6/domain';
-import { Badge, Button } from '@vl6/ui';
+import {
+  Briefcase,
+  Building2,
+  Button,
+  CheckCircle2,
+  Compass,
+  Eye,
+  EyeOff,
+  Facebook,
+  GraduationCap,
+  Globe,
+  Instagram,
+  Linkedin,
+  Lock,
+  Mail,
+  MessageCircle,
+  Phone,
+  Quote,
+  Share2,
+  Switch,
+  UserCircle,
+} from '@vl6/ui';
+import { FormSectionCard } from '@/components/forms/section-card';
 import {
   updatePublicationSettingsAction,
   withdrawFromDirectoryAction,
   type CentralActionState,
 } from '../actions/central-actions';
+
+type IconType = React.ComponentType<{ size?: number; strokeWidth?: number; className?: string }>;
 
 const BLOCK_LABELS: Record<keyof PublicationSettings['blocks'], string> = {
   apresentacao: 'Apresentação',
@@ -18,10 +42,24 @@ const BLOCK_LABELS: Record<keyof PublicationSettings['blocks'], string> = {
   informacoesMaconicas: 'Informações maçônicas complementares',
 };
 
+const BLOCK_ICONS: Record<keyof PublicationSettings['blocks'], IconType> = {
+  apresentacao: Quote,
+  informacoesPessoais: UserCircle,
+  profissional: Briefcase,
+  empresa: Building2,
+  informacoesMaconicas: Compass,
+};
+
 const CONTACT_LABELS: Record<keyof PublicationSettings['contacts'], string> = {
   telefone: 'Telefone',
   whatsapp: 'WhatsApp',
   email: 'E-mail',
+};
+
+const CONTACT_ICONS: Record<keyof PublicationSettings['contacts'], IconType> = {
+  telefone: Phone,
+  whatsapp: MessageCircle,
+  email: Mail,
 };
 
 const LINK_LABELS: Record<keyof PublicationSettings['externalLinks'], string> = {
@@ -33,21 +71,50 @@ const LINK_LABELS: Record<keyof PublicationSettings['externalLinks'], string> = 
   site: 'Site / portfólio',
 };
 
-function Toggle({
+const LINK_ICONS: Record<keyof PublicationSettings['externalLinks'], IconType> = {
+  whatsapp: MessageCircle,
+  instagram: Instagram,
+  facebook: Facebook,
+  linkedin: Linkedin,
+  lattes: GraduationCap,
+  site: Globe,
+};
+
+function ToggleRow({
   name,
   label,
+  icon: Icon,
   defaultChecked,
 }: {
   name: string;
   label: string;
+  icon: IconType;
   defaultChecked: boolean;
 }) {
+  const [checked, setChecked] = useState(defaultChecked);
   return (
-    <label className="flex items-center justify-between gap-3 py-1.5 text-sm">
-      <span>{label}</span>
-      <span className="flex items-center gap-2">
-        <span className="text-muted text-xs">{defaultChecked ? 'Visível' : '🔒 Privado'}</span>
-        <input type="checkbox" name={name} className="h-4 w-4" defaultChecked={defaultChecked} />
+    <label className="flex items-center justify-between gap-3 py-2.5 text-sm">
+      <span className="flex min-w-0 items-center gap-2.5">
+        <Icon size={16} strokeWidth={1.75} className="text-muted shrink-0" />
+        <span className="truncate">{label}</span>
+      </span>
+      <span className="flex shrink-0 items-center gap-2.5">
+        <span
+          className={
+            checked
+              ? 'text-primary flex items-center gap-1 text-xs font-medium'
+              : 'text-muted flex items-center gap-1 text-xs'
+          }
+        >
+          {checked ? <Eye size={13} /> : <Lock size={13} />}
+          {checked ? 'Visível' : 'Privado'}
+        </span>
+        <Switch
+          name={name}
+          defaultChecked={defaultChecked}
+          onChange={(event) => setChecked(event.target.checked)}
+          aria-label={label}
+        />
       </span>
     </label>
   );
@@ -58,73 +125,97 @@ export function CentralVisibilityForm({ settings }: { settings: PublicationSetti
     updatePublicationSettingsAction,
     { error: null },
   );
+  const published = settings?.profilePublished ?? false;
 
   return (
-    <div className="flex max-w-2xl flex-col gap-6">
-      <div className="border-border rounded-2xl border p-5">
-        <div className="mb-3 flex items-center justify-between">
-          <h3 className="font-display text-sm font-semibold">Minha publicação na Central</h3>
-          <Badge variant={settings?.profilePublished ? 'success' : 'outline'}>
-            {settings?.profilePublished ? 'Publicado' : 'Não publicado'}
-          </Badge>
+    <div className="flex flex-col gap-6">
+      <div
+        className={
+          published
+            ? 'flex flex-col gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-5 sm:flex-row sm:items-center sm:justify-between'
+            : 'border-border bg-background flex flex-col gap-3 rounded-2xl border p-5 sm:flex-row sm:items-center sm:justify-between'
+        }
+      >
+        <div className="flex items-center gap-3">
+          <span
+            className={
+              published
+                ? 'flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700'
+                : 'bg-primary/10 text-primary flex h-11 w-11 shrink-0 items-center justify-center rounded-full'
+            }
+          >
+            {published ? <CheckCircle2 size={22} /> : <EyeOff size={20} />}
+          </span>
+          <div>
+            <p className="font-display text-sm font-semibold">
+              {published ? 'Seu perfil está publicado' : 'Seu perfil ainda não está publicado'}
+            </p>
+            <p className="text-muted text-sm">
+              {published
+                ? 'Os blocos ativados abaixo estão visíveis aos demais Irmãos da Loja.'
+                : 'Ative pelo menos um bloco abaixo para aparecer na Central VL6.'}
+            </p>
+          </div>
         </div>
-        <p className="text-muted text-sm">
-          Você controla quais informações são disponibilizadas aos demais Irmãos. Informações
-          privadas permanecem fora da Central.
-        </p>
-        {settings?.profilePublished && (
-          <form action={withdrawFromDirectoryAction} className="mt-4">
+        {published && (
+          <form action={withdrawFromDirectoryAction}>
             <Button type="submit" variant="destructive" size="sm">
-              Retirar meu perfil da Central
+              <EyeOff size={14} />
+              Retirar da Central
             </Button>
           </form>
         )}
       </div>
 
       <form action={formAction} className="flex flex-col gap-6">
-        <fieldset>
-          <legend className="font-display mb-2 text-sm font-semibold">Blocos do perfil</legend>
-          <div className="divide-border divide-y">
-            {(Object.keys(BLOCK_LABELS) as Array<keyof typeof BLOCK_LABELS>).map((key) => (
-              <Toggle
-                key={key}
-                name={`blocks.${key}`}
-                label={BLOCK_LABELS[key]}
-                defaultChecked={settings?.blocks[key] ?? false}
-              />
-            ))}
-          </div>
-        </fieldset>
+        <FormSectionCard
+          icon={Eye}
+          title="Blocos do perfil"
+          description="Cada bloco corresponde ao conteúdo preenchido acima."
+          contentClassName="divide-border divide-y gap-0 pt-1"
+        >
+          {(Object.keys(BLOCK_LABELS) as Array<keyof typeof BLOCK_LABELS>).map((key) => (
+            <ToggleRow
+              key={key}
+              name={`blocks.${key}`}
+              label={BLOCK_LABELS[key]}
+              icon={BLOCK_ICONS[key]}
+              defaultChecked={settings?.blocks[key] ?? false}
+            />
+          ))}
+        </FormSectionCard>
 
-        <fieldset>
-          <legend className="font-display mb-2 text-sm font-semibold">Contatos</legend>
-          <div className="divide-border divide-y">
-            {(Object.keys(CONTACT_LABELS) as Array<keyof typeof CONTACT_LABELS>).map((key) => (
-              <Toggle
-                key={key}
-                name={`contacts.${key}`}
-                label={CONTACT_LABELS[key]}
-                defaultChecked={settings?.contacts[key] ?? false}
-              />
-            ))}
-          </div>
-        </fieldset>
+        <FormSectionCard
+          icon={Phone}
+          title="Contatos"
+          contentClassName="divide-border divide-y gap-0 pt-1"
+        >
+          {(Object.keys(CONTACT_LABELS) as Array<keyof typeof CONTACT_LABELS>).map((key) => (
+            <ToggleRow
+              key={key}
+              name={`contacts.${key}`}
+              label={CONTACT_LABELS[key]}
+              icon={CONTACT_ICONS[key]}
+              defaultChecked={settings?.contacts[key] ?? false}
+            />
+          ))}
+        </FormSectionCard>
 
-        <fieldset>
-          <legend className="font-display mb-2 text-sm font-semibold">
-            Redes e perfis externos
-          </legend>
-          <div className="divide-border divide-y">
-            {(Object.keys(LINK_LABELS) as Array<keyof typeof LINK_LABELS>).map((key) => (
-              <Toggle
-                key={key}
-                name={`externalLinks.${key}`}
-                label={LINK_LABELS[key]}
-                defaultChecked={settings?.externalLinks[key] ?? false}
-              />
-            ))}
-          </div>
-        </fieldset>
+        <FormSectionCard
+          icon={Share2}
+          title="Redes e perfis externos"
+          contentClassName="divide-border divide-y gap-0 pt-1"
+        >
+          {(Object.keys(LINK_LABELS) as Array<keyof typeof LINK_LABELS>).map((key) => (
+            <ToggleRow
+              key={key}
+              name={`externalLinks.${key}`}
+              label={LINK_LABELS[key]}
+              icon={LINK_ICONS[key]}
+              defaultChecked={settings?.externalLinks[key] ?? false}
+            />
+          ))}
+        </FormSectionCard>
 
         <p className="text-muted text-xs">
           Ativar um item aqui é um consentimento explícito para disponibilizá-lo aos demais Irmãos
