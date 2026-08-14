@@ -1,7 +1,7 @@
 import { createServerContainer } from '@vl6/infra';
 import { createMemberAction } from '@/modules/membership/actions/member-actions';
 import { listUsedProfessions } from '@/modules/membership/lib/list-used-professions';
-import { MemberForm } from '@/modules/membership/components/member-form';
+import { NewMemberForm } from '@/modules/membership/components/new-member-form';
 import { requirePagePermission } from '@/lib/auth/require-permission';
 
 export default async function NewMemberPage() {
@@ -16,7 +16,11 @@ export default async function NewMemberPage() {
   return (
     <div className="flex flex-col gap-6">
       <h1 className="font-display text-2xl font-semibold">Novo Irmão</h1>
-      <MemberForm action={createMemberAction} roles={roles} customProfessions={customProfessions} />
+      <NewMemberForm
+        action={createMemberAction}
+        roles={roles}
+        customProfessions={customProfessions}
+      />
     </div>
   );
 }

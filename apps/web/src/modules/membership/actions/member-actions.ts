@@ -25,6 +25,7 @@ import { requireSession } from '@/lib/auth/require-session';
 import type { CurrentSession } from '@/lib/auth/get-current-session';
 import { getCurrentTenant } from '@/lib/tenant/get-current-tenant';
 import { resolveProfissaoFromFormData } from '@/lib/membership/professions';
+import type { ProfileFieldActionState } from '@/modules/membership/components/profile-fields/action-state';
 
 export interface MemberActionState {
   error: string | null;
@@ -264,51 +265,96 @@ export async function createMemberAction(
   return { error: null, memberId: member.id, temporaryPassword };
 }
 
-export async function updateMemberAction(
-  memberId: string,
-  _prevState: MemberActionState,
+/**
+ * Cada cartão da edição administrativa de um Irmão edita só o subconjunto
+ * de campos que exibe — `formData.has(key)` distingue "não faz parte
+ * deste cartão" (mantém o valor atual) de "presente e limpo pelo
+ * administrador" (grava vazio/null), mesma técnica de
+ * `self-profile-actions.ts`/`central-actions.ts`. `UpdateMemberUseCase`
+ * exige o shape completo de `MemberFormValues`, então os campos fora do
+ * cartão em questão são sempre preenchidos com o valor já gravado.
+ */
+function textOrCurrentAdmin(
   formData: FormData,
-): Promise<MemberActionState> {
+  key: string,
+  current: string | null,
+): string | null {
+  if (!formData.has(key)) return current;
+  const value = formData.get(key);
+  return typeof value === 'string' && value.trim() ? value : null;
+}
+
+/**
+ * Edição administrativa dos campos também editáveis pelo próprio Irmão —
+ * mesmo subconjunto de `updateMyProfileAction`, usada pelos cartões
+ * compartilhados (`profile-fields/`) quando renderizados pelo Admin
+ * (`action.bind(null, memberId)`). RBAC (`member:update`) é checada dentro
+ * de `UpdateMemberUseCase`.
+ */
+export async function updateMemberProfileAction(
+  memberId: string,
+  _prevState: ProfileFieldActionState,
+  formData: FormData,
+): Promise<ProfileFieldActionState> {
   const session = await requireSession();
-  const current = await getCurrentTenant();
-  if (!current) return { ...EMPTY_STATE, error: 'Tenant não encontrado.' };
-
   const container = createServerContainer();
-  const existing = await container.repositories.member.findById(memberId);
-  if (!existing) return { ...EMPTY_STATE, error: 'Irmão não encontrado.' };
 
-  formData.set('lojaId', current.tenant.id);
-  formData.set('potencia', current.tenant.potencia);
-  // A edição geral nunca muda a situação — isso é feito por
-  // updateMemberSituationAction (ver comentário em createMemberAction).
-  formData.set('situacao', existing.situacao);
+  const current = await container.repositories.member.findById(memberId);
+  if (!current) return { error: 'Irmão não encontrado.' };
 
-  const fotoFile = formData.get('foto');
-  let fotoUrl = existing.fotoUrl;
-  if (fotoFile instanceof File && fotoFile.size > 0) {
-    const photoError = validatePhotoFile(fotoFile);
-    if (photoError) return { ...EMPTY_STATE, error: photoError };
-    try {
-      fotoUrl = await uploadMemberPhoto(fotoFile, session.authContext.tenantId, memberId);
-    } catch (error) {
-      logger.error('Falha ao enviar foto do Irmão para o storage', {
-        route: 'updateMemberAction',
-        memberId,
-        ...errorToLogContext(error),
-      });
-      Sentry.captureException(error, { tags: { route: 'updateMemberAction:foto' } });
-      return {
-        ...EMPTY_STATE,
-        error: 'Não foi possível enviar a foto. Tente novamente em instantes.',
-      };
-    }
-  }
+  const profissao = formData.has('profissao')
+    ? resolveProfissaoFromFormData(formData)
+    : current.profissao;
+
+  const endereco = formData.has('cep')
+    ? {
+        logradouro: formData.get('logradouro') ?? '',
+        numero: formData.get('enderecoNumero') ?? '',
+        bairro: formData.get('bairro') ?? '',
+        cidade: formData.get('cidade') ?? '',
+        estado: formData.get('estado') ?? '',
+        pais: formData.get('pais') || 'Brasil',
+        cep: formData.get('cep'),
+      }
+    : current.endereco;
 
   let input: MemberFormValues;
   try {
-    input = await parseMemberForm(formData, fotoUrl);
+    input = normalizeConjugeFields(
+      memberSchema.parse({
+        nomeCompleto: current.nomeCompleto,
+        fotoUrl: current.fotoUrl,
+        email: current.email,
+        telefone: textOrCurrentAdmin(formData, 'telefone', current.telefone),
+        whatsapp: textOrCurrentAdmin(formData, 'whatsapp', current.whatsapp),
+        endereco,
+        dataNascimento: current.dataNascimento,
+        dataIniciacao: current.dataIniciacao,
+        dataElevacao: current.dataElevacao,
+        dataExaltacao: current.dataExaltacao,
+        cim: current.cim,
+        grau: current.grau,
+        situacao: current.situacao,
+        lojaId: current.lojaId,
+        potencia: current.potencia,
+        profissao,
+        empresa: textOrCurrentAdmin(formData, 'empresa', current.empresa),
+        estadoCivil: formData.has('estadoCivil')
+          ? formData.get('estadoCivil') || null
+          : current.estadoCivil,
+        conjugeNome: formData.has('conjugeNome')
+          ? textOrCurrentAdmin(formData, 'conjugeNome', current.conjugeNome)
+          : current.conjugeNome,
+        conjugeDataNascimento: formData.has('conjugeDataNascimento')
+          ? formData.get('conjugeDataNascimento') || null
+          : current.conjugeDataNascimento,
+        biografia: current.biografia,
+        redesSociais: current.redesSociais,
+        observacoes: current.observacoes,
+      }),
+    );
   } catch {
-    return { ...EMPTY_STATE, error: 'Dados inválidos. Verifique os campos obrigatórios.' };
+    return { error: 'Dados inválidos.' };
   }
 
   const result = await container.useCases.updateMember.execute(
@@ -317,12 +363,114 @@ export async function updateMemberAction(
     input,
   );
   if (!result.ok) {
-    return { ...EMPTY_STATE, error: result.error.message };
+    return { error: result.error.message };
   }
 
   revalidatePath('/admin/pessoas/irmaos');
   revalidatePath(`/admin/pessoas/irmaos/${memberId}`);
-  return { ...EMPTY_STATE, memberId };
+  revalidatePath('/irmaos', 'layout');
+  return { error: null };
+}
+
+/**
+ * Edição administrativa dos campos que só o Admin edita: identificação
+ * (nome/e-mail/foto), dados maçônicos (CIM/grau/datas) e notas internas
+ * (biografia/observações/redes sociais). Nunca alcançável pelo
+ * autoatendimento — por isso não há cartão compartilhado equivalente.
+ */
+export async function updateMemberIdentityAction(
+  memberId: string,
+  _prevState: ProfileFieldActionState,
+  formData: FormData,
+): Promise<ProfileFieldActionState> {
+  const session = await requireSession();
+  const container = createServerContainer();
+
+  const current = await container.repositories.member.findById(memberId);
+  if (!current) return { error: 'Irmão não encontrado.' };
+
+  if (formData.has('nomeCompleto') && !String(formData.get('nomeCompleto') ?? '').trim()) {
+    return { error: 'Nome completo é obrigatório.' };
+  }
+  if (formData.has('email') && !String(formData.get('email') ?? '').trim()) {
+    return { error: 'E-mail é obrigatório.' };
+  }
+
+  let fotoUrl = current.fotoUrl;
+  const fotoFile = formData.get('foto');
+  if (fotoFile instanceof File && fotoFile.size > 0) {
+    const photoError = validatePhotoFile(fotoFile);
+    if (photoError) return { error: photoError };
+    try {
+      fotoUrl = await uploadMemberPhoto(fotoFile, session.authContext.tenantId, memberId);
+    } catch (error) {
+      logger.error('Falha ao enviar foto do Irmão para o storage', {
+        route: 'updateMemberIdentityAction',
+        memberId,
+        ...errorToLogContext(error),
+      });
+      Sentry.captureException(error, { tags: { route: 'updateMemberIdentityAction:foto' } });
+      return { error: 'Não foi possível enviar a foto. Tente novamente em instantes.' };
+    }
+  }
+
+  let input: MemberFormValues;
+  try {
+    input = normalizeConjugeFields(
+      memberSchema.parse({
+        nomeCompleto: textOrCurrentAdmin(formData, 'nomeCompleto', current.nomeCompleto),
+        fotoUrl,
+        email: textOrCurrentAdmin(formData, 'email', current.email),
+        telefone: current.telefone,
+        whatsapp: current.whatsapp,
+        endereco: current.endereco,
+        dataNascimento: formData.has('dataNascimento')
+          ? formData.get('dataNascimento') || null
+          : current.dataNascimento,
+        dataIniciacao: formData.has('dataIniciacao')
+          ? formData.get('dataIniciacao') || null
+          : current.dataIniciacao,
+        dataElevacao: formData.has('dataElevacao')
+          ? formData.get('dataElevacao') || null
+          : current.dataElevacao,
+        dataExaltacao: formData.has('dataExaltacao')
+          ? formData.get('dataExaltacao') || null
+          : current.dataExaltacao,
+        cim: textOrCurrentAdmin(formData, 'cim', current.cim),
+        grau: formData.has('grau') ? formData.get('grau') : current.grau,
+        situacao: current.situacao,
+        lojaId: current.lojaId,
+        potencia: current.potencia,
+        profissao: current.profissao,
+        empresa: current.empresa,
+        estadoCivil: current.estadoCivil,
+        conjugeNome: current.conjugeNome,
+        conjugeDataNascimento: current.conjugeDataNascimento,
+        biografia: textOrCurrentAdmin(formData, 'biografia', current.biografia),
+        redesSociais: {
+          instagram: textOrCurrentAdmin(formData, 'instagram', current.redesSociais.instagram),
+          facebook: textOrCurrentAdmin(formData, 'facebook', current.redesSociais.facebook),
+          linkedin: textOrCurrentAdmin(formData, 'linkedin', current.redesSociais.linkedin),
+        },
+        observacoes: textOrCurrentAdmin(formData, 'observacoes', current.observacoes),
+      }),
+    );
+  } catch {
+    return { error: 'Dados inválidos. Verifique os campos obrigatórios.' };
+  }
+
+  const result = await container.useCases.updateMember.execute(
+    session.authContext,
+    memberId,
+    input,
+  );
+  if (!result.ok) {
+    return { error: result.error.message };
+  }
+
+  revalidatePath('/admin/pessoas/irmaos');
+  revalidatePath(`/admin/pessoas/irmaos/${memberId}`);
+  return { error: null };
 }
 
 /**
