@@ -20,10 +20,10 @@ export default async function CentralMemberProfilePage({
   const profile = result.ok ? result.value : null;
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex max-w-2xl flex-col gap-6">
       <Link
         href="/central"
-        className="text-muted hover:text-foreground flex items-center gap-1.5 text-sm"
+        className="border-border bg-surface hover:border-primary hover:text-primary flex w-fit items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm transition-colors"
       >
         <ArrowLeft size={16} />
         Voltar à Central
@@ -32,7 +32,7 @@ export default async function CentralMemberProfilePage({
       {profile ? (
         <PublicMemberProfileView profile={profile} />
       ) : (
-        <Card className="max-w-md">
+        <Card>
           <CardContent className="text-muted p-6 text-sm">
             Este Irmão optou por não disponibilizar um perfil na Central dos Irmãos.
           </CardContent>

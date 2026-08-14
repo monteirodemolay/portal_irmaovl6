@@ -3,8 +3,20 @@
 import { useActionState, useState } from 'react';
 import { useFormStatus } from 'react-dom';
 import type { MemberCentralProfile } from '@vl6/domain';
-import { Button, Input, Textarea } from '@vl6/ui';
+import {
+  Briefcase,
+  Building2,
+  Button,
+  Compass,
+  Input,
+  Quote,
+  Share2,
+  Textarea,
+  UserCircle,
+  X,
+} from '@vl6/ui';
 import { FormField } from '@/components/forms/form-field';
+import { FormSectionCard } from '@/components/forms/section-card';
 import { updateCentralProfileAction, type CentralActionState } from '../actions/central-actions';
 
 const MAX_NEGOCIOS = 5;
@@ -36,14 +48,17 @@ export function CentralContentForm({ profile }: { profile: MemberCentralProfile 
   }
 
   return (
-    <form action={formAction} className="flex max-w-2xl flex-col gap-8">
+    <form action={formAction} className="flex flex-col gap-6">
       <p className="text-muted text-sm">
         Preencha o que quiser compartilhar com os demais Irmãos. Salvar aqui não torna nada visível
         — a visibilidade é decidida à parte, no card &ldquo;Privacidade e publicação&rdquo; abaixo.
       </p>
 
-      <fieldset className="flex flex-col gap-4">
-        <legend className="font-display mb-2 text-sm font-semibold">Apresentação</legend>
+      <FormSectionCard
+        icon={Quote}
+        title="Apresentação"
+        description="Uma breve descrição sobre você."
+      >
         <FormField label="Sobre mim" htmlFor="apresentacao">
           <Textarea
             id="apresentacao"
@@ -52,11 +67,10 @@ export function CentralContentForm({ profile }: { profile: MemberCentralProfile 
             defaultValue={profile?.apresentacao ?? ''}
           />
         </FormField>
-      </fieldset>
+      </FormSectionCard>
 
-      <fieldset className="flex flex-col gap-4">
-        <legend className="font-display mb-2 text-sm font-semibold">Informações pessoais</legend>
-        <div className="grid grid-cols-2 gap-4">
+      <FormSectionCard icon={UserCircle} title="Informações pessoais">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <FormField label="Interesses" htmlFor="interesses">
             <Input id="interesses" name="interesses" defaultValue={profile?.interesses ?? ''} />
           </FormField>
@@ -68,11 +82,10 @@ export function CentralContentForm({ profile }: { profile: MemberCentralProfile 
             />
           </FormField>
         </div>
-      </fieldset>
+      </FormSectionCard>
 
-      <fieldset className="flex flex-col gap-4">
-        <legend className="font-display mb-2 text-sm font-semibold">Profissional</legend>
-        <div className="grid grid-cols-2 gap-4">
+      <FormSectionCard icon={Briefcase} title="Profissional">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <FormField label="Área de atuação" htmlFor="areaAtuacao">
             <Input id="areaAtuacao" name="areaAtuacao" defaultValue={profile?.areaAtuacao ?? ''} />
           </FormField>
@@ -88,13 +101,32 @@ export function CentralContentForm({ profile }: { profile: MemberCentralProfile 
             defaultValue={profile?.resumoProfissional ?? ''}
           />
         </FormField>
-      </fieldset>
+      </FormSectionCard>
 
-      <fieldset className="flex flex-col gap-4">
-        <legend className="font-display mb-2 text-sm font-semibold">Empresa e atuação</legend>
+      <FormSectionCard
+        icon={Building2}
+        title="Empresa e atuação"
+        description="Até 5 empresas ou negócios que você queira divulgar aos Irmãos."
+      >
         {negocios.map((negocio, index) => (
-          <div key={negocio.id} className="border-border flex flex-col gap-3 rounded-xl border p-4">
-            <div className="grid grid-cols-2 gap-4">
+          <div
+            key={negocio.id}
+            className="border-border bg-background flex flex-col gap-3 rounded-xl border p-4"
+          >
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-muted text-xs font-semibold uppercase tracking-wide">
+                Empresa {index + 1}
+              </span>
+              <button
+                type="button"
+                aria-label={`Remover empresa ${index + 1}`}
+                onClick={() => setNegocios((current) => current.filter((_, i) => i !== index))}
+                className="text-muted hover:text-foreground hover:bg-surface rounded-full p-1 transition-colors"
+              >
+                <X size={16} />
+              </button>
+            </div>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <FormField label="Nome da empresa" htmlFor={`negocio-nome-${index}`}>
                 <Input
                   id={`negocio-nome-${index}`}
@@ -110,14 +142,6 @@ export function CentralContentForm({ profile }: { profile: MemberCentralProfile 
                 />
               </FormField>
             </div>
-            <Button
-              type="button"
-              variant="ghost"
-              className="w-fit"
-              onClick={() => setNegocios((current) => current.filter((_, i) => i !== index))}
-            >
-              Remover
-            </Button>
           </div>
         ))}
         {negocios.length < MAX_NEGOCIOS && (
@@ -131,13 +155,10 @@ export function CentralContentForm({ profile }: { profile: MemberCentralProfile 
           </Button>
         )}
         <input type="hidden" name="negocios" value={JSON.stringify(negocios)} />
-      </fieldset>
+      </FormSectionCard>
 
-      <fieldset className="flex flex-col gap-4">
-        <legend className="font-display mb-2 text-sm font-semibold">
-          Informações maçônicas complementares
-        </legend>
-        <div className="grid grid-cols-2 gap-4">
+      <FormSectionCard icon={Compass} title="Informações maçônicas complementares">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <FormField label="Lojas visitadas" htmlFor="lojasVisitadas">
             <Input
               id="lojasVisitadas"
@@ -153,11 +174,10 @@ export function CentralContentForm({ profile }: { profile: MemberCentralProfile 
             />
           </FormField>
         </div>
-      </fieldset>
+      </FormSectionCard>
 
-      <fieldset className="flex flex-col gap-4">
-        <legend className="font-display mb-2 text-sm font-semibold">Redes e perfis externos</legend>
-        <div className="grid grid-cols-2 gap-4">
+      <FormSectionCard icon={Share2} title="Redes e perfis externos">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <FormField label="WhatsApp" htmlFor="linkWhatsapp" description="Ex.: (64) 99999-9999">
             <Input
               id="linkWhatsapp"
@@ -197,7 +217,7 @@ export function CentralContentForm({ profile }: { profile: MemberCentralProfile 
             <Input id="linkSite" name="linkSite" defaultValue={profile?.externalLinks.site ?? ''} />
           </FormField>
         </div>
-      </fieldset>
+      </FormSectionCard>
 
       {state.error && <p className="text-sm text-red-600">{state.error}</p>}
       <SubmitButton />

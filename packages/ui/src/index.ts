@@ -15,6 +15,7 @@ export * from './components/data-table';
 export * from './components/empty-state';
 export * from './components/dialog';
 export * from './components/tabs';
+export * from './components/switch';
 // Reexporte nomeado (não `export *`) — vários ícones do Lucide colidem com
 // nomes de componentes deste barrel (ex.: `Badge`). Adicione aqui só os
 // ícones realmente usados por algum consumidor.
@@ -50,6 +51,16 @@ export {
   Eye,
   EyeOff,
   Globe,
+  Briefcase,
+  Share2,
+  Heart,
+  Search,
+  Phone,
+  MessageCircle,
+  Instagram,
+  Facebook,
+  Linkedin,
+  CheckCircle2,
   ICON_SIZE_DEFAULT,
   ICON_SIZE_LARGE,
   ICON_STROKE_WIDTH,
