@@ -74,6 +74,7 @@ import {
   RevokeApiKeyUseCase,
   SearchDirectoryUseCase,
   SearchMembersUseCase,
+  ListUpcomingAnniversariesUseCase,
   SetTenantActiveUseCase,
   SetUserStatusUseCase,
   SoftDeleteFileAssetUseCase,
@@ -291,6 +292,10 @@ export function createServerContainer() {
       memberRepository: repositories.member,
       boardTermRepository: repositories.boardTerm,
       boardPositionAssignmentRepository: repositories.boardPositionAssignment,
+    }),
+    listUpcomingAnniversaries: new ListUpcomingAnniversariesUseCase({
+      memberRepository: repositories.member,
+      clock,
     }),
     softDeleteMember: new SoftDeleteMemberUseCase({ memberRepository: repositories.member, clock }),
 

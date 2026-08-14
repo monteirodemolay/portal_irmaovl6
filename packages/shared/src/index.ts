@@ -18,5 +18,6 @@ export * from './schemas/agenda.schema';
 export * from './schemas/notification.schema';
 export * from './schemas/gallery.schema';
 export * from './schemas/central.schema';
+export * from './calendar/build-calendar-links';
 export * from './central/link-normalizers';
 export * from './observability/logger';

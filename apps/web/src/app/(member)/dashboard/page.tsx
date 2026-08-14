@@ -1,20 +1,6 @@
 import Link from 'next/link';
 import { hasPermission } from '@vl6/domain';
-import {
-  Badge,
-  BookOpen,
-  Button,
-  CalendarDays,
-  Card,
-  ChevronRight,
-  Clock,
-  Download,
-  FileText,
-  Image as GalleryIcon,
-  MapPin,
-  Megaphone,
-} from '@vl6/ui';
-import { EVENT_KIND_LABELS } from '@vl6/shared';
+import { Button } from '@vl6/ui';
 import { createServerContainer } from '@vl6/infra';
 import { getCurrentSession } from '@/lib/auth/get-current-session';
 import { roleDisplayLabel } from '@/lib/auth/role-display-label';
@@ -22,108 +8,52 @@ import { resolveMemberDisplayName } from '@/lib/membership/resolve-display-name'
 import { getCurrentTenant } from '@/lib/tenant/get-current-tenant';
 import { MemberAvatar } from '@/components/membership/member-avatar';
 import { MemberDegreeBadge } from '@/components/membership/member-degree-badge';
-
-// Sem tile de Diretoria: mesmos dados da página pública do site
-// institucional, sem nada exclusivo do Portal — docs/architecture/07 §7.0.
-const QUICK_LINKS = [
-  {
-    href: '/avisos',
-    label: 'Avisos',
-    description: 'Comunicados e informações importantes.',
-    icon: Megaphone,
-  },
-  {
-    href: '/agenda',
-    label: 'Agenda',
-    description: 'Próximas sessões e eventos.',
-    icon: CalendarDays,
-  },
-] as const;
-
-// Arquivos, Biblioteca, Galeria e Downloads reunidos sob um único rótulo no
-// Dashboard, espelhando o agrupamento da sidebar (`nav-items.tsx`) — mesmo
-// racional: são um único espaço para o Irmão (Acervo Digital), ainda que
-// continuem sendo entidades/rotas separadas no domínio.
-const ACERVO_QUICK_LINKS = [
-  {
-    href: '/arquivos',
-    label: 'Documentos',
-    description: 'Circulares e documentos oficiais.',
-    icon: FileText,
-  },
-  {
-    href: '/biblioteca',
-    label: 'Biblioteca',
-    description: 'Estudos ao alcance do Irmão.',
-    icon: BookOpen,
-  },
-  {
-    href: '/galeria',
-    label: 'Fotografias',
-    description: 'Registros de momentos especiais.',
-    icon: GalleryIcon,
-  },
-  {
-    href: '/downloads',
-    label: 'Favoritos',
-    description: 'Itens favoritados na Biblioteca.',
-    icon: Download,
-  },
-] as const;
-
-type QuickLink = (typeof QUICK_LINKS)[number] | (typeof ACERVO_QUICK_LINKS)[number];
-
-function QuickLinkCard({ item }: { item: QuickLink }) {
-  return (
-    <Link href={item.href}>
-      <Card className="hover:border-accent group flex h-full min-h-[112px] flex-col gap-3 p-4 shadow-none transition-colors">
-        <span className="bg-accent/15 text-accent flex h-10 w-10 items-center justify-center rounded-full">
-          <item.icon size={20} strokeWidth={1.75} />
-        </span>
-        <div>
-          <p className="font-display text-sm font-semibold">{item.label}</p>
-          <p className="text-muted mt-0.5 text-xs">{item.description}</p>
-        </div>
-        <ChevronRight
-          size={16}
-          className="text-accent mt-auto opacity-0 transition-opacity group-hover:opacity-100"
-        />
-      </Card>
-    </Link>
-  );
-}
-
-function formatEventDate(date: Date): { day: string; month: string; time: string } {
-  const d = new Date(date);
-  return {
-    day: new Intl.DateTimeFormat('pt-BR', { day: '2-digit' }).format(d),
-    month: new Intl.DateTimeFormat('pt-BR', { month: 'short' })
-      .format(d)
-      .replace('.', '')
-      .toUpperCase(),
-    time: new Intl.DateTimeFormat('pt-BR', { timeStyle: 'short' }).format(d),
-  };
-}
+import { AcervoPanel } from '@/modules/dashboard/components/acervo-panel';
+import { AgendaPanel } from '@/modules/dashboard/components/agenda-panel';
+import { AnniversariesPanel } from '@/modules/dashboard/components/anniversaries-panel';
+import { AvisosPanel } from '@/modules/dashboard/components/avisos-panel';
+import { DashboardSectionHeading } from '@/modules/dashboard/components/dashboard-section-heading';
+import { ImportantNoticeCard } from '@/modules/dashboard/components/important-notice-card';
+import { NextEventCard } from '@/modules/dashboard/components/next-event-card';
+import { QuickAccessPanel } from '@/modules/dashboard/components/quick-access-panel';
 
 export default async function DashboardPage() {
   const [session, current] = await Promise.all([getCurrentSession(), getCurrentTenant()]);
   if (!session || !current) return null;
 
   const container = createServerContainer();
+  const { authContext } = session;
+
   const member = await container.repositories.member.findByUserId(
-    session.authContext.tenantId,
+    authContext.tenantId,
     session.user.id,
   );
 
-  const [announcements, upcomingEvents] = await Promise.all([
-    hasPermission(session.authContext, 'announcement:read')
-      ? container.useCases.listActiveAnnouncements.execute(session.authContext.tenantId)
+  const [announcements, upcomingEventsPage, anniversaries] = await Promise.all([
+    hasPermission(authContext, 'announcement:read')
+      ? container.useCases.listActiveAnnouncements.execute(authContext.tenantId)
       : Promise.resolve([]),
-    hasPermission(session.authContext, 'event:read')
-      ? container.useCases.listUpcomingEvents.execute(session.authContext, { limit: 3 })
+    hasPermission(authContext, 'event:read')
+      ? container.useCases.listUpcomingEvents.execute(authContext, { limit: 4 })
       : Promise.resolve({ items: [], nextCursor: null, hasMore: false }),
+    hasPermission(authContext, 'member:read')
+      ? container.useCases.listUpcomingAnniversaries.execute(authContext)
+      : Promise.resolve([]),
   ]);
 
+  const events = upcomingEventsPage.items;
+  const featuredEvent = events[0] ?? null;
+  const agendaEvents = events.slice(1, 4);
+
+  const importantNotice =
+    announcements.find((a) => a.prioridade === 'alta') ??
+    announcements.find((a) => a.destacar) ??
+    null;
+  const avisosList = importantNotice
+    ? announcements.filter((a) => a.id !== importantNotice.id)
+    : announcements;
+
+  const showDirectoryLink = hasPermission(authContext, 'memberDirectory:read');
   const displayName = resolveMemberDisplayName(member, session.user.email);
 
   return (
@@ -166,101 +96,26 @@ export default async function DashboardPage() {
         </div>
       </section>
 
-      <section className="flex flex-col gap-3">
-        <h2 className="font-display text-lg font-semibold">Acesso rápido</h2>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-2">
-          {QUICK_LINKS.map((item) => (
-            <QuickLinkCard key={item.href} item={item} />
-          ))}
-        </div>
+      {(featuredEvent || importantNotice) && (
+        <section className="flex flex-col gap-3">
+          <DashboardSectionHeading title="Próximos da Loja" />
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            {featuredEvent && <NextEventCard event={featuredEvent} />}
+            {importantNotice && <ImportantNoticeCard announcement={importantNotice} />}
+          </div>
+        </section>
+      )}
+
+      <AnniversariesPanel entries={anniversaries} showDirectoryLink={showDirectoryLink} />
+
+      <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <AgendaPanel events={agendaEvents} />
+        <AvisosPanel announcements={avisosList} />
       </section>
 
-      <section className="flex flex-col gap-3">
-        <h2 className="font-display text-lg font-semibold">Acervo Digital</h2>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {ACERVO_QUICK_LINKS.map((item) => (
-            <QuickLinkCard key={item.href} item={item} />
-          ))}
-        </div>
-      </section>
-
-      <section className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <Card className="flex flex-col gap-4 p-5 shadow-none">
-          <div className="flex items-center justify-between">
-            <h2 className="font-display text-lg font-semibold">Próximos Eventos</h2>
-            <Link href="/agenda" className="text-accent text-xs font-medium hover:underline">
-              Ver agenda
-            </Link>
-          </div>
-          {upcomingEvents.items.length === 0 ? (
-            <p className="text-muted text-sm">Nenhum evento programado.</p>
-          ) : (
-            <ul className="flex flex-col gap-3">
-              {upcomingEvents.items.map((event) => {
-                const { day, month, time } = formatEventDate(event.dataInicio);
-                return (
-                  <li key={event.id} className="flex gap-3">
-                    <div className="bg-primary flex w-12 shrink-0 flex-col items-center rounded py-1.5 text-white">
-                      <span className="text-base font-bold leading-none">{day}</span>
-                      <span className="text-accent text-[10px] leading-none">{month}</span>
-                    </div>
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-medium">{event.titulo}</p>
-                      <p className="text-muted flex items-center gap-1 text-xs">
-                        <Clock size={12} /> {time}
-                        <Badge variant="outline" className="ml-1">
-                          {EVENT_KIND_LABELS[event.tipo]}
-                        </Badge>
-                      </p>
-                      <p className="text-muted flex items-center gap-1 text-xs">
-                        <MapPin size={12} /> {event.local}
-                      </p>
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </Card>
-
-        <Card className="flex flex-col gap-4 p-5 shadow-none">
-          <div className="flex items-center justify-between">
-            <h2 className="font-display text-lg font-semibold">Avisos Recentes</h2>
-            <Link href="/avisos" className="text-accent text-xs font-medium hover:underline">
-              Ver todos
-            </Link>
-          </div>
-          {announcements.length === 0 ? (
-            <p className="text-muted text-sm">Nenhum aviso no momento.</p>
-          ) : (
-            <ul className="flex flex-col gap-3">
-              {announcements.slice(0, 3).map((announcement) => (
-                <li
-                  key={announcement.id}
-                  className="border-border flex gap-3 border-b pb-3 last:border-0 last:pb-0"
-                >
-                  <span className="bg-accent/15 text-accent mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full">
-                    <Megaphone size={16} strokeWidth={1.75} />
-                  </span>
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-medium">{announcement.titulo}</p>
-                    <p className="text-muted line-clamp-1 text-xs">{announcement.descricao}</p>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </Card>
-
-        <Card className="flex flex-col gap-4 p-5 shadow-none">
-          <div className="flex items-center justify-between">
-            <h2 className="font-display text-lg font-semibold">Documentos Recentes</h2>
-            <Link href="/arquivos" className="text-accent text-xs font-medium hover:underline">
-              Ver todos
-            </Link>
-          </div>
-          <p className="text-muted text-sm">Nenhum documento recente.</p>
-        </Card>
+      <section className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <QuickAccessPanel />
+        <AcervoPanel />
       </section>
     </div>
   );

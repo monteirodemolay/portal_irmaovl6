@@ -58,6 +58,7 @@ export * from './modules/membership/use-cases/update-member.use-case';
 export * from './modules/membership/use-cases/update-my-profile.use-case';
 export * from './modules/membership/use-cases/update-member-situation.use-case';
 export * from './modules/membership/use-cases/search-members.use-case';
+export * from './modules/membership/use-cases/list-upcoming-anniversaries.use-case';
 export * from './modules/membership/use-cases/soft-delete-member.use-case';
 
 // Governance
