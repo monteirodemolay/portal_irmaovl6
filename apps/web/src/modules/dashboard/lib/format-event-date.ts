@@ -2,7 +2,13 @@ export interface FormattedEventDate {
   day: string;
   month: string;
   weekday: string;
+  /** Dia da semana sem o sufixo "-feira" (ex.: "Segunda"), pro bloco de data compacto. */
+  weekdayShort: string;
   timeRange: string;
+}
+
+function capitalize(text: string): string {
+  return text.charAt(0).toUpperCase() + text.slice(1);
 }
 
 /**
@@ -10,7 +16,7 @@ export interface FormattedEventDate {
  * Agenda do Dashboard — mesma convenção pt-BR usada no restante do Portal.
  */
 export function formatEventDate(dataInicio: Date, dataFim: Date): FormattedEventDate {
-  const weekday = new Intl.DateTimeFormat('pt-BR', { weekday: 'long' }).format(dataInicio);
+  const weekdayRaw = new Intl.DateTimeFormat('pt-BR', { weekday: 'long' }).format(dataInicio);
   const startTime = new Intl.DateTimeFormat('pt-BR', { timeStyle: 'short' }).format(dataInicio);
   const endTime = new Intl.DateTimeFormat('pt-BR', { timeStyle: 'short' }).format(dataFim);
 
@@ -20,7 +26,8 @@ export function formatEventDate(dataInicio: Date, dataFim: Date): FormattedEvent
       .format(dataInicio)
       .replace('.', '')
       .toUpperCase(),
-    weekday: weekday.charAt(0).toUpperCase() + weekday.slice(1),
+    weekday: capitalize(weekdayRaw),
+    weekdayShort: capitalize(weekdayRaw.replace('-feira', '')),
     timeRange: `${startTime} às ${endTime}`,
   };
 }

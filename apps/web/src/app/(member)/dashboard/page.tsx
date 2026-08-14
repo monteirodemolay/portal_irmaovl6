@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { hasPermission } from '@vl6/domain';
-import { Button } from '@vl6/ui';
+import { Button, Sparkles } from '@vl6/ui';
 import { createServerContainer } from '@vl6/infra';
 import { getCurrentSession } from '@/lib/auth/get-current-session';
 import { roleDisplayLabel } from '@/lib/auth/role-display-label';
@@ -29,7 +29,15 @@ export default async function DashboardPage() {
     session.user.id,
   );
 
-  const [announcements, upcomingEventsPage, anniversaries] = await Promise.all([
+  const [
+    announcements,
+    upcomingEventsPage,
+    anniversaries,
+    documentos,
+    biblioteca,
+    albuns,
+    favoritos,
+  ] = await Promise.all([
     hasPermission(authContext, 'announcement:read')
       ? container.useCases.listActiveAnnouncements.execute(authContext.tenantId)
       : Promise.resolve([]),
@@ -39,6 +47,16 @@ export default async function DashboardPage() {
     hasPermission(authContext, 'member:read')
       ? container.useCases.listUpcomingAnniversaries.execute(authContext)
       : Promise.resolve([]),
+    hasPermission(authContext, 'file:read')
+      ? container.repositories.fileAsset.countByTenant(authContext.tenantId)
+      : Promise.resolve(null),
+    hasPermission(authContext, 'libraryItem:read')
+      ? container.repositories.libraryItem.countByTenant(authContext.tenantId)
+      : Promise.resolve(null),
+    hasPermission(authContext, 'gallery:read')
+      ? container.repositories.galleryAlbum.countByTenant(authContext.tenantId)
+      : Promise.resolve(null),
+    container.useCases.listMyFavorites.execute(authContext).then((items) => items.length),
   ]);
 
   const events = upcomingEventsPage.items;
@@ -98,7 +116,7 @@ export default async function DashboardPage() {
 
       {(featuredEvent || importantNotice) && (
         <section className="flex flex-col gap-3">
-          <DashboardSectionHeading title="Próximos da Loja" />
+          <DashboardSectionHeading icon={Sparkles} title="Próximos da Loja" />
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
             {featuredEvent && <NextEventCard event={featuredEvent} />}
             {importantNotice && <ImportantNoticeCard announcement={importantNotice} />}
@@ -114,8 +132,13 @@ export default async function DashboardPage() {
       </section>
 
       <section className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <QuickAccessPanel />
-        <AcervoPanel />
+        <QuickAccessPanel showDirectoryLink={showDirectoryLink} />
+        <AcervoPanel
+          documentos={documentos}
+          biblioteca={biblioteca}
+          albuns={albuns}
+          favoritos={favoritos}
+        />
       </section>
     </div>
   );

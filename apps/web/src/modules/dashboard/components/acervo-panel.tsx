@@ -1,47 +1,100 @@
-import { BookOpen, Download, FileText, Image as GalleryIcon } from '@vl6/ui';
+import type { ComponentType } from 'react';
+import Link from 'next/link';
+import { BookOpen, Card, cn, Download, FileText, Image as GalleryIcon } from '@vl6/ui';
 import { DashboardSectionHeading } from './dashboard-section-heading';
-import { QuickLinkCard, type QuickLinkItem } from './quick-link-card';
 
-// Arquivos, Biblioteca, Galeria e Downloads reunidos sob um único rótulo no
-// Dashboard, espelhando o agrupamento da sidebar (`nav-items.tsx`) — mesmo
-// racional: são um único espaço para o Irmão (Acervo Digital), ainda que
-// continuem sendo entidades/rotas separadas no domínio.
-const ACERVO_QUICK_LINKS: QuickLinkItem[] = [
-  {
-    href: '/arquivos',
-    label: 'Documentos',
-    description: 'Circulares e documentos oficiais.',
-    icon: FileText,
-  },
-  {
-    href: '/biblioteca',
-    label: 'Biblioteca',
-    description: 'Estudos ao alcance do Irmão.',
-    icon: BookOpen,
-  },
-  {
-    href: '/galeria',
-    label: 'Fotografias',
-    description: 'Registros de momentos especiais.',
-    icon: GalleryIcon,
-  },
-  {
-    href: '/downloads',
-    label: 'Favoritos',
-    description: 'Itens favoritados na Biblioteca.',
-    icon: Download,
-  },
-];
+interface AcervoTile {
+  href: string;
+  label: string;
+  icon: ComponentType<{ size?: number; strokeWidth?: number; className?: string }>;
+  gradient: string;
+  count: number | null;
+  unit: string;
+}
 
-export function AcervoPanel() {
+function AcervoTileCard({ tile }: { tile: AcervoTile }) {
   return (
-    <section className="flex flex-col gap-3">
-      <DashboardSectionHeading title="Acervo VL6" />
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {ACERVO_QUICK_LINKS.map((item) => (
-          <QuickLinkCard key={item.href} item={item} />
+    <Link
+      href={tile.href}
+      className={cn(
+        'group relative flex h-28 flex-col justify-end overflow-hidden rounded-lg bg-gradient-to-br p-3 text-white shadow-sm',
+        tile.gradient,
+      )}
+    >
+      <tile.icon
+        size={44}
+        strokeWidth={1}
+        className="pointer-events-none absolute -right-2 -top-2 text-white/25 transition-transform group-hover:scale-105"
+      />
+      <p className="font-display relative text-sm font-semibold">{tile.label}</p>
+      <p className="relative text-xs text-white/75">
+        {tile.count === null ? '—' : `${tile.count} ${tile.unit}`}
+      </p>
+    </Link>
+  );
+}
+
+/**
+ * Contagens reais (nunca inventadas) — cada uma vem de um `countByTenant`
+ * agregado no servidor (mesmo padrão de `admin/page.tsx`), exceto Favoritos
+ * (lista pessoal pequena, contada via `ListMyFavoritesUseCase`). Álbuns de
+ * Fotografias, não fotos individuais — `GalleryMedia` não tem `tenantId`
+ * próprio pra contar direto sem uma varredura por álbum.
+ */
+export function AcervoPanel({
+  documentos,
+  biblioteca,
+  albuns,
+  favoritos,
+}: {
+  documentos: number | null;
+  biblioteca: number | null;
+  albuns: number | null;
+  favoritos: number | null;
+}) {
+  const tiles: AcervoTile[] = [
+    {
+      href: '/arquivos',
+      label: 'Documentos',
+      icon: FileText,
+      gradient: 'from-primary to-primary-dark',
+      count: documentos,
+      unit: documentos === 1 ? 'documento' : 'documentos',
+    },
+    {
+      href: '/biblioteca',
+      label: 'Biblioteca',
+      icon: BookOpen,
+      gradient: 'from-emerald-700 to-emerald-900',
+      count: biblioteca,
+      unit: biblioteca === 1 ? 'item' : 'itens',
+    },
+    {
+      href: '/galeria',
+      label: 'Fotografias',
+      icon: GalleryIcon,
+      gradient: 'from-amber-600 to-amber-800',
+      count: albuns,
+      unit: albuns === 1 ? 'álbum' : 'álbuns',
+    },
+    {
+      href: '/downloads',
+      label: 'Favoritos',
+      icon: Download,
+      gradient: 'from-rose-700 to-rose-900',
+      count: favoritos,
+      unit: favoritos === 1 ? 'item' : 'itens',
+    },
+  ];
+
+  return (
+    <Card id="acervo-vl6" className="flex flex-col gap-4 p-5 shadow-none">
+      <DashboardSectionHeading icon={BookOpen} title="Acervo VL6" />
+      <div className="grid grid-cols-2 gap-3">
+        {tiles.map((tile) => (
+          <AcervoTileCard key={tile.href} tile={tile} />
         ))}
       </div>
-    </section>
+    </Card>
   );
 }

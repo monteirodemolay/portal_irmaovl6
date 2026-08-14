@@ -5,7 +5,12 @@ import { DashboardSectionHeading } from './dashboard-section-heading';
 export function AvisosPanel({ announcements }: { announcements: Announcement[] }) {
   return (
     <Card className="flex flex-col gap-4 p-5 shadow-none">
-      <DashboardSectionHeading title="Avisos" href="/avisos" hrefLabel="Ver todos" />
+      <DashboardSectionHeading
+        icon={Megaphone}
+        title="Avisos recentes"
+        href="/avisos"
+        hrefLabel="Ver todos"
+      />
       {announcements.length === 0 ? (
         <p className="text-muted text-sm">Nenhum aviso no momento.</p>
       ) : (
