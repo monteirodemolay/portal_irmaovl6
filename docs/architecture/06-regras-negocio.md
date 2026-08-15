@@ -2,8 +2,13 @@
 
 ## 6.1 Membership (Irmãos)
 
-- `matricula` é única por `tenantId`.
-- `cim` é único por `tenantId` quando informado.
+- `cim` é único por `tenantId` quando informado — é o identificador que
+  substituiu "matrícula"/"nome maçônico" e a base de verificação de
+  identidade da autorreivindicação de acesso (ver abaixo).
+- `email` é opcional: só `nomeCompleto` é obrigatório no cadastro (manual
+  ou em massa). Sem `email`, o Irmão não tem acesso ao Portal até que o
+  Administrador informe um e-mail (`/admin/pessoas/irmaos/[id]`) ou o
+  próprio Irmão reivindique o acesso.
 - Alterar `situacao` para `falecido` ou `transferido` dispara automaticamente
   o encerramento (`dataFim = now`) do cargo ativo em `memberPositionHistory`,
   se existir.
@@ -11,6 +16,41 @@
   `dataFim == null` por vez (cargo atual único).
 - Excluir um Irmão é sempre soft delete; o histórico de cargos e presenças
   permanece intacto para fins de auditoria/histórico da Loja.
+
+### Importação em massa (.xlsx / .pdf)
+
+- `/admin/pessoas/irmaos/importar` (permissão `member:create`) aceita uma
+  planilha `.xlsx` (mesmas colunas da exportação — Nome, CIM, Grau,
+  Situação, E-mail, Cidade) ou um relatório `.pdf` de "Relatório do módulo
+  Irmãos" de outro sistema (Nome, CIM, Loja, Grau); o `.pdf` nunca traz
+  e-mail e todo Irmão importado dele entra com `situacao: 'regular'` — os
+  poucos marcados por cor no relatório original (Desligado, Irregular
+  etc.) precisam de ajuste manual depois, pela ação "Situação" na tela de
+  cada Irmão.
+- Fluxo em três passos, sem gravação até confirmação explícita: (1)
+  analisar o arquivo — cada linha é classificada como pronta ou com
+  problema (nome ausente, grau/situação inválidos, CIM duplicada dentro do
+  próprio arquivo ou já cadastrada no tenant), nada é gravado; (2) o
+  Administrador revisa a lista completa e escolhe, linha a linha (ou
+  "selecionar todos"), quais Irmãos entram; (3) só as linhas selecionadas
+  passam pelo mesmo `RegisterMemberUseCase` do cadastro manual (uma
+  chamada por linha), e o resultado final mostra quantos foram criados e
+  quais falharam e por quê.
+
+### Autorreivindicação de acesso (`/reivindicar`)
+
+- Um `Member` sem `userId` (ainda não tem conta) aparece, só pelo nome,
+  numa lista pública sem exigir sessão — usada para o próprio Irmão se
+  identificar.
+- Para criar o próprio acesso, o Irmão confirma o **CIM** do nome
+  escolhido; erro de CIM devolve uma mensagem genérica (não revela se o
+  nome ou a CIM está errada) para dificultar tentativa por tentativa —
+  reforçado por rate limiting por IP.
+- Confirmado o CIM, o Irmão define e-mail/senha; isso grava `email` no
+  `Member` e cria o `User`/conta Firebase Auth com o papel `membro`,
+  exatamente como se o Administrador tivesse feito a ativação manual (ver
+  07-fluxo-autenticacao.md §7.2b). A partir daí o `Member` deixa de
+  aparecer na lista pública (já tem `userId`).
 
 ## 6.2 Governance (Gestões / Diretoria / Comissões)
 

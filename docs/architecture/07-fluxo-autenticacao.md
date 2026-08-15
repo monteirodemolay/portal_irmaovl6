@@ -2,15 +2,19 @@
 
 ## 7.0 Plataforma privada
 
-Não existe visitante anônimo nem conteúdo público nesta fase — toda a
-plataforma exige sessão autenticada. As únicas exceções são `/login`, a
+Não existe conteúdo público de navegação nesta fase — toda a plataforma
+exige sessão autenticada, com exceções pontuais e propositais: `/login`, a
 recuperação de senha do Firebase Auth (embutida no próprio `/login`,
-`sendPasswordResetEmail`) e `/offline` (fallback do Service Worker, precisa
-funcionar sem rede nem sessão). Qualquer outra rota redireciona pra
-`/login` sem sessão válida — guard duplo, no middleware
+`sendPasswordResetEmail`), `/reivindicar` (autoatendimento de criação de
+acesso, §7.2b — só expõe nomes de Irmãos ainda sem conta, nunca CIM,
+e-mail ou qualquer outro dado) e `/offline` (fallback do Service Worker,
+precisa funcionar sem rede nem sessão). Qualquer outra rota redireciona
+pra `/login` sem sessão válida — guard duplo, no middleware
 (`PROTECTED_PREFIXES`, Edge, checa só presença do cookie) e no layout de
 cada grupo (`requireSession()`/`requirePagePermission()`, Node.js runtime,
-valida o cookie de verdade).
+valida o cookie de verdade). Rotas públicas ficam fora de
+`PROTECTED_PREFIXES` de propósito — não são "esquecidas", são as únicas
+que devem funcionar sem cookie.
 
 **Sem site institucional dentro do Portal.** `vl6.com.br` (Wix, fora deste
 repositório) é o site público da Loja — história, notícias públicas,
@@ -69,6 +73,34 @@ destino pós-login é sempre a Área do Irmão (`/dashboard`), exceto pro
 Administrador Geral (`tenantId === platform`, cross-tenant), que cai em
 `/plataforma` — ver `resolvePostLoginDestination`,
 `apps/web/src/lib/auth/resolve-post-login-destination.ts`.
+
+## 7.2b Autorreivindicação de acesso (`/reivindicar`)
+
+Existe para o caso de cadastro em massa sem e-mail (planilha/PDF, ver 06
+§6.1): o Irmão cria o próprio acesso sem depender do Administrador digitar
+e-mail um a um. Único fluxo do domínio hoje sem `AuthContext`
+(`ClaimMemberAccountUseCase` recebe `tenantId` explícito — não existe
+sessão nem usuário autenticado ainda).
+
+```
+1. Página pública resolve o tenant pelo host (getCurrentTenant(), §7.1,
+   sem exigir sessão) e lista, só por nome, os Members com userId == null
+   (findUnclaimedByTenant — nunca expõe CIM/e-mail/telefone nessa lista)
+2. Irmão escolhe o próprio nome e confirma o CIM
+3. claimMemberAccountAction (rate limit por IP) chama
+   ClaimMemberAccountUseCase.execute(tenantId, memberId, cim, novoEmail):
+   - member.tenantId !== tenantId, member.userId !== null ou
+     member.cim !== cim confirmado → erro genérico único (não diz qual
+     campo errou, dificulta tentativa por tentativa)
+4. CIM confere → Irmão define e-mail/senha; a Action então:
+   - grava email no Member (ClaimMemberAccountUseCase)
+   - cria o usuário no Firebase Auth (createUser) + o User no Firestore
+     com roleId do papel 'membro' do tenant (mesma sequência de
+     createPortalAccessForMember, iniciada pelo Irmão em vez do Admin)
+   - syncUserClaims (§7.3) e member.userId = uid
+5. Redireciona para /login com mensagem de sucesso; o Member some da
+   lista pública (já tem userId)
+```
 
 ## 7.3 Custom Claims — como e quando são atualizados
 

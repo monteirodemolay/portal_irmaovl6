@@ -60,10 +60,11 @@ Só 3 níveis de fábrica — `admin`/`membro` são o seed de toda Loja nova,
   ocupação do cargo não muda automaticamente o papel de acesso.
 - **Membro** tem só leitura em todo recurso; não há RW nem sobre o próprio
   registro `member` nesta fase (perfil é editado por quem tem `admin`).
-- Não existe mais papel implícito para visitante anônimo: a plataforma
-  inteira exige sessão autenticada (docs/architecture/07 §7.1) — não há
-  rota funcional acessível sem login além de `/login` e a recuperação de
-  senha.
+- Não existe papel implícito para visitante anônimo: quase toda a
+  plataforma exige sessão autenticada (docs/architecture/07 §7.0/§7.1) —
+  as únicas rotas funcionais sem login são `/login`, a recuperação de
+  senha, `/reivindicar` (autoatendimento de criação de acesso, §7.2b — só
+  expõe nomes, nunca dados sensíveis) e `/offline`.
 
 ## 8.4 Onde a permissão é verificada (recap da doc 07 §7.4)
 
