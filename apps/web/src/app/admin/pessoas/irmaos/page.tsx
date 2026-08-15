@@ -9,7 +9,16 @@ import {
 import { createServerContainer } from '@vl6/infra';
 import { hasPermission } from '@vl6/domain';
 import type { Member } from '@vl6/domain';
-import { Badge, Button, DataTable, EmptyState, Input, Select, type DataTableColumn } from '@vl6/ui';
+import {
+  Badge,
+  Button,
+  DataTable,
+  EmptyState,
+  Input,
+  Pagination,
+  Select,
+  type DataTableColumn,
+} from '@vl6/ui';
 import { requirePagePermission } from '@/lib/auth/require-permission';
 import { MemberAvatar } from '@/components/membership/member-avatar';
 import { MEMBER_DEGREE_LABELS } from '@/lib/membership/member-degree-label';
@@ -30,6 +39,30 @@ const SITUATION_VARIANT: Record<
   transferido: 'default',
 };
 
+const PAGE_SIZE = 50;
+/** Sentinela pro histórico de páginas — representa "página 1" (sem cursor). */
+const NO_CURSOR = '_';
+
+function parseCursorHistory(h: string | undefined): string[] {
+  return h ? h.split(',').filter(Boolean) : [];
+}
+
+/** Monta a URL de uma página (filtros atuais + cursor/histórico), preservando os filtros de busca. */
+function buildPageHref(
+  filters: Record<string, string | undefined>,
+  cursor: string | undefined,
+  history: string[],
+): string {
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries(filters)) {
+    if (value) params.set(key, value);
+  }
+  if (cursor) params.set('cursor', cursor);
+  if (history.length > 0) params.set('h', history.join(','));
+  const qs = params.toString();
+  return qs ? `/admin/pessoas/irmaos?${qs}` : '/admin/pessoas/irmaos';
+}
+
 export default async function MembersPage({
   searchParams,
 }: {
@@ -40,13 +73,24 @@ export default async function MembersPage({
     cidade?: string;
     cim?: string;
     cargo?: string;
+    cursor?: string;
+    h?: string;
   }>;
 }) {
   const session = await requirePagePermission('member:read');
   const filters = await searchParams;
+  const searchFilters = {
+    nome: filters.nome,
+    grau: filters.grau,
+    situacao: filters.situacao,
+    cidade: filters.cidade,
+    cim: filters.cim,
+    cargo: filters.cargo,
+  };
+  const cursorHistory = parseCursorHistory(filters.h);
 
   const exportQuery = new URLSearchParams(
-    Object.entries(filters).filter((entry): entry is [string, string] => Boolean(entry[1])),
+    Object.entries(searchFilters).filter((entry): entry is [string, string] => Boolean(entry[1])),
   ).toString();
 
   const container = createServerContainer();
@@ -61,7 +105,7 @@ export default async function MembersPage({
         cim: filters.cim || undefined,
         cargo: (filters.cargo || undefined) as BoardPositionKey | undefined,
       },
-      { limit: 50 },
+      { cursor: filters.cursor || undefined, limit: PAGE_SIZE },
     ),
     hasPermission(session.authContext, 'user:read')
       ? container.useCases.listUsers.execute(session.authContext)
@@ -70,6 +114,23 @@ export default async function MembersPage({
       ? container.useCases.listRoles.execute(session.authContext)
       : Promise.resolve([]),
   ]);
+
+  const hasPrevious = Boolean(filters.cursor);
+  const previousHref = hasPrevious
+    ? (() => {
+        const history = [...cursorHistory];
+        const raw = history.pop();
+        const cursor = raw && raw !== NO_CURSOR ? raw : undefined;
+        return buildPageHref(searchFilters, cursor, history);
+      })()
+    : '';
+  const hasNext = page.hasMore && Boolean(page.nextCursor);
+  const nextHref = hasNext
+    ? buildPageHref(searchFilters, page.nextCursor ?? undefined, [
+        ...cursorHistory,
+        filters.cursor || NO_CURSOR,
+      ])
+    : '';
   const usersByMemberId = new Map(users.filter((u) => u.memberId).map((u) => [u.memberId, u]));
   const rolesById = new Map(roles.map((r) => [r.id, r]));
 
@@ -123,7 +184,7 @@ export default async function MembersPage({
       <div className="flex items-center justify-between">
         <div>
           <h1 className="font-display text-2xl font-semibold">Cadastro de Irmãos</h1>
-          <p className="text-muted">{page.items.length} Irmãos encontrados</p>
+          <p className="text-muted">{page.items.length} Irmãos nesta página</p>
         </div>
         <div className="flex gap-2">
           <Button asChild variant="outline">
@@ -194,6 +255,13 @@ export default async function MembersPage({
             }
           />
         }
+      />
+
+      <Pagination
+        hasPrevious={hasPrevious}
+        hasNext={hasNext}
+        previousHref={previousHref}
+        nextHref={nextHref}
       />
     </div>
   );
