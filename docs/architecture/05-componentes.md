@@ -12,12 +12,17 @@ módulo de negócio) ou dentro de `apps/web/src/modules/<modulo>/components`
 
 > Nem todo primitivo listado neste catálogo está implementado — é um
 > catálogo de referência, não um inventário exaustivo do que existe hoje em
-> `packages/ui`. `Tabs` (acessível, `role="tablist"`/`"tab"`/`"tabpanel"`,
-> navegação por seta/Home/End) **é real** — `packages/ui/src/components/tabs.tsx`,
-> usado em `/perfil` para separar "Meu Cadastro" de "Central VL6". `Checkbox`,
-> `RadioGroup`, `Switch`, `Tooltip`, `Popover`, `DropdownMenu`, `Accordion`,
-> `Skeleton`, `Separator` e `Toast` ainda não existem — formulários usam
-> `<input type="checkbox">` nativo estilizado onde precisam de um toggle.
+> `packages/ui`. Reais hoje (`packages/ui/src/components/`): `Button`,
+> `Input`, `Textarea`, `Select`, `Label`, `Card`, `Badge`, `Avatar`,
+> `Dialog`, `DataTable`, `EmptyState`, `Switch` (usado em toggles de
+> visibilidade — antes usava `<input type="checkbox">` nativo estilizado,
+> migrado) e `Tabs` (acessível, `role="tablist"`/`"tab"`/`"tabpanel"`,
+> navegação por seta/Home/End, usado em `/irmaos/meu-espaco` para separar
+> "Meu Cadastro" de "Central VL6"). `Checkbox` avulso, `RadioGroup`,
+> `Tooltip`, `Popover`, `DropdownMenu`, `Accordion`, `Skeleton`,
+> `Separator` e `Toast` ainda não existem — onde falta um desses, o código
+> usa o elemento HTML nativo estilizado (ex.: `<input type="checkbox">` no
+> wizard de importação de Irmãos, doc 06 §6.1).
 
 ## 5.2 Layout (`components/layout`)
 

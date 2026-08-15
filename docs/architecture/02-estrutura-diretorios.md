@@ -1,207 +1,199 @@
 # 2. Estrutura Completa de Diretórios
 
+> Árvore real do repositório (não mais o desenho de planejamento pré-código
+> — este documento foi reescrito para refletir `apps/web/src/app` e os
+> pacotes como existem hoje). Detalhes de cada rota/regra ficam nas docs
+> 03–10; aqui é só "onde cada coisa mora".
+
 ```
-portal-irmao-vl6/
+portal_irmaovl6/
 ├── apps/
 │   └── web/                                   # Next.js 15 (App Router)
 │       ├── public/
-│       │   └── manifest.webmanifest           # PWA
+│       │   └── manifest.webmanifest           # PWA (ver também app/manifest.ts, dinâmico por tenant)
 │       ├── src/
-│       │   ├── app/                           # Rotas (App Router) — apenas composição, sem lógica de negócio
-│       │   │   ├── (public)/                  # Site público
-│       │   │   │   ├── page.tsx                       # Home
-│       │   │   │   ├── historia/page.tsx
-│       │   │   │   ├── nossa-loja/page.tsx
-│       │   │   │   ├── historia-maconaria/page.tsx
-│       │   │   │   ├── diretoria/page.tsx
-│       │   │   │   ├── galeria/page.tsx
-│       │   │   │   ├── eventos/page.tsx
-│       │   │   │   ├── noticias/
-│       │   │   │   │   ├── page.tsx
-│       │   │   │   │   └── [slug]/page.tsx
-│       │   │   │   ├── contato/page.tsx
-│       │   │   │   ├── mapa/page.tsx
-│       │   │   │   └── layout.tsx
-│       │   │   ├── (auth)/                    # Login, recuperação de senha
-│       │   │   │   ├── login/page.tsx
-│       │   │   │   ├── recuperar-senha/page.tsx
-│       │   │   │   └── layout.tsx
-│       │   │   ├── (member)/                  # Área do Irmão — exige sessão
+│       │   ├── app/                           # Rotas (App Router) — composição + guards, sem regra de negócio
+│       │   │   ├── (auth)/                    # Públicas — únicas exceções de PROTECTED_PREFIXES (doc 07 §7.0)
+│       │   │   │   ├── login/page.tsx                 # Login unificado (todo domínio/subdomínio) + recuperação de senha
+│       │   │   │   └── reivindicar/page.tsx           # Autorreivindicação de acesso (doc 07 §7.2b)
+│       │   │   ├── (member)/                   # Área do Irmão — exige sessão
 │       │   │   │   ├── dashboard/page.tsx
-│       │   │   │   ├── perfil/page.tsx
-│       │   │   │   ├── biblioteca/
-│       │   │   │   │   ├── page.tsx
-│       │   │   │   │   └── [itemId]/page.tsx
+│       │   │   │   ├── irmaos/                          # Diretório + "Meu Espaço" (unifica os antigos /perfil e /central)
+│       │   │   │   │   ├── page.tsx                            # Diretório (busca/filtros)
+│       │   │   │   │   ├── meu-espaco/page.tsx                  # Autoatendimento (abas: Meu Cadastro / Central VL6)
+│       │   │   │   │   ├── [memberId]/page.tsx                  # Perfil público de outro Irmão
+│       │   │   │   │   └── layout.tsx
+│       │   │   │   ├── biblioteca/page.tsx
 │       │   │   │   ├── arquivos/page.tsx
 │       │   │   │   ├── agenda/page.tsx
 │       │   │   │   ├── eventos/[eventId]/page.tsx
 │       │   │   │   ├── avisos/page.tsx
-│       │   │   │   ├── noticias/[slug]/page.tsx
-│       │   │   │   ├── galeria/[albumId]/page.tsx
-│       │   │   │   ├── diretoria/page.tsx
-│       │   │   │   ├── pesquisa-irmaos/page.tsx
-│       │   │   │   ├── comissoes/page.tsx
+│       │   │   │   ├── noticias/
+│       │   │   │   │   ├── page.tsx
+│       │   │   │   │   └── [slug]/page.tsx
+│       │   │   │   ├── galeria/
+│       │   │   │   │   ├── page.tsx
+│       │   │   │   │   └── [albumId]/page.tsx
 │       │   │   │   ├── links-uteis/page.tsx
 │       │   │   │   ├── downloads/page.tsx
-│       │   │   │   ├── configuracoes/page.tsx
 │       │   │   │   └── layout.tsx              # Sidebar + Header da área logada
-│       │   │   ├── (admin)/                    # Painel Administrativo — exige RBAC admin
-│       │   │   │   ├── dashboard/page.tsx
-│       │   │   │   ├── loja/page.tsx                    # Gestão da Loja / branding
-│       │   │   │   ├── irmaos/
+│       │   │   ├── admin/                       # Painel Administrativo — exige RBAC admin; 4 áreas com abas (TabNav, doc 05)
+│       │   │   │   ├── page.tsx                          # Visão geral (números reais das 4 áreas)
+│       │   │   │   ├── pessoas/                          # Pessoas & Loja
+│       │   │   │   │   ├── irmaos/
+│       │   │   │   │   │   ├── page.tsx
+│       │   │   │   │   │   ├── novo/page.tsx
+│       │   │   │   │   │   ├── importar/page.tsx                 # Wizard de importação .xlsx/.pdf (doc 06 §6.1)
+│       │   │   │   │   │   └── [memberId]/page.tsx
+│       │   │   │   │   ├── usuarios/page.tsx
+│       │   │   │   │   ├── permissoes/page.tsx
+│       │   │   │   │   ├── gestoes/
+│       │   │   │   │   │   ├── page.tsx
+│       │   │   │   │   │   ├── nova/page.tsx
+│       │   │   │   │   │   └── [termId]/page.tsx
+│       │   │   │   │   ├── loja/page.tsx                          # Gestão da Loja / branding
+│       │   │   │   │   ├── central/page.tsx                        # Moderação do módulo Central (doc 01 §1.5)
+│       │   │   │   │   └── layout.tsx
+│       │   │   │   ├── conteudo/                          # Notícias, Avisos, Agenda
 │       │   │   │   │   ├── page.tsx
-│       │   │   │   │   ├── novo/page.tsx
-│       │   │   │   │   └── [memberId]/page.tsx
-│       │   │   │   ├── gestoes/
+│       │   │   │   │   ├── noticias/{page.tsx, nova/page.tsx, [newsId]/page.tsx}
+│       │   │   │   │   ├── avisos/{page.tsx, novo/page.tsx}
+│       │   │   │   │   ├── agenda/{page.tsx, novo/page.tsx, [eventId]/page.tsx}
+│       │   │   │   │   └── layout.tsx
+│       │   │   │   ├── acervo/                            # Arquivos, Biblioteca, Galeria
 │       │   │   │   │   ├── page.tsx
-│       │   │   │   │   └── [termId]/page.tsx
-│       │   │   │   ├── diretoria/page.tsx
-│       │   │   │   ├── comissoes/page.tsx
-│       │   │   │   ├── agenda/page.tsx
-│       │   │   │   ├── eventos/page.tsx
-│       │   │   │   ├── arquivos/page.tsx
-│       │   │   │   ├── biblioteca/page.tsx
-│       │   │   │   ├── galeria/page.tsx
-│       │   │   │   ├── avisos/page.tsx
-│       │   │   │   ├── noticias/page.tsx
-│       │   │   │   ├── usuarios/page.tsx
-│       │   │   │   ├── permissoes/page.tsx
-│       │   │   │   ├── logs/page.tsx
-│       │   │   │   ├── auditoria/page.tsx
-│       │   │   │   ├── configuracoes/page.tsx
+│       │   │   │   │   ├── arquivos/{page.tsx, novo/page.tsx}
+│       │   │   │   │   ├── biblioteca/{page.tsx, novo/page.tsx}
+│       │   │   │   │   ├── galeria/{page.tsx, novo/page.tsx, [albumId]/page.tsx}
+│       │   │   │   │   └── layout.tsx
+│       │   │   │   ├── configuracoes/                     # Geral, Integrações
+│       │   │   │   │   ├── geral/page.tsx
+│       │   │   │   │   ├── integracoes/page.tsx           # Emissão de API Keys (doc 07 §7.9)
+│       │   │   │   │   └── layout.tsx
 │       │   │   │   └── layout.tsx
-│       │   │   ├── api/                        # Route Handlers = API REST
+│       │   │   ├── plataforma/                   # Administrador Geral (cross-tenant, doc 01 §1.6/doc 07 §7.2)
+│       │   │   │   ├── page.tsx
+│       │   │   │   ├── lojas/nova/page.tsx               # Onboarding de novo tenant
+│       │   │   │   └── layout.tsx
+│       │   │   ├── api/                          # Route Handlers
 │       │   │   │   ├── v1/
-│       │   │   │   │   ├── auth/
-│       │   │   │   │   │   ├── login/route.ts
-│       │   │   │   │   │   ├── refresh/route.ts
-│       │   │   │   │   │   └── logout/route.ts
-│       │   │   │   │   ├── members/route.ts
-│       │   │   │   │   ├── members/[id]/route.ts
-│       │   │   │   │   ├── files/route.ts
-│       │   │   │   │   ├── events/route.ts
-│       │   │   │   │   ├── news/route.ts
-│       │   │   │   │   ├── announcements/route.ts
-│       │   │   │   │   └── openapi.json/route.ts        # Documento OpenAPI gerado
-│       │   │   │   └── webhooks/
-│       │   │   │       └── storage/route.ts              # callbacks de processamento assíncrono
-│       │   │   ├── layout.tsx                   # Layout raiz: carrega TenantBranding, ThemeProvider
+│       │   │   │   │   ├── auth/{login,logout}/route.ts
+│       │   │   │   │   ├── members/route.ts                     # autenticado por API Key (doc 07 §7.9)
+│       │   │   │   │   ├── admin/members/export/route.ts        # CSV/XLSX (base da importação, doc 06 §6.1)
+│       │   │   │   │   ├── docs/route.ts + docs/assets/[file]/route.ts   # Swagger UI
+│       │   │   │   │   ├── openapi.json/route.ts
+│       │   │   │   │   └── web-vitals/route.ts
+│       │   │   │   ├── agenda/[eventId]/ics/route.ts             # Exportação de evento (.ics)
+│       │   │   │   ├── cron/{birthday-reminder,daily-backup}/route.ts   # Vercel Cron, protegidas por CRON_SECRET
+│       │   │   │   ├── files/[fileId]/route.ts                   # Proxy autenticado de binário (Vercel Blob)
+│       │   │   │   └── library-items/[libraryItemId]/route.ts
+│       │   │   ├── layout.tsx                   # Layout raiz: TenantBranding, ThemeProvider, providers.tsx
+│       │   │   ├── page.tsx                      # "/" — decide destino por sessão (resolvePostLoginDestination)
 │       │   │   ├── manifest.ts                   # PWA manifest dinâmico por tenant
-│       │   │   └── globals.css
+│       │   │   ├── offline/page.tsx               # Fallback do Service Worker — pública, sem rede/sessão
+│       │   │   ├── global-error.tsx / not-found.tsx
+│       │   │   └── providers.tsx
 │       │   ├── modules/                          # Camada de apresentação por módulo (DDD espelhado)
-│       │   │   ├── tenancy/
-│       │   │   │   ├── components/
-│       │   │   │   ├── hooks/                      # useTenantBranding, useTenantSettings (TanStack Query)
-│       │   │   │   └── actions/                    # Server Actions do módulo
-│       │   │   ├── identity-access/
-│       │   │   │   ├── components/                 # LoginForm, MfaPrompt
-│       │   │   │   ├── hooks/                       # useSession, usePermissions
-│       │   │   │   └── actions/
-│       │   │   ├── membership/
-│       │   │   │   ├── components/                 # MemberForm, MemberCard, MemberSearchFilters
-│       │   │   │   ├── hooks/                       # useMembers, useMember
-│       │   │   │   └── actions/
-│       │   │   ├── governance/
-│       │   │   ├── library/
-│       │   │   ├── document-management/
-│       │   │   ├── agenda/
-│       │   │   ├── content/                          # news + announcements
-│       │   │   ├── gallery/
-│       │   │   ├── audit/
-│       │   │   └── notification/
-│       │   ├── components/                            # Componentes GENÉRICOS de UI (não específicos de módulo)
-│       │   │   ├── ui/                                 # Primitivos Shadcn (button, input, dialog, table…)
-│       │   │   ├── layout/                             # Sidebar, Header, Footer, Breadcrumb
-│       │   │   ├── data-display/                       # DataTable, Card, Timeline, Charts
-│       │   │   ├── feedback/                            # Modal, Drawer, NotificationCenter, Toast
-│       │   │   └── forms/                               # FormField wrappers com RHF+Zod
+│       │   │   ├── tenancy/{actions,components}
+│       │   │   ├── identity-access/{actions,components}         # LoginForm, ClaimAccountForm...
+│       │   │   ├── membership/{actions,components,lib}          # MemberForm, ImportMembersForm (wizard)...
+│       │   │   ├── central/{actions,components,lib}              # Perfil unificado do Irmão (Diretório/Meu Espaço)
+│       │   │   ├── dashboard/{components,lib}
+│       │   │   ├── governance/{actions,components}
+│       │   │   ├── library/{actions,components}
+│       │   │   ├── document-management/{actions,components}
+│       │   │   ├── agenda/{actions,components}
+│       │   │   ├── content/{actions,components}                  # news + announcements
+│       │   │   ├── gallery/{actions,components}
+│       │   │   └── notification/{actions,components}
+│       │   ├── components/                            # Componentes GENÉRICOS de app (não específicos de módulo)
+│       │   │   ├── layout/                             # AppShell, TabNav/AreaTabNav, SidebarBrand, TopbarUser, nav-items
+│       │   │   ├── forms/                               # FormField, FormSectionCard
+│       │   │   ├── admin/                               # PublishToggleButton, SoftDeleteButton
+│       │   │   ├── member/                              # AcervoPageHeader, RecordingLink
+│       │   │   └── membership/                          # MemberAvatar, MemberDegreeBadge
 │       │   ├── lib/
-│       │   │   ├── firebase/                             # client.ts, admin.ts (server-only)
-│       │   │   ├── query-client.ts                        # TanStack Query provider config
-│       │   │   ├── auth/                                   # session helpers, middleware guards
-│       │   │   └── api/                                    # fetch client tipado para a API REST
+│       │   │   ├── firebase/client.ts                    # Admin SDK fica em packages/infra, não aqui
+│       │   │   ├── auth/                                   # require-session, require-permission, build-auth-context...
+│       │   │   ├── tenant/get-current-tenant.ts
+│       │   │   ├── api/                                    # rate-limiter, get-client-ip, resolve-api-key-context...
+│       │   │   ├── i18n/dictionaries/                       # doc 01 §1.7 — mecanismo real, cobertura parcial da UI
+│       │   │   ├── membership/, observability/, openapi/, pwa/
 │       │   ├── middleware.ts                                # resolução de tenant por domínio + guarda de rotas
-│       │   └── styles/
-│       │       └── tokens.css                                # CSS variables geradas do design system
+│       │   └── styles/ (globals.css — tokens vêm de packages/ui, ver doc 09)
 │       ├── next.config.ts
-│       ├── tailwind.config.ts
+│       ├── vercel.json                                       # crons de /api/cron/*
 │       └── package.json
 │
 ├── packages/
 │   ├── domain/                                    # Núcleo — Clean Architecture / DDD (zero deps de framework)
 │   │   └── src/
-│   │       ├── shared/
-│   │       │   ├── base-entity.ts                    # BaseEntity (id, tenantId, createdAt...)
-│   │       │   ├── result.ts                          # Result<T, E> para tratamento de erro sem exceptions
-│   │       │   ├── pagination.ts
-│   │       │   └── errors/
+│   │       ├── shared/                                # BaseEntity, Result, AuthContext, address, pagination, errors/
+│   │       ├── test/fakes.ts                           # Repositórios in-memory usados pelos testes de use-case
 │   │       └── modules/
-│   │           ├── tenancy/
-│   │           │   ├── entities/                        # Tenant, TenantBranding, TenantSettings
-│   │           │   ├── repositories/                     # ITenantRepository (interface)
-│   │           │   └── use-cases/                        # CreateTenant, UpdateTenantBranding...
-│   │           ├── identity-access/
-│   │           │   ├── entities/                          # User, Role, Permission
-│   │           │   ├── repositories/                       # IUserRepository, IRoleRepository
-│   │           │   └── use-cases/                          # AuthenticateUser, AssignRole, CheckPermission
-│   │           ├── membership/
-│   │           │   ├── entities/                            # Member, MemberPositionHistory
-│   │           │   ├── repositories/                         # IMemberRepository
-│   │           │   └── use-cases/                            # RegisterMember, UpdateMemberSituation, SearchMembers
-│   │           ├── governance/                                # BoardTerm, Committee + use-cases
-│   │           ├── library/                                    # LibraryItem, LibraryCategory + use-cases
-│   │           ├── document-management/                         # FileAsset, FileCategory + use-cases
-│   │           ├── agenda/                                       # Event, EventAttendance + use-cases
-│   │           ├── content/                                       # News, Announcement + use-cases
-│   │           ├── gallery/                                       # GalleryAlbum, GalleryMedia + use-cases
-│   │           ├── audit/                                          # AuditLog + RecordAuditEntry use-case
-│   │           └── notification/                                   # Notification + Dispatch use-cases
+│   │           ├── tenancy/{entities,repositories,services,use-cases}
+│   │           ├── identity-access/{entities,repositories,services,use-cases}   # inclui ClaimMemberAccountUseCase
+│   │           ├── membership/{entities,repositories,use-cases}                 # Member, MemberPositionHistory
+│   │           ├── central/{entities,dtos,repositories,use-cases,lib}           # perfil unificado do Irmão
+│   │           ├── governance/{entities,repositories,use-cases}
+│   │           ├── library/{entities,repositories,use-cases}
+│   │           ├── document-management/{entities,repositories,use-cases}
+│   │           ├── agenda/{entities,repositories,use-cases}
+│   │           ├── content/{entities,repositories,use-cases}                    # news + announcements
+│   │           ├── gallery/{entities,repositories,use-cases}
+│   │           ├── audit/{entities,repositories,use-cases}
+│   │           └── notification/{entities,repositories,services,use-cases}
 │   │
-│   ├── infra/                                       # Implementações concretas dos repositórios (Firestore/Storage)
+│   ├── infra/                                       # Implementações concretas dos repositórios (Firestore/Vercel Blob)
 │   │   └── src/
-│   │       ├── firestore/
-│   │       │   ├── client.ts / admin.ts
-│   │       │   ├── converters/                          # FirestoreDataConverter por entidade
-│   │       │   └── repositories/                          # TenantRepository, MemberRepository... (implementam packages/domain)
-│   │       ├── vercel/
-│   │       │   └── blob-storage-adapter.ts               # Vercel Blob — ver doc 01, decisão de trocar o Firebase Storage
-│   │       └── mappers/
+│   │       ├── firebase/                                # admin.ts (Admin SDK)
+│   │       ├── firestore/{converters,repositories}       # implementam as interfaces de packages/domain
+│   │       ├── vercel/                                   # blob-storage-adapter.ts
+│   │       ├── adapters/, audit/, dns/, security/
+│   │       └── container.ts                               # DI: monta use-cases + repositórios (createServerContainer)
 │   │
-│   ├── ui/                                          # Design System
+│   ├── ui/                                          # Design System — fonte real dos primitivos (não Shadcn "copiado")
 │   │   └── src/
-│   │       ├── tokens/                                  # colors.ts, spacing.ts, radius.ts, typography.ts
-│   │       ├── components/                               # versão "fonte" dos componentes Shadcn customizados
-│   │       └── icons/                                      # wrapper de Lucide com tamanhos padronizados
+│   │       ├── tokens/                                  # colors.ts, radius.ts, typography.ts, apply-branding.ts
+│   │       ├── components/                               # Button, Input, Textarea, Select, Label, Card, Badge,
+│   │       │                                              # Avatar, Dialog, Tabs, Switch, DataTable, EmptyState
+│   │       └── icons/ (reexport nomeado de Lucide — evita colisão de nomes)
 │   │
-│   ├── shared/                                     # Tipos e utilitários puros compartilhados entre apps/functions
+│   ├── shared/                                     # Tipos e utilitários puros compartilhados
 │   │   └── src/
-│   │       ├── enums/                                  # Role, Permission, MemberSituation, Degree...
-│   │       ├── schemas/                                 # Zod schemas compartilhados (client+server+functions)
-│   │       └── utils/
+│   │       ├── enums/                                  # RoleKey, PermissionKey, MemberSituation, MemberDegree...
+│   │       ├── schemas/                                 # Zod schemas compartilhados (client+server)
+│   │       ├── calendar/, central/, observability/
 │   │
 │   └── config/                                     # Presets compartilhados
-│       ├── eslint/
+│       ├── eslint/                                     # inclui eslint-plugin-boundaries (§2.1)
 │       ├── tsconfig/
 │       └── tailwind/
 │
+├── scripts/                                       # seed-tenant, seed do Administrador Geral (operacional, fora do app)
 ├── docs/
 │   ├── architecture/                              # este diretório
-│   └── openapi/
-│       └── openapi.yaml
+│   └── openapi/openapi.yaml
 │
 ├── firestore.rules
 ├── firestore.indexes.json
-├── firebase.json
+├── firebase.json                                  # só Firestore (Rules/Indexes) + emuladores — sem Hosting/Storage/Functions
 ├── turbo.json
 ├── pnpm-workspace.yaml
 ├── package.json
-├── .eslintrc.cjs → extends packages/config/eslint
+├── eslint.config.js → extends packages/config/eslint
 ├── .prettierrc
 ├── .husky/
 │   ├── pre-commit                                  # lint-staged
 │   └── pre-push                                    # test
 └── README.md
 ```
+
+Não existe `functions/` (Firebase Cloud Functions) — o projeto roda no
+plano Spark; tarefas antes pensadas como Functions viraram rotas em
+`api/cron/*` acionadas por Vercel Cron (doc 01 §1.3). Não existe mais
+grupo de rotas `(public)` nem site institucional dentro do Portal — ver
+doc 07 §7.0.
 
 ## 2.1 Regras de dependência entre camadas (impostas por lint, não só convenção)
 
