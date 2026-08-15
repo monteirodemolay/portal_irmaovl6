@@ -8,6 +8,16 @@ import * as Sentry from '@sentry/nextjs';
  * um projeto Sentry real (mesmo raciocínio da configuração do Firebase).
  */
 export async function register(): Promise<void> {
+  // Só faz sentido no runtime Node.js (não Edge) — é onde `pdf-parse`
+  // roda. Precisa acontecer aqui, na inicialização do servidor, e não
+  // dentro da Server Action que usa `pdf-parse`: o Next pré-carrega o
+  // módulo da rota de importação assim que ela é navegada, antes de
+  // qualquer upload — ver `ensureNodePdfDomPolyfills`.
+  if (process.env.NEXT_RUNTIME === 'nodejs') {
+    const { ensureNodePdfDomPolyfills } = await import('@/lib/pdf/ensure-node-dom-polyfills');
+    ensureNodePdfDomPolyfills();
+  }
+
   const dsn = process.env.SENTRY_DSN;
   if (!dsn) return;
 

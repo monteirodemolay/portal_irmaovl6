@@ -27,6 +27,7 @@ import { generateTemporaryPassword } from '@/lib/auth/generate-temporary-passwor
 import { requireSession } from '@/lib/auth/require-session';
 import type { CurrentSession } from '@/lib/auth/get-current-session';
 import { getCurrentTenant } from '@/lib/tenant/get-current-tenant';
+import { ensureNodePdfDomPolyfills } from '@/lib/pdf/ensure-node-dom-polyfills';
 import { resolveProfissaoFromFormData } from '@/lib/membership/professions';
 import type { ProfileFieldActionState } from '@/modules/membership/components/profile-fields/action-state';
 
@@ -811,7 +812,10 @@ async function buildPdfPreviewRows(
     // `pdfjs-dist` que ele embute) em toda renderização da página de
     // importação, mesmo sem nenhum PDF enviado ainda. Isolar o carregamento
     // aqui, dentro do try/catch, faz qualquer falha do pacote virar o erro
-    // amigável abaixo em vez de derrubar a página inteira.
+    // amigável abaixo em vez de derrubar a página inteira. O polyfill de
+    // DOMMatrix/ImageData/Path2D já roda no startup (instrumentation.ts) —
+    // chamar de novo aqui é só defesa extra, é idempotente (`??=`).
+    ensureNodePdfDomPolyfills();
     const { PDFParse } = await import('pdf-parse');
     const parser = new PDFParse({ data: Buffer.from(await file.arrayBuffer()) });
     const parsed = await parser.getText();
