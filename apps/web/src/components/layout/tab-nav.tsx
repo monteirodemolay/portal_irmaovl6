@@ -34,7 +34,7 @@ export function TabNav({ items }: { items: TabNavItem[] }) {
   return (
     <nav
       aria-label="Sub-navegação"
-      className="border-border block w-full max-w-full overflow-x-auto whitespace-nowrap border-b"
+      className="border-border block w-full max-w-full overflow-x-auto whitespace-nowrap border-b print:hidden"
     >
       {items.map((item) => {
         const active = item.href === activeHref;

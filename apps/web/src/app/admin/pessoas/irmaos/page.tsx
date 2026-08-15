@@ -89,7 +89,7 @@ export default async function MembersPage({
   };
   const cursorHistory = parseCursorHistory(filters.h);
 
-  const exportQuery = new URLSearchParams(
+  const filtersQuery = new URLSearchParams(
     Object.entries(searchFilters).filter((entry): entry is [string, string] => Boolean(entry[1])),
   ).toString();
 
@@ -187,17 +187,18 @@ export default async function MembersPage({
           <p className="text-muted">{page.items.length} Irmãos nesta página</p>
         </div>
         <div className="flex gap-2">
+          {/* <a>, não <Link> — a rota interceptada @drawer/(.)[memberId] captura
+              qualquer navegação client-side pra um segmento do mesmo nível
+              (mesmo sendo uma pasta estática como "relatorio"/"importar"/"novo"),
+              então um <Link> aqui abriria o drawer de edição em vez da página. */}
           <Button asChild variant="outline">
-            <a href={`/api/v1/admin/members/export?${exportQuery}&format=xlsx`}>Exportar Excel</a>
+            <a href={`/admin/pessoas/irmaos/relatorio?${filtersQuery}`}>Gerar relatório</a>
           </Button>
           <Button asChild variant="outline">
-            <a href={`/api/v1/admin/members/export?${exportQuery}&format=pdf`}>Exportar PDF</a>
-          </Button>
-          <Button asChild variant="outline">
-            <Link href="/admin/pessoas/irmaos/importar">Importar planilha</Link>
+            <a href={`/admin/pessoas/irmaos/importar`}>Importar planilha</a>
           </Button>
           <Button asChild>
-            <Link href="/admin/pessoas/irmaos/novo">Novo Irmão</Link>
+            <a href={`/admin/pessoas/irmaos/novo`}>Novo Irmão</a>
           </Button>
         </div>
       </div>
@@ -250,7 +251,7 @@ export default async function MembersPage({
             description="Cadastre o primeiro Irmão da Loja para começar."
             action={
               <Button asChild size="sm">
-                <Link href="/admin/pessoas/irmaos/novo">Novo Irmão</Link>
+                <a href={`/admin/pessoas/irmaos/novo`}>Novo Irmão</a>
               </Button>
             }
           />

@@ -94,15 +94,15 @@ export function AppShell({
   }
 
   return (
-    <div className="grid min-h-screen lg:grid-cols-[260px_1fr]">
-      <aside className="from-primary to-primary-dark sticky top-0 hidden h-screen flex-col overflow-hidden border-r border-white/10 bg-gradient-to-b lg:flex">
+    <div className="grid min-h-screen lg:grid-cols-[260px_1fr] print:block">
+      <aside className="from-primary to-primary-dark sticky top-0 hidden h-screen flex-col overflow-hidden border-r border-white/10 bg-gradient-to-b lg:flex print:hidden">
         <div className="border-b border-white/10 px-5 py-5">{brand}</div>
         {renderNav()}
         {sidebarFooter && <div className="border-t border-white/10 px-5 py-4">{sidebarFooter}</div>}
       </aside>
 
       <div className="min-w-0">
-        <header className="border-border bg-surface sticky top-0 z-20 flex h-[72px] items-center justify-between gap-4 border-b px-5 lg:px-7">
+        <header className="border-border bg-surface sticky top-0 z-20 flex h-[72px] items-center justify-between gap-4 border-b px-5 lg:px-7 print:hidden">
           <div className="flex items-center gap-3">
             <button
               type="button"
@@ -117,7 +117,9 @@ export function AppShell({
           <div className="flex items-center gap-3">{topbarRight}</div>
         </header>
 
-        <main className="mx-auto max-w-[1220px] px-5 py-6 lg:px-7 lg:py-8">{children}</main>
+        <main className="mx-auto max-w-[1220px] px-5 py-6 lg:px-7 lg:py-8 print:max-w-none print:p-0">
+          {children}
+        </main>
       </div>
 
       {mobileOpen && (

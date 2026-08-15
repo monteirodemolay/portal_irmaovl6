@@ -11,33 +11,33 @@ decoração; páginas públicas/institucionais podem respirar mais.
 ## 9.2 Tokens de cor (base — Loja Verdadeira Luz nº 06)
 
 Todo token abaixo é **dado configurável por tenant** (`TenantBranding`),
-nunca uma constante de código. Os valores a seguir são o *seed* padrão.
+nunca uma constante de código. Os valores a seguir são o _seed_ padrão.
 
 ```css
 :root {
-  --color-primary: #061C36;      /* Azul Principal */
+  --color-primary: #061c36; /* Azul Principal */
   --color-primary-dark: #041223; /* Azul Escuro */
-  --color-accent: #D4AF37;       /* Dourado — uso em destaques, não em fundo de tela */
-  --color-white: #FFFFFF;
-  --color-gray-50: #F5F7FA;      /* Cinza Claro — fundo de página */
-  --color-gray-300: #D9D9D9;     /* Cinza Médio — bordas, divisores */
+  --color-accent: #d4af37; /* Dourado — uso em destaques, não em fundo de tela */
+  --color-white: #ffffff;
+  --color-gray-50: #f5f7fa; /* Cinza Claro — fundo de página */
+  --color-gray-300: #d9d9d9; /* Cinza Médio — bordas, divisores */
 
-  --radius: 16px;                 /* raio de borda padrão do sistema */
+  --radius: 16px; /* raio de borda padrão do sistema */
   --shadow-sm: 0 1px 2px rgba(4, 18, 35, 0.06);
   --shadow-md: 0 4px 12px rgba(4, 18, 35, 0.08);
 }
 
 [data-theme='dark'] {
   --color-bg: var(--color-primary-dark);
-  --color-surface: #0B2544;
-  --color-text: #F5F7FA;
-  --color-border: #1C3A5E;
+  --color-surface: #0b2544;
+  --color-text: #f5f7fa;
+  --color-border: #1c3a5e;
   /* --color-accent permanece o mesmo — dourado funciona em ambos os temas */
 }
 
 [data-theme='light'] {
   --color-bg: var(--color-gray-50);
-  --color-surface: #FFFFFF;
+  --color-surface: #ffffff;
   --color-text: var(--color-primary-dark);
   --color-border: var(--color-gray-300);
 }
@@ -97,3 +97,45 @@ destaques, `stroke-width: 1.75` padronizado via wrapper `packages/ui/src/icons`.
 Transições curtas (150–200ms, easing `ease-out`) em hover/abertura de
 modais/drawers. Sem animações decorativas que atrasem a percepção de
 performance.
+
+## 9.10 Padrão de Relatórios
+
+Todo relatório do site segue o mesmo fluxo em 2 telas, implementado pela
+primeira vez no Relatório de Irmãos
+(`/admin/pessoas/irmaos/relatorio`) — referência pra qualquer relatório
+futuro:
+
+1. **Configurar** — os mesmos filtros já usados na listagem de origem +
+   checkboxes pra escolher quais colunas entram no relatório (com um
+   conjunto padrão pré-marcado).
+2. **Prévia** — o documento como vai sair (cabeçalho com nome da Loja,
+   filtros aplicados, data de geração e total de registros + tabela),
+   com uma barra de ações: **Imprimir** (impressão nativa do navegador,
+   `window.print()`), e baixar em **PDF, Word, Excel ou CSV**.
+
+Implementação técnica (reaproveitável 1:1 por qualquer relatório novo):
+
+- **Uma rota só**, sem sub-rotas por etapa — mesmo padrão de wizard já
+  usado pela importação em massa de Irmãos
+  (`ImportMembersForm`/`import-members-form.tsx`): a fase é derivada de
+  qual `useActionState` já tem resultado, e "voltar" é um reset de estado
+  local via `key={attempt}` no componente pai, não navegação.
+- A tela de configuração é só um `<form action={serverAction}>`
+  (uncontrolled) com os filtros + checkboxes de coluna; a Server Action
+  correspondente só lê (nunca grava), busca via o mesmo Use Case de busca
+  já usado pela listagem, e devolve os dados já formatados pra prévia —
+  incluindo a querystring pronta (filtros + colunas) que os 4 links de
+  download reaproveitam sem recalcular nada no client.
+- As colunas do relatório (chave, rótulo, `getValue(entidade)`) vivem num
+  único arquivo compartilhado entre o checkbox picker (client) e a
+  geração dos 4 formatos (server) — ver
+  `apps/web/src/modules/membership/reports/member-report-columns.ts`.
+- Geração de arquivo: Excel e CSV via `exceljs` (mesma worksheet, dois
+  writers); PDF via `@react-pdf/renderer` (biblioteca JS pura — sem
+  Puppeteer/Chromium, mesma cautela do incidente `pdfjs-dist`/Vercel já
+  resolvido neste projeto); Word via a biblioteca `docx`. Nenhuma delas
+  depende de binário nativo — importante em ambiente serverless.
+- A impressão da prévia usa CSS puro (`print:` do Tailwind, nativo, sem
+  plugin) — a sidebar e a topbar do admin já têm `print:hidden` no
+  `AppShell` (`apps/web/src/components/layout/app-shell.tsx`), então
+  qualquer relatório futuro herda uma impressão limpa de graça.

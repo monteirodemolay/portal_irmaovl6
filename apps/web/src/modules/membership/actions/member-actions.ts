@@ -12,6 +12,7 @@ import {
   MEMBER_DEGREES,
   MEMBER_SITUATIONS,
   normalizeConjugeFields,
+  type BoardPositionKey,
   type MemberFormValues,
   type MemberSituation,
 } from '@vl6/shared';
@@ -33,6 +34,15 @@ import {
 } from '@/lib/pdf/ensure-node-dom-polyfills';
 import { resolveProfissaoFromFormData } from '@/lib/membership/professions';
 import type { ProfileFieldActionState } from '@/modules/membership/components/profile-fields/action-state';
+import {
+  MEMBER_REPORT_MAX_ROWS,
+  resolveMemberReportColumns,
+} from '@/modules/membership/reports/member-report-columns';
+import {
+  buildMemberReportExportQuery,
+  describeMemberReportFilters,
+  type MemberReportFilters,
+} from '@/modules/membership/reports/member-report-query';
 
 // Chamada síncrona no topo do módulo (não dentro de uma função) — garante
 // que os stubs existam já na primeira vez que este arquivo é avaliado,
@@ -948,4 +958,94 @@ export async function confirmImportMembersAction(
 
   revalidatePath('/admin/pessoas/irmaos');
   return { error: null, resultados };
+}
+
+export interface MemberReportPreviewRow {
+  id: string;
+  values: string[];
+}
+
+export interface MemberReportPreview {
+  tenantNome: string;
+  columns: { key: string; label: string }[];
+  rows: MemberReportPreviewRow[];
+  totalShown: number;
+  hasMore: boolean;
+  filtrosResumo: string;
+  geradoEm: string;
+  /** Querystring pronta (filtros + colunas) — os 4 links de download da prévia só concatenam `&format=X`. */
+  exportQuery: string;
+}
+
+export interface MemberReportPreviewState {
+  report: MemberReportPreview | null;
+  error: string | null;
+}
+
+/**
+ * Monta a prévia do relatório — só lê, nunca grava nada. Mesma permissão
+ * já checada por `SearchMembersUseCase` (`member:read`), mas checa
+ * explicitamente aqui também (mesmo padrão de `parseMembersFileAction`)
+ * pra devolver uma mensagem amigável em vez de deixar o Use Case lançar.
+ */
+export async function buildMemberReportPreviewAction(
+  _prevState: MemberReportPreviewState,
+  formData: FormData,
+): Promise<MemberReportPreviewState> {
+  const session = await requireSession();
+  try {
+    requirePermission(session.authContext, 'member:read');
+  } catch {
+    return { report: null, error: 'Você não tem permissão para gerar relatórios de Irmãos.' };
+  }
+  const current = await getCurrentTenant();
+  if (!current) return { report: null, error: 'Tenant não encontrado.' };
+
+  const filters: MemberReportFilters = {
+    nome: (formData.get('nome') as string) || undefined,
+    grau: (formData.get('grau') as string) || undefined,
+    situacao: (formData.get('situacao') as string) || undefined,
+    cidade: (formData.get('cidade') as string) || undefined,
+    cim: (formData.get('cim') as string) || undefined,
+    cargo: (formData.get('cargo') as string) || undefined,
+  };
+
+  const selectedKeys = formData.getAll('colunas').map(String);
+  const columns = resolveMemberReportColumns(selectedKeys);
+
+  const container = createServerContainer();
+  const page = await container.useCases.searchMembers.execute(
+    session.authContext,
+    {
+      nome: filters.nome,
+      grau: filters.grau,
+      situacao: filters.situacao,
+      cidade: filters.cidade,
+      cim: filters.cim,
+      cargo: filters.cargo as BoardPositionKey | undefined,
+    },
+    { limit: MEMBER_REPORT_MAX_ROWS },
+  );
+
+  return {
+    error: null,
+    report: {
+      tenantNome: current.tenant.nome,
+      columns: columns.map((c) => ({ key: c.key, label: c.label })),
+      rows: page.items.map((member) => ({
+        id: member.id,
+        values: columns.map((c) => c.getValue(member)),
+      })),
+      totalShown: page.items.length,
+      hasMore: page.hasMore,
+      filtrosResumo: describeMemberReportFilters(filters),
+      geradoEm: new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' }).format(
+        new Date(),
+      ),
+      exportQuery: buildMemberReportExportQuery(
+        filters,
+        columns.map((c) => c.key),
+      ),
+    },
+  };
 }

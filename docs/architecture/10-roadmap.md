@@ -31,7 +31,10 @@ Objetivo: a Loja consegue operar o essencial no dia a dia.
   Gestões/Diretoria, Usuários, Permissões (RBAC visual), Avisos, Notícias.
 - **Auditoria** (registro automático via Cloud Function) e **Soft Delete**
   em todas as entidades.
-- Exportação básica (CSV/JSON) de listagens administrativas.
+- Relatório de Irmãos (`/admin/pessoas/irmaos/relatorio`): configurar filtros
+  e colunas → prévia → exportar em PDF, Word, Excel ou CSV, ou imprimir —
+  padrão de referência para os relatórios do site (doc 09 §9.10). Demais
+  listagens administrativas seguem com exportação básica.
 
 ## v1.1 — Conteúdo e organização documental
 
