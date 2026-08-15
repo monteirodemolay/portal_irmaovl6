@@ -21,3 +21,28 @@ export function ensureNodePdfDomPolyfills(): void {
   g.ImageData ??= class ImageDataStub {};
   g.Path2D ??= class Path2DStub {};
 }
+
+/**
+ * Mesmo problema de arquivo ausente no runtime da Vercel, mas num arquivo
+ * diferente: `pdfjs-dist`, em Node, sempre roda um "fake worker" (mesma
+ * thread, sem worker_thread de verdade) — mas mesmo esse fake worker
+ * carrega o código de `pdf.worker.mjs` via `import()` **dinâmico com
+ * caminho calculado em runtime** (não um literal de string). Esse padrão
+ * de import é exatamente o que o rastreador de arquivos da Vercel
+ * (`@vercel/nft`) não consegue detectar de forma estática, então o arquivo
+ * não vai para o bundle da função serverless — confirmado em produção:
+ * "Setting up fake worker failed: Cannot find module '.../pdf.worker.mjs'".
+ *
+ * A correção: `pdfjs-dist` primeiro confere se `globalThis.pdfjsWorker` já
+ * existe antes de tentar esse import dinâmico — se existir, usa direto e
+ * pula o import problemático. Fazemos nós mesmos o import do worker, mas
+ * com um caminho **literal** (`pdfjs-dist/legacy/build/pdf.worker.mjs`),
+ * que o Next/Vercel conseguem rastrear e empacotar corretamente.
+ */
+export async function ensurePdfWorkerAvailable(): Promise<void> {
+  const g = globalThis as { pdfjsWorker?: { WorkerMessageHandler: unknown } };
+  if (g.pdfjsWorker) return;
+
+  const { WorkerMessageHandler } = await import('pdfjs-dist/legacy/build/pdf.worker.mjs');
+  g.pdfjsWorker = { WorkerMessageHandler };
+}

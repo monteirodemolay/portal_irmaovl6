@@ -27,7 +27,10 @@ import { generateTemporaryPassword } from '@/lib/auth/generate-temporary-passwor
 import { requireSession } from '@/lib/auth/require-session';
 import type { CurrentSession } from '@/lib/auth/get-current-session';
 import { getCurrentTenant } from '@/lib/tenant/get-current-tenant';
-import { ensureNodePdfDomPolyfills } from '@/lib/pdf/ensure-node-dom-polyfills';
+import {
+  ensureNodePdfDomPolyfills,
+  ensurePdfWorkerAvailable,
+} from '@/lib/pdf/ensure-node-dom-polyfills';
 import { resolveProfissaoFromFormData } from '@/lib/membership/professions';
 import type { ProfileFieldActionState } from '@/modules/membership/components/profile-fields/action-state';
 
@@ -825,6 +828,8 @@ async function buildPdfPreviewRows(
     // DOMMatrix/ImageData/Path2D já roda no startup (instrumentation.ts) —
     // chamar de novo aqui é só defesa extra, é idempotente (`??=`).
     ensureNodePdfDomPolyfills();
+    // Precisa vir ANTES de criar o PDFParse — ver ensurePdfWorkerAvailable.
+    await ensurePdfWorkerAvailable();
     const { PDFParse } = await import('pdf-parse');
     const parser = new PDFParse({ data: Buffer.from(await file.arrayBuffer()) });
     const parsed = await parser.getText();
