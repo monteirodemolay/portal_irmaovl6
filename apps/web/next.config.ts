@@ -5,6 +5,13 @@ const nextConfig: NextConfig = {
   // Os pacotes do monorepo são consumidos como TypeScript-fonte (não
   // pré-compilados) — ver docs/architecture/02-estrutura-diretorios.md.
   transpilePackages: ['@vl6/ui', '@vl6/domain', '@vl6/infra', '@vl6/shared'],
+  // `pdf-parse` carrega `pdfjs-dist` (build "legacy"), que mexe em globals
+  // assumindo Node "puro" ou browser real — o bundle webpack do runtime de
+  // Server Actions (`action-browser`) não é nem um nem outro, e quebra com
+  // "Object.defineProperty called on non-object" se esses pacotes forem
+  // empacotados por ele. Marcá-los externos faz o Next usar `require()` do
+  // Node direto em vez de empacotar.
+  serverExternalPackages: ['pdf-parse', 'pdfjs-dist'],
   experimental: {
     serverActions: {
       bodySizeLimit: '10mb',

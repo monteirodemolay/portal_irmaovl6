@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import * as Sentry from '@sentry/nextjs';
 import ExcelJS from 'exceljs';
+import { PDFParse } from 'pdf-parse';
 import {
   errorToLogContext,
   logger,
@@ -579,33 +580,74 @@ function cellText(row: ExcelJS.Row, column: number): string {
   return String(value).trim();
 }
 
-/**
- * Importa Irmãos em massa a partir do mesmo formato que
- * `/api/v1/admin/members/export` escreve — Nome, CIM, Grau, Situação,
- * E-mail, Cidade — usando a mesma biblioteca (`exceljs`), só na direção
- * contrária. Cada linha vira uma chamada a `RegisterMemberUseCase`
- * (docs/architecture/06 §6.1: mesma checagem de CIM único do cadastro
- * manual), sequencial — nunca em paralelo, pra `existsByCim` pegar até
- * duplicidade dentro da própria planilha. E-mail fica opcional: quando
- * ausente, o Irmão nasce sem acesso ao Portal e pode reivindicar o
- * próprio cadastro depois (`claimMemberAccountAction`). A coluna Cidade
- * não é importada — precisa do endereço completo (`addressSchema` exige
- * todos os campos), que a planilha não tem; fica pra ser preenchido
- * depois no cadastro do Irmão.
- */
-export async function importMembersAction(
-  _prevState: ImportMembersActionState,
-  formData: FormData,
-): Promise<ImportMembersActionState> {
-  const session = await requireSession();
-  const current = await getCurrentTenant();
-  if (!current) return { ...IMPORT_EMPTY_STATE, error: 'Tenant não encontrado.' };
+interface ImportCandidateRow {
+  linha: number;
+  nome: string;
+  cim: string | null;
+  grau: (typeof MEMBER_DEGREES)[number];
+  situacao: (typeof MEMBER_SITUATIONS)[number];
+  email: string | null;
+}
 
-  const file = formData.get('planilha');
-  if (!(file instanceof File) || file.size === 0) {
-    return { ...IMPORT_EMPTY_STATE, error: 'Selecione um arquivo .xlsx.' };
+type CurrentTenant = NonNullable<Awaited<ReturnType<typeof getCurrentTenant>>>;
+
+/** Valida uma linha candidata e chama `RegisterMemberUseCase` — compartilhado entre a importação por .xlsx e por .pdf. */
+async function registerImportRow(
+  container: ServerContainer,
+  session: CurrentSession,
+  current: CurrentTenant,
+  row: ImportCandidateRow,
+): Promise<ImportMembersRowResult> {
+  let input: MemberFormValues;
+  try {
+    input = normalizeConjugeFields(
+      memberSchema.parse({
+        nomeCompleto: row.nome,
+        fotoUrl: null,
+        email: row.email,
+        telefone: null,
+        whatsapp: null,
+        endereco: null,
+        dataNascimento: null,
+        dataIniciacao: null,
+        dataElevacao: null,
+        dataExaltacao: null,
+        cim: row.cim,
+        grau: row.grau,
+        situacao: row.situacao,
+        lojaId: current.tenant.id,
+        potencia: current.tenant.potencia,
+        profissao: null,
+        empresa: null,
+        estadoCivil: null,
+        conjugeNome: null,
+        conjugeDataNascimento: null,
+        biografia: null,
+        redesSociais: { instagram: null, facebook: null, linkedin: null },
+        observacoes: null,
+      }),
+    );
+  } catch {
+    return {
+      linha: row.linha,
+      nome: row.nome,
+      status: 'erro',
+      motivo: row.email ? `E-mail "${row.email}" inválido.` : 'Dados inválidos.',
+    };
   }
 
+  const result = await container.useCases.registerMember.execute(session.authContext, input);
+  return result.ok
+    ? { linha: row.linha, nome: row.nome, status: 'criado' }
+    : { linha: row.linha, nome: row.nome, status: 'erro', motivo: result.error.message };
+}
+
+async function importFromXlsx(
+  container: ServerContainer,
+  session: CurrentSession,
+  current: CurrentTenant,
+  file: File,
+): Promise<ImportMembersActionState> {
   const workbook = new ExcelJS.Workbook();
   try {
     await workbook.xlsx.load(await file.arrayBuffer());
@@ -620,7 +662,6 @@ export async function importMembersAction(
     return { ...IMPORT_EMPTY_STATE, error: 'A planilha está vazia.' };
   }
 
-  const container = createServerContainer();
   const resultados: ImportMembersRowResult[] = [];
 
   for (let rowNumber = 2; rowNumber <= sheet.rowCount; rowNumber++) {
@@ -656,54 +697,134 @@ export async function importMembersAction(
       continue;
     }
 
-    let input: MemberFormValues;
-    try {
-      input = normalizeConjugeFields(
-        memberSchema.parse({
-          nomeCompleto: nome,
-          fotoUrl: null,
-          email: emailRaw || null,
-          telefone: null,
-          whatsapp: null,
-          endereco: null,
-          dataNascimento: null,
-          dataIniciacao: null,
-          dataElevacao: null,
-          dataExaltacao: null,
-          cim: cimRaw || null,
-          grau,
-          situacao,
-          lojaId: current.tenant.id,
-          potencia: current.tenant.potencia,
-          profissao: null,
-          empresa: null,
-          estadoCivil: null,
-          conjugeNome: null,
-          conjugeDataNascimento: null,
-          biografia: null,
-          redesSociais: { instagram: null, facebook: null, linkedin: null },
-          observacoes: null,
-        }),
-      );
-    } catch {
-      resultados.push({
+    // Sequencial de propósito (não Promise.all): existsByCim precisa enxergar as linhas já gravadas.
+    resultados.push(
+      await registerImportRow(container, session, current, {
         linha: rowNumber,
         nome,
-        status: 'erro',
-        motivo: emailRaw ? `E-mail "${emailRaw}" inválido.` : 'Dados inválidos.',
-      });
-      continue;
-    }
-
-    // Sequencial de propósito (não Promise.all): existsByCim precisa enxergar as linhas já gravadas.
-    const result = await container.useCases.registerMember.execute(session.authContext, input);
-    resultados.push(
-      result.ok
-        ? { linha: rowNumber, nome, status: 'criado' }
-        : { linha: rowNumber, nome, status: 'erro', motivo: result.error.message },
+        cim: cimRaw || null,
+        grau,
+        situacao,
+        email: emailRaw || null,
+      }),
     );
   }
 
-  revalidatePath('/admin/pessoas/irmaos');
   return { error: null, resultados };
+}
+
+/**
+ * Reconhece uma linha de texto extraída do "Relatório do módulo Irmãos"
+ * (relatório emitido por outro sistema, formato Nome/CIM/Loja/Grau — sem
+ * e-mail). Cada linha real termina com o Grau (um dos `MEMBER_DEGREES`) e
+ * tem um token só de dígitos em algum ponto (a CIM); título, legenda,
+ * cabeçalho de coluna e o rodapé de total nunca batem os dois critérios
+ * ao mesmo tempo, então são ignorados sem precisar de um "skip-list"
+ * hardcoded. A coluna Loja fica entre a CIM e o Grau e é descartada — o
+ * tenant já sabe qual é a própria Loja.
+ */
+function parsePdfRosterLine(
+  line: string,
+): { nome: string; cim: string; grau: (typeof MEMBER_DEGREES)[number] } | null {
+  const tokens = line.trim().split(/\s+/);
+  if (tokens.length < 3) return null;
+  const grau = matchEnumCaseInsensitive(MEMBER_DEGREES, tokens[tokens.length - 1]!);
+  if (!grau) return null;
+  const cimIndex = tokens.findIndex((token) => /^\d{3,7}$/.test(token));
+  if (cimIndex < 1) return null;
+  return { nome: tokens.slice(0, cimIndex).join(' '), cim: tokens[cimIndex]!, grau };
+}
+
+/**
+ * Relatório em PDF nunca tem e-mail e não expõe a situação como texto —
+ * é só cor de linha na fonte original (Desligado/Irregular/etc.), que
+ * extração de texto de PDF não carrega. Por isso todo mundo entra como
+ * "regular"; quem estava marcado no PDF original precisa ser ajustado à
+ * mão depois (mesmo botão "Situação" já usado na tela do Irmão) — decisão
+ * consciente, documentada pro Admin na própria tela de importação.
+ */
+async function importFromPdf(
+  container: ServerContainer,
+  session: CurrentSession,
+  current: CurrentTenant,
+  file: File,
+): Promise<ImportMembersActionState> {
+  let text: string;
+  try {
+    const parser = new PDFParse({ data: Buffer.from(await file.arrayBuffer()) });
+    const parsed = await parser.getText();
+    await parser.destroy();
+    text = parsed.text;
+  } catch {
+    return {
+      ...IMPORT_EMPTY_STATE,
+      error: 'Não foi possível ler o arquivo. Confirme que é um .pdf válido.',
+    };
+  }
+
+  const resultados: ImportMembersRowResult[] = [];
+  const lines = text.split('\n');
+  for (let i = 0; i < lines.length; i++) {
+    const parsedLine = parsePdfRosterLine(lines[i]!);
+    if (!parsedLine) continue;
+
+    // Sequencial de propósito — mesmo motivo do caminho .xlsx.
+    resultados.push(
+      await registerImportRow(container, session, current, {
+        linha: i + 1,
+        nome: parsedLine.nome,
+        cim: parsedLine.cim,
+        grau: parsedLine.grau,
+        situacao: 'regular',
+        email: null,
+      }),
+    );
+  }
+
+  if (resultados.length === 0) {
+    return {
+      ...IMPORT_EMPTY_STATE,
+      error: 'Não encontrei nenhuma linha de Irmão reconhecível nesse PDF.',
+    };
+  }
+  return { error: null, resultados };
+}
+
+/**
+ * Importa Irmãos em massa a partir de um .xlsx (mesmo formato que
+ * `/api/v1/admin/members/export` escreve — Nome, CIM, Grau, Situação,
+ * E-mail, Cidade, via `exceljs`) ou de um .pdf ("Relatório do módulo
+ * Irmãos" de outro sistema — Nome, CIM, Loja, Grau, via `pdf-parse`).
+ * Cada linha reconhecida vira uma chamada a `RegisterMemberUseCase`
+ * (docs/architecture/06 §6.1: mesma checagem de CIM único do cadastro
+ * manual). E-mail fica opcional: quando ausente, o Irmão nasce sem acesso
+ * ao Portal e pode reivindicar o próprio cadastro depois
+ * (`claimMemberAccountAction`). A coluna Cidade do .xlsx não é importada
+ * — precisa do endereço completo (`addressSchema` exige todos os
+ * campos), que a planilha não tem; fica pra ser preenchido depois no
+ * cadastro do Irmão.
+ */
+export async function importMembersAction(
+  _prevState: ImportMembersActionState,
+  formData: FormData,
+): Promise<ImportMembersActionState> {
+  const session = await requireSession();
+  const current = await getCurrentTenant();
+  if (!current) return { ...IMPORT_EMPTY_STATE, error: 'Tenant não encontrado.' };
+
+  const file = formData.get('planilha');
+  if (!(file instanceof File) || file.size === 0) {
+    return { ...IMPORT_EMPTY_STATE, error: 'Selecione um arquivo .xlsx ou .pdf.' };
+  }
+
+  const container = createServerContainer();
+  const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+  const state = isPdf
+    ? await importFromPdf(container, session, current, file)
+    : await importFromXlsx(container, session, current, file);
+
+  if (state.resultados) {
+    revalidatePath('/admin/pessoas/irmaos');
+  }
+  return state;
 }
