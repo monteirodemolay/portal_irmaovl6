@@ -23,7 +23,7 @@ import {
   VercelBlobStorageAdapter,
   type ServerContainer,
 } from '@vl6/infra';
-import type { Member } from '@vl6/domain';
+import { requirePermission, type Member } from '@vl6/domain';
 import { generateTemporaryPassword } from '@/lib/auth/generate-temporary-password';
 import { requireSession } from '@/lib/auth/require-session';
 import type { CurrentSession } from '@/lib/auth/get-current-session';
@@ -589,9 +589,43 @@ interface ImportCandidateRow {
   email: string | null;
 }
 
+/** Linha já classificada pra tela de confirmação — mesmo shape de `ImportCandidateRow`, com o veredito da análise. */
+export interface ImportPreviewRow extends ImportCandidateRow {
+  valido: boolean;
+  motivo?: string;
+}
+
+export interface ParseMembersFileState {
+  error: string | null;
+  rows: ImportPreviewRow[] | null;
+}
+
+const PARSE_EMPTY_STATE: ParseMembersFileState = { error: null, rows: null };
+
 type CurrentTenant = NonNullable<Awaited<ReturnType<typeof getCurrentTenant>>>;
 
-/** Valida uma linha candidata e chama `RegisterMemberUseCase` — compartilhado entre a importação por .xlsx e por .pdf. */
+/**
+ * Classifica uma CIM pra pré-visualização: duplicada dentro do próprio
+ * arquivo (segunda ocorrência em diante) ou já cadastrada no tenant —
+ * ambos os casos o Admin vê named na tela de confirmação, antes de gravar
+ * qualquer coisa. `seenCims` acumula por chamada de parse (não persiste
+ * entre requisições), então cada análise de arquivo começa do zero.
+ */
+async function classifyCim(
+  container: ServerContainer,
+  tenantId: string,
+  cim: string | null,
+  seenCims: Set<string>,
+): Promise<{ ok: true } | { ok: false; motivo: string }> {
+  if (!cim) return { ok: true };
+  if (seenCims.has(cim)) return { ok: false, motivo: `CIM "${cim}" duplicada neste arquivo.` };
+  const exists = await container.repositories.member.existsByCim(tenantId, cim);
+  if (exists) return { ok: false, motivo: `CIM "${cim}" já cadastrada.` };
+  seenCims.add(cim);
+  return { ok: true };
+}
+
+/** Valida uma linha candidata e chama `RegisterMemberUseCase` — usada só na confirmação final (depois da pré-visualização). */
 async function registerImportRow(
   container: ServerContainer,
   session: CurrentSession,
@@ -642,75 +676,98 @@ async function registerImportRow(
     : { linha: row.linha, nome: row.nome, status: 'erro', motivo: result.error.message };
 }
 
-async function importFromXlsx(
+const EMAIL_LOOSE_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+async function buildXlsxPreviewRows(
   container: ServerContainer,
-  session: CurrentSession,
   current: CurrentTenant,
   file: File,
-): Promise<ImportMembersActionState> {
+): Promise<{ error: string } | { rows: ImportPreviewRow[] }> {
   const workbook = new ExcelJS.Workbook();
   try {
     await workbook.xlsx.load(await file.arrayBuffer());
   } catch {
-    return {
-      ...IMPORT_EMPTY_STATE,
-      error: 'Não foi possível ler o arquivo. Confirme que é um .xlsx válido.',
-    };
+    return { error: 'Não foi possível ler o arquivo. Confirme que é um .xlsx válido.' };
   }
   const sheet = workbook.worksheets[0];
   if (!sheet || sheet.rowCount < 2) {
-    return { ...IMPORT_EMPTY_STATE, error: 'A planilha está vazia.' };
+    return { error: 'A planilha está vazia.' };
   }
 
-  const resultados: ImportMembersRowResult[] = [];
+  const rows: ImportPreviewRow[] = [];
+  const seenCims = new Set<string>();
 
   for (let rowNumber = 2; rowNumber <= sheet.rowCount; rowNumber++) {
     const row = sheet.getRow(rowNumber);
     const nome = cellText(row, 1);
     if (!nome) continue;
 
-    const cimRaw = cellText(row, 2);
+    const cim = cellText(row, 2) || null;
     const grauRaw = cellText(row, 3);
     const situacaoRaw = cellText(row, 4);
-    const emailRaw = cellText(row, 5);
+    const email = cellText(row, 5) || null;
 
-    const grau = grauRaw ? matchEnumCaseInsensitive(MEMBER_DEGREES, grauRaw) : 'aprendiz';
-    if (!grau) {
-      resultados.push({
+    const grauMatch = grauRaw ? matchEnumCaseInsensitive(MEMBER_DEGREES, grauRaw) : 'aprendiz';
+    const grau = grauMatch ?? 'aprendiz';
+    if (!grauMatch) {
+      rows.push({
         linha: rowNumber,
         nome,
-        status: 'erro',
+        cim,
+        grau,
+        situacao: 'regular',
+        email,
+        valido: false,
         motivo: `Grau "${grauRaw}" inválido.`,
       });
       continue;
     }
-    const situacao = situacaoRaw
+    const situacaoMatch = situacaoRaw
       ? matchEnumCaseInsensitive(MEMBER_SITUATIONS, situacaoRaw)
       : 'regular';
-    if (!situacao) {
-      resultados.push({
+    const situacao = situacaoMatch ?? 'regular';
+    if (!situacaoMatch) {
+      rows.push({
         linha: rowNumber,
         nome,
-        status: 'erro',
+        cim,
+        grau,
+        situacao,
+        email,
+        valido: false,
         motivo: `Situação "${situacaoRaw}" inválida.`,
       });
       continue;
     }
-
-    // Sequencial de propósito (não Promise.all): existsByCim precisa enxergar as linhas já gravadas.
-    resultados.push(
-      await registerImportRow(container, session, current, {
+    if (email && !EMAIL_LOOSE_PATTERN.test(email)) {
+      rows.push({
         linha: rowNumber,
         nome,
-        cim: cimRaw || null,
+        cim,
         grau,
         situacao,
-        email: emailRaw || null,
-      }),
-    );
+        email,
+        valido: false,
+        motivo: `E-mail "${email}" inválido.`,
+      });
+      continue;
+    }
+
+    // Sequencial de propósito (não Promise.all): `seenCims`/`existsByCim` precisam ver as linhas já classificadas.
+    const cimCheck = await classifyCim(container, current.tenant.id, cim, seenCims);
+    rows.push({
+      linha: rowNumber,
+      nome,
+      cim,
+      grau,
+      situacao,
+      email,
+      valido: cimCheck.ok,
+      motivo: cimCheck.ok ? undefined : cimCheck.motivo,
+    });
   }
 
-  return { error: null, resultados };
+  return { rows };
 }
 
 /**
@@ -741,14 +798,13 @@ function parsePdfRosterLine(
  * extração de texto de PDF não carrega. Por isso todo mundo entra como
  * "regular"; quem estava marcado no PDF original precisa ser ajustado à
  * mão depois (mesmo botão "Situação" já usado na tela do Irmão) — decisão
- * consciente, documentada pro Admin na própria tela de importação.
+ * consciente, mostrada pro Admin já na tela de confirmação.
  */
-async function importFromPdf(
+async function buildPdfPreviewRows(
   container: ServerContainer,
-  session: CurrentSession,
   current: CurrentTenant,
   file: File,
-): Promise<ImportMembersActionState> {
+): Promise<{ error: string } | { rows: ImportPreviewRow[] }> {
   let text: string;
   try {
     const parser = new PDFParse({ data: Buffer.from(await file.arrayBuffer()) });
@@ -756,55 +812,84 @@ async function importFromPdf(
     await parser.destroy();
     text = parsed.text;
   } catch {
-    return {
-      ...IMPORT_EMPTY_STATE,
-      error: 'Não foi possível ler o arquivo. Confirme que é um .pdf válido.',
-    };
+    return { error: 'Não foi possível ler o arquivo. Confirme que é um .pdf válido.' };
   }
 
-  const resultados: ImportMembersRowResult[] = [];
+  const rows: ImportPreviewRow[] = [];
+  const seenCims = new Set<string>();
   const lines = text.split('\n');
+
   for (let i = 0; i < lines.length; i++) {
     const parsedLine = parsePdfRosterLine(lines[i]!);
     if (!parsedLine) continue;
 
     // Sequencial de propósito — mesmo motivo do caminho .xlsx.
-    resultados.push(
-      await registerImportRow(container, session, current, {
-        linha: i + 1,
-        nome: parsedLine.nome,
-        cim: parsedLine.cim,
-        grau: parsedLine.grau,
-        situacao: 'regular',
-        email: null,
-      }),
-    );
+    const cimCheck = await classifyCim(container, current.tenant.id, parsedLine.cim, seenCims);
+    rows.push({
+      linha: i + 1,
+      nome: parsedLine.nome,
+      cim: parsedLine.cim,
+      grau: parsedLine.grau,
+      situacao: 'regular',
+      email: null,
+      valido: cimCheck.ok,
+      motivo: cimCheck.ok ? undefined : cimCheck.motivo,
+    });
   }
 
-  if (resultados.length === 0) {
-    return {
-      ...IMPORT_EMPTY_STATE,
-      error: 'Não encontrei nenhuma linha de Irmão reconhecível nesse PDF.',
-    };
+  if (rows.length === 0) {
+    return { error: 'Não encontrei nenhuma linha de Irmão reconhecível nesse PDF.' };
   }
-  return { error: null, resultados };
+  return { rows };
 }
 
 /**
- * Importa Irmãos em massa a partir de um .xlsx (mesmo formato que
- * `/api/v1/admin/members/export` escreve — Nome, CIM, Grau, Situação,
- * E-mail, Cidade, via `exceljs`) ou de um .pdf ("Relatório do módulo
- * Irmãos" de outro sistema — Nome, CIM, Loja, Grau, via `pdf-parse`).
- * Cada linha reconhecida vira uma chamada a `RegisterMemberUseCase`
- * (docs/architecture/06 §6.1: mesma checagem de CIM único do cadastro
- * manual). E-mail fica opcional: quando ausente, o Irmão nasce sem acesso
- * ao Portal e pode reivindicar o próprio cadastro depois
- * (`claimMemberAccountAction`). A coluna Cidade do .xlsx não é importada
- * — precisa do endereço completo (`addressSchema` exige todos os
- * campos), que a planilha não tem; fica pra ser preenchido depois no
- * cadastro do Irmão.
+ * 1ª etapa da importação em massa — só analisa o arquivo (.xlsx no mesmo
+ * formato que `/api/v1/admin/members/export` escreve, ou .pdf do
+ * "Relatório do módulo Irmãos" de outro sistema) e devolve cada linha
+ * classificada (pronta pra importar ou com o motivo do problema), sem
+ * gravar nada no Firestore ainda. O Admin revisa/seleciona na tela e só
+ * então `confirmImportMembersAction` grava de fato — nenhum Use Case é
+ * chamado aqui, por isso a permissão é checada explicitamente.
  */
-export async function importMembersAction(
+export async function parseMembersFileAction(
+  _prevState: ParseMembersFileState,
+  formData: FormData,
+): Promise<ParseMembersFileState> {
+  const session = await requireSession();
+  try {
+    requirePermission(session.authContext, 'member:create');
+  } catch {
+    return { ...PARSE_EMPTY_STATE, error: 'Você não tem permissão para importar Irmãos.' };
+  }
+  const current = await getCurrentTenant();
+  if (!current) return { ...PARSE_EMPTY_STATE, error: 'Tenant não encontrado.' };
+
+  const file = formData.get('planilha');
+  if (!(file instanceof File) || file.size === 0) {
+    return { ...PARSE_EMPTY_STATE, error: 'Selecione um arquivo .xlsx ou .pdf.' };
+  }
+
+  const container = createServerContainer();
+  const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+  const result = isPdf
+    ? await buildPdfPreviewRows(container, current, file)
+    : await buildXlsxPreviewRows(container, current, file);
+
+  if ('error' in result) {
+    return { ...PARSE_EMPTY_STATE, error: result.error };
+  }
+  return { error: null, rows: result.rows };
+}
+
+/**
+ * 2ª etapa — recebe de volta só as linhas que o Admin selecionou na tela
+ * de confirmação (serializadas em JSON pelo cliente, já filtradas por lá
+ * pras válidas e marcadas) e grava cada uma via `RegisterMemberUseCase`,
+ * sequencial pelo mesmo motivo de sempre. Reaproveita o shape de
+ * `ImportCandidateRow` — o cliente nunca precisa mandar mais do que isso.
+ */
+export async function confirmImportMembersAction(
   _prevState: ImportMembersActionState,
   formData: FormData,
 ): Promise<ImportMembersActionState> {
@@ -812,19 +897,24 @@ export async function importMembersAction(
   const current = await getCurrentTenant();
   if (!current) return { ...IMPORT_EMPTY_STATE, error: 'Tenant não encontrado.' };
 
-  const file = formData.get('planilha');
-  if (!(file instanceof File) || file.size === 0) {
-    return { ...IMPORT_EMPTY_STATE, error: 'Selecione um arquivo .xlsx ou .pdf.' };
+  let rows: ImportCandidateRow[];
+  try {
+    rows = JSON.parse(String(formData.get('linhas') ?? ''));
+    if (!Array.isArray(rows) || rows.length === 0) throw new Error('empty');
+  } catch {
+    return {
+      ...IMPORT_EMPTY_STATE,
+      error: 'Nenhuma linha selecionada. Volte e escolha ao menos um Irmão pra importar.',
+    };
   }
 
   const container = createServerContainer();
-  const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
-  const state = isPdf
-    ? await importFromPdf(container, session, current, file)
-    : await importFromXlsx(container, session, current, file);
-
-  if (state.resultados) {
-    revalidatePath('/admin/pessoas/irmaos');
+  const resultados: ImportMembersRowResult[] = [];
+  for (const row of rows) {
+    // Sequencial de propósito — mesmo motivo dos parsers.
+    resultados.push(await registerImportRow(container, session, current, row));
   }
-  return state;
+
+  revalidatePath('/admin/pessoas/irmaos');
+  return { error: null, resultados };
 }
