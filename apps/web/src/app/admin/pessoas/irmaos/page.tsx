@@ -132,6 +132,9 @@ export default async function MembersPage({
           <Button asChild variant="outline">
             <a href={`/api/v1/admin/members/export?${exportQuery}&format=pdf`}>Exportar PDF</a>
           </Button>
+          <Button asChild variant="outline">
+            <Link href="/admin/pessoas/irmaos/importar">Importar planilha</Link>
+          </Button>
           <Button asChild>
             <Link href="/admin/pessoas/irmaos/novo">Novo Irmão</Link>
           </Button>

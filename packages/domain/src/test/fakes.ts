@@ -248,6 +248,12 @@ export class InMemoryMemberRepository implements IMemberRepository {
   async existsByCim(tenantId: string, cim: string) {
     return [...this.byId.values()].some((m) => m.tenantId === tenantId && m.cim === cim);
   }
+  async findUnclaimedByTenant(tenantId: string) {
+    return [...this.byId.values()]
+      .filter((m) => m.tenantId === tenantId && m.userId === null && !m.deletedAt)
+      .sort((a, b) => a.nomeCompleto.localeCompare(b.nomeCompleto))
+      .map((m) => ({ id: m.id, nomeCompleto: m.nomeCompleto }));
+  }
   async search(filters: MemberSearchFilters, page: PageRequest): Promise<PageResult<Member>> {
     const items = [...this.byId.values()].filter((m) => m.tenantId === filters.tenantId);
     return { items: items.slice(0, page.limit), nextCursor: null, hasMore: false };

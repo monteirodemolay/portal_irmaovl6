@@ -160,6 +160,11 @@ export default async function LoginPage() {
           <p className="text-muted mt-5 text-center text-[10px] leading-relaxed">
             Ambiente de acesso exclusivo aos membros autorizados.
           </p>
+          <p className="mt-3 text-center text-xs">
+            <a href="/reivindicar" className="text-accent font-medium hover:underline">
+              Já é cadastrado mas ainda não tem acesso? Reivindique seu cadastro
+            </a>
+          </p>
         </div>
       </section>
     </main>

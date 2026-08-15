@@ -31,11 +31,6 @@ export class UpdateMyProfileUseCase {
     const updated: Member = {
       ...current,
       ...input,
-      redesSociais: {
-        instagram: input.redesSociais.instagram ?? current.redesSociais.instagram,
-        facebook: input.redesSociais.facebook ?? current.redesSociais.facebook,
-        linkedin: input.redesSociais.linkedin ?? current.redesSociais.linkedin,
-      },
       updatedAt: this.deps.clock.now(),
       updatedBy: ctx.uid,
     };

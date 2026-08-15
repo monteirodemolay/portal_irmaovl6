@@ -7,10 +7,8 @@ import { Building2, Button, Input, X } from '@vl6/ui';
 import { FormField } from '@/components/forms/form-field';
 import { FormSectionCard } from '@/components/forms/section-card';
 import { updateCentralProfileAction, type CentralActionState } from '../../actions/central-actions';
-import {
-  updateMyProfileAction,
-  type SelfProfileActionState,
-} from '@/modules/membership/actions/self-profile-actions';
+import { updateMyProfileAction } from '@/modules/membership/actions/self-profile-actions';
+import { CompanyCard } from '@/modules/membership/components/profile-fields/company-card';
 
 const MAX_NEGOCIOS = 5;
 
@@ -36,10 +34,6 @@ export function EmpresaTab({
   member: Member;
   profile: MemberCentralProfile | null;
 }) {
-  const [selfState, selfAction] = useActionState<SelfProfileActionState, FormData>(
-    updateMyProfileAction,
-    { error: null },
-  );
   const [contentState, contentAction] = useActionState<CentralActionState, FormData>(
     updateCentralProfileAction,
     { error: null },
@@ -52,15 +46,7 @@ export function EmpresaTab({
 
   return (
     <div className="flex flex-col gap-4">
-      <FormSectionCard icon={Building2} title="Empresa atual">
-        <form action={selfAction} className="flex flex-col gap-4">
-          <FormField label="Empresa" htmlFor="empresa">
-            <Input id="empresa" name="empresa" defaultValue={member.empresa ?? ''} />
-          </FormField>
-          {selfState.error && <p className="text-sm text-red-600">{selfState.error}</p>}
-          <SubmitButton />
-        </form>
-      </FormSectionCard>
+      <CompanyCard member={member} action={updateMyProfileAction} />
 
       <FormSectionCard
         icon={Building2}

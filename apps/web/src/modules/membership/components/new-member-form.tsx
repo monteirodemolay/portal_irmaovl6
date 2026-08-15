@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useActionState, useState } from 'react';
 import { useFormStatus } from 'react-dom';
 import { MARITAL_STATUSES, MEMBER_DEGREES, type MaritalStatus } from '@vl6/shared';
-import type { Member, Role } from '@vl6/domain';
+import type { Role } from '@vl6/domain';
 import { Button, Input, Select, Textarea } from '@vl6/ui';
 import { FormField } from '@/components/forms/form-field';
 import { MemberAvatar } from '@/components/membership/member-avatar';
@@ -16,31 +16,25 @@ import {
 import { COMMON_PROFESSIONS, OTHER_PROFESSION_VALUE } from '@/lib/membership/professions';
 import type { MemberActionState } from '../actions/member-actions';
 
-export interface MemberFormProps {
+export interface NewMemberFormProps {
   action: (state: MemberActionState, formData: FormData) => Promise<MemberActionState>;
-  member?: Member;
-  /** Só usada no cadastro (member === undefined) — seção "Acesso ao Portal". */
-  roles?: Role[];
+  roles: Role[];
   /** Profissões já usadas no tenant que não estão na lista pré-definida. */
   customProfessions?: string[];
 }
 
-function toDateInputValue(date: Date | null | undefined): string {
-  return date ? new Date(date).toISOString().slice(0, 10) : '';
-}
-
-function PhotoField({ nome, fotoUrl }: { nome: string; fotoUrl: string | null }) {
+function PhotoField({ nome }: { nome: string }) {
   const [preview, setPreview] = useState<string | null>(null);
 
   return (
     <div className="flex items-center gap-4">
-      <MemberAvatar fotoUrl={preview ?? fotoUrl} nome={nome || 'Irmão'} className="h-16 w-16" />
+      <MemberAvatar fotoUrl={preview} nome={nome || 'Irmão'} className="h-16 w-16" />
       <div className="flex flex-col gap-1">
         <label
           htmlFor="foto"
           className="text-primary w-fit cursor-pointer text-sm font-medium hover:underline"
         >
-          {fotoUrl ? 'Alterar foto' : 'Selecionar foto'}
+          Selecionar foto
         </label>
         <input
           id="foto"
@@ -59,23 +53,28 @@ function PhotoField({ nome, fotoUrl }: { nome: string; fotoUrl: string | null })
   );
 }
 
-export function MemberForm({ action, member, roles, customProfessions = [] }: MemberFormProps) {
+/**
+ * Cadastro de um novo Irmão — formulário único cobrindo todos os campos de
+ * uma vez, sem equivalente de autoatendimento (um Irmão que ainda não
+ * existe não tem como editar o próprio cadastro). A edição de um Irmão já
+ * cadastrado usa os cartões de `profile-fields/`/`admin-only/`
+ * (`/admin/pessoas/irmaos/[memberId]`), reaproveitados também pelo próprio
+ * Irmão no Meu Espaço.
+ */
+export function NewMemberForm({ action, roles, customProfessions = [] }: NewMemberFormProps) {
   const [state, formAction] = useActionState<MemberActionState, FormData>(action, {
     error: null,
     memberId: null,
     temporaryPassword: null,
   });
-  const defaultRoleId = roles?.find((r) => r.chave === 'membro')?.id ?? roles?.[0]?.id;
-  const [grau, setGrau] = useState(member?.grau ?? 'aprendiz');
-  const [estadoCivil, setEstadoCivil] = useState<MaritalStatus | ''>(member?.estadoCivil ?? '');
+  const defaultRoleId = roles.find((r) => r.chave === 'membro')?.id ?? roles[0]?.id;
+  const [grau, setGrau] = useState('aprendiz' as (typeof MEMBER_DEGREES)[number]);
+  const [estadoCivil, setEstadoCivil] = useState<MaritalStatus | ''>('');
+  const [email, setEmail] = useState('');
+  const [criarAcesso, setCriarAcesso] = useState(true);
 
   const professionOptions = [...COMMON_PROFESSIONS, ...customProfessions];
-  const initialProfissaoSelect = member?.profissao
-    ? professionOptions.includes(member.profissao)
-      ? member.profissao
-      : OTHER_PROFESSION_VALUE
-    : '';
-  const [profissaoSelect, setProfissaoSelect] = useState(initialProfissaoSelect);
+  const [profissaoSelect, setProfissaoSelect] = useState('');
 
   return (
     <form action={formAction} className="flex max-w-3xl flex-col gap-8">
@@ -99,7 +98,7 @@ export function MemberForm({ action, member, roles, customProfessions = [] }: Me
         </div>
       )}
 
-      {!member && !state.error && !state.temporaryPassword && state.memberId && (
+      {!state.error && !state.temporaryPassword && state.memberId && (
         <div className="border-accent/40 bg-accent/10 flex flex-col gap-2 rounded border p-4 text-sm">
           <p>
             Irmão cadastrado sem acesso ao Portal. Ative o acesso quando quiser, pela tela do Irmão.
@@ -115,24 +114,29 @@ export function MemberForm({ action, member, roles, customProfessions = [] }: Me
 
       <section className="flex flex-col gap-4">
         <h2 className="font-display text-lg font-semibold">Identificação</h2>
-        <PhotoField nome={member?.nomeCompleto ?? ''} fotoUrl={member?.fotoUrl ?? null} />
+        <PhotoField nome="" />
         <div className="grid grid-cols-2 gap-4">
           <FormField label="Nome completo" htmlFor="nomeCompleto">
+            <Input id="nomeCompleto" name="nomeCompleto" required />
+          </FormField>
+          <FormField
+            label="E-mail"
+            htmlFor="email"
+            description="Opcional — sem e-mail, o Irmão pode reivindicar o próprio acesso depois."
+          >
             <Input
-              id="nomeCompleto"
-              name="nomeCompleto"
-              required
-              defaultValue={member?.nomeCompleto}
+              id="email"
+              name="email"
+              type="email"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
             />
           </FormField>
-          <FormField label="E-mail" htmlFor="email">
-            <Input id="email" name="email" type="email" required defaultValue={member?.email} />
-          </FormField>
           <FormField label="Telefone" htmlFor="telefone">
-            <Input id="telefone" name="telefone" defaultValue={member?.telefone ?? ''} />
+            <Input id="telefone" name="telefone" />
           </FormField>
           <FormField label="WhatsApp" htmlFor="whatsapp">
-            <Input id="whatsapp" name="whatsapp" defaultValue={member?.whatsapp ?? ''} />
+            <Input id="whatsapp" name="whatsapp" />
           </FormField>
         </div>
       </section>
@@ -141,38 +145,25 @@ export function MemberForm({ action, member, roles, customProfessions = [] }: Me
         <h2 className="font-display text-lg font-semibold">Endereço</h2>
         <div className="grid grid-cols-3 gap-4">
           <FormField label="CEP" htmlFor="cep">
-            <Input id="cep" name="cep" defaultValue={member?.endereco?.cep ?? ''} />
+            <Input id="cep" name="cep" />
           </FormField>
           <FormField label="Logradouro" htmlFor="logradouro">
-            <Input
-              id="logradouro"
-              name="logradouro"
-              defaultValue={member?.endereco?.logradouro ?? ''}
-            />
+            <Input id="logradouro" name="logradouro" />
           </FormField>
           <FormField label="Número" htmlFor="enderecoNumero">
-            <Input
-              id="enderecoNumero"
-              name="enderecoNumero"
-              defaultValue={member?.endereco?.numero ?? ''}
-            />
+            <Input id="enderecoNumero" name="enderecoNumero" />
           </FormField>
           <FormField label="Bairro" htmlFor="bairro">
-            <Input id="bairro" name="bairro" defaultValue={member?.endereco?.bairro ?? ''} />
+            <Input id="bairro" name="bairro" />
           </FormField>
           <FormField label="Cidade" htmlFor="cidade">
-            <Input id="cidade" name="cidade" defaultValue={member?.endereco?.cidade ?? ''} />
+            <Input id="cidade" name="cidade" />
           </FormField>
           <FormField label="Estado" htmlFor="estado">
-            <Input
-              id="estado"
-              name="estado"
-              maxLength={2}
-              defaultValue={member?.endereco?.estado ?? ''}
-            />
+            <Input id="estado" name="estado" maxLength={2} />
           </FormField>
           <FormField label="País" htmlFor="pais">
-            <Input id="pais" name="pais" defaultValue={member?.endereco?.pais ?? 'Brasil'} />
+            <Input id="pais" name="pais" defaultValue="Brasil" />
           </FormField>
         </div>
       </section>
@@ -186,7 +177,7 @@ export function MemberForm({ action, member, roles, customProfessions = [] }: Me
         </div>
         <div className="grid grid-cols-2 gap-4">
           <FormField label="CIM" htmlFor="cim">
-            <Input id="cim" name="cim" defaultValue={member?.cim ?? ''} />
+            <Input id="cim" name="cim" />
           </FormField>
           <FormField label="Grau" htmlFor="grau">
             <Select
@@ -204,36 +195,16 @@ export function MemberForm({ action, member, roles, customProfessions = [] }: Me
             </Select>
           </FormField>
           <FormField label="Data de nascimento" htmlFor="dataNascimento">
-            <Input
-              id="dataNascimento"
-              name="dataNascimento"
-              type="date"
-              defaultValue={toDateInputValue(member?.dataNascimento)}
-            />
+            <Input id="dataNascimento" name="dataNascimento" type="date" />
           </FormField>
           <FormField label="Data de iniciação" htmlFor="dataIniciacao">
-            <Input
-              id="dataIniciacao"
-              name="dataIniciacao"
-              type="date"
-              defaultValue={toDateInputValue(member?.dataIniciacao)}
-            />
+            <Input id="dataIniciacao" name="dataIniciacao" type="date" />
           </FormField>
           <FormField label="Data de elevação" htmlFor="dataElevacao">
-            <Input
-              id="dataElevacao"
-              name="dataElevacao"
-              type="date"
-              defaultValue={toDateInputValue(member?.dataElevacao)}
-            />
+            <Input id="dataElevacao" name="dataElevacao" type="date" />
           </FormField>
           <FormField label="Data de exaltação" htmlFor="dataExaltacao">
-            <Input
-              id="dataExaltacao"
-              name="dataExaltacao"
-              type="date"
-              defaultValue={toDateInputValue(member?.dataExaltacao)}
-            />
+            <Input id="dataExaltacao" name="dataExaltacao" type="date" />
           </FormField>
         </div>
       </section>
@@ -259,19 +230,11 @@ export function MemberForm({ action, member, roles, customProfessions = [] }: Me
           </FormField>
           {profissaoSelect === OTHER_PROFESSION_VALUE && (
             <FormField label="Qual profissão?" htmlFor="profissaoOutra">
-              <Input
-                id="profissaoOutra"
-                name="profissaoOutra"
-                defaultValue={
-                  member?.profissao && !professionOptions.includes(member.profissao)
-                    ? member.profissao
-                    : ''
-                }
-              />
+              <Input id="profissaoOutra" name="profissaoOutra" />
             </FormField>
           )}
           <FormField label="Empresa" htmlFor="empresa">
-            <Input id="empresa" name="empresa" defaultValue={member?.empresa ?? ''} />
+            <Input id="empresa" name="empresa" />
           </FormField>
           <FormField label="Estado civil" htmlFor="estadoCivil">
             <Select
@@ -291,66 +254,53 @@ export function MemberForm({ action, member, roles, customProfessions = [] }: Me
           {maritalStatusHasSpouse(estadoCivil || null) && (
             <>
               <FormField label="Nome da cônjuge" htmlFor="conjugeNome">
-                <Input
-                  id="conjugeNome"
-                  name="conjugeNome"
-                  defaultValue={member?.conjugeNome ?? ''}
-                />
+                <Input id="conjugeNome" name="conjugeNome" />
               </FormField>
               <FormField label="Data de nascimento da cônjuge" htmlFor="conjugeDataNascimento">
-                <Input
-                  id="conjugeDataNascimento"
-                  name="conjugeDataNascimento"
-                  type="date"
-                  defaultValue={toDateInputValue(member?.conjugeDataNascimento)}
-                />
+                <Input id="conjugeDataNascimento" name="conjugeDataNascimento" type="date" />
               </FormField>
             </>
           )}
           <FormField label="Instagram" htmlFor="instagram">
-            <Input
-              id="instagram"
-              name="instagram"
-              defaultValue={member?.redesSociais.instagram ?? ''}
-            />
+            <Input id="instagram" name="instagram" />
           </FormField>
           <FormField label="Facebook" htmlFor="facebook">
-            <Input
-              id="facebook"
-              name="facebook"
-              defaultValue={member?.redesSociais.facebook ?? ''}
-            />
+            <Input id="facebook" name="facebook" />
           </FormField>
           <FormField label="LinkedIn" htmlFor="linkedin">
-            <Input
-              id="linkedin"
-              name="linkedin"
-              defaultValue={member?.redesSociais.linkedin ?? ''}
-            />
+            <Input id="linkedin" name="linkedin" />
           </FormField>
         </div>
         <FormField label="Biografia" htmlFor="biografia">
-          <Textarea id="biografia" name="biografia" defaultValue={member?.biografia ?? ''} />
+          <Textarea id="biografia" name="biografia" />
         </FormField>
         <FormField label="Observações" htmlFor="observacoes">
-          <Textarea id="observacoes" name="observacoes" defaultValue={member?.observacoes ?? ''} />
+          <Textarea id="observacoes" name="observacoes" />
         </FormField>
       </section>
 
-      {!member && roles && roles.length > 0 && (
+      {roles.length > 0 && (
         <section className="border-border flex flex-col gap-4 rounded-lg border p-4">
           <h2 className="font-display text-lg font-semibold">Acesso ao Portal</h2>
           <label className="flex items-center gap-2 text-sm">
             <input
               type="checkbox"
               name="criarAcesso"
-              defaultChecked
-              className="accent-primary h-4 w-4"
+              checked={criarAcesso && Boolean(email.trim())}
+              disabled={!email.trim()}
+              onChange={(event) => setCriarAcesso(event.target.checked)}
+              className="accent-primary h-4 w-4 disabled:opacity-50"
             />
             Criar acesso ao Portal para este Irmão
           </label>
+          {!email.trim() && (
+            <p className="text-muted text-xs">
+              Preencha o e-mail em Identificação pra poder criar o acesso agora — ou deixe em branco
+              e o próprio Irmão reivindica o acesso depois.
+            </p>
+          )}
           <FormField label="Perfil de acesso" htmlFor="roleId">
-            <Select id="roleId" name="roleId" defaultValue={defaultRoleId}>
+            <Select id="roleId" name="roleId" defaultValue={defaultRoleId} disabled={!email.trim()}>
               {roles.map((role) => (
                 <option key={role.id} value={role.id}>
                   {role.nome}

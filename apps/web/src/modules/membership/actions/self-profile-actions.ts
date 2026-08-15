@@ -73,8 +73,6 @@ export async function updateMyProfileAction(
         conjugeDataNascimento: formData.has('conjugeDataNascimento')
           ? formData.get('conjugeDataNascimento') || null
           : member.conjugeDataNascimento,
-        biografia: textOrCurrent(formData, 'biografia', member.biografia),
-        redesSociais: member.redesSociais,
       }),
     );
   } catch {

@@ -1,5 +1,9 @@
 import 'server-only';
-import type { NextRequest } from 'next/server';
+
+/** Só o que `getClientIp` precisa — `NextRequest.headers` e o `ReadonlyHeaders` de `headers()` (next/headers) satisfazem os dois. */
+interface HeaderSource {
+  headers: Pick<Headers, 'get'>;
+}
 
 /**
  * App Router não expõe mais `request.ip` (extensão específica da Vercel,
@@ -8,9 +12,11 @@ import type { NextRequest } from 'next/server';
  * uma cadeia "cliente, proxy1, proxy2"; o primeiro item é o IP original.
  * Sem nenhum proxy conhecido na frente (dev local), cai num valor fixo —
  * suficiente pra não quebrar o rate limiter, só significa que todo tráfego
- * local compartilha o mesmo balde.
+ * local compartilha o mesmo balde. Aceita tanto `NextRequest` (Route
+ * Handlers) quanto o retorno de `headers()` de `next/headers` (Server
+ * Actions, que não recebem um `NextRequest`).
  */
-export function getClientIp(request: NextRequest): string {
+export function getClientIp(request: HeaderSource): string {
   const forwardedFor = request.headers.get('x-forwarded-for');
   if (forwardedFor) {
     return forwardedFor.split(',')[0]!.trim();

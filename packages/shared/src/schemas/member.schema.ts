@@ -11,7 +11,8 @@ import { addressSchema } from './tenant.schema';
 const memberBaseSchema = z.object({
   nomeCompleto: z.string().min(3).max(150),
   fotoUrl: z.string().url().nullable(),
-  email: z.string().email(),
+  /** Opcional — Irmãos importados em massa podem não ter e-mail ainda (ver `ClaimMemberAccountUseCase`). */
+  email: z.string().email().nullable(),
   telefone: z.string().nullable(),
   whatsapp: z.string().nullable(),
   endereco: addressSchema.nullable(),
@@ -88,11 +89,14 @@ export function normalizeConjugeFields<
 }
 
 /**
- * Subconjunto editável pelo próprio Irmão no autoatendimento (docs/architecture/08 §8.3).
- * `fotoUrl` fica de fora de propósito: na 1ª fase da foto do Irmão, só o
- * Administrador cadastra/altera (docs/architecture/06 — "Acesso ao Portal");
- * mantê-la fora do schema garante que `{ ...current, ...input }` em
- * `UpdateMyProfileUseCase` nunca sobrescreva a foto já cadastrada.
+ * Subconjunto editável pelo próprio Irmão no autoatendimento (docs/architecture/08 §8.3)
+ * — exatamente os campos que os cartões compartilhados de
+ * `profile-fields/` (também usados pelo Admin) editam. `fotoUrl`,
+ * `biografia` e `redesSociais` ficam de fora de propósito: nenhuma tela de
+ * autoatendimento os edita (só a edição administrativa, via
+ * `updateMemberIdentityAction`); mantê-los fora do schema garante que
+ * `{ ...current, ...input }` em `UpdateMyProfileUseCase` nunca os
+ * sobrescreva.
  */
 export const memberSelfEditSchema = memberBaseSchema.pick({
   telefone: true,
@@ -103,7 +107,5 @@ export const memberSelfEditSchema = memberBaseSchema.pick({
   estadoCivil: true,
   conjugeNome: true,
   conjugeDataNascimento: true,
-  biografia: true,
-  redesSociais: true,
 });
 export type MemberSelfEditValues = z.infer<typeof memberSelfEditSchema>;

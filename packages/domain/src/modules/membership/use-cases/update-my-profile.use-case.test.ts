@@ -58,8 +58,6 @@ const input: MemberSelfEditValues = {
   estadoCivil: null,
   conjugeNome: null,
   conjugeDataNascimento: null,
-  biografia: 'Biografia atualizada.',
-  redesSociais: { instagram: null, facebook: null, linkedin: null },
 };
 
 function buildUseCase() {
@@ -81,12 +79,12 @@ describe('UpdateMyProfileUseCase', () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.value.profissao).toBe('Engenheiro');
-    expect(result.value.biografia).toBe('Biografia atualizada.');
     expect(result.value.nomeCompleto).toBe('Fulano de Tal');
-    // Regressão: fotoUrl não faz parte do autoatendimento (a foto é
-    // gerenciada só pelo Administrador na 1ª fase) — o autoatendimento
-    // nunca pode apagar a foto já cadastrada.
+    // Regressão: fotoUrl, biografia e redesSociais não fazem parte do
+    // autoatendimento (só a edição administrativa os altera) — o
+    // autoatendimento nunca pode sobrescrevê-los.
     expect(result.value.fotoUrl).toBe('https://blob.example.com/foto.jpg');
+    expect(result.value.biografia).toBeNull();
     expect(result.value.updatedAt).toEqual(new Date('2026-06-01T00:00:00Z'));
     expect(result.value.updatedBy).toBe('user-1');
 

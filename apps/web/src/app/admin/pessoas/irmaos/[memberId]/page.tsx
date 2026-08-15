@@ -4,12 +4,19 @@ import { createServerContainer } from '@vl6/infra';
 import { Button, Card, CardContent, CardHeader, CardTitle, Select } from '@vl6/ui';
 import { requirePagePermission } from '@/lib/auth/require-permission';
 import {
-  updateMemberAction,
+  updateMemberIdentityAction,
+  updateMemberProfileAction,
   updateMemberSituationAction,
 } from '@/modules/membership/actions/member-actions';
-import { MemberForm } from '@/modules/membership/components/member-form';
 import { DeleteMemberButton } from '@/modules/membership/components/delete-member-button';
 import { AccessCard } from '@/modules/membership/components/access-card';
+import { MemberIdentityCard } from '@/modules/membership/components/admin-only/member-identity-card';
+import { MemberMasonicDataCard } from '@/modules/membership/components/admin-only/member-masonic-data-card';
+import { MemberNotesCard } from '@/modules/membership/components/admin-only/member-notes-card';
+import { AddressMaritalCard } from '@/modules/membership/components/profile-fields/address-marital-card';
+import { ProfessionalCard } from '@/modules/membership/components/profile-fields/professional-card';
+import { CompanyCard } from '@/modules/membership/components/profile-fields/company-card';
+import { ContactsCard } from '@/modules/membership/components/profile-fields/contacts-card';
 import { listUsedProfessions } from '@/modules/membership/lib/list-used-professions';
 import { MemberAvatar } from '@/components/membership/member-avatar';
 import { MemberDegreeBadge } from '@/components/membership/member-degree-badge';
@@ -42,8 +49,9 @@ export default async function EditMemberPage({
   ]);
   const isSelf = accessUser?.id === session.authContext.uid;
 
-  const boundUpdate = updateMemberAction.bind(null, memberId);
   const boundUpdateSituation = updateMemberSituationAction.bind(null, memberId);
+  const boundUpdateProfile = updateMemberProfileAction.bind(null, memberId);
+  const boundUpdateIdentity = updateMemberIdentityAction.bind(null, memberId);
 
   return (
     <div className="flex flex-col gap-8">
@@ -94,7 +102,19 @@ export default async function EditMemberPage({
         </Card>
       </div>
 
-      <MemberForm action={boundUpdate} member={member} customProfessions={customProfessions} />
+      <div className="flex max-w-3xl flex-col gap-4">
+        <MemberIdentityCard member={member} action={boundUpdateIdentity} />
+        <MemberMasonicDataCard member={member} action={boundUpdateIdentity} />
+        <AddressMaritalCard member={member} action={boundUpdateProfile} />
+        <ProfessionalCard
+          member={member}
+          action={boundUpdateProfile}
+          customProfessions={customProfessions}
+        />
+        <CompanyCard member={member} action={boundUpdateProfile} />
+        <ContactsCard member={member} action={boundUpdateProfile} />
+        <MemberNotesCard member={member} action={boundUpdateIdentity} />
+      </div>
     </div>
   );
 }

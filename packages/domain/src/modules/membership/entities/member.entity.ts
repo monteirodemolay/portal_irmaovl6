@@ -13,7 +13,8 @@ export interface Member extends BaseEntity {
   userId: string | null;
   nomeCompleto: string;
   fotoUrl: string | null;
-  email: string;
+  /** Opcional no cadastro — Irmãos importados em massa podem não ter e-mail ainda; ver `ClaimMemberAccountUseCase`. */
+  email: string | null;
   telefone: string | null;
   whatsapp: string | null;
   endereco: Address | null;
