@@ -24,8 +24,11 @@ Objetivo: a Loja consegue operar o essencial no dia a dia.
   públicas.
 - **Área do Irmão**: Dashboard, Meu Perfil, Diretoria, Avisos, Notícias.
 - **Painel Administrativo**: Gestão da Loja (branding/config), Cadastro de
-  Irmãos completo, Gestões/Diretoria, Usuários, Permissões (RBAC visual),
-  Avisos, Notícias.
+  Irmãos completo — incluindo importação em massa (planilha .xlsx ou
+  relatório .pdf de outro sistema, com wizard de revisão/seleção antes de
+  gravar) e autoatendimento de acesso (`/reivindicar`: o próprio Irmão
+  cria e-mail/senha por Nome + CIM, sem depender do Administrador) —,
+  Gestões/Diretoria, Usuários, Permissões (RBAC visual), Avisos, Notícias.
 - **Auditoria** (registro automático via Cloud Function) e **Soft Delete**
   em todas as entidades.
 - Exportação básica (CSV/JSON) de listagens administrativas.

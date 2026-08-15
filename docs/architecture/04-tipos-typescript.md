@@ -96,6 +96,8 @@ export interface User extends BaseEntity {
 export type MemberDegree = 'aprendiz' | 'companheiro' | 'mestre';
 export type MemberSituation =
   'regular' | 'irregular' | 'remido' | 'inativo' | 'falecido' | 'transferido';
+export type MaritalStatus =
+  'solteiro' | 'casado' | 'uniao_estavel' | 'separado_judicialmente' | 'divorciado' | 'viuvo';
 
 export interface Address {
   logradouro: string;
@@ -116,9 +118,9 @@ export interface SocialLinks {
 export interface Member extends BaseEntity {
   userId: string | null;
   nomeCompleto: string;
-  nomeMaconico: string | null;
   fotoUrl: string | null;
-  email: string;
+  /** Opcional — Irmãos importados em massa podem não ter e-mail ainda; ver `ClaimMemberAccountUseCase` (07 §7.2b). */
+  email: string | null;
   telefone: string | null;
   whatsapp: string | null;
   endereco: Address | null;
@@ -126,8 +128,8 @@ export interface Member extends BaseEntity {
   dataIniciacao: Date | null;
   dataElevacao: Date | null;
   dataExaltacao: Date | null;
+  /** Identificador único do Irmão na Loja — substituiu "matrícula"/"nome maçônico". */
   cim: string | null;
-  matricula: string;
   grau: MemberDegree;
   cargoAtualId: string | null;
   situacao: MemberSituation;
@@ -135,7 +137,10 @@ export interface Member extends BaseEntity {
   potencia: string;
   profissao: string | null;
   empresa: string | null;
-  estadoCivil: string | null;
+  estadoCivil: MaritalStatus | null;
+  /** Só preenchidos quando `estadoCivil` implica cônjuge — ver `MARITAL_STATUSES_WITH_SPOUSE`. */
+  conjugeNome: string | null;
+  conjugeDataNascimento: Date | null;
   biografia: string | null;
   redesSociais: SocialLinks;
   observacoes: string | null;
@@ -286,11 +291,11 @@ import { z } from 'zod';
 
 export const memberSchema = z.object({
   nomeCompleto: z.string().min(3).max(150),
-  nomeMaconico: z.string().max(150).nullable(),
-  email: z.string().email(),
+  // Opcional — cadastro manual e importação em massa (planilha/PDF) podem
+  // não trazer e-mail; o próprio Irmão reivindica o acesso depois (07 §7.2b).
+  email: z.string().email().nullable(),
   telefone: z.string().nullable(),
   cim: z.string().nullable(),
-  matricula: z.string().min(1),
   grau: z.enum(['aprendiz', 'companheiro', 'mestre']),
   situacao: z.enum(['regular', 'irregular', 'remido', 'inativo', 'falecido', 'transferido']),
   dataNascimento: z.coerce.date().nullable(),

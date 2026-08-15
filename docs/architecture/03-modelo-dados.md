@@ -76,14 +76,23 @@ boolean (papéis padrão não editáveis), ...BaseEntity
 ### members ("Irmãos")
 
 ```
-id, tenantId, userId | null, nomeCompleto, nomeMaconico, fotoUrl, email,
-telefone, whatsapp, endereco {...}, dataNascimento, dataIniciacao,
-dataElevacao, dataExaltacao, cim, matricula, grau: 'aprendiz' | 'companheiro'
+id, tenantId, userId | null, nomeCompleto, fotoUrl, email | null, telefone,
+whatsapp, endereco {...} | null, dataNascimento, dataIniciacao,
+dataElevacao, dataExaltacao, cim (identificador único do Irmão na Loja —
+substituiu "matrícula"/"nome maçônico"), grau: 'aprendiz' | 'companheiro'
 | 'mestre', cargoAtualId (ref boardPositionAssignments), situacao:
 'regular' | 'irregular' | 'remido' | 'inativo' | 'falecido' | 'transferido',
-lojaId, potencia, profissao, empresa, estadoCivil, biografia,
-redesSociais { instagram, facebook, linkedin }, observacoes, ...BaseEntity
+lojaId, potencia, profissao, empresa, estadoCivil: MaritalStatus | null,
+conjugeNome | null, conjugeDataNascimento | null (só preenchidos quando
+estadoCivil implica cônjuge), biografia, redesSociais { instagram,
+facebook, linkedin }, observacoes, ...BaseEntity
 ```
+
+`email` é opcional: cadastro manual e importação em massa (planilha .xlsx
+ou relatório .pdf de outro sistema, ver 06 §6.1) exigem só `nomeCompleto`.
+Um `Member` sem `email` fica visível na lista pública de
+`/reivindicar`, onde o próprio Irmão define e-mail/senha depois de
+confirmar Nome + CIM (ver 07-fluxo-autenticacao.md §7.2b).
 
 ### memberPositionHistory
 

@@ -15,11 +15,16 @@ multi-tenant, com autenticação completa (login, sessão, Custom Claims, MFA)
 e os módulos de negócio da área do Irmão e do painel administrativo já
 implementados e funcionando contra Firestore real: Dashboard, Perfil,
 Agenda, Arquivos, Biblioteca, Avisos, Downloads, Galeria, Notícias, Links
-Úteis, além do `/admin` completo (Irmãos, Usuários, Permissões, Arquivos,
+Úteis, além do `/admin` completo (Irmãos — incluindo importação em massa
+por planilha `.xlsx` ou relatório `.pdf` de outro sistema, com tela de
+revisão/seleção antes de gravar —, Usuários, Permissões, Arquivos,
 Biblioteca, Agenda, Avisos, Notícias, Galeria, Gestões, Loja, Configurações,
 Integrações) e do painel `/plataforma` para o Administrador Geral
-(multi-tenant cross-tenant). Detalhes de cada módulo e o histórico de
-versões estão no [roadmap](./docs/architecture/10-roadmap.md).
+(multi-tenant cross-tenant). O cadastro de um Irmão não exige e-mail: quem
+foi importado sem e-mail cria o próprio acesso sozinho em `/reivindicar`
+(escolhe o nome numa lista e confirma o CIM), sem depender do
+Administrador. Detalhes de cada módulo e o histórico de versões estão no
+[roadmap](./docs/architecture/10-roadmap.md).
 
 ## Stack
 
