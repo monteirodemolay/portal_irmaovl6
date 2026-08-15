@@ -78,20 +78,24 @@ genéricas parametrizadas por `tenantId`.
 
 ## 1.5 Bounded Contexts (Módulos DDD)
 
-| Módulo                 | Responsabilidade                                                          | Entidades principais                                |
-| ---------------------- | ------------------------------------------------------------------------- | --------------------------------------------------- |
-| **Tenancy**            | Cadastro e configuração de Lojas (tenants), branding, módulos habilitados | `Tenant`, `TenantBranding`, `TenantSettings`        |
-| **IdentityAccess**     | Autenticação, contas de usuário, papéis e permissões (RBAC)               | `User`, `Role`, `Permission`, `Session`             |
-| **Membership**         | Cadastro de Irmãos e seu histórico                                        | `Member`, `MemberPositionHistory`                   |
-| **Governance**         | Gestões anuais, Diretoria, Comissões                                      | `BoardTerm`, `BoardPositionAssignment`, `Committee` |
-| **Library**            | Biblioteca digital, categorias, favoritos, leitura                        | `LibraryItem`, `LibraryCategory`, `LibraryFavorite` |
-| **DocumentManagement** | Arquivos compartilhados, categorias, downloads                            | `FileAsset`, `FileCategory`                         |
-| **Agenda**             | Eventos, sessões, cursos, presença                                        | `Event`, `EventAttendance`                          |
-| **Content**            | Notícias e Avisos                                                         | `News`, `NewsComment`, `Announcement`               |
-| **Gallery**            | Álbuns de fotos e vídeos                                                  | `GalleryAlbum`, `GalleryMedia`                      |
-| **Audit**              | Trilha de auditoria imutável                                              | `AuditLog`                                          |
-| **Notification**       | Notificações internas e integrações externas preparadas                   | `Notification`, `NotificationPreference`            |
-| **PublicSite**         | Conteúdo institucional editável do site público                           | `PublicPage`, `PublicPageBlock`                     |
+| Módulo                 | Responsabilidade                                                              | Entidades principais                                                |
+| ---------------------- | ----------------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| **Tenancy**            | Cadastro e configuração de Lojas (tenants), branding, módulos habilitados     | `Tenant`, `TenantBranding`, `TenantSettings`                        |
+| **IdentityAccess**     | Autenticação, contas de usuário, papéis e permissões (RBAC)                   | `User`, `Role`, `Permission`, `Session`                             |
+| **Membership**         | Cadastro de Irmãos e seu histórico                                            | `Member`, `MemberPositionHistory`                                   |
+| **Central**            | Perfil unificado do Irmão — autoatendimento + diretório interno (doc 06 §6.1) | `MemberCentralProfile`, `PublicationSettings`, `PublicationConsent` |
+| **Governance**         | Gestões anuais, Diretoria, Comissões                                          | `BoardTerm`, `BoardPositionAssignment`, `Committee`                 |
+| **Library**            | Biblioteca digital, categorias, favoritos, leitura                            | `LibraryItem`, `LibraryCategory`, `LibraryFavorite`                 |
+| **DocumentManagement** | Arquivos compartilhados, categorias, downloads                                | `FileAsset`, `FileCategory`                                         |
+| **Agenda**             | Eventos, sessões, cursos, presença                                            | `Event`, `EventAttendance`                                          |
+| **Content**            | Notícias e Avisos                                                             | `News`, `NewsComment`, `Announcement`                               |
+| **Gallery**            | Álbuns de fotos e vídeos                                                      | `GalleryAlbum`, `GalleryMedia`                                      |
+| **Audit**              | Trilha de auditoria imutável                                                  | `AuditLog`                                                          |
+| **Notification**       | Notificações internas e integrações externas preparadas                       | `Notification`, `NotificationPreference`                            |
+
+Não há módulo `PublicSite`: o site institucional (`vl6.com.br`) fica fora
+deste repositório (Wix) — o Portal não reproduz conteúdo público, ver doc
+07 §7.0.
 
 Cada módulo é um diretório autocontido em `packages/domain/src/modules/<modulo>`
 e espelhado em `apps/web/src/modules/<modulo>` para a camada de apresentação.
