@@ -818,7 +818,13 @@ async function buildPdfPreviewRows(
     await parser.destroy();
     text = parsed.text;
   } catch (error) {
-    Sentry.captureException(error);
+    logger.error('Falha ao ler PDF na importação de Irmãos', {
+      route: 'buildPdfPreviewRows',
+      tenantId: current.tenant.id,
+      fileName: file.name,
+      ...errorToLogContext(error),
+    });
+    Sentry.captureException(error, { tags: { route: 'buildPdfPreviewRows' } });
     return { error: 'Não foi possível ler o arquivo. Confirme que é um .pdf válido.' };
   }
 
