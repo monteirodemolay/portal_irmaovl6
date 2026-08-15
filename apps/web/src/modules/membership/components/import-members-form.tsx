@@ -20,20 +20,23 @@ export function ImportMembersForm() {
       <form action={formAction} className="border-border flex flex-col gap-4 rounded-lg border p-4">
         <div className="flex flex-col gap-1">
           <label htmlFor="planilha" className="text-sm font-medium">
-            Planilha (.xlsx)
+            Planilha (.xlsx) ou Relatório do módulo Irmãos (.pdf)
           </label>
           <input
             id="planilha"
             name="planilha"
             type="file"
-            accept=".xlsx"
+            accept=".xlsx,.pdf"
             required
             className="text-sm"
           />
           <p className="text-muted text-xs">
-            Mesmas colunas da exportação: Nome, CIM, Grau, Situação, E-mail, Cidade. Só Nome é
-            obrigatório — deixe E-mail em branco pra o Irmão reivindicar o próprio acesso depois em
-            "Reivindicar meu cadastro".
+            .xlsx: mesmas colunas da exportação (Nome, CIM, Grau, Situação, E-mail, Cidade) — só
+            Nome é obrigatório, deixe E-mail em branco pra o Irmão reivindicar o próprio acesso
+            depois em "Reivindicar meu cadastro". .pdf: o relatório de outro sistema (Nome, CIM,
+            Loja, Grau) — nunca tem e-mail, e todo mundo entra com situação "Regular"; os Irmãos
+            marcados por cor no PDF original (Desligado, Irregular, etc.) precisam ser ajustados à
+            mão depois, pelo botão "Situação" na tela de cada um.
           </p>
         </div>
         {state.error && <p className="text-sm text-red-600">{state.error}</p>}
