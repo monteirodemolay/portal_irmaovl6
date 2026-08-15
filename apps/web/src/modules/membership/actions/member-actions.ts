@@ -5,7 +5,6 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import * as Sentry from '@sentry/nextjs';
 import ExcelJS from 'exceljs';
-import { PDFParse } from 'pdf-parse';
 import {
   errorToLogContext,
   logger,
@@ -807,11 +806,19 @@ async function buildPdfPreviewRows(
 ): Promise<{ error: string } | { rows: ImportPreviewRow[] }> {
   let text: string;
   try {
+    // Import dinâmico (não no topo do módulo): esta é uma Server Action —
+    // um import estático de `pdf-parse` carregaria o pacote (e o
+    // `pdfjs-dist` que ele embute) em toda renderização da página de
+    // importação, mesmo sem nenhum PDF enviado ainda. Isolar o carregamento
+    // aqui, dentro do try/catch, faz qualquer falha do pacote virar o erro
+    // amigável abaixo em vez de derrubar a página inteira.
+    const { PDFParse } = await import('pdf-parse');
     const parser = new PDFParse({ data: Buffer.from(await file.arrayBuffer()) });
     const parsed = await parser.getText();
     await parser.destroy();
     text = parsed.text;
-  } catch {
+  } catch (error) {
+    Sentry.captureException(error);
     return { error: 'Não foi possível ler o arquivo. Confirme que é um .pdf válido.' };
   }
 
