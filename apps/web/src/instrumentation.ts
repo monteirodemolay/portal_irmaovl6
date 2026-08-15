@@ -1,4 +1,5 @@
 import * as Sentry from '@sentry/nextjs';
+import { ensureNodePdfDomPolyfills } from '@/lib/pdf/ensure-node-dom-polyfills';
 
 /**
  * Alertas de erro (docs/architecture/10-roadmap.md v1.3, "Sentry ou
@@ -9,12 +10,13 @@ import * as Sentry from '@sentry/nextjs';
  */
 export async function register(): Promise<void> {
   // Só faz sentido no runtime Node.js (não Edge) — é onde `pdf-parse`
-  // roda. Precisa acontecer aqui, na inicialização do servidor, e não
-  // dentro da Server Action que usa `pdf-parse`: o Next pré-carrega o
-  // módulo da rota de importação assim que ela é navegada, antes de
-  // qualquer upload — ver `ensureNodePdfDomPolyfills`.
+  // roda. Import ESTÁTICO (não dinâmico) de propósito: precisa rodar de
+  // forma síncrona, sem nenhum `await` antes, pra fechar qualquer corrida
+  // de tempo com o pré-carregamento de rota do Next
+  // (`unstable_preloadEntries`) — que dispara o `import('pdf-parse')` já
+  // ao navegar pra `/admin/pessoas/irmaos/importar`, antes de qualquer
+  // upload. Ver `ensureNodePdfDomPolyfills`.
   if (process.env.NEXT_RUNTIME === 'nodejs') {
-    const { ensureNodePdfDomPolyfills } = await import('@/lib/pdf/ensure-node-dom-polyfills');
     ensureNodePdfDomPolyfills();
   }
 

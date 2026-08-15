@@ -31,6 +31,15 @@ import { ensureNodePdfDomPolyfills } from '@/lib/pdf/ensure-node-dom-polyfills';
 import { resolveProfissaoFromFormData } from '@/lib/membership/professions';
 import type { ProfileFieldActionState } from '@/modules/membership/components/profile-fields/action-state';
 
+// Chamada síncrona no topo do módulo (não dentro de uma função) — garante
+// que os stubs existam já na primeira vez que este arquivo é avaliado,
+// sem depender da ordem entre o `register()` assíncrono de
+// `instrumentation.ts` e o pré-carregamento de rota do Next
+// (`unstable_preloadEntries`), que é o que dispara o `import('pdf-parse')`
+// mais cedo do que qualquer chamada de função poderia interceptar. Ver
+// `ensureNodePdfDomPolyfills` para o porquê.
+ensureNodePdfDomPolyfills();
+
 export interface MemberActionState {
   error: string | null;
   memberId: string | null;

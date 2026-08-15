@@ -39,6 +39,9 @@
   "pnpm": {
     "overrides": {
       "zod": "^3.24.1"
+    },
+    "patchedDependencies": {
+      "pdfjs-dist@5.4.296": "patches/pdfjs-dist@5.4.296.patch"
     }
   }
 }

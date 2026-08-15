@@ -7,6 +7,11 @@ settings:
 overrides:
   zod: ^3.24.1
 
+patchedDependencies:
+  pdfjs-dist@5.4.296:
+    hash: 5buot3kp6u6gwc2i77ma2nr2iu
+    path: patches/pdfjs-dist@5.4.296.patch
+
 importers:
 
   .:
@@ -12088,9 +12093,9 @@ snapshots:
   pdf-parse@2.4.5:
     dependencies:
       '@napi-rs/canvas': 0.1.80
-      pdfjs-dist: 5.4.296
+      pdfjs-dist: 5.4.296(patch_hash=5buot3kp6u6gwc2i77ma2nr2iu)
 
-  pdfjs-dist@5.4.296:
+  pdfjs-dist@5.4.296(patch_hash=5buot3kp6u6gwc2i77ma2nr2iu):
     optionalDependencies:
       '@napi-rs/canvas': 0.1.80
 

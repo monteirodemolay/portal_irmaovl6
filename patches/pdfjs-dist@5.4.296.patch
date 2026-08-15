@@ -1,0 +1,34 @@
+diff --git a/legacy/build/pdf.mjs b/legacy/build/pdf.mjs
+index f9593383b204f2217aa8910e8311d9575cee626c..5991329491651f5270f55d6665307b65d5c50e8a 100644
+--- a/legacy/build/pdf.mjs
++++ b/legacy/build/pdf.mjs
+@@ -14349,6 +14349,13 @@ if (isNodeJS) {
+     if (canvas?.DOMMatrix) {
+       globalThis.DOMMatrix = canvas.DOMMatrix;
+     } else {
++      // vl6 patch: stub em vez de deixar undefined — o próprio pdf.mjs
++      // referencia `new DOMMatrix()` no escopo do módulo (ex. SCALE_MATRIX)
++      // e sem isso o import inteiro quebra com ReferenceError antes mesmo
++      // de qualquer PDF ser processado, quando @napi-rs/canvas (opcional)
++      // não está disponível no ambiente serverless (ver
++      // apps/web/src/lib/pdf/ensure-node-dom-polyfills.ts).
++      globalThis.DOMMatrix = class DOMMatrixStub {};
+       warn("Cannot polyfill `DOMMatrix`, rendering may be broken.");
+     }
+   }
+@@ -14356,6 +14363,7 @@ if (isNodeJS) {
+     if (canvas?.ImageData) {
+       globalThis.ImageData = canvas.ImageData;
+     } else {
++      globalThis.ImageData = class ImageDataStub {};
+       warn("Cannot polyfill `ImageData`, rendering may be broken.");
+     }
+   }
+@@ -14363,6 +14371,7 @@ if (isNodeJS) {
+     if (canvas?.Path2D) {
+       globalThis.Path2D = canvas.Path2D;
+     } else {
++      globalThis.Path2D = class Path2DStub {};
+       warn("Cannot polyfill `Path2D`, rendering may be broken.");
+     }
+   }
