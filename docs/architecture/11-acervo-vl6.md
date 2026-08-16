@@ -152,6 +152,43 @@ contrário dos 7 repositórios de Acervo (file/library/gallery) que a
 auditoria original da Etapa 1 encontrou sem cobertura, a coleção já nasce
 auditada.
 
+## 11.6b Fotografias, documentos, biblioteca e audiovisual (Estágio 3)
+
+Quatro telas editoriais dedicadas, cada uma reaproveitando os casos de uso
+administrativos já existentes (nenhum novo caso de uso de leitura foi
+criado) e convergindo para `/acervo/item/[id]`:
+
+- `/acervo/documentos` — documentos publicados e ainda não catalogados na
+  Biblioteca, com filtro por categoria (`FileCategory`).
+- `/acervo/biblioteca` — itens catalogados, com filtro por categoria
+  (`LibraryCategory`, só categorias de topo).
+- `/acervo/fotografias` — álbuns da Galeria, com filtro pela `categoria`
+  livre do álbum.
+- `/acervo/audiovisual` — todo conteúdo `tipo: 'video'`, seja de
+  `FileAsset` (Documentos) seja de `GalleryMedia` (Galeria), reunido numa
+  única lista. **Não existe um "áudio" como tipo suportado** em
+  `FILE_KINDS`/`GALLERY_MEDIA_KINDS` — a tela não inventa suporte a um tipo
+  de mídia que o modelo de dados não tem.
+
+Dois componentes de mídia novos em `packages/ui`, usados pela página do
+Item do Acervo (e reaproveitáveis pelas telas acima):
+
+- `VideoPlayer` — `<video>` nativo do navegador, sem dependência nova.
+  Legendas/transcrição continuam fora de escopo (Etapa 4 futura do
+  roadmap).
+- `PdfViewer` — `<iframe>` apontando para o proxy autenticado (renderização
+  nativa do navegador do PDF, sem `pdfjs-dist`/`DOMMatrix` — mesma cautela
+  já registrada no incidente conhecido desses pacotes em runtime
+  serverless). Alguns navegadores móveis não renderizam PDF embutido; por
+  isso o botão "Visualizar" (nova aba) continua sendo o caminho principal
+  garantido, e o `PdfViewer` é só a prévia opcional em tela.
+
+Os 4 tiles de "Explore o Acervo" em `/acervo` passaram a apontar para estas
+telas dedicadas (`/acervo/documentos`, `/acervo/biblioteca`,
+`/acervo/fotografias`) em vez das rotas legadas — que continuam existindo e
+funcionando sem alteração (`/arquivos`, `/biblioteca`, `/galeria`,
+preservadas por compatibilidade).
+
 ### Etapa 2 — catalogação e coleções
 
 - Item do Acervo e ficha documental;

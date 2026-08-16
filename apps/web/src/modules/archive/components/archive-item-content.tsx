@@ -7,7 +7,9 @@ import {
   Download,
   FileText,
   Image as ImageIcon,
+  PdfViewer,
   ProvenancePanel,
+  VideoPlayer,
 } from '@vl6/ui';
 import type { ArchiveItemKind } from '../lib/archive-item-id';
 import type { ResolvedArchiveItem } from '../lib/resolve-archive-item';
@@ -47,15 +49,7 @@ function ItemMedia({ item }: { item: ResolvedArchiveItem }) {
   }
 
   if (item.kind === 'gallery-media' && item.tipoDetalhado === 'Vídeo') {
-    return (
-      <video
-        src={item.viewHref}
-        controls
-        className="border-border w-full rounded-lg border bg-black"
-      >
-        Seu navegador não suporta reprodução de vídeo.
-      </video>
-    );
+    return <VideoPlayer src={item.viewHref} title={item.titulo} posterUrl={item.thumbnailUrl} />;
   }
 
   if (item.kind === 'file' || item.kind === 'library') {
@@ -67,6 +61,12 @@ function ItemMedia({ item }: { item: ResolvedArchiveItem }) {
           className="border-border max-h-[70vh] w-full rounded-lg border object-contain"
         />
       );
+    }
+    if (item.tipoDetalhado === 'Vídeo') {
+      return <VideoPlayer src={item.viewHref} title={item.titulo} posterUrl={item.thumbnailUrl} />;
+    }
+    if (item.tipoDetalhado === 'PDF') {
+      return <PdfViewer src={item.viewHref} title={item.titulo} />;
     }
     return (
       <div className="border-border bg-background flex flex-col items-center justify-center gap-3 rounded-lg border p-12 text-center">

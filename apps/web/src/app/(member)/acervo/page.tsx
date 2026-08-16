@@ -77,7 +77,7 @@ export default async function AcervoPage({
 
   const categories = [
     {
-      href: '/arquivos',
+      href: '/acervo/documentos',
       title: 'Documentos',
       description: 'Atas autorizadas, circulares, registros e documentos institucionais.',
       count: formatCount(documentCount, 'arquivo', 'arquivos'),
@@ -85,7 +85,7 @@ export default async function AcervoPage({
       available: canReadFiles,
     },
     {
-      href: '/biblioteca',
+      href: '/acervo/biblioteca',
       title: 'Biblioteca',
       description: 'Livros, estudos, revistas e leituras selecionadas para os Irmãos.',
       count: formatCount(libraryCount, 'item', 'itens'),
@@ -93,7 +93,7 @@ export default async function AcervoPage({
       available: canReadLibrary,
     },
     {
-      href: '/galeria',
+      href: '/acervo/fotografias',
       title: 'Fotos e Vídeos',
       description: 'Álbuns de sessões, solenidades e acontecimentos da Loja.',
       count: formatCount(albumCount, 'álbum', 'álbuns'),
@@ -164,6 +164,9 @@ export default async function AcervoPage({
             </Link>
             <Link href="/acervo/colecoes" className="text-white/70 hover:text-white">
               Coleções
+            </Link>
+            <Link href="/acervo/audiovisual" className="text-white/70 hover:text-white">
+              Audiovisual
             </Link>
           </nav>
 
