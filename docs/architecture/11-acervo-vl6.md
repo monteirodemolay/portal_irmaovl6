@@ -82,7 +82,39 @@ migração dos dados atuais. O modelo-alvo será composto por:
 Serão referenciados pelos seus IDs canônicos, evitando duplicidade e
 divergência de informação.
 
-## 11.6 Etapas futuras
+## 11.6 Evolução para experiências especializadas (Etapa 1 — fundação e convergência)
+
+A evolução do Acervo VL6 para um conjunto de experiências editoriais
+especializadas (pesquisa, coleções, linha do tempo, pessoas, gestões,
+eventos, exposições etc.) converge todas as rotas para uma única página
+canônica: **Item do Acervo**, em `/acervo/item/[id]`.
+
+Como a catalogação formal (`archiveItems`, ver §11.5) ainda não existe, o
+`id` desta primeira etapa é um **ID composto de compatibilidade** —
+`tipo:idDeOrigem` (`file:<fileId>`, `library:<libraryItemId>`,
+`gallery-album:<albumId>`, `gallery-media:<mediaId>`) — resolvido
+diretamente contra `FileAsset`, `LibraryItem`, `GalleryAlbum` e
+`GalleryMedia`, sem duplicar nenhum registro
+(`apps/web/src/modules/archive/lib/resolve-archive-item.ts`). Quando a
+coleção `archiveItems` for criada, seu `id` próprio passa a ser o `id`
+canônico e o ID composto atual fica guardado em `origemId` — nenhuma URL já
+publicada deixa de funcionar.
+
+A página tem acesso duplo, seguindo o mesmo padrão de rota paralela e
+interceptadora já usado em `admin/pessoas/irmaos`: navegação direta/refresh
+renderiza a página cheia; ao navegar a partir de uma lista dentro de
+`/acervo` (hoje, a pesquisa federada da própria central), a mesma rota é
+interceptada (`@preview/(.)item/[id]`) e abre como painel lateral, sem
+perder o contexto da lista.
+
+Esta etapa também fecha um gap de segurança pré-existente identificado na
+auditoria: `GalleryMedia` não tinha proxy autenticado — a URL do Vercel
+Blob era exposta direta no HTML (`<a href={item.url}>`). Agora existe
+`/api/gallery-media/[mediaId]`, espelhando `/api/files/[fileId]` e
+`/api/library-items/[libraryItemId]`.
+
+Nenhuma coleção nova foi criada; nenhuma rota antiga (`/arquivos`,
+`/biblioteca`, `/galeria`, `/downloads`) foi alterada ou removida.
 
 ### Etapa 2 — catalogação e coleções
 

@@ -17,6 +17,7 @@ import {
 } from '@vl6/ui';
 import { getCurrentSession } from '@/lib/auth/get-current-session';
 import { getCurrentTenant } from '@/lib/tenant/get-current-tenant';
+import { archiveItemHref } from '@/modules/archive/lib/archive-item-id';
 
 type ArchiveKind = 'documento' | 'biblioteca' | 'fotografia';
 
@@ -105,7 +106,7 @@ export default async function AcervoPage({
       kind: 'documento',
       title: file.titulo,
       description: file.descricao || 'Documento institucional do Acervo VL6.',
-      href: `/api/files/${file.id}`,
+      href: archiveItemHref('file', file.id),
     }));
 
   const libraryResults: ArchiveResult[] = libraryItems.flatMap((item) => {
@@ -117,7 +118,7 @@ export default async function AcervoPage({
         kind: 'biblioteca' as const,
         title: file.titulo,
         description: file.descricao || 'Estudo e leitura selecionada para os Irmãos.',
-        href: `/api/library-items/${item.id}`,
+        href: archiveItemHref('library', item.id),
       },
     ];
   });
@@ -127,7 +128,7 @@ export default async function AcervoPage({
     kind: 'fotografia',
     title: album.titulo,
     description: `${album.categoria} · registro da Loja`,
-    href: `/galeria/${album.id}`,
+    href: archiveItemHref('gallery-album', album.id),
   }));
 
   const query = params.q?.trim() ?? '';
