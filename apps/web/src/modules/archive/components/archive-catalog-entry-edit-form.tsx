@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState } from 'react';
+import { useActionState, useRef } from 'react';
 import { useFormStatus } from 'react-dom';
 import type { ArchiveCatalogEntry } from '@vl6/domain';
 import { Button, Input, Textarea } from '@vl6/ui';
@@ -9,18 +9,22 @@ import {
   updateArchiveCatalogEntryAction,
   type ArchiveActionState,
 } from '../actions/archive-actions';
+import { TagSuggestions } from './tag-suggestions';
 
 const EMPTY_STATE: ArchiveActionState = { error: null };
 
 export function ArchiveCatalogEntryEditForm({
   entry,
   itemLabel,
+  existingTags,
 }: {
   entry: ArchiveCatalogEntry;
   itemLabel: string;
+  existingTags: string[];
 }) {
   const boundAction = updateArchiveCatalogEntryAction.bind(null, entry.id);
   const [state, formAction] = useActionState(boundAction, EMPTY_STATE);
+  const tagsInputRef = useRef<HTMLInputElement>(null);
 
   return (
     <form action={formAction} className="flex max-w-lg flex-col gap-4">
@@ -46,8 +50,9 @@ export function ArchiveCatalogEntryEditForm({
         />
       </FormField>
       <FormField label="Tags (opcional)" htmlFor="tags" description="Separadas por vírgula.">
-        <Input id="tags" name="tags" defaultValue={entry.tags.join(', ')} />
+        <Input id="tags" name="tags" defaultValue={entry.tags.join(', ')} ref={tagsInputRef} />
       </FormField>
+      <TagSuggestions existingTags={existingTags} inputRef={tagsInputRef} />
       {state.error && <p className="text-sm text-red-600">{state.error}</p>}
       <SubmitButton />
     </form>

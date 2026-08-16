@@ -2,40 +2,17 @@ import 'server-only';
 import type { AuthContext } from '@vl6/domain';
 import { hasPermission } from '@vl6/domain';
 import type { ServerContainer } from '@vl6/infra';
-import { archiveItemHref } from './archive-item-id';
+import { archiveItemHref, buildArchiveItemId } from './archive-item-id';
+import type { ArchiveSearchResult } from './archive-search-match';
 
-export const ARCHIVE_SEARCH_KINDS = ['documento', 'biblioteca', 'fotografia'] as const;
-export type ArchiveSearchKind = (typeof ARCHIVE_SEARCH_KINDS)[number];
-
-export const ARCHIVE_SEARCH_KIND_LABELS: Record<ArchiveSearchKind, string> = {
-  documento: 'Documento',
-  biblioteca: 'Biblioteca',
-  fotografia: 'Foto/Vídeo',
-};
-
-export interface ArchiveSearchResult {
-  id: string;
-  kind: ArchiveSearchKind;
-  title: string;
-  description: string;
-  href: string;
-  createdAt: Date;
-}
-
-export function normalizeSearchText(value: string): string {
-  return value
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase();
-}
-
-export function matchesArchiveSearch(result: ArchiveSearchResult, query: string): boolean {
-  if (!query) return true;
-  const haystack = normalizeSearchText(
-    `${result.title} ${result.description} ${ARCHIVE_SEARCH_KIND_LABELS[result.kind]}`,
-  );
-  return haystack.includes(normalizeSearchText(query));
-}
+export {
+  ARCHIVE_SEARCH_KINDS,
+  ARCHIVE_SEARCH_KIND_LABELS,
+  matchesArchiveSearch,
+  normalizeSearchText,
+  type ArchiveSearchKind,
+  type ArchiveSearchResult,
+} from './archive-search-match';
 
 /**
  * Busca federada do Acervo VL6 — documentos publicados, itens da Biblioteca
@@ -51,8 +28,9 @@ export async function loadArchiveSearchResults(
   const canReadFiles = hasPermission(authContext, 'file:read');
   const canReadLibrary = hasPermission(authContext, 'libraryItem:read');
   const canReadGallery = hasPermission(authContext, 'gallery:read');
+  const canReadCatalog = hasPermission(authContext, 'archiveCatalog:read');
 
-  const [filesPage, libraryItems, albums] = await Promise.all([
+  const [filesPage, libraryItems, albums, catalogEntries] = await Promise.all([
     canReadFiles || canReadLibrary
       ? container.useCases.listAllFileAssets.execute(authContext, { limit: 200 })
       : Promise.resolve({ items: [], nextCursor: null, hasMore: false }),
@@ -60,7 +38,21 @@ export async function loadArchiveSearchResults(
       ? container.repositories.libraryItem.listByTenant(authContext.tenantId)
       : Promise.resolve([]),
     canReadGallery ? container.useCases.listGalleryAlbums.execute(authContext) : Promise.resolve([]),
+    canReadCatalog
+      ? container.repositories.archiveCatalogEntry.listByTenant(authContext.tenantId)
+      : Promise.resolve([]),
   ]);
+
+  // Só fichas publicadas entram na busca — rascunho não deve vazar conteúdo
+  // ainda em revisão, mesma regra do painel "Contexto Histórico".
+  const catalogTextByOrigemId = new Map(
+    catalogEntries
+      .filter((entry) => entry.publicado)
+      .map((entry) => [
+        entry.origemId,
+        [entry.tituloCurado, entry.contextoHistorico, ...entry.tags].filter(Boolean).join(' '),
+      ]),
+  );
 
   const fileById = new Map(filesPage.items.map((file) => [file.id, file]));
   const libraryFileIds = new Set(libraryItems.map((item) => item.fileId));
@@ -74,6 +66,7 @@ export async function loadArchiveSearchResults(
       description: file.descricao || 'Documento institucional do Acervo VL6.',
       href: archiveItemHref('file', file.id),
       createdAt: file.createdAt,
+      catalogText: catalogTextByOrigemId.get(buildArchiveItemId('file', file.id)) ?? null,
     }));
 
   const libraryResults: ArchiveSearchResult[] = libraryItems.flatMap((item) => {
@@ -87,6 +80,7 @@ export async function loadArchiveSearchResults(
         description: file.descricao || 'Estudo e leitura selecionada para os Irmãos.',
         href: archiveItemHref('library', item.id),
         createdAt: item.createdAt,
+        catalogText: catalogTextByOrigemId.get(buildArchiveItemId('library', item.id)) ?? null,
       },
     ];
   });
@@ -98,6 +92,7 @@ export async function loadArchiveSearchResults(
     description: `${album.categoria} · registro da Loja`,
     href: archiveItemHref('gallery-album', album.id),
     createdAt: album.createdAt,
+    catalogText: catalogTextByOrigemId.get(buildArchiveItemId('gallery-album', album.id)) ?? null,
   }));
 
   return [...documentResults, ...libraryResults, ...galleryResults];

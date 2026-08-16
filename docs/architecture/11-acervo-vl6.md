@@ -360,6 +360,53 @@ existentes de `FileAsset`/`LibraryItem`, por exemplo) continua sendo uma
 ação futura separada, sujeita a plano próprio com testes e rollback antes
 de qualquer execução real — nunca automática (Regra de Preservação nº3).
 
+## 11.6f Pesquisa avançada — escopo reduzido (Estágio 7)
+
+A "Etapa 4 — pesquisa avançada" do roadmap (§11.6 acima) lista indexação de
+texto, OCR, transcrição de áudio/vídeo, pesquisa semântica e sugestões de
+tags/duplicidade. Das cinco, **OCR, transcrição e pesquisa semântica
+dependem de infraestrutura de ML externa ao projeto** (serviço de OCR,
+speech-to-text, embeddings/busca vetorial) — não são lacunas de código, são
+serviços que precisariam ser contratados (custo recorrente, chaves de API,
+dados saindo do ambiente). Por decisão do usuário, o Estágio 7 implementou
+só o que dá pra fazer com o que já existe no projeto, sem novo serviço
+externo:
+
+**Busca textual sobre a catalogação formal** — `loadArchiveSearchResults`
+(`apps/web/src/modules/archive/lib/search-archive.ts`) passa a carregar
+também as fichas de catalogação publicadas (`archiveCatalogEntries`, só
+`publicado: true` — rascunho nunca entra na busca, mesma regra do painel
+"Contexto Histórico") e anexa `tituloCurado`+`contextoHistorico`+`tags` de
+cada ficha como `catalogText` no resultado correspondente. `matchesArchiveSearch`
+passa a considerar esse texto no casamento — um termo que só existe no
+contexto histórico curado (nunca no título/descrição original do
+documento) agora encontra o item em `/acervo/pesquisar` e `/acervo`. O
+`catalogText` entra só na comparação, nunca é exibido no card de resultado.
+
+As funções puras de casamento (`normalizeSearchText`, `matchesArchiveSearch`,
+mais os tipos `ArchiveSearchKind`/`ArchiveSearchResult`) foram extraídas
+para `archive-search-match.ts` — sem `server-only` — para poderem ser
+testadas isoladamente (mesma convenção de `archive-item-id.ts`);
+`search-archive.ts` (que tem `server-only` por carregar dados via
+container) reexporta tudo, então nenhum import existente quebrou.
+
+**Sugestão de tags duplicadas, com revisão humana** — os dois formulários
+de catalogação (`archive-catalog-entry-form.tsx`,
+`archive-catalog-entry-edit-form.tsx`) ganharam o componente
+`TagSuggestions`: chips com as tags já usadas em outras fichas do tenant
+(`collectDistinctTags`, deduplicado por comparação case-insensitive,
+preservando a primeira grafia encontrada), clicáveis para acrescentar ao
+campo sem duplicar. É sugestão pura — nada é mesclado ou renomeado
+automaticamente; o Administrador decide clicar ou digitar uma tag nova.
+Não há correspondência aproximada (fuzzy) nem qualquer decisão automática
+de "essas duas tags são a mesma coisa".
+
+**Ainda fora de escopo, por decisão explícita:** OCR de documentos
+escaneados, transcrição de áudio/vídeo e busca semântica continuam
+dependendo de infraestrutura externa não contratada — não foram
+fabricados nem simulados. Retomar esse pedaço da Etapa 4 exige antes uma
+decisão do usuário sobre provedor, custo e política de dados.
+
 ## 11.7 Critérios de qualidade
 
 - WCAG AA e navegação completa por teclado;
