@@ -189,6 +189,54 @@ telas dedicadas (`/acervo/documentos`, `/acervo/biblioteca`,
 funcionando sem alteração (`/arquivos`, `/biblioteca`, `/galeria`,
 preservadas por compatibilidade).
 
+## 11.6c Pessoas, gestões, eventos e linha do tempo (Estágio 4)
+
+Diferente dos Estágios 1-3 (documentos, biblioteca, fotografias — itens
+binários que convergem para `/acervo/item/[id]`), pessoas, gestões e
+eventos já têm identidade e rotas próprias no domínio (`Member`,
+`BoardTerm`, `Event`) — a Regra de Preservação 6 ("utilize referências aos
+IDs canônicos") vale aqui em vez da convergência por ID composto: estas
+telas referenciam e navegam pelos IDs reais de `boardTerms`/`members`, sem
+criar nenhuma coleção nova.
+
+Novas rotas do Irmão:
+
+- `/acervo/gestoes` e `/acervo/gestoes/[gestaoId]` — lista de gestões e
+  detalhe com a Diretoria completa (`BoardPositionAssignment` resolvido
+  contra `Member`). Não existia nenhuma tela de Diretoria para o Irmão
+  antes deste Estágio — só a administração (`/admin/pessoas/gestoes`).
+- `/acervo/pessoas` e `/acervo/pessoas/[memberId]` — trajetória
+  institucional. A listagem deriva de `BoardTerm` + `BoardPositionAssignment`
+  (quem já ocupou algum cargo), sem nova consulta de agregação; o detalhe
+  usa `MemberPositionHistory.listByMemberId` — ledger já mantido por
+  `AssignBoardPositionUseCase` a cada atribuição de cargo, nunca lido em
+  nenhuma tela até este Estágio.
+- `/acervo/eventos` — registro histórico (eventos com `dataFim` no
+  passado), reaproveitando `ListAllEventsUseCase` já existente. Não
+  duplica `/agenda` (que é operacional: próximos eventos + confirmação de
+  presença) nem cria uma nova página de detalhe — cada card linka direto
+  para a rota canônica já existente `/eventos/[eventId]`.
+- `/acervo/linha-do-tempo` — mescla gestões e eventos passados em uma
+  lista cronológica agrupada por ano, textual e sem gráfico. É a base
+  concreta da exigência da Regra de Preservação 11 para a futura
+  "Constelação da Memória": nenhuma informação poderá existir somente no
+  grafo, e esta página já é a alternativa textual completa antes mesmo do
+  grafo existir.
+
+**Recorte de campos seguros em `/acervo/pessoas/[memberId]`** — esta é uma
+página institucional compulsória (todo Irmão com cargo aparece, sem opt-in),
+diferente da Central VL6 (`/irmaos`, autoatendimento voluntário). Por isso o
+identity card expõe deliberadamente só `nomeCompleto`, `fotoUrl`, `grau` e
+as 3 datas maçônicas (iniciação/elevação/exaltação) — nunca e-mail,
+telefone, endereço, cônjuge, profissão ou observações administrativas, os
+mesmos campos que a Central já trata como voluntários. Quando o Irmão tem
+perfil publicado na Central (`PublicationSettings.profilePublished`), a
+página exibe um link cruzado para `/irmaos/[memberId]` em vez de duplicar
+esse conteúdo.
+
+A aba "Constelação da Memória" em `/acervo` (até então apenas
+ilustrativa) passou a linkar para estas 4 rotas reais.
+
 ### Etapa 2 — catalogação e coleções
 
 - Item do Acervo e ficha documental;

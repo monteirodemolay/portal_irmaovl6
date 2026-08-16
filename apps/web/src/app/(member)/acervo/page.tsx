@@ -168,6 +168,18 @@ export default async function AcervoPage({
             <Link href="/acervo/audiovisual" className="text-white/70 hover:text-white">
               Audiovisual
             </Link>
+            <Link href="/acervo/pessoas" className="text-white/70 hover:text-white">
+              Pessoas
+            </Link>
+            <Link href="/acervo/gestoes" className="text-white/70 hover:text-white">
+              Gestões
+            </Link>
+            <Link href="/acervo/eventos" className="text-white/70 hover:text-white">
+              Eventos
+            </Link>
+            <Link href="/acervo/linha-do-tempo" className="text-white/70 hover:text-white">
+              Linha do Tempo
+            </Link>
           </nav>
 
           <div className="mt-6 flex max-w-2xl items-start gap-3 border-l border-white/20 pl-4">
@@ -306,15 +318,21 @@ export default async function AcervoPage({
             coleções que lhe dão significado.
           </p>
           <div className="mt-7 space-y-3 text-xs text-white/75">
-            <div className="flex items-center gap-3">
+            <Link href="/acervo/pessoas" className="flex items-center gap-3 hover:text-white">
               <Users className="text-accent" size={17} /> Pessoas e trajetórias
-            </div>
-            <div className="flex items-center gap-3">
+            </Link>
+            <Link href="/acervo/gestoes" className="flex items-center gap-3 hover:text-white">
+              <CalendarDays className="text-accent" size={17} /> Gestões e Diretorias
+            </Link>
+            <Link href="/acervo/eventos" className="flex items-center gap-3 hover:text-white">
               <CalendarDays className="text-accent" size={17} /> Eventos e períodos históricos
-            </div>
-            <div className="flex items-center gap-3">
-              <Compass className="text-accent" size={17} /> Coleções e linhas do tempo
-            </div>
+            </Link>
+            <Link
+              href="/acervo/linha-do-tempo"
+              className="flex items-center gap-3 hover:text-white"
+            >
+              <Compass className="text-accent" size={17} /> Coleções e linha do tempo
+            </Link>
           </div>
         </aside>
       </section>
