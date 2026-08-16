@@ -76,6 +76,17 @@ import type { GalleryAlbum } from '../modules/gallery/entities/gallery-album.ent
 import type { GalleryMedia } from '../modules/gallery/entities/gallery-media.entity';
 import type { IGalleryAlbumRepository } from '../modules/gallery/repositories/gallery-album.repository';
 import type { IGalleryMediaRepository } from '../modules/gallery/repositories/gallery-media.repository';
+import type { ArchiveCollection } from '../modules/archive/entities/archive-collection.entity';
+import type { IArchiveCollectionRepository } from '../modules/archive/repositories/archive-collection.repository';
+import type { ArchiveRelationNodeKind } from '@vl6/shared';
+import type { ArchiveRelation } from '../modules/archive/entities/archive-relation.entity';
+import type { IArchiveRelationRepository } from '../modules/archive/repositories/archive-relation.repository';
+import type { ArchiveExhibition } from '../modules/archive/entities/archive-exhibition.entity';
+import type { IArchiveExhibitionRepository } from '../modules/archive/repositories/archive-exhibition.repository';
+import type { ArchiveCatalogEntry } from '../modules/archive/entities/archive-catalog-entry.entity';
+import type { IArchiveCatalogEntryRepository } from '../modules/archive/repositories/archive-catalog-entry.repository';
+import type { ArchiveContribution } from '../modules/archive/entities/archive-contribution.entity';
+import type { IArchiveContributionRepository } from '../modules/archive/repositories/archive-contribution.repository';
 
 export class FixedClock implements IClock {
   constructor(private readonly fixed: Date = new Date('2026-01-01T00:00:00Z')) {}
@@ -548,6 +559,136 @@ export class InMemoryGalleryAlbumRepository implements IGalleryAlbumRepository {
   }
   async update(album: GalleryAlbum) {
     this.byId.set(album.id, album);
+  }
+}
+
+export class InMemoryArchiveCollectionRepository implements IArchiveCollectionRepository {
+  private readonly byId = new Map<string, ArchiveCollection>();
+
+  async findById(id: string) {
+    return this.byId.get(id) ?? null;
+  }
+  async findBySlugAndTenant(tenantId: string, slug: string) {
+    return (
+      [...this.byId.values()].find(
+        (c) => c.tenantId === tenantId && c.slug === slug && c.deletedAt === null,
+      ) ?? null
+    );
+  }
+  async listByTenant(tenantId: string) {
+    return [...this.byId.values()].filter((c) => c.tenantId === tenantId && c.deletedAt === null);
+  }
+  async listPublishedByTenant(tenantId: string) {
+    return [...this.byId.values()].filter(
+      (c) => c.tenantId === tenantId && c.deletedAt === null && c.publicado,
+    );
+  }
+  async create(collection: ArchiveCollection) {
+    this.byId.set(collection.id, collection);
+  }
+  async update(collection: ArchiveCollection) {
+    this.byId.set(collection.id, collection);
+  }
+}
+
+export class InMemoryArchiveRelationRepository implements IArchiveRelationRepository {
+  private readonly byId = new Map<string, ArchiveRelation>();
+
+  async findById(id: string) {
+    return this.byId.get(id) ?? null;
+  }
+  async listByTenant(tenantId: string) {
+    return [...this.byId.values()].filter((r) => r.tenantId === tenantId && r.deletedAt === null);
+  }
+  async listByNode(tenantId: string, nodeTipo: ArchiveRelationNodeKind, nodeId: string) {
+    return [...this.byId.values()].filter(
+      (r) =>
+        r.tenantId === tenantId &&
+        r.deletedAt === null &&
+        ((r.origemTipo === nodeTipo && r.origemId === nodeId) ||
+          (r.destinoTipo === nodeTipo && r.destinoId === nodeId)),
+    );
+  }
+  async create(relation: ArchiveRelation) {
+    this.byId.set(relation.id, relation);
+  }
+  async update(relation: ArchiveRelation) {
+    this.byId.set(relation.id, relation);
+  }
+}
+
+export class InMemoryArchiveExhibitionRepository implements IArchiveExhibitionRepository {
+  private readonly byId = new Map<string, ArchiveExhibition>();
+
+  async findById(id: string) {
+    return this.byId.get(id) ?? null;
+  }
+  async findBySlugAndTenant(tenantId: string, slug: string) {
+    return (
+      [...this.byId.values()].find(
+        (e) => e.tenantId === tenantId && e.slug === slug && e.deletedAt === null,
+      ) ?? null
+    );
+  }
+  async listByTenant(tenantId: string) {
+    return [...this.byId.values()].filter((e) => e.tenantId === tenantId && e.deletedAt === null);
+  }
+  async listPublishedByTenant(tenantId: string) {
+    return [...this.byId.values()].filter(
+      (e) => e.tenantId === tenantId && e.deletedAt === null && e.publicado,
+    );
+  }
+  async create(exhibition: ArchiveExhibition) {
+    this.byId.set(exhibition.id, exhibition);
+  }
+  async update(exhibition: ArchiveExhibition) {
+    this.byId.set(exhibition.id, exhibition);
+  }
+}
+
+export class InMemoryArchiveCatalogEntryRepository implements IArchiveCatalogEntryRepository {
+  private readonly byId = new Map<string, ArchiveCatalogEntry>();
+
+  async findById(id: string) {
+    return this.byId.get(id) ?? null;
+  }
+  async findByOrigemId(tenantId: string, origemId: string) {
+    return (
+      [...this.byId.values()].find(
+        (e) => e.tenantId === tenantId && e.origemId === origemId && e.deletedAt === null,
+      ) ?? null
+    );
+  }
+  async listByTenant(tenantId: string) {
+    return [...this.byId.values()].filter((e) => e.tenantId === tenantId && e.deletedAt === null);
+  }
+  async create(entry: ArchiveCatalogEntry) {
+    this.byId.set(entry.id, entry);
+  }
+  async update(entry: ArchiveCatalogEntry) {
+    this.byId.set(entry.id, entry);
+  }
+}
+
+export class InMemoryArchiveContributionRepository implements IArchiveContributionRepository {
+  private readonly byId = new Map<string, ArchiveContribution>();
+
+  async findById(id: string) {
+    return this.byId.get(id) ?? null;
+  }
+  async listByTenant(tenantId: string) {
+    return [...this.byId.values()].filter((c) => c.tenantId === tenantId && c.deletedAt === null);
+  }
+  async listByMember(tenantId: string, memberId: string) {
+    return [...this.byId.values()].filter(
+      (c) => c.tenantId === tenantId && c.memberId === memberId && c.deletedAt === null,
+    );
+  }
+  async create(contribution: ArchiveContribution) {
+    this.byId.set(contribution.id, contribution);
+  }
+  async update(contribution: ArchiveContribution) {
+    this.byId.set(contribution.id, contribution);
   }
 }
 

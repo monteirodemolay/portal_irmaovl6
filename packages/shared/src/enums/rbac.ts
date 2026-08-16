@@ -47,6 +47,33 @@ export const RESOURCE_KEYS = [
   // — combinado com `memberCentral:manage` — para moderação administrativa.
   'memberDirectory',
   'memberCentral',
+  // Acervo VL6 — Etapa 2 da evolução (docs/architecture/11-acervo-vl6.md
+  // §11.6). Chave própria em vez de reaproveitar `file`/`libraryItem`/
+  // `gallery`: uma coleção editorial não é dona de nenhum binário, só
+  // referencia (por ID composto) registros que já têm seu próprio RBAC.
+  'archiveCollection',
+  // Constelação da Memória (Estágio 5, §11.6d) — relações entre itens,
+  // pessoas, gestões, eventos e coleções. Recurso próprio pelo mesmo
+  // motivo de `archiveCollection`: uma relação não é dona de nenhum dos
+  // registros que conecta.
+  'archiveRelation',
+  // Exposições Virtuais (Estágio 5, §11.6d) — narrativa curada com seções,
+  // cada seção referenciando itens existentes. Recurso próprio: diferente
+  // de `archiveCollection` (agrupamento plano), uma exposição tem estrutura
+  // narrativa (título+texto por seção).
+  'archiveExhibition',
+  // Catalogação formal (Estágio 6, §11.6e) — camada aditiva de contexto
+  // histórico/título curado/tags sobre um item já existente (`origemId` =
+  // ID composto do Estágio 1). Nunca migra nem substitui o registro de
+  // origem; recurso próprio pela mesma razão de `archiveCollection`.
+  'archiveCatalog',
+  // Contribuições dos Irmãos (Estágio 8, §11.6g) — só o lado de MODERAÇÃO
+  // (listar todas, aprovar/rejeitar) é gated por este recurso
+  // (`archiveContribution:manage`, só admin). Enviar e listar as próprias
+  // contribuições são ações pessoais sem `requirePermission`, mesmo padrão
+  // de "meus favoritos"/"minhas notificações" — por isso `membro` não
+  // recebe nenhuma entrada deste recurso no seed abaixo.
+  'archiveContribution',
 ] as const;
 export type ResourceKey = (typeof RESOURCE_KEYS)[number];
 
@@ -101,6 +128,11 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<RoleKey, PermissionKey[]> = {
     'auditLog:read',
     'memberDirectory:read',
     'memberCentral:manage',
+    'archiveCollection:manage',
+    'archiveRelation:manage',
+    'archiveExhibition:manage',
+    'archiveCatalog:manage',
+    'archiveContribution:manage',
   ],
   membro: [
     'tenant:read',
@@ -116,5 +148,9 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<RoleKey, PermissionKey[]> = {
     'link:read',
     'memberDirectory:read',
     'memberCentral:update',
+    'archiveCollection:read',
+    'archiveRelation:read',
+    'archiveExhibition:read',
+    'archiveCatalog:read',
   ],
 };

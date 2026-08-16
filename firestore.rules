@@ -223,6 +223,46 @@ service cloud.firestore {
     }
 
     // ---------------------------------------------------------------
+    // Acervo VL6 — Etapa 2 (docs/architecture/11-acervo-vl6.md §11.6)
+    // ---------------------------------------------------------------
+    match /archiveCollections/{id} {
+      allow read: if sameTenant(resource.data) && hasPermission('archiveCollection:read') && (resource.data.publicado == true || hasPermission('archiveCollection:manage'));
+      allow create, update: if sameTenant(request.resource.data) && hasPermission('archiveCollection:create');
+      allow delete: if false;
+    }
+
+    // ---------------------------------------------------------------
+    // Acervo VL6 — Estágio 5, Constelação da Memória e Exposições
+    // Virtuais (docs/architecture/11-acervo-vl6.md §11.6d)
+    // ---------------------------------------------------------------
+    match /archiveRelations/{id} {
+      allow read: if sameTenant(resource.data) && hasPermission('archiveRelation:read');
+      allow create, update: if sameTenant(request.resource.data) && hasPermission('archiveRelation:create');
+      allow delete: if false;
+    }
+    match /archiveExhibitions/{id} {
+      allow read: if sameTenant(resource.data) && hasPermission('archiveExhibition:read') && (resource.data.publicado == true || hasPermission('archiveExhibition:manage'));
+      allow create, update: if sameTenant(request.resource.data) && hasPermission('archiveExhibition:create');
+      allow delete: if false;
+    }
+    // Fichas de catalogação (docs/architecture/11-acervo-vl6.md §11.6e) —
+    // camada aditiva que só referencia um item já existente por `origemId`,
+    // nunca migra/substitui a coleção de origem.
+    match /archiveCatalogEntries/{id} {
+      allow read: if sameTenant(resource.data) && hasPermission('archiveCatalog:read') && (resource.data.publicado == true || hasPermission('archiveCatalog:manage'));
+      allow create, update: if sameTenant(request.resource.data) && hasPermission('archiveCatalog:manage');
+      allow delete: if false;
+    }
+    // Contribuições dos Irmãos (Estágio 8, §11.6g) — envio e moderação
+    // acontecem exclusivamente via Server Action com Admin SDK (nunca pelo
+    // client direto, mesmo padrão de `auditLogs`): enviar é ação pessoal
+    // sem permissão de recurso, moderar exige `archiveContribution:manage`.
+    match /archiveContributions/{id} {
+      allow read: if sameTenant(resource.data) && hasPermission('archiveContribution:manage');
+      allow write: if false;
+    }
+
+    // ---------------------------------------------------------------
     // Audit — write exclusivamente via Admin SDK (ignora Security Rules),
     // dentro da própria Server Action que faz a escrita de negócio
     // (withAudit, packages/infra), nunca pelo client. Ver docs/architecture
