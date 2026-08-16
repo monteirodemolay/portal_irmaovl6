@@ -32,6 +32,10 @@ import {
   PublishArchiveCatalogEntryUseCase,
   ListArchiveCatalogEntriesUseCase,
   GetArchiveCatalogEntryByOrigemIdUseCase,
+  SubmitArchiveContributionUseCase,
+  ListMyArchiveContributionsUseCase,
+  ListArchiveContributionsUseCase,
+  ModerateArchiveContributionUseCase,
   CreateBoardTermUseCase,
   CreateCommitteeUseCase,
   CreateEventUseCase,
@@ -126,6 +130,7 @@ import { FirestoreArchiveCollectionRepository } from './firestore/repositories/a
 import { FirestoreArchiveRelationRepository } from './firestore/repositories/archive-relation.repository';
 import { FirestoreArchiveExhibitionRepository } from './firestore/repositories/archive-exhibition.repository';
 import { FirestoreArchiveCatalogEntryRepository } from './firestore/repositories/archive-catalog-entry.repository';
+import { FirestoreArchiveContributionRepository } from './firestore/repositories/archive-contribution.repository';
 import { FirestoreAuditLogRepository } from './firestore/repositories/audit-log.repository';
 import { FirestoreBoardPositionAssignmentRepository } from './firestore/repositories/board-position-assignment.repository';
 import { FirestoreBoardTermRepository } from './firestore/repositories/board-term.repository';
@@ -239,6 +244,11 @@ export function createServerContainer() {
     archiveCatalogEntry: withAudit(
       new FirestoreArchiveCatalogEntryRepository(db),
       'archiveCatalogEntries',
+      auditDeps,
+    ),
+    archiveContribution: withAudit(
+      new FirestoreArchiveContributionRepository(db),
+      'archiveContributions',
       auditDeps,
     ),
   };
@@ -686,6 +696,23 @@ export function createServerContainer() {
     }),
     getArchiveCatalogEntryByOrigemId: new GetArchiveCatalogEntryByOrigemIdUseCase({
       archiveCatalogEntryRepository: repositories.archiveCatalogEntry,
+    }),
+    submitArchiveContribution: new SubmitArchiveContributionUseCase({
+      archiveContributionRepository: repositories.archiveContribution,
+      memberRepository: repositories.member,
+      clock,
+      idGenerator,
+    }),
+    listMyArchiveContributions: new ListMyArchiveContributionsUseCase({
+      archiveContributionRepository: repositories.archiveContribution,
+      memberRepository: repositories.member,
+    }),
+    listArchiveContributions: new ListArchiveContributionsUseCase({
+      archiveContributionRepository: repositories.archiveContribution,
+    }),
+    moderateArchiveContribution: new ModerateArchiveContributionUseCase({
+      archiveContributionRepository: repositories.archiveContribution,
+      clock,
     }),
   };
 

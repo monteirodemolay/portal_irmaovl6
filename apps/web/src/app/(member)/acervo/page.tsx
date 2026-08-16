@@ -183,6 +183,9 @@ export default async function AcervoPage({
             <Link href="/acervo/linha-do-tempo" className="text-white/70 hover:text-white">
               Linha do Tempo
             </Link>
+            <Link href="/acervo/contribuir" className="text-white/70 hover:text-white">
+              Contribuir
+            </Link>
           </nav>
 
           <div className="mt-6 flex max-w-2xl items-start gap-3 border-l border-white/20 pl-4">

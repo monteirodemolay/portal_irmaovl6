@@ -55,6 +55,11 @@ export const ADMIN_AREA_TABS: Record<AdminAreaKey, AreaTabDef[]> = {
       label: 'Catalogação',
       permission: 'archiveCatalog:read',
     },
+    {
+      href: '/admin/acervo/contribuicoes',
+      label: 'Contribuições',
+      permission: 'archiveContribution:manage',
+    },
   ],
   configuracoes: [
     { href: '/admin/configuracoes/geral', label: 'Geral', permission: null },

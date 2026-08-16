@@ -253,6 +253,14 @@ service cloud.firestore {
       allow create, update: if sameTenant(request.resource.data) && hasPermission('archiveCatalog:manage');
       allow delete: if false;
     }
+    // Contribuições dos Irmãos (Estágio 8, §11.6g) — envio e moderação
+    // acontecem exclusivamente via Server Action com Admin SDK (nunca pelo
+    // client direto, mesmo padrão de `auditLogs`): enviar é ação pessoal
+    // sem permissão de recurso, moderar exige `archiveContribution:manage`.
+    match /archiveContributions/{id} {
+      allow read: if sameTenant(resource.data) && hasPermission('archiveContribution:manage');
+      allow write: if false;
+    }
 
     // ---------------------------------------------------------------
     // Audit — write exclusivamente via Admin SDK (ignora Security Rules),

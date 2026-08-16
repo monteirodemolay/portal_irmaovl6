@@ -407,6 +407,66 @@ dependendo de infraestrutura externa não contratada — não foram
 fabricados nem simulados. Retomar esse pedaço da Etapa 4 exige antes uma
 decisão do usuário sobre provedor, custo e política de dados.
 
+## 11.6g Contribuições dos Irmãos com moderação (Estágio 8)
+
+A "Etapa 3 — memória relacionada" do roadmap (§11.6 acima) lista
+"contribuições dos Irmãos com moderação" como item pendente. O Estágio 8
+implementa esse item de ponta a ponta: qualquer Irmão pode submeter um
+documento, fotografia ou relato de memória para o Acervo; nada chega ao
+Acervo público sem passar antes pela moderação de um Administrador.
+
+**Coleção de quarentena, não o Acervo em si** — `archiveContributions` é
+uma coleção nova, totalmente separada de `FileAsset`/`LibraryItem`/
+`GalleryMedia`. Aprovar uma contribuição **não** cria automaticamente um
+item do Acervo — o Administrador precisa incorporá-la manualmente depois,
+usando os fluxos de cadastro já existentes (Arquivos, Galeria etc.), caso
+decida que ela merece virar um item formal. Essa separação preserva o
+invariante de segurança já estabelecido em todas as etapas anteriores: só
+Administradores escrevem nas coleções canônicas do Acervo; um Irmão comum
+nunca ganha, nem indiretamente, esse poder. `firestore.rules` reflete isso
+— `archiveContributions` só permite leitura via Admin SDK
+(`hasPermission('archiveContribution:manage')`) e nunca permite escrita
+direta do cliente (mesmo padrão de `auditLogs`); tanto o envio (Irmão)
+quanto a moderação (Admin) passam exclusivamente por Server Actions.
+
+**RBAC de "ação pessoal", sem entrada para `membro`** — enviar uma
+contribuição e listar "minhas contribuições" são ações sobre o próprio
+cadastro, não permissões do sistema de papéis: `SubmitArchiveContribution`
+e `ListMyArchiveContributions` não chamam `requirePermission` — resolvem o
+`Member` vinculado ao `uid` da sessão (`memberRepository.findByUserId`) e
+filtram por ele, mesmo padrão já usado em favoritos e notificações
+pessoais. Já a moderação exige
+`requirePermission(ctx, 'archiveContribution:manage')`, concedida por
+padrão só ao papel Administrador.
+
+**Ciclo de vida sem soft-delete na rejeição** — ao contrário da moderação
+de comentários de notícias (que oculta o comentário rejeitado), rejeitar
+uma contribuição mantém o registro visível para o próprio Irmão, com o
+motivo da rejeição preenchido (`motivoRejeicao`) — ele precisa entender por
+que não foi aceita, não perder o registro.
+
+**Upload de arquivo** segue exatamente o padrão já usado no cadastro
+administrativo de Arquivos: Server Action lê o `File` do `FormData`,
+valida MIME/tamanho (10 MB, mesmo teto do `bodySizeLimit` de Server
+Actions), envia ao Vercel Blob e reverte (`storage.delete`) se o Use Case
+de domínio falhar depois — nenhum blob órfão fica para trás. O tipo
+"memória" dispensa arquivo (é só um relato em texto).
+
+**Descoberto durante o QA no emulador**: contas de administrador puro,
+criadas via `bootstrapTenantAdmin` (sem nenhum `Member` vinculado), ao
+tentar enviar uma contribuição recebiam o erro de domínio bruto do
+`NotFoundError` (nome da entidade + uid interno) na tela. Corrigido com uma
+mensagem amigável específica para `error.code === 'not_found'` em
+`submitArchiveContributionAction`, orientando a pessoa a procurar a
+Administração da Loja — o mesmo tratamento que qualquer usuário real nessa
+situação (administrador de sistema sem registro formal de Irmão) veria em
+produção.
+
+Telas: `/acervo/contribuir` (Irmão — formulário de envio + lista "Minhas
+contribuições" com status e motivo de rejeição) e
+`/admin/acervo/contribuicoes` (Administrador — fila de moderação com
+aprovar/rejeitar e motivo).
+
 ## 11.7 Critérios de qualidade
 
 - WCAG AA e navegação completa por teclado;

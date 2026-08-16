@@ -217,3 +217,9 @@ export * from './modules/archive/use-cases/upsert-archive-catalog-entry.use-case
 export * from './modules/archive/use-cases/publish-archive-catalog-entry.use-case';
 export * from './modules/archive/use-cases/list-archive-catalog-entries.use-case';
 export * from './modules/archive/use-cases/get-archive-catalog-entry-by-origem-id.use-case';
+export * from './modules/archive/entities/archive-contribution.entity';
+export * from './modules/archive/repositories/archive-contribution.repository';
+export * from './modules/archive/use-cases/submit-archive-contribution.use-case';
+export * from './modules/archive/use-cases/list-my-archive-contributions.use-case';
+export * from './modules/archive/use-cases/list-archive-contributions.use-case';
+export * from './modules/archive/use-cases/moderate-archive-contribution.use-case';

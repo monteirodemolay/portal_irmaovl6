@@ -85,6 +85,8 @@ import type { ArchiveExhibition } from '../modules/archive/entities/archive-exhi
 import type { IArchiveExhibitionRepository } from '../modules/archive/repositories/archive-exhibition.repository';
 import type { ArchiveCatalogEntry } from '../modules/archive/entities/archive-catalog-entry.entity';
 import type { IArchiveCatalogEntryRepository } from '../modules/archive/repositories/archive-catalog-entry.repository';
+import type { ArchiveContribution } from '../modules/archive/entities/archive-contribution.entity';
+import type { IArchiveContributionRepository } from '../modules/archive/repositories/archive-contribution.repository';
 
 export class FixedClock implements IClock {
   constructor(private readonly fixed: Date = new Date('2026-01-01T00:00:00Z')) {}
@@ -665,6 +667,28 @@ export class InMemoryArchiveCatalogEntryRepository implements IArchiveCatalogEnt
   }
   async update(entry: ArchiveCatalogEntry) {
     this.byId.set(entry.id, entry);
+  }
+}
+
+export class InMemoryArchiveContributionRepository implements IArchiveContributionRepository {
+  private readonly byId = new Map<string, ArchiveContribution>();
+
+  async findById(id: string) {
+    return this.byId.get(id) ?? null;
+  }
+  async listByTenant(tenantId: string) {
+    return [...this.byId.values()].filter((c) => c.tenantId === tenantId && c.deletedAt === null);
+  }
+  async listByMember(tenantId: string, memberId: string) {
+    return [...this.byId.values()].filter(
+      (c) => c.tenantId === tenantId && c.memberId === memberId && c.deletedAt === null,
+    );
+  }
+  async create(contribution: ArchiveContribution) {
+    this.byId.set(contribution.id, contribution);
+  }
+  async update(contribution: ArchiveContribution) {
+    this.byId.set(contribution.id, contribution);
   }
 }
 

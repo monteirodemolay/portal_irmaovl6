@@ -1,5 +1,9 @@
 import { z } from 'zod';
-import { ARCHIVE_RELATION_NODE_KINDS, ARCHIVE_RELATION_TYPE_KEYS } from '../enums/archive';
+import {
+  ARCHIVE_CONTRIBUTION_TYPE_KEYS,
+  ARCHIVE_RELATION_NODE_KINDS,
+  ARCHIVE_RELATION_TYPE_KEYS,
+} from '../enums/archive';
 
 export const archiveCollectionSchema = z.object({
   titulo: z.string().min(1).max(200),
@@ -59,3 +63,10 @@ export const archiveCatalogEntrySchema = z.object({
   tags: z.array(z.string().min(1).max(40)).max(20),
 });
 export type ArchiveCatalogEntryFormValues = z.infer<typeof archiveCatalogEntrySchema>;
+
+export const archiveContributionSchema = z.object({
+  titulo: z.string().min(1).max(200),
+  descricao: z.string().min(1).max(4000),
+  tipo: z.enum(ARCHIVE_CONTRIBUTION_TYPE_KEYS),
+});
+export type ArchiveContributionFormValues = z.infer<typeof archiveContributionSchema>;

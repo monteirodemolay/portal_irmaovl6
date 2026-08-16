@@ -67,6 +67,13 @@ export const RESOURCE_KEYS = [
   // ID composto do Estágio 1). Nunca migra nem substitui o registro de
   // origem; recurso próprio pela mesma razão de `archiveCollection`.
   'archiveCatalog',
+  // Contribuições dos Irmãos (Estágio 8, §11.6g) — só o lado de MODERAÇÃO
+  // (listar todas, aprovar/rejeitar) é gated por este recurso
+  // (`archiveContribution:manage`, só admin). Enviar e listar as próprias
+  // contribuições são ações pessoais sem `requirePermission`, mesmo padrão
+  // de "meus favoritos"/"minhas notificações" — por isso `membro` não
+  // recebe nenhuma entrada deste recurso no seed abaixo.
+  'archiveContribution',
 ] as const;
 export type ResourceKey = (typeof RESOURCE_KEYS)[number];
 
@@ -125,6 +132,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<RoleKey, PermissionKey[]> = {
     'archiveRelation:manage',
     'archiveExhibition:manage',
     'archiveCatalog:manage',
+    'archiveContribution:manage',
   ],
   membro: [
     'tenant:read',
