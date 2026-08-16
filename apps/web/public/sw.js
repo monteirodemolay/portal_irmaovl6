@@ -59,11 +59,7 @@ self.addEventListener('fetch', (event) => {
           void caches.open(PAGES_CACHE).then((cache) => cache.put(request, copy));
           return response;
         })
-        .catch(
-          async () =>
-            (await caches.match(request)) ||
-            (await caches.match(OFFLINE_URL)),
-        ),
+        .catch(async () => (await caches.match(request)) || (await caches.match(OFFLINE_URL))),
     );
     return;
   }

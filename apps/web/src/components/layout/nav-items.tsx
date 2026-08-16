@@ -1,11 +1,9 @@
 import { hasPermission, type AuthContext, type Role } from '@vl6/domain';
 import type { PermissionKey } from '@vl6/shared';
 import {
-  BookOpen,
   Building2,
   CalendarDays,
-  Download,
-  FileText,
+  Compass,
   Image as GalleryIcon,
   LayoutDashboard,
   Megaphone,
@@ -48,20 +46,11 @@ const PORTAL_ITEMS: Array<{
   { href: '/irmaos', label: 'Irmãos', icon: Users },
 ];
 
-// Arquivos, Biblioteca, Galeria e Downloads continuam sendo entidades e
-// rotas separadas no domínio (Biblioteca cataloga `FileAsset`s, nunca
-// duplica o binário — ver `LibraryItem`), mas para o Irmão elas formam um
-// único espaço: o Acervo Digital. Agrupá-las numa seção própria (em vez de
-// 4 itens soltos misturados com Agenda/Avisos) resolve a confusão de IA de
-// navegação identificada na auditoria, sem mexer no modelo de dados nem
-// nas rotas existentes. Rótulos alinhados aos títulos das próprias páginas
-// (`AcervoPageHeader`).
-const ACERVO_ITEMS = [
-  { href: '/arquivos', label: 'Documentos', icon: FileText },
-  { href: '/biblioteca', label: 'Biblioteca', icon: BookOpen },
-  { href: '/galeria', label: 'Fotografias', icon: GalleryIcon },
-  { href: '/downloads', label: 'Favoritos', icon: Download },
-] as const;
+// Entrada única do Acervo para o Irmão. Documentos, Biblioteca, Fotografias
+// e Favoritos continuam com entidades, permissões e rotas próprias, mas são
+// apresentados e pesquisados a partir de `/acervo`. As rotas antigas são
+// preservadas para compatibilidade, links salvos e migração incremental.
+const ACERVO_ITEM = { href: '/acervo', label: 'Acervo VL6', icon: Compass } as const;
 
 interface AdminNavItemDef {
   href: string;
@@ -82,39 +71,24 @@ const ADMIN_ITEMS: AdminNavItemDef[] = [
     href: '/admin/pessoas',
     labelKey: 'pessoas',
     icon: Users,
-    // Visível se qualquer uma das 5 abas internas (Irmãos/Usuários/Gestões/
-    // Permissões/Loja — ver `area-tabs.ts`) estiver disponível. Usuários
-    // volta a aparecer na navegação aqui pelo mesmo motivo de Notícias em
-    // "Conteúdo": o custo de item solto na sidebar flat some dentro de uma
-    // área já visível — mas a tela continua deixando claro que é o caso
-    // excepcional (conta de acesso sem Irmão vinculado), não o fluxo normal.
     permission: ['member:read', 'user:read', 'boardTerm:read', 'role:read', 'branding:read'],
   },
   {
     href: '/admin/conteudo',
     labelKey: 'conteudo',
     icon: Megaphone,
-    // Visível se qualquer uma das 3 abas internas (Avisos/Notícias/Agenda —
-    // ver `area-tabs.ts`) estiver disponível pra sessão atual. Notícias
-    // volta a aparecer na navegação aqui (antes ficava de fora pra não
-    // poluir a sidebar flat — esse custo some ao virar aba de uma área já
-    // visível).
     permission: ['announcement:read', 'news:read', 'event:read'],
   },
   {
     href: '/admin/acervo',
     labelKey: 'acervo',
     icon: GalleryIcon,
-    // Visível se qualquer uma das 3 abas internas (Arquivos/Biblioteca/
-    // Galeria — ver `area-tabs.ts`) estiver disponível pra sessão atual.
     permission: ['file:read', 'libraryItem:read', 'gallery:read'],
   },
   {
     href: '/admin/configuracoes',
     labelKey: 'settings',
     icon: Settings,
-    // "Geral" (idioma/senha/MFA) não exige permissão de página hoje — sempre
-    // visível a qualquer sessão admin, então este item nunca some.
     permission: 'tenant:read',
   },
 ];
@@ -130,12 +104,9 @@ function navContent(Icon: typeof LayoutDashboard, label: string) {
 
 /**
  * Monta as seções da sidebar compartilhada (`AppShell`) a partir da sessão
- * real — nunca escondidas só por CSS. "Portal" e "Acervo Digital" aparecem
- * pra qualquer autenticado; "Administração" só pra Administrador da
- * Loja/Geral, com cada item ainda filtrado pela permissão específica (mesma
- * regra de `admin/layout.tsx`); "Sistema" só pro Administrador Geral,
- * apontando pro painel `/plataforma` que já existe — nenhuma tela nova
- * inventada aqui.
+ * real — nunca escondidas só por CSS. O Acervo aparece como uma única área
+ * de memória e conhecimento; "Administração" só para Administrador da
+ * Loja/Geral, com cada item filtrado pela permissão específica.
  */
 export function buildNavSections(
   authContext: AuthContext,
@@ -153,11 +124,13 @@ export function buildNavSections(
       })),
     },
     {
-      title: 'Acervo Digital',
-      items: ACERVO_ITEMS.map((item) => ({
-        href: item.href,
-        content: navContent(item.icon, item.label),
-      })),
+      title: 'Memória e conhecimento',
+      items: [
+        {
+          href: ACERVO_ITEM.href,
+          content: navContent(ACERVO_ITEM.icon, ACERVO_ITEM.label),
+        },
+      ],
     },
   ];
 

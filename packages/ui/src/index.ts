@@ -18,6 +18,13 @@ export * from './components/tabs';
 export * from './components/switch';
 export * from './components/pagination';
 export * from './components/drawer';
+export * from './components/archive-item-card';
+export * from './components/archive-item-header';
+export * from './components/provenance-panel';
+export * from './components/filter-bar';
+export * from './components/video-player';
+export * from './components/pdf-viewer';
+export * from './components/constellation-graph';
 // Reexporte nomeado (não `export *`) — vários ícones do Lucide colidem com
 // nomes de componentes deste barrel (ex.: `Badge`). Adicione aqui só os
 // ícones realmente usados por algum consumidor.
@@ -84,6 +91,7 @@ export {
   Tag,
   IdCard,
   NotebookText,
+  PlayCircle,
   ICON_SIZE_DEFAULT,
   ICON_SIZE_LARGE,
   ICON_STROKE_WIDTH,

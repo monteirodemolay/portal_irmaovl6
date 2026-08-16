@@ -12,6 +12,30 @@ import {
   ConfirmAttendanceUseCase,
   CreateAnnouncementUseCase,
   CreateApiKeyUseCase,
+  CreateArchiveCollectionUseCase,
+  UpdateArchiveCollectionUseCase,
+  PublishArchiveCollectionUseCase,
+  ListArchiveCollectionsUseCase,
+  ListPublishedArchiveCollectionsUseCase,
+  GetArchiveCollectionBySlugUseCase,
+  CreateArchiveRelationUseCase,
+  ListArchiveRelationsUseCase,
+  ListRelationsForNodeUseCase,
+  SoftDeleteArchiveRelationUseCase,
+  CreateArchiveExhibitionUseCase,
+  UpdateArchiveExhibitionUseCase,
+  PublishArchiveExhibitionUseCase,
+  ListArchiveExhibitionsUseCase,
+  ListPublishedArchiveExhibitionsUseCase,
+  GetArchiveExhibitionBySlugUseCase,
+  UpsertArchiveCatalogEntryUseCase,
+  PublishArchiveCatalogEntryUseCase,
+  ListArchiveCatalogEntriesUseCase,
+  GetArchiveCatalogEntryByOrigemIdUseCase,
+  SubmitArchiveContributionUseCase,
+  ListMyArchiveContributionsUseCase,
+  ListArchiveContributionsUseCase,
+  ModerateArchiveContributionUseCase,
   CreateBoardTermUseCase,
   CreateCommitteeUseCase,
   CreateEventUseCase,
@@ -102,6 +126,11 @@ import { getAdminFirestore } from './firebase/admin-app';
 import { NodeApiKeyGenerator } from './security/node-api-key-generator';
 import { FirestoreAnnouncementRepository } from './firestore/repositories/announcement.repository';
 import { FirestoreApiKeyRepository } from './firestore/repositories/api-key.repository';
+import { FirestoreArchiveCollectionRepository } from './firestore/repositories/archive-collection.repository';
+import { FirestoreArchiveRelationRepository } from './firestore/repositories/archive-relation.repository';
+import { FirestoreArchiveExhibitionRepository } from './firestore/repositories/archive-exhibition.repository';
+import { FirestoreArchiveCatalogEntryRepository } from './firestore/repositories/archive-catalog-entry.repository';
+import { FirestoreArchiveContributionRepository } from './firestore/repositories/archive-contribution.repository';
 import { FirestoreAuditLogRepository } from './firestore/repositories/audit-log.repository';
 import { FirestoreBoardPositionAssignmentRepository } from './firestore/repositories/board-position-assignment.repository';
 import { FirestoreBoardTermRepository } from './firestore/repositories/board-term.repository';
@@ -197,6 +226,31 @@ export function createServerContainer() {
       auditDeps,
     ),
     publicationConsent: new FirestorePublicationConsentRepository(db),
+    archiveCollection: withAudit(
+      new FirestoreArchiveCollectionRepository(db),
+      'archiveCollections',
+      auditDeps,
+    ),
+    archiveRelation: withAudit(
+      new FirestoreArchiveRelationRepository(db),
+      'archiveRelations',
+      auditDeps,
+    ),
+    archiveExhibition: withAudit(
+      new FirestoreArchiveExhibitionRepository(db),
+      'archiveExhibitions',
+      auditDeps,
+    ),
+    archiveCatalogEntry: withAudit(
+      new FirestoreArchiveCatalogEntryRepository(db),
+      'archiveCatalogEntries',
+      auditDeps,
+    ),
+    archiveContribution: withAudit(
+      new FirestoreArchiveContributionRepository(db),
+      'archiveContributions',
+      auditDeps,
+    ),
   };
 
   const notificationGateway = new NoopNotificationGateway();
@@ -567,6 +621,98 @@ export function createServerContainer() {
     }),
     listGalleryMediaByAlbum: new ListGalleryMediaByAlbumUseCase({
       galleryMediaRepository: repositories.galleryMedia,
+    }),
+
+    createArchiveCollection: new CreateArchiveCollectionUseCase({
+      archiveCollectionRepository: repositories.archiveCollection,
+      clock,
+      idGenerator,
+    }),
+    updateArchiveCollection: new UpdateArchiveCollectionUseCase({
+      archiveCollectionRepository: repositories.archiveCollection,
+      clock,
+    }),
+    publishArchiveCollection: new PublishArchiveCollectionUseCase({
+      archiveCollectionRepository: repositories.archiveCollection,
+      clock,
+    }),
+    listArchiveCollections: new ListArchiveCollectionsUseCase({
+      archiveCollectionRepository: repositories.archiveCollection,
+    }),
+    listPublishedArchiveCollections: new ListPublishedArchiveCollectionsUseCase({
+      archiveCollectionRepository: repositories.archiveCollection,
+    }),
+    getArchiveCollectionBySlug: new GetArchiveCollectionBySlugUseCase({
+      archiveCollectionRepository: repositories.archiveCollection,
+    }),
+    createArchiveRelation: new CreateArchiveRelationUseCase({
+      archiveRelationRepository: repositories.archiveRelation,
+      clock,
+      idGenerator,
+    }),
+    listArchiveRelations: new ListArchiveRelationsUseCase({
+      archiveRelationRepository: repositories.archiveRelation,
+    }),
+    listRelationsForNode: new ListRelationsForNodeUseCase({
+      archiveRelationRepository: repositories.archiveRelation,
+    }),
+    softDeleteArchiveRelation: new SoftDeleteArchiveRelationUseCase({
+      archiveRelationRepository: repositories.archiveRelation,
+      clock,
+    }),
+    createArchiveExhibition: new CreateArchiveExhibitionUseCase({
+      archiveExhibitionRepository: repositories.archiveExhibition,
+      clock,
+      idGenerator,
+    }),
+    updateArchiveExhibition: new UpdateArchiveExhibitionUseCase({
+      archiveExhibitionRepository: repositories.archiveExhibition,
+      clock,
+    }),
+    publishArchiveExhibition: new PublishArchiveExhibitionUseCase({
+      archiveExhibitionRepository: repositories.archiveExhibition,
+      clock,
+    }),
+    listArchiveExhibitions: new ListArchiveExhibitionsUseCase({
+      archiveExhibitionRepository: repositories.archiveExhibition,
+    }),
+    listPublishedArchiveExhibitions: new ListPublishedArchiveExhibitionsUseCase({
+      archiveExhibitionRepository: repositories.archiveExhibition,
+    }),
+    getArchiveExhibitionBySlug: new GetArchiveExhibitionBySlugUseCase({
+      archiveExhibitionRepository: repositories.archiveExhibition,
+    }),
+    upsertArchiveCatalogEntry: new UpsertArchiveCatalogEntryUseCase({
+      archiveCatalogEntryRepository: repositories.archiveCatalogEntry,
+      clock,
+      idGenerator,
+    }),
+    publishArchiveCatalogEntry: new PublishArchiveCatalogEntryUseCase({
+      archiveCatalogEntryRepository: repositories.archiveCatalogEntry,
+      clock,
+    }),
+    listArchiveCatalogEntries: new ListArchiveCatalogEntriesUseCase({
+      archiveCatalogEntryRepository: repositories.archiveCatalogEntry,
+    }),
+    getArchiveCatalogEntryByOrigemId: new GetArchiveCatalogEntryByOrigemIdUseCase({
+      archiveCatalogEntryRepository: repositories.archiveCatalogEntry,
+    }),
+    submitArchiveContribution: new SubmitArchiveContributionUseCase({
+      archiveContributionRepository: repositories.archiveContribution,
+      memberRepository: repositories.member,
+      clock,
+      idGenerator,
+    }),
+    listMyArchiveContributions: new ListMyArchiveContributionsUseCase({
+      archiveContributionRepository: repositories.archiveContribution,
+      memberRepository: repositories.member,
+    }),
+    listArchiveContributions: new ListArchiveContributionsUseCase({
+      archiveContributionRepository: repositories.archiveContribution,
+    }),
+    moderateArchiveContribution: new ModerateArchiveContributionUseCase({
+      archiveContributionRepository: repositories.archiveContribution,
+      clock,
     }),
   };
 
