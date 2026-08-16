@@ -3,6 +3,7 @@ import { createServerContainer } from '@vl6/infra';
 import { requireSession } from '@/lib/auth/require-session';
 import { AcervoPageHeader } from '@/components/member/acervo-page-header';
 import { ArchiveItemContent } from '@/modules/archive/components/archive-item-content';
+import { RelationsSection } from '@/modules/archive/components/relations-section';
 import { resolveArchiveItem } from '@/modules/archive/lib/resolve-archive-item';
 
 export default async function ArchiveItemPage({ params }: { params: Promise<{ id: string }> }) {
@@ -17,6 +18,14 @@ export default async function ArchiveItemPage({ params }: { params: Promise<{ id
     <div className="flex flex-col gap-6">
       <AcervoPageHeader title="Item do Acervo" backHref="/acervo" />
       <ArchiveItemContent item={item} />
+      <RelationsSection
+        nodeTipo="archiveItem"
+        nodeId={item.compositeId}
+        centerLabel={item.titulo}
+        centerKindLabel={item.kindLabel}
+        authContext={session.authContext}
+        container={container}
+      />
     </div>
   );
 }

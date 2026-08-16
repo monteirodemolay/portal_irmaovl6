@@ -165,6 +165,9 @@ export default async function AcervoPage({
             <Link href="/acervo/colecoes" className="text-white/70 hover:text-white">
               Coleções
             </Link>
+            <Link href="/acervo/exposicoes" className="text-white/70 hover:text-white">
+              Exposições
+            </Link>
             <Link href="/acervo/audiovisual" className="text-white/70 hover:text-white">
               Audiovisual
             </Link>
@@ -314,10 +317,17 @@ export default async function AcervoPage({
             O contexto transforma um arquivo em história.
           </h2>
           <p className="mt-3 text-xs leading-5 text-white/65">
-            A evolução do Acervo conectará cada registro às pessoas, gestões, acontecimentos e
-            coleções que lhe dão significado.
+            Cada registro do Acervo pode ser conectado às pessoas, gestões, acontecimentos e
+            coleções que lhe dão significado — sempre com uma lista textual completa ao lado do
+            desenho.
           </p>
           <div className="mt-7 space-y-3 text-xs text-white/75">
+            <Link
+              href="/acervo/constelacao"
+              className="flex items-center gap-3 font-semibold text-white hover:underline"
+            >
+              <Sparkles className="text-accent" size={17} /> Ver todas as relações
+            </Link>
             <Link href="/acervo/pessoas" className="flex items-center gap-3 hover:text-white">
               <Users className="text-accent" size={17} /> Pessoas e trajetórias
             </Link>

@@ -232,6 +232,21 @@ service cloud.firestore {
     }
 
     // ---------------------------------------------------------------
+    // Acervo VL6 — Estágio 5, Constelação da Memória e Exposições
+    // Virtuais (docs/architecture/11-acervo-vl6.md §11.6d)
+    // ---------------------------------------------------------------
+    match /archiveRelations/{id} {
+      allow read: if sameTenant(resource.data) && hasPermission('archiveRelation:read');
+      allow create, update: if sameTenant(request.resource.data) && hasPermission('archiveRelation:create');
+      allow delete: if false;
+    }
+    match /archiveExhibitions/{id} {
+      allow read: if sameTenant(resource.data) && hasPermission('archiveExhibition:read') && (resource.data.publicado == true || hasPermission('archiveExhibition:manage'));
+      allow create, update: if sameTenant(request.resource.data) && hasPermission('archiveExhibition:create');
+      allow delete: if false;
+    }
+
+    // ---------------------------------------------------------------
     // Audit — write exclusivamente via Admin SDK (ignora Security Rules),
     // dentro da própria Server Action que faz a escrita de negócio
     // (withAudit, packages/infra), nunca pelo client. Ver docs/architecture

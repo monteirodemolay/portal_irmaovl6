@@ -5,6 +5,7 @@ import { BOARD_POSITION_LABELS } from '@vl6/shared';
 import { Avatar, AvatarFallback, AvatarImage, EmptyState, Users } from '@vl6/ui';
 import { requirePagePermission } from '@/lib/auth/require-permission';
 import { AcervoPageHeader } from '@/components/member/acervo-page-header';
+import { RelationsSection } from '@/modules/archive/components/relations-section';
 import { MEMBER_DEGREE_LABELS } from '@/lib/membership/member-degree-label';
 
 function formatPeriod(inicio: Date, fim: Date): string {
@@ -95,6 +96,15 @@ export default async function ArchiveBoardTermDetailPage({
           ))}
         </div>
       )}
+
+      <RelationsSection
+        nodeTipo="boardTerm"
+        nodeId={term.id}
+        centerLabel={term.nome}
+        centerKindLabel="Gestão"
+        authContext={session.authContext}
+        container={container}
+      />
     </div>
   );
 }

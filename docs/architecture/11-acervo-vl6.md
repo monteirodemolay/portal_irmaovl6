@@ -237,6 +237,67 @@ esse conteúdo.
 A aba "Constelação da Memória" em `/acervo` (até então apenas
 ilustrativa) passou a linkar para estas 4 rotas reais.
 
+## 11.6d Constelação da Memória e Exposições Virtuais (Estágio 5)
+
+Duas coleções novas e independentes, ambas puramente referenciais (nunca
+copiam o registro de origem):
+
+### Constelação da Memória — `archiveRelations`
+
+Uma aresta entre dois nós já existentes no domínio — `origemTipo`/`origemId`
+e `destinoTipo`/`destinoId` (`archiveItem` usa o ID composto do Estágio 1;
+`member`/`boardTerm`/`event`/`archiveCollection` usam o ID canônico da
+própria entidade), mais um `tipo` de relação (`retrata`, `participou_de`,
+`pertence_a`, `ocorreu_durante`, `relacionado_a`) e uma descrição opcional.
+Administração em `/admin/acervo/relacoes` (criar via seletor agrupado por
+tipo de nó, reaproveitando as mesmas fontes de dados já usadas em cada área
+— `searchMembers`, `boardTerm.listByTenant`, `listAllEvents`,
+`listArchiveCollections`, `loadArchiveSearchResults`; remover é sempre soft
+delete, nunca apaga o documento).
+
+`ConstellationGraph` (`packages/ui`) é o componente visual: um SVG
+puramente decorativo (`aria-hidden`, layout determinístico por
+trigonometria, **sem animação nem simulação em JS**) mostrando até 8 nós ao
+redor do centro, acompanhado **sempre** — não opcionalmente — de uma lista
+HTML real com todas as relações (link de verdade, focável por teclado,
+visível mesmo sem CSS/SVG). Esse par gráfico+lista é a materialização
+concreta da exigência do usuário de que "nenhuma informação poderá existir
+somente no gráfico": a lista não é um fallback de acessibilidade, é a fonte
+de verdade que o SVG apenas ilustra.
+
+Cada página do Acervo que já tem ID canônico próprio — Item
+(`/acervo/item/[id]`), Pessoa (`/acervo/pessoas/[memberId]`), Gestão
+(`/acervo/gestoes/[gestaoId]`), Coleção (`/acervo/colecoes/[slug]`) — ganhou
+uma seção "Constelação da Memória" que só aparece quando existe ao menos
+uma relação resolvível (nunca uma seção vazia). `/acervo/constelacao` é o
+índice global, com a mesma garantia textual em escala do tenant inteiro.
+Deliberadamente **não** foi adicionada uma seção de relações à rota
+canônica pré-existente `/eventos/[eventId]` — eventos participam da
+Constelação como nó, mas essa rota não é território do Acervo e não foi
+tocada.
+
+### Exposições Virtuais — `archiveExhibitions`
+
+Diferente de `archiveCollections` (Estágio 2 — agrupamento plano de itens),
+uma exposição tem estrutura narrativa: uma lista ordenada de `secoes`, cada
+uma com `titulo` + `texto` curatorial próprios + seus `itemIds` (IDs
+compostos do Estágio 1). RBAC próprio (`archiveExhibition`) pelo mesmo
+motivo do `archiveCollection` — não é dona de nenhum binário.
+
+Fluxo administrativo em duas telas, mesmo padrão de
+`/admin/acervo/colecoes`: `/admin/acervo/exposicoes/novo` cria só os
+metadados; `/admin/acervo/exposicoes/[id]` edita metadados e as seções
+(editor client-side com `useState`, adicionar/remover seção e marcar itens
+por checkbox sem round-trip ao servidor a cada mudança — as seções via
+`useState` são serializadas para um único campo oculto JSON no submit,
+evitando a complexidade de FormData com array de objetos).
+
+`/acervo/exposicoes` lista publicadas; `/acervo/exposicoes/[slug]` renderiza
+a narrativa completa — cada seção como um bloco "Parte N" com o texto
+curatorial seguido dos itens resolvidos via `resolveArchiveItem` (mesma
+função do Estágio 1), em formato editorial de leitura longa, não grade
+densa.
+
 ### Etapa 2 — catalogação e coleções
 
 - Item do Acervo e ficha documental;

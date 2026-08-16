@@ -18,6 +18,16 @@ import {
   ListArchiveCollectionsUseCase,
   ListPublishedArchiveCollectionsUseCase,
   GetArchiveCollectionBySlugUseCase,
+  CreateArchiveRelationUseCase,
+  ListArchiveRelationsUseCase,
+  ListRelationsForNodeUseCase,
+  SoftDeleteArchiveRelationUseCase,
+  CreateArchiveExhibitionUseCase,
+  UpdateArchiveExhibitionUseCase,
+  PublishArchiveExhibitionUseCase,
+  ListArchiveExhibitionsUseCase,
+  ListPublishedArchiveExhibitionsUseCase,
+  GetArchiveExhibitionBySlugUseCase,
   CreateBoardTermUseCase,
   CreateCommitteeUseCase,
   CreateEventUseCase,
@@ -109,6 +119,8 @@ import { NodeApiKeyGenerator } from './security/node-api-key-generator';
 import { FirestoreAnnouncementRepository } from './firestore/repositories/announcement.repository';
 import { FirestoreApiKeyRepository } from './firestore/repositories/api-key.repository';
 import { FirestoreArchiveCollectionRepository } from './firestore/repositories/archive-collection.repository';
+import { FirestoreArchiveRelationRepository } from './firestore/repositories/archive-relation.repository';
+import { FirestoreArchiveExhibitionRepository } from './firestore/repositories/archive-exhibition.repository';
 import { FirestoreAuditLogRepository } from './firestore/repositories/audit-log.repository';
 import { FirestoreBoardPositionAssignmentRepository } from './firestore/repositories/board-position-assignment.repository';
 import { FirestoreBoardTermRepository } from './firestore/repositories/board-term.repository';
@@ -207,6 +219,16 @@ export function createServerContainer() {
     archiveCollection: withAudit(
       new FirestoreArchiveCollectionRepository(db),
       'archiveCollections',
+      auditDeps,
+    ),
+    archiveRelation: withAudit(
+      new FirestoreArchiveRelationRepository(db),
+      'archiveRelations',
+      auditDeps,
+    ),
+    archiveExhibition: withAudit(
+      new FirestoreArchiveExhibitionRepository(db),
+      'archiveExhibitions',
       auditDeps,
     ),
   };
@@ -602,6 +624,43 @@ export function createServerContainer() {
     }),
     getArchiveCollectionBySlug: new GetArchiveCollectionBySlugUseCase({
       archiveCollectionRepository: repositories.archiveCollection,
+    }),
+    createArchiveRelation: new CreateArchiveRelationUseCase({
+      archiveRelationRepository: repositories.archiveRelation,
+      clock,
+      idGenerator,
+    }),
+    listArchiveRelations: new ListArchiveRelationsUseCase({
+      archiveRelationRepository: repositories.archiveRelation,
+    }),
+    listRelationsForNode: new ListRelationsForNodeUseCase({
+      archiveRelationRepository: repositories.archiveRelation,
+    }),
+    softDeleteArchiveRelation: new SoftDeleteArchiveRelationUseCase({
+      archiveRelationRepository: repositories.archiveRelation,
+      clock,
+    }),
+    createArchiveExhibition: new CreateArchiveExhibitionUseCase({
+      archiveExhibitionRepository: repositories.archiveExhibition,
+      clock,
+      idGenerator,
+    }),
+    updateArchiveExhibition: new UpdateArchiveExhibitionUseCase({
+      archiveExhibitionRepository: repositories.archiveExhibition,
+      clock,
+    }),
+    publishArchiveExhibition: new PublishArchiveExhibitionUseCase({
+      archiveExhibitionRepository: repositories.archiveExhibition,
+      clock,
+    }),
+    listArchiveExhibitions: new ListArchiveExhibitionsUseCase({
+      archiveExhibitionRepository: repositories.archiveExhibition,
+    }),
+    listPublishedArchiveExhibitions: new ListPublishedArchiveExhibitionsUseCase({
+      archiveExhibitionRepository: repositories.archiveExhibition,
+    }),
+    getArchiveExhibitionBySlug: new GetArchiveExhibitionBySlugUseCase({
+      archiveExhibitionRepository: repositories.archiveExhibition,
     }),
   };
 

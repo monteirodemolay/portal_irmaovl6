@@ -5,6 +5,7 @@ import { createServerContainer } from '@vl6/infra';
 import { ArchiveItemCard, BookOpen, EmptyState, FileText, Image as GalleryIcon } from '@vl6/ui';
 import { requireSession } from '@/lib/auth/require-session';
 import { AcervoPageHeader } from '@/components/member/acervo-page-header';
+import { RelationsSection } from '@/modules/archive/components/relations-section';
 import { resolveArchiveItem } from '@/modules/archive/lib/resolve-archive-item';
 import type { ArchiveItemKind } from '@/modules/archive/lib/archive-item-id';
 
@@ -72,6 +73,15 @@ export default async function ArchiveCollectionDetailPage({
           ))}
         </div>
       )}
+
+      <RelationsSection
+        nodeTipo="archiveCollection"
+        nodeId={collection.id}
+        centerLabel={collection.titulo}
+        centerKindLabel="Coleção"
+        authContext={session.authContext}
+        container={container}
+      />
     </div>
   );
 }

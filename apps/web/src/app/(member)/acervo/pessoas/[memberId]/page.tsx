@@ -5,6 +5,7 @@ import { BOARD_POSITION_LABELS } from '@vl6/shared';
 import { Avatar, AvatarFallback, AvatarImage, EmptyState, Users } from '@vl6/ui';
 import { requirePagePermission } from '@/lib/auth/require-permission';
 import { AcervoPageHeader } from '@/components/member/acervo-page-header';
+import { RelationsSection } from '@/modules/archive/components/relations-section';
 import { MEMBER_DEGREE_LABELS } from '@/lib/membership/member-degree-label';
 
 function formatDate(date: Date): string {
@@ -151,6 +152,15 @@ export default async function ArchivePersonPage({
           </ol>
         )}
       </section>
+
+      <RelationsSection
+        nodeTipo="member"
+        nodeId={member.id}
+        centerLabel={identity.nomeCompleto}
+        centerKindLabel="Pessoa"
+        authContext={session.authContext}
+        container={container}
+      />
     </div>
   );
 }

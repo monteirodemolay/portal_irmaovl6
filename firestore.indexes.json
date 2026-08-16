@@ -289,6 +289,54 @@
         { "fieldPath": "publicado", "order": "ASCENDING" },
         { "fieldPath": "ordem", "order": "ASCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "archiveRelations",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "tenantId", "order": "ASCENDING" },
+        { "fieldPath": "deletedAt", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "archiveRelations",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "tenantId", "order": "ASCENDING" },
+        { "fieldPath": "deletedAt", "order": "ASCENDING" },
+        { "fieldPath": "origemTipo", "order": "ASCENDING" },
+        { "fieldPath": "origemId", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "archiveRelations",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "tenantId", "order": "ASCENDING" },
+        { "fieldPath": "deletedAt", "order": "ASCENDING" },
+        { "fieldPath": "destinoTipo", "order": "ASCENDING" },
+        { "fieldPath": "destinoId", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "archiveExhibitions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "tenantId", "order": "ASCENDING" },
+        { "fieldPath": "deletedAt", "order": "ASCENDING" },
+        { "fieldPath": "ordem", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "archiveExhibitions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "tenantId", "order": "ASCENDING" },
+        { "fieldPath": "deletedAt", "order": "ASCENDING" },
+        { "fieldPath": "publicado", "order": "ASCENDING" },
+        { "fieldPath": "ordem", "order": "ASCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []
