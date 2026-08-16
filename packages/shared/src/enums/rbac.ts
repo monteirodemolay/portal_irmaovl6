@@ -47,6 +47,11 @@ export const RESOURCE_KEYS = [
   // — combinado com `memberCentral:manage` — para moderação administrativa.
   'memberDirectory',
   'memberCentral',
+  // Acervo VL6 — Etapa 2 da evolução (docs/architecture/11-acervo-vl6.md
+  // §11.6). Chave própria em vez de reaproveitar `file`/`libraryItem`/
+  // `gallery`: uma coleção editorial não é dona de nenhum binário, só
+  // referencia (por ID composto) registros que já têm seu próprio RBAC.
+  'archiveCollection',
 ] as const;
 export type ResourceKey = (typeof RESOURCE_KEYS)[number];
 
@@ -101,6 +106,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<RoleKey, PermissionKey[]> = {
     'auditLog:read',
     'memberDirectory:read',
     'memberCentral:manage',
+    'archiveCollection:manage',
   ],
   membro: [
     'tenant:read',
@@ -116,5 +122,6 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<RoleKey, PermissionKey[]> = {
     'link:read',
     'memberDirectory:read',
     'memberCentral:update',
+    'archiveCollection:read',
   ],
 };

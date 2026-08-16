@@ -76,6 +76,8 @@ import type { GalleryAlbum } from '../modules/gallery/entities/gallery-album.ent
 import type { GalleryMedia } from '../modules/gallery/entities/gallery-media.entity';
 import type { IGalleryAlbumRepository } from '../modules/gallery/repositories/gallery-album.repository';
 import type { IGalleryMediaRepository } from '../modules/gallery/repositories/gallery-media.repository';
+import type { ArchiveCollection } from '../modules/archive/entities/archive-collection.entity';
+import type { IArchiveCollectionRepository } from '../modules/archive/repositories/archive-collection.repository';
 
 export class FixedClock implements IClock {
   constructor(private readonly fixed: Date = new Date('2026-01-01T00:00:00Z')) {}
@@ -548,6 +550,35 @@ export class InMemoryGalleryAlbumRepository implements IGalleryAlbumRepository {
   }
   async update(album: GalleryAlbum) {
     this.byId.set(album.id, album);
+  }
+}
+
+export class InMemoryArchiveCollectionRepository implements IArchiveCollectionRepository {
+  private readonly byId = new Map<string, ArchiveCollection>();
+
+  async findById(id: string) {
+    return this.byId.get(id) ?? null;
+  }
+  async findBySlugAndTenant(tenantId: string, slug: string) {
+    return (
+      [...this.byId.values()].find(
+        (c) => c.tenantId === tenantId && c.slug === slug && c.deletedAt === null,
+      ) ?? null
+    );
+  }
+  async listByTenant(tenantId: string) {
+    return [...this.byId.values()].filter((c) => c.tenantId === tenantId && c.deletedAt === null);
+  }
+  async listPublishedByTenant(tenantId: string) {
+    return [...this.byId.values()].filter(
+      (c) => c.tenantId === tenantId && c.deletedAt === null && c.publicado,
+    );
+  }
+  async create(collection: ArchiveCollection) {
+    this.byId.set(collection.id, collection);
+  }
+  async update(collection: ArchiveCollection) {
+    this.byId.set(collection.id, collection);
   }
 }
 

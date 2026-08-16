@@ -17,36 +17,13 @@ import {
 } from '@vl6/ui';
 import { getCurrentSession } from '@/lib/auth/get-current-session';
 import { getCurrentTenant } from '@/lib/tenant/get-current-tenant';
-import { archiveItemHref } from '@/modules/archive/lib/archive-item-id';
-
-type ArchiveKind = 'documento' | 'biblioteca' | 'fotografia';
-
-interface ArchiveResult {
-  id: string;
-  kind: ArchiveKind;
-  title: string;
-  description: string;
-  href: string;
-}
-
-const KIND_LABELS: Record<ArchiveKind, string> = {
-  documento: 'Documento',
-  biblioteca: 'Biblioteca',
-  fotografia: 'Foto/Vídeo',
-};
-
-function normalize(value: string): string {
-  return value
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase();
-}
-
-function matches(result: ArchiveResult, query: string): boolean {
-  if (!query) return true;
-  const haystack = normalize(`${result.title} ${result.description} ${KIND_LABELS[result.kind]}`);
-  return haystack.includes(normalize(query));
-}
+import {
+  ARCHIVE_SEARCH_KIND_LABELS,
+  ARCHIVE_SEARCH_KINDS,
+  loadArchiveSearchResults,
+  matchesArchiveSearch,
+  type ArchiveSearchKind,
+} from '@/modules/archive/lib/search-archive';
 
 function formatCount(value: number | null, singular: string, plural: string): string {
   if (value === null) return 'Acesso conforme sua permissão';
@@ -71,74 +48,32 @@ export default async function AcervoPage({
   const canReadGallery = hasPermission(authContext, 'gallery:read');
   const container = createServerContainer();
 
-  const [filesPage, libraryItems, albums, favorites, documentCount, libraryCount, albumCount] =
-    await Promise.all([
-      canReadFiles || canReadLibrary
-        ? container.useCases.listAllFileAssets.execute(authContext, { limit: 200 })
-        : Promise.resolve({ items: [], nextCursor: null, hasMore: false }),
-      canReadLibrary
-        ? container.repositories.libraryItem.listByTenant(authContext.tenantId)
-        : Promise.resolve([]),
-      canReadGallery
-        ? container.useCases.listGalleryAlbums.execute(authContext)
-        : Promise.resolve([]),
-      canReadLibrary
-        ? container.useCases.listMyFavorites.execute(authContext)
-        : Promise.resolve([]),
-      canReadFiles
-        ? container.repositories.fileAsset.countByTenant(authContext.tenantId)
-        : Promise.resolve(null),
-      canReadLibrary
-        ? container.repositories.libraryItem.countByTenant(authContext.tenantId)
-        : Promise.resolve(null),
-      canReadGallery
-        ? container.repositories.galleryAlbum.countByTenant(authContext.tenantId)
-        : Promise.resolve(null),
-    ]);
-
-  const fileById = new Map(filesPage.items.map((file) => [file.id, file]));
-  const libraryFileIds = new Set(libraryItems.map((item) => item.fileId));
-
-  const documentResults: ArchiveResult[] = filesPage.items
-    .filter((file) => file.publicado && !libraryFileIds.has(file.id))
-    .map((file) => ({
-      id: file.id,
-      kind: 'documento',
-      title: file.titulo,
-      description: file.descricao || 'Documento institucional do Acervo VL6.',
-      href: archiveItemHref('file', file.id),
-    }));
-
-  const libraryResults: ArchiveResult[] = libraryItems.flatMap((item) => {
-    const file = fileById.get(item.fileId);
-    if (!file) return [];
-    return [
-      {
-        id: item.id,
-        kind: 'biblioteca' as const,
-        title: file.titulo,
-        description: file.descricao || 'Estudo e leitura selecionada para os Irmãos.',
-        href: archiveItemHref('library', item.id),
-      },
-    ];
-  });
-
-  const galleryResults: ArchiveResult[] = albums.map((album) => ({
-    id: album.id,
-    kind: 'fotografia',
-    title: album.titulo,
-    description: `${album.categoria} · registro da Loja`,
-    href: archiveItemHref('gallery-album', album.id),
-  }));
+  const [allResults, favorites, documentCount, libraryCount, albumCount] = await Promise.all([
+    loadArchiveSearchResults(authContext, container),
+    canReadLibrary ? container.useCases.listMyFavorites.execute(authContext) : Promise.resolve([]),
+    canReadFiles
+      ? container.repositories.fileAsset.countByTenant(authContext.tenantId)
+      : Promise.resolve(null),
+    canReadLibrary
+      ? container.repositories.libraryItem.countByTenant(authContext.tenantId)
+      : Promise.resolve(null),
+    canReadGallery
+      ? container.repositories.galleryAlbum.countByTenant(authContext.tenantId)
+      : Promise.resolve(null),
+  ]);
 
   const query = params.q?.trim() ?? '';
-  const requestedKind = params.tipo as ArchiveKind | undefined;
-  const validKind = requestedKind && requestedKind in KIND_LABELS ? requestedKind : undefined;
-  const allResults = [...documentResults, ...libraryResults, ...galleryResults];
+  const requestedKind = params.tipo as ArchiveSearchKind | undefined;
+  const validKind =
+    requestedKind && ARCHIVE_SEARCH_KINDS.includes(requestedKind) ? requestedKind : undefined;
   const filteredResults = allResults
     .filter((result) => !validKind || result.kind === validKind)
-    .filter((result) => matches(result, query));
+    .filter((result) => matchesArchiveSearch(result, query));
   const visibleResults = (query || validKind ? filteredResults : allResults).slice(0, 12);
+  const fullSearchParams = new URLSearchParams();
+  if (query) fullSearchParams.set('q', query);
+  if (validKind) fullSearchParams.set('tipo', validKind);
+  const fullSearchHref = `/acervo/pesquisar${fullSearchParams.size ? `?${fullSearchParams}` : ''}`;
 
   const categories = [
     {
@@ -195,8 +130,7 @@ export default async function AcervoPage({
             trajetória da {current.tenant.nome}.
           </p>
 
-          <form action="/acervo" method="get" role="search" className="mt-7">
-            {validKind && <input type="hidden" name="tipo" value={validKind} />}
+          <form action="/acervo/pesquisar" method="get" role="search" className="mt-7">
             <label htmlFor="archive-search" className="sr-only">
               Pesquisar no Acervo VL6
             </label>
@@ -217,6 +151,21 @@ export default async function AcervoPage({
               </button>
             </div>
           </form>
+
+          <nav
+            aria-label="Atalhos do Acervo"
+            className="mt-4 flex flex-wrap gap-x-5 gap-y-1 text-xs"
+          >
+            <Link href="/acervo/pesquisar" className="text-white/70 hover:text-white">
+              Pesquisar
+            </Link>
+            <Link href="/acervo/descobrir" className="text-white/70 hover:text-white">
+              Descobrir
+            </Link>
+            <Link href="/acervo/colecoes" className="text-white/70 hover:text-white">
+              Coleções
+            </Link>
+          </nav>
 
           <div className="mt-6 flex max-w-2xl items-start gap-3 border-l border-white/20 pl-4">
             <Quote className="text-accent mt-0.5 shrink-0" size={18} />
@@ -283,15 +232,16 @@ export default async function AcervoPage({
                 {query ? `Resultados para “${query}”` : 'Conteúdos para descobrir'}
               </h2>
             </div>
-            {(query || validKind) && (
-              <Link href="/acervo" className="text-muted hover:text-accent text-xs font-medium">
-                Limpar pesquisa
-              </Link>
-            )}
+            <Link
+              href={fullSearchHref}
+              className="text-muted hover:text-accent text-xs font-medium"
+            >
+              Ver pesquisa completa
+            </Link>
           </div>
 
           <div className="mt-4 flex flex-wrap gap-2" aria-label="Filtrar por tipo">
-            {(['documento', 'biblioteca', 'fotografia'] as const).map((kind) => (
+            {ARCHIVE_SEARCH_KINDS.map((kind) => (
               <Link
                 key={kind}
                 href={`/acervo?tipo=${kind}${query ? `&q=${encodeURIComponent(query)}` : ''}`}
@@ -301,7 +251,7 @@ export default async function AcervoPage({
                     : 'border-border text-muted hover:border-accent hover:text-foreground'
                 }`}
               >
-                {KIND_LABELS[kind]}
+                {ARCHIVE_SEARCH_KIND_LABELS[kind]}
               </Link>
             ))}
           </div>
@@ -326,7 +276,7 @@ export default async function AcervoPage({
                     {result.kind === 'documento' && <FileText size={14} />}
                     {result.kind === 'biblioteca' && <BookOpen size={14} />}
                     {result.kind === 'fotografia' && <GalleryIcon size={14} />}
-                    {KIND_LABELS[result.kind]}
+                    {ARCHIVE_SEARCH_KIND_LABELS[result.kind]}
                   </div>
                   <h3 className="font-display group-hover:text-accent mt-2 line-clamp-2 font-semibold transition-colors">
                     {result.title}

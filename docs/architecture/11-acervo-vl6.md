@@ -82,7 +82,7 @@ migração dos dados atuais. O modelo-alvo será composto por:
 Serão referenciados pelos seus IDs canônicos, evitando duplicidade e
 divergência de informação.
 
-## 11.6 Evolução para experiências especializadas (Etapa 1 — fundação e convergência)
+## 11.6 Evolução para experiências especializadas (Estágio 1 — fundação e convergência; não confundir com a "Etapa 1" do roadmap abaixo)
 
 A evolução do Acervo VL6 para um conjunto de experiências editoriais
 especializadas (pesquisa, coleções, linha do tempo, pessoas, gestões,
@@ -91,14 +91,18 @@ canônica: **Item do Acervo**, em `/acervo/item/[id]`.
 
 Como a catalogação formal (`archiveItems`, ver §11.5) ainda não existe, o
 `id` desta primeira etapa é um **ID composto de compatibilidade** —
-`tipo:idDeOrigem` (`file:<fileId>`, `library:<libraryItemId>`,
-`gallery-album:<albumId>`, `gallery-media:<mediaId>`) — resolvido
+`tipo_idDeOrigem` (`file_<fileId>`, `library_<libraryItemId>`,
+`gallery-album_<albumId>`, `gallery-media_<mediaId>`) — resolvido
 diretamente contra `FileAsset`, `LibraryItem`, `GalleryAlbum` e
 `GalleryMedia`, sem duplicar nenhum registro
 (`apps/web/src/modules/archive/lib/resolve-archive-item.ts`). Quando a
 coleção `archiveItems` for criada, seu `id` próprio passa a ser o `id`
 canônico e o ID composto atual fica guardado em `origemId` — nenhuma URL já
-publicada deixa de funcionar.
+publicada deixa de funcionar. O separador é `_`, não `:` — QA no emulador
+mostrou o navegador reescrevendo `:` para `%3A` em navegação direta (mas não
+na interceptação client-side, que reaproveita a string literal do `href`),
+quebrando o acesso duplo; `_` é caractere "unreserved" (RFC 3986) e nunca é
+reescrito.
 
 A página tem acesso duplo, seguindo o mesmo padrão de rota paralela e
 interceptadora já usado em `admin/pessoas/irmaos`: navegação direta/refresh
@@ -115,6 +119,38 @@ Blob era exposta direta no HTML (`<a href={item.url}>`). Agora existe
 
 Nenhuma coleção nova foi criada; nenhuma rota antiga (`/arquivos`,
 `/biblioteca`, `/galeria`, `/downloads`) foi alterada ou removida.
+
+## 11.6a Pesquisa, descoberta e coleções (Estágio 2 da evolução — não confundir com a "Etapa 2" do roadmap em §11.6 abaixo)
+
+Primeira coleção Firestore nova da evolução do Acervo: `archiveCollections`
+(`packages/domain/src/modules/archive`), uma ficha editorial que **referencia**
+itens existentes pelo ID composto da Etapa 1 (`itemIds: string[]`) — nunca
+copia o registro de origem. RBAC próprio (`archiveCollection`, ação `admin`
+gerencia, `membro` só lê) em vez de reaproveitar `file`/`libraryItem`/
+`gallery`, já que uma coleção não é dona de nenhum binário.
+
+Novas rotas do Irmão:
+
+- `/acervo/pesquisar` — pesquisa federada completa (a busca que já existia
+  embutida em `/acervo` virou uma função compartilhada,
+  `apps/web/src/modules/archive/lib/search-archive.ts`, reaproveitada pelos
+  dois lugares).
+- `/acervo/descobrir` — coleções publicadas em destaque + itens adicionados
+  recentemente.
+- `/acervo/colecoes` e `/acervo/colecoes/[slug]` — lista e detalhe de
+  coleções publicadas; o detalhe resolve cada `itemId` via
+  `resolveArchiveItem` (mesma função da Etapa 1) e ignora silenciosamente
+  qualquer item que não resolva mais.
+
+Administração em `/admin/acervo/colecoes` (nova aba, mesmo padrão de
+`ADMIN_AREA_TABS`): criar coleção (metadados), depois editar para
+selecionar itens (checkboxes sobre a mesma busca federada) e publicar —
+segue o mesmo fluxo em duas etapas de Álbum→Mídia da Galeria.
+
+`archiveCollection` foi registrado com `withAudit` no container — ao
+contrário dos 7 repositórios de Acervo (file/library/gallery) que a
+auditoria original da Etapa 1 encontrou sem cobertura, a coleção já nasce
+auditada.
 
 ### Etapa 2 — catalogação e coleções
 

@@ -223,6 +223,15 @@ service cloud.firestore {
     }
 
     // ---------------------------------------------------------------
+    // Acervo VL6 — Etapa 2 (docs/architecture/11-acervo-vl6.md §11.6)
+    // ---------------------------------------------------------------
+    match /archiveCollections/{id} {
+      allow read: if sameTenant(resource.data) && hasPermission('archiveCollection:read') && (resource.data.publicado == true || hasPermission('archiveCollection:manage'));
+      allow create, update: if sameTenant(request.resource.data) && hasPermission('archiveCollection:create');
+      allow delete: if false;
+    }
+
+    // ---------------------------------------------------------------
     // Audit — write exclusivamente via Admin SDK (ignora Security Rules),
     // dentro da própria Server Action que faz a escrita de negócio
     // (withAudit, packages/infra), nunca pelo client. Ver docs/architecture

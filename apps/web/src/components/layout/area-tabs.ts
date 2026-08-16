@@ -35,6 +35,11 @@ export const ADMIN_AREA_TABS: Record<AdminAreaKey, AreaTabDef[]> = {
     { href: '/admin/acervo/arquivos', label: 'Documentos', permission: 'file:read' },
     { href: '/admin/acervo/biblioteca', label: 'Biblioteca', permission: 'libraryItem:read' },
     { href: '/admin/acervo/galeria', label: 'Fotografias', permission: 'gallery:read' },
+    {
+      href: '/admin/acervo/colecoes',
+      label: 'Coleções',
+      permission: 'archiveCollection:read',
+    },
   ],
   configuracoes: [
     { href: '/admin/configuracoes/geral', label: 'Geral', permission: null },

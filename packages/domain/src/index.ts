@@ -187,3 +187,13 @@ export * from './modules/gallery/use-cases/create-gallery-album.use-case';
 export * from './modules/gallery/use-cases/list-gallery-albums.use-case';
 export * from './modules/gallery/use-cases/add-gallery-media.use-case';
 export * from './modules/gallery/use-cases/list-gallery-media.use-case';
+
+// Archive (Acervo VL6 — Etapa 2)
+export * from './modules/archive/entities/archive-collection.entity';
+export * from './modules/archive/repositories/archive-collection.repository';
+export * from './modules/archive/use-cases/create-archive-collection.use-case';
+export * from './modules/archive/use-cases/update-archive-collection.use-case';
+export * from './modules/archive/use-cases/publish-archive-collection.use-case';
+export * from './modules/archive/use-cases/list-archive-collections.use-case';
+export * from './modules/archive/use-cases/list-published-archive-collections.use-case';
+export * from './modules/archive/use-cases/get-archive-collection-by-slug.use-case';

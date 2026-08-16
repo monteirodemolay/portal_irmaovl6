@@ -12,6 +12,12 @@ import {
   ConfirmAttendanceUseCase,
   CreateAnnouncementUseCase,
   CreateApiKeyUseCase,
+  CreateArchiveCollectionUseCase,
+  UpdateArchiveCollectionUseCase,
+  PublishArchiveCollectionUseCase,
+  ListArchiveCollectionsUseCase,
+  ListPublishedArchiveCollectionsUseCase,
+  GetArchiveCollectionBySlugUseCase,
   CreateBoardTermUseCase,
   CreateCommitteeUseCase,
   CreateEventUseCase,
@@ -102,6 +108,7 @@ import { getAdminFirestore } from './firebase/admin-app';
 import { NodeApiKeyGenerator } from './security/node-api-key-generator';
 import { FirestoreAnnouncementRepository } from './firestore/repositories/announcement.repository';
 import { FirestoreApiKeyRepository } from './firestore/repositories/api-key.repository';
+import { FirestoreArchiveCollectionRepository } from './firestore/repositories/archive-collection.repository';
 import { FirestoreAuditLogRepository } from './firestore/repositories/audit-log.repository';
 import { FirestoreBoardPositionAssignmentRepository } from './firestore/repositories/board-position-assignment.repository';
 import { FirestoreBoardTermRepository } from './firestore/repositories/board-term.repository';
@@ -197,6 +204,11 @@ export function createServerContainer() {
       auditDeps,
     ),
     publicationConsent: new FirestorePublicationConsentRepository(db),
+    archiveCollection: withAudit(
+      new FirestoreArchiveCollectionRepository(db),
+      'archiveCollections',
+      auditDeps,
+    ),
   };
 
   const notificationGateway = new NoopNotificationGateway();
@@ -567,6 +579,29 @@ export function createServerContainer() {
     }),
     listGalleryMediaByAlbum: new ListGalleryMediaByAlbumUseCase({
       galleryMediaRepository: repositories.galleryMedia,
+    }),
+
+    createArchiveCollection: new CreateArchiveCollectionUseCase({
+      archiveCollectionRepository: repositories.archiveCollection,
+      clock,
+      idGenerator,
+    }),
+    updateArchiveCollection: new UpdateArchiveCollectionUseCase({
+      archiveCollectionRepository: repositories.archiveCollection,
+      clock,
+    }),
+    publishArchiveCollection: new PublishArchiveCollectionUseCase({
+      archiveCollectionRepository: repositories.archiveCollection,
+      clock,
+    }),
+    listArchiveCollections: new ListArchiveCollectionsUseCase({
+      archiveCollectionRepository: repositories.archiveCollection,
+    }),
+    listPublishedArchiveCollections: new ListPublishedArchiveCollectionsUseCase({
+      archiveCollectionRepository: repositories.archiveCollection,
+    }),
+    getArchiveCollectionBySlug: new GetArchiveCollectionBySlugUseCase({
+      archiveCollectionRepository: repositories.archiveCollection,
     }),
   };
 
