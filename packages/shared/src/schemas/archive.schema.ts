@@ -51,3 +51,11 @@ export const archiveExhibitionSchema = z.object({
   ordem: z.coerce.number().int().min(0),
 });
 export type ArchiveExhibitionFormValues = z.infer<typeof archiveExhibitionSchema>;
+
+export const archiveCatalogEntrySchema = z.object({
+  origemId: z.string().min(1),
+  tituloCurado: z.string().max(200).nullable(),
+  contextoHistorico: z.string().max(8000).nullable(),
+  tags: z.array(z.string().min(1).max(40)).max(20),
+});
+export type ArchiveCatalogEntryFormValues = z.infer<typeof archiveCatalogEntrySchema>;

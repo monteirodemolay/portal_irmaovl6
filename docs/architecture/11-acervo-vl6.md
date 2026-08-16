@@ -328,6 +328,38 @@ densa.
 Reconhecimento facial não integra o escopo. A identificação de pessoas será
 feita por catalogação humana, com consentimento e auditoria.
 
+## 11.6e Catalogação formal (Estágio 6)
+
+Camada de enriquecimento aditiva — `archiveCatalogEntries` — pensada como o
+primeiro passo real em direção à "ficha documental" da Etapa 2 do roadmap,
+sem antecipar a migração completa: cada ficha referencia um item já
+existente pelo ID composto do Estágio 1 (`origemId`, 1:1, único por
+`tenantId`+`origemId`) e só acrescenta três campos opcionais — título
+curado, contexto histórico (texto livre, até 8000 caracteres) e tags — sem
+jamais tocar, migrar ou duplicar o registro de origem (`FileAsset`,
+`LibraryItem`, `GalleryAlbum`, `GalleryMedia` continuam intocados). Nasce
+como rascunho (`publicado: false`); publicar é uma ação em separado
+(`PublishArchiveCatalogEntryUseCase`), mesmo padrão de gate de
+`archiveCollection`/`archiveExhibition`.
+
+`GetArchiveCatalogEntryByOrigemIdUseCase` só retorna fichas publicadas —
+`resolveArchiveItem` (Estágio 1) consulta essa ficha e, quando existe e está
+publicada, preenche `ResolvedArchiveItem.catalogo`; a página
+`/acervo/item/[id]` (via `ArchiveItemContent`) passa a exibir um bloco
+"Contexto Histórico" entre a mídia e a Procedência, mas só quando há
+conteúdo real — item sem ficha, ou com ficha ainda em rascunho, continua
+exibindo a página exatamente como antes. Administração em
+`/admin/acervo/catalogacao` (listar, criar por seletor do mesmo catálogo
+federado de itens do Estágio 1, editar e publicar/despublicar).
+
+Importante: este estágio **não** executa nenhuma migração em massa dos
+itens existentes para fichas de catalogação — cada ficha é criada
+manualmente, um item por vez, pelo Administrador. Uma eventual migração
+assistida (gerar fichas automaticamente a partir dos metadados já
+existentes de `FileAsset`/`LibraryItem`, por exemplo) continua sendo uma
+ação futura separada, sujeita a plano próprio com testes e rollback antes
+de qualquer execução real — nunca automática (Regra de Preservação nº3).
+
 ## 11.7 Critérios de qualidade
 
 - WCAG AA e navegação completa por teclado;

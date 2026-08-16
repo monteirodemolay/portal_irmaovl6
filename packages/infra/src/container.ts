@@ -28,6 +28,10 @@ import {
   ListArchiveExhibitionsUseCase,
   ListPublishedArchiveExhibitionsUseCase,
   GetArchiveExhibitionBySlugUseCase,
+  UpsertArchiveCatalogEntryUseCase,
+  PublishArchiveCatalogEntryUseCase,
+  ListArchiveCatalogEntriesUseCase,
+  GetArchiveCatalogEntryByOrigemIdUseCase,
   CreateBoardTermUseCase,
   CreateCommitteeUseCase,
   CreateEventUseCase,
@@ -121,6 +125,7 @@ import { FirestoreApiKeyRepository } from './firestore/repositories/api-key.repo
 import { FirestoreArchiveCollectionRepository } from './firestore/repositories/archive-collection.repository';
 import { FirestoreArchiveRelationRepository } from './firestore/repositories/archive-relation.repository';
 import { FirestoreArchiveExhibitionRepository } from './firestore/repositories/archive-exhibition.repository';
+import { FirestoreArchiveCatalogEntryRepository } from './firestore/repositories/archive-catalog-entry.repository';
 import { FirestoreAuditLogRepository } from './firestore/repositories/audit-log.repository';
 import { FirestoreBoardPositionAssignmentRepository } from './firestore/repositories/board-position-assignment.repository';
 import { FirestoreBoardTermRepository } from './firestore/repositories/board-term.repository';
@@ -229,6 +234,11 @@ export function createServerContainer() {
     archiveExhibition: withAudit(
       new FirestoreArchiveExhibitionRepository(db),
       'archiveExhibitions',
+      auditDeps,
+    ),
+    archiveCatalogEntry: withAudit(
+      new FirestoreArchiveCatalogEntryRepository(db),
+      'archiveCatalogEntries',
       auditDeps,
     ),
   };
@@ -661,6 +671,21 @@ export function createServerContainer() {
     }),
     getArchiveExhibitionBySlug: new GetArchiveExhibitionBySlugUseCase({
       archiveExhibitionRepository: repositories.archiveExhibition,
+    }),
+    upsertArchiveCatalogEntry: new UpsertArchiveCatalogEntryUseCase({
+      archiveCatalogEntryRepository: repositories.archiveCatalogEntry,
+      clock,
+      idGenerator,
+    }),
+    publishArchiveCatalogEntry: new PublishArchiveCatalogEntryUseCase({
+      archiveCatalogEntryRepository: repositories.archiveCatalogEntry,
+      clock,
+    }),
+    listArchiveCatalogEntries: new ListArchiveCatalogEntriesUseCase({
+      archiveCatalogEntryRepository: repositories.archiveCatalogEntry,
+    }),
+    getArchiveCatalogEntryByOrigemId: new GetArchiveCatalogEntryByOrigemIdUseCase({
+      archiveCatalogEntryRepository: repositories.archiveCatalogEntry,
     }),
   };
 

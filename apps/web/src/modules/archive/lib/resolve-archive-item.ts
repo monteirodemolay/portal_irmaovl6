@@ -22,6 +22,13 @@ export interface ResolvedArchiveItem {
   catalogadoEm: Date;
   legacyHref: string;
   legacyLabel: string;
+  catalogo: ResolvedArchiveItemCatalogo | null;
+}
+
+export interface ResolvedArchiveItemCatalogo {
+  tituloCurado: string | null;
+  contextoHistorico: string | null;
+  tags: string[];
 }
 
 const KIND_LABELS: Record<ArchiveItemKind, string> = {
@@ -68,6 +75,7 @@ async function resolveFile(
     catalogadoEm: file.createdAt,
     legacyHref: '/arquivos',
     legacyLabel: 'Ver em Documentos',
+    catalogo: null,
   };
 }
 
@@ -113,6 +121,7 @@ async function resolveLibraryItem(
     catalogadoEm: item.createdAt,
     legacyHref: '/biblioteca',
     legacyLabel: 'Ver na Biblioteca',
+    catalogo: null,
   };
 }
 
@@ -145,6 +154,7 @@ async function resolveGalleryAlbum(
     catalogadoEm: album.createdAt,
     legacyHref: `/galeria/${album.id}`,
     legacyLabel: 'Ver na Galeria',
+    catalogo: null,
   };
 }
 
@@ -180,6 +190,7 @@ async function resolveGalleryMedia(
     catalogadoEm: media.createdAt,
     legacyHref: `/galeria/${album.id}`,
     legacyLabel: 'Ver na Galeria',
+    catalogo: null,
   };
 }
 
@@ -199,14 +210,33 @@ export async function resolveArchiveItem(
   const parsed = parseArchiveItemId(compositeId);
   if (!parsed) return null;
 
-  switch (parsed.kind) {
-    case 'file':
-      return resolveFile(container, authContext, parsed.sourceId);
-    case 'library':
-      return resolveLibraryItem(container, authContext, parsed.sourceId);
-    case 'gallery-album':
-      return resolveGalleryAlbum(container, authContext, parsed.sourceId);
-    case 'gallery-media':
-      return resolveGalleryMedia(container, authContext, parsed.sourceId);
+  const item = await (() => {
+    switch (parsed.kind) {
+      case 'file':
+        return resolveFile(container, authContext, parsed.sourceId);
+      case 'library':
+        return resolveLibraryItem(container, authContext, parsed.sourceId);
+      case 'gallery-album':
+        return resolveGalleryAlbum(container, authContext, parsed.sourceId);
+      case 'gallery-media':
+        return resolveGalleryMedia(container, authContext, parsed.sourceId);
+    }
+  })();
+  if (!item) return null;
+
+  if (hasPermission(authContext, 'archiveCatalog:read')) {
+    const entry = await container.useCases.getArchiveCatalogEntryByOrigemId.execute(
+      authContext,
+      compositeId,
+    );
+    if (entry) {
+      item.catalogo = {
+        tituloCurado: entry.tituloCurado,
+        contextoHistorico: entry.contextoHistorico,
+        tags: entry.tags,
+      };
+    }
   }
+
+  return item;
 }

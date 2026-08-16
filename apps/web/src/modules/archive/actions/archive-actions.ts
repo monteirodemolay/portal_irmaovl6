@@ -7,6 +7,7 @@ import {
   archiveRelationSchema,
   archiveExhibitionSchema,
   archiveExhibitionSectionSchema,
+  archiveCatalogEntrySchema,
   ARCHIVE_RELATION_NODE_KINDS,
 } from '@vl6/shared';
 import { createServerContainer } from '@vl6/infra';
@@ -250,4 +251,88 @@ export async function publishArchiveExhibitionAction(
 
   revalidatePath('/admin/acervo/exposicoes');
   revalidatePath(`/admin/acervo/exposicoes/${exhibitionId}`);
+}
+
+function parseTagsField(raw: FormDataEntryValue | null): string[] {
+  if (typeof raw !== 'string') return [];
+  return raw
+    .split(',')
+    .map((tag) => tag.trim())
+    .filter((tag) => tag.length > 0);
+}
+
+function parseArchiveCatalogEntryForm(formData: FormData) {
+  return archiveCatalogEntrySchema.parse({
+    origemId: formData.get('origemId'),
+    tituloCurado: formData.get('tituloCurado') || null,
+    contextoHistorico: formData.get('contextoHistorico') || null,
+    tags: parseTagsField(formData.get('tags')),
+  });
+}
+
+export async function createArchiveCatalogEntryAction(
+  _prevState: ArchiveActionState,
+  formData: FormData,
+): Promise<ArchiveActionState> {
+  const session = await requireSession();
+
+  let input;
+  try {
+    input = parseArchiveCatalogEntryForm(formData);
+  } catch {
+    return { error: 'Dados inválidos. Selecione um item e verifique os campos.' };
+  }
+
+  const container = createServerContainer();
+  const result = await container.useCases.upsertArchiveCatalogEntry.execute(
+    session.authContext,
+    input,
+  );
+  if (!result.ok) return { error: result.error.message };
+
+  revalidatePath('/admin/acervo/catalogacao');
+  redirect(`/admin/acervo/catalogacao/${result.value.id}`);
+}
+
+export async function updateArchiveCatalogEntryAction(
+  entryId: string,
+  _prevState: ArchiveActionState,
+  formData: FormData,
+): Promise<ArchiveActionState> {
+  const session = await requireSession();
+
+  let input;
+  try {
+    input = parseArchiveCatalogEntryForm(formData);
+  } catch {
+    return { error: 'Dados inválidos. Verifique os campos.' };
+  }
+
+  const container = createServerContainer();
+  const result = await container.useCases.upsertArchiveCatalogEntry.execute(
+    session.authContext,
+    input,
+  );
+  if (!result.ok) return { error: result.error.message };
+
+  revalidatePath('/admin/acervo/catalogacao');
+  revalidatePath(`/admin/acervo/catalogacao/${entryId}`);
+  return { error: null };
+}
+
+export async function publishArchiveCatalogEntryAction(
+  entryId: string,
+  publicar: boolean,
+): Promise<void> {
+  const session = await requireSession();
+  const container = createServerContainer();
+  const result = await container.useCases.publishArchiveCatalogEntry.execute(
+    session.authContext,
+    entryId,
+    publicar,
+  );
+  if (!result.ok) throw new Error(result.error.message);
+
+  revalidatePath('/admin/acervo/catalogacao');
+  revalidatePath(`/admin/acervo/catalogacao/${entryId}`);
 }

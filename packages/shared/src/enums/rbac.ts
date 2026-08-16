@@ -62,6 +62,11 @@ export const RESOURCE_KEYS = [
   // de `archiveCollection` (agrupamento plano), uma exposição tem estrutura
   // narrativa (título+texto por seção).
   'archiveExhibition',
+  // Catalogação formal (Estágio 6, §11.6e) — camada aditiva de contexto
+  // histórico/título curado/tags sobre um item já existente (`origemId` =
+  // ID composto do Estágio 1). Nunca migra nem substitui o registro de
+  // origem; recurso próprio pela mesma razão de `archiveCollection`.
+  'archiveCatalog',
 ] as const;
 export type ResourceKey = (typeof RESOURCE_KEYS)[number];
 
@@ -119,6 +124,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<RoleKey, PermissionKey[]> = {
     'archiveCollection:manage',
     'archiveRelation:manage',
     'archiveExhibition:manage',
+    'archiveCatalog:manage',
   ],
   membro: [
     'tenant:read',
@@ -137,5 +143,6 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<RoleKey, PermissionKey[]> = {
     'archiveCollection:read',
     'archiveRelation:read',
     'archiveExhibition:read',
+    'archiveCatalog:read',
   ],
 };

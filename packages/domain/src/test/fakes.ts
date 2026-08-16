@@ -83,6 +83,8 @@ import type { ArchiveRelation } from '../modules/archive/entities/archive-relati
 import type { IArchiveRelationRepository } from '../modules/archive/repositories/archive-relation.repository';
 import type { ArchiveExhibition } from '../modules/archive/entities/archive-exhibition.entity';
 import type { IArchiveExhibitionRepository } from '../modules/archive/repositories/archive-exhibition.repository';
+import type { ArchiveCatalogEntry } from '../modules/archive/entities/archive-catalog-entry.entity';
+import type { IArchiveCatalogEntryRepository } from '../modules/archive/repositories/archive-catalog-entry.repository';
 
 export class FixedClock implements IClock {
   constructor(private readonly fixed: Date = new Date('2026-01-01T00:00:00Z')) {}
@@ -639,6 +641,30 @@ export class InMemoryArchiveExhibitionRepository implements IArchiveExhibitionRe
   }
   async update(exhibition: ArchiveExhibition) {
     this.byId.set(exhibition.id, exhibition);
+  }
+}
+
+export class InMemoryArchiveCatalogEntryRepository implements IArchiveCatalogEntryRepository {
+  private readonly byId = new Map<string, ArchiveCatalogEntry>();
+
+  async findById(id: string) {
+    return this.byId.get(id) ?? null;
+  }
+  async findByOrigemId(tenantId: string, origemId: string) {
+    return (
+      [...this.byId.values()].find(
+        (e) => e.tenantId === tenantId && e.origemId === origemId && e.deletedAt === null,
+      ) ?? null
+    );
+  }
+  async listByTenant(tenantId: string) {
+    return [...this.byId.values()].filter((e) => e.tenantId === tenantId && e.deletedAt === null);
+  }
+  async create(entry: ArchiveCatalogEntry) {
+    this.byId.set(entry.id, entry);
+  }
+  async update(entry: ArchiveCatalogEntry) {
+    this.byId.set(entry.id, entry);
   }
 }
 

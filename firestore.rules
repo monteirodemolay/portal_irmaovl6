@@ -245,6 +245,14 @@ service cloud.firestore {
       allow create, update: if sameTenant(request.resource.data) && hasPermission('archiveExhibition:create');
       allow delete: if false;
     }
+    // Fichas de catalogação (docs/architecture/11-acervo-vl6.md §11.6e) —
+    // camada aditiva que só referencia um item já existente por `origemId`,
+    // nunca migra/substitui a coleção de origem.
+    match /archiveCatalogEntries/{id} {
+      allow read: if sameTenant(resource.data) && hasPermission('archiveCatalog:read') && (resource.data.publicado == true || hasPermission('archiveCatalog:manage'));
+      allow create, update: if sameTenant(request.resource.data) && hasPermission('archiveCatalog:manage');
+      allow delete: if false;
+    }
 
     // ---------------------------------------------------------------
     // Audit — write exclusivamente via Admin SDK (ignora Security Rules),

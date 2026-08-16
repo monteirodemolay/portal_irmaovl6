@@ -37,6 +37,45 @@ function formatBytes(bytes: number): string {
   return `${value.toFixed(1)} ${units[unitIndex]}`;
 }
 
+function HistoricalContextPanel({ item }: { item: ResolvedArchiveItem }) {
+  const catalogo = item.catalogo;
+  if (!catalogo) return null;
+  if (!catalogo.tituloCurado && !catalogo.contextoHistorico && catalogo.tags.length === 0) {
+    return null;
+  }
+
+  return (
+    <section
+      aria-labelledby="historical-context-title"
+      className="border-border bg-surface rounded-lg border p-5"
+    >
+      <h2
+        id="historical-context-title"
+        className="font-display text-sm font-semibold uppercase tracking-wide"
+      >
+        Contexto Histórico
+      </h2>
+      {catalogo.tituloCurado && (
+        <p className="font-display mt-3 text-base font-semibold">{catalogo.tituloCurado}</p>
+      )}
+      {catalogo.contextoHistorico && (
+        <p className="mt-2 whitespace-pre-line text-sm leading-relaxed">
+          {catalogo.contextoHistorico}
+        </p>
+      )}
+      {catalogo.tags.length > 0 && (
+        <ul className="mt-3 flex flex-wrap gap-2">
+          {catalogo.tags.map((tag) => (
+            <li key={tag}>
+              <Badge variant="outline">{tag}</Badge>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
 function ItemMedia({ item }: { item: ResolvedArchiveItem }) {
   if (item.kind === 'gallery-media' && item.tipoDetalhado === 'Foto') {
     return (
@@ -129,6 +168,8 @@ export function ArchiveItemContent({ item }: { item: ResolvedArchiveItem }) {
       />
 
       <ItemMedia item={item} />
+
+      <HistoricalContextPanel item={item} />
 
       <ProvenancePanel
         fields={[
