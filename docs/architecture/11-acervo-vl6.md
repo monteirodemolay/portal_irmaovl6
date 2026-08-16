@@ -30,7 +30,7 @@ o Irmão encontra os quatro caminhos já funcionais:
 
 - Documentos → `/arquivos`;
 - Biblioteca → `/biblioteca`;
-- Fotografias → `/galeria`;
+- Fotos e Vídeos → `/galeria`;
 - Favoritos → `/downloads`.
 
 As páginas legadas passam a utilizar o nome `Acervo VL6` em seu cabeçalho e

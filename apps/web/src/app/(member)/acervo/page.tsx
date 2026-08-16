@@ -31,7 +31,7 @@ interface ArchiveResult {
 const KIND_LABELS: Record<ArchiveKind, string> = {
   documento: 'Documento',
   biblioteca: 'Biblioteca',
-  fotografia: 'Fotografia',
+  fotografia: 'Foto/Vídeo',
 };
 
 function normalize(value: string): string {
@@ -126,7 +126,7 @@ export default async function AcervoPage({
     id: album.id,
     kind: 'fotografia',
     title: album.titulo,
-    description: `${album.categoria} · registro fotográfico da Loja`,
+    description: `${album.categoria} · registro da Loja`,
     href: `/galeria/${album.id}`,
   }));
 
@@ -158,7 +158,7 @@ export default async function AcervoPage({
     },
     {
       href: '/galeria',
-      title: 'Fotografias',
+      title: 'Fotos e Vídeos',
       description: 'Álbuns de sessões, solenidades e acontecimentos da Loja.',
       count: formatCount(albumCount, 'álbum', 'álbuns'),
       icon: GalleryIcon,
@@ -190,8 +190,8 @@ export default async function AcervoPage({
             Acervo VL6
           </h1>
           <p className="mt-4 max-w-2xl text-sm leading-6 text-white/75 sm:text-base">
-            Um único centro de pesquisa para documentos, fotografias, biblioteca e registros que
-            preservam a trajetória da {current.tenant.nome}.
+            Um único centro de pesquisa para documentos, biblioteca, fotos e vídeos que preservam a
+            trajetória da {current.tenant.nome}.
           </p>
 
           <form action="/acervo" method="get" role="search" className="mt-7">
