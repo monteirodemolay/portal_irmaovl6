@@ -15,7 +15,6 @@ import { AvisosPanel } from '@/modules/dashboard/components/avisos-panel';
 import { DashboardSectionHeading } from '@/modules/dashboard/components/dashboard-section-heading';
 import { ImportantNoticeCard } from '@/modules/dashboard/components/important-notice-card';
 import { NextEventCard } from '@/modules/dashboard/components/next-event-card';
-import { QuickAccessPanel } from '@/modules/dashboard/components/quick-access-panel';
 
 export default async function DashboardPage() {
   const [session, current] = await Promise.all([getCurrentSession(), getCurrentTenant()]);
@@ -131,15 +130,12 @@ export default async function DashboardPage() {
         <AvisosPanel announcements={avisosList} />
       </section>
 
-      <section className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <QuickAccessPanel showDirectoryLink={showDirectoryLink} />
-        <AcervoPanel
-          documentos={documentos}
-          biblioteca={biblioteca}
-          albuns={albuns}
-          favoritos={favoritos}
-        />
-      </section>
+      <AcervoPanel
+        documentos={documentos}
+        biblioteca={biblioteca}
+        albuns={albuns}
+        favoritos={favoritos}
+      />
     </div>
   );
 }

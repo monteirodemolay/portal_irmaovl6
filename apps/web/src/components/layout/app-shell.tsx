@@ -94,14 +94,14 @@ export function AppShell({
   }
 
   return (
-    <div className="grid min-h-screen lg:grid-cols-[260px_1fr] print:block">
-      <aside className="from-primary to-primary-dark sticky top-0 hidden h-screen flex-col overflow-hidden border-r border-white/10 bg-gradient-to-b lg:flex print:hidden">
+    <div className="min-h-screen print:block">
+      <aside className="from-primary to-primary-dark fixed inset-y-0 left-0 z-10 hidden w-[260px] flex-col overflow-hidden border-r border-white/10 bg-gradient-to-b lg:flex print:hidden">
         <div className="border-b border-white/10 px-5 py-5">{brand}</div>
         {renderNav()}
         {sidebarFooter && <div className="border-t border-white/10 px-5 py-4">{sidebarFooter}</div>}
       </aside>
 
-      <div className="min-w-0">
+      <div className="min-w-0 lg:pl-[260px] print:pl-0">
         <header className="border-border bg-surface sticky top-0 z-20 flex h-[72px] items-center justify-between gap-4 border-b px-5 lg:px-7 print:hidden">
           <div className="flex items-center gap-3">
             <button

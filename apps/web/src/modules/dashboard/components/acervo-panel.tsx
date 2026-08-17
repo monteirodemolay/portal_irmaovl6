@@ -54,7 +54,7 @@ export function AcervoPanel({
 }) {
   const tiles: AcervoTile[] = [
     {
-      href: '/arquivos',
+      href: '/acervo/documentos',
       label: 'Documentos',
       icon: FileText,
       gradient: 'from-primary to-primary-dark',
@@ -62,7 +62,7 @@ export function AcervoPanel({
       unit: documentos === 1 ? 'documento' : 'documentos',
     },
     {
-      href: '/biblioteca',
+      href: '/acervo/biblioteca',
       label: 'Biblioteca',
       icon: BookOpen,
       gradient: 'from-emerald-700 to-emerald-900',
@@ -70,7 +70,7 @@ export function AcervoPanel({
       unit: biblioteca === 1 ? 'item' : 'itens',
     },
     {
-      href: '/galeria',
+      href: '/acervo/fotografias',
       label: 'Fotografias',
       icon: GalleryIcon,
       gradient: 'from-amber-600 to-amber-800',
@@ -88,9 +88,14 @@ export function AcervoPanel({
   ];
 
   return (
-    <Card id="acervo-vl6" className="flex flex-col gap-4 p-5 shadow-none">
-      <DashboardSectionHeading icon={BookOpen} title="Acervo VL6" />
-      <div className="grid grid-cols-2 gap-3">
+    <Card className="flex flex-col gap-4 p-5 shadow-none">
+      <DashboardSectionHeading
+        icon={BookOpen}
+        title="Acervo VL6"
+        href="/acervo"
+        hrefLabel="Ver acervo completo"
+      />
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {tiles.map((tile) => (
           <AcervoTileCard key={tile.href} tile={tile} />
         ))}

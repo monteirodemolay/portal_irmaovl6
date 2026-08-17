@@ -31,7 +31,9 @@ export function NextEventCard({ event }: { event: Event }) {
           </span>
         </div>
         <div className="min-w-0 pt-1">
-          <Badge variant="accent">Próximo evento</Badge>
+          <Badge variant="accent" className="bg-accent text-primary-dark">
+            Próximo evento
+          </Badge>
           <p className="font-display mt-1.5 truncate text-lg font-semibold">{event.titulo}</p>
           <Badge variant="outline" className="mt-1.5 border-white/25 text-white/80">
             {EVENT_KIND_LABELS[event.tipo]}
