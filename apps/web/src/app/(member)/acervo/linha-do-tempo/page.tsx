@@ -51,7 +51,7 @@ export default async function ArchiveTimelinePage() {
   }));
 
   const eventEntries: TimelineEntry[] = eventsPage.items
-    .filter((event) => new Date(event.dataFim) < now)
+    .filter((event) => new Date(event.dataFim ?? event.dataInicio) < now)
     .map((event) => ({
       date: event.dataInicio,
       kindLabel: EVENT_KIND_LABELS[event.tipo],

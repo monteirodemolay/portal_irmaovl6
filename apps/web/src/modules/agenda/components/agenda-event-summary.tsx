@@ -4,8 +4,9 @@ import { formatEventDate } from '@/modules/dashboard/lib/format-event-date';
 
 export function AgendaEventSummary({ event }: { event: Event }) {
   const { day, month, weekday, timeRange } = formatEventDate(event.dataInicio, event.dataFim);
-  const durationMs = event.dataFim.getTime() - event.dataInicio.getTime();
-  const durationLabel = formatDuration(durationMs);
+  const durationLabel = event.dataFim
+    ? formatDuration(event.dataFim.getTime() - event.dataInicio.getTime())
+    : null;
 
   const items = [
     {
@@ -18,7 +19,7 @@ export function AgendaEventSummary({ event }: { event: Event }) {
       icon: Clock,
       label: 'Horário',
       value: timeRange,
-      sub: `Duração: ${durationLabel}`,
+      sub: durationLabel ? `Duração: ${durationLabel}` : null,
     },
     {
       icon: Landmark,

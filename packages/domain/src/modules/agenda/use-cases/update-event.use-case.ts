@@ -23,7 +23,7 @@ export class UpdateEventUseCase {
       return err(new NotFoundError('Event', eventId));
     }
 
-    if (input.dataFim <= input.dataInicio) {
+    if (input.dataFim && input.dataFim <= input.dataInicio) {
       return err(new ConflictError('A data final deve ser posterior à data inicial.'));
     }
 

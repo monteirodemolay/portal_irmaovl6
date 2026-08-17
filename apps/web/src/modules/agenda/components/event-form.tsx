@@ -16,7 +16,8 @@ import {
 
 const EMPTY_STATE: AgendaActionState = { error: null };
 
-function toDatetimeLocalValue(date: Date): string {
+function toDatetimeLocalValue(date: Date | null): string | undefined {
+  if (!date) return undefined;
   const pad = (value: number) => String(value).padStart(2, '0');
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(
     date.getHours(),
@@ -66,12 +67,15 @@ export function EventForm({
           defaultValue={event ? toDatetimeLocalValue(event.dataInicio) : undefined}
         />
       </FormField>
-      <FormField label="Fim" htmlFor="dataFim">
+      <FormField
+        label="Fim (opcional)"
+        htmlFor="dataFim"
+        description="Deixe em branco quando não houver horário de encerramento definido (comum em sessões)."
+      >
         <Input
           id="dataFim"
           name="dataFim"
           type="datetime-local"
-          required
           defaultValue={event ? toDatetimeLocalValue(event.dataFim) : undefined}
         />
       </FormField>

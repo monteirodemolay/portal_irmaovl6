@@ -7,7 +7,8 @@ export interface Event extends BaseEntity {
   descricao: string | null;
   local: string;
   dataInicio: Date;
-  dataFim: Date;
+  /** `null` = sem horário de término definido — comum em sessões da Loja que têm início mas não têm fim fixo previsto. */
+  dataFim: Date | null;
   exigeConfirmacaoPresenca: boolean;
   capacidadeMaxima: number | null;
   /** Traje sugerido (ex.: "Social completo"). */

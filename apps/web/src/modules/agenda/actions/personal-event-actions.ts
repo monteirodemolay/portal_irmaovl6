@@ -1,7 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { personalEventSchema } from '@vl6/shared';
+import { parseBrazilDateTimeLocal, personalEventSchema } from '@vl6/shared';
 import { createServerContainer } from '@vl6/infra';
 import { requireSession } from '@/lib/auth/require-session';
 
@@ -11,12 +11,14 @@ export interface PersonalEventActionState {
 
 function parsePersonalEventForm(formData: FormData) {
   const lembrete = formData.get('lembreteMinutosAntes');
+  const dataInicioRaw = formData.get('dataInicio');
+  const dataFimRaw = formData.get('dataFim');
   return personalEventSchema.parse({
     titulo: formData.get('titulo'),
     descricao: formData.get('descricao') || null,
     local: formData.get('local') || null,
-    dataInicio: formData.get('dataInicio'),
-    dataFim: formData.get('dataFim'),
+    dataInicio: typeof dataInicioRaw === 'string' ? parseBrazilDateTimeLocal(dataInicioRaw) : null,
+    dataFim: typeof dataFimRaw === 'string' ? parseBrazilDateTimeLocal(dataFimRaw) : null,
     lembreteMinutosAntes: lembrete ? lembrete : null,
     sincronizarComGoogle: formData.get('sincronizarComGoogle') === 'on',
   });

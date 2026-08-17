@@ -8,7 +8,7 @@ export const eventSchema = z
     descricao: z.string().max(2000).nullable(),
     local: z.string().min(1).max(200),
     dataInicio: z.coerce.date(),
-    dataFim: z.coerce.date(),
+    dataFim: z.coerce.date().nullable(),
     exigeConfirmacaoPresenca: z.boolean(),
     capacidadeMaxima: z.coerce.number().int().min(1).nullable(),
     traje: z.string().max(200).nullable(),
@@ -16,7 +16,7 @@ export const eventSchema = z
     observacoes: z.string().max(1000).nullable(),
     arquivosRelacionados: z.array(z.string()).default([]),
   })
-  .refine((data) => data.dataFim > data.dataInicio, {
+  .refine((data) => !data.dataFim || data.dataFim > data.dataInicio, {
     message: 'A data final deve ser posterior à data inicial.',
     path: ['dataFim'],
   });

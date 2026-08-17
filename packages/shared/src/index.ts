@@ -23,5 +23,7 @@ export * from './schemas/gallery.schema';
 export * from './schemas/central.schema';
 export * from './schemas/archive.schema';
 export * from './calendar/build-calendar-links';
+export * from './calendar/resolve-event-end';
+export * from './calendar/timezone';
 export * from './central/link-normalizers';
 export * from './observability/logger';

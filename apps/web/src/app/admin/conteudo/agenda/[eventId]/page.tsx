@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { hasPermission } from '@vl6/domain';
-import { EVENT_KIND_LABELS } from '@vl6/shared';
+import { BRAZIL_TIME_ZONE, EVENT_KIND_LABELS } from '@vl6/shared';
 import { createServerContainer } from '@vl6/infra';
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle, EmptyState } from '@vl6/ui';
 import { requirePagePermission } from '@/lib/auth/require-permission';
@@ -18,9 +18,11 @@ const STATUS_LABEL = {
 } as const;
 
 function formatDateTime(date: Date): string {
-  return new Intl.DateTimeFormat('pt-BR', { dateStyle: 'long', timeStyle: 'short' }).format(
-    new Date(date),
-  );
+  return new Intl.DateTimeFormat('pt-BR', {
+    dateStyle: 'long',
+    timeStyle: 'short',
+    timeZone: BRAZIL_TIME_ZONE,
+  }).format(new Date(date));
 }
 
 export default async function EventDetailPage({
@@ -50,7 +52,9 @@ export default async function EventDetailPage({
             {EVENT_KIND_LABELS[event.tipo]} · {event.local}
           </p>
           <p className="text-muted text-sm">
-            {formatDateTime(event.dataInicio)} — {formatDateTime(event.dataFim)}
+            {event.dataFim
+              ? `${formatDateTime(event.dataInicio)} — ${formatDateTime(event.dataFim)}`
+              : `A partir de ${formatDateTime(event.dataInicio)}`}
           </p>
           {event.descricao && <p className="mt-2 max-w-2xl text-sm">{event.descricao}</p>}
         </div>

@@ -1,3 +1,4 @@
+import { resolveEventEnd } from '@vl6/shared';
 import type { Event } from '../../agenda/entities/event.entity';
 import type { AuthContext } from '../../../shared/auth-context';
 import type { IClock, IIdGenerator, ITokenCipher } from '../../../shared/ports';
@@ -37,7 +38,7 @@ export class SyncVl6EventToGoogleUseCase {
       descricao: event.descricao,
       local: event.local,
       inicio: event.dataInicio,
-      fim: event.dataFim,
+      fim: resolveEventEnd(event.dataInicio, event.dataFim),
     };
 
     const existingLink = await this.deps.syncLinkRepository.findBySource(

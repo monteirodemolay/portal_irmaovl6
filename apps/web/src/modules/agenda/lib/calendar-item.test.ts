@@ -122,4 +122,20 @@ describe('detectOverlaps', () => {
 
     expect(detectOverlaps(items).size).toBe(0);
   });
+
+  it('ignora eventos VL6 sem dataFim definida (sessão sem horário de encerramento)', () => {
+    const items = toCalendarItems(
+      [
+        buildEvent({
+          id: 'e1',
+          dataInicio: new Date('2026-08-18T20:00:00Z'),
+          dataFim: null,
+        }),
+      ],
+      [buildPersonalEvent({ id: 'pe1', dataInicio: new Date('2026-08-18T20:30:00Z'), dataFim: new Date('2026-08-18T21:00:00Z') })],
+      [],
+    );
+
+    expect(detectOverlaps(items).size).toBe(0);
+  });
 });

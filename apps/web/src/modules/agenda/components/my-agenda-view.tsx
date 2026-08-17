@@ -79,6 +79,7 @@ function formatItemDate(date: Date): string {
 
 function formatItemTime(item: CalendarItem): string {
   const start = new Intl.DateTimeFormat('pt-BR', { timeStyle: 'short' }).format(item.inicio);
+  if (!item.fim) return `A partir das ${start}`;
   const end = new Intl.DateTimeFormat('pt-BR', { timeStyle: 'short' }).format(item.fim);
   return `${start} às ${end}`;
 }
@@ -121,7 +122,7 @@ export function MyAgendaView({ vl6Events, personalEvents, googleEvents }: MyAgen
   );
   const dayItems = filteredItems.filter((item) => isSameDay(item.inicio, selectedDay));
   const upcomingItems = filteredItems
-    .filter((item) => item.fim >= startOfDay(now))
+    .filter((item) => (item.fim ?? item.inicio) >= startOfDay(now))
     .sort((a, b) => a.inicio.getTime() - b.inicio.getTime());
 
   function openNewPersonal(defaultStart?: Date) {

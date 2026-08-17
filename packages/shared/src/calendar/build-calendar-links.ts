@@ -7,12 +7,15 @@
  * importa manualmente.
  */
 
+import { resolveEventEnd } from './resolve-event-end';
+
 export interface CalendarEventInput {
   titulo: string;
   descricao: string | null;
   local: string;
   dataInicio: Date;
-  dataFim: Date;
+  /** `null` = sem horário de término definido (ex.: sessão sem hora de encerrar) — resolvido para +1h só nesta exportação, nunca persistido. */
+  dataFim: Date | null;
 }
 
 function formatUtcCompact(date: Date): string {
@@ -23,10 +26,11 @@ function formatUtcCompact(date: Date): string {
 }
 
 export function buildGoogleCalendarUrl(event: CalendarEventInput): string {
+  const dataFim = resolveEventEnd(event.dataInicio, event.dataFim);
   const params = new URLSearchParams({
     action: 'TEMPLATE',
     text: event.titulo,
-    dates: `${formatUtcCompact(event.dataInicio)}/${formatUtcCompact(event.dataFim)}`,
+    dates: `${formatUtcCompact(event.dataInicio)}/${formatUtcCompact(dataFim)}`,
     location: event.local,
   });
   if (event.descricao) params.set('details', event.descricao);
@@ -42,6 +46,7 @@ function escapeIcsText(text: string): string {
 }
 
 export function buildIcsContent(event: CalendarEventInput, uid: string): string {
+  const dataFim = resolveEventEnd(event.dataInicio, event.dataFim);
   const lines = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
@@ -51,7 +56,7 @@ export function buildIcsContent(event: CalendarEventInput, uid: string): string 
     `UID:${uid}`,
     `DTSTAMP:${formatUtcCompact(new Date())}`,
     `DTSTART:${formatUtcCompact(event.dataInicio)}`,
-    `DTEND:${formatUtcCompact(event.dataFim)}`,
+    `DTEND:${formatUtcCompact(dataFim)}`,
     `SUMMARY:${escapeIcsText(event.titulo)}`,
     `LOCATION:${escapeIcsText(event.local)}`,
   ];

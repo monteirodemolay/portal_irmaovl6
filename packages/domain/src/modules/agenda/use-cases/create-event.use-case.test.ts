@@ -71,4 +71,18 @@ describe('CreateEventUseCase', () => {
     expect(result.ok).toBe(true);
     expect(repo.created?.id).toBe('event-1');
   });
+
+  it('cria o evento sem dataFim (sessão sem horário de encerramento definido)', async () => {
+    const repo = new FakeEventRepository();
+    const useCase = new CreateEventUseCase({
+      eventRepository: repo as unknown as IEventRepository,
+      clock,
+      idGenerator,
+    });
+
+    const result = await useCase.execute(ctx, buildInput({ dataFim: null }));
+
+    expect(result.ok).toBe(true);
+    expect(repo.created?.dataFim).toBeNull();
+  });
 });

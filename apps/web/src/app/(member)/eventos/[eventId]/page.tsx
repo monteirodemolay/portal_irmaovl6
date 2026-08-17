@@ -1,14 +1,16 @@
 import { notFound } from 'next/navigation';
 import { createServerContainer } from '@vl6/infra';
-import { EVENT_KIND_LABELS } from '@vl6/shared';
+import { BRAZIL_TIME_ZONE, EVENT_KIND_LABELS } from '@vl6/shared';
 import { Badge, Card, CardContent, CardHeader, CardTitle } from '@vl6/ui';
 import { requirePagePermission } from '@/lib/auth/require-permission';
 import { AttendanceButtons } from '@/modules/agenda/components/attendance-buttons';
 
 function formatDateTime(date: Date): string {
-  return new Intl.DateTimeFormat('pt-BR', { dateStyle: 'long', timeStyle: 'short' }).format(
-    new Date(date),
-  );
+  return new Intl.DateTimeFormat('pt-BR', {
+    dateStyle: 'long',
+    timeStyle: 'short',
+    timeZone: BRAZIL_TIME_ZONE,
+  }).format(new Date(date));
 }
 
 export default async function EventDetailPage({
@@ -45,7 +47,9 @@ export default async function EventDetailPage({
           <CardTitle>Quando</CardTitle>
         </CardHeader>
         <CardContent className="text-sm">
-          {formatDateTime(event.dataInicio)} — {formatDateTime(event.dataFim)}
+          {event.dataFim
+            ? `${formatDateTime(event.dataInicio)} — ${formatDateTime(event.dataFim)}`
+            : `A partir de ${formatDateTime(event.dataInicio)}`}
         </CardContent>
       </Card>
 

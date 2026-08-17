@@ -1,14 +1,16 @@
 import Link from 'next/link';
 import { createServerContainer } from '@vl6/infra';
 import type { Event } from '@vl6/domain';
-import { EVENT_KIND_LABELS } from '@vl6/shared';
+import { BRAZIL_TIME_ZONE, EVENT_KIND_LABELS } from '@vl6/shared';
 import { Button, DataTable, EmptyState, type DataTableColumn } from '@vl6/ui';
 import { requirePagePermission } from '@/lib/auth/require-permission';
 
 function formatDateTime(date: Date): string {
-  return new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' }).format(
-    new Date(date),
-  );
+  return new Intl.DateTimeFormat('pt-BR', {
+    dateStyle: 'short',
+    timeStyle: 'short',
+    timeZone: BRAZIL_TIME_ZONE,
+  }).format(new Date(date));
 }
 
 export default async function AgendaPage() {

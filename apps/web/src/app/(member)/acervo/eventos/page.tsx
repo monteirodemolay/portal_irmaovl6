@@ -28,7 +28,7 @@ export default async function ArchiveEventsPage({
 
   const now = new Date();
   const pastEvents = page.items
-    .filter((event) => new Date(event.dataFim) < now)
+    .filter((event) => new Date(event.dataFim ?? event.dataInicio) < now)
     .filter((event) => !params.tipo || event.tipo === params.tipo)
     .sort((a, b) => new Date(b.dataInicio).getTime() - new Date(a.dataInicio).getTime());
 

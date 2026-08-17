@@ -17,7 +17,8 @@ export interface CalendarItem {
   source: CalendarSource;
   titulo: string;
   inicio: Date;
-  fim: Date;
+  /** `null` = sem horário de término definido (só ocorre em eventos VL6, ex.: sessões). */
+  fim: Date | null;
   local: string | null;
   /** `Event.tipo === 'aniversario'` — chip informativo, não clicável, ignorado na detecção de conflito. */
   isBirthday: boolean;
@@ -70,11 +71,16 @@ export function toCalendarItems(
 /**
  * IDs dos itens cujo horário se sobrepõe a outro — badge de aviso puramente
  * visual (client-side), não precisa ser à prova de adulteração. Aniversários
- * (`isBirthday`) nunca entram na checagem, nem como origem nem como alvo.
+ * (`isBirthday`) nunca entram na checagem, nem como origem nem como alvo. Um
+ * item sem `fim` definido (sessão sem horário de encerramento) também não
+ * entra — sem duração conhecida, não há como afirmar que ele se sobrepõe a
+ * outro compromisso.
  */
 export function detectOverlaps(items: CalendarItem[]): Set<string> {
   const overlapping = new Set<string>();
-  const relevant = items.filter((item) => !item.isBirthday);
+  const relevant = items.filter(
+    (item): item is CalendarItem & { fim: Date } => !item.isBirthday && item.fim !== null,
+  );
 
   for (let i = 0; i < relevant.length; i += 1) {
     for (let j = i + 1; j < relevant.length; j += 1) {

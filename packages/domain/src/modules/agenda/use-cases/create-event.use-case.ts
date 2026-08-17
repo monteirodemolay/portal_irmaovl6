@@ -12,7 +12,7 @@ export interface CreateEventInput {
   descricao: string | null;
   local: string;
   dataInicio: Date;
-  dataFim: Date;
+  dataFim: Date | null;
   exigeConfirmacaoPresenca: boolean;
   capacidadeMaxima: number | null;
   traje: string | null;
@@ -34,7 +34,7 @@ export class CreateEventUseCase {
   async execute(ctx: AuthContext, input: CreateEventInput): Promise<Result<Event>> {
     requirePermission(ctx, 'event:create');
 
-    if (input.dataFim <= input.dataInicio) {
+    if (input.dataFim && input.dataFim <= input.dataInicio) {
       return err(new ConflictError('A data final deve ser posterior à data inicial.'));
     }
 

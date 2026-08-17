@@ -117,4 +117,15 @@ describe('UpdateEventUseCase', () => {
     if (result.ok) return;
     expect(result.error.code).toBe('conflict');
   });
+
+  it('permite salvar sem dataFim (sessão sem horário de encerramento definido)', async () => {
+    const { useCase, eventRepository } = buildUseCase();
+    await eventRepository.create(baseEvent);
+
+    const result = await useCase.execute(ctx, 'event-1', { ...input, dataFim: null });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value.dataFim).toBeNull();
+  });
 });

@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
-import { eventSchema } from '@vl6/shared';
+import { eventSchema, parseBrazilDateTimeLocal } from '@vl6/shared';
 import type { AttendanceResponse } from '@vl6/domain';
 import { createServerContainer } from '@vl6/infra';
 import { requireSession } from '@/lib/auth/require-session';
@@ -18,13 +18,16 @@ export interface AgendaActionState {
 
 function parseEventForm(formData: FormData) {
   const capacidadeMaxima = formData.get('capacidadeMaxima');
+  const dataInicioRaw = formData.get('dataInicio');
+  const dataFimRaw = formData.get('dataFim');
   return eventSchema.parse({
     tipo: formData.get('tipo'),
     titulo: formData.get('titulo'),
     descricao: formData.get('descricao') || null,
     local: formData.get('local'),
-    dataInicio: formData.get('dataInicio'),
-    dataFim: formData.get('dataFim'),
+    dataInicio: typeof dataInicioRaw === 'string' ? parseBrazilDateTimeLocal(dataInicioRaw) : null,
+    dataFim:
+      typeof dataFimRaw === 'string' && dataFimRaw ? parseBrazilDateTimeLocal(dataFimRaw) : null,
     exigeConfirmacaoPresenca: formData.get('exigeConfirmacaoPresenca') === 'on',
     capacidadeMaxima: capacidadeMaxima ? capacidadeMaxima : null,
     traje: formData.get('traje') || null,

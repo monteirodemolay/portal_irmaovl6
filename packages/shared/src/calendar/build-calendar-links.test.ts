@@ -26,6 +26,11 @@ describe('buildGoogleCalendarUrl', () => {
     const url = buildGoogleCalendarUrl({ ...event, descricao: null });
     expect(new URL(url).searchParams.has('details')).toBe(false);
   });
+
+  it('aplica +1h como fim quando dataFim é null (sessão sem horário de encerramento)', () => {
+    const url = buildGoogleCalendarUrl({ ...event, dataFim: null });
+    expect(new URL(url).searchParams.get('dates')).toBe('20260907T230000Z/20260908T000000Z');
+  });
 });
 
 describe('buildIcsContent', () => {
