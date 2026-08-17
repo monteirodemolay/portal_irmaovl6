@@ -46,10 +46,15 @@ export default async function EventDetailPage({
         <CardHeader>
           <CardTitle>Quando</CardTitle>
         </CardHeader>
-        <CardContent className="text-sm">
+        <CardContent className="flex flex-wrap items-center gap-2 text-sm">
           {event.dataFim
             ? `${formatDateTime(event.dataInicio)} — ${formatDateTime(event.dataFim)}`
-            : `A partir de ${formatDateTime(event.dataInicio)}`}
+            : formatDateTime(event.dataInicio)}
+          {event.dataFim && (
+            <Badge variant="outline" className="text-[10px]">
+              Início e término definidos
+            </Badge>
+          )}
         </CardContent>
       </Card>
 

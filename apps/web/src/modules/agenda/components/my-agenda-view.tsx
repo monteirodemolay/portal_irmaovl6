@@ -79,7 +79,7 @@ function formatItemDate(date: Date): string {
 
 function formatItemTime(item: CalendarItem): string {
   const start = new Intl.DateTimeFormat('pt-BR', { timeStyle: 'short' }).format(item.inicio);
-  if (!item.fim) return `A partir das ${start}`;
+  if (!item.fim) return start;
   const end = new Intl.DateTimeFormat('pt-BR', { timeStyle: 'short' }).format(item.fim);
   return `${start} às ${end}`;
 }

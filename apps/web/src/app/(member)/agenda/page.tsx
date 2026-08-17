@@ -1,10 +1,14 @@
+import * as Sentry from '@sentry/nextjs';
 import { hasPermission } from '@vl6/domain';
 import { createServerContainer } from '@vl6/infra';
+import { errorToLogContext, logger } from '@vl6/shared';
 import { EmptyState, Lock } from '@vl6/ui';
 import { requireSession } from '@/lib/auth/require-session';
 import { MyAgendaView } from '@/modules/agenda/components/my-agenda-view';
 import type { GoogleCalendarEventSummary } from '@/modules/agenda/lib/calendar-item';
 import { GoogleConnectionCard } from '@/modules/integrations/components/google-connection-card';
+
+const ROUTE = '/agenda';
 
 /** Janela carregada de uma vez (filtrada client-side pelas abas) — cobre navegação de mês para trás/frente sem refetch. */
 function buildRange(): { from: Date; to: Date } {
@@ -13,6 +17,25 @@ function buildRange(): { from: Date; to: Date } {
     from: new Date(now.getFullYear(), now.getMonth() - 2, 1),
     to: new Date(now.getFullYear(), now.getMonth() + 6, 0),
   };
+}
+
+/**
+ * Isola cada origem (VL6/pessoal/Google) — se uma consulta falhar (ex.:
+ * índice do Firestore ainda não publicado em produção), as outras origens
+ * continuam funcionando em vez de derrubar a página inteira no boundary
+ * global de erro.
+ */
+async function safeFetch<T>(resource: string, fallback: T, fn: () => Promise<T>): Promise<T> {
+  try {
+    return await fn();
+  } catch (error) {
+    logger.error(`Falha ao carregar "${resource}" na Minha Agenda`, {
+      route: ROUTE,
+      ...errorToLogContext(error),
+    });
+    Sentry.captureException(error, { tags: { route: ROUTE, resource } });
+    return fallback;
+  }
 }
 
 export default async function AgendaPage() {
@@ -24,12 +47,18 @@ export default async function AgendaPage() {
 
   const [vl6Events, personalEvents, googleConnection] = await Promise.all([
     canReadVl6
-      ? container.useCases.listEventsInRange.execute(session.authContext, { from, to })
+      ? safeFetch('eventos VL6', [], () =>
+          container.useCases.listEventsInRange.execute(session.authContext, { from, to }),
+        )
       : Promise.resolve([]),
-    container.useCases.listMyPersonalEvents.execute(session.authContext, { from, to }),
-    container.repositories.googleCalendarConnection.findByUserId(
-      session.authContext.tenantId,
-      session.authContext.uid,
+    safeFetch('compromissos pessoais', [], () =>
+      container.useCases.listMyPersonalEvents.execute(session.authContext, { from, to }),
+    ),
+    safeFetch('conexão com o Google Agenda', null, () =>
+      container.repositories.googleCalendarConnection.findByUserId(
+        session.authContext.tenantId,
+        session.authContext.uid,
+      ),
     ),
   ]);
 
@@ -37,18 +66,20 @@ export default async function AgendaPage() {
   // quando conectado e com a preferência "exibir eventos Google" ligada.
   const googleEvents: GoogleCalendarEventSummary[] =
     googleConnection && googleConnection.preferences.exibirEventosGoogle
-      ? (
-          await container.repositories.googleCalendarEventCache.listByUser(
-            session.authContext.tenantId,
-            session.authContext.uid,
-          )
-        ).map((event) => ({
-          id: event.googleEventId,
-          titulo: event.titulo,
-          inicio: event.inicio,
-          fim: event.fim,
-          local: event.local,
-        }))
+      ? await safeFetch('eventos Google em cache', [], async () =>
+          (
+            await container.repositories.googleCalendarEventCache.listByUser(
+              session.authContext.tenantId,
+              session.authContext.uid,
+            )
+          ).map((event) => ({
+            id: event.googleEventId,
+            titulo: event.titulo,
+            inicio: event.inicio,
+            fim: event.fim,
+            local: event.local,
+          })),
+        )
       : [];
 
   return (

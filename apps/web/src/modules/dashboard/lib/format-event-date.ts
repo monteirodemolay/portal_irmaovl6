@@ -7,6 +7,8 @@ export interface FormattedEventDate {
   /** Dia da semana sem o sufixo "-feira" (ex.: "Segunda"), pro bloco de data compacto. */
   weekdayShort: string;
   timeRange: string;
+  /** `true` quando quem cadastrou o evento informou um horário de término. */
+  hasEndTime: boolean;
 }
 
 function capitalize(text: string): string {
@@ -44,6 +46,7 @@ export function formatEventDate(dataInicio: Date, dataFim: Date | null): Formatt
       .toUpperCase(),
     weekday: capitalize(weekdayRaw),
     weekdayShort: capitalize(weekdayRaw.replace('-feira', '')),
-    timeRange: endTime ? `${startTime} às ${endTime}` : `A partir das ${startTime}`,
+    timeRange: endTime ? `${startTime} às ${endTime}` : startTime,
+    hasEndTime: endTime !== null,
   };
 }

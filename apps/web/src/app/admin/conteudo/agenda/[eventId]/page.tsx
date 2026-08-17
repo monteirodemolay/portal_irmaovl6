@@ -51,10 +51,15 @@ export default async function EventDetailPage({
           <p className="text-muted">
             {EVENT_KIND_LABELS[event.tipo]} · {event.local}
           </p>
-          <p className="text-muted text-sm">
+          <p className="text-muted flex flex-wrap items-center gap-2 text-sm">
             {event.dataFim
               ? `${formatDateTime(event.dataInicio)} — ${formatDateTime(event.dataFim)}`
-              : `A partir de ${formatDateTime(event.dataInicio)}`}
+              : formatDateTime(event.dataInicio)}
+            {event.dataFim && (
+              <Badge variant="outline" className="text-[10px]">
+                Início e término definidos
+              </Badge>
+            )}
           </p>
           {event.descricao && <p className="mt-2 max-w-2xl text-sm">{event.descricao}</p>}
         </div>
