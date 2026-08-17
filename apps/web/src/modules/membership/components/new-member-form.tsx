@@ -13,6 +13,7 @@ import {
   MARITAL_STATUS_LABELS,
   maritalStatusHasSpouse,
 } from '@/lib/membership/marital-status-label';
+import { useCepLookup } from '@/lib/address/use-cep-lookup';
 import { COMMON_PROFESSIONS, OTHER_PROFESSION_VALUE } from '@/lib/membership/professions';
 import type { MemberActionState } from '../actions/member-actions';
 
@@ -72,6 +73,21 @@ export function NewMemberForm({ action, roles, customProfessions = [] }: NewMemb
   const [estadoCivil, setEstadoCivil] = useState<MaritalStatus | ''>('');
   const [email, setEmail] = useState('');
   const [criarAcesso, setCriarAcesso] = useState(true);
+  const [cep, setCep] = useState('');
+  const [logradouro, setLogradouro] = useState('');
+  const [bairro, setBairro] = useState('');
+  const [cidade, setCidade] = useState('');
+  const [estado, setEstado] = useState('');
+  const { lookup, loading: cepLoading, error: cepError } = useCepLookup();
+
+  async function handleCepBlur() {
+    const found = await lookup(cep);
+    if (!found) return;
+    setLogradouro(found.logradouro);
+    setBairro(found.bairro);
+    setCidade(found.cidade);
+    setEstado(found.estado);
+  }
 
   const professionOptions = [...COMMON_PROFESSIONS, ...customProfessions];
   const [profissaoSelect, setProfissaoSelect] = useState('');
@@ -144,23 +160,54 @@ export function NewMemberForm({ action, roles, customProfessions = [] }: NewMemb
       <section className="flex flex-col gap-4">
         <h2 className="font-display text-lg font-semibold">Endereço</h2>
         <div className="grid grid-cols-3 gap-4">
-          <FormField label="CEP" htmlFor="cep">
-            <Input id="cep" name="cep" />
+          <FormField
+            label="CEP"
+            htmlFor="cep"
+            description={cepLoading ? 'Consultando…' : (cepError ?? undefined)}
+          >
+            <Input
+              id="cep"
+              name="cep"
+              value={cep}
+              onChange={(event) => setCep(event.target.value)}
+              onBlur={handleCepBlur}
+            />
           </FormField>
           <FormField label="Logradouro" htmlFor="logradouro">
-            <Input id="logradouro" name="logradouro" />
+            <Input
+              id="logradouro"
+              name="logradouro"
+              value={logradouro}
+              onChange={(event) => setLogradouro(event.target.value)}
+            />
           </FormField>
           <FormField label="Número" htmlFor="enderecoNumero">
             <Input id="enderecoNumero" name="enderecoNumero" />
           </FormField>
           <FormField label="Bairro" htmlFor="bairro">
-            <Input id="bairro" name="bairro" />
+            <Input
+              id="bairro"
+              name="bairro"
+              value={bairro}
+              onChange={(event) => setBairro(event.target.value)}
+            />
           </FormField>
           <FormField label="Cidade" htmlFor="cidade">
-            <Input id="cidade" name="cidade" />
+            <Input
+              id="cidade"
+              name="cidade"
+              value={cidade}
+              onChange={(event) => setCidade(event.target.value)}
+            />
           </FormField>
           <FormField label="Estado" htmlFor="estado">
-            <Input id="estado" name="estado" maxLength={2} />
+            <Input
+              id="estado"
+              name="estado"
+              maxLength={2}
+              value={estado}
+              onChange={(event) => setEstado(event.target.value)}
+            />
           </FormField>
           <FormField label="País" htmlFor="pais">
             <Input id="pais" name="pais" defaultValue="Brasil" />

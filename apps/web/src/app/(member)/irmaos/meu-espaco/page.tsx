@@ -25,6 +25,7 @@ const EMPTY_PUBLICATION_SETTINGS: Omit<
     informacoesMaconicas: false,
     competencias: false,
     servicos: false,
+    endereco: false,
   },
   contacts: { telefone: false, whatsapp: false, email: false },
   externalLinks: {

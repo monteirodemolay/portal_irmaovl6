@@ -107,6 +107,7 @@ function buildSettings(overrides: Partial<PublicationSettings> = {}): Publicatio
       informacoesMaconicas: false,
       competencias: true,
       servicos: true,
+      endereco: false,
     },
     contacts: { telefone: false, whatsapp: false, email: false },
     externalLinks: {

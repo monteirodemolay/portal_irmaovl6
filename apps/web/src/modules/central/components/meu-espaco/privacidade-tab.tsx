@@ -8,6 +8,7 @@ import {
   CheckCircle2,
   Compass,
   EyeOff,
+  MapPin,
   Quote,
   Sparkles,
   UserCircle,
@@ -109,6 +110,12 @@ export function PrivacidadeTab({ settings }: { settings: PublicationSettings | n
               label: 'Informações maçônicas complementares',
               icon: Compass,
               defaultChecked: settings?.blocks.informacoesMaconicas ?? false,
+            },
+            {
+              key: 'endereco',
+              label: 'Endereço',
+              icon: MapPin,
+              defaultChecked: settings?.blocks.endereco ?? false,
             },
           ]}
         />

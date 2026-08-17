@@ -136,6 +136,25 @@ describe('ListUpcomingAnniversariesUseCase', () => {
     expect(result.map((e) => e.memberId)).toEqual(['m2', 'm1']);
   });
 
+  it('inclui aniversário da cônjuge com o nome dela na entrada', async () => {
+    const { useCase, memberRepository } = buildUseCase();
+    await memberRepository.create(
+      buildMember({
+        conjugeNome: 'Christianne Silva Leão',
+        conjugeDataNascimento: new Date('1985-03-13'),
+      }),
+    );
+
+    const result = await useCase.execute(ctx);
+
+    expect(result).toHaveLength(1);
+    expect(result[0]).toMatchObject({
+      kind: 'conjuge',
+      conjugeNome: 'Christianne Silva Leão',
+      diasAte: 1,
+    });
+  });
+
   it('rejeita quem não tem permissão member:read', async () => {
     const { useCase } = buildUseCase();
     const ctxSemPermissao: AuthContext = { ...ctx, permissions: [] };

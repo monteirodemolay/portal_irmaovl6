@@ -11,9 +11,8 @@ import { MemberDegreeBadge } from '@/components/membership/member-degree-badge';
 import { AcervoPanel } from '@/modules/dashboard/components/acervo-panel';
 import { AgendaPanel } from '@/modules/dashboard/components/agenda-panel';
 import { AnniversariesPanel } from '@/modules/dashboard/components/anniversaries-panel';
-import { AvisosPanel } from '@/modules/dashboard/components/avisos-panel';
+import { AvisosCard } from '@/modules/dashboard/components/avisos-card';
 import { DashboardSectionHeading } from '@/modules/dashboard/components/dashboard-section-heading';
-import { ImportantNoticeCard } from '@/modules/dashboard/components/important-notice-card';
 import { NextEventCard } from '@/modules/dashboard/components/next-event-card';
 
 export default async function DashboardPage() {
@@ -62,14 +61,6 @@ export default async function DashboardPage() {
   const featuredEvent = events[0] ?? null;
   const agendaEvents = events.slice(1, 4);
 
-  const importantNotice =
-    announcements.find((a) => a.prioridade === 'alta') ??
-    announcements.find((a) => a.destacar) ??
-    null;
-  const avisosList = importantNotice
-    ? announcements.filter((a) => a.id !== importantNotice.id)
-    : announcements;
-
   const showDirectoryLink = hasPermission(authContext, 'memberDirectory:read');
   const displayName = resolveMemberDisplayName(member, session.user.email);
 
@@ -113,22 +104,16 @@ export default async function DashboardPage() {
         </div>
       </section>
 
-      {(featuredEvent || importantNotice) && (
-        <section className="flex flex-col gap-3">
-          <DashboardSectionHeading icon={Sparkles} title="Próximos da Loja" />
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-            {featuredEvent && <NextEventCard event={featuredEvent} />}
-            {importantNotice && <ImportantNoticeCard announcement={importantNotice} />}
-          </div>
-        </section>
-      )}
-
-      <AnniversariesPanel entries={anniversaries} showDirectoryLink={showDirectoryLink} />
-
-      <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <AgendaPanel events={agendaEvents} />
-        <AvisosPanel announcements={avisosList} />
+      <section className="flex flex-col gap-3">
+        <DashboardSectionHeading icon={Sparkles} title="Próximos da Loja" />
+        {featuredEvent && <NextEventCard event={featuredEvent} />}
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <AnniversariesPanel entries={anniversaries} showDirectoryLink={showDirectoryLink} />
+          <AvisosCard announcements={announcements} />
+        </div>
       </section>
+
+      <AgendaPanel events={agendaEvents} />
 
       <AcervoPanel
         documentos={documentos}

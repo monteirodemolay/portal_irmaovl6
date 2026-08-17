@@ -35,6 +35,13 @@ export interface PublicMemberProfileDTO {
     lojasVisitadas: string | null;
     interessesMaconicos: string | null;
   } | null;
+  endereco: {
+    logradouro: string | null;
+    numero: string | null;
+    bairro: string | null;
+    cidade: string | null;
+    estado: string | null;
+  } | null;
 }
 
 /**
@@ -108,6 +115,15 @@ export function buildPublicMemberProfileDTO(
       ? {
           lojasVisitadas: profile?.lojasVisitadas ?? null,
           interessesMaconicos: profile?.interessesMaconicos ?? null,
+        }
+      : null,
+    endereco: blocks.endereco
+      ? {
+          logradouro: member.endereco?.logradouro ?? null,
+          numero: member.endereco?.numero ?? null,
+          bairro: member.endereco?.bairro ?? null,
+          cidade: member.endereco?.cidade ?? null,
+          estado: member.endereco?.estado ?? null,
         }
       : null,
   };

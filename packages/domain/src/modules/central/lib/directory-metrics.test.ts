@@ -18,6 +18,7 @@ function buildDto(overrides: Partial<PublicMemberProfileDTO> = {}): PublicMember
     contatos: null,
     redes: null,
     informacoesMaconicas: null,
+    endereco: null,
     ...overrides,
   };
 }

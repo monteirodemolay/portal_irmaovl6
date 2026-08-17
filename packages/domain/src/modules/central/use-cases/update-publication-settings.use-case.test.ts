@@ -70,6 +70,7 @@ const NO_BLOCKS = {
   informacoesMaconicas: false,
   competencias: false,
   servicos: false,
+  endereco: false,
 };
 const NO_CONTACTS = { telefone: false, whatsapp: false, email: false };
 const NO_LINKS = {

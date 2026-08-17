@@ -7,6 +7,7 @@ import type { Member } from '@vl6/domain';
 import { Button, Heart, Input, Select } from '@vl6/ui';
 import { FormField } from '@/components/forms/form-field';
 import { FormSectionCard } from '@/components/forms/section-card';
+import { useCepLookup } from '@/lib/address/use-cep-lookup';
 import {
   MARITAL_STATUS_LABELS,
   maritalStatusHasSpouse,
@@ -33,6 +34,21 @@ export function AddressMaritalCard({
     error: null,
   });
   const [estadoCivil, setEstadoCivil] = useState<MaritalStatus | ''>(member.estadoCivil ?? '');
+  const [cep, setCep] = useState(member.endereco?.cep ?? '');
+  const [logradouro, setLogradouro] = useState(member.endereco?.logradouro ?? '');
+  const [bairro, setBairro] = useState(member.endereco?.bairro ?? '');
+  const [cidade, setCidade] = useState(member.endereco?.cidade ?? '');
+  const [estado, setEstado] = useState(member.endereco?.estado ?? '');
+  const { lookup, loading: cepLoading, error: cepError } = useCepLookup();
+
+  async function handleCepBlur() {
+    const found = await lookup(cep);
+    if (!found) return;
+    setLogradouro(found.logradouro);
+    setBairro(found.bairro);
+    setCidade(found.cidade);
+    setEstado(found.estado);
+  }
 
   return (
     <FormSectionCard
@@ -79,14 +95,25 @@ export function AddressMaritalCard({
         </div>
 
         <div className="border-border-soft grid grid-cols-1 gap-4 border-t pt-4 sm:grid-cols-2 lg:grid-cols-3">
-          <FormField label="CEP" htmlFor="cep">
-            <Input id="cep" name="cep" defaultValue={member.endereco?.cep ?? ''} />
+          <FormField
+            label="CEP"
+            htmlFor="cep"
+            description={cepLoading ? 'Consultando…' : (cepError ?? undefined)}
+          >
+            <Input
+              id="cep"
+              name="cep"
+              value={cep}
+              onChange={(event) => setCep(event.target.value)}
+              onBlur={handleCepBlur}
+            />
           </FormField>
           <FormField label="Logradouro" htmlFor="logradouro">
             <Input
               id="logradouro"
               name="logradouro"
-              defaultValue={member.endereco?.logradouro ?? ''}
+              value={logradouro}
+              onChange={(event) => setLogradouro(event.target.value)}
             />
           </FormField>
           <FormField label="Número" htmlFor="enderecoNumero">
@@ -97,17 +124,28 @@ export function AddressMaritalCard({
             />
           </FormField>
           <FormField label="Bairro" htmlFor="bairro">
-            <Input id="bairro" name="bairro" defaultValue={member.endereco?.bairro ?? ''} />
+            <Input
+              id="bairro"
+              name="bairro"
+              value={bairro}
+              onChange={(event) => setBairro(event.target.value)}
+            />
           </FormField>
           <FormField label="Cidade" htmlFor="cidade">
-            <Input id="cidade" name="cidade" defaultValue={member.endereco?.cidade ?? ''} />
+            <Input
+              id="cidade"
+              name="cidade"
+              value={cidade}
+              onChange={(event) => setCidade(event.target.value)}
+            />
           </FormField>
           <FormField label="Estado" htmlFor="estado">
             <Input
               id="estado"
               name="estado"
               maxLength={2}
-              defaultValue={member.endereco?.estado ?? ''}
+              value={estado}
+              onChange={(event) => setEstado(event.target.value)}
             />
           </FormField>
         </div>

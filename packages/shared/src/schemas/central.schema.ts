@@ -72,6 +72,7 @@ const CENTRAL_BLOCK_KEYS = [
   'informacoesMaconicas',
   'competencias',
   'servicos',
+  'endereco',
 ] as const;
 
 /**

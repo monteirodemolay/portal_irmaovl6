@@ -7,7 +7,8 @@ export type CentralBlockKey =
   | 'empresa'
   | 'informacoesMaconicas'
   | 'competencias'
-  | 'servicos';
+  | 'servicos'
+  | 'endereco';
 
 export interface CentralContactVisibility {
   telefone: boolean;

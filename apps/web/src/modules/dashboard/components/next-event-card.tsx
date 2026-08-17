@@ -20,6 +20,10 @@ export function NextEventCard({ event }: { event: Event }) {
         className="text-accent/10 pointer-events-none absolute -right-8 -top-8"
       />
 
+      <p className="text-accent relative text-xs font-semibold uppercase tracking-widest">
+        Agenda de sessões da Loja
+      </p>
+
       <div className="relative flex items-start gap-4">
         <div className="flex w-16 shrink-0 flex-col items-center rounded-xl bg-white/10 py-3 ring-1 ring-white/15">
           <span className="text-2xl font-bold leading-none">{day}</span>

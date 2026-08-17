@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import type { Notification } from '@vl6/domain';
 import { MemberAvatar } from '@/components/membership/member-avatar';
 import { LogoutButton } from '@/modules/identity-access/components/logout-button';
@@ -21,7 +22,10 @@ export function TopbarUser({
   return (
     <>
       <NotificationCenter notifications={notifications} unreadCount={unreadCount} />
-      <div className="hidden items-center gap-2 sm:flex">
+      <Link
+        href="/irmaos/meu-espaco"
+        className="hover:bg-background hidden items-center gap-2 rounded-lg p-1 transition-colors sm:flex"
+      >
         <MemberAvatar fotoUrl={fotoUrl ?? null} nome={displayName} />
         <div className="leading-tight">
           <p className="max-w-[160px] truncate text-sm font-medium">{displayName}</p>
@@ -29,7 +33,7 @@ export function TopbarUser({
             {roleLabel}
           </p>
         </div>
-      </div>
+      </Link>
       <LogoutButton />
     </>
   );

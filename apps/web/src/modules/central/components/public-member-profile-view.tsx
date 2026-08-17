@@ -12,6 +12,7 @@ import {
   Instagram,
   Linkedin,
   Mail,
+  MapPin,
   MessageCircle,
   Phone,
   Quote,
@@ -109,6 +110,23 @@ export function PublicMemberProfileView({ profile }: { profile: PublicMemberProf
                     </div>
                   )}
                 </dl>
+              </Section>
+            )}
+
+          {profile.endereco &&
+            (profile.endereco.logradouro || profile.endereco.bairro || profile.endereco.cidade) && (
+              <Section title="Endereço" icon={MapPin}>
+                <p className="text-sm">
+                  {[
+                    [profile.endereco.logradouro, profile.endereco.numero]
+                      .filter(Boolean)
+                      .join(', '),
+                    profile.endereco.bairro,
+                    [profile.endereco.cidade, profile.endereco.estado].filter(Boolean).join(' - '),
+                  ]
+                    .filter(Boolean)
+                    .join(' — ')}
+                </p>
               </Section>
             )}
 

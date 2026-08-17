@@ -6,7 +6,7 @@ import { computeNextOccurrence } from './anniversary-date';
 import type { Member } from '../entities/member.entity';
 import type { IMemberRepository } from '../repositories/member.repository';
 
-export type AnniversaryKind = 'iniciacao' | 'elevacao' | 'exaltacao' | 'nascimento';
+export type AnniversaryKind = 'iniciacao' | 'elevacao' | 'exaltacao' | 'nascimento' | 'conjuge';
 
 export interface UpcomingAnniversaryEntry {
   memberId: string;
@@ -17,6 +17,8 @@ export interface UpcomingAnniversaryEntry {
   data: Date;
   anosCompletos: number;
   diasAte: number;
+  /** Só preenchido para `kind === 'conjuge'` — nome de quem faz aniversário. */
+  conjugeNome: string | null;
 }
 
 export interface ListUpcomingAnniversariesDeps {
@@ -34,6 +36,7 @@ const KIND_FIELDS: Array<[AnniversaryKind, keyof Member]> = [
   ['elevacao', 'dataElevacao'],
   ['exaltacao', 'dataExaltacao'],
   ['nascimento', 'dataNascimento'],
+  ['conjuge', 'conjugeDataNascimento'],
 ];
 
 /**
@@ -81,13 +84,17 @@ export class ListUpcomingAnniversariesUseCase {
           data,
           anosCompletos,
           diasAte,
+          conjugeNome: kind === 'conjuge' ? member.conjugeNome : null,
         });
       }
     }
 
+    const LOW_PRIORITY_KINDS: AnniversaryKind[] = ['nascimento', 'conjuge'];
     return entries.sort((a, b) => {
       if (a.diasAte !== b.diasAte) return a.diasAte - b.diasAte;
-      if (a.kind !== b.kind) return a.kind === 'nascimento' ? 1 : -1;
+      const aLow = LOW_PRIORITY_KINDS.includes(a.kind);
+      const bLow = LOW_PRIORITY_KINDS.includes(b.kind);
+      if (aLow !== bLow) return aLow ? 1 : -1;
       return a.nomeCompleto.localeCompare(b.nomeCompleto);
     });
   }

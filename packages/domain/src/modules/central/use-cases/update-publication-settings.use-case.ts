@@ -23,6 +23,9 @@ const EMPTY_BLOCKS = {
   profissional: false,
   empresa: false,
   informacoesMaconicas: false,
+  competencias: false,
+  servicos: false,
+  endereco: false,
 };
 const EMPTY_CONTACTS = { telefone: false, whatsapp: false, email: false };
 const EMPTY_LINKS = {

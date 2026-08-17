@@ -245,6 +245,7 @@ export async function updatePublicationSettingsAction(
           current?.blocks.competencias ?? false,
         ),
         servicos: bool('blocks.servicos', blocksIncluded, current?.blocks.servicos ?? false),
+        endereco: bool('blocks.endereco', blocksIncluded, current?.blocks.endereco ?? false),
       },
       contacts: {
         telefone: bool('contacts.telefone', contactsIncluded, current?.contacts.telefone ?? false),
