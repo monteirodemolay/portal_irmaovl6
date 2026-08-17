@@ -15,6 +15,10 @@ export interface CreateEventInput {
   dataFim: Date;
   exigeConfirmacaoPresenca: boolean;
   capacidadeMaxima: number | null;
+  traje: string | null;
+  chegadaSugerida: string | null;
+  observacoes: string | null;
+  arquivosRelacionados: string[];
 }
 
 export interface CreateEventDeps {

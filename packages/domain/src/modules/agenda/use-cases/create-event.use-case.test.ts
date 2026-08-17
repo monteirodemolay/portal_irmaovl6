@@ -27,6 +27,10 @@ function buildInput(overrides: Partial<CreateEventInput> = {}): CreateEventInput
     dataFim: new Date('2026-02-01T22:00:00Z'),
     exigeConfirmacaoPresenca: false,
     capacidadeMaxima: null,
+    traje: null,
+    chegadaSugerida: null,
+    observacoes: null,
+    arquivosRelacionados: [],
     ...overrides,
   };
 }

@@ -1,7 +1,7 @@
-import Link from 'next/link';
 import type { Event } from '@vl6/domain';
 import { Badge, Button, CalendarDays, Card, Clock, MapPin } from '@vl6/ui';
 import { buildGoogleCalendarUrl, EVENT_KIND_LABELS } from '@vl6/shared';
+import { AgendaOpenButton } from '@/modules/agenda/components/agenda-open-button';
 import { formatEventDate } from '../lib/format-event-date';
 import { AddToCalendarMenu } from './add-to-calendar-menu';
 
@@ -65,7 +65,7 @@ export function NextEventCard({ event }: { event: Event }) {
           size="sm"
           className="border-white/30 text-white hover:bg-white/10"
         >
-          <Link href={`/eventos/${event.id}`}>Ver detalhes</Link>
+          <AgendaOpenButton eventId={event.id}>Ver detalhes</AgendaOpenButton>
         </Button>
         <AddToCalendarMenu
           eventId={event.id}

@@ -11,6 +11,10 @@ export const eventSchema = z
     dataFim: z.coerce.date(),
     exigeConfirmacaoPresenca: z.boolean(),
     capacidadeMaxima: z.coerce.number().int().min(1).nullable(),
+    traje: z.string().max(200).nullable(),
+    chegadaSugerida: z.string().max(200).nullable(),
+    observacoes: z.string().max(1000).nullable(),
+    arquivosRelacionados: z.array(z.string()).default([]),
   })
   .refine((data) => data.dataFim > data.dataInicio, {
     message: 'A data final deve ser posterior à data inicial.',

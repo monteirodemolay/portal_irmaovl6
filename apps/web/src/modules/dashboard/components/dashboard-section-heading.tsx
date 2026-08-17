@@ -1,4 +1,4 @@
-import type { ComponentType } from 'react';
+import type { ComponentType, ReactNode } from 'react';
 import Link from 'next/link';
 
 export function DashboardSectionHeading({
@@ -6,11 +6,14 @@ export function DashboardSectionHeading({
   title,
   href,
   hrefLabel = 'Ver todos',
+  action,
 }: {
   icon?: ComponentType<{ size?: number; strokeWidth?: number }>;
   title: string;
   href?: string;
   hrefLabel?: string;
+  /** Alternativa a `href`/`hrefLabel` pra quando o "Ver todos" precisa de um trigger client (ex.: abrir um drawer) em vez de navegar. */
+  action?: ReactNode;
 }) {
   return (
     <div className="flex w-full items-center gap-3">
@@ -23,7 +26,8 @@ export function DashboardSectionHeading({
         {title}
       </h2>
       <div className="bg-accent/30 h-px flex-1" />
-      {href && (
+      {action}
+      {!action && href && (
         <Link href={href} className="text-accent shrink-0 text-xs font-medium hover:underline">
           {hrefLabel}
         </Link>

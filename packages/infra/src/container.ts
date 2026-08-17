@@ -39,6 +39,7 @@ import {
   CreateBoardTermUseCase,
   CreateCommitteeUseCase,
   CreateEventUseCase,
+  UpdateEventUseCase,
   CreateFileAssetUseCase,
   CreateFileCategoryUseCase,
   CreateGalleryAlbumUseCase,
@@ -567,6 +568,10 @@ export function createServerContainer() {
       eventRepository: repositories.event,
       clock,
       idGenerator,
+    }),
+    updateEvent: new UpdateEventUseCase({
+      eventRepository: repositories.event,
+      clock,
     }),
     listUpcomingEvents: new ListUpcomingEventsUseCase({
       eventRepository: repositories.event,

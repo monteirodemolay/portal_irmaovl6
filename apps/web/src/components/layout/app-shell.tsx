@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Menu, X, cn } from '@vl6/ui';
+import { useAgendaOptional } from '@/modules/agenda/components/agenda-provider';
 
 export interface AppShellNavItem {
   href: string;
@@ -45,6 +46,10 @@ export function AppShell({
 }: AppShellProps) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
+  // Só existe dentro do Portal (`AgendaProvider` montado em `(member)/layout.tsx`);
+  // em `/admin` fica `null` e o item "Agenda" da sidebar se comporta como um
+  // link normal. Ver docs/architecture — drawer global da Agenda.
+  const agenda = useAgendaOptional();
 
   useEffect(() => {
     setMobileOpen(false);
@@ -77,6 +82,13 @@ export function AppShell({
               <Link
                 key={item.href}
                 href={item.href}
+                onClick={(event) => {
+                  if (item.href === '/agenda' && agenda) {
+                    event.preventDefault();
+                    setMobileOpen(false);
+                    agenda.openAgenda();
+                  }
+                }}
                 className={cn(
                   'my-0.5 flex items-center gap-3 rounded-[9px] px-3 py-2.5 text-sm text-white/90 transition-colors',
                   isActive(item.href)

@@ -1,7 +1,9 @@
+import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { hasPermission } from '@vl6/domain';
 import { EVENT_KIND_LABELS } from '@vl6/shared';
 import { createServerContainer } from '@vl6/infra';
-import { Badge, Card, CardContent, CardHeader, CardTitle, EmptyState } from '@vl6/ui';
+import { Badge, Button, Card, CardContent, CardHeader, CardTitle, EmptyState } from '@vl6/ui';
 import { requirePagePermission } from '@/lib/auth/require-permission';
 
 const STATUS_VARIANT = {
@@ -41,15 +43,22 @@ export default async function EventDetailPage({
 
   return (
     <div className="flex flex-col gap-8">
-      <div>
-        <h1 className="font-display text-2xl font-semibold">{event.titulo}</h1>
-        <p className="text-muted">
-          {EVENT_KIND_LABELS[event.tipo]} · {event.local}
-        </p>
-        <p className="text-muted text-sm">
-          {formatDateTime(event.dataInicio)} — {formatDateTime(event.dataFim)}
-        </p>
-        {event.descricao && <p className="mt-2 max-w-2xl text-sm">{event.descricao}</p>}
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="font-display text-2xl font-semibold">{event.titulo}</h1>
+          <p className="text-muted">
+            {EVENT_KIND_LABELS[event.tipo]} · {event.local}
+          </p>
+          <p className="text-muted text-sm">
+            {formatDateTime(event.dataInicio)} — {formatDateTime(event.dataFim)}
+          </p>
+          {event.descricao && <p className="mt-2 max-w-2xl text-sm">{event.descricao}</p>}
+        </div>
+        {hasPermission(session.authContext, 'event:update') && (
+          <Button asChild variant="outline" size="sm">
+            <Link href={`/admin/conteudo/agenda/${eventId}/editar`}>Editar</Link>
+          </Button>
+        )}
       </div>
 
       {event.exigeConfirmacaoPresenca && (

@@ -1,6 +1,7 @@
 import { hasPermission } from '@vl6/domain';
 import { CalendarDays, Card, cn, EmptyState, Sparkles } from '@vl6/ui';
 import { createServerContainer } from '@vl6/infra';
+import { getUpcomingEventsForPortal } from '@/lib/agenda/get-upcoming-events';
 import { getCurrentSession } from '@/lib/auth/get-current-session';
 import { resolveMemberDisplayName } from '@/lib/membership/resolve-display-name';
 import { getCurrentTenant } from '@/lib/tenant/get-current-tenant';
@@ -27,37 +28,27 @@ export default async function DashboardPage() {
     session.user.id,
   );
 
-  const [
-    announcements,
-    upcomingEventsPage,
-    anniversaries,
-    documentos,
-    biblioteca,
-    albuns,
-    favoritos,
-  ] = await Promise.all([
-    hasPermission(authContext, 'announcement:read')
-      ? container.useCases.listActiveAnnouncements.execute(authContext.tenantId)
-      : Promise.resolve([]),
-    hasPermission(authContext, 'event:read')
-      ? container.useCases.listUpcomingEvents.execute(authContext, { limit: 4 })
-      : Promise.resolve({ items: [], nextCursor: null, hasMore: false }),
-    hasPermission(authContext, 'member:read')
-      ? container.useCases.listUpcomingAnniversaries.execute(authContext)
-      : Promise.resolve([]),
-    hasPermission(authContext, 'file:read')
-      ? container.repositories.fileAsset.countByTenant(authContext.tenantId)
-      : Promise.resolve(null),
-    hasPermission(authContext, 'libraryItem:read')
-      ? container.repositories.libraryItem.countByTenant(authContext.tenantId)
-      : Promise.resolve(null),
-    hasPermission(authContext, 'gallery:read')
-      ? container.repositories.galleryAlbum.countByTenant(authContext.tenantId)
-      : Promise.resolve(null),
-    container.useCases.listMyFavorites.execute(authContext).then((items) => items.length),
-  ]);
+  const [announcements, events, anniversaries, documentos, biblioteca, albuns, favoritos] =
+    await Promise.all([
+      hasPermission(authContext, 'announcement:read')
+        ? container.useCases.listActiveAnnouncements.execute(authContext.tenantId)
+        : Promise.resolve([]),
+      getUpcomingEventsForPortal(),
+      hasPermission(authContext, 'member:read')
+        ? container.useCases.listUpcomingAnniversaries.execute(authContext)
+        : Promise.resolve([]),
+      hasPermission(authContext, 'file:read')
+        ? container.repositories.fileAsset.countByTenant(authContext.tenantId)
+        : Promise.resolve(null),
+      hasPermission(authContext, 'libraryItem:read')
+        ? container.repositories.libraryItem.countByTenant(authContext.tenantId)
+        : Promise.resolve(null),
+      hasPermission(authContext, 'gallery:read')
+        ? container.repositories.galleryAlbum.countByTenant(authContext.tenantId)
+        : Promise.resolve(null),
+      container.useCases.listMyFavorites.execute(authContext).then((items) => items.length),
+    ]);
 
-  const events = upcomingEventsPage.items;
   const featuredEvent = events[0] ?? null;
   const agendaEvents = events.slice(1, 4);
 

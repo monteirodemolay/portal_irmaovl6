@@ -160,6 +160,7 @@ export * from './modules/agenda/entities/event-attendance.entity';
 export * from './modules/agenda/repositories/event.repository';
 export * from './modules/agenda/repositories/event-attendance.repository';
 export * from './modules/agenda/use-cases/create-event.use-case';
+export * from './modules/agenda/use-cases/update-event.use-case';
 export * from './modules/agenda/use-cases/list-upcoming-events.use-case';
 export * from './modules/agenda/use-cases/confirm-attendance.use-case';
 export * from './modules/agenda/use-cases/list-event-attendees.use-case';
