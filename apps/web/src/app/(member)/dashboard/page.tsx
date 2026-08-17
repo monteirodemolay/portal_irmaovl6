@@ -1,12 +1,9 @@
-import Link from 'next/link';
 import { hasPermission } from '@vl6/domain';
-import { Button, Sparkles } from '@vl6/ui';
+import { CalendarDays, Card, cn, EmptyState, Sparkles } from '@vl6/ui';
 import { createServerContainer } from '@vl6/infra';
 import { getCurrentSession } from '@/lib/auth/get-current-session';
-import { roleDisplayLabel } from '@/lib/auth/role-display-label';
 import { resolveMemberDisplayName } from '@/lib/membership/resolve-display-name';
 import { getCurrentTenant } from '@/lib/tenant/get-current-tenant';
-import { MemberAvatar } from '@/components/membership/member-avatar';
 import { MemberDegreeBadge } from '@/components/membership/member-degree-badge';
 import { AcervoPanel } from '@/modules/dashboard/components/acervo-panel';
 import { AgendaPanel } from '@/modules/dashboard/components/agenda-panel';
@@ -63,52 +60,46 @@ export default async function DashboardPage() {
 
   const showDirectoryLink = hasPermission(authContext, 'memberDirectory:read');
   const displayName = resolveMemberDisplayName(member, session.user.email);
+  const firstName = displayName.split(' ')[0];
+  const hasAnniversaries = anniversaries.length > 0;
 
   return (
     <div className="flex flex-col gap-8">
-      <section className="from-primary to-primary-dark relative grid gap-6 overflow-hidden rounded-[18px] bg-gradient-to-br px-7 py-8 text-white shadow-md lg:grid-cols-[1.35fr_0.65fr] lg:px-9 lg:py-9">
+      <section className="from-primary to-primary-dark relative overflow-hidden rounded-[18px] bg-gradient-to-br px-7 py-7 text-white shadow-md lg:px-9">
         <div className="bg-accent/10 absolute -right-16 -top-16 h-64 w-64 rounded-full blur-3xl" />
-        <div className="relative flex flex-col justify-center gap-3">
+        <div className="relative flex flex-col gap-3">
           <p className="text-accent text-xs font-semibold uppercase tracking-widest">
             {current.tenant.nome}
           </p>
-          <h1 className="font-display text-3xl font-semibold leading-[1.1] sm:text-4xl">
-            Bem-vindo ao Portal do Irmão
-          </h1>
-          <p className="max-w-xl text-sm text-white/70">
-            Um ambiente reservado para acompanhar os conteúdos, avisos, eventos, documentos e
-            informações da {current.tenant.nome}.
-          </p>
-        </div>
-
-        <div className="relative flex items-center gap-4 self-center rounded-[14px] border border-white/15 bg-white/[0.08] p-4 backdrop-blur-sm">
-          <MemberAvatar
-            fotoUrl={member?.fotoUrl ?? null}
-            nome={displayName}
-            className="h-14 w-14 shrink-0 ring-2 ring-white/20"
-          />
-          <div className="min-w-0">
-            <p className="font-display truncate text-lg font-semibold text-white">{displayName}</p>
-            <p className="truncate text-xs text-white/70">
-              {roleDisplayLabel(session.role)} · {current.tenant.nome}
-            </p>
-            {member && (
-              <div className="mt-2">
-                <MemberDegreeBadge grau={member.grau} compact />
-              </div>
-            )}
-            <Button asChild variant="accent" size="sm" className="mt-2.5">
-              <Link href="/irmaos/meu-espaco">Ver meu perfil</Link>
-            </Button>
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="font-display text-3xl font-semibold leading-[1.1] sm:text-4xl">
+              Bem-vindo, {firstName}
+            </h1>
+            {member && <MemberDegreeBadge grau={member.grau} compact />}
           </div>
+          <p className="max-w-xl text-sm text-white/70">
+            Acompanhe a agenda, os avisos e o acervo da {current.tenant.nome} — tudo em um só lugar.
+          </p>
         </div>
       </section>
 
       <section className="flex flex-col gap-3">
         <DashboardSectionHeading icon={Sparkles} title="Próximos da Loja" />
-        {featuredEvent && <NextEventCard event={featuredEvent} />}
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-          <AnniversariesPanel entries={anniversaries} showDirectoryLink={showDirectoryLink} />
+        {featuredEvent ? (
+          <NextEventCard event={featuredEvent} />
+        ) : (
+          <Card className="shadow-none">
+            <EmptyState
+              icon={<CalendarDays size={22} />}
+              title="Nenhuma sessão agendada"
+              description="Assim que uma nova sessão for cadastrada na Agenda, ela aparece aqui em destaque."
+            />
+          </Card>
+        )}
+        <div className={cn('grid grid-cols-1 gap-4', hasAnniversaries && 'lg:grid-cols-2')}>
+          {hasAnniversaries && (
+            <AnniversariesPanel entries={anniversaries} showDirectoryLink={showDirectoryLink} />
+          )}
           <AvisosCard announcements={announcements} />
         </div>
       </section>
