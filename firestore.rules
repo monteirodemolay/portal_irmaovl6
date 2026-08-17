@@ -190,6 +190,13 @@ service cloud.firestore {
         (hasPermission('event:manage') || isOwner(request.resource.data, 'memberId'));
     }
 
+    // Compromisso privado do Irmão — nunca visível a administradores/outros
+    // Irmãos, mesmo padrão de `libraryFavorites`/`notificationPreferences`.
+    match /personalEvents/{id} {
+      allow read, write: if isSignedIn() && isOwner(resource.data, 'userId');
+      allow create: if isSignedIn() && isOwner(request.resource.data, 'userId') && sameTenant(request.resource.data);
+    }
+
     // ---------------------------------------------------------------
     // Content
     // ---------------------------------------------------------------
@@ -282,6 +289,22 @@ service cloud.firestore {
     }
 
     match /notificationPreferences/{id} {
+      allow read, write: if isSignedIn() && isOwner(resource.data, 'userId');
+    }
+
+    // ---------------------------------------------------------------
+    // Integrations — Google Calendar (sempre privado ao próprio usuário;
+    // tokens só chegam aqui já cifrados pelo backend via `ITokenCipher`)
+    // ---------------------------------------------------------------
+    match /googleCalendarConnections/{id} {
+      allow read, write: if isSignedIn() && isOwner(resource.data, 'userId');
+    }
+
+    match /googleEventSyncLinks/{id} {
+      allow read, write: if isSignedIn() && isOwner(resource.data, 'userId');
+    }
+
+    match /googleCalendarEvents/{id} {
       allow read, write: if isSignedIn() && isOwner(resource.data, 'userId');
     }
 

@@ -68,8 +68,10 @@ import type { INotificationRepository } from '../modules/notification/repositori
 import type { INotificationPreferenceRepository } from '../modules/notification/repositories/notification-preference.repository';
 import type { Event } from '../modules/agenda/entities/event.entity';
 import type { EventAttendance } from '../modules/agenda/entities/event-attendance.entity';
+import type { PersonalEvent } from '../modules/agenda/entities/personal-event.entity';
 import type { IEventRepository } from '../modules/agenda/repositories/event.repository';
 import type { IEventAttendanceRepository } from '../modules/agenda/repositories/event-attendance.repository';
+import type { IPersonalEventRepository } from '../modules/agenda/repositories/personal-event.repository';
 import type { FileCategory } from '../modules/document-management/entities/file-category.entity';
 import type { IFileCategoryRepository } from '../modules/document-management/repositories/file-category.repository';
 import type { GalleryAlbum } from '../modules/gallery/entities/gallery-album.entity';
@@ -87,6 +89,22 @@ import type { ArchiveCatalogEntry } from '../modules/archive/entities/archive-ca
 import type { IArchiveCatalogEntryRepository } from '../modules/archive/repositories/archive-catalog-entry.repository';
 import type { ArchiveContribution } from '../modules/archive/entities/archive-contribution.entity';
 import type { IArchiveContributionRepository } from '../modules/archive/repositories/archive-contribution.repository';
+import type { GoogleCalendarConnection } from '../modules/integrations/entities/google-calendar-connection.entity';
+import type {
+  GoogleEventSyncLink,
+  GoogleSyncSourceType,
+} from '../modules/integrations/entities/google-event-sync-link.entity';
+import type { GoogleCalendarEventCache } from '../modules/integrations/entities/google-calendar-event-cache.entity';
+import type { IGoogleCalendarConnectionRepository } from '../modules/integrations/repositories/google-calendar-connection.repository';
+import type { IGoogleEventSyncLinkRepository } from '../modules/integrations/repositories/google-event-sync-link.repository';
+import type { IGoogleCalendarEventCacheRepository } from '../modules/integrations/repositories/google-calendar-event-cache.repository';
+import type {
+  GoogleCalendarEventInput,
+  GoogleCalendarSyncResult,
+  GoogleOAuthTokens,
+  IGoogleCalendarService,
+} from '../modules/integrations/services/google-calendar.service';
+import type { ITokenCipher, IOAuthStateSigner, OAuthStatePayload } from '../shared/ports';
 
 export class FixedClock implements IClock {
   constructor(private readonly fixed: Date = new Date('2026-01-01T00:00:00Z')) {}
@@ -861,6 +879,11 @@ export class InMemoryEventRepository implements IEventRepository {
     const items = [...this.byId.values()].filter((e) => e.tenantId === tenantId);
     return { items: items.slice(0, page.limit), nextCursor: null, hasMore: false };
   }
+  async listInRange(tenantId: string, from: Date, to: Date) {
+    return [...this.byId.values()].filter(
+      (e) => e.tenantId === tenantId && e.dataInicio >= from && e.dataInicio <= to,
+    );
+  }
   async countUpcomingByTenant(tenantId: string, from: Date) {
     return [...this.byId.values()].filter((e) => e.tenantId === tenantId && e.dataInicio >= from)
       .length;
@@ -869,6 +892,30 @@ export class InMemoryEventRepository implements IEventRepository {
     this.byId.set(event.id, event);
   }
   async update(event: Event) {
+    this.byId.set(event.id, event);
+  }
+}
+
+export class InMemoryPersonalEventRepository implements IPersonalEventRepository {
+  private readonly byId = new Map<string, PersonalEvent>();
+
+  async findById(id: string) {
+    return this.byId.get(id) ?? null;
+  }
+  async listByUserInRange(tenantId: string, userId: string, from: Date, to: Date) {
+    return [...this.byId.values()].filter(
+      (e) =>
+        e.tenantId === tenantId &&
+        e.userId === userId &&
+        e.deletedAt === null &&
+        e.dataInicio >= from &&
+        e.dataInicio <= to,
+    );
+  }
+  async create(event: PersonalEvent) {
+    this.byId.set(event.id, event);
+  }
+  async update(event: PersonalEvent) {
     this.byId.set(event.id, event);
   }
 }
@@ -955,5 +1002,147 @@ export class InMemoryPublicationConsentRepository implements IPublicationConsent
   }
   async append(consent: PublicationConsent) {
     this.entries.push(consent);
+  }
+}
+
+export class InMemoryGoogleCalendarConnectionRepository implements IGoogleCalendarConnectionRepository {
+  private readonly byId = new Map<string, GoogleCalendarConnection>();
+
+  async findByUserId(tenantId: string, userId: string) {
+    return (
+      [...this.byId.values()].find((c) => c.tenantId === tenantId && c.userId === userId) ?? null
+    );
+  }
+  async create(connection: GoogleCalendarConnection) {
+    this.byId.set(connection.id, connection);
+  }
+  async update(connection: GoogleCalendarConnection) {
+    this.byId.set(connection.id, connection);
+  }
+  async delete(id: string) {
+    this.byId.delete(id);
+  }
+}
+
+export class InMemoryGoogleEventSyncLinkRepository implements IGoogleEventSyncLinkRepository {
+  private readonly byId = new Map<string, GoogleEventSyncLink>();
+
+  async findBySource(
+    tenantId: string,
+    userId: string,
+    sourceType: GoogleSyncSourceType,
+    sourceId: string,
+  ) {
+    return (
+      [...this.byId.values()].find(
+        (l) =>
+          l.tenantId === tenantId &&
+          l.userId === userId &&
+          l.sourceType === sourceType &&
+          l.sourceId === sourceId,
+      ) ?? null
+    );
+  }
+  async create(link: GoogleEventSyncLink) {
+    this.byId.set(link.id, link);
+  }
+  async delete(id: string) {
+    this.byId.delete(id);
+  }
+}
+
+export class InMemoryGoogleCalendarEventCacheRepository implements IGoogleCalendarEventCacheRepository {
+  private readonly byId = new Map<string, GoogleCalendarEventCache>();
+
+  async listByUser(tenantId: string, userId: string) {
+    return [...this.byId.values()].filter((e) => e.tenantId === tenantId && e.userId === userId);
+  }
+  async upsert(event: GoogleCalendarEventCache) {
+    this.byId.set(event.id, event);
+  }
+  async deleteByGoogleEventId(tenantId: string, userId: string, googleEventId: string) {
+    const entry = [...this.byId.values()].find(
+      (e) => e.tenantId === tenantId && e.userId === userId && e.googleEventId === googleEventId,
+    );
+    if (entry) this.byId.delete(entry.id);
+  }
+}
+
+/** Cifra "de mentira" (apenas prefixa/remove) — determinística e reversível para testes. */
+export class FakeTokenCipher implements ITokenCipher {
+  encrypt(plainText: string): string {
+    return `enc(${plainText})`;
+  }
+  decrypt(cipherText: string): string {
+    return cipherText.replace(/^enc\(/, '').replace(/\)$/, '');
+  }
+}
+
+/** Assinatura "de mentira" — serializa o payload em JSON, sem HMAC real (suficiente para testar orquestração). */
+export class FakeOAuthStateSigner implements IOAuthStateSigner {
+  sign(payload: OAuthStatePayload): string {
+    return JSON.stringify(payload);
+  }
+  verify(token: string): OAuthStatePayload | null {
+    try {
+      return JSON.parse(token) as OAuthStatePayload;
+    } catch {
+      return null;
+    }
+  }
+}
+
+export class FakeGoogleCalendarService implements IGoogleCalendarService {
+  public createdEvents: GoogleCalendarEventInput[] = [];
+  public updatedEvents: Array<{ googleEventId: string; input: GoogleCalendarEventInput }> = [];
+  public deletedEventIds: string[] = [];
+  public revokedTokens: string[] = [];
+  private counter = 0;
+  public nextSyncResult: GoogleCalendarSyncResult = { changes: [], nextSyncToken: null };
+  public tokensToReturn: GoogleOAuthTokens = {
+    accessToken: 'access-token',
+    refreshToken: 'refresh-token',
+    expiresAt: new Date('2026-01-01T01:00:00Z'),
+    scope: 'https://www.googleapis.com/auth/calendar.events',
+  };
+
+  buildAuthorizationUrl(state: string): string {
+    return `https://accounts.google.com/o/oauth2/v2/auth?state=${state}`;
+  }
+  async exchangeCodeForTokens(): Promise<GoogleOAuthTokens> {
+    return this.tokensToReturn;
+  }
+  async refreshAccessToken(): Promise<GoogleOAuthTokens> {
+    return this.tokensToReturn;
+  }
+  async loadEvents(): Promise<GoogleCalendarSyncResult> {
+    return this.nextSyncResult;
+  }
+  async createEvent(
+    _accessToken: string,
+    _calendarId: string,
+    event: GoogleCalendarEventInput,
+  ): Promise<string> {
+    this.createdEvents.push(event);
+    this.counter += 1;
+    return `google-event-${this.counter}`;
+  }
+  async updateEvent(
+    _accessToken: string,
+    _calendarId: string,
+    googleEventId: string,
+    event: GoogleCalendarEventInput,
+  ): Promise<void> {
+    this.updatedEvents.push({ googleEventId, input: event });
+  }
+  async deleteEvent(
+    _accessToken: string,
+    _calendarId: string,
+    googleEventId: string,
+  ): Promise<void> {
+    this.deletedEventIds.push(googleEventId);
+  }
+  async revokeToken(token: string): Promise<void> {
+    this.revokedTokens.push(token);
   }
 }

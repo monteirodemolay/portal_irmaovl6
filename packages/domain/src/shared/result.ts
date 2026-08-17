@@ -32,6 +32,16 @@ export class ValidationError extends DomainError {
   }
 }
 
+/** Integração externa (ex.: Google Calendar) sem credenciais configuradas neste ambiente. */
+export class IntegrationNotConfiguredError extends DomainError {
+  constructor(integration: string) {
+    super(
+      'integration_not_configured',
+      `Integração ${integration} não está configurada neste ambiente.`,
+    );
+  }
+}
+
 export type Result<T, E extends DomainError = DomainError> =
   { ok: true; value: T } | { ok: false; error: E };
 

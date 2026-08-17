@@ -40,6 +40,11 @@ import {
   CreateCommitteeUseCase,
   CreateEventUseCase,
   UpdateEventUseCase,
+  CreatePersonalEventUseCase,
+  UpdatePersonalEventUseCase,
+  DeletePersonalEventUseCase,
+  ListMyPersonalEventsUseCase,
+  ListEventsInRangeUseCase,
   CreateFileAssetUseCase,
   CreateFileCategoryUseCase,
   CreateGalleryAlbumUseCase,
@@ -121,6 +126,15 @@ import {
   UpdateTenantSettingsUseCase,
   VerifyDomainUseCase,
   WithdrawFromDirectoryUseCase,
+  StartGoogleConnectionUseCase,
+  CompleteGoogleConnectionUseCase,
+  DisconnectGoogleCalendarUseCase,
+  LoadGoogleEventsUseCase,
+  SyncVl6EventToGoogleUseCase,
+  SyncPersonalEventToGoogleUseCase,
+  UpdateGoogleEventUseCase,
+  DeleteOrCancelGoogleEventUseCase,
+  UpdateGoogleCalendarPreferencesUseCase,
 } from '@vl6/domain';
 import { withAudit } from './audit/with-audit';
 import { NodeDnsResolver } from './dns/node-dns-resolver';
@@ -139,10 +153,14 @@ import { FirestoreBoardTermRepository } from './firestore/repositories/board-ter
 import { FirestoreCommitteeRepository } from './firestore/repositories/committee.repository';
 import { FirestoreEventRepository } from './firestore/repositories/event.repository';
 import { FirestoreEventAttendanceRepository } from './firestore/repositories/event-attendance.repository';
+import { FirestorePersonalEventRepository } from './firestore/repositories/personal-event.repository';
 import { FirestoreFileAssetRepository } from './firestore/repositories/file-asset.repository';
 import { FirestoreFileCategoryRepository } from './firestore/repositories/file-category.repository';
 import { FirestoreGalleryAlbumRepository } from './firestore/repositories/gallery-album.repository';
 import { FirestoreGalleryMediaRepository } from './firestore/repositories/gallery-media.repository';
+import { FirestoreGoogleCalendarConnectionRepository } from './firestore/repositories/google-calendar-connection.repository';
+import { FirestoreGoogleEventSyncLinkRepository } from './firestore/repositories/google-event-sync-link.repository';
+import { FirestoreGoogleCalendarEventCacheRepository } from './firestore/repositories/google-calendar-event-cache.repository';
 import { FirestoreLibraryCategoryRepository } from './firestore/repositories/library-category.repository';
 import { FirestoreLibraryFavoriteRepository } from './firestore/repositories/library-favorite.repository';
 import { FirestoreLibraryItemRepository } from './firestore/repositories/library-item.repository';
@@ -165,6 +183,9 @@ import { FirestoreUserRepository } from './firestore/repositories/user.repositor
 import { SystemClock } from './adapters/system-clock';
 import { FirestoreIdGenerator } from './adapters/firestore-id-generator';
 import { NoopNotificationGateway } from './adapters/noop-notification-gateway';
+import { AesGcmCipher } from './security/aes-gcm-cipher';
+import { HmacOAuthStateSigner } from './security/hmac-oauth-state-signer';
+import { GoogleCalendarService } from './google/google-calendar-service';
 
 /**
  * Composition root do servidor — instancia repositórios Firestore reais e os
@@ -180,6 +201,13 @@ export function createServerContainer() {
   const idGenerator = new FirestoreIdGenerator(db);
   const auditLogRepository = new FirestoreAuditLogRepository(db);
   const auditDeps = { auditLogRepository, clock, idGenerator };
+
+  // Integração Google Calendar — cada método lança `IntegrationNotConfiguredError`
+  // (capturado pelos use cases) quando as env vars `GOOGLE_*` não existem
+  // neste ambiente; a criação destes adapters nunca falha por si só.
+  const tokenCipher = new AesGcmCipher();
+  const oAuthStateSigner = new HmacOAuthStateSigner();
+  const googleCalendarService = new GoogleCalendarService();
 
   // As 8 coleções que a extinta Cloud Function `onEntityAudited` cobria
   // (docs/architecture/06 §6.7) — `withAudit` registra create/update/
@@ -210,6 +238,10 @@ export function createServerContainer() {
     libraryFavorite: new FirestoreLibraryFavoriteRepository(db),
     event: new FirestoreEventRepository(db),
     eventAttendance: new FirestoreEventAttendanceRepository(db),
+    personalEvent: new FirestorePersonalEventRepository(db),
+    googleCalendarConnection: new FirestoreGoogleCalendarConnectionRepository(db),
+    googleEventSyncLink: new FirestoreGoogleEventSyncLinkRepository(db),
+    googleCalendarEventCache: new FirestoreGoogleCalendarEventCacheRepository(db),
     notification: new FirestoreNotificationRepository(db),
     notificationPreference: new FirestoreNotificationPreferenceRepository(db),
     link: new FirestoreLinkRepository(db),
@@ -587,6 +619,84 @@ export function createServerContainer() {
     }),
     listEventAttendees: new ListEventAttendeesUseCase({
       attendanceRepository: repositories.eventAttendance,
+    }),
+    listEventsInRange: new ListEventsInRangeUseCase({ eventRepository: repositories.event }),
+
+    createPersonalEvent: new CreatePersonalEventUseCase({
+      personalEventRepository: repositories.personalEvent,
+      clock,
+      idGenerator,
+    }),
+    updatePersonalEvent: new UpdatePersonalEventUseCase({
+      personalEventRepository: repositories.personalEvent,
+      clock,
+    }),
+    deletePersonalEvent: new DeletePersonalEventUseCase({
+      personalEventRepository: repositories.personalEvent,
+      clock,
+    }),
+    listMyPersonalEvents: new ListMyPersonalEventsUseCase({
+      personalEventRepository: repositories.personalEvent,
+    }),
+
+    startGoogleConnection: new StartGoogleConnectionUseCase({
+      googleCalendarService,
+      stateSigner: oAuthStateSigner,
+      clock,
+    }),
+    completeGoogleConnection: new CompleteGoogleConnectionUseCase({
+      connectionRepository: repositories.googleCalendarConnection,
+      googleCalendarService,
+      tokenCipher,
+      stateSigner: oAuthStateSigner,
+      clock,
+      idGenerator,
+    }),
+    disconnectGoogleCalendar: new DisconnectGoogleCalendarUseCase({
+      connectionRepository: repositories.googleCalendarConnection,
+      googleCalendarService,
+      tokenCipher,
+    }),
+    loadGoogleEvents: new LoadGoogleEventsUseCase({
+      connectionRepository: repositories.googleCalendarConnection,
+      eventCacheRepository: repositories.googleCalendarEventCache,
+      googleCalendarService,
+      tokenCipher,
+      clock,
+      idGenerator,
+    }),
+    syncVl6EventToGoogle: new SyncVl6EventToGoogleUseCase({
+      connectionRepository: repositories.googleCalendarConnection,
+      syncLinkRepository: repositories.googleEventSyncLink,
+      googleCalendarService,
+      tokenCipher,
+      clock,
+      idGenerator,
+    }),
+    syncPersonalEventToGoogle: new SyncPersonalEventToGoogleUseCase({
+      connectionRepository: repositories.googleCalendarConnection,
+      syncLinkRepository: repositories.googleEventSyncLink,
+      personalEventRepository: repositories.personalEvent,
+      googleCalendarService,
+      tokenCipher,
+      clock,
+      idGenerator,
+    }),
+    updateGoogleEvent: new UpdateGoogleEventUseCase({
+      connectionRepository: repositories.googleCalendarConnection,
+      syncLinkRepository: repositories.googleEventSyncLink,
+      googleCalendarService,
+      tokenCipher,
+    }),
+    deleteOrCancelGoogleEvent: new DeleteOrCancelGoogleEventUseCase({
+      connectionRepository: repositories.googleCalendarConnection,
+      syncLinkRepository: repositories.googleEventSyncLink,
+      googleCalendarService,
+      tokenCipher,
+    }),
+    updateGoogleCalendarPreferences: new UpdateGoogleCalendarPreferencesUseCase({
+      connectionRepository: repositories.googleCalendarConnection,
+      clock,
     }),
 
     notifyRecipient: new NotifyRecipientUseCase({

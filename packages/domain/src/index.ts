@@ -157,13 +157,38 @@ export * from './modules/library/use-cases/record-library-interaction.use-case';
 // Agenda
 export * from './modules/agenda/entities/event.entity';
 export * from './modules/agenda/entities/event-attendance.entity';
+export * from './modules/agenda/entities/personal-event.entity';
 export * from './modules/agenda/repositories/event.repository';
 export * from './modules/agenda/repositories/event-attendance.repository';
+export * from './modules/agenda/repositories/personal-event.repository';
 export * from './modules/agenda/use-cases/create-event.use-case';
 export * from './modules/agenda/use-cases/update-event.use-case';
 export * from './modules/agenda/use-cases/list-upcoming-events.use-case';
+export * from './modules/agenda/use-cases/list-events-in-range.use-case';
 export * from './modules/agenda/use-cases/confirm-attendance.use-case';
 export * from './modules/agenda/use-cases/list-event-attendees.use-case';
+export * from './modules/agenda/use-cases/create-personal-event.use-case';
+export * from './modules/agenda/use-cases/update-personal-event.use-case';
+export * from './modules/agenda/use-cases/delete-personal-event.use-case';
+export * from './modules/agenda/use-cases/list-my-personal-events.use-case';
+
+// Integrations (Google Calendar)
+export * from './modules/integrations/entities/google-calendar-connection.entity';
+export * from './modules/integrations/entities/google-event-sync-link.entity';
+export * from './modules/integrations/entities/google-calendar-event-cache.entity';
+export * from './modules/integrations/repositories/google-calendar-connection.repository';
+export * from './modules/integrations/repositories/google-event-sync-link.repository';
+export * from './modules/integrations/repositories/google-calendar-event-cache.repository';
+export * from './modules/integrations/services/google-calendar.service';
+export * from './modules/integrations/use-cases/start-google-connection.use-case';
+export * from './modules/integrations/use-cases/complete-google-connection.use-case';
+export * from './modules/integrations/use-cases/disconnect-google-calendar.use-case';
+export * from './modules/integrations/use-cases/load-google-events.use-case';
+export * from './modules/integrations/use-cases/sync-vl6-event-to-google.use-case';
+export * from './modules/integrations/use-cases/sync-personal-event-to-google.use-case';
+export * from './modules/integrations/use-cases/update-google-event.use-case';
+export * from './modules/integrations/use-cases/delete-or-cancel-google-event.use-case';
+export * from './modules/integrations/use-cases/update-google-calendar-preferences.use-case';
 
 // Notification
 export * from './modules/notification/entities/notification.entity';

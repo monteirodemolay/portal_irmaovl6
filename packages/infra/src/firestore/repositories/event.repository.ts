@@ -36,6 +36,17 @@ export class FirestoreEventRepository implements IEventRepository {
     return this.paginate(query, page);
   }
 
+  async listInRange(tenantId: string, from: Date, to: Date): Promise<Event[]> {
+    const snap = await this.collection
+      .where('tenantId', '==', tenantId)
+      .where('deletedAt', '==', null)
+      .where('dataInicio', '>=', Timestamp.fromDate(from))
+      .where('dataInicio', '<=', Timestamp.fromDate(to))
+      .orderBy('dataInicio', 'asc')
+      .get();
+    return snap.docs.map((doc) => doc.data());
+  }
+
   async countUpcomingByTenant(tenantId: string, from: Date): Promise<number> {
     const snap = await this.collection
       .where('tenantId', '==', tenantId)

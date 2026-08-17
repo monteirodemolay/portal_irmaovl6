@@ -5,6 +5,8 @@ export interface IEventRepository {
   findById(id: string): Promise<Event | null>;
   listUpcoming(tenantId: string, from: Date, page: PageRequest): Promise<PageResult<Event>>;
   listAll(tenantId: string, page: PageRequest): Promise<PageResult<Event>>;
+  /** Janela de datas arbitrária (ex.: navegação de mês em "Minha Agenda") — sem paginação por cursor. */
+  listInRange(tenantId: string, from: Date, to: Date): Promise<Event[]>;
   /** Total de eventos futuros a partir de `from` — usado pelo Painel administrativo. */
   countUpcomingByTenant(tenantId: string, from: Date): Promise<number>;
   create(event: Event): Promise<void>;
