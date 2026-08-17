@@ -9,8 +9,11 @@ import { AcervoPanel } from '@/modules/dashboard/components/acervo-panel';
 import { AgendaPanel } from '@/modules/dashboard/components/agenda-panel';
 import { AnniversariesPanel } from '@/modules/dashboard/components/anniversaries-panel';
 import { AvisosCard } from '@/modules/dashboard/components/avisos-card';
+import { DailyQuoteCard } from '@/modules/dashboard/components/daily-quote-card';
 import { DashboardSectionHeading } from '@/modules/dashboard/components/dashboard-section-heading';
 import { NextEventCard } from '@/modules/dashboard/components/next-event-card';
+import { timeOfDayGreeting } from '@/modules/dashboard/lib/greeting';
+import { pickDailyQuote } from '@/modules/dashboard/lib/masonic-quotes';
 
 export default async function DashboardPage() {
   const [session, current] = await Promise.all([getCurrentSession(), getCurrentTenant()]);
@@ -62,6 +65,9 @@ export default async function DashboardPage() {
   const displayName = resolveMemberDisplayName(member, session.user.email);
   const firstName = displayName.split(' ')[0];
   const hasAnniversaries = anniversaries.length > 0;
+  const now = new Date();
+  const greeting = timeOfDayGreeting(now);
+  const dailyQuote = pickDailyQuote(now);
 
   return (
     <div className="flex flex-col gap-8">
@@ -73,7 +79,7 @@ export default async function DashboardPage() {
           </p>
           <div className="flex flex-wrap items-center gap-3">
             <h1 className="font-display text-3xl font-semibold leading-[1.1] sm:text-4xl">
-              Bem-vindo, {firstName}
+              {greeting}. Seja bem-vindo, {firstName}
             </h1>
             {member && <MemberDegreeBadge grau={member.grau} compact />}
           </div>
@@ -82,6 +88,8 @@ export default async function DashboardPage() {
           </p>
         </div>
       </section>
+
+      <DailyQuoteCard quote={dailyQuote} />
 
       <section className="flex flex-col gap-3">
         <DashboardSectionHeading icon={Sparkles} title="Próximos da Loja" />
