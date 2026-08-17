@@ -111,6 +111,7 @@ import {
   UpdateFileAssetUseCase,
   UpdateMemberSituationUseCase,
   UpdateMemberUseCase,
+  UpdateMyPhotoUseCase,
   UpdateMyProfileUseCase,
   UpdateNewsUseCase,
   UpdateNotificationPreferenceUseCase,
@@ -337,6 +338,7 @@ export function createServerContainer() {
       idGenerator,
     }),
     updateMember: new UpdateMemberUseCase({ memberRepository: repositories.member, clock }),
+    updateMyPhoto: new UpdateMyPhotoUseCase({ memberRepository: repositories.member, clock }),
     updateMyProfile: new UpdateMyProfileUseCase({ memberRepository: repositories.member, clock }),
     claimMemberAccount: new ClaimMemberAccountUseCase({
       memberRepository: repositories.member,

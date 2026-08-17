@@ -92,6 +92,7 @@ export {
   IdCard,
   NotebookText,
   PlayCircle,
+  Camera,
   ICON_SIZE_DEFAULT,
   ICON_SIZE_LARGE,
   ICON_STROKE_WIDTH,

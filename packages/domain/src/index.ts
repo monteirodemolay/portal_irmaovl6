@@ -55,6 +55,7 @@ export * from './modules/membership/repositories/member.repository';
 export * from './modules/membership/repositories/member-position-history.repository';
 export * from './modules/membership/use-cases/register-member.use-case';
 export * from './modules/membership/use-cases/update-member.use-case';
+export * from './modules/membership/use-cases/update-my-photo.use-case';
 export * from './modules/membership/use-cases/update-my-profile.use-case';
 export * from './modules/membership/use-cases/update-member-situation.use-case';
 export * from './modules/membership/use-cases/search-members.use-case';

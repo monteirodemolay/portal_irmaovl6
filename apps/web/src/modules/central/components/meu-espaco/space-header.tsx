@@ -1,10 +1,10 @@
 import type { Member, PublicMemberProfileDTO } from '@vl6/domain';
 import { calculateProfileCompletion, type MemberCentralProfile } from '@vl6/domain';
 import { Card, CardContent } from '@vl6/ui';
-import { MemberAvatar } from '@/components/membership/member-avatar';
 import { MemberDegreeBadge } from '@/components/membership/member-degree-badge';
 import { CompletionRing } from './completion-ring';
 import { PreviewAsOthersDialog } from './preview-as-others-dialog';
+import { SelfPhotoUpload } from './self-photo-upload';
 
 export function SpaceHeader({
   member,
@@ -23,7 +23,11 @@ export function SpaceHeader({
     <Card>
       <CardContent className="flex flex-col gap-6 p-6 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-4">
-          <MemberAvatar fotoUrl={member.fotoUrl} nome={member.nomeCompleto} className="h-16 w-16" />
+          <SelfPhotoUpload
+            fotoUrl={member.fotoUrl}
+            nome={member.nomeCompleto}
+            className="h-16 w-16"
+          />
           <div className="flex flex-col gap-1.5">
             <p className="font-display text-xl font-semibold">{member.nomeCompleto}</p>
             <MemberDegreeBadge grau={member.grau} />

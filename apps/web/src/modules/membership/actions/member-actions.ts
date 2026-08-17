@@ -1,6 +1,5 @@
 'use server';
 
-import { randomUUID } from 'node:crypto';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import * as Sentry from '@sentry/nextjs';
@@ -20,7 +19,6 @@ import {
   createServerContainer,
   getAdminAuth,
   syncUserClaims,
-  VercelBlobStorageAdapter,
   type ServerContainer,
 } from '@vl6/infra';
 import { requirePermission, type Member } from '@vl6/domain';
@@ -32,6 +30,7 @@ import {
   ensureNodePdfDomPolyfills,
   ensurePdfWorkerAvailable,
 } from '@/lib/pdf/ensure-node-dom-polyfills';
+import { uploadMemberPhoto, validatePhotoFile } from '@/lib/membership/member-photo-upload';
 import { resolveProfissaoFromFormData } from '@/lib/membership/professions';
 import type { ProfileFieldActionState } from '@/modules/membership/components/profile-fields/action-state';
 import {
@@ -60,35 +59,6 @@ export interface MemberActionState {
 }
 
 const EMPTY_STATE: MemberActionState = { error: null, memberId: null, temporaryPassword: null };
-
-const ALLOWED_PHOTO_TYPES: Record<string, string> = {
-  'image/jpeg': 'jpg',
-  'image/png': 'png',
-  'image/webp': 'webp',
-};
-const MAX_PHOTO_SIZE_BYTES = 5 * 1024 * 1024;
-
-function validatePhotoFile(file: File): string | null {
-  if (!(file.type in ALLOWED_PHOTO_TYPES)) {
-    return 'Foto inválida: use JPG, PNG ou WEBP.';
-  }
-  if (file.size > MAX_PHOTO_SIZE_BYTES) {
-    return 'Foto muito grande: o limite é 5 MB.';
-  }
-  return null;
-}
-
-async function uploadMemberPhoto(file: File, tenantId: string, memberId: string): Promise<string> {
-  const buffer = Buffer.from(await file.arrayBuffer());
-  const ext = ALLOWED_PHOTO_TYPES[file.type] ?? 'jpg';
-  const storage = new VercelBlobStorageAdapter();
-  const upload = await storage.upload({
-    path: `tenants/${tenantId}/members/${memberId}/foto-${randomUUID()}.${ext}`,
-    buffer,
-    contentType: file.type,
-  });
-  return upload.url;
-}
 
 async function parseMemberForm(
   formData: FormData,

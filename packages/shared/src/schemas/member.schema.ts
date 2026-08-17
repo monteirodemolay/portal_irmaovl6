@@ -91,12 +91,15 @@ export function normalizeConjugeFields<
 /**
  * Subconjunto editável pelo próprio Irmão no autoatendimento (docs/architecture/08 §8.3)
  * — exatamente os campos que os cartões compartilhados de
- * `profile-fields/` (também usados pelo Admin) editam. `fotoUrl`,
- * `biografia` e `redesSociais` ficam de fora de propósito: nenhuma tela de
- * autoatendimento os edita (só a edição administrativa, via
- * `updateMemberIdentityAction`); mantê-los fora do schema garante que
- * `{ ...current, ...input }` em `UpdateMyProfileUseCase` nunca os
- * sobrescreva.
+ * `profile-fields/` (também usados pelo Admin) editam. `biografia` e
+ * `redesSociais` ficam de fora de propósito: nenhuma tela de autoatendimento
+ * os edita (só a edição administrativa, via `updateMemberIdentityAction`);
+ * mantê-los fora do schema garante que `{ ...current, ...input }` em
+ * `UpdateMyProfileUseCase` nunca os sobrescreva. `fotoUrl` também fica fora
+ * daqui pelo mesmo motivo estrutural — mas é editável pelo próprio Irmão,
+ * só que por um caminho dedicado (`updateMyPhotoAction` →
+ * `UpdateMyPhotoUseCase`, ver "Meu Espaço"), já que precisa de upload de
+ * arquivo, não cabe como campo de formulário comum.
  */
 export const memberSelfEditSchema = memberBaseSchema.pick({
   telefone: true,
