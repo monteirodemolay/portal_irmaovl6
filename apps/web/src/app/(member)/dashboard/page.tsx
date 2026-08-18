@@ -1,5 +1,5 @@
 import { hasPermission } from '@vl6/domain';
-import { CalendarDays, Card, cn, EmptyState, Sparkles } from '@vl6/ui';
+import { CalendarDays, Card, EmptyState, Sparkles } from '@vl6/ui';
 import { createServerContainer } from '@vl6/infra';
 import { getUpcomingEventsForPortal } from '@/lib/agenda/get-upcoming-events';
 import { getCurrentSession } from '@/lib/auth/get-current-session';
@@ -84,22 +84,24 @@ export default async function DashboardPage() {
 
       <section className="flex flex-col gap-3">
         <DashboardSectionHeading icon={Sparkles} title="Próximos da Loja" />
-        {featuredEvent ? (
-          <NextEventCard event={featuredEvent} />
-        ) : (
-          <Card className="shadow-none">
-            <EmptyState
-              icon={<CalendarDays size={22} />}
-              title="Nenhuma sessão agendada"
-              description="Assim que uma nova sessão for cadastrada na Agenda, ela aparece aqui em destaque."
-            />
-          </Card>
-        )}
-        <div className={cn('grid grid-cols-1 gap-4', hasAnniversaries && 'lg:grid-cols-2')}>
-          {hasAnniversaries && (
-            <AnniversariesPanel entries={anniversaries} showDirectoryLink={showDirectoryLink} />
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          {featuredEvent ? (
+            <NextEventCard event={featuredEvent} />
+          ) : (
+            <Card className="shadow-none">
+              <EmptyState
+                icon={<CalendarDays size={22} />}
+                title="Nenhuma sessão agendada"
+                description="Assim que uma nova sessão for cadastrada na Agenda, ela aparece aqui em destaque."
+              />
+            </Card>
           )}
-          <AvisosCard announcements={announcements} />
+          <div className="flex flex-col gap-4">
+            {hasAnniversaries && (
+              <AnniversariesPanel entries={anniversaries} showDirectoryLink={showDirectoryLink} />
+            )}
+            <AvisosCard announcements={announcements} />
+          </div>
         </div>
       </section>
 
