@@ -199,6 +199,7 @@ export * from './modules/integrations/use-cases/disconnect-google-calendar.use-c
 export * from './modules/integrations/use-cases/load-google-events.use-case';
 export * from './modules/integrations/use-cases/sync-vl6-event-to-google.use-case';
 export * from './modules/integrations/use-cases/sync-vl6-event-to-all-connected-users.use-case';
+export * from './modules/integrations/use-cases/notify-connected-users-of-new-vl6-event.use-case';
 export * from './modules/integrations/use-cases/sync-personal-event-to-google.use-case';
 export * from './modules/integrations/use-cases/update-google-event.use-case';
 export * from './modules/integrations/use-cases/delete-or-cancel-google-event.use-case';

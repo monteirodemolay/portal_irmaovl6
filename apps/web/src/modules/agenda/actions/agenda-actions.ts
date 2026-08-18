@@ -52,6 +52,30 @@ async function syncEventToConnectedGoogleCalendars(
   }
 }
 
+/**
+ * Avisa (notificação interna) cada Irmão com a Agenda da Loja sincronizada
+ * ao Google sempre que um evento é criado — mesma proteção do fan-out
+ * acima: nunca pode impedir a criação do evento em si.
+ */
+async function notifyConnectedUsersOfNewEvent(
+  container: ServerContainer,
+  tenantId: string,
+  event: Event,
+): Promise<void> {
+  try {
+    await container.useCases.notifyConnectedUsersOfNewVl6Event.execute(tenantId, event);
+  } catch (error) {
+    logger.error('Falha inesperada ao notificar Irmãos sobre novo evento VL6', {
+      route: 'notifyConnectedUsersOfNewEvent',
+      eventId: event.id,
+      ...errorToLogContext(error),
+    });
+    Sentry.captureException(error, {
+      tags: { route: 'notifyConnectedUsersOfNewEvent', eventId: event.id },
+    });
+  }
+}
+
 function parseEventForm(formData: FormData) {
   const capacidadeMaxima = formData.get('capacidadeMaxima');
   const dataInicioRaw = formData.get('dataInicio');
@@ -91,6 +115,7 @@ export async function createEventAction(
   if (!result.ok) return { error: result.error.message };
 
   await syncEventToConnectedGoogleCalendars(container, session.authContext.tenantId, result.value);
+  await notifyConnectedUsersOfNewEvent(container, session.authContext.tenantId, result.value);
 
   revalidatePath('/admin/conteudo/agenda');
   redirect('/admin/conteudo/agenda');
