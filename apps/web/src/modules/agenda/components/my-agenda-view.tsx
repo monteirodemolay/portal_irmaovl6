@@ -247,6 +247,7 @@ export function MyAgendaView({
         onOpenVl6Drawer={(id) => agenda?.openAgenda(id)}
         onEditPersonal={openEditPersonal}
         personalNotes={personalNotes}
+        overlapping={overlapping}
       />
     </div>
   );

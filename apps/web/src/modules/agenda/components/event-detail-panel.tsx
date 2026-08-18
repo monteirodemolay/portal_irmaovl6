@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useTransition } from 'react';
 import Link from 'next/link';
 import type { PersonalNote } from '@vl6/domain';
 import {
+  AlertTriangle,
   ArrowUpRight,
   Button,
   Clock,
@@ -44,6 +45,8 @@ export interface EventDetailPanelProps {
   onOpenVl6Drawer: (id: string) => void;
   onEditPersonal: (item: CalendarItem) => void;
   personalNotes: PersonalNote[];
+  /** IDs de itens com choque de horário — aviso informativo, nunca bloqueia salvar. */
+  overlapping: Set<string>;
 }
 
 /**
@@ -61,6 +64,7 @@ export function EventDetailPanel({
   onOpenVl6Drawer,
   onEditPersonal,
   personalNotes,
+  overlapping,
 }: EventDetailPanelProps) {
   // Mantém o último item durante a animação de saída — `item` já virou
   // `null` nesse momento (fechado pelo pai), mas o corpo não pode sumir
@@ -80,6 +84,7 @@ export function EventDetailPanel({
             onOpenVl6Drawer={onOpenVl6Drawer}
             onEditPersonal={onEditPersonal}
             personalNotes={personalNotes}
+            hasConflict={overlapping.has(lastItem.id)}
             onClose={() => onOpenChange(false)}
           />
         )}
@@ -94,6 +99,7 @@ function EventDetailPanelBody({
   onOpenVl6Drawer,
   onEditPersonal,
   personalNotes,
+  hasConflict,
   onClose,
 }: {
   item: CalendarItem;
@@ -101,6 +107,7 @@ function EventDetailPanelBody({
   onOpenVl6Drawer: (id: string) => void;
   onEditPersonal: (item: CalendarItem) => void;
   personalNotes: PersonalNote[];
+  hasConflict: boolean;
   onClose: () => void;
 }) {
   const existingNote = personalNotes.find(
@@ -133,6 +140,30 @@ function EventDetailPanelBody({
             </span>
           )}
         </div>
+
+        {hasConflict && !item.isBirthday && (
+          <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2.5 text-xs text-red-700">
+            <p className="flex items-center gap-1.5 font-semibold">
+              <AlertTriangle size={12} strokeWidth={2} />
+              Conflito de horário com outro compromisso
+            </p>
+            <p className="mt-0.5 text-red-600/90">
+              Isso nem sempre é um problema — você decide se muda o horário ou deixa como está.
+            </p>
+            {item.source === 'personal' && (
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  onEditPersonal(item);
+                }}
+                className="mt-1.5 font-semibold underline underline-offset-2 hover:text-red-800"
+              >
+                Alterar horário
+              </button>
+            )}
+          </div>
+        )}
 
         {item.source === 'vl6' && !item.isBirthday && (
           <Vl6Section
