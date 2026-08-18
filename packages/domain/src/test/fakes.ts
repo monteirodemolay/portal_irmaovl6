@@ -1067,6 +1067,12 @@ export class InMemoryGoogleCalendarConnectionRepository implements IGoogleCalend
       [...this.byId.values()].find((c) => c.tenantId === tenantId && c.userId === userId) ?? null
     );
   }
+  async listActiveWithVl6Sync(tenantId: string) {
+    return [...this.byId.values()].filter(
+      (c) =>
+        c.tenantId === tenantId && c.preferences.sincronizarVL6ParaGoogle && c.deletedAt === null,
+    );
+  }
   async create(connection: GoogleCalendarConnection) {
     this.byId.set(connection.id, connection);
   }

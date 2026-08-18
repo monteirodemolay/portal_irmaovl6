@@ -2,9 +2,10 @@
 
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
-import { eventSchema, parseBrazilDateTimeLocal } from '@vl6/shared';
-import type { AttendanceResponse } from '@vl6/domain';
-import { createServerContainer } from '@vl6/infra';
+import * as Sentry from '@sentry/nextjs';
+import { errorToLogContext, eventSchema, logger, parseBrazilDateTimeLocal } from '@vl6/shared';
+import type { AttendanceResponse, Event } from '@vl6/domain';
+import { createServerContainer, type ServerContainer } from '@vl6/infra';
 import { requireSession } from '@/lib/auth/require-session';
 import {
   resolveArchiveItem,
@@ -14,6 +15,41 @@ import { parseArchiveItemId } from '@/modules/archive/lib/archive-item-id';
 
 export interface AgendaActionState {
   error: string | null;
+}
+
+/**
+ * Fan-out "Agenda da Loja → Google Agenda" — dispara ao criar/editar um
+ * evento VL6, mas nunca pode impedir a criação/edição em si: uma falha aqui
+ * (token expirado, API do Google fora do ar) só é registrada em
+ * observabilidade, nunca propagada pro admin que só queria salvar o evento.
+ */
+async function syncEventToConnectedGoogleCalendars(
+  container: ServerContainer,
+  tenantId: string,
+  event: Event,
+): Promise<void> {
+  try {
+    const { failedUserIds } = await container.useCases.syncVl6EventToAllConnectedUsers.execute(
+      tenantId,
+      event,
+    );
+    if (failedUserIds.length > 0) {
+      logger.error('Falha ao sincronizar evento VL6 com o Google Agenda de alguns Irmãos', {
+        route: 'syncEventToConnectedGoogleCalendars',
+        eventId: event.id,
+        failedUserIds,
+      });
+    }
+  } catch (error) {
+    logger.error('Falha inesperada no fan-out Loja → Google Agenda', {
+      route: 'syncEventToConnectedGoogleCalendars',
+      eventId: event.id,
+      ...errorToLogContext(error),
+    });
+    Sentry.captureException(error, {
+      tags: { route: 'syncEventToConnectedGoogleCalendars', eventId: event.id },
+    });
+  }
 }
 
 function parseEventForm(formData: FormData) {
@@ -54,6 +90,8 @@ export async function createEventAction(
   const result = await container.useCases.createEvent.execute(session.authContext, input);
   if (!result.ok) return { error: result.error.message };
 
+  await syncEventToConnectedGoogleCalendars(container, session.authContext.tenantId, result.value);
+
   revalidatePath('/admin/conteudo/agenda');
   redirect('/admin/conteudo/agenda');
 }
@@ -75,6 +113,8 @@ export async function updateEventAction(
   const container = createServerContainer();
   const result = await container.useCases.updateEvent.execute(session.authContext, eventId, input);
   if (!result.ok) return { error: result.error.message };
+
+  await syncEventToConnectedGoogleCalendars(container, session.authContext.tenantId, result.value);
 
   revalidatePath('/admin/conteudo/agenda');
   revalidatePath(`/admin/conteudo/agenda/${eventId}`);

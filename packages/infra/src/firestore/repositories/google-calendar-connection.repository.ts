@@ -23,6 +23,15 @@ export class FirestoreGoogleCalendarConnectionRepository implements IGoogleCalen
     return snap.empty ? null : snap.docs[0]!.data();
   }
 
+  async listActiveWithVl6Sync(tenantId: string): Promise<GoogleCalendarConnection[]> {
+    const snap = await this.collection
+      .where('tenantId', '==', tenantId)
+      .where('preferences.sincronizarVL6ParaGoogle', '==', true)
+      .where('deletedAt', '==', null)
+      .get();
+    return snap.docs.map((doc) => doc.data());
+  }
+
   async create(connection: GoogleCalendarConnection): Promise<void> {
     await this.collection.doc(connection.id).set(connection);
   }

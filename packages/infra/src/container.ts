@@ -140,6 +140,7 @@ import {
   DisconnectGoogleCalendarUseCase,
   LoadGoogleEventsUseCase,
   SyncVl6EventToGoogleUseCase,
+  SyncVl6EventToAllConnectedUsersUseCase,
   SyncPersonalEventToGoogleUseCase,
   UpdateGoogleEventUseCase,
   DeleteOrCancelGoogleEventUseCase,
@@ -718,6 +719,14 @@ export function createServerContainer() {
       idGenerator,
     }),
     syncVl6EventToGoogle: new SyncVl6EventToGoogleUseCase({
+      connectionRepository: repositories.googleCalendarConnection,
+      syncLinkRepository: repositories.googleEventSyncLink,
+      googleCalendarService,
+      tokenCipher,
+      clock,
+      idGenerator,
+    }),
+    syncVl6EventToAllConnectedUsers: new SyncVl6EventToAllConnectedUsersUseCase({
       connectionRepository: repositories.googleCalendarConnection,
       syncLinkRepository: repositories.googleEventSyncLink,
       googleCalendarService,
