@@ -74,8 +74,8 @@ export default async function InspirationalQuotesPage() {
         </CardHeader>
         <CardContent>
           <QuoteRotationForm
-            modo={current?.settings?.citacaoRotacao.modo ?? 'diaria'}
-            intervaloMinutos={current?.settings?.citacaoRotacao.intervaloMinutos ?? null}
+            modo={current?.settings?.citacaoRotacao?.modo ?? 'diaria'}
+            intervaloMinutos={current?.settings?.citacaoRotacao?.intervaloMinutos ?? null}
           />
         </CardContent>
       </Card>
