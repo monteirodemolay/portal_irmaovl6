@@ -4,9 +4,9 @@ import { createServerContainer } from '@vl6/infra';
 import { errorToLogContext, logger } from '@vl6/shared';
 import { EmptyState, Lock } from '@vl6/ui';
 import { requireSession } from '@/lib/auth/require-session';
+import { AgendaSidebar } from '@/modules/agenda/components/agenda-sidebar';
 import { MyAgendaView } from '@/modules/agenda/components/my-agenda-view';
 import type { GoogleCalendarEventSummary } from '@/modules/agenda/lib/calendar-item';
-import { GoogleConnectionCard } from '@/modules/integrations/components/google-connection-card';
 
 const ROUTE = '/agenda';
 
@@ -45,22 +45,29 @@ export default async function AgendaPage() {
 
   const canReadVl6 = hasPermission(session.authContext, 'event:read');
 
-  const [vl6Events, personalEvents, googleConnection] = await Promise.all([
-    canReadVl6
-      ? safeFetch('eventos VL6', [], () =>
-          container.useCases.listEventsInRange.execute(session.authContext, { from, to }),
-        )
-      : Promise.resolve([]),
-    safeFetch('compromissos pessoais', [], () =>
-      container.useCases.listMyPersonalEvents.execute(session.authContext, { from, to }),
-    ),
-    safeFetch('conexão com o Google Agenda', null, () =>
-      container.repositories.googleCalendarConnection.findByUserId(
-        session.authContext.tenantId,
-        session.authContext.uid,
+  const [vl6Events, personalEvents, googleConnection, personalTasks, personalNotes] =
+    await Promise.all([
+      canReadVl6
+        ? safeFetch('eventos VL6', [], () =>
+            container.useCases.listEventsInRange.execute(session.authContext, { from, to }),
+          )
+        : Promise.resolve([]),
+      safeFetch('compromissos pessoais', [], () =>
+        container.useCases.listMyPersonalEvents.execute(session.authContext, { from, to }),
       ),
-    ),
-  ]);
+      safeFetch('conexão com o Google Agenda', null, () =>
+        container.repositories.googleCalendarConnection.findByUserId(
+          session.authContext.tenantId,
+          session.authContext.uid,
+        ),
+      ),
+      safeFetch('minhas tarefas', [], () =>
+        container.useCases.listMyPersonalTasks.execute(session.authContext),
+      ),
+      safeFetch('minhas anotações', [], () =>
+        container.useCases.listMyPersonalNotes.execute(session.authContext),
+      ),
+    ]);
 
   // Cache local (nunca chama a Calendar API a cada render) — só populado
   // quando conectado e com a preferência "exibir eventos Google" ligada.
@@ -89,8 +96,6 @@ export default async function AgendaPage() {
         <p className="text-muted text-sm">Loja, Google e compromissos pessoais em um só lugar.</p>
       </div>
 
-      <GoogleConnectionCard connection={googleConnection} />
-
       {!canReadVl6 && (
         <EmptyState
           icon={<Lock size={18} strokeWidth={1.75} />}
@@ -100,11 +105,19 @@ export default async function AgendaPage() {
         />
       )}
 
-      <MyAgendaView
-        vl6Events={vl6Events}
-        personalEvents={personalEvents}
-        googleEvents={googleEvents}
-      />
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_320px]">
+        <MyAgendaView
+          vl6Events={vl6Events}
+          personalEvents={personalEvents}
+          googleEvents={googleEvents}
+          personalNotes={personalNotes}
+        />
+        <AgendaSidebar
+          personalTasks={personalTasks}
+          personalNotes={personalNotes}
+          googleConnection={googleConnection}
+        />
+      </div>
     </div>
   );
 }

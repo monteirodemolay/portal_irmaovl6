@@ -197,6 +197,17 @@ service cloud.firestore {
       allow create: if isSignedIn() && isOwner(request.resource.data, 'userId') && sameTenant(request.resource.data);
     }
 
+    // "Minhas tarefas" e "Minhas anotações" da Minha Agenda — mesmo padrão de `personalEvents`.
+    match /personalTasks/{id} {
+      allow read, write: if isSignedIn() && isOwner(resource.data, 'userId');
+      allow create: if isSignedIn() && isOwner(request.resource.data, 'userId') && sameTenant(request.resource.data);
+    }
+
+    match /personalNotes/{id} {
+      allow read, write: if isSignedIn() && isOwner(resource.data, 'userId');
+      allow create: if isSignedIn() && isOwner(request.resource.data, 'userId') && sameTenant(request.resource.data);
+    }
+
     // ---------------------------------------------------------------
     // Content
     // ---------------------------------------------------------------

@@ -125,6 +125,26 @@ export async function resolveAcervoItemAction(
   return { ok: true, item };
 }
 
+/** Status de presença do usuário atual num evento VL6 — usado pelo resumo leve do painel de detalhes da Minha Agenda. */
+export async function getMyAttendanceStatusAction(
+  eventId: string,
+): Promise<'confirmado' | 'recusado' | 'pendente' | null> {
+  const session = await requireSession();
+  const container = createServerContainer();
+
+  const member = await container.repositories.member.findByUserId(
+    session.authContext.tenantId,
+    session.authContext.uid,
+  );
+  if (!member) return null;
+
+  const attendance = await container.repositories.eventAttendance.findByEventAndMember(
+    eventId,
+    member.id,
+  );
+  return attendance?.statusPresenca ?? null;
+}
+
 export async function confirmAttendanceAction(
   eventId: string,
   resposta: AttendanceResponse,

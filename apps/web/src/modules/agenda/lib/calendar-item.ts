@@ -2,6 +2,18 @@ import type { Event, PersonalEvent } from '@vl6/domain';
 
 export type CalendarSource = 'vl6' | 'google' | 'personal';
 
+export const SOURCE_LABELS: Record<CalendarSource, string> = {
+  vl6: 'VL6 / Loja',
+  google: 'Google',
+  personal: 'Pessoal',
+};
+
+export const SOURCE_BADGE_CLASS: Record<CalendarSource, string> = {
+  vl6: 'bg-primary/10 text-primary',
+  google: 'bg-purple-100 text-purple-700',
+  personal: 'bg-emerald-100 text-emerald-700',
+};
+
 /** Recorte mínimo de um evento Google já sincronizado localmente — ver módulo `integrations`. */
 export interface GoogleCalendarEventSummary {
   id: string;

@@ -44,6 +44,15 @@ import {
   UpdatePersonalEventUseCase,
   DeletePersonalEventUseCase,
   ListMyPersonalEventsUseCase,
+  CreatePersonalTaskUseCase,
+  TogglePersonalTaskUseCase,
+  DeletePersonalTaskUseCase,
+  ListMyPersonalTasksUseCase,
+  CreatePersonalNoteUseCase,
+  UpdatePersonalNoteUseCase,
+  DeletePersonalNoteUseCase,
+  ListMyPersonalNotesUseCase,
+  UpsertPersonalEventNoteUseCase,
   ListEventsInRangeUseCase,
   CreateFileAssetUseCase,
   CreateFileCategoryUseCase,
@@ -154,6 +163,8 @@ import { FirestoreCommitteeRepository } from './firestore/repositories/committee
 import { FirestoreEventRepository } from './firestore/repositories/event.repository';
 import { FirestoreEventAttendanceRepository } from './firestore/repositories/event-attendance.repository';
 import { FirestorePersonalEventRepository } from './firestore/repositories/personal-event.repository';
+import { FirestorePersonalTaskRepository } from './firestore/repositories/personal-task.repository';
+import { FirestorePersonalNoteRepository } from './firestore/repositories/personal-note.repository';
 import { FirestoreFileAssetRepository } from './firestore/repositories/file-asset.repository';
 import { FirestoreFileCategoryRepository } from './firestore/repositories/file-category.repository';
 import { FirestoreGalleryAlbumRepository } from './firestore/repositories/gallery-album.repository';
@@ -239,6 +250,8 @@ export function createServerContainer() {
     event: new FirestoreEventRepository(db),
     eventAttendance: new FirestoreEventAttendanceRepository(db),
     personalEvent: new FirestorePersonalEventRepository(db),
+    personalTask: new FirestorePersonalTaskRepository(db),
+    personalNote: new FirestorePersonalNoteRepository(db),
     googleCalendarConnection: new FirestoreGoogleCalendarConnectionRepository(db),
     googleEventSyncLink: new FirestoreGoogleEventSyncLinkRepository(db),
     googleCalendarEventCache: new FirestoreGoogleCalendarEventCacheRepository(db),
@@ -637,6 +650,45 @@ export function createServerContainer() {
     }),
     listMyPersonalEvents: new ListMyPersonalEventsUseCase({
       personalEventRepository: repositories.personalEvent,
+    }),
+
+    createPersonalTask: new CreatePersonalTaskUseCase({
+      personalTaskRepository: repositories.personalTask,
+      clock,
+      idGenerator,
+    }),
+    togglePersonalTask: new TogglePersonalTaskUseCase({
+      personalTaskRepository: repositories.personalTask,
+      clock,
+    }),
+    deletePersonalTask: new DeletePersonalTaskUseCase({
+      personalTaskRepository: repositories.personalTask,
+      clock,
+    }),
+    listMyPersonalTasks: new ListMyPersonalTasksUseCase({
+      personalTaskRepository: repositories.personalTask,
+    }),
+
+    createPersonalNote: new CreatePersonalNoteUseCase({
+      personalNoteRepository: repositories.personalNote,
+      clock,
+      idGenerator,
+    }),
+    updatePersonalNote: new UpdatePersonalNoteUseCase({
+      personalNoteRepository: repositories.personalNote,
+      clock,
+    }),
+    deletePersonalNote: new DeletePersonalNoteUseCase({
+      personalNoteRepository: repositories.personalNote,
+      clock,
+    }),
+    listMyPersonalNotes: new ListMyPersonalNotesUseCase({
+      personalNoteRepository: repositories.personalNote,
+    }),
+    upsertPersonalEventNote: new UpsertPersonalEventNoteUseCase({
+      personalNoteRepository: repositories.personalNote,
+      clock,
+      idGenerator,
     }),
 
     startGoogleConnection: new StartGoogleConnectionUseCase({

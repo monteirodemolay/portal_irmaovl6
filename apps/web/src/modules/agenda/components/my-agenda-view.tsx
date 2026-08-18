@@ -1,8 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import Link from 'next/link';
-import type { Event, PersonalEvent } from '@vl6/domain';
+import type { Event, PersonalEvent, PersonalNote } from '@vl6/domain';
 import {
   AlertTriangle,
   Clock,
@@ -17,10 +16,14 @@ import {
 } from '@vl6/ui';
 import { useAgendaOptional } from './agenda-provider';
 import { PersonalEventDrawer } from './personal-event-drawer';
+import { EventDetailPanel } from './event-detail-panel';
 import { MonthGrid } from './month-grid';
+import { WeekAgendaGrid } from './week-agenda-grid';
 import {
   detectOverlaps,
   toCalendarItems,
+  SOURCE_BADGE_CLASS,
+  SOURCE_LABELS,
   type CalendarItem,
   type CalendarSource,
   type GoogleCalendarEventSummary,
@@ -33,33 +36,9 @@ const SOURCE_FILTERS: Array<{ value: CalendarSource | 'all'; label: string }> = 
   { value: 'personal', label: 'Pessoal' },
 ];
 
-const SOURCE_LABELS: Record<CalendarSource, string> = {
-  vl6: 'VL6 / Loja',
-  google: 'Google',
-  personal: 'Pessoal',
-};
-
-const SOURCE_BADGE_CLASS: Record<CalendarSource, string> = {
-  vl6: 'bg-primary/10 text-primary',
-  google: 'bg-purple-100 text-purple-700',
-  personal: 'bg-emerald-100 text-emerald-700',
-};
-
 function startOfDay(date: Date): Date {
   const d = new Date(date);
   d.setHours(0, 0, 0, 0);
-  return d;
-}
-
-function startOfWeek(date: Date): Date {
-  const d = startOfDay(date);
-  d.setDate(d.getDate() - d.getDay());
-  return d;
-}
-
-function endOfWeek(date: Date): Date {
-  const d = startOfWeek(date);
-  d.setDate(d.getDate() + 7);
   return d;
 }
 
@@ -88,13 +67,20 @@ export interface MyAgendaViewProps {
   vl6Events: Event[];
   personalEvents: PersonalEvent[];
   googleEvents: GoogleCalendarEventSummary[];
+  personalNotes: PersonalNote[];
 }
 
-export function MyAgendaView({ vl6Events, personalEvents, googleEvents }: MyAgendaViewProps) {
+export function MyAgendaView({
+  vl6Events,
+  personalEvents,
+  googleEvents,
+  personalNotes,
+}: MyAgendaViewProps) {
   const agenda = useAgendaOptional();
   const [view, setView] = useState('lista');
   const [sourceFilter, setSourceFilter] = useState<CalendarSource | 'all'>('all');
   const [selectedDay, setSelectedDay] = useState<Date>(() => new Date());
+  const [selectedItem, setSelectedItem] = useState<CalendarItem | null>(null);
   const [drawerState, setDrawerState] = useState<{
     open: boolean;
     event: PersonalEvent | null;
@@ -115,11 +101,6 @@ export function MyAgendaView({ vl6Events, personalEvents, googleEvents }: MyAgen
 
   const now = new Date();
   const todayItems = filteredItems.filter((item) => isSameDay(item.inicio, now));
-  const weekStart = startOfWeek(now);
-  const weekEnd = endOfWeek(now);
-  const weekItems = filteredItems.filter(
-    (item) => item.inicio >= weekStart && item.inicio < weekEnd,
-  );
   const dayItems = filteredItems.filter((item) => isSameDay(item.inicio, selectedDay));
   const upcomingItems = filteredItems
     .filter((item) => (item.fim ?? item.inicio) >= startOfDay(now))
@@ -186,20 +167,17 @@ export function MyAgendaView({ vl6Events, personalEvents, googleEvents }: MyAgen
             items={todayItems}
             emptyTitle="Nada agendado para hoje"
             overlapping={overlapping}
-            isVl6InDrawer={isVl6InDrawer}
-            onOpenVl6={(id) => agenda?.openAgenda(id)}
-            onOpenPersonal={openEditPersonal}
+            onSelectItem={setSelectedItem}
           />
         </TabsContent>
 
         <TabsContent value="semana">
-          <ItemList
-            items={weekItems}
-            emptyTitle="Nada agendado esta semana"
+          <WeekAgendaGrid
+            items={filteredItems}
+            referenceDate={now}
             overlapping={overlapping}
-            isVl6InDrawer={isVl6InDrawer}
-            onOpenVl6={(id) => agenda?.openAgenda(id)}
-            onOpenPersonal={openEditPersonal}
+            onSelectItem={setSelectedItem}
+            onNewPersonal={(date) => openNewPersonal(date)}
           />
         </TabsContent>
 
@@ -218,9 +196,7 @@ export function MyAgendaView({ vl6Events, personalEvents, googleEvents }: MyAgen
                 items={dayItems}
                 emptyTitle="Nenhum compromisso neste dia"
                 overlapping={overlapping}
-                isVl6InDrawer={isVl6InDrawer}
-                onOpenVl6={(id) => agenda?.openAgenda(id)}
-                onOpenPersonal={openEditPersonal}
+                onSelectItem={setSelectedItem}
                 action={
                   <button
                     type="button"
@@ -240,9 +216,7 @@ export function MyAgendaView({ vl6Events, personalEvents, googleEvents }: MyAgen
             items={upcomingItems}
             emptyTitle="Nenhum compromisso futuro"
             overlapping={overlapping}
-            isVl6InDrawer={isVl6InDrawer}
-            onOpenVl6={(id) => agenda?.openAgenda(id)}
-            onOpenPersonal={openEditPersonal}
+            onSelectItem={setSelectedItem}
           />
         </TabsContent>
       </Tabs>
@@ -263,6 +237,17 @@ export function MyAgendaView({ vl6Events, personalEvents, googleEvents }: MyAgen
         event={drawerState.event}
         defaultStart={drawerState.defaultStart}
       />
+
+      <EventDetailPanel
+        item={selectedItem}
+        onOpenChange={(open) => {
+          if (!open) setSelectedItem(null);
+        }}
+        isVl6InDrawer={isVl6InDrawer}
+        onOpenVl6Drawer={(id) => agenda?.openAgenda(id)}
+        onEditPersonal={openEditPersonal}
+        personalNotes={personalNotes}
+      />
     </div>
   );
 }
@@ -271,17 +256,13 @@ function ItemList({
   items,
   emptyTitle,
   overlapping,
-  isVl6InDrawer,
-  onOpenVl6,
-  onOpenPersonal,
+  onSelectItem,
   action,
 }: {
   items: CalendarItem[];
   emptyTitle: string;
   overlapping: Set<string>;
-  isVl6InDrawer: (item: CalendarItem) => boolean;
-  onOpenVl6: (id: string) => void;
-  onOpenPersonal: (item: CalendarItem) => void;
+  onSelectItem: (item: CalendarItem) => void;
   action?: React.ReactNode;
 }) {
   if (items.length === 0) {
@@ -301,9 +282,7 @@ function ItemList({
           key={`${item.source}-${item.id}`}
           item={item}
           hasConflict={overlapping.has(item.id)}
-          clickableVl6={isVl6InDrawer(item)}
-          onOpenVl6={onOpenVl6}
-          onOpenPersonal={onOpenPersonal}
+          onSelectItem={onSelectItem}
         />
       ))}
     </div>
@@ -313,15 +292,11 @@ function ItemList({
 function CalendarItemRow({
   item,
   hasConflict,
-  clickableVl6,
-  onOpenVl6,
-  onOpenPersonal,
+  onSelectItem,
 }: {
   item: CalendarItem;
   hasConflict: boolean;
-  clickableVl6: boolean;
-  onOpenVl6: (id: string) => void;
-  onOpenPersonal: (item: CalendarItem) => void;
+  onSelectItem: (item: CalendarItem) => void;
 }) {
   const content = (
     <>
@@ -370,36 +345,13 @@ function CalendarItemRow({
     return <div className={cn(rowClassName, 'cursor-default')}>{content}</div>;
   }
 
-  if (item.source === 'vl6') {
-    if (clickableVl6) {
-      return (
-        <button
-          type="button"
-          onClick={() => onOpenVl6(item.id)}
-          className={cn(rowClassName, 'hover:bg-background w-full')}
-        >
-          {content}
-        </button>
-      );
-    }
-    return (
-      <Link href={`/eventos/${item.id}`} className={cn(rowClassName, 'hover:bg-background')}>
-        {content}
-      </Link>
-    );
-  }
-
-  if (item.source === 'personal') {
-    return (
-      <button
-        type="button"
-        onClick={() => onOpenPersonal(item)}
-        className={cn(rowClassName, 'hover:bg-background w-full')}
-      >
-        {content}
-      </button>
-    );
-  }
-
-  return <div className={cn(rowClassName, 'cursor-default')}>{content}</div>;
+  return (
+    <button
+      type="button"
+      onClick={() => onSelectItem(item)}
+      className={cn(rowClassName, 'hover:bg-background w-full')}
+    >
+      {content}
+    </button>
+  );
 }

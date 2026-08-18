@@ -80,6 +80,9 @@ export function GoogleConnectionCard({
               {connection.googleAccountEmail ?? 'Conta conectada'} ·{' '}
               {formatLastSync(connection.lastSyncedAt)}
             </p>
+            {connection.syncStatus === 'error' && connection.lastError && (
+              <p className="mt-0.5 text-xs text-red-600">{connection.lastError}</p>
+            )}
           </div>
         </div>
         <div className="flex items-center gap-2">

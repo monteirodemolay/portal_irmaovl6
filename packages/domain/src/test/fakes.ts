@@ -69,9 +69,13 @@ import type { INotificationPreferenceRepository } from '../modules/notification/
 import type { Event } from '../modules/agenda/entities/event.entity';
 import type { EventAttendance } from '../modules/agenda/entities/event-attendance.entity';
 import type { PersonalEvent } from '../modules/agenda/entities/personal-event.entity';
+import type { PersonalTask } from '../modules/agenda/entities/personal-task.entity';
+import type { PersonalNote } from '../modules/agenda/entities/personal-note.entity';
 import type { IEventRepository } from '../modules/agenda/repositories/event.repository';
 import type { IEventAttendanceRepository } from '../modules/agenda/repositories/event-attendance.repository';
 import type { IPersonalEventRepository } from '../modules/agenda/repositories/personal-event.repository';
+import type { IPersonalTaskRepository } from '../modules/agenda/repositories/personal-task.repository';
+import type { IPersonalNoteRepository } from '../modules/agenda/repositories/personal-note.repository';
 import type { FileCategory } from '../modules/document-management/entities/file-category.entity';
 import type { IFileCategoryRepository } from '../modules/document-management/repositories/file-category.repository';
 import type { GalleryAlbum } from '../modules/gallery/entities/gallery-album.entity';
@@ -917,6 +921,56 @@ export class InMemoryPersonalEventRepository implements IPersonalEventRepository
   }
   async update(event: PersonalEvent) {
     this.byId.set(event.id, event);
+  }
+}
+
+export class InMemoryPersonalTaskRepository implements IPersonalTaskRepository {
+  private readonly byId = new Map<string, PersonalTask>();
+
+  async findById(id: string) {
+    return this.byId.get(id) ?? null;
+  }
+  async listByUser(tenantId: string, userId: string) {
+    return [...this.byId.values()].filter(
+      (t) => t.tenantId === tenantId && t.userId === userId && t.deletedAt === null,
+    );
+  }
+  async create(task: PersonalTask) {
+    this.byId.set(task.id, task);
+  }
+  async update(task: PersonalTask) {
+    this.byId.set(task.id, task);
+  }
+}
+
+export class InMemoryPersonalNoteRepository implements IPersonalNoteRepository {
+  private readonly byId = new Map<string, PersonalNote>();
+
+  async findById(id: string) {
+    return this.byId.get(id) ?? null;
+  }
+  async listByUser(tenantId: string, userId: string) {
+    return [...this.byId.values()].filter(
+      (n) => n.tenantId === tenantId && n.userId === userId && n.deletedAt === null,
+    );
+  }
+  async findByEvent(tenantId: string, userId: string, eventoOrigem: string, eventoId: string) {
+    return (
+      [...this.byId.values()].find(
+        (n) =>
+          n.tenantId === tenantId &&
+          n.userId === userId &&
+          n.deletedAt === null &&
+          n.eventoOrigem === eventoOrigem &&
+          n.eventoId === eventoId,
+      ) ?? null
+    );
+  }
+  async create(note: PersonalNote) {
+    this.byId.set(note.id, note);
+  }
+  async update(note: PersonalNote) {
+    this.byId.set(note.id, note);
   }
 }
 
