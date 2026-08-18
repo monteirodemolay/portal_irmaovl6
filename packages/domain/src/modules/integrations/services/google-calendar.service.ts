@@ -27,6 +27,16 @@ export interface GoogleCalendarSyncResult {
   changes: GoogleCalendarEventChange[];
   /** `null` quando a API não devolveu um token novo (sincronização completa a refazer). */
   nextSyncToken: string | null;
+  /**
+   * `true` quando a busca foi uma listagem completa (sem `syncToken`, seja
+   * na primeira sincronização ou após um HTTP 410) em vez de um delta
+   * incremental. Uma listagem completa nunca devolve `status: 'cancelled'`
+   * para itens removidos — o chamador precisa reconciliar o cache local
+   * contra `changes` para detectar remoções.
+   */
+  isFullSync: boolean;
+  /** Início da janela coberta pela listagem completa (`timeMin` enviado ao Google). `null` fora de uma listagem completa. */
+  fullSyncFrom: Date | null;
 }
 
 /**

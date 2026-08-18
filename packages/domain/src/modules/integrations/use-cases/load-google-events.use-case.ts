@@ -16,9 +16,15 @@ export interface LoadGoogleEventsDeps {
 }
 
 /**
- * `loadGoogleEvents()` — sincronização incremental via `syncToken` salvo na
- * conexão. Atualiza o cache local (`googleCalendarEvents`) que "Minha
- * Agenda" lê; nunca chama a Calendar API a cada render da página.
+ * `loadGoogleEvents()` — disparado só pelo botão "Sincronizar agora" (sem
+ * cron/webhook). Por isso sempre pede uma listagem completa ao Google (nunca
+ * passa `syncToken`, mesmo que a conexão tenha um salvo): sem sincronização
+ * em segundo plano pra justificar o delta incremental, o custo extra é
+ * irrelevante e o ganho é reconciliar o cache local a cada clique — inclui
+ * remover eventos apagados no Google que a API não teria como sinalizar de
+ * outra forma (ex.: aniversário de contato excluído). Atualiza o cache local
+ * (`googleCalendarEvents`) que "Minha Agenda" lê; nunca chama a Calendar API
+ * a cada render da página.
  */
 export class LoadGoogleEventsUseCase {
   constructor(private readonly deps: LoadGoogleEventsDeps) {}
@@ -40,9 +46,10 @@ export class LoadGoogleEventsUseCase {
       const result = await this.deps.googleCalendarService.loadEvents(
         accessToken,
         connection.calendarId,
-        connection.syncToken,
+        null,
       );
 
+      const confirmedIds = new Set<string>();
       for (const change of result.changes) {
         if (change.status === 'cancelled') {
           await this.deps.eventCacheRepository.deleteByGoogleEventId(
@@ -52,6 +59,7 @@ export class LoadGoogleEventsUseCase {
           );
           continue;
         }
+        confirmedIds.add(change.googleEventId);
         const now = this.deps.clock.now();
         await this.deps.eventCacheRepository.upsert({
           id: `${ctx.uid}_${change.googleEventId}`,
@@ -70,6 +78,26 @@ export class LoadGoogleEventsUseCase {
           status: 'active',
           ativo: true,
         });
+      }
+
+      // Uma listagem completa (sem `syncToken`) nunca devolve `cancelled`
+      // para itens removidos no Google — só reflete o estado atual. Sem
+      // isso, um evento apagado no Google (ex.: aniversário de contato
+      // removido) ficaria preso no cache pra sempre depois de uma
+      // sincronização completa (primeira conexão ou recuperação de um
+      // `syncToken` expirado, HTTP 410).
+      if (result.isFullSync && result.fullSyncFrom) {
+        const cached = await this.deps.eventCacheRepository.listByUser(ctx.tenantId, ctx.uid);
+        for (const cachedEvent of cached) {
+          const coveredByFullSync = cachedEvent.inicio >= result.fullSyncFrom;
+          if (coveredByFullSync && !confirmedIds.has(cachedEvent.googleEventId)) {
+            await this.deps.eventCacheRepository.deleteByGoogleEventId(
+              ctx.tenantId,
+              ctx.uid,
+              cachedEvent.googleEventId,
+            );
+          }
+        }
       }
 
       const finishedAt = this.deps.clock.now();

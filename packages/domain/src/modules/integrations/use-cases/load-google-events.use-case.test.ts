@@ -79,6 +79,8 @@ describe('LoadGoogleEventsUseCase', () => {
         },
       ],
       nextSyncToken: 'token-abc',
+      isFullSync: false,
+      fullSyncFrom: null,
     };
 
     const result = await useCase.execute(ctx);
@@ -125,11 +127,75 @@ describe('LoadGoogleEventsUseCase', () => {
         },
       ],
       nextSyncToken: 'token-def',
+      isFullSync: false,
+      fullSyncFrom: null,
     };
 
     await useCase.execute(ctx);
 
     expect(await eventCacheRepository.listByUser('t1', 'u1')).toHaveLength(0);
+  });
+
+  it('reconcilia o cache numa sincronização completa: remove eventos que não vieram mais (ex.: aniversário de contato apagado no Google)', async () => {
+    const { useCase, connectionRepository, eventCacheRepository, googleCalendarService } =
+      buildUseCase();
+    await connectionRepository.create(buildConnection({ syncToken: null }));
+    // Cache com 2 eventos futuros: um sobrevive à sincronização completa, o
+    // outro (o aniversário apagado no Google) não aparece mais na resposta.
+    await eventCacheRepository.upsert({
+      id: 'u1_g1',
+      tenantId: 't1',
+      userId: 'u1',
+      googleEventId: 'g1',
+      titulo: 'Dentista',
+      local: null,
+      inicio: new Date('2026-08-05T09:00:00Z'),
+      fim: new Date('2026-08-05T10:00:00Z'),
+      createdAt: new Date('2026-08-01'),
+      updatedAt: new Date('2026-08-01'),
+      createdBy: 'u1',
+      updatedBy: 'u1',
+      deletedAt: null,
+      status: 'active',
+      ativo: true,
+    });
+    await eventCacheRepository.upsert({
+      id: 'u1_g2',
+      tenantId: 't1',
+      userId: 'u1',
+      googleEventId: 'g2',
+      titulo: 'Aniversário de Fulano',
+      local: null,
+      inicio: new Date('2026-08-10T00:00:00Z'),
+      fim: new Date('2026-08-11T00:00:00Z'),
+      createdAt: new Date('2026-08-01'),
+      updatedAt: new Date('2026-08-01'),
+      createdBy: 'u1',
+      updatedBy: 'u1',
+      deletedAt: null,
+      status: 'active',
+      ativo: true,
+    });
+    googleCalendarService.nextSyncResult = {
+      changes: [
+        {
+          googleEventId: 'g1',
+          status: 'confirmed',
+          titulo: 'Dentista',
+          local: null,
+          inicio: new Date('2026-08-05T09:00:00Z'),
+          fim: new Date('2026-08-05T10:00:00Z'),
+        },
+      ],
+      nextSyncToken: 'token-full',
+      isFullSync: true,
+      fullSyncFrom: new Date('2026-08-01T00:00:00Z'),
+    };
+
+    await useCase.execute(ctx);
+
+    const cached = await eventCacheRepository.listByUser('t1', 'u1');
+    expect(cached.map((event) => event.googleEventId)).toEqual(['g1']);
   });
 
   it('marca syncStatus como erro quando a chamada ao Google falha', async () => {
@@ -145,6 +211,15 @@ describe('LoadGoogleEventsUseCase', () => {
     const connection = await connectionRepository.findByUserId('t1', 'u1');
     expect(connection?.syncStatus).toBe('error');
     expect(connection?.lastError).toBe('Token expirado');
+  });
+
+  it('sempre pede uma listagem completa ao Google, mesmo com syncToken salvo (só há sincronização manual, sem cron/webhook)', async () => {
+    const { useCase, connectionRepository, googleCalendarService } = buildUseCase();
+    await connectionRepository.create(buildConnection({ syncToken: 'token-salvo-anteriormente' }));
+
+    await useCase.execute(ctx);
+
+    expect(googleCalendarService.lastLoadEventsSyncToken).toBeNull();
   });
 
   it('retorna NotFoundError sem conexão', async () => {

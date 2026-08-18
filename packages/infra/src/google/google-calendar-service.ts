@@ -153,10 +153,12 @@ export class GoogleCalendarService implements IGoogleCalendarService {
     syncToken: string | null,
   ): Promise<GoogleCalendarSyncResult> {
     const params = new URLSearchParams({ singleEvents: 'true' });
+    const isFullSync = !syncToken;
+    const fullSyncFrom = isFullSync ? new Date() : null;
     if (syncToken) {
       params.set('syncToken', syncToken);
-    } else {
-      params.set('timeMin', new Date().toISOString());
+    } else if (fullSyncFrom) {
+      params.set('timeMin', fullSyncFrom.toISOString());
     }
 
     const changes: GoogleCalendarEventChange[] = [];
@@ -180,7 +182,7 @@ export class GoogleCalendarService implements IGoogleCalendarService {
       if (data.nextSyncToken) nextSyncToken = data.nextSyncToken;
     } while (pageToken);
 
-    return { changes, nextSyncToken };
+    return { changes, nextSyncToken, isFullSync, fullSyncFrom };
   }
 
   private toChange(item: GoogleEventResource): GoogleCalendarEventChange {

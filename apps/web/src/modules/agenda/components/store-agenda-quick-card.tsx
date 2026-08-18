@@ -1,6 +1,7 @@
 'use client';
 
 import { Badge, Button, CalendarDays, Card, Clock, MapPin } from '@vl6/ui';
+import { DashboardSectionHeading } from '@/modules/dashboard/components/dashboard-section-heading';
 import { EVENT_KIND_LABELS } from '@vl6/shared';
 import { formatEventDate } from '@/modules/dashboard/lib/format-event-date';
 import { useAgendaOptional } from './agenda-provider';
@@ -15,6 +16,7 @@ export function StoreAgendaQuickCard() {
   if (!nextEvent) {
     return (
       <Card className="flex flex-col gap-3 p-4">
+        <DashboardSectionHeading icon={CalendarDays} title="Agenda da Loja" />
         <p className="text-muted text-sm">
           Sessões e eventos oficiais, com anexos e confirmação de presença.
         </p>

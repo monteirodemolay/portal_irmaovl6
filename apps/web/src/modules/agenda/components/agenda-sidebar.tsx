@@ -28,9 +28,7 @@ export function AgendaSidebar({
 }: AgendaSidebarProps) {
   return (
     <div className="flex flex-col gap-6">
-      <SidebarSection label="Agenda da Loja">
-        <StoreAgendaQuickCard />
-      </SidebarSection>
+      <StoreAgendaQuickCard />
 
       <SidebarSection label="Tarefas">
         <PersonalTasksWidget tasks={personalTasks} />

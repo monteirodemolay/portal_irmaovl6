@@ -1158,7 +1158,13 @@ export class FakeGoogleCalendarService implements IGoogleCalendarService {
   public deletedEventIds: string[] = [];
   public revokedTokens: string[] = [];
   private counter = 0;
-  public nextSyncResult: GoogleCalendarSyncResult = { changes: [], nextSyncToken: null };
+  public nextSyncResult: GoogleCalendarSyncResult = {
+    changes: [],
+    nextSyncToken: null,
+    isFullSync: false,
+    fullSyncFrom: null,
+  };
+  public lastLoadEventsSyncToken: string | null | undefined;
   public tokensToReturn: GoogleOAuthTokens = {
     accessToken: 'access-token',
     refreshToken: 'refresh-token',
@@ -1175,7 +1181,12 @@ export class FakeGoogleCalendarService implements IGoogleCalendarService {
   async refreshAccessToken(): Promise<GoogleOAuthTokens> {
     return this.tokensToReturn;
   }
-  async loadEvents(): Promise<GoogleCalendarSyncResult> {
+  async loadEvents(
+    _accessToken: string,
+    _calendarId: string,
+    syncToken: string | null,
+  ): Promise<GoogleCalendarSyncResult> {
+    this.lastLoadEventsSyncToken = syncToken;
     return this.nextSyncResult;
   }
   async createEvent(
