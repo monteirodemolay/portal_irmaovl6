@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Compass, ExternalLink } from '@vl6/ui';
+import { Compass } from '@vl6/ui';
 
 const links = [
   { href: '/sobre-o-portal', label: 'Sobre o Portal' },
@@ -50,7 +50,7 @@ export default function PublicInfoLayout({ children }: { children: React.ReactNo
               rel="noopener noreferrer"
               className="text-muted hover:text-primary inline-flex items-center gap-1 transition-colors"
             >
-              Site da Loja <ExternalLink size={12} />
+              Site da Loja
             </a>
           </nav>
           <p className="text-muted text-xs leading-6">
