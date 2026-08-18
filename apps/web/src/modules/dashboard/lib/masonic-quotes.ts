@@ -1,3 +1,5 @@
+import type { QuoteRotationMode } from '@vl6/shared';
+
 export interface MasonicQuote {
   text: string;
   author: string;
@@ -9,8 +11,8 @@ export interface MasonicQuote {
  * autoria exata é discutida na tradição popular), metade provérbios da
  * tradição maçônica (pedra bruta, esquadro e compasso, luz e trevas —
  * sem atribuição a uma pessoa real, pois são máximas de ofício, não
- * citações). `pickDailyQuote` escolhe uma por dia, de forma determinística,
- * para todo mundo ver a mesma "frase do dia" na Loja.
+ * citações). Serve de fallback em `pickQuote` enquanto o Admin não cadastra
+ * nenhuma frase própria em Conteúdo → Frases.
  */
 export const MASONIC_QUOTES: MasonicQuote[] = [
   { text: 'Só sei que nada sei.', author: 'Sócrates' },
@@ -328,9 +330,38 @@ function saoPauloDateKey(date: Date): string {
   return new Intl.DateTimeFormat('en-CA', { timeZone: SAO_PAULO_TIME_ZONE }).format(date);
 }
 
-/** Escolha determinística por dia (fuso da Loja) — todo mundo vê a mesma frase no mesmo dia. */
-export function pickDailyQuote(date: Date): MasonicQuote {
-  const key = saoPauloDateKey(date).replace(/-/g, '');
-  const index = Number(key) % MASONIC_QUOTES.length;
-  return MASONIC_QUOTES[index]!;
+export interface QuoteRotationSettings {
+  modo: QuoteRotationMode;
+  intervaloMinutos: number | null;
+}
+
+/**
+ * Escolhe a "frase do dia" a partir do pool cadastrado pelo Admin em
+ * Conteúdo → Frases (ou do banco embutido acima, quando o Admin ainda não
+ * cadastrou nenhuma), conforme a cadência de rotação escolhida:
+ * - `recarga`: sorteio novo a cada carregamento da página;
+ * - `diaria`: escolha determinística por dia (fuso da Loja) — todo mundo vê
+ *   a mesma frase no mesmo dia;
+ * - `intervalo`: troca a cada `intervaloMinutos`, igual para todo mundo
+ *   dentro da mesma janela de tempo.
+ */
+export function pickQuote(
+  quotes: MasonicQuote[],
+  settings: QuoteRotationSettings,
+  now: Date,
+): MasonicQuote {
+  const pool = quotes.length > 0 ? quotes : MASONIC_QUOTES;
+
+  if (settings.modo === 'recarga') {
+    const index = Math.floor(Math.random() * pool.length);
+    return pool[index]!;
+  }
+
+  if (settings.modo === 'intervalo' && settings.intervaloMinutos) {
+    const bucket = Math.floor(now.getTime() / (settings.intervaloMinutos * 60_000));
+    return pool[bucket % pool.length]!;
+  }
+
+  const key = saoPauloDateKey(now).replace(/-/g, '');
+  return pool[Number(key) % pool.length]!;
 }

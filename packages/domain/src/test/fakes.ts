@@ -44,9 +44,11 @@ import type { IPublicationConsentRepository } from '../modules/central/repositor
 import type { News } from '../modules/content/entities/news.entity';
 import type { Announcement } from '../modules/content/entities/announcement.entity';
 import type { NewsComment } from '../modules/content/entities/news-comment.entity';
+import type { InspirationalQuote } from '../modules/content/entities/inspirational-quote.entity';
 import type { INewsRepository } from '../modules/content/repositories/news.repository';
 import type { IAnnouncementRepository } from '../modules/content/repositories/announcement.repository';
 import type { INewsCommentRepository } from '../modules/content/repositories/news-comment.repository';
+import type { IInspirationalQuoteRepository } from '../modules/content/repositories/inspirational-quote.repository';
 import type { AuditLog } from '../modules/audit/entities/audit-log.entity';
 import type {
   IAuditLogRepository,
@@ -458,6 +460,26 @@ export class InMemoryAnnouncementRepository implements IAnnouncementRepository {
   }
   async update(announcement: Announcement) {
     this.byId.set(announcement.id, announcement);
+  }
+}
+
+export class InMemoryInspirationalQuoteRepository implements IInspirationalQuoteRepository {
+  private readonly byId = new Map<string, InspirationalQuote>();
+
+  async findById(id: string) {
+    return this.byId.get(id) ?? null;
+  }
+  async listAll(tenantId: string) {
+    return [...this.byId.values()].filter((q) => q.tenantId === tenantId);
+  }
+  async listActive(tenantId: string) {
+    return [...this.byId.values()].filter((q) => q.tenantId === tenantId && q.ativa);
+  }
+  async create(quote: InspirationalQuote) {
+    this.byId.set(quote.id, quote);
+  }
+  async update(quote: InspirationalQuote) {
+    this.byId.set(quote.id, quote);
   }
 }
 

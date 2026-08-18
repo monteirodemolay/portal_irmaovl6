@@ -74,6 +74,10 @@ export const RESOURCE_KEYS = [
   // de "meus favoritos"/"minhas notificações" — por isso `membro` não
   // recebe nenhuma entrada deste recurso no seed abaixo.
   'archiveContribution',
+  // Frases inspiracionais do Início (Conteúdo → Frases) — recurso próprio
+  // em vez de reaproveitar `announcement`/`news`: rotação e exibição têm
+  // regras de negócio (modo/intervalo) e ciclo de vida diferentes.
+  'quote',
 ] as const;
 export type ResourceKey = (typeof RESOURCE_KEYS)[number];
 
@@ -133,6 +137,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<RoleKey, PermissionKey[]> = {
     'archiveExhibition:manage',
     'archiveCatalog:manage',
     'archiveContribution:manage',
+    'quote:manage',
   ],
   membro: [
     'tenant:read',
@@ -152,5 +157,6 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<RoleKey, PermissionKey[]> = {
     'archiveRelation:read',
     'archiveExhibition:read',
     'archiveCatalog:read',
+    'quote:read',
   ],
 };

@@ -13,7 +13,7 @@ import { DailyQuoteCard } from '@/modules/dashboard/components/daily-quote-card'
 import { DashboardSectionHeading } from '@/modules/dashboard/components/dashboard-section-heading';
 import { NextEventCard } from '@/modules/dashboard/components/next-event-card';
 import { timeOfDayGreeting } from '@/modules/dashboard/lib/greeting';
-import { pickDailyQuote } from '@/modules/dashboard/lib/masonic-quotes';
+import { pickQuote } from '@/modules/dashboard/lib/masonic-quotes';
 
 export default async function DashboardPage() {
   const [session, current] = await Promise.all([getCurrentSession(), getCurrentTenant()]);
@@ -27,7 +27,7 @@ export default async function DashboardPage() {
     session.user.id,
   );
 
-  const [announcements, events, anniversaries, documentos, biblioteca, albuns, favoritos] =
+  const [announcements, events, anniversaries, documentos, biblioteca, albuns, favoritos, quotes] =
     await Promise.all([
       hasPermission(authContext, 'announcement:read')
         ? container.useCases.listActiveAnnouncements.execute(authContext.tenantId)
@@ -46,6 +46,9 @@ export default async function DashboardPage() {
         ? container.repositories.galleryAlbum.countByTenant(authContext.tenantId)
         : Promise.resolve(null),
       container.useCases.listMyFavorites.execute(authContext).then((items) => items.length),
+      hasPermission(authContext, 'quote:read')
+        ? container.useCases.listActiveInspirationalQuotes.execute(authContext)
+        : Promise.resolve([]),
     ]);
 
   const featuredEvent = events[0] ?? null;
@@ -57,7 +60,11 @@ export default async function DashboardPage() {
   const hasAnniversaries = anniversaries.length > 0;
   const now = new Date();
   const greeting = timeOfDayGreeting(now);
-  const dailyQuote = pickDailyQuote(now);
+  const dailyQuote = pickQuote(
+    quotes.map((q) => ({ text: q.texto, author: q.autor })),
+    current.settings?.citacaoRotacao ?? { modo: 'diaria', intervaloMinutos: null },
+    now,
+  );
 
   return (
     <div className="flex flex-col gap-8">

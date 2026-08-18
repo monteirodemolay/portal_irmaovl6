@@ -30,6 +30,7 @@ export const ADMIN_AREA_TABS: Record<AdminAreaKey, AreaTabDef[]> = {
     { href: '/admin/conteudo/avisos', label: 'Avisos', permission: 'announcement:read' },
     { href: '/admin/conteudo/agenda', label: 'Agenda', permission: 'event:read' },
     { href: '/admin/conteudo/noticias', label: 'Notícias', permission: 'news:read' },
+    { href: '/admin/conteudo/frases', label: 'Frases', permission: 'quote:read' },
   ],
   acervo: [
     { href: '/admin/acervo/arquivos', label: 'Documentos', permission: 'file:read' },

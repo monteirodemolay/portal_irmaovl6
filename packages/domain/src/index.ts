@@ -103,9 +103,11 @@ export * from './modules/central/use-cases/list-central-profiles-admin-view.use-
 export * from './modules/content/entities/news.entity';
 export * from './modules/content/entities/announcement.entity';
 export * from './modules/content/entities/news-comment.entity';
+export * from './modules/content/entities/inspirational-quote.entity';
 export * from './modules/content/repositories/news.repository';
 export * from './modules/content/repositories/announcement.repository';
 export * from './modules/content/repositories/news-comment.repository';
+export * from './modules/content/repositories/inspirational-quote.repository';
 export * from './modules/content/use-cases/create-news.use-case';
 export * from './modules/content/use-cases/update-news.use-case';
 export * from './modules/content/use-cases/publish-news.use-case';
@@ -117,6 +119,11 @@ export * from './modules/content/use-cases/list-active-announcements.use-case';
 export * from './modules/content/use-cases/list-all-announcements.use-case';
 export * from './modules/content/use-cases/create-news-comment.use-case';
 export * from './modules/content/use-cases/moderate-news-comment.use-case';
+export * from './modules/content/use-cases/create-inspirational-quote.use-case';
+export * from './modules/content/use-cases/update-inspirational-quote.use-case';
+export * from './modules/content/use-cases/toggle-inspirational-quote-active.use-case';
+export * from './modules/content/use-cases/list-active-inspirational-quotes.use-case';
+export * from './modules/content/use-cases/list-all-inspirational-quotes.use-case';
 export * from './modules/content/use-cases/list-news-comments.use-case';
 
 // Audit

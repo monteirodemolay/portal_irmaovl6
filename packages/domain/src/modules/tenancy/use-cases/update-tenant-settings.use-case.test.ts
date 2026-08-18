@@ -20,6 +20,7 @@ function buildSettings(overrides: Partial<TenantSettings> = {}): TenantSettings 
     itensMenu: [],
     rodape: { textoDireitosAutorais: '', links: [] },
     integracoesHabilitadas: [],
+    citacaoRotacao: { modo: 'diaria', intervaloMinutos: null },
     createdAt: new Date('2025-01-01'),
     updatedAt: new Date('2025-01-01'),
     createdBy: 'admin-1',

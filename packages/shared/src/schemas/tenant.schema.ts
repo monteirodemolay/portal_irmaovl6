@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { SUPPORTED_LOCALES } from '../enums/locale';
+import { quoteRotationSchema } from './content.schema';
 
 const DOMAIN_REGEX =
   /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+$/i;
@@ -67,5 +68,6 @@ export const DEFAULT_TENANT_BRANDING: TenantBrandingInput = {
 
 export const updateTenantSettingsSchema = z.object({
   idiomaPadrao: z.enum(SUPPORTED_LOCALES),
+  citacaoRotacao: quoteRotationSchema,
 });
 export type UpdateTenantSettingsInput = z.infer<typeof updateTenantSettingsSchema>;

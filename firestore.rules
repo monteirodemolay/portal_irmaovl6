@@ -227,6 +227,11 @@ service cloud.firestore {
       allow write: if sameTenant(request.resource.data) && hasPermission('announcement:manage');
     }
 
+    match /inspirationalQuotes/{id} {
+      allow read: if sameTenant(resource.data) && hasPermission('quote:read') && (resource.data.ativa == true || hasPermission('quote:manage'));
+      allow write: if sameTenant(request.resource.data) && hasPermission('quote:manage');
+    }
+
     // ---------------------------------------------------------------
     // Gallery
     // ---------------------------------------------------------------

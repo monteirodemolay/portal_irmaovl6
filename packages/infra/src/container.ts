@@ -11,6 +11,11 @@ import {
   ClaimMemberAccountUseCase,
   ConfirmAttendanceUseCase,
   CreateAnnouncementUseCase,
+  CreateInspirationalQuoteUseCase,
+  UpdateInspirationalQuoteUseCase,
+  ToggleInspirationalQuoteActiveUseCase,
+  ListAllInspirationalQuotesUseCase,
+  ListActiveInspirationalQuotesUseCase,
   CreateApiKeyUseCase,
   CreateArchiveCollectionUseCase,
   UpdateArchiveCollectionUseCase,
@@ -152,6 +157,7 @@ import { NodeDnsResolver } from './dns/node-dns-resolver';
 import { getAdminFirestore } from './firebase/admin-app';
 import { NodeApiKeyGenerator } from './security/node-api-key-generator';
 import { FirestoreAnnouncementRepository } from './firestore/repositories/announcement.repository';
+import { FirestoreInspirationalQuoteRepository } from './firestore/repositories/inspirational-quote.repository';
 import { FirestoreApiKeyRepository } from './firestore/repositories/api-key.repository';
 import { FirestoreArchiveCollectionRepository } from './firestore/repositories/archive-collection.repository';
 import { FirestoreArchiveRelationRepository } from './firestore/repositories/archive-relation.repository';
@@ -243,6 +249,11 @@ export function createServerContainer() {
     committee: withAudit(new FirestoreCommitteeRepository(db), 'committees', auditDeps),
     news: withAudit(new FirestoreNewsRepository(db), 'news', auditDeps),
     announcement: withAudit(new FirestoreAnnouncementRepository(db), 'announcements', auditDeps),
+    inspirationalQuote: withAudit(
+      new FirestoreInspirationalQuoteRepository(db),
+      'inspirationalQuotes',
+      auditDeps,
+    ),
     auditLog: auditLogRepository,
     fileCategory: new FirestoreFileCategoryRepository(db),
     fileAsset: new FirestoreFileAssetRepository(db),
@@ -513,6 +524,25 @@ export function createServerContainer() {
     }),
     listAllAnnouncements: new ListAllAnnouncementsUseCase({
       announcementRepository: repositories.announcement,
+    }),
+    createInspirationalQuote: new CreateInspirationalQuoteUseCase({
+      quoteRepository: repositories.inspirationalQuote,
+      clock,
+      idGenerator,
+    }),
+    updateInspirationalQuote: new UpdateInspirationalQuoteUseCase({
+      quoteRepository: repositories.inspirationalQuote,
+      clock,
+    }),
+    toggleInspirationalQuoteActive: new ToggleInspirationalQuoteActiveUseCase({
+      quoteRepository: repositories.inspirationalQuote,
+      clock,
+    }),
+    listAllInspirationalQuotes: new ListAllInspirationalQuotesUseCase({
+      quoteRepository: repositories.inspirationalQuote,
+    }),
+    listActiveInspirationalQuotes: new ListActiveInspirationalQuotesUseCase({
+      quoteRepository: repositories.inspirationalQuote,
     }),
     createNewsComment: new CreateNewsCommentUseCase({
       newsCommentRepository: repositories.newsComment,

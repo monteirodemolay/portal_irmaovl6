@@ -27,3 +27,20 @@ export const newsCommentSchema = z.object({
   texto: z.string().min(1).max(1000),
 });
 export type NewsCommentFormValues = z.infer<typeof newsCommentSchema>;
+
+export const inspirationalQuoteSchema = z.object({
+  texto: z.string().min(3).max(280),
+  autor: z.string().min(1).max(120),
+});
+export type InspirationalQuoteFormValues = z.infer<typeof inspirationalQuoteSchema>;
+
+/** Cadência de rotação da "frase do dia" no Início — ver TenantSettings.citacaoRotacao. */
+export const QUOTE_ROTATION_MODES = ['recarga', 'diaria', 'intervalo'] as const;
+export type QuoteRotationMode = (typeof QUOTE_ROTATION_MODES)[number];
+
+export const quoteRotationSchema = z.object({
+  modo: z.enum(QUOTE_ROTATION_MODES),
+  // Só usado quando modo === 'intervalo'; null nos demais modos.
+  intervaloMinutos: z.coerce.number().int().min(5).max(10080).nullable(),
+});
+export type QuoteRotationFormValues = z.infer<typeof quoteRotationSchema>;

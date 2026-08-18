@@ -4,9 +4,12 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import {
   announcementSchema,
+  inspirationalQuoteSchema,
   newsCommentSchema,
   newsSchema,
+  quoteRotationSchema,
   type AnnouncementFormValues,
+  type InspirationalQuoteFormValues,
   type NewsFormValues,
 } from '@vl6/shared';
 import { createServerContainer } from '@vl6/infra';
@@ -166,6 +169,117 @@ export async function createNewsCommentAction(
 
   revalidatePath(`/noticias/${slug}`);
   return { error: null };
+}
+
+export async function createInspirationalQuoteAction(
+  _prevState: ContentActionState,
+  formData: FormData,
+): Promise<ContentActionState> {
+  const session = await requireSession();
+
+  let input: InspirationalQuoteFormValues;
+  try {
+    input = inspirationalQuoteSchema.parse({
+      texto: formData.get('texto'),
+      autor: formData.get('autor'),
+    });
+  } catch {
+    return { error: 'Dados inválidos. Verifique os campos obrigatórios.' };
+  }
+
+  const container = createServerContainer();
+  const result = await container.useCases.createInspirationalQuote.execute(
+    session.authContext,
+    input,
+  );
+  if (!result.ok) return { error: result.error.message };
+
+  revalidatePath('/admin/conteudo/frases');
+  revalidatePath('/dashboard');
+  redirect('/admin/conteudo/frases');
+}
+
+export async function updateInspirationalQuoteAction(
+  quoteId: string,
+  _prevState: ContentActionState,
+  formData: FormData,
+): Promise<ContentActionState> {
+  const session = await requireSession();
+
+  let input: InspirationalQuoteFormValues;
+  try {
+    input = inspirationalQuoteSchema.parse({
+      texto: formData.get('texto'),
+      autor: formData.get('autor'),
+    });
+  } catch {
+    return { error: 'Dados inválidos. Verifique os campos obrigatórios.' };
+  }
+
+  const container = createServerContainer();
+  const result = await container.useCases.updateInspirationalQuote.execute(
+    session.authContext,
+    quoteId,
+    input,
+  );
+  if (!result.ok) return { error: result.error.message };
+
+  revalidatePath('/admin/conteudo/frases');
+  revalidatePath('/dashboard');
+  return { error: null };
+}
+
+export async function toggleInspirationalQuoteActiveAction(
+  quoteId: string,
+  ativa: boolean,
+): Promise<void> {
+  const session = await requireSession();
+  const container = createServerContainer();
+  const result = await container.useCases.toggleInspirationalQuoteActive.execute(
+    session.authContext,
+    quoteId,
+    ativa,
+  );
+  if (!result.ok) throw new Error(result.error.message);
+
+  revalidatePath('/admin/conteudo/frases');
+  revalidatePath('/dashboard');
+}
+
+export interface QuoteRotationActionState {
+  error: string | null;
+  success: boolean;
+}
+
+export async function updateQuoteRotationAction(
+  _prevState: QuoteRotationActionState,
+  formData: FormData,
+): Promise<QuoteRotationActionState> {
+  const session = await requireSession();
+
+  const intervaloMinutosRaw = formData.get('intervaloMinutos');
+  let input;
+  try {
+    input = quoteRotationSchema.parse({
+      modo: formData.get('modo'),
+      intervaloMinutos: intervaloMinutosRaw ? intervaloMinutosRaw : null,
+    });
+  } catch {
+    return { error: 'Dados inválidos. Verifique os campos obrigatórios.', success: false };
+  }
+
+  const container = createServerContainer();
+  const result = await container.useCases.updateTenantSettings.execute(session.authContext, {
+    citacaoRotacao: {
+      modo: input.modo,
+      intervaloMinutos: input.modo === 'intervalo' ? input.intervaloMinutos : null,
+    },
+  });
+  if (!result.ok) return { error: result.error.message, success: false };
+
+  revalidatePath('/admin/conteudo/frases');
+  revalidatePath('/dashboard');
+  return { error: null, success: true };
 }
 
 export async function moderateNewsCommentAction(

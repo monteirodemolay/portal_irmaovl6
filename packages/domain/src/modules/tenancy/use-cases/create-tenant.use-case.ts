@@ -96,6 +96,7 @@ export class CreateTenantUseCase {
       itensMenu: [],
       rodape: { textoDireitosAutorais: `© ${tenant.nome}`, links: [] },
       integracoesHabilitadas: [],
+      citacaoRotacao: { modo: 'diaria', intervaloMinutos: null },
       createdAt: now,
       updatedAt: now,
       createdBy: ctx.uid,
