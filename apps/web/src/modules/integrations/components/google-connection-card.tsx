@@ -41,12 +41,12 @@ export function GoogleConnectionCard({
 
   if (!connection) {
     return (
-      <div className="border-border flex flex-wrap items-center justify-between gap-4 rounded-xl border bg-white p-4">
+      <div className="border-border rounded-xl border bg-white p-4">
         <div className="flex items-center gap-3">
-          <div className="border-border flex h-11 w-11 items-center justify-center rounded-lg border text-lg font-black text-[#4285f4]">
+          <div className="border-border flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border text-lg font-black text-[#4285f4]">
             G
           </div>
-          <div>
+          <div className="min-w-0">
             <p className="text-sm font-semibold">Google Agenda não conectado</p>
             <p className="text-muted text-xs">
               Conecte para ver seus compromissos Google aqui e sincronizar a Agenda da Loja.
@@ -56,7 +56,7 @@ export function GoogleConnectionCard({
         <a
           href="/api/integrations/google-calendar/start"
           onClick={() => setConnecting(true)}
-          className="bg-primary hover:bg-primary-dark flex h-9 items-center gap-2 rounded-lg px-4 text-xs font-semibold text-white transition-colors"
+          className="bg-primary hover:bg-primary-dark mt-3 flex h-9 w-fit items-center gap-2 rounded-lg px-4 text-xs font-semibold text-white transition-colors"
         >
           {connecting ? 'Conectando…' : 'Conectar'}
         </a>
@@ -66,26 +66,26 @@ export function GoogleConnectionCard({
 
   return (
     <>
-      <div className="border-border flex flex-wrap items-center justify-between gap-4 rounded-xl border bg-white p-4">
+      <div className="border-border rounded-xl border bg-white p-4">
         <div className="flex items-center gap-3">
-          <div className="border-border flex h-11 w-11 items-center justify-center rounded-lg border text-lg font-black text-[#4285f4]">
+          <div className="border-border flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border text-lg font-black text-[#4285f4]">
             G
           </div>
-          <div>
+          <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
               <p className="text-sm font-semibold">Google Agenda</p>
               <StatusBadge connection={connection} />
             </div>
-            <p className="text-muted text-xs">
+            <p className="text-muted truncate text-xs">
               {connection.googleAccountEmail ?? 'Conta conectada'} ·{' '}
               {formatLastSync(connection.lastSyncedAt)}
             </p>
-            {connection.syncStatus === 'error' && connection.lastError && (
-              <p className="mt-0.5 text-xs text-red-600">{connection.lastError}</p>
-            )}
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        {connection.syncStatus === 'error' && connection.lastError && (
+          <p className="mt-2 text-xs text-red-600">{connection.lastError}</p>
+        )}
+        <div className="mt-3 flex flex-wrap gap-2">
           <SyncNowButton />
           <Button variant="outline" size="sm" onClick={() => setPreferencesOpen(true)}>
             Gerenciar sincronização

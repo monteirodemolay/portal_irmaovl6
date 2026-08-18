@@ -132,6 +132,26 @@ export class GoogleCalendarService implements IGoogleCalendarService {
     calendarId: string,
     syncToken: string | null,
   ): Promise<GoogleCalendarSyncResult> {
+    try {
+      return await this.fetchEvents(accessToken, calendarId, syncToken);
+    } catch (error) {
+      // HTTP 410 = o `syncToken` expirou (comportamento documentado da
+      // Calendar API — acontece se a Minha Agenda ficar muito tempo sem
+      // sincronizar). O único jeito de continuar é descartar o token e
+      // pedir a lista inteira de novo, o que naturalmente gera um
+      // `nextSyncToken` novo e válido.
+      if (syncToken && error instanceof Error && error.message.includes('HTTP 410')) {
+        return await this.fetchEvents(accessToken, calendarId, null);
+      }
+      throw error;
+    }
+  }
+
+  private async fetchEvents(
+    accessToken: string,
+    calendarId: string,
+    syncToken: string | null,
+  ): Promise<GoogleCalendarSyncResult> {
     const params = new URLSearchParams({ singleEvents: 'true' });
     if (syncToken) {
       params.set('syncToken', syncToken);
