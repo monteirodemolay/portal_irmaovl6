@@ -78,7 +78,7 @@ export function MyAgendaView({
 }: MyAgendaViewProps) {
   const agenda = useAgendaOptional();
   const [view, setView] = useState('lista');
-  const [sourceFilter, setSourceFilter] = useState<CalendarSource | 'all'>('all');
+  const [sourceFilter, setSourceFilter] = useState<CalendarSource | 'all'>('vl6');
   const [selectedDay, setSelectedDay] = useState<Date>(() => new Date());
   const [selectedItem, setSelectedItem] = useState<CalendarItem | null>(null);
   const [drawerState, setDrawerState] = useState<{
