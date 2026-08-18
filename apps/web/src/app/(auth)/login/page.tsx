@@ -136,7 +136,11 @@ export default async function LoginPage() {
           <h2 className="font-display text-center text-3xl font-medium">
             {tenant?.nome ?? 'Portal do Irmão'}
           </h2>
-          <p className="text-muted mb-8 mt-2 text-center text-sm">{dictionary.login.subtitle}</p>
+          <p className="text-muted mb-3 mt-2 text-center text-sm">{dictionary.login.subtitle}</p>
+          <p className="text-muted mb-8 text-center text-xs leading-5">
+            Ambiente digital da Loja Maçônica Verdadeira Luz nº 06 para agenda, avisos,
+            documentos e memória institucional.
+          </p>
 
           <Suspense>
             <LoginForm />
@@ -166,6 +170,30 @@ export default async function LoginPage() {
             </a>
           </p>
         </div>
+
+        <nav
+          aria-label="Informações públicas"
+          className="text-muted relative z-10 mt-6 flex max-w-[540px] flex-wrap justify-center gap-x-4 gap-y-2 text-[11px]"
+        >
+          <a href="/sobre-o-portal" className="hover:text-primary transition-colors">
+            Sobre o Portal
+          </a>
+          <a href="/minha-agenda" className="hover:text-primary transition-colors">
+            Minha Agenda
+          </a>
+          <a href="/privacidade" className="font-semibold text-primary hover:underline">
+            Política de Privacidade
+          </a>
+          <a href="/termos-de-uso" className="hover:text-primary transition-colors">
+            Termos de Uso
+          </a>
+          <a href="/suporte" className="hover:text-primary transition-colors">
+            Suporte
+          </a>
+        </nav>
+        <p className="text-muted relative z-10 mt-3 text-center text-[10px]">
+          © 2026 Loja Maçônica Verdadeira Luz nº 06
+        </p>
       </section>
     </main>
   );
