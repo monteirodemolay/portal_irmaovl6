@@ -68,7 +68,7 @@ export default async function DashboardPage() {
 
   return (
     <div className="flex flex-col gap-8">
-      <div className="relative">
+      <div>
         <section className="from-primary to-primary-dark relative overflow-hidden rounded-[18px] bg-gradient-to-br px-7 pb-11 pt-7 text-white shadow-md lg:px-9">
           <div className="bg-accent/10 absolute -right-16 -top-16 h-64 w-64 rounded-full blur-3xl" />
           <div className="relative flex flex-col gap-3">
@@ -84,7 +84,12 @@ export default async function DashboardPage() {
             </p>
           </div>
         </section>
-        <div className="absolute inset-x-4 -bottom-4 sm:inset-x-6">
+        {/* Fica no fluxo normal (não absolute) — só puxado pra cima o
+            suficiente pra sobrepor a borda inferior do banner, dentro da
+            área em branco reservada por pb-11 acima. Se a frase crescer
+            (2-3 linhas), o card só empurra o restante da página pra baixo,
+            nunca cobre o texto do banner. */}
+        <div className="relative z-10 -mt-6 px-4 sm:px-6">
           <DailyQuoteCard quote={dailyQuote} />
         </div>
       </div>
