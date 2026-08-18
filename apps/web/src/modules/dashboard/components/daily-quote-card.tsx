@@ -1,18 +1,21 @@
 import { Quote } from '@vl6/ui';
 import type { MasonicQuote } from '../lib/masonic-quotes';
 
+/**
+ * Faixa compacta "flutuante" sobre a borda inferior do banner de saudação
+ * — citação e autor numa linha só, pra ocupar o mínimo de espaço vertical
+ * possível e ler como uma continuação do banner, não um bloco à parte.
+ */
 export function DailyQuoteCard({ quote }: { quote: MasonicQuote }) {
   return (
-    <div className="border-accent/30 bg-accent/5 relative flex items-start gap-3 rounded-xl border p-5">
-      <Quote size={18} strokeWidth={1.75} className="text-accent mt-0.5 shrink-0" />
-      <div className="min-w-0">
-        <p className="text-foreground text-sm italic leading-relaxed sm:text-base">
-          &ldquo;{quote.text}&rdquo;
-        </p>
-        <p className="text-muted mt-2 text-xs font-medium uppercase tracking-wide">
-          {quote.author}
-        </p>
-      </div>
+    <div className="bg-surface border-border flex items-center gap-2 rounded-xl border p-3 shadow-lg">
+      <Quote size={14} strokeWidth={1.75} className="text-accent shrink-0" />
+      <p className="text-foreground min-w-0 truncate text-xs italic sm:text-sm">
+        &ldquo;{quote.text}&rdquo;{' '}
+        <span className="text-muted font-medium uppercase not-italic tracking-wide">
+          — {quote.author}
+        </span>
+      </p>
     </div>
   );
 }

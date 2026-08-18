@@ -5,7 +5,6 @@ import { getUpcomingEventsForPortal } from '@/lib/agenda/get-upcoming-events';
 import { getCurrentSession } from '@/lib/auth/get-current-session';
 import { resolveMemberDisplayName } from '@/lib/membership/resolve-display-name';
 import { getCurrentTenant } from '@/lib/tenant/get-current-tenant';
-import { MemberDegreeBadge } from '@/components/membership/member-degree-badge';
 import { AcervoPanel } from '@/modules/dashboard/components/acervo-panel';
 import { AgendaPanel } from '@/modules/dashboard/components/agenda-panel';
 import { AnniversariesPanel } from '@/modules/dashboard/components/anniversaries-panel';
@@ -62,25 +61,26 @@ export default async function DashboardPage() {
 
   return (
     <div className="flex flex-col gap-8">
-      <section className="from-primary to-primary-dark relative overflow-hidden rounded-[18px] bg-gradient-to-br px-7 py-7 text-white shadow-md lg:px-9">
-        <div className="bg-accent/10 absolute -right-16 -top-16 h-64 w-64 rounded-full blur-3xl" />
-        <div className="relative flex flex-col gap-3">
-          <p className="text-accent text-xs font-semibold uppercase tracking-widest">
-            {current.tenant.nome}
-          </p>
-          <div className="flex flex-wrap items-center gap-3">
+      <div className="relative">
+        <section className="from-primary to-primary-dark relative overflow-hidden rounded-[18px] bg-gradient-to-br px-7 pb-11 pt-7 text-white shadow-md lg:px-9">
+          <div className="bg-accent/10 absolute -right-16 -top-16 h-64 w-64 rounded-full blur-3xl" />
+          <div className="relative flex flex-col gap-3">
+            <p className="text-accent text-xs font-semibold uppercase tracking-widest">
+              {current.tenant.nome}
+            </p>
             <h1 className="font-display text-3xl font-semibold leading-[1.1] sm:text-4xl">
               {greeting}. Seja bem-vindo, {firstName}
             </h1>
-            {member && <MemberDegreeBadge grau={member.grau} compact />}
+            <p className="max-w-xl text-sm text-white/70">
+              Acompanhe a agenda, os avisos e o acervo da {current.tenant.nome} — tudo em um só
+              lugar.
+            </p>
           </div>
-          <p className="max-w-xl text-sm text-white/70">
-            Acompanhe a agenda, os avisos e o acervo da {current.tenant.nome} — tudo em um só lugar.
-          </p>
+        </section>
+        <div className="absolute inset-x-4 -bottom-4 sm:inset-x-6">
+          <DailyQuoteCard quote={dailyQuote} />
         </div>
-      </section>
-
-      <DailyQuoteCard quote={dailyQuote} />
+      </div>
 
       <section className="flex flex-col gap-3">
         <DashboardSectionHeading icon={Sparkles} title="Próximos da Loja" />

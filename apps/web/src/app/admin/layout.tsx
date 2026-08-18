@@ -63,6 +63,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           fotoUrl={member?.fotoUrl ?? null}
           roleLabel={roleDisplayLabel(session.role)}
           email={session.user.email}
+          grau={member?.grau ?? null}
           notifications={notificationsPage.items}
           unreadCount={unreadCount}
         />
