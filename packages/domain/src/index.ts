@@ -124,6 +124,17 @@ export * from './modules/content/use-cases/update-inspirational-quote.use-case';
 export * from './modules/content/use-cases/toggle-inspirational-quote-active.use-case';
 export * from './modules/content/use-cases/list-active-inspirational-quotes.use-case';
 export * from './modules/content/use-cases/list-all-inspirational-quotes.use-case';
+export * from './modules/content/use-cases/update-announcement.use-case';
+export * from './modules/content/use-cases/delete-announcement.use-case';
+export * from './modules/content/use-cases/hard-delete-announcement.use-case';
+export * from './modules/content/use-cases/list-concluded-announcements.use-case';
+export * from './modules/content/use-cases/list-all-active-announcements.use-case';
+export * from './modules/content/use-cases/delete-news.use-case';
+export * from './modules/content/use-cases/hard-delete-news.use-case';
+export * from './modules/content/use-cases/list-concluded-news.use-case';
+export * from './modules/content/use-cases/delete-inspirational-quote.use-case';
+export * from './modules/content/use-cases/hard-delete-inspirational-quote.use-case';
+export * from './modules/content/use-cases/list-concluded-inspirational-quotes.use-case';
 export * from './modules/content/use-cases/list-news-comments.use-case';
 
 // Audit
@@ -174,6 +185,9 @@ export * from './modules/agenda/repositories/personal-task.repository';
 export * from './modules/agenda/repositories/personal-note.repository';
 export * from './modules/agenda/use-cases/create-event.use-case';
 export * from './modules/agenda/use-cases/update-event.use-case';
+export * from './modules/agenda/use-cases/delete-event.use-case';
+export * from './modules/agenda/use-cases/hard-delete-event.use-case';
+export * from './modules/agenda/use-cases/list-concluded-events.use-case';
 export * from './modules/agenda/use-cases/list-upcoming-events.use-case';
 export * from './modules/agenda/use-cases/list-events-in-range.use-case';
 export * from './modules/agenda/use-cases/confirm-attendance.use-case';

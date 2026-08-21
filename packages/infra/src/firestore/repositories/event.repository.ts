@@ -1,6 +1,7 @@
 import { Timestamp, type Firestore, type Query } from 'firebase-admin/firestore';
 import type { Event, IEventRepository, PageRequest, PageResult } from '@vl6/domain';
 import { createEntityConverter } from '../converters/entity.converter';
+import { paginateInMemory } from '../paginate-in-memory';
 
 const COLLECTION = 'events';
 const DATE_FIELDS = ['dataInicio', 'dataFim'] as const;
@@ -57,6 +58,35 @@ export class FirestoreEventRepository implements IEventRepository {
     return snap.data().count;
   }
 
+  async listConcluded(
+    tenantId: string,
+    page: PageRequest,
+    at: Date = new Date(),
+  ): Promise<PageResult<Event>> {
+    // "Passado" = dataFim (se houver) ou dataInicio antes de `at` — duas
+    // consultas mescladas, mesma estratégia de `AnnouncementRepository`.
+    const [semFim, comFim, excluidos] = await Promise.all([
+      this.collection
+        .where('tenantId', '==', tenantId)
+        .where('deletedAt', '==', null)
+        .where('dataFim', '==', null)
+        .where('dataInicio', '<', Timestamp.fromDate(at))
+        .get(),
+      this.collection
+        .where('tenantId', '==', tenantId)
+        .where('deletedAt', '==', null)
+        .where('dataFim', '<', Timestamp.fromDate(at))
+        .get(),
+      this.collection.where('tenantId', '==', tenantId).where('deletedAt', '!=', null).get(),
+    ]);
+    const byId = new Map<string, Event>();
+    for (const doc of [...semFim.docs, ...comFim.docs, ...excluidos.docs]) {
+      byId.set(doc.id, doc.data());
+    }
+    const items = [...byId.values()].sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
+    return paginateInMemory(items, page);
+  }
+
   private async paginate(query: Query<Event>, page: PageRequest): Promise<PageResult<Event>> {
     let paged = query;
     if (page.cursor) {
@@ -79,5 +109,9 @@ export class FirestoreEventRepository implements IEventRepository {
 
   async update(event: Event): Promise<void> {
     await this.collection.doc(event.id).set(event);
+  }
+
+  async hardDelete(id: string): Promise<void> {
+    await this.collection.doc(id).delete();
   }
 }

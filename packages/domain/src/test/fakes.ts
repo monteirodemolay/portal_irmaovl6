@@ -421,7 +421,15 @@ export class InMemoryNewsRepository implements INewsRepository {
     return { items: items.slice(0, page.limit), nextCursor: null, hasMore: false };
   }
   async listAll(tenantId: string, page: PageRequest): Promise<PageResult<News>> {
-    const items = [...this.byId.values()].filter((n) => n.tenantId === tenantId);
+    const items = [...this.byId.values()].filter(
+      (n) => n.tenantId === tenantId && n.deletedAt === null,
+    );
+    return { items: items.slice(0, page.limit), nextCursor: null, hasMore: false };
+  }
+  async listConcluded(tenantId: string, page: PageRequest): Promise<PageResult<News>> {
+    const items = [...this.byId.values()]
+      .filter((n) => n.tenantId === tenantId && n.deletedAt !== null)
+      .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
     return { items: items.slice(0, page.limit), nextCursor: null, hasMore: false };
   }
   async create(news: News) {
@@ -429,6 +437,9 @@ export class InMemoryNewsRepository implements INewsRepository {
   }
   async update(news: News) {
     this.byId.set(news.id, news);
+  }
+  async hardDelete(id: string) {
+    this.byId.delete(id);
   }
 }
 
@@ -452,6 +463,28 @@ export class InMemoryAnnouncementRepository implements IAnnouncementRepository {
   async listAll(tenantId: string) {
     return [...this.byId.values()].filter((a) => a.tenantId === tenantId);
   }
+  async listAllActive(tenantId: string, at: Date = new Date()) {
+    return [...this.byId.values()].filter(
+      (a) =>
+        a.tenantId === tenantId &&
+        a.deletedAt === null &&
+        (a.dataExpiracao === null || a.dataExpiracao >= at),
+    );
+  }
+  async listConcluded(
+    tenantId: string,
+    page: PageRequest,
+    at: Date = new Date(),
+  ): Promise<PageResult<Announcement>> {
+    const items = [...this.byId.values()]
+      .filter(
+        (a) =>
+          a.tenantId === tenantId &&
+          (a.deletedAt !== null || (a.dataExpiracao !== null && a.dataExpiracao < at)),
+      )
+      .sort((x, y) => y.updatedAt.getTime() - x.updatedAt.getTime());
+    return { items: items.slice(0, page.limit), nextCursor: null, hasMore: false };
+  }
   async countPublishedByTenant(tenantId: string) {
     return [...this.byId.values()].filter((a) => a.tenantId === tenantId && a.publicado).length;
   }
@@ -460,6 +493,9 @@ export class InMemoryAnnouncementRepository implements IAnnouncementRepository {
   }
   async update(announcement: Announcement) {
     this.byId.set(announcement.id, announcement);
+  }
+  async hardDelete(id: string) {
+    this.byId.delete(id);
   }
 }
 
@@ -475,11 +511,23 @@ export class InMemoryInspirationalQuoteRepository implements IInspirationalQuote
   async listActive(tenantId: string) {
     return [...this.byId.values()].filter((q) => q.tenantId === tenantId && q.ativa);
   }
+  async listConcluded(
+    tenantId: string,
+    page: PageRequest,
+  ): Promise<PageResult<InspirationalQuote>> {
+    const items = [...this.byId.values()]
+      .filter((q) => q.tenantId === tenantId && (q.deletedAt !== null || !q.ativa))
+      .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
+    return { items: items.slice(0, page.limit), nextCursor: null, hasMore: false };
+  }
   async create(quote: InspirationalQuote) {
     this.byId.set(quote.id, quote);
   }
   async update(quote: InspirationalQuote) {
     this.byId.set(quote.id, quote);
+  }
+  async hardDelete(id: string) {
+    this.byId.delete(id);
   }
 }
 
@@ -905,6 +953,19 @@ export class InMemoryEventRepository implements IEventRepository {
     const items = [...this.byId.values()].filter((e) => e.tenantId === tenantId);
     return { items: items.slice(0, page.limit), nextCursor: null, hasMore: false };
   }
+  async listConcluded(
+    tenantId: string,
+    page: PageRequest,
+    at: Date = new Date(),
+  ): Promise<PageResult<Event>> {
+    const items = [...this.byId.values()]
+      .filter(
+        (e) =>
+          e.tenantId === tenantId && (e.deletedAt !== null || (e.dataFim ?? e.dataInicio) < at),
+      )
+      .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
+    return { items: items.slice(0, page.limit), nextCursor: null, hasMore: false };
+  }
   async listInRange(tenantId: string, from: Date, to: Date) {
     return [...this.byId.values()].filter(
       (e) => e.tenantId === tenantId && e.dataInicio >= from && e.dataInicio <= to,
@@ -919,6 +980,9 @@ export class InMemoryEventRepository implements IEventRepository {
   }
   async update(event: Event) {
     this.byId.set(event.id, event);
+  }
+  async hardDelete(id: string) {
+    this.byId.delete(id);
   }
 }
 

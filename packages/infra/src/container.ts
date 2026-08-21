@@ -11,11 +11,25 @@ import {
   ClaimMemberAccountUseCase,
   ConfirmAttendanceUseCase,
   CreateAnnouncementUseCase,
+  UpdateAnnouncementUseCase,
+  DeleteAnnouncementUseCase,
+  HardDeleteAnnouncementUseCase,
+  ListConcludedAnnouncementsUseCase,
+  ListAllActiveAnnouncementsUseCase,
   CreateInspirationalQuoteUseCase,
   UpdateInspirationalQuoteUseCase,
   ToggleInspirationalQuoteActiveUseCase,
   ListAllInspirationalQuotesUseCase,
   ListActiveInspirationalQuotesUseCase,
+  DeleteInspirationalQuoteUseCase,
+  HardDeleteInspirationalQuoteUseCase,
+  ListConcludedInspirationalQuotesUseCase,
+  DeleteEventUseCase,
+  HardDeleteEventUseCase,
+  ListConcludedEventsUseCase,
+  DeleteNewsUseCase,
+  HardDeleteNewsUseCase,
+  ListConcludedNewsUseCase,
   CreateApiKeyUseCase,
   CreateArchiveCollectionUseCase,
   UpdateArchiveCollectionUseCase,
@@ -510,6 +524,9 @@ export function createServerContainer() {
     publishNews: new PublishNewsUseCase({ newsRepository: repositories.news, clock }),
     listPublishedNews: new ListPublishedNewsUseCase({ newsRepository: repositories.news }),
     listAllNews: new ListAllNewsUseCase({ newsRepository: repositories.news }),
+    deleteNews: new DeleteNewsUseCase({ newsRepository: repositories.news, clock }),
+    hardDeleteNews: new HardDeleteNewsUseCase({ newsRepository: repositories.news }),
+    listConcludedNews: new ListConcludedNewsUseCase({ newsRepository: repositories.news }),
     createAnnouncement: new CreateAnnouncementUseCase({
       announcementRepository: repositories.announcement,
       clock,
@@ -524,6 +541,25 @@ export function createServerContainer() {
     }),
     listAllAnnouncements: new ListAllAnnouncementsUseCase({
       announcementRepository: repositories.announcement,
+    }),
+    listAllActiveAnnouncements: new ListAllActiveAnnouncementsUseCase({
+      announcementRepository: repositories.announcement,
+      clock,
+    }),
+    updateAnnouncement: new UpdateAnnouncementUseCase({
+      announcementRepository: repositories.announcement,
+      clock,
+    }),
+    deleteAnnouncement: new DeleteAnnouncementUseCase({
+      announcementRepository: repositories.announcement,
+      clock,
+    }),
+    hardDeleteAnnouncement: new HardDeleteAnnouncementUseCase({
+      announcementRepository: repositories.announcement,
+    }),
+    listConcludedAnnouncements: new ListConcludedAnnouncementsUseCase({
+      announcementRepository: repositories.announcement,
+      clock,
     }),
     createInspirationalQuote: new CreateInspirationalQuoteUseCase({
       quoteRepository: repositories.inspirationalQuote,
@@ -542,6 +578,16 @@ export function createServerContainer() {
       quoteRepository: repositories.inspirationalQuote,
     }),
     listActiveInspirationalQuotes: new ListActiveInspirationalQuotesUseCase({
+      quoteRepository: repositories.inspirationalQuote,
+    }),
+    deleteInspirationalQuote: new DeleteInspirationalQuoteUseCase({
+      quoteRepository: repositories.inspirationalQuote,
+      clock,
+    }),
+    hardDeleteInspirationalQuote: new HardDeleteInspirationalQuoteUseCase({
+      quoteRepository: repositories.inspirationalQuote,
+    }),
+    listConcludedInspirationalQuotes: new ListConcludedInspirationalQuotesUseCase({
       quoteRepository: repositories.inspirationalQuote,
     }),
     createNewsComment: new CreateNewsCommentUseCase({
@@ -647,6 +693,17 @@ export function createServerContainer() {
       idGenerator,
     }),
     updateEvent: new UpdateEventUseCase({
+      eventRepository: repositories.event,
+      clock,
+    }),
+    deleteEvent: new DeleteEventUseCase({
+      eventRepository: repositories.event,
+      clock,
+    }),
+    hardDeleteEvent: new HardDeleteEventUseCase({
+      eventRepository: repositories.event,
+    }),
+    listConcludedEvents: new ListConcludedEventsUseCase({
       eventRepository: repositories.event,
       clock,
     }),

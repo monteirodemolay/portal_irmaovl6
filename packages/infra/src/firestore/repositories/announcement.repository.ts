@@ -1,6 +1,7 @@
 import { Timestamp, type Firestore } from 'firebase-admin/firestore';
-import type { Announcement, IAnnouncementRepository } from '@vl6/domain';
+import type { Announcement, IAnnouncementRepository, PageRequest, PageResult } from '@vl6/domain';
 import { createEntityConverter } from '../converters/entity.converter';
+import { paginateInMemory } from '../paginate-in-memory';
 
 const COLLECTION = 'announcements';
 const DATE_FIELDS = ['dataPublicacao', 'dataExpiracao'] as const;
@@ -63,6 +64,49 @@ export class FirestoreAnnouncementRepository implements IAnnouncementRepository 
     return snap.docs.map((doc) => doc.data());
   }
 
+  async listAllActive(tenantId: string, at: Date = new Date()): Promise<Announcement[]> {
+    // Mesma estratégia de merge de `listActive` (sem expiração / expiração
+    // futura), sem o filtro `publicado` — aba principal do admin.
+    const [semExpiracao, comExpiracaoFutura] = await Promise.all([
+      this.collection
+        .where('tenantId', '==', tenantId)
+        .where('deletedAt', '==', null)
+        .where('dataExpiracao', '==', null)
+        .get(),
+      this.collection
+        .where('tenantId', '==', tenantId)
+        .where('deletedAt', '==', null)
+        .where('dataExpiracao', '>=', Timestamp.fromDate(at))
+        .get(),
+    ]);
+    const byId = new Map<string, Announcement>();
+    for (const doc of [...semExpiracao.docs, ...comExpiracaoFutura.docs]) {
+      byId.set(doc.id, doc.data());
+    }
+    return [...byId.values()];
+  }
+
+  async listConcluded(
+    tenantId: string,
+    page: PageRequest,
+    at: Date = new Date(),
+  ): Promise<PageResult<Announcement>> {
+    const [naoExcluidos, excluidos] = await Promise.all([
+      this.collection
+        .where('tenantId', '==', tenantId)
+        .where('deletedAt', '==', null)
+        .where('dataExpiracao', '<', Timestamp.fromDate(at))
+        .get(),
+      this.collection.where('tenantId', '==', tenantId).where('deletedAt', '!=', null).get(),
+    ]);
+    const byId = new Map<string, Announcement>();
+    for (const doc of [...naoExcluidos.docs, ...excluidos.docs]) {
+      byId.set(doc.id, doc.data());
+    }
+    const items = [...byId.values()].sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
+    return paginateInMemory(items, page);
+  }
+
   async countPublishedByTenant(tenantId: string): Promise<number> {
     const snap = await this.collection
       .where('tenantId', '==', tenantId)
@@ -79,5 +123,9 @@ export class FirestoreAnnouncementRepository implements IAnnouncementRepository 
 
   async update(announcement: Announcement): Promise<void> {
     await this.collection.doc(announcement.id).set(announcement);
+  }
+
+  async hardDelete(id: string): Promise<void> {
+    await this.collection.doc(id).delete();
   }
 }

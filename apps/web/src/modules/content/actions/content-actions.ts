@@ -100,6 +100,24 @@ export async function toggleNewsPublishedAction(newsId: string, publicar: boolea
   revalidatePath(`/admin/conteudo/noticias/${newsId}`);
 }
 
+export async function deleteNewsAction(newsId: string): Promise<void> {
+  const session = await requireSession();
+  const container = createServerContainer();
+  const result = await container.useCases.deleteNews.execute(session.authContext, newsId);
+  if (!result.ok) throw new Error(result.error.message);
+
+  revalidatePath('/admin/conteudo/noticias');
+}
+
+export async function hardDeleteNewsAction(newsId: string): Promise<void> {
+  const session = await requireSession();
+  const container = createServerContainer();
+  const result = await container.useCases.hardDeleteNews.execute(session.authContext, newsId);
+  if (!result.ok) throw new Error(result.error.message);
+
+  revalidatePath('/admin/conteudo/noticias');
+}
+
 export async function createAnnouncementAction(
   _prevState: ContentActionState,
   formData: FormData,
@@ -126,6 +144,64 @@ export async function createAnnouncementAction(
 
   revalidatePath('/admin/conteudo/avisos');
   redirect('/admin/conteudo/avisos');
+}
+
+export async function updateAnnouncementAction(
+  announcementId: string,
+  _prevState: ContentActionState,
+  formData: FormData,
+): Promise<ContentActionState> {
+  const session = await requireSession();
+
+  const dataExpiracao = formData.get('dataExpiracao');
+  let input: AnnouncementFormValues;
+  try {
+    input = announcementSchema.parse({
+      titulo: formData.get('titulo'),
+      descricao: formData.get('descricao'),
+      prioridade: formData.get('prioridade'),
+      destacar: formData.get('destacar') === 'on',
+      dataExpiracao: dataExpiracao ? dataExpiracao : null,
+    });
+  } catch {
+    return { error: 'Dados inválidos. Verifique os campos obrigatórios.' };
+  }
+
+  const container = createServerContainer();
+  const result = await container.useCases.updateAnnouncement.execute(
+    session.authContext,
+    announcementId,
+    input,
+  );
+  if (!result.ok) return { error: result.error.message };
+
+  revalidatePath('/admin/conteudo/avisos');
+  revalidatePath(`/admin/conteudo/avisos/${announcementId}`);
+  return { error: null };
+}
+
+export async function deleteAnnouncementAction(announcementId: string): Promise<void> {
+  const session = await requireSession();
+  const container = createServerContainer();
+  const result = await container.useCases.deleteAnnouncement.execute(
+    session.authContext,
+    announcementId,
+  );
+  if (!result.ok) throw new Error(result.error.message);
+
+  revalidatePath('/admin/conteudo/avisos');
+}
+
+export async function hardDeleteAnnouncementAction(announcementId: string): Promise<void> {
+  const session = await requireSession();
+  const container = createServerContainer();
+  const result = await container.useCases.hardDeleteAnnouncement.execute(
+    session.authContext,
+    announcementId,
+  );
+  if (!result.ok) throw new Error(result.error.message);
+
+  revalidatePath('/admin/conteudo/avisos');
 }
 
 export async function toggleAnnouncementPublishedAction(
@@ -227,6 +303,30 @@ export async function updateInspirationalQuoteAction(
   revalidatePath('/admin/conteudo/frases');
   revalidatePath('/dashboard');
   return { error: null };
+}
+
+export async function deleteInspirationalQuoteAction(quoteId: string): Promise<void> {
+  const session = await requireSession();
+  const container = createServerContainer();
+  const result = await container.useCases.deleteInspirationalQuote.execute(
+    session.authContext,
+    quoteId,
+  );
+  if (!result.ok) throw new Error(result.error.message);
+
+  revalidatePath('/admin/conteudo/frases');
+}
+
+export async function hardDeleteInspirationalQuoteAction(quoteId: string): Promise<void> {
+  const session = await requireSession();
+  const container = createServerContainer();
+  const result = await container.useCases.hardDeleteInspirationalQuote.execute(
+    session.authContext,
+    quoteId,
+  );
+  if (!result.ok) throw new Error(result.error.message);
+
+  revalidatePath('/admin/conteudo/frases');
 }
 
 export async function toggleInspirationalQuoteActiveAction(

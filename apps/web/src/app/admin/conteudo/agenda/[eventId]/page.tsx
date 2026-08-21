@@ -5,6 +5,8 @@ import { BRAZIL_TIME_ZONE, EVENT_KIND_LABELS } from '@vl6/shared';
 import { createServerContainer } from '@vl6/infra';
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle, EmptyState } from '@vl6/ui';
 import { requirePagePermission } from '@/lib/auth/require-permission';
+import { deleteEventAction } from '@/modules/agenda/actions/agenda-actions';
+import { DeleteButton } from '@/components/admin/delete-button';
 
 const STATUS_VARIANT = {
   confirmado: 'success',
@@ -64,9 +66,16 @@ export default async function EventDetailPage({
           {event.descricao && <p className="mt-2 max-w-2xl text-sm">{event.descricao}</p>}
         </div>
         {hasPermission(session.authContext, 'event:update') && (
-          <Button asChild variant="outline" size="sm">
-            <Link href={`/admin/conteudo/agenda/${eventId}/editar`}>Editar</Link>
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button asChild variant="outline" size="sm">
+              <Link href={`/admin/conteudo/agenda/${eventId}/editar`}>Editar</Link>
+            </Button>
+            <DeleteButton
+              action={deleteEventAction.bind(null, eventId)}
+              confirmMessage={`Excluir "${event.titulo}"? Fica registrado em Concluídos.`}
+              redirectTo="/admin/conteudo/agenda"
+            />
+          </div>
         )}
       </div>
 

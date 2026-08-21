@@ -146,6 +146,24 @@ export async function updateEventAction(
   redirect(`/admin/conteudo/agenda/${eventId}`);
 }
 
+export async function deleteEventAction(eventId: string): Promise<void> {
+  const session = await requireSession();
+  const container = createServerContainer();
+  const result = await container.useCases.deleteEvent.execute(session.authContext, eventId);
+  if (!result.ok) throw new Error(result.error.message);
+
+  revalidatePath('/admin/conteudo/agenda');
+}
+
+export async function hardDeleteEventAction(eventId: string): Promise<void> {
+  const session = await requireSession();
+  const container = createServerContainer();
+  const result = await container.useCases.hardDeleteEvent.execute(session.authContext, eventId);
+  if (!result.ok) throw new Error(result.error.message);
+
+  revalidatePath('/admin/conteudo/agenda');
+}
+
 /** Arquivos do Acervo VL6 anexados a um evento, resolvidos a partir dos IDs compostos gravados nele — sem duplicar nenhum registro de origem. */
 export async function getEventAttachmentsAction(eventId: string): Promise<ResolvedArchiveItem[]> {
   const session = await requireSession();

@@ -4,12 +4,14 @@ import { createServerContainer } from '@vl6/infra';
 import { Card, CardHeader, CardTitle, CardContent } from '@vl6/ui';
 import { requirePagePermission } from '@/lib/auth/require-permission';
 import {
+  deleteNewsAction,
   toggleNewsPublishedAction,
   updateNewsAction,
 } from '@/modules/content/actions/content-actions';
 import { NewsForm } from '@/modules/content/components/news-form';
 import { ModerateCommentsPanel } from '@/modules/content/components/moderate-comments-panel';
 import { PublishToggleButton } from '@/components/admin/publish-toggle-button';
+import { DeleteButton } from '@/components/admin/delete-button';
 
 export default async function EditNewsPage({ params }: { params: Promise<{ newsId: string }> }) {
   const session = await requirePagePermission('news:update');
@@ -30,10 +32,17 @@ export default async function EditNewsPage({ params }: { params: Promise<{ newsI
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
         <h1 className="font-display text-2xl font-semibold">{news.titulo}</h1>
-        <PublishToggleButton
-          published={news.publicado}
-          onToggle={toggleNewsPublishedAction.bind(null, news.id)}
-        />
+        <div className="flex items-center gap-2">
+          <PublishToggleButton
+            published={news.publicado}
+            onToggle={toggleNewsPublishedAction.bind(null, news.id)}
+          />
+          <DeleteButton
+            action={deleteNewsAction.bind(null, newsId)}
+            confirmMessage={`Excluir "${news.titulo}"? Fica registrado em Concluídos.`}
+            redirectTo="/admin/conteudo/noticias"
+          />
+        </div>
       </div>
       <NewsForm action={updateNewsAction.bind(null, newsId)} news={news} />
 

@@ -1,6 +1,7 @@
 import type { Firestore, Query } from 'firebase-admin/firestore';
 import type { INewsRepository, News, PageRequest, PageResult } from '@vl6/domain';
 import { createEntityConverter } from '../converters/entity.converter';
+import { paginateInMemory } from '../paginate-in-memory';
 
 const COLLECTION = 'news';
 const DATE_FIELDS = ['dataPublicacao'] as const;
@@ -55,6 +56,18 @@ export class FirestoreNewsRepository implements INewsRepository {
     return this.paginate(query, page);
   }
 
+  async listConcluded(tenantId: string, page: PageRequest): Promise<PageResult<News>> {
+    // Sem critério natural de conclusão — só notícias excluídas (registro).
+    const snap = await this.collection
+      .where('tenantId', '==', tenantId)
+      .where('deletedAt', '!=', null)
+      .get();
+    const items = snap.docs
+      .map((doc) => doc.data())
+      .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
+    return paginateInMemory(items, page);
+  }
+
   private async paginate(query: Query<News>, page: PageRequest): Promise<PageResult<News>> {
     let paged = query;
     if (page.cursor) {
@@ -77,5 +90,9 @@ export class FirestoreNewsRepository implements INewsRepository {
 
   async update(news: News): Promise<void> {
     await this.collection.doc(news.id).set(news);
+  }
+
+  async hardDelete(id: string): Promise<void> {
+    await this.collection.doc(id).delete();
   }
 }

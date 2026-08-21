@@ -1,6 +1,12 @@
 import type { Firestore } from 'firebase-admin/firestore';
-import type { InspirationalQuote, IInspirationalQuoteRepository } from '@vl6/domain';
+import type {
+  InspirationalQuote,
+  IInspirationalQuoteRepository,
+  PageRequest,
+  PageResult,
+} from '@vl6/domain';
 import { createEntityConverter } from '../converters/entity.converter';
+import { paginateInMemory } from '../paginate-in-memory';
 
 const COLLECTION = 'inspirationalQuotes';
 
@@ -36,11 +42,35 @@ export class FirestoreInspirationalQuoteRepository implements IInspirationalQuot
     return snap.docs.map((doc) => doc.data());
   }
 
+  async listConcluded(
+    tenantId: string,
+    page: PageRequest,
+  ): Promise<PageResult<InspirationalQuote>> {
+    const [inativas, excluidas] = await Promise.all([
+      this.collection
+        .where('tenantId', '==', tenantId)
+        .where('deletedAt', '==', null)
+        .where('ativa', '==', false)
+        .get(),
+      this.collection.where('tenantId', '==', tenantId).where('deletedAt', '!=', null).get(),
+    ]);
+    const byId = new Map<string, InspirationalQuote>();
+    for (const doc of [...inativas.docs, ...excluidas.docs]) {
+      byId.set(doc.id, doc.data());
+    }
+    const items = [...byId.values()].sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
+    return paginateInMemory(items, page);
+  }
+
   async create(quote: InspirationalQuote): Promise<void> {
     await this.collection.doc(quote.id).set(quote);
   }
 
   async update(quote: InspirationalQuote): Promise<void> {
     await this.collection.doc(quote.id).set(quote);
+  }
+
+  async hardDelete(id: string): Promise<void> {
+    await this.collection.doc(id).delete();
   }
 }
