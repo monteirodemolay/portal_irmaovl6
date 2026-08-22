@@ -9,7 +9,7 @@ import {
   DirectorySearchPanel,
   type DirectoryFiltersValues,
 } from '@/modules/central/components/directorio/directory-search-panel';
-import { MemberDirectoryCard } from '@/modules/central/components/directorio/member-directory-card';
+import { DirectoryResultsGrid } from '@/modules/central/components/directorio/directory-results-grid';
 
 type SearchParams = Record<string, string | undefined>;
 
@@ -95,11 +95,7 @@ export default async function IrmaosDiretorioPage({
             <p className="text-muted text-sm">
               {items.length} {items.length === 1 ? 'Irmão encontrado' : 'Irmãos encontrados'}
             </p>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {items.map((profile) => (
-                <MemberDirectoryCard key={profile.memberId} profile={profile} />
-              ))}
-            </div>
+            <DirectoryResultsGrid items={items} />
           </>
         )}
       </section>
