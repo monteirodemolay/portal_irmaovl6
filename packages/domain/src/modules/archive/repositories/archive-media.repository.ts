@@ -6,6 +6,8 @@ export interface IArchiveMediaRepository {
   findByTenant(tenantId: string, page: PageRequest): Promise<PageResult<ArchiveMedia>>;
   /** Todas as mídias de um item (não excluídas), ordenadas por `order` — usado para renderizar o item e para `SetArchiveItemCoverUseCase`. */
   findByArchiveItemId(archiveItemId: string): Promise<ArchiveMedia[]>;
+  /** Lixeira administrativa (Fase 3) — mídias do tenant com `deletedAt` preenchido. */
+  findDeletedByTenant(tenantId: string, page: PageRequest): Promise<PageResult<ArchiveMedia>>;
   create(archiveMedia: ArchiveMedia): Promise<void>;
   update(archiveMedia: ArchiveMedia): Promise<void>;
   softDelete(id: string, deletedAt: Date, updatedBy: string): Promise<void>;

@@ -140,5 +140,10 @@ export const updateArchiveMediaBatchSchema = z.object({
   tags: z.array(z.string().min(1).max(40)).max(20).optional(),
   accessLevel: z.enum(ACCESS_LEVEL_KEYS).optional(),
   allowDownload: z.boolean().optional(),
+  caption: z.string().max(500).nullable().optional(),
+  altText: z.string().max(300).nullable().optional(),
+  documentType: z.string().max(80).nullable().optional(),
+  role: z.string().max(80).nullable().optional(),
+  isFeatured: z.boolean().optional(),
 });
 export type UpdateArchiveMediaBatchFormValues = z.infer<typeof updateArchiveMediaBatchSchema>;

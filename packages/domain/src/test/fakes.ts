@@ -808,6 +808,12 @@ export class InMemoryArchiveItemRepository implements IArchiveItemRepository {
   async findByEventId(eventId: string) {
     return [...this.byId.values()].filter((i) => i.eventId === eventId && i.deletedAt === null);
   }
+  async findDeletedByTenant(tenantId: string, page: PageRequest): Promise<PageResult<ArchiveItem>> {
+    const items = [...this.byId.values()].filter(
+      (i) => i.tenantId === tenantId && i.deletedAt !== null,
+    );
+    return { items: items.slice(0, page.limit), nextCursor: null, hasMore: false };
+  }
   async create(item: ArchiveItem) {
     this.byId.set(item.id, item);
   }
@@ -903,6 +909,15 @@ export class InMemoryArchiveMediaRepository implements IArchiveMediaRepository {
     return [...this.byId.values()]
       .filter((m) => m.archiveItemId === archiveItemId && m.deletedAt === null)
       .sort((a, b) => a.order - b.order);
+  }
+  async findDeletedByTenant(
+    tenantId: string,
+    page: PageRequest,
+  ): Promise<PageResult<ArchiveMedia>> {
+    const items = [...this.byId.values()].filter(
+      (m) => m.tenantId === tenantId && m.deletedAt !== null,
+    );
+    return { items: items.slice(0, page.limit), nextCursor: null, hasMore: false };
   }
   async create(archiveMedia: ArchiveMedia) {
     this.byId.set(archiveMedia.id, archiveMedia);

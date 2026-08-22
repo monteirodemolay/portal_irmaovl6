@@ -22,6 +22,17 @@ export interface UpdateArchiveMediaBatchFields {
   tags?: string[];
   accessLevel?: AccessLevel;
   allowDownload?: boolean;
+  /**
+   * Campos individuais (Fase 3, aba "Fotografias"/"Vídeos"/"Documentos" do
+   * passo "Organizar/Publicar") — aplicáveis tanto em lote quanto a uma
+   * única mídia (`archiveMediaIds` com um elemento só), sem duplicar esta
+   * regra de "só sobrescreve o que foi informado" num caso de uso separado.
+   */
+  caption?: string | null;
+  altText?: string | null;
+  documentType?: string | null;
+  role?: string | null;
+  isFeatured?: boolean;
 }
 
 export interface UpdateArchiveMediaBatchInput {
@@ -79,6 +90,13 @@ export class UpdateArchiveMediaBatchUseCase {
       ...(input.fields.allowDownload !== undefined
         ? { allowDownload: input.fields.allowDownload }
         : {}),
+      ...(input.fields.caption !== undefined ? { caption: input.fields.caption } : {}),
+      ...(input.fields.altText !== undefined ? { altText: input.fields.altText } : {}),
+      ...(input.fields.documentType !== undefined
+        ? { documentType: input.fields.documentType }
+        : {}),
+      ...(input.fields.role !== undefined ? { role: input.fields.role } : {}),
+      ...(input.fields.isFeatured !== undefined ? { isFeatured: input.fields.isFeatured } : {}),
       updatedAt: now,
       updatedBy: ctx.uid,
     }));

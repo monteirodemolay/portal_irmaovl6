@@ -62,6 +62,11 @@ import {
   SoftDeleteArchiveItemUseCase,
   RestoreArchiveItemUseCase,
   UpdateArchiveMediaBatchUseCase,
+  ReorderArchiveMediaUseCase,
+  SoftDeleteArchiveMediaUseCase,
+  RestoreArchiveMediaUseCase,
+  PublishArchiveItemUseCase,
+  UnpublishArchiveItemUseCase,
   FindBoardTermForDateUseCase,
   CreateBoardTermUseCase,
   CreateCommitteeUseCase,
@@ -1040,6 +1045,29 @@ export function createServerContainer() {
     }),
     updateArchiveMediaBatch: new UpdateArchiveMediaBatchUseCase({
       archiveMediaRepository: repositories.archiveMedia,
+      clock,
+    }),
+
+    // Fase 3 — Organização (docs/architecture/11-acervo-vl6.md §11.6)
+    reorderArchiveMedia: new ReorderArchiveMediaUseCase({
+      archiveItemRepository: repositories.archiveItem,
+      archiveMediaRepository: repositories.archiveMedia,
+      clock,
+    }),
+    softDeleteArchiveMedia: new SoftDeleteArchiveMediaUseCase({
+      archiveMediaRepository: repositories.archiveMedia,
+      clock,
+    }),
+    restoreArchiveMedia: new RestoreArchiveMediaUseCase({
+      archiveMediaRepository: repositories.archiveMedia,
+    }),
+    publishArchiveItem: new PublishArchiveItemUseCase({
+      archiveItemRepository: repositories.archiveItem,
+      archiveMediaRepository: repositories.archiveMedia,
+      clock,
+    }),
+    unpublishArchiveItem: new UnpublishArchiveItemUseCase({
+      archiveItemRepository: repositories.archiveItem,
       clock,
     }),
   };

@@ -66,6 +66,11 @@ export const ADMIN_AREA_TABS: Record<AdminAreaKey, AreaTabDef[]> = {
       label: 'Contribuições',
       permission: 'archiveContribution:manage',
     },
+    {
+      href: '/admin/acervo/lixeira',
+      label: 'Lixeira',
+      permission: 'archiveItem:delete',
+    },
   ],
   configuracoes: [
     { href: '/admin/configuracoes/geral', label: 'Geral', permission: null },

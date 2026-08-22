@@ -13,7 +13,11 @@ import {
   type ArchiveItemTypeKey,
   type ArchiveMediaTypeKey,
 } from '@vl6/shared';
-import type { Event } from '@vl6/domain';
+import {
+  ARCHIVE_ITEM_PUBLICATION_BLOCKER_LABELS,
+  getArchiveItemPublicationBlockers,
+  type Event,
+} from '@vl6/domain';
 import { createServerContainer, VercelBlobStorageAdapter } from '@vl6/infra';
 import { requireSession } from '@/lib/auth/require-session';
 
@@ -356,6 +360,11 @@ export interface UpdateArchiveMediaBatchFieldsInput {
   tags?: string[];
   accessLevel?: AccessLevel;
   allowDownload?: boolean;
+  caption?: string | null;
+  altText?: string | null;
+  documentType?: string | null;
+  role?: string | null;
+  isFeatured?: boolean;
 }
 
 export interface UpdateArchiveMediaBatchActionState {
@@ -387,6 +396,11 @@ export async function updateArchiveMediaBatchAction(
       tags: input.tags,
       accessLevel: input.accessLevel,
       allowDownload: input.allowDownload,
+      caption: input.caption,
+      altText: input.altText,
+      documentType: input.documentType,
+      role: input.role,
+      isFeatured: input.isFeatured,
     },
   });
   if (!result.ok) return { ok: false, error: result.error.message };
@@ -396,22 +410,157 @@ export async function updateArchiveMediaBatchAction(
 }
 
 // ---------------------------------------------------------------------
-// Passos 3/4 — resumo do rascunho (esqueleto, aprofundado na Fase 3)
+// Passo 3 — Organizar / Publicar (Fase 3,
+// docs/architecture/11-acervo-vl6.md §11.6)
+// ---------------------------------------------------------------------
+
+export interface ReorderArchiveMediaState {
+  ok: boolean;
+  error: string | null;
+}
+
+/** Aba "Fotografias" — drag-and-drop nativo no client, persiste a ordem final. */
+export async function reorderArchiveMediaAction(
+  archiveItemId: string,
+  orderedArchiveMediaIds: string[],
+): Promise<ReorderArchiveMediaState> {
+  const session = await requireSession();
+  const container = createServerContainer();
+  const result = await container.useCases.reorderArchiveMedia.execute(
+    session.authContext,
+    archiveItemId,
+    orderedArchiveMediaIds,
+  );
+  if (!result.ok) return { ok: false, error: result.error.message };
+
+  revalidatePath(PUBLISH_HUB_PATH);
+  return { ok: true, error: null };
+}
+
+export interface SimpleActionState {
+  ok: boolean;
+  error: string | null;
+}
+
+/** Define a fotografia de capa do item (`SetArchiveItemCoverUseCase`, Fase 1). */
+export async function setArchiveItemCoverAction(
+  archiveItemId: string,
+  archiveMediaId: string,
+): Promise<SimpleActionState> {
+  const session = await requireSession();
+  const container = createServerContainer();
+  const result = await container.useCases.setArchiveItemCover.execute(
+    session.authContext,
+    archiveItemId,
+    archiveMediaId,
+  );
+  if (!result.ok) return { ok: false, error: result.error.message };
+
+  revalidatePath(PUBLISH_HUB_PATH);
+  return { ok: true, error: null };
+}
+
+/** Move uma única mídia para a lixeira — o item e as demais mídias seguem intactos. */
+export async function softDeleteArchiveMediaAction(
+  archiveMediaId: string,
+): Promise<SimpleActionState> {
+  const session = await requireSession();
+  const container = createServerContainer();
+  const result = await container.useCases.softDeleteArchiveMedia.execute(
+    session.authContext,
+    archiveMediaId,
+  );
+  if (!result.ok) return { ok: false, error: result.error.message };
+
+  revalidatePath(PUBLISH_HUB_PATH);
+  return { ok: true, error: null };
+}
+
+/** Atualiza os campos editoriais de UMA mídia — reaproveita `UpdateArchiveMediaBatchUseCase` com uma lista de um elemento só. */
+export async function updateArchiveMediaFieldsAction(
+  archiveItemId: string,
+  archiveMediaId: string,
+  fields: UpdateArchiveMediaBatchFieldsInput,
+): Promise<UpdateArchiveMediaBatchActionState> {
+  return updateArchiveMediaBatchAction(archiveItemId, [archiveMediaId], fields);
+}
+
+export interface PublicationChecklistResult {
+  blockers: string[];
+  canPublish: boolean;
+}
+
+/**
+ * Checklist de publicação — reaproveita `getArchiveItemPublicationBlockers`
+ * (função pura exportada por `PublishArchiveItemUseCase`) para nunca
+ * duplicar a regra que decide o que bloqueia a publicação de verdade.
+ */
+export async function loadPublicationChecklistAction(
+  archiveItemId: string,
+): Promise<PublicationChecklistResult> {
+  const session = await requireSession();
+  const container = createServerContainer();
+
+  const item = await container.repositories.archiveItem.findById(archiveItemId);
+  if (!item || item.tenantId !== session.authContext.tenantId) {
+    return { blockers: [], canPublish: false };
+  }
+  const medias = await container.repositories.archiveMedia.findByArchiveItemId(archiveItemId);
+  const blockers = getArchiveItemPublicationBlockers(item, medias);
+
+  return {
+    blockers: blockers.map((blocker) => ARCHIVE_ITEM_PUBLICATION_BLOCKER_LABELS[blocker]),
+    canPublish: blockers.length === 0,
+  };
+}
+
+export interface PublishArchiveItemState {
+  ok: boolean;
+  error: string | null;
+}
+
+/** Botão "Publicar Evento" — transição definitiva para `publicado` (`PublishArchiveItemUseCase`). */
+export async function publishArchiveItemAction(
+  archiveItemId: string,
+): Promise<PublishArchiveItemState> {
+  const session = await requireSession();
+  const container = createServerContainer();
+  const result = await container.useCases.publishArchiveItem.execute(
+    session.authContext,
+    archiveItemId,
+  );
+  if (!result.ok) return { ok: false, error: result.error.message };
+
+  revalidatePath(PUBLISH_HUB_PATH);
+  return { ok: true, error: null };
+}
+
+// ---------------------------------------------------------------------
+// Passo 3 — resumo/organização do rascunho
 // ---------------------------------------------------------------------
 
 export interface ArchiveItemSummaryMedia {
   id: string;
+  mediaAssetId: string;
   mediaType: ArchiveMediaTypeKey;
   publicacaoStatus: string;
   originalName: string;
   mimeType: string;
   size: number;
+  order: number;
+  caption: string | null;
+  altText: string | null;
+  documentType: string | null;
+  role: string | null;
+  isCover: boolean;
+  isFeatured: boolean;
 }
 
 export interface ArchiveItemSummary {
   archiveItemId: string;
   titulo: string;
   eventoTitulo: string;
+  gestaoNome: string | null;
   medias: ArchiveItemSummaryMedia[];
 }
 
@@ -425,9 +574,10 @@ export async function loadArchiveItemSummaryAction(
   const item = await container.repositories.archiveItem.findById(archiveItemId);
   if (!item || item.tenantId !== session.authContext.tenantId) return null;
 
-  const [event, medias] = await Promise.all([
+  const [event, medias, boardTerm] = await Promise.all([
     container.repositories.event.findById(item.eventId),
     container.repositories.archiveMedia.findByArchiveItemId(item.id),
+    item.boardTermId ? container.repositories.boardTerm.findById(item.boardTermId) : null,
   ]);
   const mediaAssets = await Promise.all(
     medias.map((media) => container.repositories.mediaAsset.findById(media.mediaAssetId)),
@@ -437,13 +587,28 @@ export async function loadArchiveItemSummaryAction(
     archiveItemId: item.id,
     titulo: item.titulo,
     eventoTitulo: event?.titulo ?? '—',
-    medias: medias.map((media, index) => ({
-      id: media.id,
-      mediaType: media.mediaType,
-      publicacaoStatus: media.publicacaoStatus,
-      originalName: mediaAssets[index]?.originalName ?? 'arquivo',
-      mimeType: mediaAssets[index]?.mimeType ?? '',
-      size: mediaAssets[index]?.size ?? 0,
-    })),
+    gestaoNome: boardTerm?.nome ?? null,
+    medias: medias
+      .slice()
+      .sort((a, b) => a.order - b.order)
+      .map((media) => {
+        const asset = mediaAssets.find((candidate) => candidate?.id === media.mediaAssetId);
+        return {
+          id: media.id,
+          mediaAssetId: media.mediaAssetId,
+          mediaType: media.mediaType,
+          publicacaoStatus: media.publicacaoStatus,
+          originalName: asset?.originalName ?? 'arquivo',
+          mimeType: asset?.mimeType ?? '',
+          size: asset?.size ?? 0,
+          order: media.order,
+          caption: media.caption,
+          altText: media.altText,
+          documentType: media.documentType,
+          role: media.role,
+          isCover: media.isCover,
+          isFeatured: media.isFeatured,
+        };
+      }),
   };
 }

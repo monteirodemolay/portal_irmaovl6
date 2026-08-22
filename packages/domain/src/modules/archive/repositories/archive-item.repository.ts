@@ -7,6 +7,8 @@ export interface IArchiveItemRepository {
   findByTenant(tenantId: string, page: PageRequest): Promise<PageResult<ArchiveItem>>;
   /** Todos os itens vinculados a um Evento (não excluídos) — usado pelo Acervo do Evento. */
   findByEventId(eventId: string): Promise<ArchiveItem[]>;
+  /** Lixeira administrativa (Fase 3) — itens do tenant com `deletedAt` preenchido. */
+  findDeletedByTenant(tenantId: string, page: PageRequest): Promise<PageResult<ArchiveItem>>;
   create(item: ArchiveItem): Promise<void>;
   update(item: ArchiveItem): Promise<void>;
   /** Lixeira — soft delete (`deletedAt` preenchido), nunca exclusão física. */
