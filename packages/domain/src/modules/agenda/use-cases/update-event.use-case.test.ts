@@ -35,6 +35,9 @@ const baseEvent: Event = {
   chegadaSugerida: null,
   observacoes: null,
   arquivosRelacionados: [],
+  boardTermId: null,
+  nivelAcesso: 'irmaos',
+  exibirNaLinhaDoTempo: true,
   createdAt: new Date('2025-01-01'),
   updatedAt: new Date('2025-01-01'),
   createdBy: 'admin-1',
@@ -57,6 +60,9 @@ const input: EventFormValues = {
   chegadaSugerida: '19:30',
   observacoes: 'Levar caderno',
   arquivosRelacionados: ['file_abc'],
+  boardTermId: null,
+  nivelAcesso: 'irmaos',
+  exibirNaLinhaDoTempo: true,
 };
 
 function buildUseCase() {

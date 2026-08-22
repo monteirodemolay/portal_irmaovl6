@@ -6,6 +6,23 @@ import { paginateInMemory } from '../paginate-in-memory';
 const COLLECTION = 'events';
 const DATE_FIELDS = ['dataInicio', 'dataFim'] as const;
 
+/**
+ * Preenche os campos da Fase 1 da Fundação do Acervo VL6
+ * (docs/architecture/11-acervo-vl6.md §11.5) com um default seguro em
+ * eventos gravados antes desta fase — sem isso, `boardTermId`/`nivelAcesso`/
+ * `exibirNaLinhaDoTempo` viriam `undefined` do Firestore. Default de
+ * `nivelAcesso` é "irmãos" (visibilidade equivalente à leitura atual, já
+ * que todo Irmão tem `event:read`); `exibirNaLinhaDoTempo` default `true`.
+ */
+function withDefaults(event: Event): Event {
+  return {
+    ...event,
+    boardTermId: event.boardTermId ?? null,
+    nivelAcesso: event.nivelAcesso ?? 'irmaos',
+    exibirNaLinhaDoTempo: event.exibirNaLinhaDoTempo ?? true,
+  };
+}
+
 export class FirestoreEventRepository implements IEventRepository {
   private readonly collection;
 
@@ -17,7 +34,7 @@ export class FirestoreEventRepository implements IEventRepository {
 
   async findById(id: string): Promise<Event | null> {
     const snap = await this.collection.doc(id).get();
-    return snap.exists ? snap.data()! : null;
+    return snap.exists ? withDefaults(snap.data()!) : null;
   }
 
   async listUpcoming(tenantId: string, from: Date, page: PageRequest): Promise<PageResult<Event>> {
@@ -45,7 +62,7 @@ export class FirestoreEventRepository implements IEventRepository {
       .where('dataInicio', '<=', Timestamp.fromDate(to))
       .orderBy('dataInicio', 'asc')
       .get();
-    return snap.docs.map((doc) => doc.data());
+    return snap.docs.map((doc) => withDefaults(doc.data()));
   }
 
   async countUpcomingByTenant(tenantId: string, from: Date): Promise<number> {
@@ -81,7 +98,7 @@ export class FirestoreEventRepository implements IEventRepository {
     ]);
     const byId = new Map<string, Event>();
     for (const doc of [...semFim.docs, ...comFim.docs, ...excluidos.docs]) {
-      byId.set(doc.id, doc.data());
+      byId.set(doc.id, withDefaults(doc.data()));
     }
     const items = [...byId.values()].sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
     return paginateInMemory(items, page);
@@ -97,7 +114,7 @@ export class FirestoreEventRepository implements IEventRepository {
     const docs = snap.docs.slice(0, page.limit);
     const hasMore = snap.docs.length > page.limit;
     return {
-      items: docs.map((doc) => doc.data()),
+      items: docs.map((doc) => withDefaults(doc.data())),
       nextCursor: hasMore ? (docs.at(-1)?.id ?? null) : null,
       hasMore,
     };

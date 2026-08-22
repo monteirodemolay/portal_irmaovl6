@@ -10,6 +10,8 @@ export * from './enums/tenant-modules';
 export * from './enums/locale';
 export * from './enums/central';
 export * from './enums/archive';
+export * from './enums/access-level';
+export * from './enums/media-asset';
 export * from './schemas/tenant.schema';
 export * from './schemas/user.schema';
 export * from './schemas/member.schema';
