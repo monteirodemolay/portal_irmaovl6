@@ -61,6 +61,7 @@ import {
   SetArchiveItemCoverUseCase,
   SoftDeleteArchiveItemUseCase,
   RestoreArchiveItemUseCase,
+  UpdateArchiveMediaBatchUseCase,
   FindBoardTermForDateUseCase,
   CreateBoardTermUseCase,
   CreateCommitteeUseCase,
@@ -1036,6 +1037,10 @@ export function createServerContainer() {
     }),
     restoreArchiveItem: new RestoreArchiveItemUseCase({
       archiveItemRepository: repositories.archiveItem,
+    }),
+    updateArchiveMediaBatch: new UpdateArchiveMediaBatchUseCase({
+      archiveMediaRepository: repositories.archiveMedia,
+      clock,
     }),
   };
 

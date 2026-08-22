@@ -56,6 +56,8 @@ function buildMedia(overrides: Partial<ArchiveMedia> = {}): ArchiveMedia {
     accessLevel: 'irmaos',
     allowDownload: false,
     publicacaoStatus: 'rascunho',
+    autor: null,
+    tags: [],
     createdAt: new Date('2026-01-01'),
     updatedAt: new Date('2026-01-01'),
     createdBy: 'admin-1',

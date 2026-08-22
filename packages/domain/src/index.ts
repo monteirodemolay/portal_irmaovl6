@@ -299,4 +299,5 @@ export * from './modules/archive/use-cases/attach-media-to-archive-item.use-case
 export * from './modules/archive/use-cases/set-archive-item-cover.use-case';
 export * from './modules/archive/use-cases/soft-delete-archive-item.use-case';
 export * from './modules/archive/use-cases/restore-archive-item.use-case';
+export * from './modules/archive/use-cases/update-archive-media-batch.use-case';
 export * from './modules/governance/use-cases/find-board-term-for-date.use-case';

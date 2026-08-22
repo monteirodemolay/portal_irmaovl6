@@ -63,6 +63,8 @@ export class AttachMediaToArchiveItemUseCase {
       accessLevel: input.accessLevel,
       allowDownload: input.allowDownload,
       publicacaoStatus: 'rascunho',
+      autor: null,
+      tags: [],
       createdAt: now,
       updatedAt: now,
       createdBy: ctx.uid,

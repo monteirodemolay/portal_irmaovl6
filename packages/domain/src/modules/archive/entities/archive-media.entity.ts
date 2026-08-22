@@ -29,4 +29,12 @@ export interface ArchiveMedia extends BaseEntity {
   accessLevel: AccessLevel;
   allowDownload: boolean;
   publicacaoStatus: ArchiveMediaStatus;
+  /**
+   * Fotógrafo/autor da mídia — Fase 2 da Central de Publicação
+   * (docs/architecture/11-acervo-vl6.md §11.5). `null` até o painel de
+   * metadados em lote (`UpdateArchiveMediaBatchUseCase`) preencher.
+   */
+  autor: string | null;
+  /** Tags livres, mesmo padrão de `ArchiveCatalogEntry.tags` — preenchidas pelo painel de metadados em lote. */
+  tags: string[];
 }

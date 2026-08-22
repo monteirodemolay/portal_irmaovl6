@@ -127,3 +127,18 @@ export const attachMediaToArchiveItemSchema = z.object({
   allowDownload: z.boolean(),
 });
 export type AttachMediaToArchiveItemFormValues = z.infer<typeof attachMediaToArchiveItemSchema>;
+
+// ---------------------------------------------------------------------
+// Fase 2 da Central de Publicação do Acervo VL6 (docs/architecture/
+// 11-acervo-vl6.md §11.5) — painel de metadados em lote do passo "Enviar".
+// ---------------------------------------------------------------------
+
+export const updateArchiveMediaBatchSchema = z.object({
+  archiveItemId: z.string().min(1),
+  archiveMediaIds: z.array(z.string().min(1)).min(1),
+  autor: z.string().max(200).nullable().optional(),
+  tags: z.array(z.string().min(1).max(40)).max(20).optional(),
+  accessLevel: z.enum(ACCESS_LEVEL_KEYS).optional(),
+  allowDownload: z.boolean().optional(),
+});
+export type UpdateArchiveMediaBatchFormValues = z.infer<typeof updateArchiveMediaBatchSchema>;
