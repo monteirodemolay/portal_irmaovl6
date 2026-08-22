@@ -1,5 +1,5 @@
 import 'server-only';
-import type { AuthContext, Role } from '@vl6/domain';
+import type { AuthContext, Member, Role } from '@vl6/domain';
 import type { ServerContainer } from '@vl6/infra';
 import type { ArchiveMediaTypeKey } from '@vl6/shared';
 import { isAccessLevelVisible } from './access-level-visibility';
@@ -18,6 +18,12 @@ export interface EventAlbumMediaItem {
   originalName: string;
   mimeType: string;
   sizeBytes: number;
+  /**
+   * Pessoas marcadas nesta mídia (Fase A "Pessoas & Descoberta") já
+   * resolvidas para exibição — nome + link para `/acervo/pessoas/[id]`.
+   * `Member`s excluídos/de outro tenant nunca aparecem aqui.
+   */
+  pessoasIdentificadas: { id: string; nomeCompleto: string }[];
 }
 
 export interface EventAlbumData {
@@ -82,6 +88,20 @@ export async function loadEventAlbum(
     publishedMedia.map((media) => container.repositories.mediaAsset.findById(media.mediaAssetId)),
   );
 
+  const memberIds = [
+    ...new Set(publishedMedia.flatMap((media) => media.pessoasIdentificadas ?? [])),
+  ];
+  const members = await Promise.all(
+    memberIds.map((memberId) => container.repositories.member.findById(memberId)),
+  );
+  const memberNameById = new Map(
+    members
+      .filter(
+        (member): member is Member => member !== null && member.tenantId === authContext.tenantId,
+      )
+      .map((member) => [member.id, member.nomeCompleto]),
+  );
+
   const media: EventAlbumMediaItem[] = publishedMedia
     .map((archiveMedia, index) => {
       const asset = assets[index];
@@ -99,6 +119,9 @@ export async function loadEventAlbum(
         originalName: asset.originalName,
         mimeType: asset.mimeType,
         sizeBytes: asset.size,
+        pessoasIdentificadas: (archiveMedia.pessoasIdentificadas ?? [])
+          .filter((memberId) => memberNameById.has(memberId))
+          .map((memberId) => ({ id: memberId, nomeCompleto: memberNameById.get(memberId)! })),
       };
       return item;
     })

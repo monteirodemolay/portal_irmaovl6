@@ -37,4 +37,15 @@ export interface ArchiveMedia extends BaseEntity {
   autor: string | null;
   /** Tags livres, mesmo padrão de `ArchiveCatalogEntry.tags` — preenchidas pelo painel de metadados em lote. */
   tags: string[];
+  /**
+   * IDs de `Member` marcados como identificados nesta mídia — Fase A
+   * "Pessoas & Descoberta" (identificação manual pelo administrador na
+   * Central de Publicação, NUNCA reconhecimento facial automático, ver
+   * docs/architecture/11-acervo-vl6.md Etapa 4). Campo aditivo opcional,
+   * mesmo padrão de `ArchiveItem.origemGalleryAlbumId` (Fase 5) — não
+   * exige alteração em nenhum construtor de `ArchiveMedia` já existente;
+   * ausente/`undefined` equivale a "ninguém identificado ainda" e deve
+   * ser tratado como `[]` por quem lê.
+   */
+  pessoasIdentificadas?: string[];
 }

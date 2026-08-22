@@ -12,8 +12,10 @@ import { AvisosCard } from '@/modules/dashboard/components/avisos-card';
 import { DailyQuoteCard } from '@/modules/dashboard/components/daily-quote-card';
 import { DashboardSectionHeading } from '@/modules/dashboard/components/dashboard-section-heading';
 import { NextEventCard } from '@/modules/dashboard/components/next-event-card';
+import { OnThisDayCard } from '@/modules/dashboard/components/on-this-day-card';
 import { timeOfDayGreeting } from '@/modules/dashboard/lib/greeting';
 import { pickQuote } from '@/modules/dashboard/lib/masonic-quotes';
+import { findOnThisDayArchiveItem } from '@/modules/archive/lib/find-on-this-day-archive-item';
 
 export default async function DashboardPage() {
   const [session, current] = await Promise.all([getCurrentSession(), getCurrentTenant()]);
@@ -27,29 +29,39 @@ export default async function DashboardPage() {
     session.user.id,
   );
 
-  const [announcements, events, anniversaries, documentos, biblioteca, albuns, favoritos, quotes] =
-    await Promise.all([
-      hasPermission(authContext, 'announcement:read')
-        ? container.useCases.listActiveAnnouncements.execute(authContext.tenantId)
-        : Promise.resolve([]),
-      getUpcomingEventsForPortal(),
-      hasPermission(authContext, 'member:read')
-        ? container.useCases.listUpcomingAnniversaries.execute(authContext)
-        : Promise.resolve([]),
-      hasPermission(authContext, 'file:read')
-        ? container.repositories.fileAsset.countByTenant(authContext.tenantId)
-        : Promise.resolve(null),
-      hasPermission(authContext, 'libraryItem:read')
-        ? container.repositories.libraryItem.countByTenant(authContext.tenantId)
-        : Promise.resolve(null),
-      hasPermission(authContext, 'gallery:read')
-        ? container.repositories.galleryAlbum.countByTenant(authContext.tenantId)
-        : Promise.resolve(null),
-      container.useCases.listMyFavorites.execute(authContext).then((items) => items.length),
-      hasPermission(authContext, 'quote:read')
-        ? container.useCases.listActiveInspirationalQuotes.execute(authContext)
-        : Promise.resolve([]),
-    ]);
+  const [
+    announcements,
+    events,
+    anniversaries,
+    documentos,
+    biblioteca,
+    albuns,
+    favoritos,
+    quotes,
+    onThisDay,
+  ] = await Promise.all([
+    hasPermission(authContext, 'announcement:read')
+      ? container.useCases.listActiveAnnouncements.execute(authContext.tenantId)
+      : Promise.resolve([]),
+    getUpcomingEventsForPortal(),
+    hasPermission(authContext, 'member:read')
+      ? container.useCases.listUpcomingAnniversaries.execute(authContext)
+      : Promise.resolve([]),
+    hasPermission(authContext, 'file:read')
+      ? container.repositories.fileAsset.countByTenant(authContext.tenantId)
+      : Promise.resolve(null),
+    hasPermission(authContext, 'libraryItem:read')
+      ? container.repositories.libraryItem.countByTenant(authContext.tenantId)
+      : Promise.resolve(null),
+    hasPermission(authContext, 'gallery:read')
+      ? container.repositories.galleryAlbum.countByTenant(authContext.tenantId)
+      : Promise.resolve(null),
+    container.useCases.listMyFavorites.execute(authContext).then((items) => items.length),
+    hasPermission(authContext, 'quote:read')
+      ? container.useCases.listActiveInspirationalQuotes.execute(authContext)
+      : Promise.resolve([]),
+    findOnThisDayArchiveItem(container, authContext, session.role),
+  ]);
 
   const featuredEvent = events[0] ?? null;
   const agendaEvents = events.slice(1, 4);
@@ -109,6 +121,7 @@ export default async function DashboardPage() {
             </Card>
           )}
           <div className="flex flex-col gap-4">
+            {onThisDay && <OnThisDayCard entry={onThisDay} />}
             {hasAnniversaries && (
               <AnniversariesPanel entries={anniversaries} showDirectoryLink={showDirectoryLink} />
             )}

@@ -10,6 +10,8 @@ export interface ArchiveLightboxPhoto {
   caption?: string | null;
   downloadHref?: string | null;
   downloadName?: string;
+  /** Pessoas identificadas nesta fotografia (Fase A "Pessoas & Descoberta") — cada uma linka para sua página de trajetória. */
+  people?: { id: string; label: string; href: string }[];
 }
 
 export interface ArchiveLightboxProps {
@@ -162,10 +164,27 @@ export function ArchiveLightbox({ photos, index, onIndexChange, onClose }: Archi
         )}
       </div>
 
-      {current.caption && (
-        <p className="shrink-0 px-4 pb-4 pt-2 text-center text-sm text-white/85 sm:pb-6">
-          {current.caption}
-        </p>
+      {(current.caption || (current.people && current.people.length > 0)) && (
+        <div className="shrink-0 px-4 pb-4 pt-2 text-center sm:pb-6">
+          {current.caption && <p className="text-sm text-white/85">{current.caption}</p>}
+          {current.people && current.people.length > 0 && (
+            <p className="mt-1.5 text-xs text-white/70">
+              Pessoas identificadas:{' '}
+              {current.people.map((person, personIndex) => (
+                <span key={person.id}>
+                  <a
+                    href={person.href}
+                    className="underline decoration-white/40 hover:text-white hover:decoration-white"
+                    onClick={(event) => event.stopPropagation()}
+                  >
+                    {person.label}
+                  </a>
+                  {personIndex < current.people!.length - 1 ? ', ' : ''}
+                </span>
+              ))}
+            </p>
+          )}
+        </div>
       )}
     </div>
   );

@@ -29,8 +29,9 @@ export async function loadArchiveSearchResults(
   const canReadLibrary = hasPermission(authContext, 'libraryItem:read');
   const canReadGallery = hasPermission(authContext, 'gallery:read');
   const canReadCatalog = hasPermission(authContext, 'archiveCatalog:read');
+  const canReadArchiveItem = hasPermission(authContext, 'archiveItem:read');
 
-  const [filesPage, libraryItems, albums, catalogEntries] = await Promise.all([
+  const [filesPage, libraryItems, albums, catalogEntries, archiveItemsPage] = await Promise.all([
     canReadFiles || canReadLibrary
       ? container.useCases.listAllFileAssets.execute(authContext, { limit: 200 })
       : Promise.resolve({ items: [], nextCursor: null, hasMore: false }),
@@ -41,6 +42,9 @@ export async function loadArchiveSearchResults(
     canReadCatalog
       ? container.repositories.archiveCatalogEntry.listByTenant(authContext.tenantId)
       : Promise.resolve([]),
+    canReadArchiveItem
+      ? container.repositories.archiveItem.findByTenant(authContext.tenantId, { limit: 200 })
+      : Promise.resolve({ items: [], nextCursor: null, hasMore: false }),
   ]);
 
   // Só fichas publicadas entram na busca — rascunho não deve vazar conteúdo
@@ -95,5 +99,39 @@ export async function loadArchiveSearchResults(
     catalogText: catalogTextByOrigemId.get(buildArchiveItemId('gallery-album', album.id)) ?? null,
   }));
 
-  return [...documentResults, ...libraryResults, ...galleryResults];
+  // Só ArchiveItem publicado entra na busca — rascunho não deve vazar
+  // conteúdo ainda em revisão, mesma regra já aplicada às fichas de
+  // catalogação acima.
+  const publishedArchiveItems = archiveItemsPage.items.filter(
+    (item) => item.publicacaoStatus === 'publicado',
+  );
+  const [archiveItemEvents, archiveItemMedias] = await Promise.all([
+    Promise.all(publishedArchiveItems.map((item) => container.repositories.event.findById(item.eventId))),
+    Promise.all(
+      publishedArchiveItems.map((item) => container.repositories.archiveMedia.findByArchiveItemId(item.id)),
+    ),
+  ]);
+
+  const eventResults: ArchiveSearchResult[] = publishedArchiveItems.flatMap((item, index) => {
+    const event = archiveItemEvents[index];
+    if (!event || event.tenantId !== authContext.tenantId || event.deletedAt) return [];
+    const captions = (archiveItemMedias[index] ?? [])
+      .filter((media) => media.publicacaoStatus === 'publicado')
+      .map((media) => media.caption)
+      .filter(Boolean)
+      .join(' ');
+    return [
+      {
+        id: item.id,
+        kind: 'evento' as const,
+        title: item.titulo,
+        description: event.local,
+        href: `/acervo/eventos/${event.id}`,
+        createdAt: item.createdAt,
+        catalogText: [item.descricao, captions].filter(Boolean).join(' ') || null,
+      },
+    ];
+  });
+
+  return [...documentResults, ...libraryResults, ...galleryResults, ...eventResults];
 }

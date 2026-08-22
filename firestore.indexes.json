@@ -969,6 +969,28 @@
           "order": "ASCENDING"
         }
       ]
+    },
+    {
+      "collectionGroup": "archiveMedia",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "pessoasIdentificadas",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "tenantId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "deletedAt",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        }
+      ]
     }
   ],
   "fieldOverrides": []

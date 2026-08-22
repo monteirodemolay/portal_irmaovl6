@@ -365,6 +365,7 @@ export interface UpdateArchiveMediaBatchFieldsInput {
   documentType?: string | null;
   role?: string | null;
   isFeatured?: boolean;
+  pessoasIdentificadas?: string[];
 }
 
 export interface UpdateArchiveMediaBatchActionState {
@@ -401,6 +402,7 @@ export async function updateArchiveMediaBatchAction(
       documentType: input.documentType,
       role: input.role,
       isFeatured: input.isFeatured,
+      pessoasIdentificadas: input.pessoasIdentificadas,
     },
   });
   if (!result.ok) return { ok: false, error: result.error.message };
@@ -554,6 +556,7 @@ export interface ArchiveItemSummaryMedia {
   role: string | null;
   isCover: boolean;
   isFeatured: boolean;
+  pessoasIdentificadas: string[];
 }
 
 export interface ArchiveItemSummary {
@@ -608,7 +611,36 @@ export async function loadArchiveItemSummaryAction(
           role: media.role,
           isCover: media.isCover,
           isFeatured: media.isFeatured,
+          pessoasIdentificadas: media.pessoasIdentificadas ?? [],
         };
       }),
   };
+}
+
+// ---------------------------------------------------------------------
+// Identificação de pessoas (Fase A "Pessoas & Descoberta")
+// ---------------------------------------------------------------------
+
+export interface MemberPickerOption {
+  id: string;
+  nomeCompleto: string;
+}
+
+/**
+ * Opções para o seletor de pessoas por nome da aba "Fotografias" —
+ * reaproveita `SearchMembersUseCase` (mesma busca de Irmão usada em
+ * `loadRelationNodeOptions`), sem paginação por cursor porque a lista
+ * inteira é filtrada no client enquanto o admin digita.
+ */
+export async function loadMemberPickerOptionsAction(): Promise<MemberPickerOption[]> {
+  const session = await requireSession();
+  const container = createServerContainer();
+  const page = await container.useCases.searchMembers.execute(
+    session.authContext,
+    {},
+    {
+      limit: 1000,
+    },
+  );
+  return page.items.map((member) => ({ id: member.id, nomeCompleto: member.nomeCompleto }));
 }

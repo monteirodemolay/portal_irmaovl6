@@ -47,4 +47,14 @@ describe('matchesArchiveSearch', () => {
   it('string vazia casa com tudo', () => {
     expect(matchesArchiveSearch(makeResult(), '')).toBe(true);
   });
+
+  it('casa evento do Acervo novo pela legenda das mídias publicadas', () => {
+    const result = makeResult({
+      kind: 'evento',
+      title: 'Sessão Pública do Dia dos Pais',
+      description: 'Rio Verde – GO',
+      catalogText: 'Mesa de honra com o Venerável Mestre',
+    });
+    expect(matchesArchiveSearch(result, 'mesa de honra')).toBe(true);
+  });
 });

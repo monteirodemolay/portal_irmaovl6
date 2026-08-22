@@ -11,7 +11,10 @@ export interface RelationNodeOption {
   label: string;
 }
 
-const ARCHIVE_ITEM_KIND_BY_SEARCH_KIND: Record<ArchiveSearchKind, ArchiveItemKind> = {
+const ARCHIVE_ITEM_KIND_BY_SEARCH_KIND: Record<
+  Exclude<ArchiveSearchKind, 'evento'>,
+  ArchiveItemKind
+> = {
   documento: 'file',
   biblioteca: 'library',
   fotografia: 'gallery-album',
@@ -59,11 +62,19 @@ export async function loadRelationNodeOptions(
     label: collection.titulo,
   }));
 
-  const archiveItemOptions: RelationNodeOption[] = archiveItems.map((item) => ({
-    tipo: 'archiveItem',
-    id: buildArchiveItemId(ARCHIVE_ITEM_KIND_BY_SEARCH_KIND[item.kind], item.id),
-    label: item.title,
-  }));
+  // Itens do Acervo novo (kind 'evento') já entram na Constelação como nó
+  // 'event' (mesmo Evento, ID canônico) — não têm mapeamento de ID
+  // composto legado, e criar um segundo nó pro mesmo evento duplicaria a
+  // Constelação sem necessidade.
+  const archiveItemOptions: RelationNodeOption[] = archiveItems
+    .filter((item): item is typeof item & { kind: Exclude<ArchiveSearchKind, 'evento'> } =>
+      item.kind !== 'evento',
+    )
+    .map((item) => ({
+      tipo: 'archiveItem',
+      id: buildArchiveItemId(ARCHIVE_ITEM_KIND_BY_SEARCH_KIND[item.kind], item.id),
+      label: item.title,
+    }));
 
   return [
     ...memberOptions,

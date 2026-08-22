@@ -77,6 +77,38 @@ describe('UpdateArchiveMediaBatchUseCase', () => {
     expect(media1?.accessLevel).toBe('irmaos');
   });
 
+  it('marca pessoas identificadas quando informado', async () => {
+    const { useCase, archiveMediaRepository } = buildUseCase();
+    await archiveMediaRepository.create(buildMedia({ id: 'media-1' }));
+
+    const result = await useCase.execute(ctx, {
+      archiveItemId: 'item-1',
+      archiveMediaIds: ['media-1'],
+      fields: { pessoasIdentificadas: ['member-1', 'member-2'] },
+    });
+
+    expect(result.ok).toBe(true);
+    const media = await archiveMediaRepository.findById('media-1');
+    expect(media?.pessoasIdentificadas).toEqual(['member-1', 'member-2']);
+  });
+
+  it('preserva pessoas identificadas quando o campo não é informado', async () => {
+    const { useCase, archiveMediaRepository } = buildUseCase();
+    await archiveMediaRepository.create(
+      buildMedia({ id: 'media-1', pessoasIdentificadas: ['member-1'] }),
+    );
+
+    const result = await useCase.execute(ctx, {
+      archiveItemId: 'item-1',
+      archiveMediaIds: ['media-1'],
+      fields: { autor: 'Irmão Fulano' },
+    });
+
+    expect(result.ok).toBe(true);
+    const media = await archiveMediaRepository.findById('media-1');
+    expect(media?.pessoasIdentificadas).toEqual(['member-1']);
+  });
+
   it('sobrescreve o nível de acesso quando informado', async () => {
     const { useCase, archiveMediaRepository } = buildUseCase();
     await archiveMediaRepository.create(buildMedia({ id: 'media-1', accessLevel: 'irmaos' }));
@@ -90,6 +122,28 @@ describe('UpdateArchiveMediaBatchUseCase', () => {
     expect(result.ok).toBe(true);
     const media = await archiveMediaRepository.findById('media-1');
     expect(media?.accessLevel).toBe('publico');
+  });
+
+  it('findByPessoaIdentificada retorna só as mídias não excluídas que marcam a pessoa', async () => {
+    const { archiveMediaRepository } = buildUseCase();
+    await archiveMediaRepository.create(
+      buildMedia({ id: 'media-1', pessoasIdentificadas: ['member-1'] }),
+    );
+    await archiveMediaRepository.create(
+      buildMedia({ id: 'media-2', pessoasIdentificadas: ['member-2'] }),
+    );
+    await archiveMediaRepository.create(
+      buildMedia({
+        id: 'media-3',
+        pessoasIdentificadas: ['member-1'],
+        deletedAt: new Date('2026-01-05'),
+      }),
+    );
+    await archiveMediaRepository.create(buildMedia({ id: 'media-4' }));
+
+    const result = await archiveMediaRepository.findByPessoaIdentificada('t1', 'member-1');
+
+    expect(result.map((m) => m.id)).toEqual(['media-1']);
   });
 
   it('rejeita lista vazia', async () => {

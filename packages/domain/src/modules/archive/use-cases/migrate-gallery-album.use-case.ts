@@ -174,6 +174,7 @@ export class MigrateGalleryAlbumUseCase {
         publicacaoStatus: 'rascunho',
         autor: null,
         tags: [],
+        pessoasIdentificadas: [],
         createdAt: now,
         updatedAt: now,
         createdBy: ctx.uid,

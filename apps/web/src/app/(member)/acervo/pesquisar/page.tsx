@@ -4,6 +4,7 @@ import { createServerContainer } from '@vl6/infra';
 import {
   ArchiveItemCard,
   BookOpen,
+  CalendarDays,
   EmptyState,
   FileText,
   FilterBar,
@@ -24,6 +25,7 @@ const KIND_ICONS: Record<ArchiveSearchKind, ReactNode> = {
   documento: <FileText size={14} />,
   biblioteca: <BookOpen size={14} />,
   fotografia: <GalleryIcon size={14} />,
+  evento: <CalendarDays size={14} />,
 };
 
 function buildHref(query: string, kind?: ArchiveSearchKind): string {

@@ -41,6 +41,11 @@ function toLightboxPhoto(media: EventAlbumMediaItem): ArchiveLightboxPhoto {
     caption: media.caption,
     downloadHref: media.allowDownload ? media.src : null,
     downloadName: media.originalName,
+    people: media.pessoasIdentificadas.map((pessoa) => ({
+      id: pessoa.id,
+      label: pessoa.nomeCompleto,
+      href: `/acervo/pessoas/${pessoa.id}`,
+    })),
   };
 }
 

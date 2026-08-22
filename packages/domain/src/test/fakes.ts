@@ -919,6 +919,16 @@ export class InMemoryArchiveMediaRepository implements IArchiveMediaRepository {
     );
     return { items: items.slice(0, page.limit), nextCursor: null, hasMore: false };
   }
+  async findByPessoaIdentificada(tenantId: string, memberId: string) {
+    return [...this.byId.values()]
+      .filter(
+        (m) =>
+          m.tenantId === tenantId &&
+          m.deletedAt === null &&
+          (m.pessoasIdentificadas ?? []).includes(memberId),
+      )
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  }
   async create(archiveMedia: ArchiveMedia) {
     this.byId.set(archiveMedia.id, archiveMedia);
   }

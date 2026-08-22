@@ -65,6 +65,7 @@ export class AttachMediaToArchiveItemUseCase {
       publicacaoStatus: 'rascunho',
       autor: null,
       tags: [],
+      pessoasIdentificadas: [],
       createdAt: now,
       updatedAt: now,
       createdBy: ctx.uid,

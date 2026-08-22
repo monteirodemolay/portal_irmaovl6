@@ -43,6 +43,16 @@ export class FirestoreArchiveMediaRepository implements IArchiveMediaRepository 
     return this.paginate(query, page);
   }
 
+  async findByPessoaIdentificada(tenantId: string, memberId: string): Promise<ArchiveMedia[]> {
+    const snap = await this.collection
+      .where('pessoasIdentificadas', 'array-contains', memberId)
+      .where('tenantId', '==', tenantId)
+      .where('deletedAt', '==', null)
+      .orderBy('createdAt', 'desc')
+      .get();
+    return snap.docs.map((doc) => doc.data());
+  }
+
   private async paginate(
     query: Query<ArchiveMedia>,
     page: PageRequest,

@@ -33,6 +33,13 @@ export interface UpdateArchiveMediaBatchFields {
   documentType?: string | null;
   role?: string | null;
   isFeatured?: boolean;
+  /**
+   * IDs de `Member` identificados na mídia (item 1 do escopo da Fase A
+   * "Pessoas & Descoberta") — mesma regra de "só sobrescreve o que foi
+   * informado" dos demais campos individuais, aplicável tanto em lote
+   * quanto a uma única mídia.
+   */
+  pessoasIdentificadas?: string[];
 }
 
 export interface UpdateArchiveMediaBatchInput {
@@ -97,6 +104,9 @@ export class UpdateArchiveMediaBatchUseCase {
         : {}),
       ...(input.fields.role !== undefined ? { role: input.fields.role } : {}),
       ...(input.fields.isFeatured !== undefined ? { isFeatured: input.fields.isFeatured } : {}),
+      ...(input.fields.pessoasIdentificadas !== undefined
+        ? { pessoasIdentificadas: input.fields.pessoasIdentificadas }
+        : {}),
       updatedAt: now,
       updatedBy: ctx.uid,
     }));

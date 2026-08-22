@@ -145,5 +145,6 @@ export const updateArchiveMediaBatchSchema = z.object({
   documentType: z.string().max(80).nullable().optional(),
   role: z.string().max(80).nullable().optional(),
   isFeatured: z.boolean().optional(),
+  pessoasIdentificadas: z.array(z.string().min(1)).max(50).optional(),
 });
 export type UpdateArchiveMediaBatchFormValues = z.infer<typeof updateArchiveMediaBatchSchema>;
