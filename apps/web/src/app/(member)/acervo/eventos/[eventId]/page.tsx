@@ -51,7 +51,7 @@ export default async function EventAlbumPage({ params }: { params: Promise<{ eve
           <MapPin size={15} />
           {event.local}
         </span>
-        {album?.boardTermNome && <span>Gestão {album.boardTermNome}</span>}
+        {album?.boardTermNome && <span>{album.boardTermNome}</span>}
       </div>
 
       {event.descricao && (
