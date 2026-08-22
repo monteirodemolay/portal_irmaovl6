@@ -110,9 +110,12 @@ export interface CreateEventForPublishState {
 }
 
 /**
- * Cadastro retroativo inline do passo 1 — reaproveita `CreateEventUseCase`
- * (que já identifica a Gestão vigente automaticamente via
- * `FindBoardTermForDateUseCase` quando `boardTermId` não é informado).
+ * Cadastro retroativo inline do passo 1. `CreateEventUseCase` (Fase 1) NÃO
+ * identifica a Gestão sozinho — `boardTermId` é um input obrigatório dele,
+ * então esta action precisa rodar `FindBoardTermForDateUseCase` aqui e
+ * repassar o resultado, exatamente como `previewBoardTermForDateAction` já
+ * faz para a prévia. Sem isso, o evento seria salvo com `boardTermId: null`
+ * mesmo quando o admin viu "Gestão identificada" na tela antes de enviar.
  */
 export async function createEventForPublishAction(
   _prevState: CreateEventForPublishState,
@@ -121,6 +124,15 @@ export async function createEventForPublishAction(
   const session = await requireSession();
 
   const dataInicioRaw = formData.get('dataInicio');
+  const parsedDate =
+    typeof dataInicioRaw === 'string' ? parseBrazilDateTimeLocal(dataInicioRaw) : null;
+
+  const container = createServerContainer();
+  const boardTerm =
+    parsedDate && !Number.isNaN(parsedDate.getTime())
+      ? await container.useCases.findBoardTermForDate.execute(session.authContext, parsedDate)
+      : null;
+
   let input;
   try {
     input = eventSchema.parse({
@@ -128,8 +140,7 @@ export async function createEventForPublishAction(
       titulo: formData.get('titulo'),
       descricao: null,
       local: formData.get('local'),
-      dataInicio:
-        typeof dataInicioRaw === 'string' ? parseBrazilDateTimeLocal(dataInicioRaw) : null,
+      dataInicio: parsedDate,
       dataFim: null,
       exigeConfirmacaoPresenca: false,
       capacidadeMaxima: null,
@@ -137,12 +148,12 @@ export async function createEventForPublishAction(
       chegadaSugerida: null,
       observacoes: null,
       arquivosRelacionados: [],
+      boardTermId: boardTerm?.id ?? null,
     });
   } catch {
     return { error: 'Dados inválidos. Verifique título, local e data.', event: null };
   }
 
-  const container = createServerContainer();
   const result = await container.useCases.createEvent.execute(session.authContext, input);
   if (!result.ok) return { error: result.error.message, event: null };
 
