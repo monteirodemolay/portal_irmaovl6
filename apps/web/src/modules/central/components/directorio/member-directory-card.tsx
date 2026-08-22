@@ -14,14 +14,14 @@ export function MemberDirectoryCard({ profile }: { profile: PublicMemberProfileD
       <Card className="hover:border-primary h-full transition-colors hover:shadow-md">
         <CardContent className="flex h-full flex-col gap-3 p-5">
           <div className="flex items-start justify-between gap-2">
-            <div className="flex items-center gap-3">
+            <div className="flex min-w-0 flex-1 items-center gap-3">
               <MemberAvatar
                 fotoUrl={profile.fotoUrl}
                 nome={profile.nomeCompleto}
-                className="h-12 w-12"
+                className="h-12 w-12 shrink-0"
               />
               <div className="flex min-w-0 flex-col gap-1">
-                <p className="truncate font-medium">{profile.nomeCompleto}</p>
+                <p className="line-clamp-2 font-medium leading-snug">{profile.nomeCompleto}</p>
                 <MemberDegreeBadge grau={profile.grau} compact />
               </div>
             </div>
