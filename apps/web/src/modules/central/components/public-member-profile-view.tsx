@@ -196,23 +196,27 @@ export function PublicMemberProfileView({ profile }: { profile: PublicMemberProf
 
           {hasContatos && (
             <Section title="Contatos" icon={Phone}>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-col gap-2">
                 {profile.contatos?.whatsapp && (
                   <LinkPill
                     href={buildWhatsappLink(profile.contatos.whatsapp)}
-                    label="WhatsApp"
+                    label={profile.contatos.whatsapp}
                     icon={MessageCircle}
                   />
                 )}
                 {profile.contatos?.telefone && (
                   <LinkPill
                     href={`tel:${profile.contatos.telefone}`}
-                    label="Telefone"
+                    label={profile.contatos.telefone}
                     icon={Phone}
                   />
                 )}
                 {profile.contatos?.email && (
-                  <LinkPill href={`mailto:${profile.contatos.email}`} label="E-mail" icon={Mail} />
+                  <LinkPill
+                    href={`mailto:${profile.contatos.email}`}
+                    label={profile.contatos.email}
+                    icon={Mail}
+                  />
                 )}
               </div>
             </Section>

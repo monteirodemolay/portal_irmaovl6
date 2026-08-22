@@ -3,7 +3,21 @@ import { Users } from '@vl6/ui';
 import { requireSession } from '@/lib/auth/require-session';
 import { TabNav } from '@/components/layout/tab-nav';
 
-export default async function IrmaosLayout({ children }: { children: ReactNode }) {
+/**
+ * Slot paralelo `@drawer` — só existe pra permitir a rota interceptada
+ * `@drawer/(.)[memberId]` abrir o perfil de um Irmão como painel lateral
+ * por cima do Diretório, sem navegação de página cheia (mesmo padrão de
+ * `/admin/pessoas/irmaos`). Em `/irmaos/meu-espaco` ou no próprio
+ * Diretório sem nenhum Irmão selecionado, `@drawer/default.tsx` devolve
+ * `null` e este layout se comporta como se não existisse.
+ */
+export default async function IrmaosLayout({
+  children,
+  drawer,
+}: {
+  children: ReactNode;
+  drawer: ReactNode;
+}) {
   await requireSession();
 
   return (
@@ -29,6 +43,7 @@ export default async function IrmaosLayout({ children }: { children: ReactNode }
       />
 
       {children}
+      {drawer}
     </div>
   );
 }
