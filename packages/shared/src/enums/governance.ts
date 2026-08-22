@@ -38,3 +38,12 @@ export const BOARD_POSITION_LABELS: Record<BoardPositionKey, string> = {
   experto: 'Experto',
   cobridor: 'Cobridor',
 };
+
+function isBoardPositionKey(cargo: string): cargo is BoardPositionKey {
+  return (BOARD_POSITION_KEYS as readonly string[]).includes(cargo);
+}
+
+/** Rótulo de exibição de um cargo — cai para o próprio valor quando é um cargo extra digitado pelo usuário. */
+export function getBoardPositionLabel(cargo: string): string {
+  return isBoardPositionKey(cargo) ? BOARD_POSITION_LABELS[cargo] : cargo;
+}

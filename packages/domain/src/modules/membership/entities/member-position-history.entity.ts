@@ -1,9 +1,9 @@
-import type { BoardPositionKey } from '@vl6/shared';
 import type { BaseEntity } from '../../../shared/base-entity';
 
 export interface MemberPositionHistory extends BaseEntity {
   memberId: string;
-  cargo: BoardPositionKey;
+  /** Chave de `BOARD_POSITION_KEYS` ou um cargo extra digitado pelo usuário. */
+  cargo: string;
   gestaoId: string;
   dataInicio: Date;
   dataFim: Date | null;

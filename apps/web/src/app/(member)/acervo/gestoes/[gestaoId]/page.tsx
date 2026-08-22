@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { createServerContainer } from '@vl6/infra';
-import { BOARD_POSITION_LABELS } from '@vl6/shared';
+import { getBoardPositionLabel } from '@vl6/shared';
 import { Avatar, AvatarFallback, AvatarImage, EmptyState, Users } from '@vl6/ui';
 import { requirePagePermission } from '@/lib/auth/require-permission';
 import { AcervoPageHeader } from '@/components/member/acervo-page-header';
@@ -85,7 +85,7 @@ export default async function ArchiveBoardTermDetailPage({
               </Avatar>
               <div className="min-w-0">
                 <div className="text-accent text-[10px] font-semibold uppercase tracking-wider">
-                  {BOARD_POSITION_LABELS[seat.cargo]}
+                  {getBoardPositionLabel(seat.cargo)}
                 </div>
                 <h3 className="font-display group-hover:text-accent truncate font-semibold transition-colors">
                   {seat.nomeCompleto}

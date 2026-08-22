@@ -1,4 +1,3 @@
-import { SINGLE_OCCURRENCE_BOARD_POSITIONS, type BoardPositionKey } from '@vl6/shared';
 import type { AuthContext } from '../../../shared/auth-context';
 import { requirePermission } from '../../../shared/auth-context';
 import type { IClock, IIdGenerator } from '../../../shared/ports';
@@ -12,7 +11,8 @@ import type { IBoardPositionAssignmentRepository } from '../repositories/board-p
 
 export interface AssignBoardPositionInput {
   gestaoId: string;
-  cargo: BoardPositionKey;
+  /** Chave de `BOARD_POSITION_KEYS` ou um cargo extra digitado pelo usuário. */
+  cargo: string;
   memberId: string;
   ordem: number;
 }
@@ -27,9 +27,10 @@ export interface AssignBoardPositionDeps {
 }
 
 /**
- * Atribui um Irmão a um cargo da Diretoria dentro de uma gestão. Para
- * cargos de ocorrência única (todos exceto Diácono/Experto —
- * SINGLE_OCCURRENCE_BOARD_POSITIONS), substitui quem estava no cargo,
+ * Atribui um Irmão a um cargo da Diretoria dentro de uma gestão. `cargo`
+ * aceita tanto uma chave de BOARD_POSITION_KEYS quanto um cargo extra
+ * digitado pelo usuário (ex.: novos cargos de oficiais). Para cargos de
+ * ocorrência única (todos exceto Diácono/Experto), substitui quem estava no cargo,
  * encerrando o histórico do titular anterior. Sempre grava uma entrada em
  * `memberPositionHistory` e atualiza `Member.cargoAtualId` do novo titular
  * — docs/architecture/06-regras-negocio.md §6.2.
@@ -55,7 +56,7 @@ export class AssignBoardPositionUseCase {
     }
 
     const now = this.deps.clock.now();
-    const isSingleOccurrence = SINGLE_OCCURRENCE_BOARD_POSITIONS.includes(input.cargo);
+    const isSingleOccurrence = input.cargo !== 'diacono' && input.cargo !== 'experto';
 
     let assignment: BoardPositionAssignment;
 

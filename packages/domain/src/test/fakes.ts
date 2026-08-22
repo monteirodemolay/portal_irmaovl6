@@ -31,7 +31,6 @@ import type { Committee } from '../modules/governance/entities/committee.entity'
 import type { IBoardTermRepository } from '../modules/governance/repositories/board-term.repository';
 import type { IBoardPositionAssignmentRepository } from '../modules/governance/repositories/board-position-assignment.repository';
 import type { ICommitteeRepository } from '../modules/governance/repositories/committee.repository';
-import type { BoardPositionKey } from '@vl6/shared';
 import type { MemberCentralProfile } from '../modules/central/entities/member-central-profile.entity';
 import type { PublicationSettings } from '../modules/central/entities/publication-settings.entity';
 import type { PublicationConsent } from '../modules/central/entities/publication-consent.entity';
@@ -365,7 +364,7 @@ export class InMemoryBoardPositionAssignmentRepository implements IBoardPosition
   async listByGestao(gestaoId: string) {
     return [...this.byId.values()].filter((a) => a.gestaoId === gestaoId);
   }
-  async findByGestaoAndCargo(gestaoId: string, cargo: BoardPositionKey) {
+  async findByGestaoAndCargo(gestaoId: string, cargo: string) {
     return (
       [...this.byId.values()].find((a) => a.gestaoId === gestaoId && a.cargo === cargo) ?? null
     );

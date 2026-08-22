@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { createServerContainer } from '@vl6/infra';
-import { BOARD_POSITION_LABELS } from '@vl6/shared';
+import { getBoardPositionLabel } from '@vl6/shared';
 import { Avatar, AvatarFallback, AvatarImage, EmptyState, Users } from '@vl6/ui';
 import { requirePagePermission } from '@/lib/auth/require-permission';
 import { AcervoPageHeader } from '@/components/member/acervo-page-header';
@@ -142,7 +142,7 @@ export default async function ArchivePersonPage({
             {sortedHistory.map((entry) => (
               <li key={entry.id} className="relative">
                 <span className="bg-accent absolute -left-[23px] top-1.5 h-2 w-2 rounded-full" />
-                <p className="font-display font-semibold">{BOARD_POSITION_LABELS[entry.cargo]}</p>
+                <p className="font-display font-semibold">{getBoardPositionLabel(entry.cargo)}</p>
                 <p className="text-muted text-xs">
                   {termNameById.get(entry.gestaoId) ?? 'Gestão'} · {formatDate(entry.dataInicio)}
                   {entry.dataFim ? ` a ${formatDate(entry.dataFim)}` : ' — atual'}

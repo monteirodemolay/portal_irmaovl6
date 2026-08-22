@@ -2,9 +2,9 @@
 
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
-import type { BoardPositionKey } from '@vl6/shared';
 import { createServerContainer } from '@vl6/infra';
 import { requireSession } from '@/lib/auth/require-session';
+import { CUSTOM_CARGO_VALUE } from '../lib/cargo-constants';
 
 export interface GovernanceActionState {
   error: string | null;
@@ -44,7 +44,9 @@ export async function assignBoardPositionAction(
 ): Promise<GovernanceActionState> {
   const session = await requireSession();
 
-  const cargo = String(formData.get('cargo')) as BoardPositionKey;
+  const cargoSelecionado = String(formData.get('cargo') ?? '').trim();
+  const cargoPersonalizado = String(formData.get('cargoPersonalizado') ?? '').trim();
+  const cargo = cargoSelecionado === CUSTOM_CARGO_VALUE ? cargoPersonalizado : cargoSelecionado;
   const memberId = String(formData.get('memberId'));
   const ordem = Number(formData.get('ordem') ?? 1);
   if (!cargo || !memberId) {

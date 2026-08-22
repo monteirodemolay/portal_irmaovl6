@@ -1,6 +1,5 @@
 import type { Firestore } from 'firebase-admin/firestore';
 import type { BoardPositionAssignment, IBoardPositionAssignmentRepository } from '@vl6/domain';
-import type { BoardPositionKey } from '@vl6/shared';
 import { createEntityConverter } from '../converters/entity.converter';
 
 const COLLECTION = 'boardPositionAssignments';
@@ -26,7 +25,7 @@ export class FirestoreBoardPositionAssignmentRepository implements IBoardPositio
 
   async findByGestaoAndCargo(
     gestaoId: string,
-    cargo: BoardPositionKey,
+    cargo: string,
   ): Promise<BoardPositionAssignment | null> {
     const snap = await this.collection
       .where('gestaoId', '==', gestaoId)

@@ -6,6 +6,7 @@ import * as Sentry from '@sentry/nextjs';
 import ExcelJS from 'exceljs';
 import {
   errorToLogContext,
+  formatBrazilianPersonName,
   logger,
   memberSchema,
   MEMBER_DEGREES,
@@ -691,8 +692,9 @@ async function buildXlsxPreviewRows(
 
   for (let rowNumber = 2; rowNumber <= sheet.rowCount; rowNumber++) {
     const row = sheet.getRow(rowNumber);
-    const nome = cellText(row, 1);
-    if (!nome) continue;
+    const nomeRaw = cellText(row, 1);
+    if (!nomeRaw) continue;
+    const nome = formatBrazilianPersonName(nomeRaw);
 
     const cim = cellText(row, 2) || null;
     const grauRaw = cellText(row, 3);
@@ -781,7 +783,11 @@ function parsePdfRosterLine(
   if (!grau) return null;
   const cimIndex = tokens.findIndex((token) => /^\d{3,7}$/.test(token));
   if (cimIndex < 1) return null;
-  return { nome: tokens.slice(0, cimIndex).join(' '), cim: tokens[cimIndex]!, grau };
+  return {
+    nome: formatBrazilianPersonName(tokens.slice(0, cimIndex).join(' ')),
+    cim: tokens[cimIndex]!,
+    grau,
+  };
 }
 
 /**

@@ -24,13 +24,30 @@ export default async function BoardTermDetailPage({
   const term = await container.repositories.boardTerm.findById(termId);
   if (!term || term.tenantId !== session.authContext.tenantId) notFound();
 
-  const [assignments, membersPage, committees] = await Promise.all([
+  const [assignments, membersPage, committees, allTerms] = await Promise.all([
     container.repositories.boardPositionAssignment.listByGestao(termId),
     container.useCases.searchMembers.execute(session.authContext, {}, { limit: 500 }),
     container.useCases.listCommitteesByGestao.execute(session.authContext, termId),
+    container.repositories.boardTerm.listByTenant(session.authContext.tenantId),
   ]);
   const membersById = new Map(membersPage.items.map((m) => [m.id, m]));
   const createCommittee = createCommitteeAction.bind(null, termId);
+
+  const previousTerm = allTerms
+    .filter((t) => t.periodoInicio.getTime() < term.periodoInicio.getTime())
+    .sort((a, b) => b.periodoInicio.getTime() - a.periodoInicio.getTime())[0];
+  const previousAssignments = previousTerm
+    ? await container.repositories.boardPositionAssignment.listByGestao(previousTerm.id)
+    : [];
+  const boardPositionKeySet = new Set<string>(BOARD_POSITION_KEYS);
+  const extraCargos = [
+    ...new Set(
+      previousAssignments.map((a) => a.cargo).filter((cargo) => !boardPositionKeySet.has(cargo)),
+    ),
+  ];
+  const currentExtraCargos = [
+    ...new Set(assignments.map((a) => a.cargo).filter((cargo) => !boardPositionKeySet.has(cargo))),
+  ];
 
   return (
     <div className="flex flex-col gap-8">
@@ -46,7 +63,11 @@ export default async function BoardTermDetailPage({
           <CardTitle>Atribuir cargo</CardTitle>
         </CardHeader>
         <CardContent>
-          <AssignPositionForm gestaoId={termId} members={membersPage.items} />
+          <AssignPositionForm
+            gestaoId={termId}
+            members={membersPage.items}
+            extraCargos={extraCargos}
+          />
         </CardContent>
       </Card>
 
@@ -61,6 +82,23 @@ export default async function BoardTermDetailPage({
                 <CardContent className="flex flex-col gap-1 p-4">
                   <Badge variant="accent" className="w-fit">
                     {BOARD_POSITION_LABELS[cargo]}
+                  </Badge>
+                  {seats.map((seat) => (
+                    <p key={seat.id} className="text-sm font-medium">
+                      {membersById.get(seat.memberId)?.nomeCompleto ?? '—'}
+                    </p>
+                  ))}
+                </CardContent>
+              </Card>
+            );
+          })}
+          {currentExtraCargos.map((cargo) => {
+            const seats = assignments.filter((a) => a.cargo === cargo);
+            return (
+              <Card key={cargo}>
+                <CardContent className="flex flex-col gap-1 p-4">
+                  <Badge variant="accent" className="w-fit">
+                    {cargo}
                   </Badge>
                   {seats.map((seat) => (
                     <p key={seat.id} className="text-sm font-medium">

@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { createServerContainer } from '@vl6/infra';
-import { BOARD_POSITION_LABELS, type BoardPositionKey } from '@vl6/shared';
+import { getBoardPositionLabel } from '@vl6/shared';
 import { ArchiveItemCard, EmptyState, Users } from '@vl6/ui';
 import { requirePagePermission } from '@/lib/auth/require-permission';
 import { AcervoPageHeader } from '@/components/member/acervo-page-header';
@@ -31,7 +31,7 @@ export default async function ArchivePeoplePage() {
 
   const mostRecentByMember = new Map<
     string,
-    { cargo: BoardPositionKey; gestaoNome: string; periodoInicio: Date }
+    { cargo: string; gestaoNome: string; periodoInicio: Date }
   >();
   for (const { term, assignments } of termsWithAssignments) {
     for (const assignment of assignments) {
@@ -60,7 +60,7 @@ export default async function ArchivePeoplePage() {
         memberId: member.id,
         nomeCompleto: member.nomeCompleto,
         grauLabel: MEMBER_DEGREE_LABELS[member.grau],
-        cargoLabel: BOARD_POSITION_LABELS[highlight.cargo],
+        cargoLabel: getBoardPositionLabel(highlight.cargo),
         gestaoNome: highlight.gestaoNome,
         periodoInicio: highlight.periodoInicio,
       };
