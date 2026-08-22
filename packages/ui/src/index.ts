@@ -24,6 +24,7 @@ export * from './components/provenance-panel';
 export * from './components/filter-bar';
 export * from './components/video-player';
 export * from './components/pdf-viewer';
+export * from './components/archive-lightbox';
 export * from './components/constellation-graph';
 // Reexporte nomeado (não `export *`) — vários ícones do Lucide colidem com
 // nomes de componentes deste barrel (ex.: `Badge`). Adicione aqui só os
@@ -99,6 +100,8 @@ export {
   ListChecks,
   StickyNote,
   Trash2,
+  Music,
+  Video,
   ICON_SIZE_DEFAULT,
   ICON_SIZE_LARGE,
   ICON_STROKE_WIDTH,
