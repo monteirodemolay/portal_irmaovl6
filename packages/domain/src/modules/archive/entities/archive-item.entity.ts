@@ -28,4 +28,17 @@ export interface ArchiveItem extends BaseEntity {
   nivelAcesso: AccessLevel;
   /** `ArchiveMedia.id` marcada como capa (`SetArchiveItemCoverUseCase`) — `null` até a primeira mídia ser anexada. */
   capaMediaId: string | null;
+  /**
+   * `GalleryAlbum.id` de origem quando este item nasceu de uma migração
+   * assistida da Galeria legada — Fase 5 (docs/architecture/
+   * 11-acervo-vl6.md §11.6e, `MigrateGalleryAlbumUseCase`). Campo opcional
+   * para não exigir alteração em todo construtor de `ArchiveItem` já
+   * existente (Fases 1-4); ausente/`null` para todo item criado pelos
+   * fluxos normais. Também serve de marcador de idempotência: a tela de
+   * migração usa a presença de um `ArchiveItem` com este campo apontando
+   * para um álbum para não listá-lo de novo como pendente — o
+   * `GalleryAlbum`/`GalleryMedia` original nunca é alterado ou marcado
+   * (Regra de Preservação).
+   */
+  origemGalleryAlbumId?: string | null;
 }

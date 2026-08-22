@@ -307,3 +307,6 @@ export * from './modules/archive/use-cases/restore-archive-media.use-case';
 export * from './modules/archive/use-cases/publish-archive-item.use-case';
 export * from './modules/archive/use-cases/unpublish-archive-item.use-case';
 export * from './modules/governance/use-cases/find-board-term-for-date.use-case';
+
+// Fase 5 — Memória institucional (docs/architecture/11-acervo-vl6.md §11.6e)
+export * from './modules/archive/use-cases/migrate-gallery-album.use-case';

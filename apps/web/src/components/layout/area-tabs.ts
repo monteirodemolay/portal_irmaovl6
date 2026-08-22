@@ -71,6 +71,11 @@ export const ADMIN_AREA_TABS: Record<AdminAreaKey, AreaTabDef[]> = {
       label: 'Lixeira',
       permission: 'archiveItem:delete',
     },
+    {
+      href: '/admin/acervo/migracao',
+      label: 'Migração',
+      permission: 'archiveItem:create',
+    },
   ],
   configuracoes: [
     { href: '/admin/configuracoes/geral', label: 'Geral', permission: null },

@@ -67,6 +67,7 @@ import {
   RestoreArchiveMediaUseCase,
   PublishArchiveItemUseCase,
   UnpublishArchiveItemUseCase,
+  MigrateGalleryAlbumUseCase,
   FindBoardTermForDateUseCase,
   CreateBoardTermUseCase,
   CreateCommitteeUseCase,
@@ -1069,6 +1070,19 @@ export function createServerContainer() {
     unpublishArchiveItem: new UnpublishArchiveItemUseCase({
       archiveItemRepository: repositories.archiveItem,
       clock,
+    }),
+
+    // Fase 5 — Memória institucional (docs/architecture/11-acervo-vl6.md §11.6e)
+    migrateGalleryAlbum: new MigrateGalleryAlbumUseCase({
+      galleryAlbumRepository: repositories.galleryAlbum,
+      galleryMediaRepository: repositories.galleryMedia,
+      eventRepository: repositories.event,
+      boardTermRepository: repositories.boardTerm,
+      archiveItemRepository: repositories.archiveItem,
+      archiveMediaRepository: repositories.archiveMedia,
+      mediaAssetRepository: repositories.mediaAsset,
+      clock,
+      idGenerator,
     }),
   };
 

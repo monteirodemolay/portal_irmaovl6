@@ -2,9 +2,11 @@ import Link from 'next/link';
 import { hasPermission } from '@vl6/domain';
 import { createServerContainer } from '@vl6/infra';
 import { EVENT_KIND_LABELS } from '@vl6/shared';
-import { CalendarDays, Compass, EmptyState } from '@vl6/ui';
+import { CalendarDays, Compass, EmptyState, Image as ImageIcon } from '@vl6/ui';
 import { requireSession } from '@/lib/auth/require-session';
 import { AcervoPageHeader } from '@/components/member/acervo-page-header';
+import { formatArchiveSummaryLabel } from '@/modules/archive/lib/format-archive-summary-label';
+import { loadEventArchiveSummary } from '@/modules/archive/lib/load-event-album';
 
 interface TimelineEntry {
   date: Date;
@@ -12,6 +14,7 @@ interface TimelineEntry {
   titulo: string;
   descricao: string;
   href: string;
+  archiveSummaryLabel: string | null;
 }
 
 function formatDate(date: Date): string {
@@ -48,17 +51,32 @@ export default async function ArchiveTimelinePage() {
     titulo: term.nome,
     descricao: formatPeriod(term.periodoInicio, term.periodoFim),
     href: `/acervo/gestoes/${term.id}`,
+    archiveSummaryLabel: null,
   }));
 
-  const eventEntries: TimelineEntry[] = eventsPage.items
-    .filter((event) => new Date(event.dataFim ?? event.dataInicio) < now)
-    .map((event) => ({
+  const pastEvents = eventsPage.items.filter(
+    (event) => new Date(event.dataFim ?? event.dataInicio) < now,
+  );
+
+  // Uma consulta em lote sobre a lista já carregada (não N+1 por render) —
+  // mesmo padrão de `/acervo/eventos/page.tsx` (Fase 4) — decide se a
+  // entrada linka para o álbum público do Acervo VL6 e exibe a contagem de
+  // mídia publicada abaixo do título.
+  const archiveSummaries = await Promise.all(
+    pastEvents.map((event) => loadEventArchiveSummary(container, authContext.tenantId, event.id)),
+  );
+
+  const eventEntries: TimelineEntry[] = pastEvents.map((event, index) => {
+    const summary = archiveSummaries[index];
+    return {
       date: event.dataInicio,
       kindLabel: EVENT_KIND_LABELS[event.tipo],
       titulo: event.titulo,
       descricao: event.local,
-      href: `/eventos/${event.id}`,
-    }));
+      href: summary ? `/acervo/eventos/${event.id}` : `/eventos/${event.id}`,
+      archiveSummaryLabel: summary ? formatArchiveSummaryLabel(summary) : null,
+    };
+  });
 
   const entries = [...termEntries, ...eventEntries].sort(
     (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
@@ -106,6 +124,12 @@ export default async function ArchiveTimelinePage() {
                         {entry.titulo}
                       </p>
                       <p className="text-muted text-xs">{entry.descricao}</p>
+                      {entry.archiveSummaryLabel && (
+                        <p className="text-accent mt-1 inline-flex items-center gap-1.5 text-xs font-medium">
+                          <ImageIcon size={12} />
+                          {entry.archiveSummaryLabel}
+                        </p>
+                      )}
                     </Link>
                   </li>
                 ))}
