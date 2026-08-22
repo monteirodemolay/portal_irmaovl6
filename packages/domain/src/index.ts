@@ -286,3 +286,17 @@ export * from './modules/archive/use-cases/submit-archive-contribution.use-case'
 export * from './modules/archive/use-cases/list-my-archive-contributions.use-case';
 export * from './modules/archive/use-cases/list-archive-contributions.use-case';
 export * from './modules/archive/use-cases/moderate-archive-contribution.use-case';
+// Fase 1 da Fundação do Acervo VL6 (docs/architecture/11-acervo-vl6.md §11.5)
+export * from './modules/archive/entities/archive-item.entity';
+export * from './modules/archive/repositories/archive-item.repository';
+export * from './modules/archive/entities/media-asset.entity';
+export * from './modules/archive/repositories/media-asset.repository';
+export * from './modules/archive/entities/archive-media.entity';
+export * from './modules/archive/repositories/archive-media.repository';
+export * from './modules/archive/use-cases/create-archive-item.use-case';
+export * from './modules/archive/use-cases/register-media-asset.use-case';
+export * from './modules/archive/use-cases/attach-media-to-archive-item.use-case';
+export * from './modules/archive/use-cases/set-archive-item-cover.use-case';
+export * from './modules/archive/use-cases/soft-delete-archive-item.use-case';
+export * from './modules/archive/use-cases/restore-archive-item.use-case';
+export * from './modules/governance/use-cases/find-board-term-for-date.use-case';

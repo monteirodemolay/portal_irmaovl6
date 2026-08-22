@@ -33,6 +33,11 @@ export class FirestoreBoardTermRepository implements IBoardTermRepository {
     return candidate ?? null;
   }
 
+  /** Mesma lógica de `findActive`, com data explícita em vez do padrão "agora" — Fase 1 do Acervo VL6. */
+  async findByDate(tenantId: string, date: Date): Promise<BoardTerm | null> {
+    return this.findActive(tenantId, date);
+  }
+
   async listByTenant(tenantId: string): Promise<BoardTerm[]> {
     const snap = await this.collection
       .where('tenantId', '==', tenantId)

@@ -286,6 +286,29 @@ service cloud.firestore {
     }
 
     // ---------------------------------------------------------------
+    // Acervo VL6 — Fase 1 da Fundação (docs/architecture/11-acervo-vl6.md
+    // §11.5): `archiveItems`, `mediaAssets` e o vínculo entre eles
+    // (`archiveMedia`). Mesmo padrão de `archiveCollections` acima:
+    // leitura pública quando publicado, ou com permissão de gestão;
+    // nunca `allow delete` — só soft delete via update (`deletedAt`).
+    // ---------------------------------------------------------------
+    match /archiveItems/{id} {
+      allow read: if sameTenant(resource.data) && hasPermission('archiveItem:read') && (resource.data.publicacaoStatus == 'publicado' || hasPermission('archiveItem:manage'));
+      allow create, update: if sameTenant(request.resource.data) && hasPermission('archiveItem:create');
+      allow delete: if false;
+    }
+    match /mediaAssets/{id} {
+      allow read: if sameTenant(resource.data) && hasPermission('mediaAsset:read');
+      allow create, update: if sameTenant(request.resource.data) && hasPermission('mediaAsset:create');
+      allow delete: if false;
+    }
+    match /archiveMedia/{id} {
+      allow read: if sameTenant(resource.data) && hasPermission('archiveMedia:read') && (resource.data.publicacaoStatus == 'publicado' || hasPermission('archiveMedia:manage'));
+      allow create, update: if sameTenant(request.resource.data) && hasPermission('archiveMedia:create');
+      allow delete: if false;
+    }
+
+    // ---------------------------------------------------------------
     // Audit — write exclusivamente via Admin SDK (ignora Security Rules),
     // dentro da própria Server Action que faz a escrita de negócio
     // (withAudit, packages/infra), nunca pelo client. Ver docs/architecture
