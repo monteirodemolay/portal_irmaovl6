@@ -2,7 +2,14 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { createServerContainer } from '@vl6/infra';
-import { ArchiveItemCard, BookOpen, EmptyState, FileText, Image as GalleryIcon } from '@vl6/ui';
+import {
+  ArchiveItemCard,
+  BookOpen,
+  CalendarDays,
+  EmptyState,
+  FileText,
+  Image as GalleryIcon,
+} from '@vl6/ui';
 import { requireSession } from '@/lib/auth/require-session';
 import { AcervoPageHeader } from '@/components/member/acervo-page-header';
 import { RelationsSection } from '@/modules/archive/components/relations-section';
@@ -14,6 +21,7 @@ const KIND_ICONS: Record<ArchiveItemKind, ReactNode> = {
   library: <BookOpen size={14} />,
   'gallery-album': <GalleryIcon size={14} />,
   'gallery-media': <GalleryIcon size={14} />,
+  'archive-item': <CalendarDays size={14} />,
 };
 
 export default async function ArchiveCollectionDetailPage({
@@ -34,7 +42,7 @@ export default async function ArchiveCollectionDetailPage({
   const resolvedItems = (
     await Promise.all(
       collection.itemIds.map((itemId) =>
-        resolveArchiveItem(itemId, session.authContext, container),
+        resolveArchiveItem(itemId, session.authContext, container, session.role),
       ),
     )
   ).filter((item) => item !== null);

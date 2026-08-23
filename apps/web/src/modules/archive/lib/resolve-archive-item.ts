@@ -1,8 +1,9 @@
 import 'server-only';
-import type { AuthContext } from '@vl6/domain';
+import type { AuthContext, Role } from '@vl6/domain';
 import { hasPermission } from '@vl6/domain';
 import type { ServerContainer } from '@vl6/infra';
-import { FILE_KIND_LABELS, GALLERY_MEDIA_KIND_LABELS } from '@vl6/shared';
+import { ARCHIVE_ITEM_TYPE_LABELS, FILE_KIND_LABELS, GALLERY_MEDIA_KIND_LABELS } from '@vl6/shared';
+import { isAccessLevelVisible } from './access-level-visibility';
 import { buildArchiveItemId, parseArchiveItemId, type ArchiveItemKind } from './archive-item-id';
 
 export interface ResolvedArchiveItem {
@@ -36,6 +37,7 @@ const KIND_LABELS: Record<ArchiveItemKind, string> = {
   library: 'Biblioteca',
   'gallery-album': 'Álbum de Fotos e Vídeos',
   'gallery-media': 'Foto/Vídeo',
+  'archive-item': 'Evento do Acervo',
 };
 
 async function resolveFile(
@@ -195,17 +197,92 @@ async function resolveGalleryMedia(
 }
 
 /**
+ * Resolve um `ArchiveItem` do Acervo novo (Fases 1-B da Fundação) pelo
+ * kind composto `archive-item` (Fase D) — só itens já publicados e visíveis
+ * ao nível de acesso da sessão (`isAccessLevelVisible`, mesma regra de
+ * `loadEventAlbum`, nunca duplicada aqui). `viewHref`/`legacyHref` apontam
+ * para o álbum público real do evento (`/acervo/eventos/[eventId]`), já que
+ * um `ArchiveItem` reúne várias mídias — não há um único binário para abrir
+ * como nos 4 kinds legados.
+ */
+async function resolveNewArchiveItem(
+  container: ServerContainer,
+  authContext: AuthContext,
+  role: Role | null,
+  sourceId: string,
+): Promise<ResolvedArchiveItem | null> {
+  if (!hasPermission(authContext, 'archiveItem:read')) return null;
+
+  const visibility = { authenticated: true, role };
+
+  const item = await container.repositories.archiveItem.findById(sourceId);
+  if (
+    !item ||
+    item.tenantId !== authContext.tenantId ||
+    item.deletedAt ||
+    item.publicacaoStatus !== 'publicado' ||
+    !isAccessLevelVisible(item.nivelAcesso, visibility)
+  ) {
+    return null;
+  }
+
+  const event = await container.repositories.event.findById(item.eventId);
+  if (!event || event.tenantId !== authContext.tenantId || event.deletedAt) return null;
+
+  let thumbnailUrl: string | null = null;
+  if (item.capaMediaId) {
+    const capaMedia = await container.repositories.archiveMedia.findById(item.capaMediaId);
+    if (
+      capaMedia &&
+      capaMedia.tenantId === authContext.tenantId &&
+      !capaMedia.deletedAt &&
+      capaMedia.publicacaoStatus === 'publicado' &&
+      isAccessLevelVisible(capaMedia.accessLevel, visibility)
+    ) {
+      thumbnailUrl = `/api/archive-media/${capaMedia.id}`;
+    }
+  }
+
+  return {
+    compositeId: buildArchiveItemId('archive-item', item.id),
+    kind: 'archive-item',
+    kindLabel: KIND_LABELS['archive-item'],
+    titulo: item.titulo,
+    descricao: item.descricao,
+    autor: null,
+    categoriaNome: ARCHIVE_ITEM_TYPE_LABELS[item.tipo],
+    tipoDetalhado: null,
+    thumbnailUrl,
+    viewHref: `/acervo/eventos/${event.id}`,
+    downloadHref: null,
+    tamanhoBytes: null,
+    dataReferencia: event.dataInicio,
+    catalogadoEm: item.createdAt,
+    legacyHref: `/acervo/eventos/${event.id}`,
+    legacyLabel: 'Ver o álbum do evento',
+    catalogo: null,
+  };
+}
+
+/**
  * Resolve o "Item do Acervo" canônico a partir de um ID composto
  * (`kind:sourceId`) sem duplicar nenhum registro de origem — ver
  * `archive-item-id.ts`. Retorna `null` tanto para ID inválido quanto para
  * item inexistente/sem permissão/de outro tenant, deliberadamente sem
  * distinguir os casos (mesma cautela de privacidade já usada em
  * `GetPublicMemberProfileUseCase`).
+ *
+ * `role` é opcional (padrão `null`) — só o kind `archive-item` precisa dele
+ * para `isAccessLevelVisible` decidir o nível `administracao`; chamadores
+ * que não repassam a sessão continuam funcionando para os 4 kinds legados
+ * (que não têm controle de nível de acesso) e, por padrão mais restritivo,
+ * nunca resolvem um `archive-item` de nível `administracao` sem a role real.
  */
 export async function resolveArchiveItem(
   compositeId: string,
   authContext: AuthContext,
   container: ServerContainer,
+  role: Role | null = null,
 ): Promise<ResolvedArchiveItem | null> {
   const parsed = parseArchiveItemId(compositeId);
   if (!parsed) return null;
@@ -220,6 +297,8 @@ export async function resolveArchiveItem(
         return resolveGalleryAlbum(container, authContext, parsed.sourceId);
       case 'gallery-media':
         return resolveGalleryMedia(container, authContext, parsed.sourceId);
+      case 'archive-item':
+        return resolveNewArchiveItem(container, authContext, role, parsed.sourceId);
     }
   })();
   if (!item) return null;

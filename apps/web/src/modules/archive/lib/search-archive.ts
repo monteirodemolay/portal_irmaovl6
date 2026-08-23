@@ -69,6 +69,7 @@ export async function loadArchiveSearchResults(
       title: file.titulo,
       description: file.descricao || 'Documento institucional do Acervo VL6.',
       href: archiveItemHref('file', file.id),
+      compositeId: buildArchiveItemId('file', file.id),
       createdAt: file.createdAt,
       catalogText: catalogTextByOrigemId.get(buildArchiveItemId('file', file.id)) ?? null,
     }));
@@ -83,6 +84,7 @@ export async function loadArchiveSearchResults(
         title: file.titulo,
         description: file.descricao || 'Estudo e leitura selecionada para os Irmãos.',
         href: archiveItemHref('library', item.id),
+        compositeId: buildArchiveItemId('library', item.id),
         createdAt: item.createdAt,
         catalogText: catalogTextByOrigemId.get(buildArchiveItemId('library', item.id)) ?? null,
       },
@@ -95,6 +97,7 @@ export async function loadArchiveSearchResults(
     title: album.titulo,
     description: `${album.categoria} · registro da Loja`,
     href: archiveItemHref('gallery-album', album.id),
+    compositeId: buildArchiveItemId('gallery-album', album.id),
     createdAt: album.createdAt,
     catalogText: catalogTextByOrigemId.get(buildArchiveItemId('gallery-album', album.id)) ?? null,
   }));
@@ -127,6 +130,7 @@ export async function loadArchiveSearchResults(
         title: item.titulo,
         description: event.local,
         href: `/acervo/eventos/${event.id}`,
+        compositeId: buildArchiveItemId('archive-item', item.id),
         createdAt: item.createdAt,
         catalogText: [item.descricao, captions].filter(Boolean).join(' ') || null,
       },

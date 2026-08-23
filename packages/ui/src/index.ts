@@ -102,6 +102,7 @@ export {
   Trash2,
   Music,
   Video,
+  FileArchive,
   ICON_SIZE_DEFAULT,
   ICON_SIZE_LARGE,
   ICON_STROKE_WIDTH,

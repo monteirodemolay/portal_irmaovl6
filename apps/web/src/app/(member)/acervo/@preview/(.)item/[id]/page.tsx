@@ -14,7 +14,7 @@ export default async function ArchiveItemPreviewPage({
   const { id } = await params;
 
   const container = createServerContainer();
-  const item = await resolveArchiveItem(id, session.authContext, container);
+  const item = await resolveArchiveItem(id, session.authContext, container, session.role);
   if (!item) notFound();
 
   return (

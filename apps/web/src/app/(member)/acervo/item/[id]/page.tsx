@@ -11,7 +11,7 @@ export default async function ArchiveItemPage({ params }: { params: Promise<{ id
   const { id } = await params;
 
   const container = createServerContainer();
-  const item = await resolveArchiveItem(id, session.authContext, container);
+  const item = await resolveArchiveItem(id, session.authContext, container, session.role);
   if (!item) notFound();
 
   return (

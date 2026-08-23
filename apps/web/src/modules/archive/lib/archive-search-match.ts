@@ -15,6 +15,14 @@ export interface ArchiveSearchResult {
   title: string;
   description: string;
   href: string;
+  /**
+   * ID composto do "Item do Acervo" (`archive-item-id.ts`) para este
+   * resultado — usado pelo seletor de itens de Coleções/Exposições (Fase
+   * D) para montar `itemIds` sem adivinhar o kind a partir de `href` (que,
+   * para `kind: 'evento'`, aponta para `/acervo/eventos/[eventId]`, não
+   * para `/acervo/item/[id]`).
+   */
+  compositeId: string;
   createdAt: Date;
   /**
    * Texto complementar que entra no casamento de busca mas nunca é

@@ -21,7 +21,7 @@ export default async function EditArchiveExhibitionPage({
 
   const searchResults = await loadArchiveSearchResults(session.authContext, container);
   const availableItems = searchResults.map((result) => ({
-    compositeId: result.href.replace('/acervo/item/', ''),
+    compositeId: result.compositeId,
     title: result.title,
     kindLabel: ARCHIVE_SEARCH_KIND_LABELS[result.kind],
   }));

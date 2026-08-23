@@ -12,6 +12,7 @@ function makeResult(overrides: Partial<ArchiveSearchResult> = {}): ArchiveSearch
     title: 'Circular 001/2026',
     description: 'Convocação oficial.',
     href: '/acervo/item/file_1',
+    compositeId: 'file_1',
     createdAt: new Date(),
     catalogText: null,
     ...overrides,
