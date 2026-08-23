@@ -17,10 +17,16 @@ export interface IArchiveItemRepository {
    * vencido — o checklist de pendências continua a mesma barreira).
    */
   findScheduledForPublication(tenantId: string, now: Date): Promise<ArchiveItem[]>;
+  /** Total de itens do tenant (não excluídos) — Fase C, tile "Itens no Acervo VL6" do Painel administrativo. */
+  countByTenant(tenantId: string): Promise<number>;
+  /** Total de itens publicados do tenant (não excluídos) — Fase C, métricas. */
+  countPublishedByTenant(tenantId: string): Promise<number>;
   create(item: ArchiveItem): Promise<void>;
   update(item: ArchiveItem): Promise<void>;
   /** Lixeira — soft delete (`deletedAt` preenchido), nunca exclusão física. */
   softDelete(id: string, deletedAt: Date, updatedBy: string): Promise<void>;
   /** Lixeira — restauração, limpa `deletedAt`. */
   restore(id: string, updatedBy: string): Promise<void>;
+  /** Incremento atômico do contador de visualizações — Fase C, nunca via read-modify-write. */
+  incrementViews(id: string): Promise<void>;
 }

@@ -42,6 +42,21 @@ export interface ArchiveItem extends BaseEntity {
    */
   origemGalleryAlbumId?: string | null;
   /**
+   * `FileAsset.id` de origem quando este item nasceu de uma migração
+   * assistida de Arquivos legado — Fase C "Administração & métricas"
+   * (`MigrateFileAssetUseCase`). Mesmo papel de `origemGalleryAlbumId`:
+   * marcador de idempotência da tela de migração, nunca um sinal de
+   * alteração do `FileAsset` original (Regra de Preservação).
+   */
+  origemFileAssetId?: string | null;
+  /**
+   * `LibraryItem.id` de origem quando este item nasceu de uma migração
+   * assistida da Biblioteca legada — Fase C "Administração & métricas"
+   * (`MigrateLibraryItemUseCase`). Mesmo papel de
+   * `origemGalleryAlbumId`/`origemFileAssetId`.
+   */
+  origemLibraryItemId?: string | null;
+  /**
    * Data/hora futura para publicação automática — Fase B "Publicação
    * avançada" (`ScheduleArchiveItemPublicationUseCase`,
    * `PublishScheduledArchiveItemsUseCase`). `null` (padrão) para todo item
@@ -53,4 +68,14 @@ export interface ArchiveItem extends BaseEntity {
    * padrão de `origemGalleryAlbumId`.
    */
   publicarEm?: Date | null;
+  /**
+   * Contador de visualizações — Fase C "Administração & métricas". Somado a
+   * partir das visualizações de cada `ArchiveMedia` do item
+   * (`RecordArchiveMediaViewUseCase`, chamado pelo proxy autenticado
+   * `/api/archive-media/[archiveMediaId]`), mesmo espírito de
+   * `FileAsset.contagemVisualizacoes`/`LibraryItem.contagemVisualizacoes`.
+   * Campo aditivo opcional — ausente/`undefined` equivale a `0` para quem lê
+   * (mesmo padrão de `pessoasIdentificadas` em `ArchiveMedia`).
+   */
+  contagemVisualizacoes?: number;
 }

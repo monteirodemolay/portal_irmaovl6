@@ -58,4 +58,14 @@ export interface ArchiveMedia extends BaseEntity {
    * miniatura ainda" (o `<video>` mostra o primeiro frame por padrão).
    */
   posterMediaAssetId?: string | null;
+  /**
+   * Contador de visualizações — Fase C "Administração & métricas". Cada
+   * requisição bem-sucedida ao binário principal via
+   * `/api/archive-media/[archiveMediaId]` incrementa este campo
+   * (`RecordArchiveMediaViewUseCase`), mesmo espírito de
+   * `FileAsset.contagemVisualizacoes`/`LibraryItem.contagemVisualizacoes`.
+   * Campo aditivo opcional — ausente/`undefined` equivale a `0` para quem
+   * lê, mesmo padrão de `pessoasIdentificadas`.
+   */
+  contagemVisualizacoes?: number;
 }
