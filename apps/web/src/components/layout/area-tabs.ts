@@ -76,6 +76,11 @@ export const ADMIN_AREA_TABS: Record<AdminAreaKey, AreaTabDef[]> = {
       label: 'Migração',
       permission: 'archiveItem:create',
     },
+    {
+      href: '/admin/acervo/duplicidade',
+      label: 'Duplicidade',
+      permission: 'archiveMedia:manage',
+    },
   ],
   configuracoes: [
     { href: '/admin/configuracoes/geral', label: 'Geral', permission: null },
