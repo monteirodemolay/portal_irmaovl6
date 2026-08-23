@@ -1,4 +1,4 @@
-import type { Firestore, Query } from 'firebase-admin/firestore';
+import { FieldValue, type Firestore, type Query } from 'firebase-admin/firestore';
 import type { ArchiveItem, IArchiveItemRepository, PageRequest, PageResult } from '@vl6/domain';
 import { createEntityConverter } from '../converters/entity.converter';
 
@@ -49,6 +49,25 @@ export class FirestoreArchiveItemRepository implements IArchiveItemRepository {
     return snap.docs.map((doc) => doc.data());
   }
 
+  async countByTenant(tenantId: string): Promise<number> {
+    const snap = await this.collection
+      .where('tenantId', '==', tenantId)
+      .where('deletedAt', '==', null)
+      .count()
+      .get();
+    return snap.data().count;
+  }
+
+  async countPublishedByTenant(tenantId: string): Promise<number> {
+    const snap = await this.collection
+      .where('tenantId', '==', tenantId)
+      .where('deletedAt', '==', null)
+      .where('publicacaoStatus', '==', 'publicado')
+      .count()
+      .get();
+    return snap.data().count;
+  }
+
   private async paginate(
     query: Query<ArchiveItem>,
     page: PageRequest,
@@ -94,5 +113,9 @@ export class FirestoreArchiveItemRepository implements IArchiveItemRepository {
       status: 'active',
       ativo: true,
     });
+  }
+
+  async incrementViews(id: string): Promise<void> {
+    await this.collection.doc(id).update({ contagemVisualizacoes: FieldValue.increment(1) });
   }
 }

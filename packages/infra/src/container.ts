@@ -72,6 +72,11 @@ import {
   PublishScheduledArchiveItemsUseCase,
   SetArchiveMediaPosterUseCase,
   ListDuplicateMediaAssetsUseCase,
+  MigrateFileAssetUseCase,
+  MigrateLibraryItemUseCase,
+  RecordArchiveMediaViewUseCase,
+  ListMostViewedArchiveItemsUseCase,
+  GetStorageUsageByBoardTermUseCase,
   FindBoardTermForDateUseCase,
   CreateBoardTermUseCase,
   CreateCommitteeUseCase,
@@ -1111,6 +1116,41 @@ export function createServerContainer() {
     listDuplicateMediaAssets: new ListDuplicateMediaAssetsUseCase({
       mediaAssetRepository: repositories.mediaAsset,
       archiveMediaRepository: repositories.archiveMedia,
+    }),
+
+    // Fase C — Administração & métricas (docs/architecture/11-acervo-vl6.md)
+    migrateFileAsset: new MigrateFileAssetUseCase({
+      fileAssetRepository: repositories.fileAsset,
+      eventRepository: repositories.event,
+      boardTermRepository: repositories.boardTerm,
+      archiveItemRepository: repositories.archiveItem,
+      archiveMediaRepository: repositories.archiveMedia,
+      mediaAssetRepository: repositories.mediaAsset,
+      clock,
+      idGenerator,
+    }),
+    migrateLibraryItem: new MigrateLibraryItemUseCase({
+      libraryItemRepository: repositories.libraryItem,
+      fileAssetRepository: repositories.fileAsset,
+      eventRepository: repositories.event,
+      boardTermRepository: repositories.boardTerm,
+      archiveItemRepository: repositories.archiveItem,
+      archiveMediaRepository: repositories.archiveMedia,
+      mediaAssetRepository: repositories.mediaAsset,
+      clock,
+      idGenerator,
+    }),
+    recordArchiveMediaView: new RecordArchiveMediaViewUseCase({
+      archiveMediaRepository: repositories.archiveMedia,
+      archiveItemRepository: repositories.archiveItem,
+    }),
+    listMostViewedArchiveItems: new ListMostViewedArchiveItemsUseCase({
+      archiveItemRepository: repositories.archiveItem,
+    }),
+    getStorageUsageByBoardTerm: new GetStorageUsageByBoardTermUseCase({
+      archiveMediaRepository: repositories.archiveMedia,
+      mediaAssetRepository: repositories.mediaAsset,
+      boardTermRepository: repositories.boardTerm,
     }),
   };
 
