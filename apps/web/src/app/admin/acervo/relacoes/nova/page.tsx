@@ -8,7 +8,7 @@ export default async function NewArchiveRelationPage() {
   const session = await requirePagePermission('archiveRelation:create');
 
   const container = createServerContainer();
-  const options = await loadRelationNodeOptions(session.authContext, container);
+  const options = await loadRelationNodeOptions(session.authContext, container, session.role);
 
   const groups = Object.entries(
     options.reduce<Record<ArchiveRelationNodeKind, typeof options>>(

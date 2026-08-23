@@ -50,7 +50,7 @@ export default async function ArchiveSearchPage({
     requestedKind && ARCHIVE_SEARCH_KINDS.includes(requestedKind) ? requestedKind : undefined;
 
   const container = createServerContainer();
-  const allResults = await loadArchiveSearchResults(session.authContext, container);
+  const allResults = await loadArchiveSearchResults(session.authContext, container, session.role);
   const results = allResults
     .filter((result) => !validKind || result.kind === validKind)
     .filter((result) => matchesArchiveSearch(result, query));

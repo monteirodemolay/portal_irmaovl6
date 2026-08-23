@@ -1,7 +1,8 @@
 import 'server-only';
-import type { AuthContext } from '@vl6/domain';
+import type { AuthContext, Role } from '@vl6/domain';
 import { hasPermission } from '@vl6/domain';
 import type { ServerContainer } from '@vl6/infra';
+import { isAccessLevelVisible } from './access-level-visibility';
 import { archiveItemHref, buildArchiveItemId } from './archive-item-id';
 import type { ArchiveSearchResult } from './archive-search-match';
 
@@ -24,7 +25,9 @@ export {
 export async function loadArchiveSearchResults(
   authContext: AuthContext,
   container: ServerContainer,
+  role: Role | null = null,
 ): Promise<ArchiveSearchResult[]> {
+  const visibility = { authenticated: true, role };
   const canReadFiles = hasPermission(authContext, 'file:read');
   const canReadLibrary = hasPermission(authContext, 'libraryItem:read');
   const canReadGallery = hasPermission(authContext, 'gallery:read');
@@ -102,11 +105,15 @@ export async function loadArchiveSearchResults(
     catalogText: catalogTextByOrigemId.get(buildArchiveItemId('gallery-album', album.id)) ?? null,
   }));
 
-  // Só ArchiveItem publicado entra na busca — rascunho não deve vazar
-  // conteúdo ainda em revisão, mesma regra já aplicada às fichas de
-  // catalogação acima.
+  // Só ArchiveItem publicado E visível pro nível de acesso da sessão entra
+  // na busca — rascunho não deve vazar conteúdo ainda em revisão (mesma
+  // regra já aplicada às fichas de catalogação acima), e nivelAcesso
+  // 'administracao' não deve vazar metadado nenhum pra quem não é admin,
+  // mesma regra que loadEventAlbum/resolveArchiveItem já aplicam pro
+  // álbum público — busca nunca pode ser um caminho mais permissivo do
+  // que abrir o item diretamente.
   const publishedArchiveItems = archiveItemsPage.items.filter(
-    (item) => item.publicacaoStatus === 'publicado',
+    (item) => item.publicacaoStatus === 'publicado' && isAccessLevelVisible(item.nivelAcesso, visibility),
   );
   const [archiveItemEvents, archiveItemMedias] = await Promise.all([
     Promise.all(publishedArchiveItems.map((item) => container.repositories.event.findById(item.eventId))),
@@ -119,7 +126,10 @@ export async function loadArchiveSearchResults(
     const event = archiveItemEvents[index];
     if (!event || event.tenantId !== authContext.tenantId || event.deletedAt) return [];
     const captions = (archiveItemMedias[index] ?? [])
-      .filter((media) => media.publicacaoStatus === 'publicado')
+      .filter(
+        (media) =>
+          media.publicacaoStatus === 'publicado' && isAccessLevelVisible(media.accessLevel, visibility),
+      )
       .map((media) => media.caption)
       .filter(Boolean)
       .join(' ');

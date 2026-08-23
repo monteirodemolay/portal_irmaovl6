@@ -1,5 +1,5 @@
 import 'server-only';
-import type { AuthContext } from '@vl6/domain';
+import type { AuthContext, Role } from '@vl6/domain';
 import type { ServerContainer } from '@vl6/infra';
 import type { ArchiveRelationNodeKind } from '@vl6/shared';
 import { buildArchiveItemId, type ArchiveItemKind } from './archive-item-id';
@@ -29,13 +29,14 @@ const ARCHIVE_ITEM_KIND_BY_SEARCH_KIND: Record<
 export async function loadRelationNodeOptions(
   authContext: AuthContext,
   container: ServerContainer,
+  role: Role | null = null,
 ): Promise<RelationNodeOption[]> {
   const [membersPage, boardTerms, eventsPage, collections, archiveItems] = await Promise.all([
     container.useCases.searchMembers.execute(authContext, {}, { limit: 500 }),
     container.repositories.boardTerm.listByTenant(authContext.tenantId),
     container.useCases.listAllEvents.execute(authContext, { limit: 200 }),
     container.useCases.listArchiveCollections.execute(authContext),
-    loadArchiveSearchResults(authContext, container),
+    loadArchiveSearchResults(authContext, container, role),
   ]);
 
   const memberOptions: RelationNodeOption[] = membersPage.items.map((member) => ({

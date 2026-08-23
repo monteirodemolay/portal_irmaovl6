@@ -12,7 +12,7 @@ export default async function NewArchiveCatalogEntryPage() {
 
   const container = createServerContainer();
   const [searchResults, existingEntries] = await Promise.all([
-    loadArchiveSearchResults(session.authContext, container),
+    loadArchiveSearchResults(session.authContext, container, session.role),
     container.useCases.listArchiveCatalogEntries.execute(session.authContext),
   ]);
   const items = searchResults.map((result) => ({

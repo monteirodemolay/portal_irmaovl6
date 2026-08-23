@@ -32,7 +32,7 @@ export default async function ArchiveDiscoverPage() {
   const container = createServerContainer();
 
   const [allResults, collections] = await Promise.all([
-    loadArchiveSearchResults(session.authContext, container),
+    loadArchiveSearchResults(session.authContext, container, session.role),
     container.useCases.listPublishedArchiveCollections.execute(session.authContext),
   ]);
 
