@@ -58,6 +58,18 @@ function buildTileDefs(container: ReturnType<typeof createServerContainer>): Das
       href: '/admin/acervo/galeria',
       load: (tenantId) => container.repositories.galleryAlbum.countByTenant(tenantId),
     },
+    {
+      label: 'Itens no Acervo VL6',
+      permission: 'archiveItem:read',
+      href: '/admin/acervo/publicar',
+      load: (tenantId) => container.repositories.archiveItem.countByTenant(tenantId),
+    },
+    {
+      label: 'Fotos/vídeos/documentos no Acervo VL6',
+      permission: 'archiveMedia:read',
+      href: '/admin/acervo/metricas',
+      load: (tenantId) => container.repositories.archiveMedia.countPublishedByTenant(tenantId),
+    },
   ];
 }
 
