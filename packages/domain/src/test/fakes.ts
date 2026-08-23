@@ -814,6 +814,16 @@ export class InMemoryArchiveItemRepository implements IArchiveItemRepository {
     );
     return { items: items.slice(0, page.limit), nextCursor: null, hasMore: false };
   }
+  async findScheduledForPublication(tenantId: string, now: Date) {
+    return [...this.byId.values()].filter(
+      (i) =>
+        i.tenantId === tenantId &&
+        i.deletedAt === null &&
+        i.publicacaoStatus === 'pronto_para_publicar' &&
+        i.publicarEm != null &&
+        i.publicarEm.getTime() <= now.getTime(),
+    );
+  }
   async create(item: ArchiveItem) {
     this.byId.set(item.id, item);
   }

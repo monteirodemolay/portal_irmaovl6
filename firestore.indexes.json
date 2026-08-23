@@ -921,6 +921,28 @@
       ]
     },
     {
+      "collectionGroup": "archiveItems",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "tenantId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "deletedAt",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "publicacaoStatus",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "publicarEm",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
       "collectionGroup": "archiveMedia",
       "queryScope": "COLLECTION",
       "fields": [

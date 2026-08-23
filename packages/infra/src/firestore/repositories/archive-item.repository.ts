@@ -10,7 +10,7 @@ export class FirestoreArchiveItemRepository implements IArchiveItemRepository {
   constructor(private readonly db: Firestore) {
     this.collection = db
       .collection(COLLECTION)
-      .withConverter(createEntityConverter<ArchiveItem>([]));
+      .withConverter(createEntityConverter<ArchiveItem>(['publicarEm']));
   }
 
   async findById(id: string): Promise<ArchiveItem | null> {
@@ -37,6 +37,16 @@ export class FirestoreArchiveItemRepository implements IArchiveItemRepository {
   async findDeletedByTenant(tenantId: string, page: PageRequest): Promise<PageResult<ArchiveItem>> {
     const query = this.collection.where('tenantId', '==', tenantId).where('deletedAt', '!=', null);
     return this.paginate(query, page);
+  }
+
+  async findScheduledForPublication(tenantId: string, now: Date): Promise<ArchiveItem[]> {
+    const snap = await this.collection
+      .where('tenantId', '==', tenantId)
+      .where('deletedAt', '==', null)
+      .where('publicacaoStatus', '==', 'pronto_para_publicar')
+      .where('publicarEm', '<=', now)
+      .get();
+    return snap.docs.map((doc) => doc.data());
   }
 
   private async paginate(

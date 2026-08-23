@@ -310,3 +310,9 @@ export * from './modules/governance/use-cases/find-board-term-for-date.use-case'
 
 // Fase 5 — Memória institucional (docs/architecture/11-acervo-vl6.md §11.6e)
 export * from './modules/archive/use-cases/migrate-gallery-album.use-case';
+
+// Fase B — Publicação avançada (docs/architecture/11-acervo-vl6.md §11.5/§11.6)
+export * from './modules/archive/use-cases/schedule-archive-item-publication.use-case';
+export * from './modules/archive/use-cases/publish-scheduled-archive-items.use-case';
+export * from './modules/archive/use-cases/set-archive-media-poster.use-case';
+export * from './modules/archive/use-cases/list-duplicate-media-assets.use-case';

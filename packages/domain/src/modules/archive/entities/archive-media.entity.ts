@@ -48,4 +48,14 @@ export interface ArchiveMedia extends BaseEntity {
    * ser tratado como `[]` por quem lê.
    */
   pessoasIdentificadas?: string[];
+  /**
+   * `MediaAsset.id` da miniatura capturada no browser (frame do vídeo) —
+   * Fase B "Publicação avançada". Só relevante quando `mediaType ===
+   * 'video'`; registrado como um `MediaAsset` comum de imagem, mesmo fluxo
+   * de `RegisterMediaAssetUseCase` usado para o binário principal
+   * (`SetArchiveMediaPosterUseCase`). Campo aditivo opcional, mesmo padrão
+   * de `pessoasIdentificadas` — ausente/`undefined`/`null` equivale a "sem
+   * miniatura ainda" (o `<video>` mostra o primeiro frame por padrão).
+   */
+  posterMediaAssetId?: string | null;
 }

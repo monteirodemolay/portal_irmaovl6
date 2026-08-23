@@ -68,6 +68,10 @@ import {
   PublishArchiveItemUseCase,
   UnpublishArchiveItemUseCase,
   MigrateGalleryAlbumUseCase,
+  ScheduleArchiveItemPublicationUseCase,
+  PublishScheduledArchiveItemsUseCase,
+  SetArchiveMediaPosterUseCase,
+  ListDuplicateMediaAssetsUseCase,
   FindBoardTermForDateUseCase,
   CreateBoardTermUseCase,
   CreateCommitteeUseCase,
@@ -1083,6 +1087,30 @@ export function createServerContainer() {
       mediaAssetRepository: repositories.mediaAsset,
       clock,
       idGenerator,
+    }),
+
+    // Fase B — Publicação avançada (docs/architecture/11-acervo-vl6.md §11.5/§11.6)
+    scheduleArchiveItemPublication: new ScheduleArchiveItemPublicationUseCase({
+      archiveItemRepository: repositories.archiveItem,
+      archiveMediaRepository: repositories.archiveMedia,
+      clock,
+    }),
+    publishScheduledArchiveItems: new PublishScheduledArchiveItemsUseCase({
+      archiveItemRepository: repositories.archiveItem,
+      publishArchiveItem: new PublishArchiveItemUseCase({
+        archiveItemRepository: repositories.archiveItem,
+        archiveMediaRepository: repositories.archiveMedia,
+        clock,
+      }),
+      clock,
+    }),
+    setArchiveMediaPoster: new SetArchiveMediaPosterUseCase({
+      archiveMediaRepository: repositories.archiveMedia,
+      clock,
+    }),
+    listDuplicateMediaAssets: new ListDuplicateMediaAssetsUseCase({
+      mediaAssetRepository: repositories.mediaAsset,
+      archiveMediaRepository: repositories.archiveMedia,
     }),
   };
 

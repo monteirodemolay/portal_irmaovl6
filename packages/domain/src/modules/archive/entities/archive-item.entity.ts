@@ -41,4 +41,16 @@ export interface ArchiveItem extends BaseEntity {
    * (Regra de Preservação).
    */
   origemGalleryAlbumId?: string | null;
+  /**
+   * Data/hora futura para publicação automática — Fase B "Publicação
+   * avançada" (`ScheduleArchiveItemPublicationUseCase`,
+   * `PublishScheduledArchiveItemsUseCase`). `null` (padrão) para todo item
+   * criado pelos fluxos normais e para todo item já publicado manualmente;
+   * só é aceito quando o item está sem pendências de publicação
+   * (`getArchiveItemPublicationBlockers`) — a mesma regra da publicação
+   * imediata, só adiada no tempo. Campo opcional para não exigir alteração
+   * em todo construtor de `ArchiveItem` já existente (Fases 1-3), mesmo
+   * padrão de `origemGalleryAlbumId`.
+   */
+  publicarEm?: Date | null;
 }
