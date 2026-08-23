@@ -33,6 +33,11 @@ export const ADMIN_AREA_TABS: Record<AdminAreaKey, AreaTabDef[]> = {
     { href: '/admin/conteudo/frases', label: 'Frases', permission: 'quote:read' },
   ],
   acervo: [
+    {
+      href: '/admin/acervo/publicar',
+      label: 'Publicar',
+      permission: 'archiveItem:create',
+    },
     { href: '/admin/acervo/arquivos', label: 'Documentos', permission: 'file:read' },
     { href: '/admin/acervo/biblioteca', label: 'Biblioteca', permission: 'libraryItem:read' },
     { href: '/admin/acervo/galeria', label: 'Fotografias', permission: 'gallery:read' },
@@ -60,6 +65,26 @@ export const ADMIN_AREA_TABS: Record<AdminAreaKey, AreaTabDef[]> = {
       href: '/admin/acervo/contribuicoes',
       label: 'Contribuições',
       permission: 'archiveContribution:manage',
+    },
+    {
+      href: '/admin/acervo/lixeira',
+      label: 'Lixeira',
+      permission: 'archiveItem:delete',
+    },
+    {
+      href: '/admin/acervo/migracao',
+      label: 'Migração',
+      permission: 'archiveItem:create',
+    },
+    {
+      href: '/admin/acervo/duplicidade',
+      label: 'Duplicidade',
+      permission: 'archiveMedia:manage',
+    },
+    {
+      href: '/admin/acervo/metricas',
+      label: 'Métricas',
+      permission: 'archiveMedia:manage',
     },
   ],
   configuracoes: [

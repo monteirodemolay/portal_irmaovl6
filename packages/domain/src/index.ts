@@ -286,3 +286,40 @@ export * from './modules/archive/use-cases/submit-archive-contribution.use-case'
 export * from './modules/archive/use-cases/list-my-archive-contributions.use-case';
 export * from './modules/archive/use-cases/list-archive-contributions.use-case';
 export * from './modules/archive/use-cases/moderate-archive-contribution.use-case';
+// Fase 1 da Fundação do Acervo VL6 (docs/architecture/11-acervo-vl6.md §11.5)
+export * from './modules/archive/entities/archive-item.entity';
+export * from './modules/archive/repositories/archive-item.repository';
+export * from './modules/archive/entities/media-asset.entity';
+export * from './modules/archive/repositories/media-asset.repository';
+export * from './modules/archive/entities/archive-media.entity';
+export * from './modules/archive/repositories/archive-media.repository';
+export * from './modules/archive/use-cases/create-archive-item.use-case';
+export * from './modules/archive/use-cases/register-media-asset.use-case';
+export * from './modules/archive/use-cases/attach-media-to-archive-item.use-case';
+export * from './modules/archive/use-cases/set-archive-item-cover.use-case';
+export * from './modules/archive/use-cases/soft-delete-archive-item.use-case';
+export * from './modules/archive/use-cases/restore-archive-item.use-case';
+export * from './modules/archive/use-cases/update-archive-media-batch.use-case';
+// Fase 3 — Organização (docs/architecture/11-acervo-vl6.md §11.6)
+export * from './modules/archive/use-cases/reorder-archive-media.use-case';
+export * from './modules/archive/use-cases/soft-delete-archive-media.use-case';
+export * from './modules/archive/use-cases/restore-archive-media.use-case';
+export * from './modules/archive/use-cases/publish-archive-item.use-case';
+export * from './modules/archive/use-cases/unpublish-archive-item.use-case';
+export * from './modules/governance/use-cases/find-board-term-for-date.use-case';
+
+// Fase 5 — Memória institucional (docs/architecture/11-acervo-vl6.md §11.6e)
+export * from './modules/archive/use-cases/migrate-gallery-album.use-case';
+
+// Fase B — Publicação avançada (docs/architecture/11-acervo-vl6.md §11.5/§11.6)
+export * from './modules/archive/use-cases/schedule-archive-item-publication.use-case';
+export * from './modules/archive/use-cases/publish-scheduled-archive-items.use-case';
+export * from './modules/archive/use-cases/set-archive-media-poster.use-case';
+export * from './modules/archive/use-cases/list-duplicate-media-assets.use-case';
+
+// Fase C — Administração & métricas (docs/architecture/11-acervo-vl6.md)
+export * from './modules/archive/use-cases/migrate-file-asset.use-case';
+export * from './modules/archive/use-cases/migrate-library-item.use-case';
+export * from './modules/archive/use-cases/record-archive-media-view.use-case';
+export * from './modules/archive/use-cases/list-most-viewed-archive-items.use-case';
+export * from './modules/archive/use-cases/get-storage-usage-by-board-term.use-case';

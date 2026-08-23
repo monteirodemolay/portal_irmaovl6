@@ -94,6 +94,12 @@ import type { ArchiveCatalogEntry } from '../modules/archive/entities/archive-ca
 import type { IArchiveCatalogEntryRepository } from '../modules/archive/repositories/archive-catalog-entry.repository';
 import type { ArchiveContribution } from '../modules/archive/entities/archive-contribution.entity';
 import type { IArchiveContributionRepository } from '../modules/archive/repositories/archive-contribution.repository';
+import type { ArchiveItem } from '../modules/archive/entities/archive-item.entity';
+import type { IArchiveItemRepository } from '../modules/archive/repositories/archive-item.repository';
+import type { MediaAsset } from '../modules/archive/entities/media-asset.entity';
+import type { IMediaAssetRepository } from '../modules/archive/repositories/media-asset.repository';
+import type { ArchiveMedia } from '../modules/archive/entities/archive-media.entity';
+import type { IArchiveMediaRepository } from '../modules/archive/repositories/archive-media.repository';
 import type { GoogleCalendarConnection } from '../modules/integrations/entities/google-calendar-connection.entity';
 import type {
   GoogleEventSyncLink,
@@ -334,6 +340,9 @@ export class InMemoryBoardTermRepository implements IBoardTermRepository {
         (t) => t.tenantId === tenantId && t.periodoInicio <= at && at <= t.periodoFim,
       ) ?? null
     );
+  }
+  async findByDate(tenantId: string, date: Date) {
+    return this.findActive(tenantId, date);
   }
   async listByTenant(tenantId: string) {
     return [...this.byId.values()].filter((t) => t.tenantId === tenantId);
@@ -780,6 +789,214 @@ export class InMemoryArchiveContributionRepository implements IArchiveContributi
   }
   async update(contribution: ArchiveContribution) {
     this.byId.set(contribution.id, contribution);
+  }
+}
+
+export class InMemoryArchiveItemRepository implements IArchiveItemRepository {
+  private readonly byId = new Map<string, ArchiveItem>();
+
+  async findById(id: string) {
+    return this.byId.get(id) ?? null;
+  }
+  async findByTenant(tenantId: string, page: PageRequest): Promise<PageResult<ArchiveItem>> {
+    const items = [...this.byId.values()].filter(
+      (i) => i.tenantId === tenantId && i.deletedAt === null,
+    );
+    return { items: items.slice(0, page.limit), nextCursor: null, hasMore: false };
+  }
+  async findByEventId(eventId: string) {
+    return [...this.byId.values()].filter((i) => i.eventId === eventId && i.deletedAt === null);
+  }
+  async findDeletedByTenant(tenantId: string, page: PageRequest): Promise<PageResult<ArchiveItem>> {
+    const items = [...this.byId.values()].filter(
+      (i) => i.tenantId === tenantId && i.deletedAt !== null,
+    );
+    return { items: items.slice(0, page.limit), nextCursor: null, hasMore: false };
+  }
+  async findScheduledForPublication(tenantId: string, now: Date) {
+    return [...this.byId.values()].filter(
+      (i) =>
+        i.tenantId === tenantId &&
+        i.deletedAt === null &&
+        i.publicacaoStatus === 'pronto_para_publicar' &&
+        i.publicarEm != null &&
+        i.publicarEm.getTime() <= now.getTime(),
+    );
+  }
+  async countByTenant(tenantId: string) {
+    return [...this.byId.values()].filter((i) => i.tenantId === tenantId && i.deletedAt === null)
+      .length;
+  }
+  async countPublishedByTenant(tenantId: string) {
+    return [...this.byId.values()].filter(
+      (i) => i.tenantId === tenantId && i.deletedAt === null && i.publicacaoStatus === 'publicado',
+    ).length;
+  }
+  async create(item: ArchiveItem) {
+    this.byId.set(item.id, item);
+  }
+  async update(item: ArchiveItem) {
+    this.byId.set(item.id, item);
+  }
+  async softDelete(id: string, deletedAt: Date, updatedBy: string) {
+    const item = this.byId.get(id);
+    if (item) {
+      this.byId.set(id, {
+        ...item,
+        deletedAt,
+        status: 'archived',
+        ativo: false,
+        updatedAt: deletedAt,
+        updatedBy,
+      });
+    }
+  }
+  async restore(id: string, updatedBy: string) {
+    const item = this.byId.get(id);
+    if (item) {
+      this.byId.set(id, { ...item, deletedAt: null, status: 'active', ativo: true, updatedBy });
+    }
+  }
+  async incrementViews(id: string) {
+    const item = this.byId.get(id);
+    if (item) {
+      this.byId.set(id, { ...item, contagemVisualizacoes: (item.contagemVisualizacoes ?? 0) + 1 });
+    }
+  }
+}
+
+export class InMemoryMediaAssetRepository implements IMediaAssetRepository {
+  private readonly byId = new Map<string, MediaAsset>();
+
+  async findById(id: string) {
+    return this.byId.get(id) ?? null;
+  }
+  async findByTenant(tenantId: string, page: PageRequest): Promise<PageResult<MediaAsset>> {
+    const items = [...this.byId.values()].filter(
+      (m) => m.tenantId === tenantId && m.deletedAt === null,
+    );
+    return { items: items.slice(0, page.limit), nextCursor: null, hasMore: false };
+  }
+  async findBySha256(tenantId: string, sha256: string) {
+    return (
+      [...this.byId.values()].find(
+        (m) => m.tenantId === tenantId && m.sha256 === sha256 && m.deletedAt === null,
+      ) ?? null
+    );
+  }
+  async create(mediaAsset: MediaAsset) {
+    this.byId.set(mediaAsset.id, mediaAsset);
+  }
+  async update(mediaAsset: MediaAsset) {
+    this.byId.set(mediaAsset.id, mediaAsset);
+  }
+  async softDelete(id: string, deletedAt: Date, updatedBy: string) {
+    const mediaAsset = this.byId.get(id);
+    if (mediaAsset) {
+      this.byId.set(id, {
+        ...mediaAsset,
+        deletedAt,
+        status: 'archived',
+        ativo: false,
+        updatedAt: deletedAt,
+        updatedBy,
+      });
+    }
+  }
+  async restore(id: string, updatedBy: string) {
+    const mediaAsset = this.byId.get(id);
+    if (mediaAsset) {
+      this.byId.set(id, {
+        ...mediaAsset,
+        deletedAt: null,
+        status: 'active',
+        ativo: true,
+        updatedBy,
+      });
+    }
+  }
+}
+
+export class InMemoryArchiveMediaRepository implements IArchiveMediaRepository {
+  private readonly byId = new Map<string, ArchiveMedia>();
+
+  async findById(id: string) {
+    return this.byId.get(id) ?? null;
+  }
+  async findByTenant(tenantId: string, page: PageRequest): Promise<PageResult<ArchiveMedia>> {
+    const items = [...this.byId.values()].filter(
+      (m) => m.tenantId === tenantId && m.deletedAt === null,
+    );
+    return { items: items.slice(0, page.limit), nextCursor: null, hasMore: false };
+  }
+  async findByArchiveItemId(archiveItemId: string) {
+    return [...this.byId.values()]
+      .filter((m) => m.archiveItemId === archiveItemId && m.deletedAt === null)
+      .sort((a, b) => a.order - b.order);
+  }
+  async findDeletedByTenant(
+    tenantId: string,
+    page: PageRequest,
+  ): Promise<PageResult<ArchiveMedia>> {
+    const items = [...this.byId.values()].filter(
+      (m) => m.tenantId === tenantId && m.deletedAt !== null,
+    );
+    return { items: items.slice(0, page.limit), nextCursor: null, hasMore: false };
+  }
+  async findByPessoaIdentificada(tenantId: string, memberId: string) {
+    return [...this.byId.values()]
+      .filter(
+        (m) =>
+          m.tenantId === tenantId &&
+          m.deletedAt === null &&
+          (m.pessoasIdentificadas ?? []).includes(memberId),
+      )
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  }
+  async countPublishedByTenant(tenantId: string) {
+    return [...this.byId.values()].filter(
+      (m) => m.tenantId === tenantId && m.deletedAt === null && m.publicacaoStatus === 'publicado',
+    ).length;
+  }
+  async create(archiveMedia: ArchiveMedia) {
+    this.byId.set(archiveMedia.id, archiveMedia);
+  }
+  async update(archiveMedia: ArchiveMedia) {
+    this.byId.set(archiveMedia.id, archiveMedia);
+  }
+  async softDelete(id: string, deletedAt: Date, updatedBy: string) {
+    const archiveMedia = this.byId.get(id);
+    if (archiveMedia) {
+      this.byId.set(id, {
+        ...archiveMedia,
+        deletedAt,
+        status: 'archived',
+        ativo: false,
+        updatedAt: deletedAt,
+        updatedBy,
+      });
+    }
+  }
+  async restore(id: string, updatedBy: string) {
+    const archiveMedia = this.byId.get(id);
+    if (archiveMedia) {
+      this.byId.set(id, {
+        ...archiveMedia,
+        deletedAt: null,
+        status: 'active',
+        ativo: true,
+        updatedBy,
+      });
+    }
+  }
+  async incrementViews(id: string) {
+    const archiveMedia = this.byId.get(id);
+    if (archiveMedia) {
+      this.byId.set(id, {
+        ...archiveMedia,
+        contagemVisualizacoes: (archiveMedia.contagemVisualizacoes ?? 0) + 1,
+      });
+    }
   }
 }
 

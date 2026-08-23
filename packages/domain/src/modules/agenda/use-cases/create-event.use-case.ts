@@ -1,4 +1,4 @@
-import type { EventKind } from '@vl6/shared';
+import type { AccessLevel, EventKind } from '@vl6/shared';
 import type { AuthContext } from '../../../shared/auth-context';
 import { requirePermission } from '../../../shared/auth-context';
 import type { IClock, IIdGenerator } from '../../../shared/ports';
@@ -19,6 +19,9 @@ export interface CreateEventInput {
   chegadaSugerida: string | null;
   observacoes: string | null;
   arquivosRelacionados: string[];
+  boardTermId: string | null;
+  nivelAcesso: AccessLevel;
+  exibirNaLinhaDoTempo: boolean;
 }
 
 export interface CreateEventDeps {

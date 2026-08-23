@@ -2,10 +2,11 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { createServerContainer } from '@vl6/infra';
 import { getBoardPositionLabel } from '@vl6/shared';
-import { Avatar, AvatarFallback, AvatarImage, EmptyState, Users } from '@vl6/ui';
+import { Avatar, AvatarFallback, AvatarImage, Camera, EmptyState, Users } from '@vl6/ui';
 import { requirePagePermission } from '@/lib/auth/require-permission';
 import { AcervoPageHeader } from '@/components/member/acervo-page-header';
 import { RelationsSection } from '@/modules/archive/components/relations-section';
+import { isAccessLevelVisible } from '@/modules/archive/lib/access-level-visibility';
 import { MEMBER_DEGREE_LABELS } from '@/lib/membership/member-degree-label';
 
 function formatDate(date: Date): string {
@@ -46,10 +47,42 @@ export default async function ArchivePersonPage({
     dataExaltacao: member.dataExaltacao,
   };
 
-  const [history, publicationSettings] = await Promise.all([
+  const [history, publicationSettings, taggedMedia] = await Promise.all([
     container.repositories.memberPositionHistory.listByMemberId(memberId),
     container.repositories.publicationSettings.findByMemberId(tenantId, memberId),
+    container.repositories.archiveMedia.findByPessoaIdentificada(tenantId, memberId),
   ]);
+
+  // Só mídia publicada e visível ao nível de acesso da sessão atual —
+  // trajetória pública nunca vaza rascunho/reservado (item 1 do escopo da
+  // Fase A "Pessoas & Descoberta", mesma regra de `loadEventAlbum`).
+  const visibility = { authenticated: true, role: session.role };
+  const publishedTaggedMedia = taggedMedia.filter(
+    (media) =>
+      media.mediaType === 'foto' &&
+      media.publicacaoStatus === 'publicado' &&
+      isAccessLevelVisible(media.accessLevel, visibility),
+  );
+  const taggedAssets = await Promise.all(
+    publishedTaggedMedia.map((media) =>
+      container.repositories.mediaAsset.findById(media.mediaAssetId),
+    ),
+  );
+  const photos = publishedTaggedMedia
+    .map((media, index) => {
+      const asset = taggedAssets[index];
+      if (!asset || asset.deletedAt) return null;
+      return {
+        id: media.id,
+        eventId: media.eventId,
+        src: `/api/archive-media/${media.id}`,
+        caption: media.caption ?? asset.originalName,
+      };
+    })
+    .filter(
+      (entry): entry is { id: string; eventId: string; src: string; caption: string } =>
+        entry !== null,
+    );
 
   const sortedHistory = [...history].sort(
     (a, b) => new Date(b.dataInicio).getTime() - new Date(a.dataInicio).getTime(),
@@ -152,6 +185,34 @@ export default async function ArchivePersonPage({
           </ol>
         )}
       </section>
+
+      {photos.length > 0 && (
+        <section aria-labelledby="fotografias-title">
+          <h2
+            id="fotografias-title"
+            className="font-display flex items-center gap-2 text-lg font-semibold"
+          >
+            <Camera size={18} />
+            Fotografias
+          </h2>
+          <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
+            {photos.map((photo) => (
+              <Link
+                key={photo.id}
+                href={`/acervo/eventos/${photo.eventId}`}
+                className="border-border hover:border-accent aspect-square overflow-hidden rounded-lg border transition-colors"
+              >
+                <img
+                  src={photo.src}
+                  alt={photo.caption}
+                  loading="lazy"
+                  className="h-full w-full object-cover"
+                />
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
 
       <RelationsSection
         nodeTipo="member"

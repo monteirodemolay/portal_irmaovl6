@@ -62,3 +62,45 @@ export const ARCHIVE_CONTRIBUTION_STATUS_LABELS: Record<ArchiveContributionStatu
   aprovada: 'Aprovada',
   rejeitada: 'Não aprovada',
 };
+
+/**
+ * `ArchiveItem` — Fase 1 da Fundação do Acervo VL6 (docs/architecture/
+ * 11-acervo-vl6.md §11.5, `archiveItems`). `publicacaoStatus` é o ciclo de
+ * vida editorial do item, distinto de `status`/`ativo` herdados de
+ * `BaseEntity` (que seguem soft delete) — mesmo padrão de
+ * `ArchiveContribution.moderacaoStatus` acima.
+ */
+export const ARCHIVE_ITEM_STATUS_KEYS = [
+  'rascunho',
+  'pronto_para_publicar',
+  'publicado',
+  'oculto',
+  'arquivado',
+] as const;
+export type ArchiveItemStatus = (typeof ARCHIVE_ITEM_STATUS_KEYS)[number];
+
+export const ARCHIVE_ITEM_STATUS_LABELS: Record<ArchiveItemStatus, string> = {
+  rascunho: 'Rascunho',
+  pronto_para_publicar: 'Pronto para publicar',
+  publicado: 'Publicado',
+  oculto: 'Oculto',
+  arquivado: 'Arquivado',
+};
+
+/** Classificação editorial do item — mais ampla que o tipo técnico da mídia (`ArchiveMediaTypeKey`, packages/shared/src/enums/media-asset.ts). */
+export const ARCHIVE_ITEM_TYPE_KEYS = [
+  'fotografia',
+  'documento',
+  'audiovisual',
+  'objeto',
+  'outro',
+] as const;
+export type ArchiveItemTypeKey = (typeof ARCHIVE_ITEM_TYPE_KEYS)[number];
+
+export const ARCHIVE_ITEM_TYPE_LABELS: Record<ArchiveItemTypeKey, string> = {
+  fotografia: 'Fotografia',
+  documento: 'Documento',
+  audiovisual: 'Audiovisual',
+  objeto: 'Objeto',
+  outro: 'Outro',
+};

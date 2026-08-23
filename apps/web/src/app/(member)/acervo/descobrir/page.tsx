@@ -4,6 +4,7 @@ import { createServerContainer } from '@vl6/infra';
 import {
   ArchiveItemCard,
   BookOpen,
+  CalendarDays,
   Compass,
   EmptyState,
   FileText,
@@ -21,6 +22,7 @@ const KIND_ICONS: Record<ArchiveSearchKind, ReactNode> = {
   documento: <FileText size={14} />,
   biblioteca: <BookOpen size={14} />,
   fotografia: <GalleryIcon size={14} />,
+  evento: <CalendarDays size={14} />,
 };
 
 const RECENT_LIMIT = 8;
@@ -30,7 +32,7 @@ export default async function ArchiveDiscoverPage() {
   const container = createServerContainer();
 
   const [allResults, collections] = await Promise.all([
-    loadArchiveSearchResults(session.authContext, container),
+    loadArchiveSearchResults(session.authContext, container, session.role),
     container.useCases.listPublishedArchiveCollections.execute(session.authContext),
   ]);
 

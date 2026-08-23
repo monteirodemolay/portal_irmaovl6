@@ -4,6 +4,7 @@ import {
   ArchiveItemHeader,
   Badge,
   BookOpen,
+  CalendarDays,
   Download,
   FileText,
   Image as ImageIcon,
@@ -19,6 +20,7 @@ const KIND_ICONS: Record<ArchiveItemKind, ReactNode> = {
   library: <BookOpen size={14} />,
   'gallery-album': <ImageIcon size={14} />,
   'gallery-media': <ImageIcon size={14} />,
+  'archive-item': <CalendarDays size={14} />,
 };
 
 function formatDate(date: Date): string {
@@ -118,7 +120,7 @@ function ItemMedia({ item }: { item: ResolvedArchiveItem }) {
     );
   }
 
-  if (item.kind === 'gallery-album' && item.thumbnailUrl) {
+  if ((item.kind === 'gallery-album' || item.kind === 'archive-item') && item.thumbnailUrl) {
     return (
       <img
         src={item.thumbnailUrl}

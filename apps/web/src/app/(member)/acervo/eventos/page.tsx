@@ -1,9 +1,11 @@
 import Link from 'next/link';
 import { createServerContainer } from '@vl6/infra';
 import { EVENT_KIND_LABELS, type EventKind } from '@vl6/shared';
-import { CalendarDays, EmptyState, FilterBar } from '@vl6/ui';
+import { CalendarDays, EmptyState, FilterBar, Image as ImageIcon } from '@vl6/ui';
 import { requirePagePermission } from '@/lib/auth/require-permission';
 import { AcervoPageHeader } from '@/components/member/acervo-page-header';
+import { formatArchiveSummaryLabel } from '@/modules/archive/lib/format-archive-summary-label';
+import { loadEventArchiveSummary } from '@/modules/archive/lib/load-event-album';
 
 function formatDate(date: Date): string {
   return new Intl.DateTimeFormat('pt-BR', { dateStyle: 'long' }).format(new Date(date));
@@ -39,6 +41,15 @@ export default async function ArchiveEventsPage({
     href: buildHref(params.tipo === kind ? undefined : kind),
   }));
 
+  // Uma consulta em lote sobre a lista já carregada (não N+1 por render) —
+  // decide se o card linka para o álbum público do Acervo VL6 (Fase 4) ou
+  // continua linkando para a página operacional da Agenda, intocada.
+  const archiveSummaries = await Promise.all(
+    pastEvents.map((event) =>
+      loadEventArchiveSummary(container, session.authContext.tenantId, event.id),
+    ),
+  );
+
   return (
     <div className="flex flex-col gap-6">
       <AcervoPageHeader
@@ -64,24 +75,34 @@ export default async function ArchiveEventsPage({
         />
       ) : (
         <div className="flex flex-col gap-3">
-          {pastEvents.map((event) => (
-            <Link
-              key={event.id}
-              href={`/eventos/${event.id}`}
-              className="border-border hover:border-accent group rounded-lg border p-4 transition-colors"
-            >
-              <div className="text-accent flex items-center gap-2 text-[10px] font-semibold uppercase tracking-wider">
-                <CalendarDays size={14} />
-                {EVENT_KIND_LABELS[event.tipo]}
-              </div>
-              <h3 className="font-display group-hover:text-accent mt-2 font-semibold transition-colors">
-                {event.titulo}
-              </h3>
-              <p className="text-muted mt-1 text-xs leading-5">
-                {formatDate(event.dataInicio)} · {event.local}
-              </p>
-            </Link>
-          ))}
+          {pastEvents.map((event, index) => {
+            const summary = archiveSummaries[index];
+            const href = summary ? `/acervo/eventos/${event.id}` : `/eventos/${event.id}`;
+            return (
+              <Link
+                key={event.id}
+                href={href}
+                className="border-border hover:border-accent group rounded-lg border p-4 transition-colors"
+              >
+                <div className="text-accent flex items-center gap-2 text-[10px] font-semibold uppercase tracking-wider">
+                  <CalendarDays size={14} />
+                  {EVENT_KIND_LABELS[event.tipo]}
+                </div>
+                <h3 className="font-display group-hover:text-accent mt-2 font-semibold transition-colors">
+                  {event.titulo}
+                </h3>
+                <p className="text-muted mt-1 text-xs leading-5">
+                  {formatDate(event.dataInicio)} · {event.local}
+                </p>
+                {summary && (
+                  <p className="text-accent mt-2 inline-flex items-center gap-1.5 text-xs font-medium">
+                    <ImageIcon size={13} />
+                    {formatArchiveSummaryLabel(summary)}
+                  </p>
+                )}
+              </Link>
+            );
+          })}
         </div>
       )}
     </div>

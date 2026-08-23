@@ -4,6 +4,7 @@ import { createServerContainer } from '@vl6/infra';
 import {
   ArchiveItemCard,
   BookOpen,
+  CalendarDays,
   EmptyState,
   FileText,
   FilterBar,
@@ -24,6 +25,7 @@ const KIND_ICONS: Record<ArchiveSearchKind, ReactNode> = {
   documento: <FileText size={14} />,
   biblioteca: <BookOpen size={14} />,
   fotografia: <GalleryIcon size={14} />,
+  evento: <CalendarDays size={14} />,
 };
 
 function buildHref(query: string, kind?: ArchiveSearchKind): string {
@@ -48,7 +50,7 @@ export default async function ArchiveSearchPage({
     requestedKind && ARCHIVE_SEARCH_KINDS.includes(requestedKind) ? requestedKind : undefined;
 
   const container = createServerContainer();
-  const allResults = await loadArchiveSearchResults(session.authContext, container);
+  const allResults = await loadArchiveSearchResults(session.authContext, container, session.role);
   const results = allResults
     .filter((result) => !validKind || result.kind === validKind)
     .filter((result) => matchesArchiveSearch(result, query));

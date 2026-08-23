@@ -31,6 +31,9 @@ function buildInput(overrides: Partial<CreateEventInput> = {}): CreateEventInput
     chegadaSugerida: null,
     observacoes: null,
     arquivosRelacionados: [],
+    boardTermId: null,
+    nivelAcesso: 'irmaos',
+    exibirNaLinhaDoTempo: true,
     ...overrides,
   };
 }

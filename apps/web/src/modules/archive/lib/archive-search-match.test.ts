@@ -12,6 +12,7 @@ function makeResult(overrides: Partial<ArchiveSearchResult> = {}): ArchiveSearch
     title: 'Circular 001/2026',
     description: 'Convocação oficial.',
     href: '/acervo/item/file_1',
+    compositeId: 'file_1',
     createdAt: new Date(),
     catalogText: null,
     ...overrides,
@@ -46,5 +47,15 @@ describe('matchesArchiveSearch', () => {
 
   it('string vazia casa com tudo', () => {
     expect(matchesArchiveSearch(makeResult(), '')).toBe(true);
+  });
+
+  it('casa evento do Acervo novo pela legenda das mídias publicadas', () => {
+    const result = makeResult({
+      kind: 'evento',
+      title: 'Sessão Pública do Dia dos Pais',
+      description: 'Rio Verde – GO',
+      catalogText: 'Mesa de honra com o Venerável Mestre',
+    });
+    expect(matchesArchiveSearch(result, 'mesa de honra')).toBe(true);
   });
 });

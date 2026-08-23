@@ -218,7 +218,7 @@ export function LoginForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="flex w-full flex-col gap-5">
+    <form method="post" onSubmit={handleSubmit(onSubmit)} className="flex w-full flex-col gap-5">
       {searchParams.get('reivindicado') && (
         <p className="border-accent/30 bg-accent/10 text-accent rounded-lg border p-3 text-sm">
           Acesso criado! Entre com o e-mail e a senha que você acabou de definir.

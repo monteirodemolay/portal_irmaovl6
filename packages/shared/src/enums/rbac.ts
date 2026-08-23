@@ -74,6 +74,15 @@ export const RESOURCE_KEYS = [
   // de "meus favoritos"/"minhas notificações" — por isso `membro` não
   // recebe nenhuma entrada deste recurso no seed abaixo.
   'archiveContribution',
+  // Fase 1 da Fundação do Acervo VL6 (docs/architecture/11-acervo-vl6.md
+  // §11.5) — `archiveItems`, `mediaAssets` e o vínculo entre eles
+  // (`archiveMedia`). Recursos próprios pelo mesmo motivo dos demais
+  // recursos de Acervo acima: cada um tem regras de negócio e ciclo de
+  // vida próprios (proveniência obrigatória de `eventId`, deduplicação por
+  // hash, capa única por item).
+  'archiveItem',
+  'mediaAsset',
+  'archiveMedia',
   // Frases inspiracionais do Início (Conteúdo → Frases) — recurso próprio
   // em vez de reaproveitar `announcement`/`news`: rotação e exibição têm
   // regras de negócio (modo/intervalo) e ciclo de vida diferentes.
@@ -137,6 +146,9 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<RoleKey, PermissionKey[]> = {
     'archiveExhibition:manage',
     'archiveCatalog:manage',
     'archiveContribution:manage',
+    'archiveItem:manage',
+    'mediaAsset:manage',
+    'archiveMedia:manage',
     'quote:manage',
   ],
   membro: [
@@ -157,6 +169,9 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<RoleKey, PermissionKey[]> = {
     'archiveRelation:read',
     'archiveExhibition:read',
     'archiveCatalog:read',
+    'archiveItem:read',
+    'mediaAsset:read',
+    'archiveMedia:read',
     'quote:read',
   ],
 };

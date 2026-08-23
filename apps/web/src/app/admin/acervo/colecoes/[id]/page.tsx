@@ -19,9 +19,13 @@ export default async function EditArchiveCollectionPage({
   const collection = await container.repositories.archiveCollection.findById(id);
   if (!collection || collection.tenantId !== session.authContext.tenantId) notFound();
 
-  const searchResults = await loadArchiveSearchResults(session.authContext, container);
+  const searchResults = await loadArchiveSearchResults(
+    session.authContext,
+    container,
+    session.role,
+  );
   const availableItems = searchResults.map((result) => ({
-    compositeId: result.href.replace('/acervo/item/', ''),
+    compositeId: result.compositeId,
     title: result.title,
     kindLabel: ARCHIVE_SEARCH_KIND_LABELS[result.kind],
   }));

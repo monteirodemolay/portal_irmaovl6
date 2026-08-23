@@ -1,4 +1,22 @@
-export const ARCHIVE_ITEM_KINDS = ['file', 'library', 'gallery-album', 'gallery-media'] as const;
+/**
+ * `archive-item` foi acrescentado na Fase D (docs/architecture/
+ * 11-acervo-vl6.md) para os `ArchiveItem`s do Acervo novo (Fases 1-B da
+ * Fundação, `packages/domain/.../archive-item.entity.ts`) poderem ser
+ * referenciados por Coleções/Exposições junto dos 4 kinds legados —
+ * `sourceId` aqui é o `ArchiveItem.id` real, resolvido contra
+ * `archiveItems`/`archiveMedia` (nunca duplicado). Diferente do contra-
+ * exemplo da Constelação de Relações (`load-relation-node-options.ts`, que
+ * exclui o kind `evento` por já existir como node nativo `event`): aqui não
+ * existe nó nativo prévio para um `ArchiveItem` dentro de uma Coleção, então
+ * o ID composto é a abordagem certa.
+ */
+export const ARCHIVE_ITEM_KINDS = [
+  'file',
+  'library',
+  'gallery-album',
+  'gallery-media',
+  'archive-item',
+] as const;
 export type ArchiveItemKind = (typeof ARCHIVE_ITEM_KINDS)[number];
 
 export interface ParsedArchiveItemId {

@@ -42,14 +42,14 @@ export default async function AcervoPage({
   ]);
   if (!session || !current) return null;
 
-  const { authContext } = session;
+  const { authContext, role } = session;
   const canReadFiles = hasPermission(authContext, 'file:read');
   const canReadLibrary = hasPermission(authContext, 'libraryItem:read');
   const canReadGallery = hasPermission(authContext, 'gallery:read');
   const container = createServerContainer();
 
   const [allResults, favorites, documentCount, libraryCount, albumCount] = await Promise.all([
-    loadArchiveSearchResults(authContext, container),
+    loadArchiveSearchResults(authContext, container, role),
     canReadLibrary ? container.useCases.listMyFavorites.execute(authContext) : Promise.resolve([]),
     canReadFiles
       ? container.repositories.fileAsset.countByTenant(authContext.tenantId)

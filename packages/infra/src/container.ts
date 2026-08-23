@@ -55,6 +55,29 @@ import {
   ListMyArchiveContributionsUseCase,
   ListArchiveContributionsUseCase,
   ModerateArchiveContributionUseCase,
+  CreateArchiveItemUseCase,
+  RegisterMediaAssetUseCase,
+  AttachMediaToArchiveItemUseCase,
+  SetArchiveItemCoverUseCase,
+  SoftDeleteArchiveItemUseCase,
+  RestoreArchiveItemUseCase,
+  UpdateArchiveMediaBatchUseCase,
+  ReorderArchiveMediaUseCase,
+  SoftDeleteArchiveMediaUseCase,
+  RestoreArchiveMediaUseCase,
+  PublishArchiveItemUseCase,
+  UnpublishArchiveItemUseCase,
+  MigrateGalleryAlbumUseCase,
+  ScheduleArchiveItemPublicationUseCase,
+  PublishScheduledArchiveItemsUseCase,
+  SetArchiveMediaPosterUseCase,
+  ListDuplicateMediaAssetsUseCase,
+  MigrateFileAssetUseCase,
+  MigrateLibraryItemUseCase,
+  RecordArchiveMediaViewUseCase,
+  ListMostViewedArchiveItemsUseCase,
+  GetStorageUsageByBoardTermUseCase,
+  FindBoardTermForDateUseCase,
   CreateBoardTermUseCase,
   CreateCommitteeUseCase,
   CreateEventUseCase,
@@ -178,6 +201,9 @@ import { FirestoreArchiveRelationRepository } from './firestore/repositories/arc
 import { FirestoreArchiveExhibitionRepository } from './firestore/repositories/archive-exhibition.repository';
 import { FirestoreArchiveCatalogEntryRepository } from './firestore/repositories/archive-catalog-entry.repository';
 import { FirestoreArchiveContributionRepository } from './firestore/repositories/archive-contribution.repository';
+import { FirestoreArchiveItemRepository } from './firestore/repositories/archive-item.repository';
+import { FirestoreMediaAssetRepository } from './firestore/repositories/media-asset.repository';
+import { FirestoreArchiveMediaRepository } from './firestore/repositories/archive-media.repository';
 import { FirestoreAuditLogRepository } from './firestore/repositories/audit-log.repository';
 import { FirestoreBoardPositionAssignmentRepository } from './firestore/repositories/board-position-assignment.repository';
 import { FirestoreBoardTermRepository } from './firestore/repositories/board-term.repository';
@@ -325,6 +351,9 @@ export function createServerContainer() {
       'archiveContributions',
       auditDeps,
     ),
+    archiveItem: withAudit(new FirestoreArchiveItemRepository(db), 'archiveItems', auditDeps),
+    mediaAsset: withAudit(new FirestoreMediaAssetRepository(db), 'mediaAssets', auditDeps),
+    archiveMedia: withAudit(new FirestoreArchiveMediaRepository(db), 'archiveMedia', auditDeps),
   };
 
   const notificationGateway = new NoopNotificationGateway();
@@ -987,6 +1016,141 @@ export function createServerContainer() {
     moderateArchiveContribution: new ModerateArchiveContributionUseCase({
       archiveContributionRepository: repositories.archiveContribution,
       clock,
+    }),
+
+    // Fase 1 da Fundação do Acervo VL6 (docs/architecture/11-acervo-vl6.md §11.5)
+    findBoardTermForDate: new FindBoardTermForDateUseCase({
+      boardTermRepository: repositories.boardTerm,
+    }),
+    createArchiveItem: new CreateArchiveItemUseCase({
+      archiveItemRepository: repositories.archiveItem,
+      eventRepository: repositories.event,
+      boardTermRepository: repositories.boardTerm,
+      clock,
+      idGenerator,
+    }),
+    registerMediaAsset: new RegisterMediaAssetUseCase({
+      mediaAssetRepository: repositories.mediaAsset,
+      clock,
+      idGenerator,
+    }),
+    attachMediaToArchiveItem: new AttachMediaToArchiveItemUseCase({
+      archiveMediaRepository: repositories.archiveMedia,
+      archiveItemRepository: repositories.archiveItem,
+      mediaAssetRepository: repositories.mediaAsset,
+      clock,
+      idGenerator,
+    }),
+    setArchiveItemCover: new SetArchiveItemCoverUseCase({
+      archiveItemRepository: repositories.archiveItem,
+      archiveMediaRepository: repositories.archiveMedia,
+      clock,
+    }),
+    softDeleteArchiveItem: new SoftDeleteArchiveItemUseCase({
+      archiveItemRepository: repositories.archiveItem,
+      clock,
+    }),
+    restoreArchiveItem: new RestoreArchiveItemUseCase({
+      archiveItemRepository: repositories.archiveItem,
+    }),
+    updateArchiveMediaBatch: new UpdateArchiveMediaBatchUseCase({
+      archiveMediaRepository: repositories.archiveMedia,
+      clock,
+    }),
+
+    // Fase 3 — Organização (docs/architecture/11-acervo-vl6.md §11.6)
+    reorderArchiveMedia: new ReorderArchiveMediaUseCase({
+      archiveItemRepository: repositories.archiveItem,
+      archiveMediaRepository: repositories.archiveMedia,
+      clock,
+    }),
+    softDeleteArchiveMedia: new SoftDeleteArchiveMediaUseCase({
+      archiveMediaRepository: repositories.archiveMedia,
+      clock,
+    }),
+    restoreArchiveMedia: new RestoreArchiveMediaUseCase({
+      archiveMediaRepository: repositories.archiveMedia,
+    }),
+    publishArchiveItem: new PublishArchiveItemUseCase({
+      archiveItemRepository: repositories.archiveItem,
+      archiveMediaRepository: repositories.archiveMedia,
+      clock,
+    }),
+    unpublishArchiveItem: new UnpublishArchiveItemUseCase({
+      archiveItemRepository: repositories.archiveItem,
+      clock,
+    }),
+
+    // Fase 5 — Memória institucional (docs/architecture/11-acervo-vl6.md §11.6e)
+    migrateGalleryAlbum: new MigrateGalleryAlbumUseCase({
+      galleryAlbumRepository: repositories.galleryAlbum,
+      galleryMediaRepository: repositories.galleryMedia,
+      eventRepository: repositories.event,
+      boardTermRepository: repositories.boardTerm,
+      archiveItemRepository: repositories.archiveItem,
+      archiveMediaRepository: repositories.archiveMedia,
+      mediaAssetRepository: repositories.mediaAsset,
+      clock,
+      idGenerator,
+    }),
+
+    // Fase B — Publicação avançada (docs/architecture/11-acervo-vl6.md §11.5/§11.6)
+    scheduleArchiveItemPublication: new ScheduleArchiveItemPublicationUseCase({
+      archiveItemRepository: repositories.archiveItem,
+      archiveMediaRepository: repositories.archiveMedia,
+      clock,
+    }),
+    publishScheduledArchiveItems: new PublishScheduledArchiveItemsUseCase({
+      archiveItemRepository: repositories.archiveItem,
+      publishArchiveItem: new PublishArchiveItemUseCase({
+        archiveItemRepository: repositories.archiveItem,
+        archiveMediaRepository: repositories.archiveMedia,
+        clock,
+      }),
+      clock,
+    }),
+    setArchiveMediaPoster: new SetArchiveMediaPosterUseCase({
+      archiveMediaRepository: repositories.archiveMedia,
+      clock,
+    }),
+    listDuplicateMediaAssets: new ListDuplicateMediaAssetsUseCase({
+      mediaAssetRepository: repositories.mediaAsset,
+      archiveMediaRepository: repositories.archiveMedia,
+    }),
+
+    // Fase C — Administração & métricas (docs/architecture/11-acervo-vl6.md)
+    migrateFileAsset: new MigrateFileAssetUseCase({
+      fileAssetRepository: repositories.fileAsset,
+      eventRepository: repositories.event,
+      boardTermRepository: repositories.boardTerm,
+      archiveItemRepository: repositories.archiveItem,
+      archiveMediaRepository: repositories.archiveMedia,
+      mediaAssetRepository: repositories.mediaAsset,
+      clock,
+      idGenerator,
+    }),
+    migrateLibraryItem: new MigrateLibraryItemUseCase({
+      libraryItemRepository: repositories.libraryItem,
+      fileAssetRepository: repositories.fileAsset,
+      eventRepository: repositories.event,
+      boardTermRepository: repositories.boardTerm,
+      archiveItemRepository: repositories.archiveItem,
+      archiveMediaRepository: repositories.archiveMedia,
+      mediaAssetRepository: repositories.mediaAsset,
+      clock,
+      idGenerator,
+    }),
+    recordArchiveMediaView: new RecordArchiveMediaViewUseCase({
+      archiveMediaRepository: repositories.archiveMedia,
+      archiveItemRepository: repositories.archiveItem,
+    }),
+    listMostViewedArchiveItems: new ListMostViewedArchiveItemsUseCase({
+      archiveItemRepository: repositories.archiveItem,
+    }),
+    getStorageUsageByBoardTerm: new GetStorageUsageByBoardTermUseCase({
+      archiveMediaRepository: repositories.archiveMedia,
+      mediaAssetRepository: repositories.mediaAsset,
+      boardTermRepository: repositories.boardTerm,
     }),
   };
 

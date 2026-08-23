@@ -21,6 +21,9 @@ firestore-debug.log
 ui-debug.log
 *.tsbuildinfo
 
+# Claude Code agent worktrees
+.claude/worktrees/
+
 # Editor / OS
 .DS_Store
 .vscode/*
