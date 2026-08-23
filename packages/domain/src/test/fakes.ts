@@ -824,6 +824,15 @@ export class InMemoryArchiveItemRepository implements IArchiveItemRepository {
         i.publicarEm.getTime() <= now.getTime(),
     );
   }
+  async countByTenant(tenantId: string) {
+    return [...this.byId.values()].filter((i) => i.tenantId === tenantId && i.deletedAt === null)
+      .length;
+  }
+  async countPublishedByTenant(tenantId: string) {
+    return [...this.byId.values()].filter(
+      (i) => i.tenantId === tenantId && i.deletedAt === null && i.publicacaoStatus === 'publicado',
+    ).length;
+  }
   async create(item: ArchiveItem) {
     this.byId.set(item.id, item);
   }
@@ -847,6 +856,12 @@ export class InMemoryArchiveItemRepository implements IArchiveItemRepository {
     const item = this.byId.get(id);
     if (item) {
       this.byId.set(id, { ...item, deletedAt: null, status: 'active', ativo: true, updatedBy });
+    }
+  }
+  async incrementViews(id: string) {
+    const item = this.byId.get(id);
+    if (item) {
+      this.byId.set(id, { ...item, contagemVisualizacoes: (item.contagemVisualizacoes ?? 0) + 1 });
     }
   }
 }
@@ -939,6 +954,11 @@ export class InMemoryArchiveMediaRepository implements IArchiveMediaRepository {
       )
       .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
   }
+  async countPublishedByTenant(tenantId: string) {
+    return [...this.byId.values()].filter(
+      (m) => m.tenantId === tenantId && m.deletedAt === null && m.publicacaoStatus === 'publicado',
+    ).length;
+  }
   async create(archiveMedia: ArchiveMedia) {
     this.byId.set(archiveMedia.id, archiveMedia);
   }
@@ -967,6 +987,15 @@ export class InMemoryArchiveMediaRepository implements IArchiveMediaRepository {
         status: 'active',
         ativo: true,
         updatedBy,
+      });
+    }
+  }
+  async incrementViews(id: string) {
+    const archiveMedia = this.byId.get(id);
+    if (archiveMedia) {
+      this.byId.set(id, {
+        ...archiveMedia,
+        contagemVisualizacoes: (archiveMedia.contagemVisualizacoes ?? 0) + 1,
       });
     }
   }

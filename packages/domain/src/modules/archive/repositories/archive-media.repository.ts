@@ -18,8 +18,12 @@ export interface IArchiveMediaRepository {
    * `findByArchiveItemId`.
    */
   findByPessoaIdentificada(tenantId: string, memberId: string): Promise<ArchiveMedia[]>;
+  /** Total de mídias publicadas do tenant (não excluídas) — Fase C, tile "Fotos/vídeos/documentos no Acervo VL6" do Painel administrativo. */
+  countPublishedByTenant(tenantId: string): Promise<number>;
   create(archiveMedia: ArchiveMedia): Promise<void>;
   update(archiveMedia: ArchiveMedia): Promise<void>;
   softDelete(id: string, deletedAt: Date, updatedBy: string): Promise<void>;
   restore(id: string, updatedBy: string): Promise<void>;
+  /** Incremento atômico do contador de visualizações — Fase C, nunca via read-modify-write. */
+  incrementViews(id: string): Promise<void>;
 }

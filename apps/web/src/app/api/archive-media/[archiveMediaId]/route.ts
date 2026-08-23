@@ -34,9 +34,6 @@ export async function GET(
     const { archiveMediaId } = await params;
     const container = createServerContainer();
 
-    // Miniatura de vídeo (Fase B "Publicação avançada") — `?variant=poster`
-    // serve o `MediaAsset` da miniatura em vez do binário principal, mesmo
-    // proxy autenticado (nunca a URL crua do Vercel Blob para nenhum dos dois).
     const variant =
       request.nextUrl.searchParams.get('variant') === 'poster' ? 'poster' : 'original';
     const binary = await fetchArchiveMediaBinary(
@@ -56,6 +53,20 @@ export async function GET(
         { error: binary.status === 404 ? 'not_found' : 'storage_unavailable' },
         { status: binary.status },
       );
+    }
+
+    // Visualização — Fase C "Administração & métricas". Só o binário
+    // principal conta como visualização (a miniatura de vídeo é um detalhe
+    // técnico de exibição, não um acesso independente ao conteúdo).
+    if (variant !== 'poster') {
+      const viewResult = await container.useCases.recordArchiveMediaView.execute(
+        session.authContext,
+        archiveMediaId,
+      );
+      if (!viewResult.ok) {
+        const status = viewResult.error.code === 'forbidden' ? 403 : 404;
+        return NextResponse.json({ error: viewResult.error.code }, { status });
+      }
     }
 
     const headers = new Headers();

@@ -81,6 +81,11 @@ export const ADMIN_AREA_TABS: Record<AdminAreaKey, AreaTabDef[]> = {
       label: 'Duplicidade',
       permission: 'archiveMedia:manage',
     },
+    {
+      href: '/admin/acervo/metricas',
+      label: 'Métricas',
+      permission: 'archiveMedia:manage',
+    },
   ],
   configuracoes: [
     { href: '/admin/configuracoes/geral', label: 'Geral', permission: null },

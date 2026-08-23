@@ -316,3 +316,10 @@ export * from './modules/archive/use-cases/schedule-archive-item-publication.use
 export * from './modules/archive/use-cases/publish-scheduled-archive-items.use-case';
 export * from './modules/archive/use-cases/set-archive-media-poster.use-case';
 export * from './modules/archive/use-cases/list-duplicate-media-assets.use-case';
+
+// Fase C — Administração & métricas (docs/architecture/11-acervo-vl6.md)
+export * from './modules/archive/use-cases/migrate-file-asset.use-case';
+export * from './modules/archive/use-cases/migrate-library-item.use-case';
+export * from './modules/archive/use-cases/record-archive-media-view.use-case';
+export * from './modules/archive/use-cases/list-most-viewed-archive-items.use-case';
+export * from './modules/archive/use-cases/get-storage-usage-by-board-term.use-case';

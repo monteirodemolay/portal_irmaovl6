@@ -1,4 +1,4 @@
-import type { Firestore, Query } from 'firebase-admin/firestore';
+import { FieldValue, type Firestore, type Query } from 'firebase-admin/firestore';
 import type { ArchiveMedia, IArchiveMediaRepository, PageRequest, PageResult } from '@vl6/domain';
 import { createEntityConverter } from '../converters/entity.converter';
 
@@ -53,6 +53,16 @@ export class FirestoreArchiveMediaRepository implements IArchiveMediaRepository 
     return snap.docs.map((doc) => doc.data());
   }
 
+  async countPublishedByTenant(tenantId: string): Promise<number> {
+    const snap = await this.collection
+      .where('tenantId', '==', tenantId)
+      .where('deletedAt', '==', null)
+      .where('publicacaoStatus', '==', 'publicado')
+      .count()
+      .get();
+    return snap.data().count;
+  }
+
   private async paginate(
     query: Query<ArchiveMedia>,
     page: PageRequest,
@@ -98,5 +108,9 @@ export class FirestoreArchiveMediaRepository implements IArchiveMediaRepository 
       status: 'active',
       ativo: true,
     });
+  }
+
+  async incrementViews(id: string): Promise<void> {
+    await this.collection.doc(id).update({ contagemVisualizacoes: FieldValue.increment(1) });
   }
 }
