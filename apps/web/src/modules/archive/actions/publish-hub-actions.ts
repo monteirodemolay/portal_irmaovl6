@@ -537,6 +537,156 @@ export async function publishArchiveItemAction(
   return { ok: true, error: null };
 }
 
+export interface ScheduleArchiveItemPublicationState {
+  ok: boolean;
+  error: string | null;
+  publicarEm: string | null;
+}
+
+/**
+ * "Agendar publicação" — Fase B "Publicação avançada". `publicarEmLocal`
+ * vem do `<input type="datetime-local">` (fuso do navegador do Irmão, mesmo
+ * padrão de `dataInicio` no cadastro retroativo de evento) e é convertido
+ * com `parseBrazilDateTimeLocal`, a mesma função já usada em todo o resto
+ * da Central de Publicação.
+ */
+export async function scheduleArchiveItemPublicationAction(
+  archiveItemId: string,
+  publicarEmLocal: string,
+): Promise<ScheduleArchiveItemPublicationState> {
+  const session = await requireSession();
+  const date = parseBrazilDateTimeLocal(publicarEmLocal);
+  if (Number.isNaN(date.getTime())) {
+    return { ok: false, error: 'Data de agendamento inválida.', publicarEm: null };
+  }
+
+  const container = createServerContainer();
+  const result = await container.useCases.scheduleArchiveItemPublication.execute(
+    session.authContext,
+    archiveItemId,
+    date,
+  );
+  if (!result.ok) return { ok: false, error: result.error.message, publicarEm: null };
+
+  revalidatePath(PUBLISH_HUB_PATH);
+  return {
+    ok: true,
+    error: null,
+    publicarEm: result.value.publicarEm ? result.value.publicarEm.toISOString() : null,
+  };
+}
+
+/** Cancela o agendamento de publicação — limpa `publicarEm`, sem alterar `publicacaoStatus`. */
+export async function cancelScheduledArchiveItemPublicationAction(
+  archiveItemId: string,
+): Promise<SimpleActionState> {
+  const session = await requireSession();
+  const container = createServerContainer();
+  const result = await container.useCases.scheduleArchiveItemPublication.execute(
+    session.authContext,
+    archiveItemId,
+    null,
+  );
+  if (!result.ok) return { ok: false, error: result.error.message };
+
+  revalidatePath(PUBLISH_HUB_PATH);
+  return { ok: true, error: null };
+}
+
+// ---------------------------------------------------------------------
+// Miniatura automática de vídeo (Fase B "Publicação avançada")
+// ---------------------------------------------------------------------
+
+export interface UploadArchiveMediaPosterResult {
+  ok: boolean;
+  error: string | null;
+  posterMediaAssetId: string | null;
+}
+
+/**
+ * Recebe a miniatura de vídeo capturada no browser (frame do `<video>` em
+ * canvas, sempre JPEG) e a associa à `ArchiveMedia` do vídeo original —
+ * Fase B "Publicação avançada". Chamada em SEGUIDA de um
+ * `uploadArchiveMediaAction` bem-sucedido para um vídeo; qualquer falha
+ * aqui é tolerada em silêncio pelo client (o upload do vídeo principal já
+ * está concluído e nunca é revertido por causa da miniatura).
+ */
+export async function uploadArchiveMediaPosterAction(
+  formData: FormData,
+): Promise<UploadArchiveMediaPosterResult> {
+  const session = await requireSession();
+
+  const file = formData.get('file');
+  const archiveMediaId = String(formData.get('archiveMediaId') ?? '');
+  if (!(file instanceof File) || file.size === 0 || !archiveMediaId) {
+    return {
+      ok: false,
+      error: 'Miniatura ou mídia de destino inválida.',
+      posterMediaAssetId: null,
+    };
+  }
+  if (!IMAGE_MIME_TYPES.includes(file.type)) {
+    return { ok: false, error: 'A miniatura precisa ser uma imagem.', posterMediaAssetId: null };
+  }
+
+  const container = createServerContainer();
+
+  const media = await container.repositories.archiveMedia.findById(archiveMediaId);
+  if (!media || media.tenantId !== session.authContext.tenantId || media.mediaType !== 'video') {
+    return { ok: false, error: 'Vídeo de destino não encontrado.', posterMediaAssetId: null };
+  }
+
+  const buffer = Buffer.from(await file.arrayBuffer());
+  const sha256 = createHash('sha256').update(buffer).digest('hex');
+  const safeName = sanitizeFileName(file.name || 'miniatura.jpg');
+  const storage = new VercelBlobStorageAdapter();
+  const path = `tenants/${session.authContext.tenantId}/archive/posters/${randomUUID()}-${safeName}`;
+
+  let upload;
+  try {
+    upload = await storage.upload({ path, buffer, contentType: file.type });
+  } catch (error) {
+    logger.error('Falha ao enviar miniatura de vídeo do Acervo para o storage', {
+      route: 'uploadArchiveMediaPosterAction',
+      ...errorToLogContext(error),
+    });
+    return { ok: false, error: 'Não foi possível enviar a miniatura.', posterMediaAssetId: null };
+  }
+
+  const extension = safeName.includes('.') ? (safeName.split('.').pop() ?? 'jpg') : 'jpg';
+
+  const registerResult = await container.useCases.registerMediaAsset.execute(session.authContext, {
+    originalName: file.name || 'miniatura.jpg',
+    normalizedName: safeName,
+    mimeType: file.type,
+    extension,
+    size: upload.sizeBytes,
+    sha256,
+    provider: 'vercel_blob',
+    storageKey: path,
+    width: null,
+    height: null,
+    duration: null,
+  });
+  if (!registerResult.ok) {
+    await storage.delete(path).catch(() => {});
+    return { ok: false, error: registerResult.error.message, posterMediaAssetId: null };
+  }
+
+  const setPosterResult = await container.useCases.setArchiveMediaPoster.execute(
+    session.authContext,
+    archiveMediaId,
+    registerResult.value.mediaAsset.id,
+  );
+  if (!setPosterResult.ok) {
+    await storage.delete(path).catch(() => {});
+    return { ok: false, error: setPosterResult.error.message, posterMediaAssetId: null };
+  }
+
+  revalidatePath(PUBLISH_HUB_PATH);
+  return { ok: true, error: null, posterMediaAssetId: registerResult.value.mediaAsset.id };
+}
+
 // ---------------------------------------------------------------------
 // Passo 3 — resumo/organização do rascunho
 // ---------------------------------------------------------------------
@@ -564,6 +714,8 @@ export interface ArchiveItemSummary {
   titulo: string;
   eventoTitulo: string;
   gestaoNome: string | null;
+  /** ISO 8601, ou `null` sem agendamento — Fase B "Publicação avançada". */
+  publicarEm: string | null;
   medias: ArchiveItemSummaryMedia[];
 }
 
@@ -591,6 +743,7 @@ export async function loadArchiveItemSummaryAction(
     titulo: item.titulo,
     eventoTitulo: event?.titulo ?? '—',
     gestaoNome: boardTerm?.nome ?? null,
+    publicarEm: item.publicarEm ? item.publicarEm.toISOString() : null,
     medias: medias
       .slice()
       .sort((a, b) => a.order - b.order)

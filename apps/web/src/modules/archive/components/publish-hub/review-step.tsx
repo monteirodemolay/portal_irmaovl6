@@ -16,11 +16,13 @@ import {
   TabsTrigger,
 } from '@vl6/ui';
 import {
+  cancelScheduledArchiveItemPublicationAction,
   loadArchiveItemSummaryAction,
   loadMemberPickerOptionsAction,
   loadPublicationChecklistAction,
   publishArchiveItemAction,
   reorderArchiveMediaAction,
+  scheduleArchiveItemPublicationAction,
   setArchiveItemCoverAction,
   softDeleteArchiveMediaAction,
   updateArchiveMediaFieldsAction,
@@ -75,6 +77,17 @@ function mediaThumb(media: ArchiveItemSummaryMedia) {
 
 function pendingCaption(media: ArchiveItemSummaryMedia) {
   return !media.caption || media.caption.trim().length === 0;
+}
+
+function formatScheduledLabel(publicarEmIso: string): string {
+  const date = new Date(publicarEmIso);
+  return new Intl.DateTimeFormat('pt-BR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(date);
 }
 
 /**
@@ -177,6 +190,8 @@ export function ReviewStep({ archiveItemId, onBack }: ReviewStepProps) {
   const [message, setMessage] = useState<{ text: string; error: boolean } | null>(null);
   const [isPublishing, startPublishing] = useTransition();
   const [dragId, setDragId] = useState<string | null>(null);
+  const [scheduleValue, setScheduleValue] = useState('');
+  const [isScheduling, startScheduling] = useTransition();
 
   const refresh = useCallback(async () => {
     const [nextSummary, nextChecklist] = await Promise.all([
@@ -286,6 +301,39 @@ export function ReviewStep({ archiveItemId, onBack }: ReviewStepProps) {
     });
   }
 
+  function handleSchedule() {
+    if (!scheduleValue) return;
+    setMessage(null);
+    startScheduling(async () => {
+      const result = await scheduleArchiveItemPublicationAction(archiveItemId, scheduleValue);
+      if (!result.ok) {
+        setMessage({ text: result.error ?? 'Não foi possível agendar.', error: true });
+        return;
+      }
+      setMessage({ text: 'Publicação agendada com sucesso.', error: false });
+      setScheduleValue('');
+      await refresh();
+    });
+  }
+
+  function handleCancelSchedule() {
+    setMessage(null);
+    startScheduling(async () => {
+      const result = await cancelScheduledArchiveItemPublicationAction(archiveItemId);
+      if (!result.ok) {
+        setMessage({
+          text: result.error ?? 'Não foi possível cancelar o agendamento.',
+          error: true,
+        });
+        return;
+      }
+      setMessage({ text: 'Agendamento cancelado.', error: false });
+      await refresh();
+    });
+  }
+
+  const isScheduled = Boolean(summary.publicarEm && new Date(summary.publicarEm) > new Date());
+
   return (
     <div className="flex flex-col gap-6">
       <Card>
@@ -299,9 +347,16 @@ export function ReviewStep({ archiveItemId, onBack }: ReviewStepProps) {
                 {summary.gestaoNome ? ` · ${summary.gestaoNome}` : ' · Sem Gestão identificada'}
               </p>
             </div>
-            <Badge variant={isPublished ? 'success' : 'outline'}>
-              {isPublished ? 'Publicado' : 'Rascunho'}
-            </Badge>
+            <div className="flex flex-wrap items-center gap-2">
+              {isScheduled && summary.publicarEm && (
+                <Badge variant="accent">
+                  Agendado para {formatScheduledLabel(summary.publicarEm)}
+                </Badge>
+              )}
+              <Badge variant={isPublished ? 'success' : 'outline'}>
+                {isPublished ? 'Publicado' : 'Rascunho'}
+              </Badge>
+            </div>
           </div>
           <div className="flex flex-wrap gap-2">
             {(Object.keys(countsByType) as ArchiveMediaTypeKey[])
@@ -567,7 +622,7 @@ export function ReviewStep({ archiveItemId, onBack }: ReviewStepProps) {
           ) : (
             <p className="text-sm text-emerald-700">Tudo pronto para publicar.</p>
           )}
-          <div className="flex flex-wrap gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <Button type="button" variant="outline" onClick={onBack}>
               Voltar e enviar mais arquivos
             </Button>
@@ -576,9 +631,55 @@ export function ReviewStep({ archiveItemId, onBack }: ReviewStepProps) {
               onClick={handlePublish}
               disabled={isPublishing || !checklist?.canPublish || isPublished}
             >
-              {isPublished ? 'Já publicado' : isPublishing ? 'Publicando…' : 'Publicar Evento'}
+              {isPublished ? 'Já publicado' : isPublishing ? 'Publicando…' : 'Publicar agora'}
             </Button>
           </div>
+
+          {!isPublished && (
+            <div className="border-border flex flex-col gap-2 border-t pt-3">
+              <p className="text-sm font-medium">Ou agendar para mais tarde</p>
+              {isScheduled ? (
+                <div className="flex flex-wrap items-center gap-3">
+                  <p className="text-muted text-sm">
+                    Agendado para{' '}
+                    {summary.publicarEm ? formatScheduledLabel(summary.publicarEm) : '—'}.
+                  </p>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleCancelSchedule}
+                    disabled={isScheduling}
+                  >
+                    Cancelar agendamento
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex flex-wrap items-center gap-2">
+                  <Input
+                    type="datetime-local"
+                    value={scheduleValue}
+                    onChange={(event) => setScheduleValue(event.target.value)}
+                    disabled={!checklist?.canPublish || isScheduling}
+                    className="w-auto"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleSchedule}
+                    disabled={!checklist?.canPublish || isScheduling || !scheduleValue}
+                  >
+                    {isScheduling ? 'Agendando…' : 'Agendar publicação'}
+                  </Button>
+                </div>
+              )}
+              {!checklist?.canPublish && (
+                <p className="text-muted text-xs">
+                  Resolva as pendências acima para poder agendar.
+                </p>
+              )}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
