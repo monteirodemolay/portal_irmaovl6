@@ -47,6 +47,20 @@ export async function GET(
       return NextResponse.json({ error: 'not_found' }, { status: 404 });
     }
 
+    // Visualização — Fase C "Administração & métricas". Só o binário
+    // principal conta como visualização (a miniatura de vídeo é um detalhe
+    // técnico de exibição, não um acesso independente ao conteúdo).
+    if (variant !== 'poster') {
+      const viewResult = await container.useCases.recordArchiveMediaView.execute(
+        session.authContext,
+        media.id,
+      );
+      if (!viewResult.ok) {
+        const status = viewResult.error.code === 'forbidden' ? 403 : 404;
+        return NextResponse.json({ error: viewResult.error.code }, { status });
+      }
+    }
+
     const asset = await container.repositories.mediaAsset.findById(mediaAssetId);
     if (!asset || asset.tenantId !== session.authContext.tenantId || asset.deletedAt) {
       return NextResponse.json({ error: 'not_found' }, { status: 404 });
