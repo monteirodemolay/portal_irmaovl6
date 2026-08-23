@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 import { createServerContainer } from '@vl6/infra';
-import { CalendarDays, EmptyState, MapPin } from '@vl6/ui';
+import { CalendarDays, Download, EmptyState, FileArchive, MapPin } from '@vl6/ui';
 import { requireSession } from '@/lib/auth/require-session';
 import { AcervoPageHeader } from '@/components/member/acervo-page-header';
 import { ArchiveEventAlbum } from '@/modules/archive/components/archive-event-album';
@@ -29,10 +29,32 @@ export default async function EventAlbumPage({ params }: { params: Promise<{ eve
   }
 
   const album = await loadEventAlbum(container, session.authContext, session.role, eventId);
+  const hasDownloadableMedia = Boolean(album?.media.some((item) => item.allowDownload));
 
   return (
     <div className="flex flex-col gap-6">
       <AcervoPageHeader title={event.titulo} backHref="/acervo/eventos" backLabel="Eventos" />
+
+      {album && album.media.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {hasDownloadableMedia && (
+            <a
+              href={`/api/acervo/eventos/${event.id}/zip`}
+              className="border-border hover:border-accent inline-flex items-center gap-2 rounded-md border px-4 py-2 text-sm font-medium transition-colors"
+            >
+              <FileArchive size={15} />
+              Baixar tudo em ZIP
+            </a>
+          )}
+          <a
+            href={`/api/acervo/eventos/${event.id}/pdf`}
+            className="border-border hover:border-accent inline-flex items-center gap-2 rounded-md border px-4 py-2 text-sm font-medium transition-colors"
+          >
+            <Download size={15} />
+            Exportar em PDF
+          </a>
+        </div>
+      )}
 
       {album?.coverMedia && (
         <img

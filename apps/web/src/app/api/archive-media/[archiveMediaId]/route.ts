@@ -1,9 +1,10 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import * as Sentry from '@sentry/nextjs';
 import { hasPermission } from '@vl6/domain';
-import { createServerContainer, VercelBlobStorageAdapter } from '@vl6/infra';
+import { createServerContainer } from '@vl6/infra';
 import { errorToLogContext, logger } from '@vl6/shared';
 import { getCurrentSession } from '@/lib/auth/get-current-session';
+import { fetchArchiveMediaBinary } from '@/modules/archive/lib/fetch-archive-media-binary';
 
 export const runtime = 'nodejs';
 
@@ -32,57 +33,40 @@ export async function GET(
 
     const { archiveMediaId } = await params;
     const container = createServerContainer();
-    const media = await container.repositories.archiveMedia.findById(archiveMediaId);
-    if (!media || media.tenantId !== session.authContext.tenantId || media.deletedAt) {
-      return NextResponse.json({ error: 'not_found' }, { status: 404 });
-    }
 
     // Miniatura de vídeo (Fase B "Publicação avançada") — `?variant=poster`
     // serve o `MediaAsset` da miniatura em vez do binário principal, mesmo
     // proxy autenticado (nunca a URL crua do Vercel Blob para nenhum dos dois).
-    const variant = request.nextUrl.searchParams.get('variant');
-    const mediaAssetId =
-      variant === 'poster' ? (media.posterMediaAssetId ?? null) : media.mediaAssetId;
-    if (!mediaAssetId) {
-      return NextResponse.json({ error: 'not_found' }, { status: 404 });
-    }
-
-    const asset = await container.repositories.mediaAsset.findById(mediaAssetId);
-    if (!asset || asset.tenantId !== session.authContext.tenantId || asset.deletedAt) {
-      return NextResponse.json({ error: 'not_found' }, { status: 404 });
-    }
-
-    const storage = new VercelBlobStorageAdapter();
-    let downloadUrl: string;
-    try {
-      downloadUrl = await storage.getDownloadUrl(asset.storageKey);
-    } catch (storageError) {
-      logger.error('Storage indisponível ao resolver a URL da mídia do Acervo', {
-        route: 'GET /api/archive-media/[archiveMediaId]',
-        archiveMediaId,
-        ...errorToLogContext(storageError),
-      });
-      return NextResponse.json({ error: 'storage_unavailable' }, { status: 502 });
-    }
-    const upstream = await fetch(downloadUrl);
-    if (!upstream.ok || !upstream.body) {
-      logger.error('Storage upstream indisponível ao servir mídia do Acervo', {
-        route: 'GET /api/archive-media/[archiveMediaId]',
-        archiveMediaId,
-        upstreamStatus: upstream.status,
-      });
-      return NextResponse.json({ error: 'storage_unavailable' }, { status: 502 });
+    const variant =
+      request.nextUrl.searchParams.get('variant') === 'poster' ? 'poster' : 'original';
+    const binary = await fetchArchiveMediaBinary(
+      container,
+      session.authContext.tenantId,
+      archiveMediaId,
+      variant,
+    );
+    if (!binary.ok) {
+      if (binary.status === 502) {
+        logger.error('Storage indisponível ao servir mídia do Acervo', {
+          route: 'GET /api/archive-media/[archiveMediaId]',
+          archiveMediaId,
+        });
+      }
+      return NextResponse.json(
+        { error: binary.status === 404 ? 'not_found' : 'storage_unavailable' },
+        { status: binary.status },
+      );
     }
 
     const headers = new Headers();
-    headers.set('Content-Type', asset.mimeType || 'application/octet-stream');
+    headers.set('Content-Type', binary.mimeType);
     headers.set(
       'Content-Disposition',
-      `inline; filename="${encodeURIComponent(asset.originalName)}"`,
+      `inline; filename="${encodeURIComponent(binary.originalName)}"`,
     );
     headers.set('Cache-Control', 'private, no-store');
 
-    return new NextResponse(upstream.body, { headers });
+    return new NextResponse(binary.webStream, { headers });
   } catch (error) {
     logger.error('Erro não tratado em GET /api/archive-media/[archiveMediaId]', {
       route: 'GET /api/archive-media/[archiveMediaId]',

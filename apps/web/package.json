@@ -25,6 +25,7 @@
     "@vl6/infra": "workspace:*",
     "@vl6/shared": "workspace:*",
     "@vl6/ui": "workspace:*",
+    "archiver": "^7.0.1",
     "docx": "^9.7.1",
     "exceljs": "^4.4.0",
     "firebase": "^11.1.0",
@@ -43,6 +44,7 @@
   "devDependencies": {
     "@next/eslint-plugin-next": "^15.1.3",
     "@playwright/test": "^1.62.1",
+    "@types/archiver": "^6.0.3",
     "@types/node": "^22.10.5",
     "@types/qrcode": "^1.5.5",
     "@types/react": "^19.0.2",
