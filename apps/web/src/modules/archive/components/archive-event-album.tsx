@@ -85,7 +85,11 @@ function VideoList({ videos }: { videos: EventAlbumMediaItem[] }) {
     <div className="flex flex-col gap-6">
       {videos.map((video) => (
         <div key={video.id} className="flex flex-col gap-2">
-          <VideoPlayer src={video.src} title={video.caption ?? video.originalName} />
+          <VideoPlayer
+            src={video.src}
+            title={video.caption ?? video.originalName}
+            posterUrl={video.posterUrl}
+          />
           {video.caption && <p className="text-muted text-sm">{video.caption}</p>}
           {video.allowDownload && (
             <a

@@ -37,7 +37,17 @@ export async function GET(
       return NextResponse.json({ error: 'not_found' }, { status: 404 });
     }
 
-    const asset = await container.repositories.mediaAsset.findById(media.mediaAssetId);
+    // Miniatura de vídeo (Fase B "Publicação avançada") — `?variant=poster`
+    // serve o `MediaAsset` da miniatura em vez do binário principal, mesmo
+    // proxy autenticado (nunca a URL crua do Vercel Blob para nenhum dos dois).
+    const variant = request.nextUrl.searchParams.get('variant');
+    const mediaAssetId =
+      variant === 'poster' ? (media.posterMediaAssetId ?? null) : media.mediaAssetId;
+    if (!mediaAssetId) {
+      return NextResponse.json({ error: 'not_found' }, { status: 404 });
+    }
+
+    const asset = await container.repositories.mediaAsset.findById(mediaAssetId);
     if (!asset || asset.tenantId !== session.authContext.tenantId || asset.deletedAt) {
       return NextResponse.json({ error: 'not_found' }, { status: 404 });
     }

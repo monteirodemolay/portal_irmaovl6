@@ -15,6 +15,12 @@ export interface EventAlbumMediaItem {
   autor: string | null;
   /** Sempre o proxy autenticado `/api/archive-media/[archiveMediaId]` — nunca a URL crua do Vercel Blob. */
   src: string;
+  /**
+   * Miniatura de vídeo capturada no browser (Fase B "Publicação
+   * avançada") — `/api/archive-media/[archiveMediaId]?variant=poster`, ou
+   * `null` quando `mediaType !== 'video'` ou a captura falhou/não rodou.
+   */
+  posterUrl: string | null;
   originalName: string;
   mimeType: string;
   sizeBytes: number;
@@ -116,6 +122,10 @@ export async function loadEventAlbum(
         allowDownload: archiveMedia.allowDownload,
         autor: archiveMedia.autor,
         src: `/api/archive-media/${archiveMedia.id}`,
+        posterUrl:
+          archiveMedia.mediaType === 'video' && archiveMedia.posterMediaAssetId
+            ? `/api/archive-media/${archiveMedia.id}?variant=poster`
+            : null,
         originalName: asset.originalName,
         mimeType: asset.mimeType,
         sizeBytes: asset.size,

@@ -7,7 +7,10 @@ import { Badge, Button, Card, CardContent } from '@vl6/ui';
 import {
   loadArchiveItemSummaryAction,
   uploadArchiveMediaAction,
+  uploadArchiveMediaPosterAction,
 } from '../../actions/publish-hub-actions';
+import { captureVideoPosterFrame } from '../../lib/capture-video-poster';
+import { optimizeImageUpload } from '../../lib/optimize-image-upload';
 import { UnifiedDropzone } from './unified-dropzone';
 import { BatchMetadataPanel } from './batch-metadata-panel';
 
@@ -23,6 +26,8 @@ interface QueueItem {
   archiveMediaId: string | null;
   duplicateWarning: boolean;
   error: string | null;
+  /** Preenchido quando a imagem foi redimensionada/recomprimida no browser antes do envio. */
+  optimizedFrom: number | null;
 }
 
 const MEDIA_TYPE_LABELS: Record<ArchiveMediaTypeKey, string> = {
@@ -92,6 +97,7 @@ export function UploadStep({ event, initialArchiveItemId, onBack, onContinue }: 
           archiveMediaId: media.id,
           duplicateWarning: false,
           error: null,
+          optimizedFrom: null,
         })),
       );
       setIsLoadingExisting(false);
@@ -109,8 +115,25 @@ export function UploadStep({ event, initialArchiveItemId, onBack, onContinue }: 
     if (!item.file) return;
     updateItem(item.id, { status: 'enviando', error: null });
     try {
+      let fileToUpload = item.file;
+
+      // Compressão/otimização de imagem (Fase B "Publicação avançada") —
+      // só imagens, e só quando o arquivo original justifica (dimensão ou
+      // tamanho acima do limite). Falha aqui nunca impede o upload: o
+      // arquivo original segue em frente.
+      if (item.file.type.startsWith('image/')) {
+        const optimized = await optimizeImageUpload(item.file);
+        if (optimized.optimized) {
+          fileToUpload = optimized.file;
+          updateItem(item.id, {
+            fileSize: optimized.optimizedSize,
+            optimizedFrom: optimized.originalSize,
+          });
+        }
+      }
+
       const formData = new FormData();
-      formData.set('file', item.file);
+      formData.set('file', fileToUpload);
       formData.set('eventId', event.id);
       if (archiveItemIdRef.current) {
         formData.set('archiveItemId', archiveItemIdRef.current);
@@ -127,11 +150,31 @@ export function UploadStep({ event, initialArchiveItemId, onBack, onContinue }: 
           archiveMediaId: result.archiveMediaId,
           duplicateWarning: result.duplicateWarning,
         });
+
+        // Miniatura automática de vídeo (Fase B) — captura e envio SEMPRE
+        // depois do vídeo principal já estar salvo; qualquer falha aqui é
+        // silenciosa e nunca reflete no status do item (já concluído).
+        if (result.mediaType === 'video' && result.archiveMediaId) {
+          void generateAndUploadPoster(item.file, result.archiveMediaId);
+        }
       } else {
         updateItem(item.id, { status: 'erro', error: result.error ?? 'Falha no envio.' });
       }
     } catch {
       updateItem(item.id, { status: 'erro', error: 'Falha inesperada no envio.' });
+    }
+  }
+
+  async function generateAndUploadPoster(videoFile: File, archiveMediaId: string) {
+    try {
+      const posterBlob = await captureVideoPosterFrame(videoFile);
+      if (!posterBlob) return;
+      const posterFormData = new FormData();
+      posterFormData.set('file', new File([posterBlob], 'miniatura.jpg', { type: 'image/jpeg' }));
+      posterFormData.set('archiveMediaId', archiveMediaId);
+      await uploadArchiveMediaPosterAction(posterFormData);
+    } catch {
+      // Tolerado em silêncio — o vídeo principal já foi salvo com sucesso.
     }
   }
 
@@ -169,6 +212,7 @@ export function UploadStep({ event, initialArchiveItemId, onBack, onContinue }: 
       archiveMediaId: null,
       duplicateWarning: false,
       error: null,
+      optimizedFrom: null,
     }));
     setItems((prev) => [...prev, ...newItems]);
     void runQueue(newItems);
@@ -220,6 +264,12 @@ export function UploadStep({ event, initialArchiveItemId, onBack, onContinue }: 
                         {item.mediaType ? ` · ${MEDIA_TYPE_LABELS[item.mediaType]}` : ''}
                         {item.duplicateWarning ? ' · possível duplicata' : ''}
                       </span>
+                      {item.optimizedFrom !== null && (
+                        <span className="text-xs text-emerald-700">
+                          Otimizada: {formatFileSize(item.optimizedFrom)} →{' '}
+                          {formatFileSize(item.fileSize)}
+                        </span>
+                      )}
                       {item.error && <span className="text-xs text-red-600">{item.error}</span>}
                     </div>
                     <div className="flex shrink-0 items-center gap-2">
