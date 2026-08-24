@@ -35,7 +35,10 @@ export function EventStep({
   onResumeDraft,
 }: EventStepProps) {
   const [query, setQuery] = useState('');
-  const [boardTermFilter, setBoardTermFilter] = useState('');
+  // A Gestão mais recente vem primeiro em `boardTerms` (repositório ordena
+  // por `periodoInicio desc`) — usada como filtro padrão pra não obrigar o
+  // Administrador a escolher toda vez que só quer publicar da gestão atual.
+  const [boardTermFilter, setBoardTermFilter] = useState(boardTerms[0]?.id ?? '');
   const [showCreateForm, setShowCreateForm] = useState(false);
 
   const boardTermNameById = useMemo(() => {
@@ -55,8 +58,7 @@ export function EventStep({
         );
         return haystack.includes(normalizedQuery);
       })
-      .sort((a, b) => b.dataInicio.getTime() - a.dataInicio.getTime())
-      .slice(0, 30);
+      .sort((a, b) => a.dataInicio.getTime() - b.dataInicio.getTime());
   }, [events, query, boardTermFilter]);
 
   return (
@@ -133,7 +135,7 @@ export function EventStep({
             description="Ajuste a busca ou cadastre o evento retroativamente."
           />
         ) : (
-          <ul className="flex flex-col gap-2">
+          <ul className="border-border flex max-h-[420px] flex-col gap-2 overflow-y-auto rounded border p-2">
             {filteredEvents.map((event) => (
               <li key={event.id}>
                 <button

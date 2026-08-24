@@ -13,7 +13,10 @@ export default async function PublicarPage() {
   const container = createServerContainer();
 
   const [eventsPage, draftsPage, boardTerms] = await Promise.all([
-    container.useCases.listAllEvents.execute(session.authContext, { limit: 200 }),
+    // Limite alto o bastante pra nunca cortar Sessões retroativas de
+    // Gestões antigas — a paginação real (`hasMore`) não é usada aqui, o
+    // wizard precisa do histórico completo pra selecionar qualquer Sessão.
+    container.useCases.listAllEvents.execute(session.authContext, { limit: 5000 }),
     container.repositories.archiveItem.findByTenant(session.authContext.tenantId, { limit: 100 }),
     container.repositories.boardTerm.listByTenant(session.authContext.tenantId),
   ]);
