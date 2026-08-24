@@ -88,7 +88,7 @@ export default async function InspirationalQuotesPage({
   }
 
   const [quotes, current] = await Promise.all([
-    container.useCases.listActiveInspirationalQuotes.execute(session.authContext),
+    container.useCases.listAllInspirationalQuotes.execute(session.authContext),
     getCurrentTenant(),
   ]);
 

@@ -13,7 +13,7 @@ test.describe('Login', () => {
     await page.getByRole('button', { name: 'Entrar' }).click();
 
     await expect(page).toHaveURL(/\/dashboard/);
-    await expect(page.getByRole('heading', { name: 'Bem-vindo ao Portal do Irmão' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Seja bem-vindo/ })).toBeVisible();
   });
 
   test('mostra erro com senha inválida', async ({ page }) => {
