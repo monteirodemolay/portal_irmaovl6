@@ -10,7 +10,7 @@ test.describe('Irmãos (Diretório + Meu Espaço)', () => {
     await loginAsAdmin(page);
 
     await page.goto('/irmaos');
-    await expect(page.getByRole('heading', { name: 'Irmãos' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Irmãos', exact: true })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Meu Espaço' })).toBeVisible();
 
     await page.getByRole('link', { name: 'Meu Espaço' }).click();
@@ -24,7 +24,7 @@ test.describe('Irmãos (Diretório + Meu Espaço)', () => {
     await loginAsAdmin(page);
 
     await page.goto('/irmaos');
-    await expect(page.getByRole('heading', { name: 'Irmãos' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Irmãos', exact: true })).toBeVisible();
     await expect(page.getByText('Algo deu errado')).toHaveCount(0);
   });
 

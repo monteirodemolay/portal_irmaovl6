@@ -89,6 +89,8 @@ test('admin cadastra Irmão sem acesso, ativa depois e consegue bloquear sem apa
   // Bloqueia o acesso sem apagar o cadastro do Irmão.
   await row.getByText(nome).click();
   await page.getByRole('button', { name: 'Bloquear' }).click();
-  await expect(page.getByText('Bloqueada', { exact: true })).toBeVisible();
+  await expect(
+    page.getByLabel('Editar Irmão').getByText('Bloqueada', { exact: true }),
+  ).toBeVisible();
   await expect(page.getByRole('heading', { name: nome })).toBeVisible();
 });
