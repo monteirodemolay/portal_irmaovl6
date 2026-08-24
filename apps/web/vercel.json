@@ -10,7 +10,7 @@
     },
     {
       "path": "/api/cron/publish-scheduled-archive-items",
-      "schedule": "0 * * * *"
+      "schedule": "0 7 * * *"
     }
   ]
 }
