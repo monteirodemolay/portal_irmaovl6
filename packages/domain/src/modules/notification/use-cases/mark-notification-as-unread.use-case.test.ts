@@ -3,7 +3,7 @@ import type { AuthContext } from '../../../shared/auth-context';
 import type { IClock } from '../../../shared/ports';
 import type { Notification } from '../entities/notification.entity';
 import type { INotificationRepository } from '../repositories/notification.repository';
-import { MarkNotificationAsReadUseCase } from './mark-notification-as-read.use-case';
+import { MarkNotificationAsUnreadUseCase } from './mark-notification-as-unread.use-case';
 
 const ctx: AuthContext = { uid: 'u1', tenantId: 't1', roleId: 'r1', permissions: [] };
 
@@ -15,8 +15,8 @@ function buildNotification(overrides: Partial<Notification> = {}): Notification 
     tipo: 'announcement',
     titulo: 'Aviso',
     mensagem: 'Mensagem',
-    lida: false,
-    readAt: null,
+    lida: true,
+    readAt: new Date('2026-01-01T10:00:00Z'),
     canal: 'interno',
     link: null,
     priority: 'normal',
@@ -51,10 +51,10 @@ class FakeNotificationRepository implements Partial<INotificationRepository> {
 
 const clock: IClock = { now: () => new Date('2026-01-02T00:00:00Z') };
 
-describe('MarkNotificationAsReadUseCase', () => {
+describe('MarkNotificationAsUnreadUseCase', () => {
   it('rejeita quando a notificação pertence a outro destinatário', async () => {
     const repo = new FakeNotificationRepository(buildNotification({ destinatarioId: 'outro-uid' }));
-    const useCase = new MarkNotificationAsReadUseCase({
+    const useCase = new MarkNotificationAsUnreadUseCase({
       notificationRepository: repo as unknown as INotificationRepository,
       clock,
     });
@@ -64,12 +64,11 @@ describe('MarkNotificationAsReadUseCase', () => {
     expect(result.ok).toBe(false);
     if (result.ok) return;
     expect(result.error.code).toBe('forbidden');
-    expect(repo.updated).toBeNull();
   });
 
-  it('marca como lida quando o destinatário é o próprio usuário', async () => {
+  it('marca como não lida e limpa readAt', async () => {
     const repo = new FakeNotificationRepository(buildNotification());
-    const useCase = new MarkNotificationAsReadUseCase({
+    const useCase = new MarkNotificationAsUnreadUseCase({
       notificationRepository: repo as unknown as INotificationRepository,
       clock,
     });
@@ -77,6 +76,7 @@ describe('MarkNotificationAsReadUseCase', () => {
     const result = await useCase.execute(ctx, 'notif-1');
 
     expect(result.ok).toBe(true);
-    expect(repo.updated?.lida).toBe(true);
+    expect(repo.updated?.lida).toBe(false);
+    expect(repo.updated?.readAt).toBeNull();
   });
 });

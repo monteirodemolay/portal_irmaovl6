@@ -36,7 +36,7 @@ const PORTAL_ITEMS: Array<{
 }> = [
   { href: '/dashboard', label: 'Início', icon: LayoutDashboard },
   { href: '/agenda', label: 'Minha Agenda', icon: CalendarDays },
-  { href: '/avisos', label: 'Avisos', icon: Megaphone },
+  { href: '/avisos', label: 'Central de Avisos', icon: Megaphone },
   // Módulo "Irmãos" (docs/architecture) — Diretório institucional privado e
   // voluntário + "Meu Espaço" (autoatendimento), unificados em duas abas
   // internas sob uma única rota. Sem `permission` aqui de propósito: "Meu
@@ -93,11 +93,16 @@ const ADMIN_ITEMS: AdminNavItemDef[] = [
   },
 ];
 
-function navContent(Icon: typeof LayoutDashboard, label: string) {
+function navContent(Icon: typeof LayoutDashboard, label: string, badge?: number) {
   return (
     <>
       <Icon size={ICON_SIZE} strokeWidth={ICON_STROKE} />
-      <span>{label}</span>
+      <span className="flex-1">{label}</span>
+      {Boolean(badge) && (
+        <em className="bg-accent text-primary-dark flex h-5 min-w-[20px] items-center justify-center rounded-full px-1.5 text-[10px] font-bold not-italic">
+          {badge}
+        </em>
+      )}
     </>
   );
 }
@@ -112,6 +117,7 @@ export function buildNavSections(
   authContext: AuthContext,
   role: Role | null,
   dictionary: Dictionary,
+  unreadNotificationsCount = 0,
 ): AppShellNavSection[] {
   const sections: AppShellNavSection[] = [
     {
@@ -120,7 +126,11 @@ export function buildNavSections(
         (item) => !item.permission || hasPermission(authContext, item.permission),
       ).map((item) => ({
         href: item.href,
-        content: navContent(item.icon, item.label),
+        content: navContent(
+          item.icon,
+          item.label,
+          item.href === '/avisos' ? unreadNotificationsCount : undefined,
+        ),
       })),
     },
     {

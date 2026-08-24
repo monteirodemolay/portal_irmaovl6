@@ -50,7 +50,7 @@ export default async function MemberLayout({ children }: { children: React.React
               subtitle={tenantName}
             />
           }
-          sections={buildNavSections(session.authContext, session.role, dictionary)}
+          sections={buildNavSections(session.authContext, session.role, dictionary, unreadCount)}
           sidebarFooter={
             current?.tenant.site && (
               <SidebarInstitutionalLink siteUrl={current.tenant.site} tenantName={tenantName} />

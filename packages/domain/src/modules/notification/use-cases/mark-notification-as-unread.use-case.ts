@@ -4,14 +4,18 @@ import { ForbiddenError, NotFoundError, ok, err, type Result } from '../../../sh
 import type { Notification } from '../entities/notification.entity';
 import type { INotificationRepository } from '../repositories/notification.repository';
 
-export interface MarkNotificationAsReadDeps {
+export interface MarkNotificationAsUnreadDeps {
   notificationRepository: INotificationRepository;
   clock: IClock;
 }
 
-/** Ação pessoal — apenas o próprio destinatário pode marcar como lida. */
-export class MarkNotificationAsReadUseCase {
-  constructor(private readonly deps: MarkNotificationAsReadDeps) {}
+/**
+ * Simétrico a `MarkNotificationAsReadUseCase` — a Central de Avisos permite
+ * devolver um item lido pra "Não lidas" (ex.: pra tratar depois), inclusive
+ * fazendo-o reaparecer no card da Dashboard.
+ */
+export class MarkNotificationAsUnreadUseCase {
+  constructor(private readonly deps: MarkNotificationAsUnreadDeps) {}
 
   async execute(ctx: AuthContext, notificationId: string): Promise<Result<Notification>> {
     const notification = await this.deps.notificationRepository.findById(notificationId);
@@ -22,12 +26,11 @@ export class MarkNotificationAsReadUseCase {
       return err(new ForbiddenError('notification:read-own'));
     }
 
-    const now = this.deps.clock.now();
     const updated: Notification = {
       ...notification,
-      lida: true,
-      readAt: notification.readAt ?? now,
-      updatedAt: now,
+      lida: false,
+      readAt: null,
+      updatedAt: this.deps.clock.now(),
       updatedBy: ctx.uid,
     };
     await this.deps.notificationRepository.update(updated);

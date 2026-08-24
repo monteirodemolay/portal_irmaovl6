@@ -18,6 +18,8 @@ import {
   getArchiveItemPublicationBlockers,
   type Event,
 } from '@vl6/domain';
+import { isAdminTier } from '@/lib/auth/is-admin-tier';
+import { notifyAllActiveUsers } from '@/modules/notification/lib/notify-all-active-users';
 import { createServerContainer, VercelBlobStorageAdapter } from '@vl6/infra';
 import { requireSession } from '@/lib/auth/require-session';
 
@@ -525,6 +527,19 @@ export async function publishArchiveItemAction(
     archiveItemId,
   );
   if (!result.ok) return { ok: false, error: result.error.message };
+
+  // Nunca notifica além de quem enxergaria o item publicado — mesma regra
+  // de `isAccessLevelVisible` (Acervo VL6): só `administracao` restringe a
+  // audiência a papéis administrativos, os demais níveis já valem pra
+  // qualquer sessão autenticada.
+  await notifyAllActiveUsers(container, session.authContext.tenantId, {
+    tipo: 'acervo',
+    titulo: `Novidade no Acervo: ${result.value.titulo}`,
+    mensagem: 'Um novo registro foi publicado no Acervo VL6.',
+    link: `/acervo/eventos/${result.value.eventId}`,
+    audienceFilter:
+      result.value.nivelAcesso === 'administracao' ? (_user, role) => isAdminTier(role) : undefined,
+  });
 
   revalidatePath(PUBLISH_HUB_PATH);
   return { ok: true, error: null };

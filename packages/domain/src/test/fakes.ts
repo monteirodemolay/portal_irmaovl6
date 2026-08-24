@@ -1129,6 +1129,12 @@ export class InMemoryNotificationRepository implements INotificationRepository {
       (n) => n.tenantId === tenantId && n.destinatarioId === destinatarioId && !n.lida,
     ).length;
   }
+  async findByDedupeKey(tenantId: string, dedupeKey: string) {
+    return (
+      [...this.byId.values()].find((n) => n.tenantId === tenantId && n.dedupeKey === dedupeKey) ??
+      null
+    );
+  }
   async create(notification: Notification) {
     this.byId.set(notification.id, notification);
   }

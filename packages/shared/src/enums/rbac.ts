@@ -87,6 +87,13 @@ export const RESOURCE_KEYS = [
   // em vez de reaproveitar `announcement`/`news`: rotação e exibição têm
   // regras de negócio (modo/intervalo) e ciclo de vida diferentes.
   'quote',
+  // Central de Avisos (docs/architecture) — só a ADMINISTRAÇÃO de
+  // notificações (compor/enviar aviso manual, ver relatórios de leitura,
+  // Fase 3) passa por `notification:manage`. Ler/marcar como
+  // lida/arquivar/dar ciência na PRÓPRIA notificação nunca usa
+  // `requirePermission` — o critério é ser o destinatário, mesmo padrão já
+  // documentado em `ListMyNotificationsUseCase`/`MarkNotificationAsReadUseCase`.
+  'notification',
 ] as const;
 export type ResourceKey = (typeof RESOURCE_KEYS)[number];
 
@@ -150,6 +157,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<RoleKey, PermissionKey[]> = {
     'mediaAsset:manage',
     'archiveMedia:manage',
     'quote:manage',
+    'notification:manage',
   ],
   membro: [
     'tenant:read',

@@ -4,14 +4,14 @@ import { ForbiddenError, NotFoundError, ok, err, type Result } from '../../../sh
 import type { Notification } from '../entities/notification.entity';
 import type { INotificationRepository } from '../repositories/notification.repository';
 
-export interface MarkNotificationAsReadDeps {
+export interface ToggleNotificationImportantDeps {
   notificationRepository: INotificationRepository;
   clock: IClock;
 }
 
-/** Ação pessoal — apenas o próprio destinatário pode marcar como lida. */
-export class MarkNotificationAsReadUseCase {
-  constructor(private readonly deps: MarkNotificationAsReadDeps) {}
+/** Ação pessoal — marca/desmarca "Importante" na Central de Avisos. */
+export class ToggleNotificationImportantUseCase {
+  constructor(private readonly deps: ToggleNotificationImportantDeps) {}
 
   async execute(ctx: AuthContext, notificationId: string): Promise<Result<Notification>> {
     const notification = await this.deps.notificationRepository.findById(notificationId);
@@ -22,12 +22,10 @@ export class MarkNotificationAsReadUseCase {
       return err(new ForbiddenError('notification:read-own'));
     }
 
-    const now = this.deps.clock.now();
     const updated: Notification = {
       ...notification,
-      lida: true,
-      readAt: notification.readAt ?? now,
-      updatedAt: now,
+      important: !notification.important,
+      updatedAt: this.deps.clock.now(),
       updatedBy: ctx.uid,
     };
     await this.deps.notificationRepository.update(updated);

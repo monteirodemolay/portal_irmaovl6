@@ -3,7 +3,13 @@
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import * as Sentry from '@sentry/nextjs';
-import { errorToLogContext, eventSchema, logger, parseBrazilDateTimeLocal } from '@vl6/shared';
+import {
+  BRAZIL_TIME_ZONE,
+  errorToLogContext,
+  eventSchema,
+  logger,
+  parseBrazilDateTimeLocal,
+} from '@vl6/shared';
 import type { AttendanceResponse, Event } from '@vl6/domain';
 import { createServerContainer, type ServerContainer } from '@vl6/infra';
 import { requireSession } from '@/lib/auth/require-session';
@@ -12,6 +18,7 @@ import {
   type ResolvedArchiveItem,
 } from '@/modules/archive/lib/resolve-archive-item';
 import { parseArchiveItemId } from '@/modules/archive/lib/archive-item-id';
+import { notifyAllActiveUsers } from '@/modules/notification/lib/notify-all-active-users';
 
 export interface AgendaActionState {
   error: string | null;
@@ -76,6 +83,67 @@ async function notifyConnectedUsersOfNewEvent(
   }
 }
 
+function formatEventDateTime(date: Date): string {
+  return new Intl.DateTimeFormat('pt-BR', {
+    dateStyle: 'long',
+    timeStyle: 'short',
+    timeZone: BRAZIL_TIME_ZONE,
+  }).format(date);
+}
+
+/**
+ * Gatilhos imediatos da Central de Avisos (docs/architecture) — sempre
+ * roda DEPOIS que `createEvent`/`updateEvent`/`deleteEvent` já teve
+ * sucesso, nunca impede a ação em si. Audiência: todos os usuários ativos
+ * do tenant — diferente do fan-out específico do Google Agenda acima
+ * (`notifyConnectedUsersOfNewEvent`), que só alcança quem sincronizou.
+ */
+async function notifyEventCreated(
+  container: ServerContainer,
+  tenantId: string,
+  event: Event,
+): Promise<void> {
+  await notifyAllActiveUsers(container, tenantId, {
+    tipo: 'event',
+    titulo: `Nova Sessão: ${event.titulo}`,
+    mensagem: `${formatEventDateTime(event.dataInicio)} · ${event.local}`,
+    link: '/agenda',
+  });
+}
+
+async function notifyEventRescheduled(
+  container: ServerContainer,
+  tenantId: string,
+  before: Event,
+  after: Event,
+): Promise<void> {
+  const changedDate = before.dataInicio.getTime() !== after.dataInicio.getTime();
+  const changedLocal = before.local !== after.local;
+  if (!changedDate && !changedLocal) return;
+
+  await notifyAllActiveUsers(container, tenantId, {
+    tipo: 'event',
+    titulo: `Alteração na Sessão: ${after.titulo}`,
+    mensagem: `Nova data/local: ${formatEventDateTime(after.dataInicio)} · ${after.local}`,
+    link: '/agenda',
+    priority: 'attention',
+  });
+}
+
+async function notifyEventCancelled(
+  container: ServerContainer,
+  tenantId: string,
+  event: Event,
+): Promise<void> {
+  await notifyAllActiveUsers(container, tenantId, {
+    tipo: 'event',
+    titulo: `Sessão cancelada: ${event.titulo}`,
+    mensagem: `Estava marcada para ${formatEventDateTime(event.dataInicio)} · ${event.local}.`,
+    link: '/agenda',
+    priority: 'urgent',
+  });
+}
+
 function parseEventForm(formData: FormData) {
   const capacidadeMaxima = formData.get('capacidadeMaxima');
   const dataInicioRaw = formData.get('dataInicio');
@@ -116,6 +184,7 @@ export async function createEventAction(
 
   await syncEventToConnectedGoogleCalendars(container, session.authContext.tenantId, result.value);
   await notifyConnectedUsersOfNewEvent(container, session.authContext.tenantId, result.value);
+  await notifyEventCreated(container, session.authContext.tenantId, result.value);
 
   revalidatePath('/admin/conteudo/agenda');
   redirect('/admin/conteudo/agenda');
@@ -136,10 +205,14 @@ export async function updateEventAction(
   }
 
   const container = createServerContainer();
+  const before = await container.repositories.event.findById(eventId);
   const result = await container.useCases.updateEvent.execute(session.authContext, eventId, input);
   if (!result.ok) return { error: result.error.message };
 
   await syncEventToConnectedGoogleCalendars(container, session.authContext.tenantId, result.value);
+  if (before) {
+    await notifyEventRescheduled(container, session.authContext.tenantId, before, result.value);
+  }
 
   revalidatePath('/admin/conteudo/agenda');
   revalidatePath(`/admin/conteudo/agenda/${eventId}`);
@@ -151,6 +224,8 @@ export async function deleteEventAction(eventId: string): Promise<void> {
   const container = createServerContainer();
   const result = await container.useCases.deleteEvent.execute(session.authContext, eventId);
   if (!result.ok) throw new Error(result.error.message);
+
+  await notifyEventCancelled(container, session.authContext.tenantId, result.value);
 
   revalidatePath('/admin/conteudo/agenda');
 }

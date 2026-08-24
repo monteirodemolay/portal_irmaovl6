@@ -4,14 +4,18 @@ import { ForbiddenError, NotFoundError, ok, err, type Result } from '../../../sh
 import type { Notification } from '../entities/notification.entity';
 import type { INotificationRepository } from '../repositories/notification.repository';
 
-export interface MarkNotificationAsReadDeps {
+export interface ToggleNotificationArchivedDeps {
   notificationRepository: INotificationRepository;
   clock: IClock;
 }
 
-/** Ação pessoal — apenas o próprio destinatário pode marcar como lida. */
-export class MarkNotificationAsReadUseCase {
-  constructor(private readonly deps: MarkNotificationAsReadDeps) {}
+/**
+ * Ação pessoal — arquiva/restaura na Central de Avisos. Diferente de
+ * `deletedAt` (soft delete real): arquivar é reversível pelo próprio
+ * destinatário e nunca some da aba "Arquivadas".
+ */
+export class ToggleNotificationArchivedUseCase {
+  constructor(private readonly deps: ToggleNotificationArchivedDeps) {}
 
   async execute(ctx: AuthContext, notificationId: string): Promise<Result<Notification>> {
     const notification = await this.deps.notificationRepository.findById(notificationId);
@@ -25,8 +29,7 @@ export class MarkNotificationAsReadUseCase {
     const now = this.deps.clock.now();
     const updated: Notification = {
       ...notification,
-      lida: true,
-      readAt: notification.readAt ?? now,
+      archivedAt: notification.archivedAt ? null : now,
       updatedAt: now,
       updatedBy: ctx.uid,
     };

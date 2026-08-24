@@ -139,6 +139,10 @@ import {
   ListUpcomingEventsUseCase,
   ListUsersUseCase,
   MarkNotificationAsReadUseCase,
+  MarkNotificationAsUnreadUseCase,
+  ToggleNotificationImportantUseCase,
+  ToggleNotificationArchivedUseCase,
+  AcknowledgeNotificationUseCase,
   ModerateNewsCommentUseCase,
   NotifyRecipientUseCase,
   PublishAnnouncementUseCase,
@@ -898,6 +902,22 @@ export function createServerContainer() {
       notificationRepository: repositories.notification,
     }),
     markNotificationAsRead: new MarkNotificationAsReadUseCase({
+      notificationRepository: repositories.notification,
+      clock,
+    }),
+    markNotificationAsUnread: new MarkNotificationAsUnreadUseCase({
+      notificationRepository: repositories.notification,
+      clock,
+    }),
+    toggleNotificationImportant: new ToggleNotificationImportantUseCase({
+      notificationRepository: repositories.notification,
+      clock,
+    }),
+    toggleNotificationArchived: new ToggleNotificationArchivedUseCase({
+      notificationRepository: repositories.notification,
+      clock,
+    }),
+    acknowledgeNotification: new AcknowledgeNotificationUseCase({
       notificationRepository: repositories.notification,
       clock,
     }),

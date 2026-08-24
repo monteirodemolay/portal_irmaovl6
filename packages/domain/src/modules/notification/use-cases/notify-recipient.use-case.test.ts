@@ -9,8 +9,13 @@ import { NotifyRecipientUseCase } from './notify-recipient.use-case';
 
 class FakeNotificationRepository implements Partial<INotificationRepository> {
   created: Notification | null = null;
+  byDedupeKey = new Map<string, Notification>();
   async create(notification: Notification) {
     this.created = notification;
+    if (notification.dedupeKey) this.byDedupeKey.set(notification.dedupeKey, notification);
+  }
+  async findByDedupeKey(_tenantId: string, dedupeKey: string) {
+    return this.byDedupeKey.get(dedupeKey) ?? null;
   }
 }
 
@@ -99,5 +104,35 @@ describe('NotifyRecipientUseCase', () => {
 
     expect(notificationRepository.created?.canal).toBe('interno');
     expect(gateway.sent.map((n) => n.canal).sort()).toEqual(['email', 'whatsapp']);
+  });
+
+  it('não duplica nem redespacha quando o dedupeKey já existe', async () => {
+    const notificationRepository = new FakeNotificationRepository();
+    const gateway = new FakeNotificationGateway();
+    const useCase = new NotifyRecipientUseCase({
+      notificationRepository: notificationRepository as unknown as INotificationRepository,
+      notificationPreferenceRepository: new FakePreferenceRepository(
+        buildPreference({ canaisHabilitados: ['interno', 'email'] }),
+      ) as unknown as INotificationPreferenceRepository,
+      notificationGateway: gateway,
+      clock,
+      idGenerator,
+    });
+
+    const input = {
+      tenantId: 't1',
+      destinatarioId: 'u1',
+      tipo: 'event' as const,
+      titulo: 'Lembrete de sessão',
+      mensagem: 'Sua sessão é hoje.',
+      link: '/agenda',
+      dedupeKey: 'event:e1:day-of:2026-01-01:user:u1',
+    };
+
+    const first = await useCase.execute(input);
+    const second = await useCase.execute(input);
+
+    expect(second.id).toBe(first.id);
+    expect(gateway.sent).toHaveLength(1);
   });
 });

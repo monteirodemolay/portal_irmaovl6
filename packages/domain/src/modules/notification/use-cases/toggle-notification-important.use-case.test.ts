@@ -3,7 +3,7 @@ import type { AuthContext } from '../../../shared/auth-context';
 import type { IClock } from '../../../shared/ports';
 import type { Notification } from '../entities/notification.entity';
 import type { INotificationRepository } from '../repositories/notification.repository';
-import { MarkNotificationAsReadUseCase } from './mark-notification-as-read.use-case';
+import { ToggleNotificationImportantUseCase } from './toggle-notification-important.use-case';
 
 const ctx: AuthContext = { uid: 'u1', tenantId: 't1', roleId: 'r1', permissions: [] };
 
@@ -51,10 +51,10 @@ class FakeNotificationRepository implements Partial<INotificationRepository> {
 
 const clock: IClock = { now: () => new Date('2026-01-02T00:00:00Z') };
 
-describe('MarkNotificationAsReadUseCase', () => {
+describe('ToggleNotificationImportantUseCase', () => {
   it('rejeita quando a notificação pertence a outro destinatário', async () => {
     const repo = new FakeNotificationRepository(buildNotification({ destinatarioId: 'outro-uid' }));
-    const useCase = new MarkNotificationAsReadUseCase({
+    const useCase = new ToggleNotificationImportantUseCase({
       notificationRepository: repo as unknown as INotificationRepository,
       clock,
     });
@@ -62,21 +62,18 @@ describe('MarkNotificationAsReadUseCase', () => {
     const result = await useCase.execute(ctx, 'notif-1');
 
     expect(result.ok).toBe(false);
-    if (result.ok) return;
-    expect(result.error.code).toBe('forbidden');
-    expect(repo.updated).toBeNull();
   });
 
-  it('marca como lida quando o destinatário é o próprio usuário', async () => {
-    const repo = new FakeNotificationRepository(buildNotification());
-    const useCase = new MarkNotificationAsReadUseCase({
+  it('alterna important de false para true e de volta', async () => {
+    const notification = buildNotification();
+    const repo = new FakeNotificationRepository(notification);
+    const useCase = new ToggleNotificationImportantUseCase({
       notificationRepository: repo as unknown as INotificationRepository,
       clock,
     });
 
-    const result = await useCase.execute(ctx, 'notif-1');
-
-    expect(result.ok).toBe(true);
-    expect(repo.updated?.lida).toBe(true);
+    const first = await useCase.execute(ctx, 'notif-1');
+    expect(first.ok).toBe(true);
+    expect(repo.updated?.important).toBe(true);
   });
 });

@@ -3,6 +3,7 @@ import type { INotificationRepository, Notification, PageRequest, PageResult } f
 import { createEntityConverter } from '../converters/entity.converter';
 
 const COLLECTION = 'notifications';
+const DATE_FIELDS = ['readAt', 'archivedAt', 'acknowledgedAt', 'expiresAt'] as const;
 
 export class FirestoreNotificationRepository implements INotificationRepository {
   private readonly collection;
@@ -10,7 +11,7 @@ export class FirestoreNotificationRepository implements INotificationRepository 
   constructor(private readonly db: Firestore) {
     this.collection = db
       .collection(COLLECTION)
-      .withConverter(createEntityConverter<Notification>());
+      .withConverter(createEntityConverter<Notification>(DATE_FIELDS));
   }
 
   async findById(id: string): Promise<Notification | null> {
@@ -52,6 +53,15 @@ export class FirestoreNotificationRepository implements INotificationRepository 
       .count()
       .get();
     return snap.data().count;
+  }
+
+  async findByDedupeKey(tenantId: string, dedupeKey: string): Promise<Notification | null> {
+    const snap = await this.collection
+      .where('tenantId', '==', tenantId)
+      .where('dedupeKey', '==', dedupeKey)
+      .limit(1)
+      .get();
+    return snap.empty ? null : snap.docs[0]!.data();
   }
 
   async create(notification: Notification): Promise<void> {

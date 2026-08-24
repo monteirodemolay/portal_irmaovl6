@@ -9,6 +9,7 @@ import { AcervoPanel } from '@/modules/dashboard/components/acervo-panel';
 import { AgendaPanel } from '@/modules/dashboard/components/agenda-panel';
 import { AnniversariesPanel } from '@/modules/dashboard/components/anniversaries-panel';
 import { AvisosCard } from '@/modules/dashboard/components/avisos-card';
+import { CentralAvisosCard } from '@/modules/dashboard/components/central-avisos-card';
 import { DailyQuoteCard } from '@/modules/dashboard/components/daily-quote-card';
 import { DashboardSectionHeading } from '@/modules/dashboard/components/dashboard-section-heading';
 import { NextEventCard } from '@/modules/dashboard/components/next-event-card';
@@ -31,6 +32,7 @@ export default async function DashboardPage() {
 
   const [
     announcements,
+    notificationsPage,
     events,
     anniversaries,
     documentos,
@@ -43,6 +45,7 @@ export default async function DashboardPage() {
     hasPermission(authContext, 'announcement:read')
       ? container.useCases.listActiveAnnouncements.execute(authContext.tenantId)
       : Promise.resolve([]),
+    container.useCases.listMyNotifications.execute(authContext, { limit: 20 }),
     getUpcomingEventsForPortal(),
     hasPermission(authContext, 'member:read')
       ? container.useCases.listUpcomingAnniversaries.execute(authContext)
@@ -121,6 +124,7 @@ export default async function DashboardPage() {
             </Card>
           )}
           <div className="flex flex-col gap-4">
+            <CentralAvisosCard notifications={notificationsPage.items} />
             {onThisDay && <OnThisDayCard entry={onThisDay} />}
             {hasAnniversaries && (
               <AnniversariesPanel entries={anniversaries} showDirectoryLink={showDirectoryLink} />

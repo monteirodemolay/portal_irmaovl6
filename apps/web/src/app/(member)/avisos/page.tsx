@@ -1,35 +1,35 @@
 import { createServerContainer } from '@vl6/infra';
-import { Badge, Card, CardContent, CardHeader, CardTitle, EmptyState } from '@vl6/ui';
-import { requirePagePermission } from '@/lib/auth/require-permission';
+import { requireSession } from '@/lib/auth/require-session';
+import { CentralDeAvisos } from '@/modules/notification/components/central-de-avisos';
 
-const PRIORITY_VARIANT = { baixa: 'default', media: 'warning', alta: 'destructive' } as const;
-
-export default async function MemberAnnouncementsPage() {
-  const session = await requirePagePermission('announcement:read');
-
+/**
+ * Central de Avisos — reúne avisos oficiais da Gestão e notificações
+ * automáticas do Portal num único ambiente (docs/architecture), sem
+ * misturar o conteúdo da Agenda. Substitui a antiga tela só de "Avisos"
+ * nesta mesma rota (`/avisos`), preservando o link já existente no menu e
+ * no sino.
+ */
+export default async function AvisosPage() {
+  const session = await requireSession();
   const container = createServerContainer();
-  const announcements = await container.useCases.listActiveAnnouncements.execute(
-    session.authContext.tenantId,
-  );
+
+  const page = await container.useCases.listMyNotifications.execute(session.authContext, {
+    limit: 200,
+  });
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="font-display text-2xl font-semibold">Avisos</h1>
-      {announcements.length === 0 ? (
-        <EmptyState title="Nenhum aviso no momento" />
-      ) : (
-        <div className="flex flex-col gap-3">
-          {announcements.map((a) => (
-            <Card key={a.id} className={a.destacar ? 'border-accent' : undefined}>
-              <CardHeader className="flex-row items-center justify-between gap-2 space-y-0">
-                <CardTitle>{a.titulo}</CardTitle>
-                <Badge variant={PRIORITY_VARIANT[a.prioridade]}>{a.prioridade}</Badge>
-              </CardHeader>
-              <CardContent className="text-muted text-sm">{a.descricao}</CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
+      <div>
+        <span className="text-accent text-xs font-semibold uppercase tracking-wide">
+          Comunicação institucional
+        </span>
+        <h1 className="font-display text-2xl font-semibold">Central de Avisos</h1>
+        <p className="text-muted max-w-xl text-sm">
+          Avisos oficiais da Gestão e notificações automáticas do Portal, reunidos com clareza em um
+          único ambiente.
+        </p>
+      </div>
+      <CentralDeAvisos notifications={page.items} />
     </div>
   );
 }

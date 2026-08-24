@@ -12,8 +12,20 @@ import {
   type InspirationalQuoteFormValues,
   type NewsFormValues,
 } from '@vl6/shared';
+import type { NotificationPriority } from '@vl6/shared';
+import type { AnnouncementPriority } from '@vl6/domain';
 import { createServerContainer } from '@vl6/infra';
 import { requireSession } from '@/lib/auth/require-session';
+import { notifyAllActiveUsers } from '@/modules/notification/lib/notify-all-active-users';
+
+const ANNOUNCEMENT_PRIORITY_TO_NOTIFICATION_PRIORITY: Record<
+  AnnouncementPriority,
+  NotificationPriority
+> = {
+  baixa: 'normal',
+  media: 'attention',
+  alta: 'urgent',
+};
 
 export interface ContentActionState {
   error: string | null;
@@ -216,6 +228,17 @@ export async function toggleAnnouncementPublishedAction(
     publicar,
   );
   if (!result.ok) throw new Error(result.error.message);
+
+  if (publicar) {
+    await notifyAllActiveUsers(container, session.authContext.tenantId, {
+      tipo: 'announcement',
+      titulo: result.value.titulo,
+      mensagem: result.value.descricao,
+      link: '/avisos',
+      priority: ANNOUNCEMENT_PRIORITY_TO_NOTIFICATION_PRIORITY[result.value.prioridade],
+      expiresAt: result.value.dataExpiracao,
+    });
+  }
 
   revalidatePath('/admin/conteudo/avisos');
 }

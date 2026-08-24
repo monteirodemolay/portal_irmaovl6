@@ -1,17 +1,29 @@
 import type { AuthContext } from '../../../shared/auth-context';
 import type { IClock } from '../../../shared/ports';
-import { ForbiddenError, NotFoundError, ok, err, type Result } from '../../../shared/result';
+import {
+  ConflictError,
+  ForbiddenError,
+  NotFoundError,
+  ok,
+  err,
+  type Result,
+} from '../../../shared/result';
 import type { Notification } from '../entities/notification.entity';
 import type { INotificationRepository } from '../repositories/notification.repository';
 
-export interface MarkNotificationAsReadDeps {
+export interface AcknowledgeNotificationDeps {
   notificationRepository: INotificationRepository;
   clock: IClock;
 }
 
-/** Ação pessoal — apenas o próprio destinatário pode marcar como lida. */
-export class MarkNotificationAsReadUseCase {
-  constructor(private readonly deps: MarkNotificationAsReadDeps) {}
+/**
+ * Confirma ciência de um comunicado que exige (`requiresAcknowledgement`) —
+ * registro separado da leitura (`lida`/`readAt`): o Irmão pode ter lido sem
+ * ainda ter confirmado. Idempotente: confirmar de novo não é erro, mas
+ * recusa notificações que nunca exigiram ciência.
+ */
+export class AcknowledgeNotificationUseCase {
+  constructor(private readonly deps: AcknowledgeNotificationDeps) {}
 
   async execute(ctx: AuthContext, notificationId: string): Promise<Result<Notification>> {
     const notification = await this.deps.notificationRepository.findById(notificationId);
@@ -21,12 +33,14 @@ export class MarkNotificationAsReadUseCase {
     if (notification.destinatarioId !== ctx.uid) {
       return err(new ForbiddenError('notification:read-own'));
     }
+    if (!notification.requiresAcknowledgement) {
+      return err(new ConflictError('Este comunicado não exige confirmação de ciência.'));
+    }
 
     const now = this.deps.clock.now();
     const updated: Notification = {
       ...notification,
-      lida: true,
-      readAt: notification.readAt ?? now,
+      acknowledgedAt: notification.acknowledgedAt ?? now,
       updatedAt: now,
       updatedBy: ctx.uid,
     };
