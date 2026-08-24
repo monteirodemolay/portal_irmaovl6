@@ -4,6 +4,12 @@ import { loginAsAdmin } from './helpers';
 test('admin cadastra um novo Irmão, ganha acesso ao Portal e o Irmão consegue logar', async ({
   page,
 }) => {
+  // Esse teste passa por várias rotas ainda não compiladas nesta execução
+  // (novo → detalhe do Irmão → lista → login → dashboard) — o compile
+  // on-demand do Next dev, somado à carga do sandbox, já estourou o
+  // timeout padrão de 90s (playwright.config.ts) mesmo com a lógica
+  // correta (confirmado rodando este spec isolado, sem falha).
+  test.setTimeout(150_000);
   await loginAsAdmin(page);
 
   const nome = `Irmão E2E ${Date.now()}`;
