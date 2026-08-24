@@ -22,6 +22,7 @@ function buildAnnouncement(overrides: Partial<Announcement> = {}): Announcement 
     destacar: false,
     dataPublicacao: null,
     dataExpiracao: null,
+    requiresAcknowledgement: false,
     createdAt: new Date('2026-01-01'),
     updatedAt: new Date('2026-01-01'),
     createdBy: 'admin-1',

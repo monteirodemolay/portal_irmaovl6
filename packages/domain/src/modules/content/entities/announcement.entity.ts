@@ -10,4 +10,6 @@ export interface Announcement extends BaseEntity {
   destacar: boolean;
   dataPublicacao: Date | null;
   dataExpiracao: Date | null;
+  /** Central de Avisos — cada notificação disparada na publicação exige ciência do destinatário. */
+  requiresAcknowledgement: boolean;
 }

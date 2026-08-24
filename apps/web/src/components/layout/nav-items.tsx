@@ -44,6 +44,11 @@ const PORTAL_ITEMS: Array<{
   // a aba "Diretório" checa `memberDirectory:read` sozinha e degrada com
   // uma mensagem explicativa em vez de esconder o item inteiro do menu.
   { href: '/irmaos', label: 'Irmãos', icon: Users },
+  // Rota pessoal, distinta de `/admin/configuracoes` (administração do
+  // tenant) — Fase 4 da Central de Avisos (docs/architecture). Sem
+  // `permission`: é autoatendimento de qualquer autenticado, mesmo padrão
+  // de "Meu Espaço".
+  { href: '/irmaos/configuracoes', label: 'Configurações', icon: Settings },
 ];
 
 // Entrada única do Acervo para o Irmão. Documentos, Biblioteca, Fotografias

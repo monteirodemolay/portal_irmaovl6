@@ -69,6 +69,15 @@ export function AnnouncementForm({ action, announcement }: AnnouncementFormProps
         />
         Destacar no topo (máximo 3 avisos destacados simultâneos)
       </label>
+      <label className="flex items-center gap-2 text-sm">
+        <input
+          type="checkbox"
+          name="requiresAcknowledgement"
+          className="h-4 w-4"
+          defaultChecked={announcement?.requiresAcknowledgement}
+        />
+        Exigir confirmação de ciência de cada Irmão na Central de Avisos
+      </label>
       {state.error && <p className="text-sm text-red-600">{state.error}</p>}
       <SubmitButton />
     </form>

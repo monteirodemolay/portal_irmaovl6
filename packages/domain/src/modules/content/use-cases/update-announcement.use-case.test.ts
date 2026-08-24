@@ -23,6 +23,7 @@ function buildAnnouncement(overrides: Partial<Announcement> = {}): Announcement 
     destacar: false,
     dataPublicacao: null,
     dataExpiracao: null,
+    requiresAcknowledgement: false,
     createdAt: new Date('2026-01-01'),
     updatedAt: new Date('2026-01-01'),
     createdBy: 'admin-1',
@@ -49,6 +50,7 @@ describe('UpdateAnnouncementUseCase', () => {
       prioridade: 'alta',
       destacar: true,
       dataExpiracao: null,
+      requiresAcknowledgement: false,
     });
 
     expect(result.ok).toBe(true);
@@ -70,6 +72,7 @@ describe('UpdateAnnouncementUseCase', () => {
       prioridade: 'baixa',
       destacar: false,
       dataExpiracao: null,
+      requiresAcknowledgement: false,
     });
 
     expect(result.ok).toBe(false);

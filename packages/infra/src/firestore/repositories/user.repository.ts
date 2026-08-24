@@ -39,4 +39,8 @@ export class FirestoreUserRepository implements IUserRepository {
   async update(user: User): Promise<void> {
     await this.collection.doc(user.id).set(user);
   }
+
+  async delete(uid: string): Promise<void> {
+    await this.collection.doc(uid).delete();
+  }
 }

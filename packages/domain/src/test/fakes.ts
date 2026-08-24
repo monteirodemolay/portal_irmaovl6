@@ -272,6 +272,9 @@ export class InMemoryUserRepository implements IUserRepository {
   async update(user: User) {
     this.byId.set(user.id, user);
   }
+  async delete(uid: string) {
+    this.byId.delete(uid);
+  }
 }
 
 export class InMemoryMemberRepository implements IMemberRepository {
@@ -1133,6 +1136,21 @@ export class InMemoryNotificationRepository implements INotificationRepository {
     return (
       [...this.byId.values()].find((n) => n.tenantId === tenantId && n.dedupeKey === dedupeKey) ??
       null
+    );
+  }
+  async listByDedupeKeyPrefix(tenantId: string, prefix: string) {
+    return [...this.byId.values()].filter(
+      (n) => n.tenantId === tenantId && n.dedupeKey?.startsWith(prefix),
+    );
+  }
+  async listExpiringUnarchived(tenantId: string, at: Date) {
+    return [...this.byId.values()].filter(
+      (n) =>
+        n.tenantId === tenantId &&
+        n.archivedAt === null &&
+        n.deletedAt === null &&
+        n.expiresAt !== null &&
+        n.expiresAt.getTime() <= at.getTime(),
     );
   }
   async create(notification: Notification) {

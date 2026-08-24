@@ -143,6 +143,8 @@ import {
   ToggleNotificationImportantUseCase,
   ToggleNotificationArchivedUseCase,
   AcknowledgeNotificationUseCase,
+  ArchiveExpiredNotificationsUseCase,
+  DeleteMyAccountUseCase,
   ModerateNewsCommentUseCase,
   NotifyRecipientUseCase,
   PublishAnnouncementUseCase,
@@ -647,6 +649,21 @@ export function createServerContainer() {
     }),
     listAuditLog: new ListAuditLogUseCase({ auditLogRepository: repositories.auditLog }),
 
+    deleteMyAccount: new DeleteMyAccountUseCase({
+      userRepository: repositories.user,
+      roleRepository: repositories.role,
+      memberRepository: repositories.member,
+      personalEventRepository: repositories.personalEvent,
+      personalTaskRepository: repositories.personalTask,
+      personalNoteRepository: repositories.personalNote,
+      libraryFavoriteRepository: repositories.libraryFavorite,
+      googleCalendarConnectionRepository: repositories.googleCalendarConnection,
+      notificationRepository: repositories.notification,
+      auditLogRepository: repositories.auditLog,
+      clock,
+      idGenerator,
+    }),
+
     createFileCategory: new CreateFileCategoryUseCase({
       fileCategoryRepository: repositories.fileCategory,
       clock,
@@ -918,6 +935,10 @@ export function createServerContainer() {
       clock,
     }),
     acknowledgeNotification: new AcknowledgeNotificationUseCase({
+      notificationRepository: repositories.notification,
+      clock,
+    }),
+    archiveExpiredNotifications: new ArchiveExpiredNotificationsUseCase({
       notificationRepository: repositories.notification,
       clock,
     }),

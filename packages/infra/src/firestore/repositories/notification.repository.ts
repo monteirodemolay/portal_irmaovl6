@@ -64,6 +64,25 @@ export class FirestoreNotificationRepository implements INotificationRepository 
     return snap.empty ? null : snap.docs[0]!.data();
   }
 
+  async listExpiringUnarchived(tenantId: string, at: Date): Promise<Notification[]> {
+    const snap = await this.collection
+      .where('tenantId', '==', tenantId)
+      .where('archivedAt', '==', null)
+      .where('deletedAt', '==', null)
+      .where('expiresAt', '<=', at)
+      .get();
+    return snap.docs.map((doc) => doc.data());
+  }
+
+  async listByDedupeKeyPrefix(tenantId: string, prefix: string): Promise<Notification[]> {
+    const snap = await this.collection
+      .where('tenantId', '==', tenantId)
+      .where('dedupeKey', '>=', prefix)
+      .where('dedupeKey', '<', `${prefix}`)
+      .get();
+    return snap.docs.map((doc) => doc.data());
+  }
+
   async create(notification: Notification): Promise<void> {
     await this.collection.doc(notification.id).set(notification);
   }

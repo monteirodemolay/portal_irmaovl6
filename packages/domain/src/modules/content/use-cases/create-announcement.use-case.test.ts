@@ -19,6 +19,7 @@ const baseInput = {
   prioridade: 'alta' as const,
   destacar: true,
   dataExpiracao: null,
+  requiresAcknowledgement: false,
 };
 
 describe('CreateAnnouncementUseCase', () => {

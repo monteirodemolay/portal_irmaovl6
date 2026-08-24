@@ -145,6 +145,7 @@ export async function createAnnouncementAction(
       prioridade: formData.get('prioridade'),
       destacar: formData.get('destacar') === 'on',
       dataExpiracao: dataExpiracao ? dataExpiracao : null,
+      requiresAcknowledgement: formData.get('requiresAcknowledgement') === 'on',
     });
   } catch {
     return { error: 'Dados inválidos. Verifique os campos obrigatórios.' };
@@ -174,6 +175,7 @@ export async function updateAnnouncementAction(
       prioridade: formData.get('prioridade'),
       destacar: formData.get('destacar') === 'on',
       dataExpiracao: dataExpiracao ? dataExpiracao : null,
+      requiresAcknowledgement: formData.get('requiresAcknowledgement') === 'on',
     });
   } catch {
     return { error: 'Dados inválidos. Verifique os campos obrigatórios.' };
@@ -230,6 +232,10 @@ export async function toggleAnnouncementPublishedAction(
   if (!result.ok) throw new Error(result.error.message);
 
   if (publicar) {
+    // `dedupeKey` por destinatário no formato `announcement:{id}:user:{uid}`
+    // — além de idempotência, é a chave que o relatório de alcance
+    // (`getAnnouncementReachReportAction`) usa pra encontrar todas as
+    // notificações nascidas desta publicação.
     await notifyAllActiveUsers(container, session.authContext.tenantId, {
       tipo: 'announcement',
       titulo: result.value.titulo,
@@ -237,6 +243,9 @@ export async function toggleAnnouncementPublishedAction(
       link: '/avisos',
       priority: ANNOUNCEMENT_PRIORITY_TO_NOTIFICATION_PRIORITY[result.value.prioridade],
       expiresAt: result.value.dataExpiracao,
+      requiresAcknowledgement: result.value.requiresAcknowledgement,
+      actionLabel: result.value.requiresAcknowledgement ? 'Estou ciente' : undefined,
+      dedupeKey: (userId) => `announcement:${announcementId}:user:${userId}`,
     });
   }
 

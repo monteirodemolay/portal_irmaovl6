@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation';
+import { hasPermission } from '@vl6/domain';
 import { createServerContainer } from '@vl6/infra';
 import { requirePagePermission } from '@/lib/auth/require-permission';
 import {
@@ -6,6 +7,7 @@ import {
   updateAnnouncementAction,
 } from '@/modules/content/actions/content-actions';
 import { AnnouncementForm } from '@/modules/content/components/announcement-form';
+import { AnnouncementReachReportCard } from '@/modules/content/components/announcement-reach-report';
 import { DeleteButton } from '@/components/admin/delete-button';
 
 export default async function EditAnnouncementPage({
@@ -34,6 +36,9 @@ export default async function EditAnnouncementPage({
         action={updateAnnouncementAction.bind(null, announcementId)}
         announcement={announcement}
       />
+      {announcement.publicado && hasPermission(session.authContext, 'notification:manage') && (
+        <AnnouncementReachReportCard announcementId={announcementId} />
+      )}
     </div>
   );
 }
