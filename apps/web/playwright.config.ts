@@ -18,7 +18,11 @@ export default defineConfig({
   // generosos de propósito — dev mode do Next, não representativo do
   // tempo de resposta em produção (já compilada).
   timeout: 90_000,
-  expect: { timeout: 20_000 },
+  // 20s não é generoso o bastante sob carga (visto na prática: rotas frias
+  // estourando o timeout padrão em pontos diferentes do fluxo em execuções
+  // sucessivas) — 40s absorve o compile on-demand sem mascarar timeouts
+  // reais de asserção.
+  expect: { timeout: 40_000 },
   globalSetup: './e2e/global-setup.ts',
   fullyParallel: false,
   forbidOnly: !!process.env.CI,
