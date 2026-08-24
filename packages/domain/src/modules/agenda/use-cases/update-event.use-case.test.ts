@@ -2,7 +2,12 @@ import { describe, expect, it } from 'vitest';
 import type { EventFormValues } from '@vl6/shared';
 import type { AuthContext } from '../../../shared/auth-context';
 import { ForbiddenError } from '../../../shared/result';
-import { FixedClock, InMemoryEventRepository } from '../../../test/fakes';
+import {
+  FixedClock,
+  InMemoryBoardTermRepository,
+  InMemoryEventRepository,
+} from '../../../test/fakes';
+import type { BoardTerm } from '../../governance/entities/board-term.entity';
 import type { Event } from '../entities/event.entity';
 import { UpdateEventUseCase } from './update-event.use-case';
 
@@ -67,11 +72,13 @@ const input: EventFormValues = {
 
 function buildUseCase() {
   const eventRepository = new InMemoryEventRepository();
+  const boardTermRepository = new InMemoryBoardTermRepository();
   const useCase = new UpdateEventUseCase({
     eventRepository,
+    boardTermRepository,
     clock: new FixedClock(new Date('2026-06-01T00:00:00Z')),
   });
-  return { useCase, eventRepository };
+  return { useCase, eventRepository, boardTermRepository };
 }
 
 describe('UpdateEventUseCase', () => {
@@ -133,5 +140,31 @@ describe('UpdateEventUseCase', () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.value.dataFim).toBeNull();
+  });
+
+  it('recalcula boardTermId pela nova dataInicio, ignorando o valor recebido no input', async () => {
+    const { useCase, eventRepository, boardTermRepository } = buildUseCase();
+    await eventRepository.create(baseEvent);
+    const term: BoardTerm = {
+      id: 'term-2026-2027',
+      tenantId: 't1',
+      nome: 'Gestão 2026/2027',
+      periodoInicio: new Date('2026-01-01T00:00:00Z'),
+      periodoFim: new Date('2027-12-31T23:59:59Z'),
+      createdAt: new Date('2025-12-01'),
+      updatedAt: new Date('2025-12-01'),
+      createdBy: 'admin-1',
+      updatedBy: 'admin-1',
+      deletedAt: null,
+      status: 'active',
+      ativo: true,
+    };
+    await boardTermRepository.create(term);
+
+    const result = await useCase.execute(ctx, 'event-1', { ...input, boardTermId: 'outro-id' });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value.boardTermId).toBe('term-2026-2027');
   });
 });

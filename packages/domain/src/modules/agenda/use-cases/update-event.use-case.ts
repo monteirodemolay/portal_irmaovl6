@@ -3,11 +3,13 @@ import type { AuthContext } from '../../../shared/auth-context';
 import { requirePermission } from '../../../shared/auth-context';
 import type { IClock } from '../../../shared/ports';
 import { ConflictError, NotFoundError, ok, err, type Result } from '../../../shared/result';
+import type { IBoardTermRepository } from '../../governance/repositories/board-term.repository';
 import type { Event } from '../entities/event.entity';
 import type { IEventRepository } from '../repositories/event.repository';
 
 export interface UpdateEventDeps {
   eventRepository: IEventRepository;
+  boardTermRepository: IBoardTermRepository;
   clock: IClock;
 }
 
@@ -27,9 +29,19 @@ export class UpdateEventUseCase {
       return err(new ConflictError('A data final deve ser posterior à data inicial.'));
     }
 
+    // Mesma regra de `CreateEventUseCase` — a Gestão é sempre recalculada
+    // pela nova `dataInicio`, nunca herdada do valor anterior nem escolhida
+    // manualmente, senão editar a data de um evento o deixa com a Gestão
+    // errada.
+    const boardTerm = await this.deps.boardTermRepository.findByDate(
+      ctx.tenantId,
+      input.dataInicio,
+    );
+
     const updated: Event = {
       ...current,
       ...input,
+      boardTermId: boardTerm?.id ?? null,
       updatedAt: this.deps.clock.now(),
       updatedBy: ctx.uid,
     };

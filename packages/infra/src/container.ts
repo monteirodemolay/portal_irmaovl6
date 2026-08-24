@@ -718,11 +718,13 @@ export function createServerContainer() {
 
     createEvent: new CreateEventUseCase({
       eventRepository: repositories.event,
+      boardTermRepository: repositories.boardTerm,
       clock,
       idGenerator,
     }),
     updateEvent: new UpdateEventUseCase({
       eventRepository: repositories.event,
+      boardTermRepository: repositories.boardTerm,
       clock,
     }),
     deleteEvent: new DeleteEventUseCase({

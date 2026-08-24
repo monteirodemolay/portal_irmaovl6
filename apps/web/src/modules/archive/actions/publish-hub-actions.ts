@@ -114,12 +114,10 @@ export interface CreateEventForPublishState {
 }
 
 /**
- * Cadastro retroativo inline do passo 1. `CreateEventUseCase` (Fase 1) NÃO
- * identifica a Gestão sozinho — `boardTermId` é um input obrigatório dele,
- * então esta action precisa rodar `FindBoardTermForDateUseCase` aqui e
- * repassar o resultado, exatamente como `previewBoardTermForDateAction` já
- * faz para a prévia. Sem isso, o evento seria salvo com `boardTermId: null`
- * mesmo quando o admin viu "Gestão identificada" na tela antes de enviar.
+ * Cadastro retroativo inline do passo 1. `CreateEventUseCase` deriva
+ * `boardTermId` sozinho a partir de `dataInicio` — não precisa ser
+ * calculado aqui; `previewBoardTermForDateAction` já cuida só da prévia
+ * exibida na tela antes do submit.
  */
 export async function createEventForPublishAction(
   _prevState: CreateEventForPublishState,
@@ -132,10 +130,6 @@ export async function createEventForPublishAction(
     typeof dataInicioRaw === 'string' ? parseBrazilDateTimeLocal(dataInicioRaw) : null;
 
   const container = createServerContainer();
-  const boardTerm =
-    parsedDate && !Number.isNaN(parsedDate.getTime())
-      ? await container.useCases.findBoardTermForDate.execute(session.authContext, parsedDate)
-      : null;
 
   let input;
   try {
@@ -152,7 +146,6 @@ export async function createEventForPublishAction(
       chegadaSugerida: null,
       observacoes: null,
       arquivosRelacionados: [],
-      boardTermId: boardTerm?.id ?? null,
     });
   } catch {
     return { error: 'Dados inválidos. Verifique título, local e data.', event: null };

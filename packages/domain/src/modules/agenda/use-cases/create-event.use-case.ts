@@ -3,6 +3,7 @@ import type { AuthContext } from '../../../shared/auth-context';
 import { requirePermission } from '../../../shared/auth-context';
 import type { IClock, IIdGenerator } from '../../../shared/ports';
 import { ConflictError, ok, err, type Result } from '../../../shared/result';
+import type { IBoardTermRepository } from '../../governance/repositories/board-term.repository';
 import type { Event } from '../entities/event.entity';
 import type { IEventRepository } from '../repositories/event.repository';
 
@@ -26,6 +27,7 @@ export interface CreateEventInput {
 
 export interface CreateEventDeps {
   eventRepository: IEventRepository;
+  boardTermRepository: IBoardTermRepository;
   clock: IClock;
   idGenerator: IIdGenerator;
 }
@@ -41,11 +43,22 @@ export class CreateEventUseCase {
       return err(new ConflictError('A data final deve ser posterior à data inicial.'));
     }
 
+    // A Gestão nunca é escolhida manualmente — é sempre derivada de
+    // `dataInicio` contra o período de cada Gestão cadastrada, senão o
+    // evento fica com `boardTermId` errado (ou nulo) e some do filtro por
+    // Gestão em qualquer tela que dependa dele (Central de Publicação,
+    // Constelação da Memória etc.).
+    const boardTerm = await this.deps.boardTermRepository.findByDate(
+      ctx.tenantId,
+      input.dataInicio,
+    );
+
     const now = this.deps.clock.now();
     const event: Event = {
       id: this.deps.idGenerator.next(),
       tenantId: ctx.tenantId,
       ...input,
+      boardTermId: boardTerm?.id ?? null,
       createdAt: now,
       updatedAt: now,
       createdBy: ctx.uid,
