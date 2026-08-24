@@ -14,6 +14,7 @@ import { getDictionary } from '@/lib/i18n/get-dictionary';
 import { resolveMemberDisplayName } from '@/lib/membership/resolve-display-name';
 import { getCurrentTenant } from '@/lib/tenant/get-current-tenant';
 import { AgendaProvider } from '@/modules/agenda/components/agenda-provider';
+import { MemberProfileProvider } from '@/modules/central/components/directorio/member-profile-provider';
 
 export default async function MemberLayout({ children }: { children: React.ReactNode }) {
   const session = await getCurrentSession();
@@ -40,42 +41,44 @@ export default async function MemberLayout({ children }: { children: React.React
 
   return (
     <AgendaProvider events={agendaEvents} canManageEvents={canManageEvents}>
-      <AppShell
-        brand={
-          <SidebarBrand
-            crestUrl={current?.branding.brasaoUrl ?? null}
-            title="Portal do Irmão"
-            subtitle={tenantName}
-          />
-        }
-        sections={buildNavSections(session.authContext, session.role, dictionary)}
-        sidebarFooter={
-          current?.tenant.site && (
-            <SidebarInstitutionalLink siteUrl={current.tenant.site} tenantName={tenantName} />
-          )
-        }
-        topbarLeft={
-          <div className="hidden leading-tight sm:block">
-            <p className="text-muted text-[11px] font-medium uppercase tracking-wide">
-              Área Restrita
-            </p>
-            <p className="font-display truncate text-sm font-semibold">{tenantName}</p>
-          </div>
-        }
-        topbarRight={
-          <TopbarUser
-            displayName={displayName}
-            fotoUrl={member?.fotoUrl ?? null}
-            roleLabel={roleDisplayLabel(session.role)}
-            email={session.user.email}
-            grau={member?.grau ?? null}
-            notifications={notificationsPage.items}
-            unreadCount={unreadCount}
-          />
-        }
-      >
-        {children}
-      </AppShell>
+      <MemberProfileProvider>
+        <AppShell
+          brand={
+            <SidebarBrand
+              crestUrl={current?.branding.brasaoUrl ?? null}
+              title="Portal do Irmão"
+              subtitle={tenantName}
+            />
+          }
+          sections={buildNavSections(session.authContext, session.role, dictionary)}
+          sidebarFooter={
+            current?.tenant.site && (
+              <SidebarInstitutionalLink siteUrl={current.tenant.site} tenantName={tenantName} />
+            )
+          }
+          topbarLeft={
+            <div className="hidden leading-tight sm:block">
+              <p className="text-muted text-[11px] font-medium uppercase tracking-wide">
+                Área Restrita
+              </p>
+              <p className="font-display truncate text-sm font-semibold">{tenantName}</p>
+            </div>
+          }
+          topbarRight={
+            <TopbarUser
+              displayName={displayName}
+              fotoUrl={member?.fotoUrl ?? null}
+              roleLabel={roleDisplayLabel(session.role)}
+              email={session.user.email}
+              grau={member?.grau ?? null}
+              notifications={notificationsPage.items}
+              unreadCount={unreadCount}
+            />
+          }
+        >
+          {children}
+        </AppShell>
+      </MemberProfileProvider>
     </AgendaProvider>
   );
 }

@@ -16,8 +16,28 @@ import {
   type MemberCentralProfileValues,
   type PublicationSettingsInputValues,
 } from '@vl6/shared';
+import type { PublicMemberProfileDTO } from '@vl6/domain';
 import { createServerContainer } from '@vl6/infra';
 import { requireSession } from '@/lib/auth/require-session';
+
+/**
+ * Busca sob demanda pro painel lateral de perfil (`MemberProfileProvider`) —
+ * usado por qualquer ponto do Portal que só tem o `memberId` em mãos (ex.:
+ * link "Ver perfil completo" a partir do Acervo VL6), sem precisar
+ * pré-carregar o Diretório inteiro. Mesma checagem de permissão e DTO já
+ * filtrado que `/irmaos/[memberId]` usa.
+ */
+export async function getMemberProfileForDrawerAction(
+  memberId: string,
+): Promise<PublicMemberProfileDTO | null> {
+  const session = await requireSession();
+  const container = createServerContainer();
+  const result = await container.useCases.getPublicMemberProfile.execute(
+    session.authContext,
+    memberId,
+  );
+  return result.ok ? result.value : null;
+}
 
 export interface CentralActionState {
   error: string | null;

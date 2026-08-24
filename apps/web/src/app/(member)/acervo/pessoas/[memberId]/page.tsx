@@ -8,6 +8,7 @@ import { AcervoPageHeader } from '@/components/member/acervo-page-header';
 import { RelationsSection } from '@/modules/archive/components/relations-section';
 import { isAccessLevelVisible } from '@/modules/archive/lib/access-level-visibility';
 import { MEMBER_DEGREE_LABELS } from '@/lib/membership/member-degree-label';
+import { ViewCentralProfileLink } from '@/modules/central/components/directorio/view-central-profile-link';
 
 function formatDate(date: Date): string {
   return new Intl.DateTimeFormat('pt-BR', { dateStyle: 'long' }).format(new Date(date));
@@ -148,14 +149,7 @@ export default async function ArchivePersonPage({
         </div>
       )}
 
-      {hasPublishedCentralProfile && (
-        <Link
-          href={`/irmaos/${member.id}`}
-          className="text-accent w-fit text-xs font-medium hover:underline"
-        >
-          Ver perfil completo na Central VL6 →
-        </Link>
-      )}
+      {hasPublishedCentralProfile && <ViewCentralProfileLink memberId={member.id} />}
 
       <section aria-labelledby="trajetoria-title">
         <h2 id="trajetoria-title" className="font-display text-lg font-semibold">
