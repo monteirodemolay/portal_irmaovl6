@@ -4,6 +4,8 @@ import type { ArtTemplate } from '@vl6/domain';
 import { ART_TEMPLATE_TYPE_LABELS } from '@vl6/shared';
 import { Badge, Button, DataTable, EmptyState, type DataTableColumn } from '@vl6/ui';
 import { requirePagePermission } from '@/lib/auth/require-permission';
+import { SoftDeleteButton } from '@/components/admin/soft-delete-button';
+import { deleteArtTemplateAction } from '@/modules/communication/actions/communication-actions';
 
 const BASE_PATH = '/admin/comunicacao/modelos';
 
@@ -47,9 +49,17 @@ export default async function ArtTemplateLibraryPage() {
       key: 'acoes',
       header: '',
       cell: (t) => (
-        <Button asChild variant="outline" size="sm">
-          <Link href={`${BASE_PATH}/${t.id}`}>Editar</Link>
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button asChild variant="outline" size="sm">
+            <Link href={`${BASE_PATH}/${t.id}`}>Editar</Link>
+          </Button>
+          <SoftDeleteButton
+            triggerLabel="Excluir"
+            title={`Excluir "${t.name}"?`}
+            description="O modelo sai da biblioteca e não pode mais ser escolhido pra novas publicações. Publicações já geradas a partir dele continuam intactas e editáveis."
+            onDelete={deleteArtTemplateAction.bind(null, t.id)}
+          />
+        </div>
       ),
     },
   ];

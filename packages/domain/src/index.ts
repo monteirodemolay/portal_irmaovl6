@@ -254,6 +254,7 @@ export * from './modules/communication/repositories/art-template.repository';
 export * from './modules/communication/repositories/publication.repository';
 export * from './modules/communication/use-cases/create-art-template.use-case';
 export * from './modules/communication/use-cases/update-art-template.use-case';
+export * from './modules/communication/use-cases/delete-art-template.use-case';
 export * from './modules/communication/use-cases/list-art-templates.use-case';
 export * from './modules/communication/use-cases/create-publication-from-event.use-case';
 export * from './modules/communication/use-cases/create-publication-from-birthday.use-case';

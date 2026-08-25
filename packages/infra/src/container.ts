@@ -196,6 +196,7 @@ import {
   UpdateGoogleCalendarPreferencesUseCase,
   CreateArtTemplateUseCase,
   UpdateArtTemplateUseCase,
+  DeleteArtTemplateUseCase,
   ListArtTemplatesUseCase,
   CreatePublicationFromEventUseCase,
   CreatePublicationFromBirthdayUseCase,
@@ -972,6 +973,10 @@ export function createServerContainer() {
       idGenerator,
     }),
     updateArtTemplate: new UpdateArtTemplateUseCase({
+      artTemplateRepository: repositories.artTemplate,
+      clock,
+    }),
+    deleteArtTemplate: new DeleteArtTemplateUseCase({
       artTemplateRepository: repositories.artTemplate,
       clock,
     }),

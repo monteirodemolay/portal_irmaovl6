@@ -114,6 +114,19 @@ export async function updateArtTemplateAction(
   return { error: null };
 }
 
+/** Exclusão lógica — modelo some da biblioteca, mas publicações já geradas a partir dele continuam intactas. */
+export async function deleteArtTemplateAction(templateId: string): Promise<void> {
+  const session = await requireSession();
+  const container = createServerContainer();
+  const result = await container.useCases.deleteArtTemplate.execute(
+    session.authContext,
+    templateId,
+  );
+  if (!result.ok) throw new Error(result.error.message);
+
+  revalidatePath(`${BASE_PATH}/modelos`);
+}
+
 /** Edita título, campos, legenda e texto de WhatsApp de uma publicação em produção. */
 export async function updatePublicationAction(
   publicationId: string,
