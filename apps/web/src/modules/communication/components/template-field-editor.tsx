@@ -243,11 +243,21 @@ export function TemplateFieldEditor({ mode, action, initial }: TemplateFieldEdit
               onPointerMove={handleCanvasPointerMove}
               onPointerUp={handleCanvasPointerUp}
               onPointerLeave={handleCanvasPointerUp}
-              className="border-border relative mx-auto select-none overflow-hidden rounded-lg border"
+              // `alignSelf: center` tira a caixa do stretch padrão do
+              // flex column pai — sem isso, o navegador força a largura a
+              // preencher o container inteiro (ignorando aspect-ratio) e só
+              // corta a altura depois, deixando uma imagem vertical (Story)
+              // enorme e cortada, ou em alguns casos a caixa colapsando
+              // sem exibir nada. Com `alignSelf: center` + `height`
+              // definido (não `maxHeight`), a largura passa a ser
+              // derivada corretamente a partir da proporção real da
+              // imagem.
+              className="border-border relative select-none overflow-hidden rounded-lg border"
               style={{
                 aspectRatio: `${naturalSize.width} / ${naturalSize.height}`,
-                maxHeight: '65vh',
+                height: 'min(65vh, 640px)',
                 maxWidth: '100%',
+                alignSelf: 'center',
               }}
             >
               <img
