@@ -6,6 +6,13 @@ import { Badge } from '@vl6/ui';
 import { requirePagePermission } from '@/lib/auth/require-permission';
 import { PublicationArtGenerator } from '@/modules/communication/components/publication-art-generator';
 
+// O padrão do plano Hobby (10s) já se mostrou curto pra "Baixar"/"Compartilhar"
+// (conversão do canvas + envio ao Vercel Blob + Firestore) numa function
+// "fria" — a função é interrompida no meio e o cliente recebe uma resposta
+// cortada ("An unexpected response was received from the server."), sem cair
+// em nenhum try/catch nosso.
+export const maxDuration = 30;
+
 export default async function PublicationPage({ params }: { params: Promise<{ id: string }> }) {
   const session = await requirePagePermission('communication:manage');
   const { id } = await params;
