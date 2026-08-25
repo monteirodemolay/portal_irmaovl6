@@ -11,6 +11,7 @@ import {
   type PublicationOutputFormat,
 } from '@vl6/shared';
 import { Button, Input, Textarea } from '@vl6/ui';
+import { SoftDeleteButton } from '@/components/admin/soft-delete-button';
 import { FormField } from '@/components/forms/form-field';
 import {
   approvePublicationAction,
@@ -103,9 +104,11 @@ export function PublicationArtGenerator({
   const [isPending, startTransition] = useTransition();
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  const isEditable =
-    publication.publicacaoStatus === 'draft' ||
-    publication.publicacaoStatus === 'awaiting_approval';
+  // Edição liberada em qualquer estado, exceto arquivada — um erro de
+  // digitação só é notado às vezes depois que a arte já foi publicada, e o
+  // Administrador precisa corrigir e regerar a imagem sem recriar a
+  // publicação do zero (mesma regra em UpdatePublicationUseCase).
+  const isEditable = publication.publicacaoStatus !== 'archived';
 
   function notify(text: string) {
     setMessage(text);
@@ -367,18 +370,12 @@ export function PublicationArtGenerator({
           )}
 
           {publication.publicacaoStatus !== 'archived' && (
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() =>
-                startTransition(async () => {
-                  await archivePublicationAction(publication.id);
-                  notify('Publicação arquivada.');
-                })
-              }
-            >
-              Arquivar
-            </Button>
+            <SoftDeleteButton
+              triggerLabel="Excluir publicação"
+              title="Excluir esta publicação?"
+              description="A publicação sai da lista principal e vai para a aba Arquivadas. As artes já geradas continuam salvas, mas a publicação não pode mais ser editada nem gerar novas imagens depois disso."
+              onDelete={() => archivePublicationAction(publication.id)}
+            />
           )}
         </div>
       </div>

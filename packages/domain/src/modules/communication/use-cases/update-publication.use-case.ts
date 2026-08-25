@@ -19,9 +19,12 @@ export interface UpdatePublicationDeps {
 }
 
 /**
- * Edita título, campos da arte, legenda e texto de WhatsApp — só antes da
- * publicação (`published`/`archived` são estados finais, editar depois não
- * corrigiria nada que já foi pro ar fora do Portal).
+ * Edita título, campos da arte, legenda e texto de WhatsApp — inclusive
+ * depois de publicada: um erro de digitação (nome, data, local) só é
+ * percebido às vezes depois que a arte já foi ao ar, e o Administrador
+ * precisa corrigir e regerar a imagem sem precisar recriar a publicação do
+ * zero. Só `archived` é estado final de verdade (publicação arquivada some
+ * da lista principal e não deve mais ser mexida).
  */
 export class UpdatePublicationUseCase {
   constructor(private readonly deps: UpdatePublicationDeps) {}
@@ -37,10 +40,8 @@ export class UpdatePublicationUseCase {
     if (!current || current.tenantId !== ctx.tenantId) {
       return err(new NotFoundError('Publication', publicationId));
     }
-    if (current.publicacaoStatus === 'published' || current.publicacaoStatus === 'archived') {
-      return err(
-        new ConflictError('Publicações já publicadas ou arquivadas não podem ser editadas.'),
-      );
+    if (current.publicacaoStatus === 'archived') {
+      return err(new ConflictError('Publicações arquivadas não podem ser editadas.'));
     }
 
     const updated: Publication = {

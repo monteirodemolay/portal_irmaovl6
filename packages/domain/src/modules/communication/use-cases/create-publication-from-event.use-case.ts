@@ -1,3 +1,4 @@
+import { BRAZIL_TIME_ZONE } from '@vl6/shared';
 import type { AuthContext } from '../../../shared/auth-context';
 import { requirePermission } from '../../../shared/auth-context';
 import type { IClock, IIdGenerator } from '../../../shared/ports';
@@ -74,8 +75,14 @@ export class CreatePublicationFromEventUseCase {
       title: event.titulo,
       fields: {
         sessionName: event.titulo,
-        date: event.dataInicio.toISOString(),
-        time: event.dataInicio.toISOString().slice(11, 16),
+        date: new Intl.DateTimeFormat('pt-BR', {
+          dateStyle: 'short',
+          timeZone: BRAZIL_TIME_ZONE,
+        }).format(event.dataInicio),
+        time: new Intl.DateTimeFormat('pt-BR', {
+          timeStyle: 'short',
+          timeZone: BRAZIL_TIME_ZONE,
+        }).format(event.dataInicio),
         degree: event.grau ? (SESSION_DEGREE_LABELS[event.grau] ?? event.grau) : '',
         location: event.local,
       },
