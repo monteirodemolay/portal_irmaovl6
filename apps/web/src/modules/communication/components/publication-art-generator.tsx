@@ -126,19 +126,37 @@ export function PublicationArtGenerator({
     else notify('Alterações salvas.');
   }
 
-  async function generateAndUpload(format: PublicationOutputFormat) {
-    if (!canvasRef.current) return;
-    await renderPreview();
-    const blob = await canvasToBlob(canvasRef.current);
-    const formData = new FormData();
-    formData.set('asset', new File([blob], `${format}.png`, { type: 'image/png' }));
-    formData.set('format', format);
-    formData.set('width', String(canvasRef.current.width));
-    formData.set('height', String(canvasRef.current.height));
-    const result = await uploadPublicationAssetAction(publication.id, formData);
-    if (result.error) notify(result.error);
-    else notify('Imagem gerada com sucesso.');
-    return blob;
+  /**
+   * Nunca deixa uma falha de `canvas.toBlob`/upload passar em silêncio —
+   * sem isso, um erro aqui (ex.: canvas "contaminado" por CORS, Server
+   * Action perdida por deploy recente) vira um clique que aparentemente
+   * não faz nada, sem nenhuma pista pro Administrador nem pra nós.
+   */
+  async function generateAndUpload(format: PublicationOutputFormat): Promise<Blob | null> {
+    if (!canvasRef.current) return null;
+    try {
+      await renderPreview();
+      const blob = await canvasToBlob(canvasRef.current);
+      const formData = new FormData();
+      formData.set('asset', new File([blob], `${format}.png`, { type: 'image/png' }));
+      formData.set('format', format);
+      formData.set('width', String(canvasRef.current.width));
+      formData.set('height', String(canvasRef.current.height));
+      const result = await uploadPublicationAssetAction(publication.id, formData);
+      if (result.error) {
+        notify(result.error);
+        return null;
+      }
+      notify('Imagem gerada com sucesso.');
+      return blob;
+    } catch (error) {
+      notify(
+        error instanceof Error
+          ? `Não foi possível gerar a imagem: ${error.message}`
+          : 'Não foi possível gerar a imagem.',
+      );
+      return null;
+    }
   }
 
   async function downloadFormat(format: PublicationOutputFormat) {
@@ -167,7 +185,12 @@ export function PublicationArtGenerator({
         // cancelamento do usuário — nada a fazer.
       }
     } else {
-      await downloadFormat(format);
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = `${publication.title.replace(/\s+/g, '-').toLowerCase()}-${format}.png`;
+      anchor.click();
+      URL.revokeObjectURL(url);
       notify('Imagem baixada. Agora você pode anexá-la no WhatsApp.');
     }
   }
