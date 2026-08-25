@@ -71,6 +71,7 @@ export function TemplateFieldEditor({ mode, action, initial }: TemplateFieldEdit
   const [dragKey, setDragKey] = useState<string | null>(null);
 
   const canvasRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const selected = fields.find((f) => f.key === selectedKey) ?? null;
 
   function updateSelected(patch: Partial<TemplateField>) {
@@ -149,16 +150,26 @@ export function TemplateFieldEditor({ mode, action, initial }: TemplateFieldEdit
             </Button>
           </div>
 
+          {/* Único input de arquivo, nunca desmontado — trocar de branch (sem
+              imagem ↔ com prévia) desmontaria esse elemento e perderia o
+              File já selecionado, mesmo com `previewUrl` continuando a
+              mostrar a prévia (state do blob URL, não do input). */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            id="background-input"
+            name="background"
+            accept="image/png,image/jpeg"
+            onChange={handleFileChange}
+            className="hidden"
+          />
+
           {!previewUrl ? (
-            <label className="border-border flex h-80 cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border border-dashed text-sm">
+            <label
+              htmlFor="background-input"
+              className="border-border flex h-80 cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border border-dashed text-sm"
+            >
               <span>Selecione a imagem de fundo do modelo (PNG ou JPEG)</span>
-              <input
-                type="file"
-                name="background"
-                accept="image/png,image/jpeg"
-                onChange={handleFileChange}
-                className="hidden"
-              />
               <span className="text-accent underline">Escolher arquivo</span>
             </label>
           ) : (
@@ -195,15 +206,11 @@ export function TemplateFieldEditor({ mode, action, initial }: TemplateFieldEdit
                 </button>
               ))}
               {mode === 'create' && (
-                <label className="absolute bottom-2 right-2 cursor-pointer rounded bg-black/60 px-2 py-1 text-xs text-white">
+                <label
+                  htmlFor="background-input"
+                  className="absolute bottom-2 right-2 cursor-pointer rounded bg-black/60 px-2 py-1 text-xs text-white"
+                >
                   Trocar imagem
-                  <input
-                    type="file"
-                    name="background"
-                    accept="image/png,image/jpeg"
-                    onChange={handleFileChange}
-                    className="hidden"
-                  />
                 </label>
               )}
             </div>
