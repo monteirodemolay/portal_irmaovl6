@@ -112,6 +112,13 @@ export function TemplateFieldEditor({ mode, action, initial }: TemplateFieldEdit
     height: initial.backgroundHeight ?? 1350,
   });
   const [dragIndex, setDragIndex] = useState<number | null>(null);
+  // Linha-guia tracejada (estilo "smart guides" do Canva) que aparece
+  // enquanto um campo arrastado se alinha ao centro da imagem ou a outro
+  // campo já posicionado — `null` quando não há alinhamento no momento.
+  const [guides, setGuides] = useState<{ x: number | null; y: number | null }>({
+    x: null,
+    y: null,
+  });
 
   const canvasRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -165,16 +172,48 @@ export function TemplateFieldEditor({ mode, action, initial }: TemplateFieldEdit
     };
   }
 
+  const SNAP_THRESHOLD_PX = 6;
+
   function handleCanvasPointerMove(event: React.PointerEvent) {
     if (dragIndex === null || !canvasRef.current) return;
     const rect = canvasRef.current.getBoundingClientRect();
-    const xPercent = Math.min(100, Math.max(0, ((event.clientX - rect.left) / rect.width) * 100));
-    const yPercent = Math.min(100, Math.max(0, ((event.clientY - rect.top) / rect.height) * 100));
+    let xPercent = Math.min(100, Math.max(0, ((event.clientX - rect.left) / rect.width) * 100));
+    let yPercent = Math.min(100, Math.max(0, ((event.clientY - rect.top) / rect.height) * 100));
+
+    // "Régua" pedida pelo Administrador: em vez de números fixos, o campo
+    // arrastado gruda (snap) no centro da imagem ou na posição de outro
+    // campo já colocado, como as guias inteligentes do Canva — bem mais
+    // fácil de "deixar tudo alinhadinho" do que digitar coordenadas.
+    const snapXThreshold = (SNAP_THRESHOLD_PX / rect.width) * 100;
+    const snapYThreshold = (SNAP_THRESHOLD_PX / rect.height) * 100;
+    const others = fields.filter((_, i) => i !== dragIndex);
+    const xCandidates = [0, 50, 100, ...others.map((f) => f.xPercent)];
+    const yCandidates = [0, 50, 100, ...others.map((f) => f.yPercent)];
+
+    let snappedX: number | null = null;
+    for (const cx of xCandidates) {
+      if (Math.abs(xPercent - cx) < snapXThreshold) {
+        xPercent = cx;
+        snappedX = cx;
+        break;
+      }
+    }
+    let snappedY: number | null = null;
+    for (const cy of yCandidates) {
+      if (Math.abs(yPercent - cy) < snapYThreshold) {
+        yPercent = cy;
+        snappedY = cy;
+        break;
+      }
+    }
+
+    setGuides({ x: snappedX, y: snappedY });
     setFields((prev) => prev.map((f, i) => (i === dragIndex ? { ...f, xPercent, yPercent } : f)));
   }
 
   function handleCanvasPointerUp() {
     setDragIndex(null);
+    setGuides({ x: null, y: null });
   }
 
   function addField() {
@@ -266,6 +305,18 @@ export function TemplateFieldEditor({ mode, action, initial }: TemplateFieldEdit
                 className="pointer-events-none absolute inset-0 h-full w-full object-cover"
                 draggable={false}
               />
+              {guides.x !== null && (
+                <div
+                  className="pointer-events-none absolute inset-y-0 border-l border-dashed"
+                  style={{ left: `${guides.x}%`, borderColor: '#d4af37' }}
+                />
+              )}
+              {guides.y !== null && (
+                <div
+                  className="pointer-events-none absolute inset-x-0 border-t border-dashed"
+                  style={{ top: `${guides.y}%`, borderColor: '#d4af37' }}
+                />
+              )}
               {fields.map((field, index) => (
                 <button
                   key={index}
