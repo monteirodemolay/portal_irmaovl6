@@ -1,18 +1,13 @@
 'use server';
 
-import { randomUUID } from 'node:crypto';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
-import * as Sentry from '@sentry/nextjs';
 import type { ArtTemplateType, PublicationChannel, PublicationOutputFormat } from '@vl6/shared';
-import { errorToLogContext, logger } from '@vl6/shared';
-import { createServerContainer, VercelBlobStorageAdapter } from '@vl6/infra';
+import { createServerContainer } from '@vl6/infra';
 import type { TemplateField } from '@vl6/domain';
 import { requireSession } from '@/lib/auth/require-session';
 
 const BASE_PATH = '/admin/comunicacao';
-const MAX_TEMPLATE_SIZE_BYTES = 15 * 1024 * 1024;
-const MAX_ASSET_SIZE_BYTES = 15 * 1024 * 1024;
 
 function parseFields(raw: FormDataEntryValue | null): TemplateField[] {
   if (typeof raw !== 'string' || !raw) return [];
@@ -25,7 +20,14 @@ export interface CommunicationActionState {
   error: string | null;
 }
 
-/** Cadastro de modelo — a imagem de fundo é enviada uma única vez aqui. */
+/**
+ * Cadastro de modelo — a imagem de fundo já chega enviada ao Vercel Blob
+ * (upload direto do navegador via `@vercel/blob/client`, ver
+ * `/api/comunicacao/blob-upload`): o corpo de uma Server Action tem um teto
+ * físico de 4,5 MB na Vercel, que uma imagem institucional em alta
+ * resolução ultrapassa com frequência — passar só a URL final aqui evita
+ * esse limite por completo.
+ */
 export async function createArtTemplateAction(
   _prevState: CommunicationActionState,
   formData: FormData,
@@ -37,37 +39,15 @@ export async function createArtTemplateAction(
   if (!name) return { error: 'Nome do modelo é obrigatório.' };
 
   const type = formData.get('type') as ArtTemplateType;
-  const file = formData.get('background');
-  if (!(file instanceof File) || file.size === 0) {
+  const backgroundUrl = String(formData.get('backgroundUrl') ?? '');
+  if (!backgroundUrl) {
     return { error: 'Envie a imagem de fundo do modelo.' };
-  }
-  if (!['image/png', 'image/jpeg'].includes(file.type)) {
-    return { error: 'A imagem de fundo deve ser PNG ou JPEG.' };
-  }
-  if (file.size > MAX_TEMPLATE_SIZE_BYTES) {
-    return { error: 'Arquivo muito grande: o limite é 15 MB.' };
   }
 
   const width = Number(formData.get('backgroundWidth'));
   const height = Number(formData.get('backgroundHeight'));
   if (!width || !height) {
     return { error: 'Não foi possível ler as dimensões da imagem.' };
-  }
-
-  const storage = new VercelBlobStorageAdapter();
-  const path = `tenants/${session.authContext.tenantId}/communication-templates/${randomUUID()}.png`;
-  let backgroundUrl: string;
-  try {
-    const buffer = Buffer.from(await file.arrayBuffer());
-    const upload = await storage.upload({ path, buffer, contentType: file.type });
-    backgroundUrl = upload.url;
-  } catch (error) {
-    logger.error('Falha ao enviar modelo de arte para o storage', {
-      route: 'createArtTemplateAction',
-      ...errorToLogContext(error),
-    });
-    Sentry.captureException(error, { tags: { route: 'createArtTemplateAction' } });
-    return { error: 'Não foi possível enviar a imagem. Tente novamente em instantes.' };
   }
 
   const result = await container.useCases.createArtTemplate.execute(session.authContext, {
@@ -153,53 +133,35 @@ export async function updatePublicationAction(
 }
 
 /**
- * Recebe o PNG já renderizado pelo `<canvas>` do navegador (a Central de
- * Comunicação nunca renderiza imagem no servidor — mesma cautela do
- * incidente `pdfjs-dist` em runtime serverless), envia ao Storage e
- * registra o resultado na publicação.
+ * Recebe a URL de uma arte já renderizada pelo `<canvas>` do navegador (a
+ * Central de Comunicação nunca renderiza imagem no servidor — mesma cautela
+ * do incidente `pdfjs-dist` em runtime serverless) e já enviada ao Vercel
+ * Blob por upload direto do navegador (mesmo motivo de
+ * `createArtTemplateAction`: o corpo de uma Server Action tem um teto físico
+ * de 4,5 MB na Vercel, e o formato Story em alta resolução ultrapassa isso
+ * com frequência) — só registra o resultado na publicação.
  */
 export async function uploadPublicationAssetAction(
   publicationId: string,
-  formData: FormData,
+  input: {
+    format: PublicationOutputFormat;
+    url: string;
+    width: number;
+    height: number;
+    checksum: string;
+  },
 ): Promise<{ error: string | null }> {
   const session = await requireSession();
   const container = createServerContainer();
 
-  const file = formData.get('asset');
-  const format = formData.get('format') as PublicationOutputFormat;
-  const width = Number(formData.get('width'));
-  const height = Number(formData.get('height'));
-  if (!(file instanceof File) || file.size === 0) {
+  if (!input.url) {
     return { error: 'Nenhuma imagem gerada para enviar.' };
-  }
-  if (file.size > MAX_ASSET_SIZE_BYTES) {
-    return { error: 'Arte gerada excede o tamanho máximo permitido.' };
-  }
-
-  const storage = new VercelBlobStorageAdapter();
-  const path = `tenants/${session.authContext.tenantId}/communication-assets/${publicationId}/${format}-${randomUUID()}.png`;
-  let url: string;
-  let checksum: string;
-  try {
-    const buffer = Buffer.from(await file.arrayBuffer());
-    const upload = await storage.upload({ path, buffer, contentType: 'image/png' });
-    url = upload.url;
-    const { createHash } = await import('node:crypto');
-    checksum = createHash('sha256').update(buffer).digest('hex');
-  } catch (error) {
-    logger.error('Falha ao enviar arte gerada para o storage', {
-      route: 'uploadPublicationAssetAction',
-      publicationId,
-      ...errorToLogContext(error),
-    });
-    Sentry.captureException(error, { tags: { route: 'uploadPublicationAssetAction' } });
-    return { error: 'Não foi possível enviar a imagem gerada. Tente novamente em instantes.' };
   }
 
   const result = await container.useCases.generatePublicationAsset.execute(
     session.authContext,
     publicationId,
-    { format, url, width, height, checksum },
+    input,
   );
   if (!result.ok) return { error: result.error.message };
 

@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useState, useTransition } from 'react';
+import { upload } from '@vercel/blob/client';
 import type { ArtTemplate, Publication } from '@vl6/domain';
 import {
   PUBLICATION_CHANNELS,
@@ -82,6 +83,11 @@ async function canvasToBlob(canvas: HTMLCanvasElement): Promise<Blob> {
   });
 }
 
+async function sha256Hex(blob: Blob): Promise<string> {
+  const digest = await crypto.subtle.digest('SHA-256', await blob.arrayBuffer());
+  return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
 export function PublicationArtGenerator({
   publication,
   template,
@@ -128,21 +134,42 @@ export function PublicationArtGenerator({
 
   /**
    * Nunca deixa uma falha de `canvas.toBlob`/upload passar em silêncio —
-   * sem isso, um erro aqui (ex.: canvas "contaminado" por CORS, Server
-   * Action perdida por deploy recente) vira um clique que aparentemente
-   * não faz nada, sem nenhuma pista pro Administrador nem pra nós.
+   * sem isso, um erro aqui vira um clique que aparentemente não faz nada,
+   * sem nenhuma pista pro Administrador nem pra nós.
+   *
+   * O upload vai direto do navegador pro Vercel Blob (`@vercel/blob/client`)
+   * — uma Server Action tem um teto físico de 4,5 MB na Vercel, e o formato
+   * Story em alta resolução ultrapassa isso com frequência ("413 Content Too
+   * Large" antes mesmo do código da aplicação rodar); só a URL final e um
+   * checksum (calculado aqui via Web Crypto, sem reler o arquivo no
+   * servidor) chegam à Server Action que registra o resultado.
    */
   async function generateAndUpload(format: PublicationOutputFormat): Promise<Blob | null> {
     if (!canvasRef.current) return null;
     try {
       await renderPreview();
       const blob = await canvasToBlob(canvasRef.current);
-      const formData = new FormData();
-      formData.set('asset', new File([blob], `${format}.png`, { type: 'image/png' }));
-      formData.set('format', format);
-      formData.set('width', String(canvasRef.current.width));
-      formData.set('height', String(canvasRef.current.height));
-      const result = await uploadPublicationAssetAction(publication.id, formData);
+      const width = canvasRef.current.width;
+      const height = canvasRef.current.height;
+      const [uploaded, checksum] = await Promise.all([
+        upload(
+          `communication-assets/${publication.id}/${format}-${crypto.randomUUID()}.png`,
+          blob,
+          {
+            access: 'public',
+            handleUploadUrl: '/api/comunicacao/blob-upload',
+            contentType: 'image/png',
+          },
+        ),
+        sha256Hex(blob),
+      ]);
+      const result = await uploadPublicationAssetAction(publication.id, {
+        format,
+        url: uploaded.url,
+        width,
+        height,
+        checksum,
+      });
       if (result.error) {
         notify(result.error);
         return null;

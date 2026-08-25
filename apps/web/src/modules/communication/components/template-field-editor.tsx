@@ -2,6 +2,7 @@
 
 import { useActionState, useRef, useState } from 'react';
 import { useFormStatus } from 'react-dom';
+import { upload } from '@vercel/blob/client';
 import type { TemplateField } from '@vl6/domain';
 import {
   ART_TEMPLATE_TYPE_LABELS,
@@ -74,6 +75,12 @@ export function TemplateFieldEditor({ mode, action, initial }: TemplateFieldEdit
     initial.fields.length > 0 ? 0 : null,
   );
   const [previewUrl, setPreviewUrl] = useState<string | null>(initial.backgroundUrl);
+  // URL final no Vercel Blob, só depois do upload direto do navegador
+  // terminar — `previewUrl` (acima) é só a prévia local instantânea
+  // (blob: URL), nunca o valor submetido no formulário.
+  const [backgroundUrl, setBackgroundUrl] = useState<string | null>(initial.backgroundUrl);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const [naturalSize, setNaturalSize] = useState({ width: 1080, height: 1350 });
   const [dragIndex, setDragIndex] = useState<number | null>(null);
 
@@ -86,14 +93,39 @@ export function TemplateFieldEditor({ mode, action, initial }: TemplateFieldEdit
     setFields((prev) => prev.map((f, i) => (i === selectedIndex ? { ...f, ...patch } : f)));
   }
 
+  /**
+   * Upload direto do navegador pro Vercel Blob (`@vercel/blob/client`) —
+   * uma Server Action tem um teto físico de 4,5 MB na Vercel, que uma
+   * imagem institucional em alta resolução ultrapassa com frequência
+   * ("413 Content Too Large" antes mesmo do código da aplicação rodar).
+   * `previewUrl` mostra o arquivo local instantaneamente; `backgroundUrl`
+   * só fica pronto quando o upload de verdade termina, e é isso que vai no
+   * campo oculto submetido pelo formulário.
+   */
   function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     if (!file) return;
     const url = URL.createObjectURL(file);
     setPreviewUrl(url);
+    setBackgroundUrl(null);
+    setUploadError(null);
     const img = new Image();
     img.onload = () => setNaturalSize({ width: img.naturalWidth, height: img.naturalHeight });
     img.src = url;
+
+    setUploading(true);
+    upload(`communication/${crypto.randomUUID()}.png`, file, {
+      access: 'public',
+      handleUploadUrl: '/api/comunicacao/blob-upload',
+      contentType: file.type,
+    })
+      .then((result) => setBackgroundUrl(result.url))
+      .catch((error: unknown) => {
+        setUploadError(
+          error instanceof Error ? `Falha no upload: ${error.message}` : 'Falha no upload.',
+        );
+      })
+      .finally(() => setUploading(false));
   }
 
   function handlePointerDown(index: number) {
@@ -142,6 +174,7 @@ export function TemplateFieldEditor({ mode, action, initial }: TemplateFieldEdit
   return (
     <form action={formAction} className="flex flex-col gap-6">
       <input type="hidden" name="fields" value={JSON.stringify(fields)} />
+      <input type="hidden" name="backgroundUrl" value={backgroundUrl ?? ''} />
       <input type="hidden" name="backgroundWidth" value={naturalSize.width} />
       <input type="hidden" name="backgroundHeight" value={naturalSize.height} />
       {[...outputFormats].map((format) => (
@@ -162,16 +195,19 @@ export function TemplateFieldEditor({ mode, action, initial }: TemplateFieldEdit
           {/* Único input de arquivo, nunca desmontado — trocar de branch (sem
               imagem ↔ com prévia) desmontaria esse elemento e perderia o
               File já selecionado, mesmo com `previewUrl` continuando a
-              mostrar a prévia (state do blob URL, não do input). */}
+              mostrar a prévia (state do blob URL, não do input). Sem `name`
+              — o arquivo é enviado direto ao Vercel Blob pelo navegador
+              (`handleFileChange`), nunca pelo corpo do formulário. */}
           <input
             ref={fileInputRef}
             type="file"
             id="background-input"
-            name="background"
             accept="image/png,image/jpeg"
             onChange={handleFileChange}
             className="hidden"
           />
+          {uploading && <p className="text-muted text-xs">Enviando imagem…</p>}
+          {uploadError && <p className="text-xs text-red-600">{uploadError}</p>}
 
           {!previewUrl ? (
             <label
@@ -362,17 +398,17 @@ export function TemplateFieldEditor({ mode, action, initial }: TemplateFieldEdit
           </div>
 
           {state.error && <p className="text-sm text-red-600">{state.error}</p>}
-          <SubmitButton />
+          <SubmitButton disabled={uploading || (mode === 'create' && !backgroundUrl)} />
         </div>
       </div>
     </form>
   );
 }
 
-function SubmitButton() {
+function SubmitButton({ disabled }: { disabled: boolean }) {
   const { pending } = useFormStatus();
   return (
-    <Button type="submit" disabled={pending}>
+    <Button type="submit" disabled={pending || disabled}>
       {pending ? 'Salvando…' : 'Salvar modelo'}
     </Button>
   );

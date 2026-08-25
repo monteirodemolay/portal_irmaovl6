@@ -21,6 +21,7 @@
     "@react-pdf/renderer": "^4.6.1",
     "@sentry/nextjs": "^10.69.0",
     "@tanstack/react-query": "^5.62.11",
+    "@vercel/blob": "^2.6.1",
     "@vl6/domain": "workspace:*",
     "@vl6/infra": "workspace:*",
     "@vl6/shared": "workspace:*",
