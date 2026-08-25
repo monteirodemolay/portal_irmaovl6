@@ -194,6 +194,17 @@ import {
   UpdateGoogleEventUseCase,
   DeleteOrCancelGoogleEventUseCase,
   UpdateGoogleCalendarPreferencesUseCase,
+  CreateArtTemplateUseCase,
+  UpdateArtTemplateUseCase,
+  ListArtTemplatesUseCase,
+  CreatePublicationFromEventUseCase,
+  CreatePublicationFromBirthdayUseCase,
+  GeneratePublicationAssetUseCase,
+  ApprovePublicationUseCase,
+  MarkPublicationAsPublishedUseCase,
+  ArchivePublicationUseCase,
+  ListPublicationsUseCase,
+  UpdatePublicationUseCase,
 } from '@vl6/domain';
 import { withAudit } from './audit/with-audit';
 import { NodeDnsResolver } from './dns/node-dns-resolver';
@@ -236,6 +247,8 @@ import { FirestoreMemberRepository } from './firestore/repositories/member.repos
 import { FirestoreNewsCommentRepository } from './firestore/repositories/news-comment.repository';
 import { FirestoreNewsRepository } from './firestore/repositories/news.repository';
 import { FirestoreNotificationRepository } from './firestore/repositories/notification.repository';
+import { FirestoreArtTemplateRepository } from './firestore/repositories/art-template.repository';
+import { FirestorePublicationRepository } from './firestore/repositories/publication.repository';
 import { FirestoreNotificationPreferenceRepository } from './firestore/repositories/notification-preference.repository';
 import { FirestorePublicationConsentRepository } from './firestore/repositories/publication-consent.repository';
 import { FirestorePublicationSettingsRepository } from './firestore/repositories/publication-settings.repository';
@@ -316,6 +329,8 @@ export function createServerContainer() {
     googleCalendarEventCache: new FirestoreGoogleCalendarEventCacheRepository(db),
     notification: new FirestoreNotificationRepository(db),
     notificationPreference: new FirestoreNotificationPreferenceRepository(db),
+    artTemplate: withAudit(new FirestoreArtTemplateRepository(db), 'artTemplates', auditDeps),
+    publication: withAudit(new FirestorePublicationRepository(db), 'publications', auditDeps),
     link: new FirestoreLinkRepository(db),
     galleryAlbum: new FirestoreGalleryAlbumRepository(db),
     galleryMedia: new FirestoreGalleryMediaRepository(db),
@@ -950,6 +965,56 @@ export function createServerContainer() {
     createLink: new CreateLinkUseCase({ linkRepository: repositories.link, clock, idGenerator }),
     listActiveLinks: new ListActiveLinksUseCase({ linkRepository: repositories.link }),
     listAllLinks: new ListAllLinksUseCase({ linkRepository: repositories.link }),
+
+    createArtTemplate: new CreateArtTemplateUseCase({
+      artTemplateRepository: repositories.artTemplate,
+      clock,
+      idGenerator,
+    }),
+    updateArtTemplate: new UpdateArtTemplateUseCase({
+      artTemplateRepository: repositories.artTemplate,
+      clock,
+    }),
+    listArtTemplates: new ListArtTemplatesUseCase({
+      artTemplateRepository: repositories.artTemplate,
+    }),
+    createPublicationFromEvent: new CreatePublicationFromEventUseCase({
+      publicationRepository: repositories.publication,
+      artTemplateRepository: repositories.artTemplate,
+      eventRepository: repositories.event,
+      clock,
+      idGenerator,
+    }),
+    createPublicationFromBirthday: new CreatePublicationFromBirthdayUseCase({
+      publicationRepository: repositories.publication,
+      artTemplateRepository: repositories.artTemplate,
+      memberRepository: repositories.member,
+      clock,
+      idGenerator,
+    }),
+    generatePublicationAsset: new GeneratePublicationAssetUseCase({
+      publicationRepository: repositories.publication,
+      clock,
+    }),
+    approvePublication: new ApprovePublicationUseCase({
+      publicationRepository: repositories.publication,
+      clock,
+    }),
+    markPublicationAsPublished: new MarkPublicationAsPublishedUseCase({
+      publicationRepository: repositories.publication,
+      clock,
+    }),
+    archivePublication: new ArchivePublicationUseCase({
+      publicationRepository: repositories.publication,
+      clock,
+    }),
+    listPublications: new ListPublicationsUseCase({
+      publicationRepository: repositories.publication,
+    }),
+    updatePublication: new UpdatePublicationUseCase({
+      publicationRepository: repositories.publication,
+      clock,
+    }),
 
     createGalleryAlbum: new CreateGalleryAlbumUseCase({
       galleryAlbumRepository: repositories.galleryAlbum,

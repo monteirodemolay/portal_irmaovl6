@@ -73,6 +73,7 @@ export const GET = withApiLogging(ROUTE, async (request: NextRequest) => {
         boardTermId: null,
         nivelAcesso: 'irmaos',
         exibirNaLinhaDoTempo: false,
+        grau: null,
         createdAt: now,
         updatedAt: now,
         createdBy: 'system',

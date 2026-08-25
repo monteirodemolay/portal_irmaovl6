@@ -7,6 +7,7 @@ import {
   Image as GalleryIcon,
   LayoutDashboard,
   Megaphone,
+  Send,
   Settings,
   Users,
 } from '@vl6/ui';
@@ -83,6 +84,12 @@ const ADMIN_ITEMS: AdminNavItemDef[] = [
     labelKey: 'conteudo',
     icon: Megaphone,
     permission: ['announcement:read', 'news:read', 'event:read'],
+  },
+  {
+    href: '/admin/comunicacao',
+    labelKey: 'comunicacao',
+    icon: Send,
+    permission: 'communication:manage',
   },
   {
     href: '/admin/acervo',

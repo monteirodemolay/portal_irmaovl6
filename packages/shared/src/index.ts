@@ -5,6 +5,7 @@ export * from './enums/governance';
 export * from './enums/document-management';
 export * from './enums/agenda';
 export * from './enums/notification';
+export * from './enums/communication';
 export * from './enums/gallery';
 export * from './enums/tenant-modules';
 export * from './enums/locale';

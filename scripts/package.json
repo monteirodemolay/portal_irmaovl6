@@ -6,6 +6,7 @@
   "scripts": {
     "seed-tenant": "tsx seed-tenant.ts",
     "seed-platform-admin": "tsx seed-platform-admin.ts",
+    "seed-communication-session-template": "tsx seed-communication-session-template.ts",
     "lint": "eslint . --max-warnings 0",
     "type-check": "tsc --noEmit"
   },

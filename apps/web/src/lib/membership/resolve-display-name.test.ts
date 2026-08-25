@@ -31,6 +31,7 @@ function buildMember(overrides: Partial<Member> = {}): Member {
     biografia: null,
     redesSociais: { instagram: null, facebook: null, linkedin: null },
     observacoes: null,
+    autorizaDivulgacaoExterna: false,
     createdAt: new Date('2025-01-01'),
     updatedAt: new Date('2025-01-01'),
     createdBy: 'seed',

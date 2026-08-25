@@ -21,6 +21,7 @@ const BASE: Omit<MemberFormValues, 'grau' | 'dataIniciacao' | 'dataElevacao' | '
   biografia: null,
   redesSociais: {},
   observacoes: null,
+  autorizaDivulgacaoExterna: false,
 };
 
 describe('memberSchema — cadastro simplificado (só nome e e-mail obrigatórios)', () => {

@@ -38,6 +38,7 @@ function buildEvent(overrides: Partial<Event> = {}): Event {
     boardTermId: null,
     nivelAcesso: 'irmaos',
     exibirNaLinhaDoTempo: true,
+    grau: null,
     createdAt: new Date('2025-01-01'),
     updatedAt: new Date('2025-01-01'),
     createdBy: 'admin-1',

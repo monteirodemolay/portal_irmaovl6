@@ -13,6 +13,8 @@ const DATE_FIELDS = ['dataInicio', 'dataFim'] as const;
  * `exibirNaLinhaDoTempo` viriam `undefined` do Firestore. Default de
  * `nivelAcesso` é "irmãos" (visibilidade equivalente à leitura atual, já
  * que todo Irmão tem `event:read`); `exibirNaLinhaDoTempo` default `true`.
+ * `grau` (Central de Comunicação) segue o mesmo cuidado — default `null`
+ * pra eventos gravados antes desse campo existir.
  */
 function withDefaults(event: Event): Event {
   return {
@@ -20,6 +22,7 @@ function withDefaults(event: Event): Event {
     boardTermId: event.boardTermId ?? null,
     nivelAcesso: event.nivelAcesso ?? 'irmaos',
     exibirNaLinhaDoTempo: event.exibirNaLinhaDoTempo ?? true,
+    grau: event.grau ?? null,
   };
 }
 

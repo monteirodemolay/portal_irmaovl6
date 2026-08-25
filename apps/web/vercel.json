@@ -15,6 +15,10 @@
     {
       "path": "/api/cron/notification-daily-tasks",
       "schedule": "30 7 * * *"
+    },
+    {
+      "path": "/api/cron/communication-daily-tasks",
+      "schedule": "15 9 * * *"
     }
   ]
 }

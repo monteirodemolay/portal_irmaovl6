@@ -1,10 +1,11 @@
 import Link from 'next/link';
 import { createServerContainer } from '@vl6/infra';
-import type { Event } from '@vl6/domain';
+import { hasPermission, type Event } from '@vl6/domain';
 import { BRAZIL_TIME_ZONE, EVENT_KIND_LABELS } from '@vl6/shared';
 import { Button, DataTable, EmptyState, Pagination, type DataTableColumn } from '@vl6/ui';
 import { requirePagePermission } from '@/lib/auth/require-permission';
 import { deleteEventAction, hardDeleteEventAction } from '@/modules/agenda/actions/agenda-actions';
+import { startPublicationFromEventAction } from '@/modules/communication/actions/communication-actions';
 import { DeleteButton } from '@/components/admin/delete-button';
 import { ConcludedTabNav } from '@/components/admin/concluded-tab-nav';
 
@@ -105,6 +106,14 @@ export default async function AgendaPage({
       header: '',
       cell: (event) => (
         <div className="flex items-center justify-end gap-2">
+          {event.tipo === 'sessao' &&
+            hasPermission(session.authContext, 'communication:manage') && (
+              <form action={startPublicationFromEventAction.bind(null, event.id)}>
+                <Button type="submit" variant="outline" size="sm">
+                  Gerar arte
+                </Button>
+              </form>
+            )}
           <Button asChild variant="outline" size="sm">
             <Link href={`${BASE_PATH}/${event.id}/editar`}>Editar</Link>
           </Button>

@@ -55,6 +55,23 @@ export function MemberNotesCard({
         <FormField label="Observações" htmlFor="observacoes">
           <Textarea id="observacoes" name="observacoes" defaultValue={member.observacoes ?? ''} />
         </FormField>
+        <label className="flex items-start gap-2 text-sm">
+          <input
+            type="checkbox"
+            id="autorizaDivulgacaoExterna"
+            name="autorizaDivulgacaoExterna"
+            defaultChecked={member.autorizaDivulgacaoExterna}
+            className="mt-0.5"
+          />
+          <span>
+            <span className="font-medium">Autoriza divulgação externa</span>
+            <span className="text-muted block text-xs">
+              Permite que nome, foto e data de aniversário deste Irmão sejam usados em artes da
+              Central de Comunicação publicadas fora do Portal (Instagram, WhatsApp). Sem esta
+              autorização, nenhuma publicação de aniversário é gerada para ele.
+            </span>
+          </span>
+        </label>
         {state.error && <p className="text-sm text-red-600">{state.error}</p>}
         <SubmitButton />
       </form>

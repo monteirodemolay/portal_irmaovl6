@@ -39,6 +39,11 @@ const memberBaseSchema = z.object({
     linkedin: z.string().url().nullable().optional(),
   }),
   observacoes: z.string().max(4000).nullable(),
+  // Consentimento específico pra publicação EXTERNA (Instagram/WhatsApp) via
+  // Central de Comunicação (docs/architecture) — distinto da publicação
+  // voluntária no Diretório interno (`PublicationSettings.profilePublished`,
+  // módulo `central`). Opt-in, nunca opt-out: default `false`.
+  autorizaDivulgacaoExterna: z.boolean().default(false),
 });
 
 /**

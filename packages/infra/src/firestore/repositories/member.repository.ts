@@ -23,9 +23,16 @@ const DATE_FIELDS = [
  * Normaliza `nomeCompleto` pro padrão brasileiro na leitura — cobre nomes
  * de importações antigas gravados inteiramente em maiúscula, sem exigir
  * migração de dados. Não altera o valor persistido, só o que é retornado.
+ * Também preenche `autorizaDivulgacaoExterna` (Central de Comunicação,
+ * docs/architecture) com o default seguro `false` em cadastros gravados
+ * antes desse campo existir — nunca divulgar sem opt-in explícito.
  */
-function normalizeMemberName<T extends { nomeCompleto: string }>(entity: T): T {
-  return { ...entity, nomeCompleto: formatBrazilianPersonName(entity.nomeCompleto) };
+function normalizeMemberName(entity: Member): Member {
+  return {
+    ...entity,
+    nomeCompleto: formatBrazilianPersonName(entity.nomeCompleto),
+    autorizaDivulgacaoExterna: entity.autorizaDivulgacaoExterna ?? false,
+  };
 }
 
 export class FirestoreMemberRepository implements IMemberRepository {

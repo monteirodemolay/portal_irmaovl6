@@ -15,6 +15,7 @@ export const dictionary = {
     agenda: 'Calendar / Events',
     gallery: 'Gallery',
     acervo: 'VL6 Collection',
+    comunicacao: 'Communication Center',
     conteudo: 'Content',
     pessoas: 'People & Lodge',
     integrations: 'Integrations',

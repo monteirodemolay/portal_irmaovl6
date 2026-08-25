@@ -36,6 +36,7 @@ function buildInput(overrides: Partial<CreateEventInput> = {}): CreateEventInput
     boardTermId: null,
     nivelAcesso: 'irmaos',
     exibirNaLinhaDoTempo: true,
+    grau: null,
     ...overrides,
   };
 }

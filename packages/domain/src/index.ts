@@ -247,6 +247,23 @@ export * from './modules/notification/use-cases/update-notification-preference.u
 export * from './modules/notification/use-cases/create-link.use-case';
 export * from './modules/notification/use-cases/list-links.use-case';
 
+// Communication (Central de Comunicação)
+export * from './modules/communication/entities/art-template.entity';
+export * from './modules/communication/entities/publication.entity';
+export * from './modules/communication/repositories/art-template.repository';
+export * from './modules/communication/repositories/publication.repository';
+export * from './modules/communication/use-cases/create-art-template.use-case';
+export * from './modules/communication/use-cases/update-art-template.use-case';
+export * from './modules/communication/use-cases/list-art-templates.use-case';
+export * from './modules/communication/use-cases/create-publication-from-event.use-case';
+export * from './modules/communication/use-cases/create-publication-from-birthday.use-case';
+export * from './modules/communication/use-cases/generate-publication-asset.use-case';
+export * from './modules/communication/use-cases/approve-publication.use-case';
+export * from './modules/communication/use-cases/mark-publication-as-published.use-case';
+export * from './modules/communication/use-cases/archive-publication.use-case';
+export * from './modules/communication/use-cases/list-publications.use-case';
+export * from './modules/communication/use-cases/update-publication.use-case';
+
 // Gallery
 export * from './modules/gallery/entities/gallery-album.entity';
 export * from './modules/gallery/entities/gallery-media.entity';

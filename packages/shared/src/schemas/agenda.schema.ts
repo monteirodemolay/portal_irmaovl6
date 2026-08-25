@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { EVENT_KINDS } from '../enums/agenda';
+import { EVENT_KINDS, SESSION_DEGREES } from '../enums/agenda';
 import { ACCESS_LEVEL_KEYS } from '../enums/access-level';
 
 export const eventSchema = z
@@ -25,6 +25,7 @@ export const eventSchema = z
     boardTermId: z.string().min(1).nullable().default(null),
     nivelAcesso: z.enum(ACCESS_LEVEL_KEYS).default('irmaos'),
     exibirNaLinhaDoTempo: z.boolean().default(true),
+    grau: z.enum(SESSION_DEGREES).nullable().default(null),
   })
   .refine((data) => !data.dataFim || data.dataFim > data.dataInicio, {
     message: 'A data final deve ser posterior à data inicial.',

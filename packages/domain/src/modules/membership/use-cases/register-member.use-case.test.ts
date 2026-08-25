@@ -43,6 +43,7 @@ const input: MemberFormValues = {
   biografia: null,
   redesSociais: { instagram: null, facebook: null, linkedin: null },
   observacoes: null,
+  autorizaDivulgacaoExterna: false,
 };
 
 function buildUseCase() {

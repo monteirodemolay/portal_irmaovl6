@@ -77,6 +77,10 @@ import type { IEventAttendanceRepository } from '../modules/agenda/repositories/
 import type { IPersonalEventRepository } from '../modules/agenda/repositories/personal-event.repository';
 import type { IPersonalTaskRepository } from '../modules/agenda/repositories/personal-task.repository';
 import type { IPersonalNoteRepository } from '../modules/agenda/repositories/personal-note.repository';
+import type { ArtTemplate } from '../modules/communication/entities/art-template.entity';
+import type { Publication } from '../modules/communication/entities/publication.entity';
+import type { IArtTemplateRepository } from '../modules/communication/repositories/art-template.repository';
+import type { IPublicationRepository } from '../modules/communication/repositories/publication.repository';
 import type { FileCategory } from '../modules/document-management/entities/file-category.entity';
 import type { IFileCategoryRepository } from '../modules/document-management/repositories/file-category.repository';
 import type { GalleryAlbum } from '../modules/gallery/entities/gallery-album.entity';
@@ -1541,5 +1545,66 @@ export class FakeGoogleCalendarService implements IGoogleCalendarService {
   }
   async revokeToken(token: string): Promise<void> {
     this.revokedTokens.push(token);
+  }
+}
+
+export class InMemoryArtTemplateRepository implements IArtTemplateRepository {
+  private readonly byId = new Map<string, ArtTemplate>();
+
+  async findById(id: string) {
+    return this.byId.get(id) ?? null;
+  }
+  async listAll(tenantId: string) {
+    return [...this.byId.values()].filter((t) => t.tenantId === tenantId);
+  }
+  async listActiveByType(tenantId: string, type: ArtTemplate['type']) {
+    return [...this.byId.values()].filter(
+      (t) => t.tenantId === tenantId && t.type === type && t.active,
+    );
+  }
+  async create(template: ArtTemplate) {
+    this.byId.set(template.id, template);
+  }
+  async update(template: ArtTemplate) {
+    this.byId.set(template.id, template);
+  }
+}
+
+export class InMemoryPublicationRepository implements IPublicationRepository {
+  private readonly byId = new Map<string, Publication>();
+
+  async findById(id: string) {
+    return this.byId.get(id) ?? null;
+  }
+  async listByStatus(tenantId: string, statuses: Publication['publicacaoStatus'][] | null) {
+    return [...this.byId.values()].filter(
+      (p) =>
+        p.tenantId === tenantId &&
+        p.deletedAt === null &&
+        (statuses === null || statuses.includes(p.publicacaoStatus)),
+    );
+  }
+  async findBySource(
+    tenantId: string,
+    sourceType: Publication['sourceType'],
+    sourceId: string,
+    scheduledForDay: string,
+  ) {
+    return (
+      [...this.byId.values()].find(
+        (p) =>
+          p.tenantId === tenantId &&
+          p.sourceType === sourceType &&
+          p.sourceId === sourceId &&
+          p.scheduledFor !== null &&
+          p.scheduledFor.toISOString().slice(0, 10) === scheduledForDay,
+      ) ?? null
+    );
+  }
+  async create(publication: Publication) {
+    this.byId.set(publication.id, publication);
+  }
+  async update(publication: Publication) {
+    this.byId.set(publication.id, publication);
   }
 }

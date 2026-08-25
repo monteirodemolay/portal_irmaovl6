@@ -43,6 +43,7 @@ const baseEvent: Event = {
   boardTermId: null,
   nivelAcesso: 'irmaos',
   exibirNaLinhaDoTempo: true,
+  grau: null,
   createdAt: new Date('2025-01-01'),
   updatedAt: new Date('2025-01-01'),
   createdBy: 'admin-1',
@@ -68,6 +69,7 @@ const input: EventFormValues = {
   boardTermId: null,
   nivelAcesso: 'irmaos',
   exibirNaLinhaDoTempo: true,
+  grau: null,
 };
 
 function buildUseCase() {

@@ -94,6 +94,15 @@ export const RESOURCE_KEYS = [
   // `requirePermission` — o critério é ser o destinatário, mesmo padrão já
   // documentado em `ListMyNotificationsUseCase`/`MarkNotificationAsReadUseCase`.
   'notification',
+  // Central de Comunicação — produção, aprovação e distribuição de artes
+  // institucionais (sessão, aniversário, campanha). Recurso próprio,
+  // separado de `announcement`/`notification`: aqui a saída é uma peça
+  // visual pra fora do Portal (Instagram/WhatsApp), com um fluxo de
+  // aprovação humana antes de qualquer publicação externa. O Chanceler
+  // ganha acesso recebendo um papel customizado com `communication:manage`
+  // — não existe checagem por cargo institucional (`BoardPosition`) no
+  // RBAC, que é só por papel de acesso.
+  'communication',
 ] as const;
 export type ResourceKey = (typeof RESOURCE_KEYS)[number];
 
@@ -158,6 +167,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<RoleKey, PermissionKey[]> = {
     'archiveMedia:manage',
     'quote:manage',
     'notification:manage',
+    'communication:manage',
   ],
   membro: [
     'tenant:read',

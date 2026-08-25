@@ -38,4 +38,10 @@ export interface Member extends BaseEntity {
   biografia: string | null;
   redesSociais: SocialLinks;
   observacoes: string | null;
+  /**
+   * Consentimento pra publicação EXTERNA (Instagram/WhatsApp) via Central de
+   * Comunicação — distinto de `PublicationSettings.profilePublished`
+   * (Diretório interno, módulo `central`). Opt-in, nunca opt-out.
+   */
+  autorizaDivulgacaoExterna: boolean;
 }

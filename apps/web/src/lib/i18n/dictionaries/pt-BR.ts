@@ -20,6 +20,7 @@ export const dictionary = {
     agenda: 'Agenda / Eventos',
     gallery: 'Galeria',
     acervo: 'Acervo VL6',
+    comunicacao: 'Central de Comunicação',
     conteudo: 'Conteúdo',
     pessoas: 'Pessoas & Loja',
     integrations: 'Integrações',

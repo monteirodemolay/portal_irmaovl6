@@ -103,6 +103,7 @@ async function parseMemberForm(
       linkedin: formData.get('linkedin') || null,
     },
     observacoes: formData.get('observacoes') || null,
+    autorizaDivulgacaoExterna: false,
   };
 
   return normalizeConjugeFields(memberSchema.parse(raw));
@@ -355,6 +356,7 @@ export async function updateMemberProfileAction(
         biografia: current.biografia,
         redesSociais: current.redesSociais,
         observacoes: current.observacoes,
+        autorizaDivulgacaoExterna: current.autorizaDivulgacaoExterna,
       }),
     );
   } catch {
@@ -454,6 +456,9 @@ export async function updateMemberIdentityAction(
           linkedin: textOrCurrentAdmin(formData, 'linkedin', current.redesSociais.linkedin),
         },
         observacoes: textOrCurrentAdmin(formData, 'observacoes', current.observacoes),
+        autorizaDivulgacaoExterna: formData.has('autorizaDivulgacaoExterna')
+          ? formData.get('autorizaDivulgacaoExterna') === 'on'
+          : current.autorizaDivulgacaoExterna,
       }),
     );
   } catch {
@@ -652,6 +657,7 @@ async function registerImportRow(
         biografia: null,
         redesSociais: { instagram: null, facebook: null, linkedin: null },
         observacoes: null,
+        autorizaDivulgacaoExterna: false,
       }),
     );
   } catch {

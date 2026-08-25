@@ -1,4 +1,4 @@
-import type { AccessLevel, EventKind } from '@vl6/shared';
+import type { AccessLevel, EventKind, SessionDegree } from '@vl6/shared';
 import type { BaseEntity } from '../../../shared/base-entity';
 
 export interface Event extends BaseEntity {
@@ -30,4 +30,11 @@ export interface Event extends BaseEntity {
   nivelAcesso: AccessLevel;
   /** Se `true`, o evento aparece na Linha do Tempo do Acervo VL6. */
   exibirNaLinhaDoTempo: boolean;
+  /**
+   * Grau da Sessão (Central de Comunicação, docs/architecture) — `null` pra
+   * tipos de evento que não são sessão, ou sessões legadas sem essa
+   * informação. Preenche automaticamente o gerador de arte, nunca exigido
+   * na Agenda em si.
+   */
+  grau: SessionDegree | null;
 }
