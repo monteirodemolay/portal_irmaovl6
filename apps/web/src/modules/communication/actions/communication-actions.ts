@@ -10,6 +10,13 @@ import { createServerContainer, VercelBlobStorageAdapter } from '@vl6/infra';
 import type { TemplateField } from '@vl6/domain';
 import { requireSession } from '@/lib/auth/require-session';
 
+// O padrão do plano Hobby (10s) já se mostrou curto pra upload de imagem de
+// modelo/arte (conversão + envio ao Vercel Blob + Firestore) numa function
+// "fria" — a função é interrompida no meio e o cliente recebe uma resposta
+// cortada ("An unexpected response was received from the server."), em vez
+// de qualquer erro tratado por este arquivo.
+export const maxDuration = 30;
+
 const BASE_PATH = '/admin/comunicacao';
 const MAX_TEMPLATE_SIZE_BYTES = 15 * 1024 * 1024;
 const MAX_ASSET_SIZE_BYTES = 15 * 1024 * 1024;
