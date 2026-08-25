@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState, useRef, useState } from 'react';
+import { useActionState, useEffect, useRef, useState } from 'react';
 import { useFormStatus } from 'react-dom';
 import { upload } from '@vercel/blob/client';
 import type { TemplateField } from '@vl6/domain';
@@ -123,6 +123,24 @@ export function TemplateFieldEditor({ mode, action, initial }: TemplateFieldEdit
   const canvasRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const selected = selectedIndex !== null ? (fields[selectedIndex] ?? null) : null;
+
+  // Escala real da prévia (px exibido ÷ px natural da imagem) — a caixa da
+  // prévia agora se adapta à altura da tela (`height: min(65vh, 640px)`),
+  // então seu tamanho em CSS px muda a cada resolução. Sem medir isso, o
+  // rótulo de cada campo usava um divisor fixo (`fontSizePx / 2.4`) sem
+  // nenhuma relação com o tamanho real da caixa, deixando o texto
+  // desproporcional (pequeno demais em telas onde a prévia encolhe mais).
+  const [previewScale, setPreviewScale] = useState(1);
+  useEffect(() => {
+    const el = canvasRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver((entries) => {
+      const width = entries[0]?.contentRect.width;
+      if (width) setPreviewScale(width / naturalSize.width);
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [naturalSize.width, previewUrl]);
 
   function updateSelected(patch: Partial<TemplateField>) {
     if (selectedIndex === null) return;
@@ -328,7 +346,7 @@ export function TemplateFieldEditor({ mode, action, initial }: TemplateFieldEdit
                     top: `${field.yPercent}%`,
                     borderColor: index === selectedIndex ? '#d4af37' : 'rgba(255,255,255,0.7)',
                     color: field.color,
-                    fontSize: Math.max(10, field.fontSizePx / 2.4),
+                    fontSize: Math.max(8, field.fontSizePx * previewScale),
                     background: 'rgba(255,255,255,0.55)',
                   }}
                 >
