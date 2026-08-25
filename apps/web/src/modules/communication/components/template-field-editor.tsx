@@ -26,6 +26,8 @@ export interface TemplateFieldEditorProps {
     name: string;
     type: ArtTemplateType;
     backgroundUrl: string | null;
+    backgroundWidth: number | null;
+    backgroundHeight: number | null;
     outputFormats: PublicationOutputFormat[];
     fields: TemplateField[];
     active: boolean;
@@ -81,7 +83,15 @@ export function TemplateFieldEditor({ mode, action, initial }: TemplateFieldEdit
   const [backgroundUrl, setBackgroundUrl] = useState<string | null>(initial.backgroundUrl);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
-  const [naturalSize, setNaturalSize] = useState({ width: 1080, height: 1350 });
+  // Em modo "edit" a imagem de fundo já existe no Blob — sem carregar as
+  // dimensões reais aqui, a caixa da prévia ficava com a proporção padrão
+  // (1080x1350) mesmo quando o modelo real era, por exemplo, Story
+  // (1080x1920), cortando a imagem visualmente sem que o arquivo em si
+  // estivesse errado.
+  const [naturalSize, setNaturalSize] = useState({
+    width: initial.backgroundWidth ?? 1080,
+    height: initial.backgroundHeight ?? 1350,
+  });
   const [dragIndex, setDragIndex] = useState<number | null>(null);
 
   const canvasRef = useRef<HTMLDivElement>(null);

@@ -29,6 +29,8 @@ export default async function EditArtTemplatePage({ params }: { params: Promise<
           name: template.name,
           type: template.type,
           backgroundUrl: template.backgroundUrl,
+          backgroundWidth: template.backgroundWidth,
+          backgroundHeight: template.backgroundHeight,
           outputFormats: template.outputFormats,
           fields: template.fields,
           active: template.active,

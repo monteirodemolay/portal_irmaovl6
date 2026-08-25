@@ -29,6 +29,8 @@ export default async function NewArtTemplatePage() {
           name: '',
           type: 'session',
           backgroundUrl: null,
+          backgroundWidth: null,
+          backgroundHeight: null,
           outputFormats: ['feed'],
           fields: [],
           active: true,
