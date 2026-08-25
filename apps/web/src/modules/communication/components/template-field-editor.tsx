@@ -65,18 +65,25 @@ export function TemplateFieldEditor({ mode, action, initial }: TemplateFieldEdit
     new Set(initial.outputFormats.length > 0 ? initial.outputFormats : ['feed']),
   );
   const [fields, setFields] = useState<TemplateField[]>(initial.fields);
-  const [selectedKey, setSelectedKey] = useState<string | null>(initial.fields[0]?.key ?? null);
+  // Seleção por índice, nunca pela `key` do campo — `key` é o próprio valor
+  // que o formulário deixa o Administrador editar ao lado ("Chave (usada
+  // pra preencher automaticamente)"); rastrear a seleção por ela fazia o
+  // painel de edição sumir a cada letra digitada, porque o campo editado
+  // deixava de bater com a seleção antiga no mesmo instante em que mudava.
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(
+    initial.fields.length > 0 ? 0 : null,
+  );
   const [previewUrl, setPreviewUrl] = useState<string | null>(initial.backgroundUrl);
   const [naturalSize, setNaturalSize] = useState({ width: 1080, height: 1350 });
-  const [dragKey, setDragKey] = useState<string | null>(null);
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
 
   const canvasRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const selected = fields.find((f) => f.key === selectedKey) ?? null;
+  const selected = selectedIndex !== null ? (fields[selectedIndex] ?? null) : null;
 
   function updateSelected(patch: Partial<TemplateField>) {
-    if (!selectedKey) return;
-    setFields((prev) => prev.map((f) => (f.key === selectedKey ? { ...f, ...patch } : f)));
+    if (selectedIndex === null) return;
+    setFields((prev) => prev.map((f, i) => (i === selectedIndex ? { ...f, ...patch } : f)));
   }
 
   function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
@@ -89,36 +96,38 @@ export function TemplateFieldEditor({ mode, action, initial }: TemplateFieldEdit
     img.src = url;
   }
 
-  function handlePointerDown(key: string) {
+  function handlePointerDown(index: number) {
     return (event: React.PointerEvent) => {
       event.preventDefault();
-      setSelectedKey(key);
-      setDragKey(key);
+      setSelectedIndex(index);
+      setDragIndex(index);
     };
   }
 
   function handleCanvasPointerMove(event: React.PointerEvent) {
-    if (!dragKey || !canvasRef.current) return;
+    if (dragIndex === null || !canvasRef.current) return;
     const rect = canvasRef.current.getBoundingClientRect();
     const xPercent = Math.min(100, Math.max(0, ((event.clientX - rect.left) / rect.width) * 100));
     const yPercent = Math.min(100, Math.max(0, ((event.clientY - rect.top) / rect.height) * 100));
-    setFields((prev) => prev.map((f) => (f.key === dragKey ? { ...f, xPercent, yPercent } : f)));
+    setFields((prev) => prev.map((f, i) => (i === dragIndex ? { ...f, xPercent, yPercent } : f)));
   }
 
   function handleCanvasPointerUp() {
-    setDragKey(null);
+    setDragIndex(null);
   }
 
   function addField() {
     const field = newField(50, 50);
-    setFields((prev) => [...prev, field]);
-    setSelectedKey(field.key);
+    setFields((prev) => {
+      setSelectedIndex(prev.length);
+      return [...prev, field];
+    });
   }
 
   function removeSelected() {
-    if (!selectedKey) return;
-    setFields((prev) => prev.filter((f) => f.key !== selectedKey));
-    setSelectedKey(null);
+    if (selectedIndex === null) return;
+    setFields((prev) => prev.filter((_, i) => i !== selectedIndex));
+    setSelectedIndex(null);
   }
 
   function toggleFormat(format: PublicationOutputFormat) {
@@ -187,16 +196,16 @@ export function TemplateFieldEditor({ mode, action, initial }: TemplateFieldEdit
                 className="pointer-events-none absolute inset-0 h-full w-full object-cover"
                 draggable={false}
               />
-              {fields.map((field) => (
+              {fields.map((field, index) => (
                 <button
-                  key={field.key}
+                  key={index}
                   type="button"
-                  onPointerDown={handlePointerDown(field.key)}
+                  onPointerDown={handlePointerDown(index)}
                   className="absolute -translate-x-1/2 -translate-y-1/2 cursor-grab touch-none rounded border-2 px-2 py-1 text-xs font-semibold active:cursor-grabbing"
                   style={{
                     left: `${field.xPercent}%`,
                     top: `${field.yPercent}%`,
-                    borderColor: field.key === selectedKey ? '#d4af37' : 'rgba(255,255,255,0.7)',
+                    borderColor: index === selectedIndex ? '#d4af37' : 'rgba(255,255,255,0.7)',
                     color: field.color,
                     fontSize: Math.max(10, field.fontSizePx / 2.4),
                     background: 'rgba(255,255,255,0.55)',
