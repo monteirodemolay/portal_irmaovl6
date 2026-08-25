@@ -7,8 +7,8 @@ import type { TemplateField } from '@vl6/domain';
 import {
   ART_TEMPLATE_TYPE_LABELS,
   ART_TEMPLATE_TYPES,
+  PUBLICATION_OUTPUT_FORMAT_DIMENSIONS,
   PUBLICATION_OUTPUT_FORMAT_LABELS,
-  PUBLICATION_OUTPUT_FORMATS,
   TEMPLATE_FIELD_ALIGNMENTS,
   type ArtTemplateType,
   type PublicationOutputFormat,
@@ -32,6 +32,28 @@ export interface TemplateFieldEditorProps {
     fields: TemplateField[];
     active: boolean;
   };
+}
+
+/**
+ * Formato de saída sempre detectado pela proporção real da imagem enviada
+ * — nunca escolhido manualmente. Os checkboxes de "Formatos de saída"
+ * foram removidos: eles não recortavam nem redimensionavam nada (a
+ * publicação sempre exporta as dimensões reais do arquivo, só rotuladas
+ * de formas diferentes), então marcar mais de um só confundia sem gerar
+ * nenhum resultado visual diferente.
+ */
+function detectFormat(width: number, height: number): PublicationOutputFormat {
+  const ratio = width / height;
+  let closest: PublicationOutputFormat = 'feed';
+  let smallestDiff = Infinity;
+  for (const [format, dims] of Object.entries(PUBLICATION_OUTPUT_FORMAT_DIMENSIONS)) {
+    const diff = Math.abs(ratio - dims.width / dims.height);
+    if (diff < smallestDiff) {
+      smallestDiff = diff;
+      closest = format as PublicationOutputFormat;
+    }
+  }
+  return closest;
 }
 
 let nextFieldSeq = 0;
@@ -64,9 +86,6 @@ export function TemplateFieldEditor({ mode, action, initial }: TemplateFieldEdit
   const [name, setName] = useState(initial.name);
   const [type] = useState<ArtTemplateType>(initial.type);
   const [active, setActive] = useState(initial.active);
-  const [outputFormats, setOutputFormats] = useState<Set<PublicationOutputFormat>>(
-    new Set(initial.outputFormats.length > 0 ? initial.outputFormats : ['feed']),
-  );
   const [fields, setFields] = useState<TemplateField[]>(initial.fields);
   // Seleção por índice, nunca pela `key` do campo — `key` é o próprio valor
   // que o formulário deixa o Administrador editar ao lado ("Chave (usada
@@ -172,14 +191,7 @@ export function TemplateFieldEditor({ mode, action, initial }: TemplateFieldEdit
     setSelectedIndex(null);
   }
 
-  function toggleFormat(format: PublicationOutputFormat) {
-    setOutputFormats((prev) => {
-      const next = new Set(prev);
-      if (next.has(format)) next.delete(format);
-      else next.add(format);
-      return next;
-    });
-  }
+  const detectedFormat = detectFormat(naturalSize.width, naturalSize.height);
 
   return (
     <form action={formAction} className="flex flex-col gap-6">
@@ -187,9 +199,7 @@ export function TemplateFieldEditor({ mode, action, initial }: TemplateFieldEdit
       <input type="hidden" name="backgroundUrl" value={backgroundUrl ?? ''} />
       <input type="hidden" name="backgroundWidth" value={naturalSize.width} />
       <input type="hidden" name="backgroundHeight" value={naturalSize.height} />
-      {[...outputFormats].map((format) => (
-        <input key={format} type="hidden" name="outputFormats" value={format} />
-      ))}
+      <input type="hidden" name="outputFormats" value={detectedFormat} />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_340px]">
         <div className="flex flex-col gap-3">
@@ -233,8 +243,12 @@ export function TemplateFieldEditor({ mode, action, initial }: TemplateFieldEdit
               onPointerMove={handleCanvasPointerMove}
               onPointerUp={handleCanvasPointerUp}
               onPointerLeave={handleCanvasPointerUp}
-              className="border-border relative w-full select-none overflow-hidden rounded-lg border"
-              style={{ aspectRatio: `${naturalSize.width} / ${naturalSize.height}` }}
+              className="border-border relative mx-auto select-none overflow-hidden rounded-lg border"
+              style={{
+                aspectRatio: `${naturalSize.width} / ${naturalSize.height}`,
+                maxHeight: '65vh',
+                maxWidth: '100%',
+              }}
             >
               <img
                 src={previewUrl}
@@ -294,21 +308,12 @@ export function TemplateFieldEditor({ mode, action, initial }: TemplateFieldEdit
             </div>
           )}
 
-          <div className="flex flex-col gap-1.5">
-            <span className="text-sm font-medium">Formatos de saída</span>
-            <div className="flex flex-wrap gap-2">
-              {PUBLICATION_OUTPUT_FORMATS.map((format) => (
-                <label key={format} className="flex items-center gap-1.5 text-sm">
-                  <input
-                    type="checkbox"
-                    checked={outputFormats.has(format)}
-                    onChange={() => toggleFormat(format)}
-                  />
-                  {PUBLICATION_OUTPUT_FORMAT_LABELS[format]}
-                </label>
-              ))}
-            </div>
-          </div>
+          {previewUrl && (
+            <p className="text-muted text-xs">
+              Formato: {PUBLICATION_OUTPUT_FORMAT_LABELS[detectedFormat]} ({naturalSize.width}×
+              {naturalSize.height}px) — detectado pela imagem enviada.
+            </p>
+          )}
 
           {mode === 'edit' && (
             <label className="flex items-center gap-2 text-sm">
@@ -318,7 +323,7 @@ export function TemplateFieldEditor({ mode, action, initial }: TemplateFieldEdit
                 checked={active}
                 onChange={(e) => setActive(e.target.checked)}
               />
-              Modelo ativo (disponível pra gerar novas artes)
+              Modelo ativo
             </label>
           )}
 
@@ -348,9 +353,9 @@ export function TemplateFieldEditor({ mode, action, initial }: TemplateFieldEdit
                   />
                 </FormField>
                 <FormField
-                  label="Chave (usada pra preencher automaticamente)"
+                  label="Chave"
                   htmlFor="field-key"
-                  description="Use sessionName, date, time, degree ou location pra sincronizar com a Agenda; memberName, memberPhotoUrl, day ou month pra aniversário."
+                  description="sessionName/date/time/degree/location (Agenda) ou memberName/memberPhotoUrl/day/month (aniversário)."
                 >
                   <Input
                     id="field-key"
@@ -359,7 +364,7 @@ export function TemplateFieldEditor({ mode, action, initial }: TemplateFieldEdit
                   />
                 </FormField>
                 <div className="grid grid-cols-2 gap-3">
-                  <FormField label="Tamanho da fonte (px)" htmlFor="field-size">
+                  <FormField label="Fonte (px)" htmlFor="field-size">
                     <Input
                       id="field-size"
                       type="number"
@@ -391,7 +396,7 @@ export function TemplateFieldEditor({ mode, action, initial }: TemplateFieldEdit
                     ))}
                   </Select>
                 </FormField>
-                <FormField label="Tamanho máximo do texto" htmlFor="field-max">
+                <FormField label="Máx. caracteres" htmlFor="field-max">
                   <Input
                     id="field-max"
                     type="number"
