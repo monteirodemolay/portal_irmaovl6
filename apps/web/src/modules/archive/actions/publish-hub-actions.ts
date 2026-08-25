@@ -46,8 +46,8 @@ const DOCUMENT_MIME_TYPES = [
   'application/vnd.openxmlformats-officedocument.presentationml.presentation',
 ];
 
-// Alinhado ao `bodySizeLimit: '10mb'` de Server Actions (next.config.ts) —
-// cada arquivo do lote vira uma chamada de Server Action independente
+// Dentro do teto de `bodySizeLimit: '20mb'` de Server Actions (next.config.ts)
+// — cada arquivo do lote vira uma chamada de Server Action independente
 // (ver `uploadArchiveMediaAction`), então o limite é por arquivo, não por lote.
 const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024;
 

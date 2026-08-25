@@ -41,8 +41,8 @@ const ALLOWED_FILE_MIME_TYPES: Record<FileKind, string[]> = {
   video: ['video/mp4', 'video/webm'],
 };
 
-// Alinhado ao `bodySizeLimit: '10mb'` de Server Actions (next.config.ts) —
-// sem isto, um arquivo maior falha com o erro genérico do Next em vez de
+// Dentro do teto de `bodySizeLimit: '20mb'` de Server Actions (next.config.ts)
+// — acima dele, um arquivo maior falha com o erro genérico do Next em vez de
 // uma mensagem amigável.
 const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024;
 

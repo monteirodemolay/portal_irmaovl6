@@ -12,9 +12,14 @@ const nextConfig: NextConfig = {
   // empacotados por ele. Marcá-los externos faz o Next usar `require()` do
   // Node direto em vez de empacotar.
   serverExternalPackages: ['pdf-parse', 'pdfjs-dist'],
+  // Alinhado ao maior limite de arquivo aceito por uma Server Action no app
+  // (MAX_TEMPLATE_SIZE_BYTES/MAX_ASSET_SIZE_BYTES = 15 MB, em
+  // communication-actions.ts) — um limite global menor que a validação da
+  // própria ação faz o Next rejeitar o corpo antes do código da aplicação
+  // rodar, sem log nem tela de erro tratada (só a página de erro genérica).
   experimental: {
     serverActions: {
-      bodySizeLimit: '10mb',
+      bodySizeLimit: '20mb',
     },
   },
   // Hardening da API REST (docs/architecture/10-roadmap.md v1.3) — cabeçalhos
