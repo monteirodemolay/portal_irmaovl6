@@ -347,3 +347,4 @@ export * from './modules/archive/use-cases/migrate-library-item.use-case';
 export * from './modules/archive/use-cases/record-archive-media-view.use-case';
 export * from './modules/archive/use-cases/list-most-viewed-archive-items.use-case';
 export * from './modules/archive/use-cases/get-storage-usage-by-board-term.use-case';
+export * from './modules/archive/use-cases/get-archive-media-counts-by-event.use-case';

@@ -77,6 +77,7 @@ import {
   RecordArchiveMediaViewUseCase,
   ListMostViewedArchiveItemsUseCase,
   GetStorageUsageByBoardTermUseCase,
+  GetArchiveMediaCountsByEventUseCase,
   FindBoardTermForDateUseCase,
   CreateBoardTermUseCase,
   CreateCommitteeUseCase,
@@ -1264,6 +1265,10 @@ export function createServerContainer() {
       archiveMediaRepository: repositories.archiveMedia,
       mediaAssetRepository: repositories.mediaAsset,
       boardTermRepository: repositories.boardTerm,
+    }),
+    getArchiveMediaCountsByEvent: new GetArchiveMediaCountsByEventUseCase({
+      archiveItemRepository: repositories.archiveItem,
+      archiveMediaRepository: repositories.archiveMedia,
     }),
   };
 

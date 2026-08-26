@@ -1,9 +1,9 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import type { Event } from '@vl6/domain';
+import type { ArchiveMediaCounts, Event } from '@vl6/domain';
 import type { ArchiveMediaTypeKey } from '@vl6/shared';
-import { Badge, Button, Card, CardContent } from '@vl6/ui';
+import { Badge, Button } from '@vl6/ui';
 import {
   loadArchiveItemSummaryAction,
   uploadArchiveMediaAction,
@@ -12,7 +12,7 @@ import {
 import { captureVideoPosterFrame } from '../../lib/capture-video-poster';
 import { optimizeImageUpload } from '../../lib/optimize-image-upload';
 import { UnifiedDropzone } from './unified-dropzone';
-import { BatchMetadataPanel } from './batch-metadata-panel';
+import { EventContextBar, MediaStatsRow, StepTitle } from './wizard-chrome';
 
 type QueueItemStatus = 'pendente' | 'enviando' | 'concluido' | 'erro';
 
@@ -222,40 +222,46 @@ export function UploadStep({ event, initialArchiveItemId, onBack, onContinue }: 
     void uploadOne(item);
   }
 
-  const completedMediaIds = items
-    .filter((item) => item.status === 'concluido' && item.archiveMediaId)
-    .map((item) => item.archiveMediaId as string);
   const hasInFlight = items.some(
     (item) => item.status === 'enviando' || item.status === 'pendente',
   );
 
+  const counts: ArchiveMediaCounts = items.reduce<ArchiveMediaCounts>(
+    (acc, item) => {
+      if (item.status === 'concluido' && item.mediaType) acc[item.mediaType] += 1;
+      return acc;
+    },
+    { foto: 0, video: 0, audio: 0, documento: 0 },
+  );
+
   return (
-    <div className="flex flex-col gap-6">
-      <Card>
-        <CardContent className="flex items-center justify-between gap-3 p-5">
-          <div>
-            <p className="text-muted text-xs">Evento selecionado</p>
-            <p className="font-medium">{event.titulo}</p>
-          </div>
-          <Button type="button" variant="outline" size="sm" onClick={onBack}>
-            Trocar evento
-          </Button>
-        </CardContent>
-      </Card>
+    <>
+      <EventContextBar
+        title={event.titulo}
+        date={event.dataInicio}
+        local={event.local}
+        onChangeEvent={onBack}
+      />
+      <div className="border-border bg-surface rounded-b-xl border border-t-0 p-6 shadow-sm">
+        <StepTitle
+          n={2}
+          title="Adicione todos os arquivos de uma só vez"
+          text="Fotografias, vídeos, áudios e documentos podem ser enviados no mesmo lote."
+        />
 
-      <UnifiedDropzone onFilesSelected={handleFilesSelected} disabled={isLoadingExisting} />
+        <UnifiedDropzone onFilesSelected={handleFilesSelected} disabled={isLoadingExisting} />
 
-      {items.length > 0 && (
-        <Card>
-          <CardContent className="flex flex-col gap-3 p-5">
-            <p className="font-medium">Fila de envio ({items.length})</p>
-            <ul className="flex flex-col gap-2">
+        {items.length > 0 && (
+          <div className="mt-5 flex flex-col gap-3">
+            <MediaStatsRow counts={counts} />
+            <p className="text-sm font-medium">Fila de envio ({items.length})</p>
+            <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
               {items.map((item) => {
                 const badge = STATUS_BADGE[item.status];
                 return (
                   <li
                     key={item.id}
-                    className="border-border flex items-center justify-between gap-3 rounded border px-3 py-2 text-sm"
+                    className="border-border flex items-center justify-between gap-3 rounded-lg border px-3 py-2 text-sm"
                   >
                     <div className="flex min-w-0 flex-col">
                       <span className="truncate font-medium">{item.fileName}</span>
@@ -289,32 +295,24 @@ export function UploadStep({ event, initialArchiveItemId, onBack, onContinue }: 
                 );
               })}
             </ul>
-          </CardContent>
-        </Card>
-      )}
+          </div>
+        )}
 
-      {archiveItemId && completedMediaIds.length > 0 && (
-        <BatchMetadataPanel
-          archiveItemId={archiveItemId}
-          targetArchiveMediaIds={completedMediaIds}
-          onApplied={() => {}}
-        />
-      )}
+        <p className="text-muted mt-5 text-sm">
+          Salvo automaticamente como rascunho a cada arquivo enviado — você pode sair e continuar
+          depois pela lista &quot;Continuar rascunho&quot; do passo 1.
+        </p>
 
-      <p className="text-muted text-sm">
-        Salvo automaticamente como rascunho a cada arquivo enviado — você pode sair e continuar
-        depois pela lista &quot;Continuar rascunho&quot; do passo 1.
-      </p>
-
-      <div>
-        <Button
-          type="button"
-          disabled={!archiveItemId || hasInFlight}
-          onClick={() => archiveItemId && onContinue(archiveItemId)}
-        >
-          Continuar
-        </Button>
+        <div className="mt-5">
+          <Button
+            type="button"
+            disabled={!archiveItemId || hasInFlight}
+            onClick={() => archiveItemId && onContinue(archiveItemId)}
+          >
+            Continuar →
+          </Button>
+        </div>
       </div>
-    </div>
+    </>
   );
 }

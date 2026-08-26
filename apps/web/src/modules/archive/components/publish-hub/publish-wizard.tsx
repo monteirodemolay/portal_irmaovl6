@@ -1,67 +1,32 @@
 'use client';
 
 import { useState } from 'react';
-import type { ArchiveItem, BoardTerm, Event } from '@vl6/domain';
-import { cn } from '@vl6/ui';
+import type { ArchiveItem, ArchiveMediaCounts, BoardTerm, Event } from '@vl6/domain';
+import { ClassifyStep } from './classify-step';
 import { EventStep } from './event-step';
+import { OrganizeStep } from './organize-step';
+import { PublishStep } from './publish-step';
+import { ReviewSummaryStep } from './review-summary-step';
 import { UploadStep } from './upload-step';
-import { ReviewStep } from './review-step';
-
-export type PublishWizardStep = 'evento' | 'enviar' | 'organizar';
-
-const STEPS: { key: PublishWizardStep; label: string }[] = [
-  { key: 'evento', label: 'Evento' },
-  { key: 'enviar', label: 'Enviar' },
-  { key: 'organizar', label: 'Organizar / Publicar' },
-];
-
-function WizardStepper({ current }: { current: PublishWizardStep }) {
-  const currentIndex = STEPS.findIndex((step) => step.key === current);
-  return (
-    <ol className="flex items-center gap-2 text-sm">
-      {STEPS.map((step, index) => {
-        const isActive = step.key === current;
-        const isDone = index < currentIndex;
-        return (
-          <li key={step.key} className="flex items-center gap-2">
-            {index > 0 && <span className="text-muted">→</span>}
-            <span
-              className={cn(
-                'flex items-center gap-1.5 rounded-full px-3 py-1 font-medium',
-                isActive && 'bg-primary text-white',
-                isDone && !isActive && 'bg-accent/20 text-primary-dark',
-                !isActive && !isDone && 'text-muted bg-surface',
-              )}
-            >
-              <span
-                className={cn(
-                  'flex h-5 w-5 items-center justify-center rounded-full text-xs',
-                  isActive ? 'bg-white/20' : 'bg-primary/10',
-                )}
-              >
-                {index + 1}
-              </span>
-              {step.label}
-            </span>
-          </li>
-        );
-      })}
-    </ol>
-  );
-}
+import { useArchiveItemWorkspace } from './use-archive-item-workspace';
+import { WizardStepper, type PublishWizardStep } from './wizard-chrome';
 
 export interface PublishWizardProps {
   events: Event[];
   drafts: ArchiveItem[];
   boardTerms: BoardTerm[];
+  mediaCountsByEventId: Record<string, ArchiveMediaCounts>;
 }
 
 /**
- * Wizard de 4 passos da Central de Publicação — Evento → Enviar → Organizar
- * → Publicar (docs/architecture/11-acervo-vl6.md §11.5/§11.6). Os passos 1
- * e 2 são o coração funcional da Fase 2; "Organizar/Publicar" (junto aqui
- * no mesmo componente, `ReviewStep`) é um esqueleto de resumo — sem
- * drag-reorder, capa ou checklist, aprofundado na Fase 3.
+ * Wizard de 6 passos da Central de Publicação — Evento → Arquivos →
+ * Classificação → Organização → Revisão → Publicação
+ * (docs/architecture/11-acervo-vl6.md §11.5/§11.6), redesenhado a partir
+ * do mock-up aprovado pelo Administrador. Nenhuma regra de negócio nova:
+ * "Classificação" reaproveita `updateArchiveMediaBatchAction`;
+ * "Organização"/"Revisão"/"Publicação" são o antigo `ReviewStep`
+ * monolítico dividido em telas, todos operando sobre o mesmo
+ * `useArchiveItemWorkspace` pra não recarregar dados ao trocar de passo.
  *
  * Estado do lote (evento selecionado, `archiveItemId` em uso) vive
  * client-side, em memória — nada de sessão de upload persistida no
@@ -70,7 +35,12 @@ export interface PublishWizardProps {
  * === 'rascunho'`), então recarregar a página não perde os dados — só o
  * progresso da navegação entre passos.
  */
-export function PublishWizard({ events, drafts, boardTerms }: PublishWizardProps) {
+export function PublishWizard({
+  events,
+  drafts,
+  boardTerms,
+  mediaCountsByEventId,
+}: PublishWizardProps) {
   const [step, setStep] = useState<PublishWizardStep>('evento');
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [archiveItemId, setArchiveItemId] = useState<string | null>(null);
@@ -78,45 +48,156 @@ export function PublishWizard({ events, drafts, boardTerms }: PublishWizardProps
   function handleEventSelected(event: Event, existingArchiveItemId: string | null) {
     setSelectedEvent(event);
     setArchiveItemId(existingArchiveItemId);
-    setStep('enviar');
+    setStep('arquivos');
   }
 
   function handleResumeDraft(draft: ArchiveItem) {
     const event = events.find((candidate) => candidate.id === draft.eventId) ?? null;
     setSelectedEvent(event);
     setArchiveItemId(draft.id);
-    setStep('enviar');
+    setStep('arquivos');
+  }
+
+  function handleNavigate(target: PublishWizardStep) {
+    // Só permite voltar (ou ficar no atual) — avançar exige concluir o
+    // passo corrente, mesma regra do wizard antigo (3 passos).
+    const order: PublishWizardStep[] = [
+      'evento',
+      'arquivos',
+      'classificacao',
+      'organizacao',
+      'revisao',
+      'publicacao',
+    ];
+    if (order.indexOf(target) <= order.indexOf(step)) setStep(target);
   }
 
   return (
-    <div className="flex flex-col gap-6">
-      <WizardStepper current={step} />
+    <div className="flex flex-col gap-5">
+      <WizardStepper current={step} onNavigate={handleNavigate} />
 
       {step === 'evento' && (
         <EventStep
           events={events}
           drafts={drafts}
           boardTerms={boardTerms}
+          mediaCountsByEventId={mediaCountsByEventId}
           onEventSelected={handleEventSelected}
           onResumeDraft={handleResumeDraft}
         />
       )}
 
-      {step === 'enviar' && selectedEvent && (
+      {step === 'arquivos' && selectedEvent && (
         <UploadStep
           event={selectedEvent}
           initialArchiveItemId={archiveItemId}
           onBack={() => setStep('evento')}
           onContinue={(itemId) => {
             setArchiveItemId(itemId);
-            setStep('organizar');
+            setStep('classificacao');
           }}
         />
       )}
 
-      {step === 'organizar' && archiveItemId && (
-        <ReviewStep archiveItemId={archiveItemId} onBack={() => setStep('enviar')} />
+      {step === 'classificacao' && selectedEvent && archiveItemId && (
+        <ClassifyStep
+          archiveItemId={archiveItemId}
+          eventTitle={selectedEvent.titulo}
+          eventDate={selectedEvent.dataInicio}
+          eventLocal={selectedEvent.local}
+          onBack={() => setStep('arquivos')}
+          onContinue={() => setStep('organizacao')}
+        />
       )}
+
+      {(step === 'organizacao' || step === 'revisao' || step === 'publicacao') &&
+        selectedEvent &&
+        archiveItemId && (
+          <WorkspaceSteps
+            archiveItemId={archiveItemId}
+            event={selectedEvent}
+            activeSubStep={step}
+            onBackToClassify={() => setStep('classificacao')}
+            onContinueToReview={() => setStep('revisao')}
+            onBackToOrganize={() => setStep('organizacao')}
+            onContinueToPublish={() => setStep('publicacao')}
+            onBackToReview={() => setStep('revisao')}
+            onDone={() => {
+              setSelectedEvent(null);
+              setArchiveItemId(null);
+              setStep('evento');
+            }}
+          />
+        )}
     </div>
+  );
+}
+
+/**
+ * Os passos "Organização"/"Revisão"/"Publicação" compartilham o mesmo
+ * `useArchiveItemWorkspace` — por isso vivem sob um único componente que
+ * monta o hook uma vez e só troca qual sub-tela renderizar, em vez de cada
+ * `step === X` do wizard remontar o workspace do zero (perderia o cache de
+ * `summary`/`checklist` ao ir e voltar entre esses três passos).
+ */
+function WorkspaceSteps({
+  archiveItemId,
+  event,
+  activeSubStep,
+  onBackToClassify,
+  onContinueToReview,
+  onBackToOrganize,
+  onContinueToPublish,
+  onBackToReview,
+  onDone,
+}: {
+  archiveItemId: string;
+  event: Event;
+  activeSubStep: 'organizacao' | 'revisao' | 'publicacao';
+  onBackToClassify: () => void;
+  onContinueToReview: () => void;
+  onBackToOrganize: () => void;
+  onContinueToPublish: () => void;
+  onBackToReview: () => void;
+  onDone: () => void;
+}) {
+  const workspace = useArchiveItemWorkspace(archiveItemId);
+
+  if (activeSubStep === 'organizacao') {
+    return (
+      <OrganizeStep
+        workspace={workspace}
+        eventTitle={event.titulo}
+        eventDate={event.dataInicio}
+        eventLocal={event.local}
+        onBack={onBackToClassify}
+        onContinue={onContinueToReview}
+      />
+    );
+  }
+
+  if (activeSubStep === 'revisao') {
+    return (
+      <ReviewSummaryStep
+        workspace={workspace}
+        eventId={event.id}
+        eventTitle={event.titulo}
+        eventDate={event.dataInicio}
+        eventLocal={event.local}
+        onBack={onBackToOrganize}
+        onContinue={onContinueToPublish}
+      />
+    );
+  }
+
+  return (
+    <PublishStep
+      workspace={workspace}
+      eventTitle={event.titulo}
+      eventDate={event.dataInicio}
+      eventLocal={event.local}
+      onBack={onBackToReview}
+      onDone={onDone}
+    />
   );
 }

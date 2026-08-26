@@ -12,13 +12,14 @@ export default async function PublicarPage() {
   const session = await requirePagePermission('archiveItem:create');
   const container = createServerContainer();
 
-  const [eventsPage, draftsPage, boardTerms] = await Promise.all([
+  const [eventsPage, draftsPage, boardTerms, mediaCountsByEventId] = await Promise.all([
     // Limite alto o bastante pra nunca cortar Sessões retroativas de
     // Gestões antigas — a paginação real (`hasMore`) não é usada aqui, o
     // wizard precisa do histórico completo pra selecionar qualquer Sessão.
     container.useCases.listAllEvents.execute(session.authContext, { limit: 5000 }),
     container.repositories.archiveItem.findByTenant(session.authContext.tenantId, { limit: 100 }),
     container.repositories.boardTerm.listByTenant(session.authContext.tenantId),
+    container.useCases.getArchiveMediaCountsByEvent.execute(session.authContext),
   ]);
 
   const drafts = draftsPage.items.filter((item) => item.publicacaoStatus === 'rascunho');
@@ -28,11 +29,16 @@ export default async function PublicarPage() {
       <div>
         <h1 className="font-display text-2xl font-semibold">Central de Publicação</h1>
         <p className="text-muted max-w-lg text-sm">
-          Envie fotos, vídeos, áudios e documentos de um Evento num só fluxo — Evento → Enviar →
-          Organizar → Publicar.
+          Registre um acontecimento e preserve a memória da Verdadeira Luz — Evento → Arquivos →
+          Classificação → Organização → Revisão → Publicação.
         </p>
       </div>
-      <PublishWizard events={eventsPage.items} drafts={drafts} boardTerms={boardTerms} />
+      <PublishWizard
+        events={eventsPage.items}
+        drafts={drafts}
+        boardTerms={boardTerms}
+        mediaCountsByEventId={mediaCountsByEventId}
+      />
     </div>
   );
 }
