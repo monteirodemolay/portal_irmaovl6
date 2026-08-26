@@ -51,20 +51,27 @@ export function DirectorySearchPanel({ filters }: { filters: DirectoryFiltersVal
       </div>
 
       <div className="flex flex-wrap gap-2">
-        {QUICK_CHIPS.map((chip) => (
-          <span
-            key={chip.label}
-            className={
-              chip.field === 'q' && !activeChip
-                ? 'border-primary bg-primary min-h-[30px] rounded-full border px-3.5 py-1 text-[11px] font-bold text-white'
-                : activeChip === chip.field
+        {QUICK_CHIPS.map((chip) => {
+          const isActive = chip.field === 'q' ? !activeChip : activeChip === chip.field;
+          // "Todos" limpa tudo (nova navegação); os demais levam direto pro
+          // campo correspondente em "Filtros refinados" — âncora pro próprio
+          // `<details>` (não um filho dentro dele) já abre ele sozinho por
+          // padrão do navegador ao focar no elemento de destino do fragmento.
+          const href = chip.field === 'q' ? '/irmaos' : '#filtros-avancados';
+          return (
+            <a
+              key={chip.label}
+              href={href}
+              className={
+                isActive
                   ? 'border-primary bg-primary min-h-[30px] rounded-full border px-3.5 py-1 text-[11px] font-bold text-white'
-                  : 'border-border bg-surface text-muted min-h-[30px] rounded-full border px-3.5 py-1 text-[11px] font-bold'
-            }
-          >
-            {chip.label}
-          </span>
-        ))}
+                  : 'border-border bg-surface text-muted hover:border-primary min-h-[30px] rounded-full border px-3.5 py-1 text-[11px] font-bold transition-colors'
+              }
+            >
+              {chip.label}
+            </a>
+          );
+        })}
       </div>
 
       <details id="filtros-avancados" className="border-border bg-surface rounded-xl border p-4">
