@@ -24,6 +24,7 @@ export default async function IrmaosLayout({ children }: { children: ReactNode }
       <TabNav
         items={[
           { href: '/irmaos', label: 'Diretório' },
+          { href: '/irmaos/negocios', label: 'Negócios & Serviços' },
           { href: '/irmaos/meu-espaco', label: 'Meu Espaço' },
         ]}
       />

@@ -87,6 +87,7 @@ export * from './modules/central/repositories/member-central-profile.repository'
 export * from './modules/central/repositories/publication-settings.repository';
 export * from './modules/central/repositories/publication-consent.repository';
 export * from './modules/central/dtos/public-member-profile.dto';
+export * from './modules/central/dtos/business-directory-entry.dto';
 export * from './modules/central/lib/resolve-area-atuacao';
 export * from './modules/central/lib/profile-completion';
 export * from './modules/central/lib/directory-metrics';
@@ -95,6 +96,7 @@ export * from './modules/central/use-cases/update-publication-settings.use-case'
 export * from './modules/central/use-cases/withdraw-from-directory.use-case';
 export * from './modules/central/use-cases/get-public-member-profile.use-case';
 export * from './modules/central/use-cases/search-directory.use-case';
+export * from './modules/central/use-cases/search-business-directory.use-case';
 export * from './modules/central/use-cases/suspend-central-profile.use-case';
 export * from './modules/central/use-cases/reactivate-central-profile.use-case';
 export * from './modules/central/use-cases/list-central-profiles-admin-view.use-case';

@@ -161,6 +161,7 @@ import {
   RequestDomainVerificationUseCase,
   ResolveTenantByHostUseCase,
   RevokeApiKeyUseCase,
+  SearchBusinessDirectoryUseCase,
   SearchDirectoryUseCase,
   SearchMembersUseCase,
   ListUpcomingAnniversariesUseCase,
@@ -556,6 +557,11 @@ export function createServerContainer() {
       boardTermRepository: repositories.boardTerm,
     }),
     searchDirectory: new SearchDirectoryUseCase({
+      memberRepository: repositories.member,
+      memberCentralProfileRepository: repositories.memberCentralProfile,
+      publicationSettingsRepository: repositories.publicationSettings,
+    }),
+    searchBusinessDirectory: new SearchBusinessDirectoryUseCase({
       memberRepository: repositories.member,
       memberCentralProfileRepository: repositories.memberCentralProfile,
       publicationSettingsRepository: repositories.publicationSettings,
