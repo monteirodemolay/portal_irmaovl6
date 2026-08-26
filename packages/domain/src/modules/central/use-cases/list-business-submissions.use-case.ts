@@ -48,6 +48,9 @@ export class ListBusinessSubmissionsUseCase {
           segmento: negocio.segmento,
           cidade: negocio.cidade,
           descricao: negocio.descricao,
+          logoUrl: negocio.logoUrl,
+          whatsappComercial: negocio.whatsappComercial,
+          emailComercial: negocio.emailComercial,
           status: negocio.status,
           updatedAt: negocio.updatedAt,
         });

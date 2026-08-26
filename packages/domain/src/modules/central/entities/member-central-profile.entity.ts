@@ -1,4 +1,4 @@
-import type { AreaAtuacaoKey, BusinessPublicationStatus } from '@vl6/shared';
+import type { AreaAtuacaoKey, BusinessPublicationStatus, FormaAtendimentoKey } from '@vl6/shared';
 import type { BaseEntity } from '../../../shared/base-entity';
 
 export interface CentralBusinessEntry {
@@ -10,6 +10,15 @@ export interface CentralBusinessEntry {
   cidade: string | null;
   telefoneComercial: string | null;
   siteUrl: string | null;
+  logoUrl: string | null;
+  produtosServicos: string[];
+  whatsappComercial: string | null;
+  emailComercial: string | null;
+  instagramComercial: string | null;
+  formasAtendimento: FormaAtendimentoKey[];
+  horarioFuncionamento: string | null;
+  ofereceDescontoIrmaos: boolean;
+  descontoDescricao: string | null;
   /**
    * Nunca vem do formulário do Irmão — sempre computado por
    * `UpdateCentralProfileUseCase` (novo/alterado vira `pending_review`) ou

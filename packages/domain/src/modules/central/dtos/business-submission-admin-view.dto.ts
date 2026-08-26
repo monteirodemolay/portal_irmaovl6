@@ -8,6 +8,9 @@ export interface BusinessSubmissionAdminViewDTO {
   segmento: string | null;
   cidade: string | null;
   descricao: string | null;
+  logoUrl: string | null;
+  whatsappComercial: string | null;
+  emailComercial: string | null;
   status: BusinessPublicationStatus;
   updatedAt: Date;
 }

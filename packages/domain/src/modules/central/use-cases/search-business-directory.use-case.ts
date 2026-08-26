@@ -20,6 +20,7 @@ export interface SearchBusinessDirectoryInput {
   termo?: string;
   segmento?: string;
   cidade?: string;
+  atendeOnline?: boolean;
 }
 
 export interface SearchBusinessDirectoryOutput {
@@ -70,6 +71,15 @@ export class SearchBusinessDirectoryUseCase {
           cidade: negocio.cidade,
           telefoneComercial: negocio.telefoneComercial,
           siteUrl: negocio.siteUrl,
+          logoUrl: negocio.logoUrl,
+          produtosServicos: negocio.produtosServicos,
+          whatsappComercial: negocio.whatsappComercial,
+          emailComercial: negocio.emailComercial,
+          instagramComercial: negocio.instagramComercial,
+          formasAtendimento: negocio.formasAtendimento,
+          horarioFuncionamento: negocio.horarioFuncionamento,
+          ofereceDescontoIrmaos: negocio.ofereceDescontoIrmaos,
+          descontoDescricao: negocio.descontoDescricao,
           responsavel: {
             memberId: dto.memberId,
             nomeCompleto: dto.nomeCompleto,
@@ -89,6 +99,7 @@ export class SearchBusinessDirectoryUseCase {
           entry.descricao,
           entry.cidade,
           entry.responsavel.nomeCompleto,
+          ...entry.produtosServicos,
         ]
           .filter((v): v is string => Boolean(v))
           .join(' ')
@@ -105,6 +116,10 @@ export class SearchBusinessDirectoryUseCase {
     if (input.cidade?.trim()) {
       const needleCidade = input.cidade.trim().toLowerCase();
       items = items.filter((entry) => entry.cidade?.toLowerCase().includes(needleCidade));
+    }
+
+    if (input.atendeOnline) {
+      items = items.filter((entry) => entry.formasAtendimento.includes('online'));
     }
 
     return ok({ items, totalEmpresas: allItems.length });

@@ -67,3 +67,18 @@ export const BUSINESS_PUBLICATION_STATUS_LABELS: Record<BusinessPublicationStatu
   published: 'Publicado',
   suspended: 'Suspenso',
 };
+
+/**
+ * Como o negócio atende — usado tanto no formulário (checkboxes) quanto no
+ * filtro do Diretório ("atende online" importa muito mais que cidade pra
+ * quem mora em outra praça). Array, não campo único: nada impede um negócio
+ * de atender presencial E online ao mesmo tempo.
+ */
+export const FORMA_ATENDIMENTO_KEYS = ['presencial', 'online', 'entrega'] as const;
+export type FormaAtendimentoKey = (typeof FORMA_ATENDIMENTO_KEYS)[number];
+
+export const FORMA_ATENDIMENTO_LABELS: Record<FormaAtendimentoKey, string> = {
+  presencial: 'Atende presencialmente',
+  online: 'Atende online/remoto',
+  entrega: 'Entrega/envio',
+};

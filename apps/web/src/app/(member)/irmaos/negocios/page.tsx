@@ -28,6 +28,7 @@ export default async function NegociosDiretorioPage({
     q: params.q || undefined,
     segmento: params.segmento || undefined,
     cidade: params.cidade || undefined,
+    online: params.online === '1' || undefined,
   };
 
   const container = createServerContainer();
@@ -35,6 +36,7 @@ export default async function NegociosDiretorioPage({
     termo: filters.q,
     segmento: filters.segmento,
     cidade: filters.cidade,
+    atendeOnline: filters.online,
   });
 
   if (!result.ok) {
@@ -76,6 +78,16 @@ export default async function NegociosDiretorioPage({
             Buscar
           </button>
         </div>
+        <label className="flex w-fit items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            name="online"
+            value="1"
+            defaultChecked={Boolean(filters.online)}
+            className="accent-primary"
+          />
+          Mostrar só quem atende online/remoto
+        </label>
       </form>
 
       <div className="border-border bg-surface flex items-start gap-3 rounded-xl border p-4 text-sm">

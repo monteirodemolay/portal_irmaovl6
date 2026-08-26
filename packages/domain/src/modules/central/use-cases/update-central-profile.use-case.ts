@@ -21,6 +21,10 @@ import type { IMemberRepository } from '../../membership/repositories/member.rep
  * a data que já tinha (não "reseta a fila" por causa de outro bloco do
  * formulário ter sido salvo junto).
  */
+function sameStringArray(a: string[], b: string[]): boolean {
+  return a.length === b.length && a.every((value, i) => value === b[i]);
+}
+
 function reconcileNegociosStatus(
   input: MemberCentralProfileValues['negocios'],
   currentNegocios: CentralBusinessEntry[],
@@ -37,7 +41,16 @@ function reconcileNegociosStatus(
       previous.descricao === entry.descricao &&
       previous.cidade === entry.cidade &&
       previous.telefoneComercial === entry.telefoneComercial &&
-      previous.siteUrl === entry.siteUrl;
+      previous.siteUrl === entry.siteUrl &&
+      previous.logoUrl === entry.logoUrl &&
+      previous.whatsappComercial === entry.whatsappComercial &&
+      previous.emailComercial === entry.emailComercial &&
+      previous.instagramComercial === entry.instagramComercial &&
+      previous.horarioFuncionamento === entry.horarioFuncionamento &&
+      previous.ofereceDescontoIrmaos === entry.ofereceDescontoIrmaos &&
+      previous.descontoDescricao === entry.descontoDescricao &&
+      sameStringArray(previous.produtosServicos, entry.produtosServicos) &&
+      sameStringArray(previous.formasAtendimento, entry.formasAtendimento);
 
     if (unchanged) {
       return { ...entry, status: previous.status, updatedAt: previous.updatedAt };

@@ -1,6 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import * as Sentry from '@sentry/nextjs';
 import {
   memberCentralProfileSchema,
   publicationSettingsInputSchema,
@@ -12,13 +13,17 @@ import {
   validateLinkedInUrl,
   validateLattesUrl,
   validateWebsiteUrl,
+  errorToLogContext,
+  logger,
   type AreaAtuacaoKey,
+  type CentralBusinessEntryValues,
   type MemberCentralProfileValues,
   type PublicationSettingsInputValues,
 } from '@vl6/shared';
 import type { PublicMemberProfileDTO } from '@vl6/domain';
 import { createServerContainer } from '@vl6/infra';
 import { requireSession } from '@/lib/auth/require-session';
+import { uploadBusinessLogo, validateLogoFile } from '@/lib/central/business-logo-upload';
 
 /**
  * Busca sob demanda pro painel lateral de perfil (`MemberProfileProvider`) —
@@ -85,6 +90,46 @@ function parseExternalLink(
   return { value: normalized, invalid: normalized === null };
 }
 
+/**
+ * A logo é o único campo de negócio que não cabe no JSON de `negocios`
+ * (é um `File`, não serializável) — por isso cada card do formulário manda
+ * um `<input type="file">` à parte, nomeado `logo-<id>` (id estável do
+ * negócio, o mesmo usado por `reconcileNegociosStatus`). Sem arquivo novo
+ * selecionado, mantém o `logoUrl` que já veio no JSON (a empresa já tinha
+ * logo, ou continua sem).
+ */
+async function withUploadedLogos(
+  formData: FormData,
+  negocios: CentralBusinessEntryValues[],
+  tenantId: string,
+  memberId: string,
+): Promise<{ negocios: CentralBusinessEntryValues[]; error: string | null }> {
+  const resolved: CentralBusinessEntryValues[] = [];
+  for (const entry of negocios) {
+    const file = formData.get(`logo-${entry.id}`);
+    if (!(file instanceof File) || file.size === 0) {
+      resolved.push(entry);
+      continue;
+    }
+    const validationError = validateLogoFile(file);
+    if (validationError) return { negocios, error: validationError };
+    try {
+      const logoUrl = await uploadBusinessLogo(file, tenantId, memberId, entry.id);
+      resolved.push({ ...entry, logoUrl });
+    } catch (error) {
+      logger.error('Falha ao enviar logo de negócio para o storage', {
+        route: 'updateCentralProfileAction',
+        memberId,
+        businessId: entry.id,
+        ...errorToLogContext(error),
+      });
+      Sentry.captureException(error, { tags: { route: 'updateCentralProfileAction:logo' } });
+      return { negocios, error: 'Não foi possível enviar a logo. Tente novamente em instantes.' };
+    }
+  }
+  return { negocios: resolved, error: null };
+}
+
 export async function updateCentralProfileAction(
   _prevState: CentralActionState,
   formData: FormData,
@@ -103,7 +148,14 @@ export async function updateCentralProfileAction(
     member.id,
   );
 
-  const negocios = jsonArrayOrCurrent(formData, 'negocios', current?.negocios ?? []);
+  const negociosSubmitted = jsonArrayOrCurrent(formData, 'negocios', current?.negocios ?? []);
+  const { negocios, error: logoError } = await withUploadedLogos(
+    formData,
+    negociosSubmitted,
+    session.authContext.tenantId,
+    member.id,
+  );
+  if (logoError) return { error: logoError };
   const competencias = jsonArrayOrCurrent(formData, 'competencias', current?.competencias ?? []);
   const servicos = jsonArrayOrCurrent(formData, 'servicos', current?.servicos ?? []);
 

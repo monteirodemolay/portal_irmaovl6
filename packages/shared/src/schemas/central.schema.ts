@@ -1,5 +1,7 @@
 import { z } from 'zod';
-import { AREA_ATUACAO_KEYS } from '../enums/central';
+import { AREA_ATUACAO_KEYS, FORMA_ATENDIMENTO_KEYS } from '../enums/central';
+
+const tagSchema = z.string().min(1).max(60);
 
 /**
  * Versão vigente do termo de consentimento da Central — só existe uma
@@ -26,6 +28,17 @@ export const centralBusinessEntrySchema = z.object({
   cidade: z.string().max(150).nullable(),
   telefoneComercial: z.string().max(30).nullable(),
   siteUrl: z.string().url().nullable(),
+  /** Logo/identidade visual do negócio — sobe pro Blob, aceita várias extensões (ver ALLOWED_LOGO_TYPES). */
+  logoUrl: z.string().url().nullable(),
+  /** "O que a empresa oferece" — tags curtas, o que mais importa pra busca do Diretório. */
+  produtosServicos: z.array(tagSchema).max(8),
+  whatsappComercial: z.string().max(30).nullable(),
+  emailComercial: z.string().email().max(200).nullable(),
+  instagramComercial: z.string().max(200).nullable(),
+  formasAtendimento: z.array(z.enum(FORMA_ATENDIMENTO_KEYS)).max(3),
+  horarioFuncionamento: z.string().max(200).nullable(),
+  ofereceDescontoIrmaos: z.boolean(),
+  descontoDescricao: z.string().max(200).nullable(),
 });
 export type CentralBusinessEntryValues = z.infer<typeof centralBusinessEntrySchema>;
 
@@ -37,8 +50,6 @@ export const centralExternalLinksSchema = z.object({
   lattes: z.string().max(300).nullable(),
   site: z.string().max(300).nullable(),
 });
-
-const tagSchema = z.string().min(1).max(60);
 
 export const memberCentralProfileSchema = z
   .object({

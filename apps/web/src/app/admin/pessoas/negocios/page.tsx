@@ -34,10 +34,11 @@ export default async function BusinessSubmissionsAdminPage() {
           <table className="w-full text-sm">
             <thead className="border-border border-b text-left">
               <tr>
-                <th className="px-4 py-3 font-medium">Irmão</th>
                 <th className="px-4 py-3 font-medium">Empresa/atividade</th>
+                <th className="px-4 py-3 font-medium">Irmão</th>
                 <th className="px-4 py-3 font-medium">Segmento</th>
                 <th className="px-4 py-3 font-medium">Cidade</th>
+                <th className="px-4 py-3 font-medium">Contato</th>
                 <th className="px-4 py-3 font-medium">Enviado em</th>
                 <th className="px-4 py-3 font-medium">Ações</th>
               </tr>
@@ -45,13 +46,29 @@ export default async function BusinessSubmissionsAdminPage() {
             <tbody>
               {rows.map((row) => (
                 <tr key={row.businessId} className="border-border border-b last:border-0">
-                  <td className="px-4 py-3">{row.memberNomeCompleto}</td>
                   <td className="px-4 py-3">
-                    <p className="font-medium">{row.nomeEmpresa}</p>
-                    {row.descricao && <p className="text-muted text-xs">{row.descricao}</p>}
+                    <div className="flex items-start gap-2.5">
+                      {row.logoUrl ? (
+                        <img
+                          src={row.logoUrl}
+                          alt={`Logo de ${row.nomeEmpresa}`}
+                          className="bg-background h-9 w-9 shrink-0 rounded-md object-contain p-1"
+                        />
+                      ) : null}
+                      <div>
+                        <p className="font-medium">{row.nomeEmpresa}</p>
+                        {row.descricao && <p className="text-muted text-xs">{row.descricao}</p>}
+                      </div>
+                    </div>
                   </td>
+                  <td className="px-4 py-3">{row.memberNomeCompleto}</td>
                   <td className="text-muted px-4 py-3">{row.segmento ?? '—'}</td>
                   <td className="text-muted px-4 py-3">{row.cidade ?? '—'}</td>
+                  <td className="text-muted px-4 py-3 text-xs">
+                    {row.whatsappComercial && <p>{row.whatsappComercial}</p>}
+                    {row.emailComercial && <p>{row.emailComercial}</p>}
+                    {!row.whatsappComercial && !row.emailComercial && '—'}
+                  </td>
                   <td className="text-muted px-4 py-3">{formatDate(row.updatedAt)}</td>
                   <td className="px-4 py-3">
                     <BusinessReviewActions memberId={row.memberId} businessId={row.businessId} />
