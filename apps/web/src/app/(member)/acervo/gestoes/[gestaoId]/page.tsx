@@ -63,21 +63,21 @@ function TextSeatCard({ seat, label }: { seat: Seat; label: string }) {
   );
 }
 
-/** Card compacto (foto circular pequena) — lateralizado ao lado do card do Venerável, não abaixo. */
+/** Card lateralizado ao lado do Venerável — foto quadrada preenchendo o card, igual ao do Venerável. */
 function VigilanteCard({ seat, label }: { seat: Seat; label: string }) {
   return (
     <Link
       href={`/acervo/pessoas/${seat.memberId}`}
-      className="border-border hover:border-accent group flex flex-1 items-center gap-3 rounded-xl border p-3 transition-colors"
+      className="border-border hover:border-accent group flex flex-1 flex-col overflow-hidden rounded-xl border transition-colors"
     >
-      <div className="bg-bg flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full">
+      <div className="bg-bg flex aspect-square w-full items-center justify-center overflow-hidden">
         {seat.fotoUrl ? (
           <img src={seat.fotoUrl} alt={seat.nomeCompleto} className="h-full w-full object-cover" />
         ) : (
-          <span className="text-muted font-display text-sm">{initials(seat.nomeCompleto)}</span>
+          <span className="text-muted font-display text-4xl">{initials(seat.nomeCompleto)}</span>
         )}
       </div>
-      <div className="min-w-0">
+      <div className="p-3">
         <h3 className="font-display group-hover:text-accent truncate text-sm font-semibold transition-colors">
           {seat.nomeCompleto}
         </h3>
