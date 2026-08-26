@@ -56,10 +56,15 @@ export function EventStep({
   onResumeDraft,
 }: EventStepProps) {
   const [query, setQuery] = useState('');
-  // A Gestão mais recente vem primeiro em `boardTerms` (repositório ordena
-  // por `periodoInicio desc`) — usada como filtro padrão pra não obrigar o
-  // Administrador a escolher toda vez que só quer publicar da gestão atual.
-  const [boardTermFilter, setBoardTermFilter] = useState(boardTerms[0]?.id ?? '');
+  // Sem filtro de Gestão por padrão ("Todas as Gestões") — `boardTermId` só
+  // é preenchido no Evento se já existia uma Gestão cadastrada cobrindo
+  // aquela data no momento da criação (`CreateEventUseCase`); um Evento
+  // criado antes da Gestão existir no sistema fica com `boardTermId: null`
+  // e nunca é recalculado depois. Filtrar pela Gestão mais recente por
+  // padrão escondia justamente esses Eventos sem nenhum aviso — o
+  // Administrador via "Nenhum evento encontrado" mesmo já tendo cadastrado
+  // os Eventos.
+  const [boardTermFilter, setBoardTermFilter] = useState('');
   const [showCreateForm, setShowCreateForm] = useState(false);
 
   const boardTermNameById = useMemo(() => {
