@@ -188,15 +188,9 @@ export default async function ArchiveBoardTermDetailPage({
       ) : (
         <>
           {(veneravel || vigilantes.length > 0) && (
-            <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1fr_15rem]">
+            <div className="grid grid-cols-1 items-start gap-3 lg:grid-cols-[1fr_15rem]">
               {veneravel && (
-                <div className="bg-bg border-border grid grid-cols-1 overflow-hidden rounded-xl border sm:grid-cols-[1fr_auto]">
-                  <div className="flex flex-col justify-center gap-1 p-8">
-                    <h2 className="font-display text-3xl font-semibold">
-                      {veneravel.nomeCompleto}
-                    </h2>
-                    <p className="text-accent font-medium">Venerável Mestre</p>
-                  </div>
+                <div className="bg-bg border-border grid grid-cols-1 overflow-hidden rounded-xl border sm:grid-cols-[auto_1fr]">
                   <div className="bg-surface flex h-48 w-full items-center justify-center sm:h-auto sm:w-56">
                     {veneravel.fotoUrl ? (
                       <img
@@ -211,6 +205,12 @@ export default async function ArchiveBoardTermDetailPage({
                         </AvatarFallback>
                       </Avatar>
                     )}
+                  </div>
+                  <div className="flex flex-col justify-center gap-1 p-8">
+                    <h2 className="font-display text-3xl font-semibold">
+                      {veneravel.nomeCompleto}
+                    </h2>
+                    <p className="text-accent font-medium">Venerável Mestre</p>
                   </div>
                 </div>
               )}
