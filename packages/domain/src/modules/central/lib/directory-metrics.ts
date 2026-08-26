@@ -59,3 +59,68 @@ export function computeAreaFacets(dtos: PublicMemberProfileDTO[]): AreaFacet[] {
     .map(([key, count]) => ({ key, label: AREA_ATUACAO_LABELS[key], count }))
     .sort((a, b) => b.count - a.count);
 }
+
+export interface DirectoryFilterOption {
+  value: string;
+  count: number;
+}
+
+export interface DirectoryFilterOptions {
+  profissoes: DirectoryFilterOption[];
+  cidades: DirectoryFilterOption[];
+  /** Competências e serviços mesclados num único conjunto — mesmo critério já usado em `computeDirectoryMetrics`. */
+  tags: DirectoryFilterOption[];
+  empresas: DirectoryFilterOption[];
+}
+
+function countDistinct(values: Iterable<string>): DirectoryFilterOption[] {
+  const counts = new Map<string, { value: string; count: number }>();
+  for (const raw of values) {
+    const trimmed = raw.trim();
+    if (!trimmed) continue;
+    const key = normalize(trimmed);
+    const entry = counts.get(key);
+    if (entry) entry.count += 1;
+    else counts.set(key, { value: trimmed, count: 1 });
+  }
+  return Array.from(counts.values()).sort(
+    (a, b) => b.count - a.count || a.value.localeCompare(b.value, 'pt-BR'),
+  );
+}
+
+/**
+ * "Só o que realmente existe cadastrado" — o Diretório trocou campos de
+ * texto livre por seletores fechados nessas opções (docs/architecture),
+ * pra nunca deixar o Irmão filtrar/buscar por algo que ninguém publicou.
+ * Sempre computado sobre o conjunto COMPLETO de perfis publicados, igual
+ * `computeDirectoryMetrics`/`computeAreaFacets` — os filtros disponíveis
+ * não encolhem conforme o usuário já filtra.
+ */
+export function computeDirectoryFilterOptions(dtos: PublicMemberProfileDTO[]): DirectoryFilterOptions {
+  function* profissoes() {
+    for (const dto of dtos) if (dto.profissional?.profissao) yield dto.profissional.profissao;
+  }
+  function* cidades() {
+    for (const dto of dtos)
+      if (dto.informacoesPessoais?.cidadeExibicao) yield dto.informacoesPessoais.cidadeExibicao;
+  }
+  function* tags() {
+    for (const dto of dtos) {
+      yield* dto.competencias ?? [];
+      yield* dto.servicos ?? [];
+    }
+  }
+  function* empresas() {
+    for (const dto of dtos) {
+      if (dto.empresaAtual) yield dto.empresaAtual;
+      for (const negocio of dto.negocios ?? []) yield negocio.nomeEmpresa;
+    }
+  }
+
+  return {
+    profissoes: countDistinct(profissoes()),
+    cidades: countDistinct(cidades()),
+    tags: countDistinct(tags()),
+    empresas: countDistinct(empresas()),
+  };
+}

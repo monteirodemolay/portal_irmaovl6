@@ -1,6 +1,6 @@
 import { hasPermission } from '@vl6/domain';
 import { createServerContainer } from '@vl6/infra';
-import { EmptyState, Input, Lock, Search, ShieldCheck } from '@vl6/ui';
+import { EmptyState, Input, Lock, Search, Select, ShieldCheck } from '@vl6/ui';
 import { requireSession } from '@/lib/auth/require-session';
 import { BusinessDirectoryCard } from '@/modules/central/components/negocios/business-directory-card';
 
@@ -43,7 +43,7 @@ export default async function NegociosDiretorioPage({
     return <EmptyState title="Não foi possível carregar Negócios & Serviços." />;
   }
 
-  const { items, totalEmpresas } = result.value;
+  const { items, totalEmpresas, filterOptions } = result.value;
   const hasActiveFilter = Object.values(filters).some(Boolean);
 
   return (
@@ -63,14 +63,32 @@ export default async function NegociosDiretorioPage({
               className="pl-9"
             />
           </div>
-          <label className="flex flex-col gap-1.5 text-sm">
-            Segmento
-            <Input name="segmento" defaultValue={filters.segmento ?? ''} />
-          </label>
-          <label className="flex flex-col gap-1.5 text-sm">
-            Cidade
-            <Input name="cidade" defaultValue={filters.cidade ?? ''} />
-          </label>
+          {filterOptions.segmentos.length > 0 && (
+            <label className="flex flex-col gap-1.5 text-sm">
+              Segmento
+              <Select name="segmento" defaultValue={filters.segmento ?? ''}>
+                <option value="">Todos</option>
+                {filterOptions.segmentos.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.value} ({opt.count})
+                  </option>
+                ))}
+              </Select>
+            </label>
+          )}
+          {filterOptions.cidades.length > 0 && (
+            <label className="flex flex-col gap-1.5 text-sm">
+              Cidade
+              <Select name="cidade" defaultValue={filters.cidade ?? ''}>
+                <option value="">Todas</option>
+                {filterOptions.cidades.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.value} ({opt.count})
+                  </option>
+                ))}
+              </Select>
+            </label>
+          )}
           <button
             type="submit"
             className="bg-primary self-end rounded-lg px-4 py-2 text-sm font-semibold text-white"

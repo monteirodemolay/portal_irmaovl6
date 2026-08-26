@@ -88,6 +88,7 @@ export * from './modules/central/repositories/publication-settings.repository';
 export * from './modules/central/repositories/publication-consent.repository';
 export * from './modules/central/dtos/public-member-profile.dto';
 export * from './modules/central/dtos/business-directory-entry.dto';
+export * from './modules/central/lib/business-directory-metrics';
 export * from './modules/central/dtos/business-submission-admin-view.dto';
 export * from './modules/central/lib/resolve-area-atuacao';
 export * from './modules/central/lib/profile-completion';

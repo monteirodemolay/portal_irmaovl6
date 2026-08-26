@@ -39,8 +39,7 @@ export default async function IrmaosDiretorioPage({
     q: params.q || undefined,
     profissao: params.profissao || undefined,
     areaAtuacao: (params.areaAtuacao as AreaAtuacaoKey) || undefined,
-    competencia: params.competencia || undefined,
-    servico: params.servico || undefined,
+    tag: params.tag || undefined,
     empresa: params.empresa || undefined,
     cidade: params.cidade || undefined,
   };
@@ -50,8 +49,7 @@ export default async function IrmaosDiretorioPage({
     termo: filters.q,
     profissao: filters.profissao,
     areaAtuacao: filters.areaAtuacao,
-    competencia: filters.competencia,
-    servico: filters.servico,
+    tag: filters.tag,
     empresa: filters.empresa,
     cidade: filters.cidade,
   });
@@ -60,12 +58,12 @@ export default async function IrmaosDiretorioPage({
     return <EmptyState title="Não foi possível carregar o Diretório." />;
   }
 
-  const { items, metrics, areaFacets } = result.value;
+  const { items, metrics, areaFacets, filterOptions } = result.value;
   const hasActiveFilter = Object.values(filters).some(Boolean);
 
   return (
     <div className="flex flex-col gap-8">
-      <DirectorySearchPanel filters={filters} />
+      <DirectorySearchPanel filters={filters} options={filterOptions} />
 
       <DirectoryMetricsPanel metrics={metrics} />
 

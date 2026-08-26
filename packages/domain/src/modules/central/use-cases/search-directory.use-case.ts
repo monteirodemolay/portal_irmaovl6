@@ -8,8 +8,10 @@ import {
 } from '../dtos/public-member-profile.dto';
 import {
   computeAreaFacets,
+  computeDirectoryFilterOptions,
   computeDirectoryMetrics,
   type AreaFacet,
+  type DirectoryFilterOptions,
   type DirectoryMetrics,
 } from '../lib/directory-metrics';
 import type { IMemberCentralProfileRepository } from '../repositories/member-central-profile.repository';
@@ -28,6 +30,8 @@ export interface SearchDirectoryInput {
   areaAtuacao?: AreaAtuacaoKey;
   competencia?: string;
   servico?: string;
+  /** Competência OU serviço — filtro único da UI, que mescla os dois campos (ver `computeDirectoryFilterOptions`). */
+  tag?: string;
   empresa?: string;
   cidade?: string;
 }
@@ -36,6 +40,7 @@ export interface SearchDirectoryOutput {
   items: PublicMemberProfileDTO[];
   metrics: DirectoryMetrics;
   areaFacets: AreaFacet[];
+  filterOptions: DirectoryFilterOptions;
 }
 
 /**
@@ -77,6 +82,7 @@ export class SearchDirectoryUseCase {
 
     const metrics = computeDirectoryMetrics(allItems);
     const areaFacets = computeAreaFacets(allItems);
+    const filterOptions = computeDirectoryFilterOptions(allItems);
 
     let items = allItems;
 
@@ -123,6 +129,15 @@ export class SearchDirectoryUseCase {
       items = items.filter((dto) => dto.servicos?.some((s) => s.toLowerCase() === needleServico));
     }
 
+    if (input.tag?.trim()) {
+      const needleTag = input.tag.trim().toLowerCase();
+      items = items.filter(
+        (dto) =>
+          dto.competencias?.some((c) => c.toLowerCase() === needleTag) ||
+          dto.servicos?.some((s) => s.toLowerCase() === needleTag),
+      );
+    }
+
     if (input.empresa?.trim()) {
       const needleEmpresa = input.empresa.trim().toLowerCase();
       items = items.filter((dto) => {
@@ -141,6 +156,6 @@ export class SearchDirectoryUseCase {
       );
     }
 
-    return ok({ items, metrics, areaFacets });
+    return ok({ items, metrics, areaFacets, filterOptions });
   }
 }

@@ -6,6 +6,10 @@ import {
   type PublicMemberProfileDTO,
 } from '../dtos/public-member-profile.dto';
 import type { BusinessDirectoryEntryDTO } from '../dtos/business-directory-entry.dto';
+import {
+  computeBusinessDirectoryFilterOptions,
+  type BusinessDirectoryFilterOptions,
+} from '../lib/business-directory-metrics';
 import type { IMemberCentralProfileRepository } from '../repositories/member-central-profile.repository';
 import type { IPublicationSettingsRepository } from '../repositories/publication-settings.repository';
 import type { IMemberRepository } from '../../membership/repositories/member.repository';
@@ -26,6 +30,7 @@ export interface SearchBusinessDirectoryInput {
 export interface SearchBusinessDirectoryOutput {
   items: BusinessDirectoryEntryDTO[];
   totalEmpresas: number;
+  filterOptions: BusinessDirectoryFilterOptions;
 }
 
 /**
@@ -88,6 +93,8 @@ export class SearchBusinessDirectoryUseCase {
         })),
       );
 
+    const filterOptions = computeBusinessDirectoryFilterOptions(allItems);
+
     let items = allItems;
 
     const needle = input.termo?.trim().toLowerCase();
@@ -122,6 +129,6 @@ export class SearchBusinessDirectoryUseCase {
       items = items.filter((entry) => entry.formasAtendimento.includes('online'));
     }
 
-    return ok({ items, totalEmpresas: allItems.length });
+    return ok({ items, totalEmpresas: allItems.length, filterOptions });
   }
 }
