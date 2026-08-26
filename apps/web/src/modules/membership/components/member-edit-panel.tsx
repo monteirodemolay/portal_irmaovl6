@@ -18,6 +18,7 @@ import { ProfessionalCard } from '@/modules/membership/components/profile-fields
 import { CompanyCard } from '@/modules/membership/components/profile-fields/company-card';
 import { ContactsCard } from '@/modules/membership/components/profile-fields/contacts-card';
 import { listUsedProfessions } from '@/modules/membership/lib/list-used-professions';
+import { listUsedCompanies } from '@/modules/membership/lib/list-used-companies';
 import { MemberAvatar } from '@/components/membership/member-avatar';
 import { MemberDegreeBadge } from '@/components/membership/member-degree-badge';
 
@@ -44,10 +45,11 @@ export async function MemberEditPanel({ memberId }: { memberId: string }) {
   const member = await container.repositories.member.findById(memberId);
   if (!member || member.deletedAt) notFound();
 
-  const [roles, accessUser, customProfessions] = await Promise.all([
+  const [roles, accessUser, customProfessions, customCompanies] = await Promise.all([
     container.useCases.listRoles.execute(session.authContext),
     member.userId ? container.repositories.user.findById(member.userId) : Promise.resolve(null),
     listUsedProfessions(container, session.authContext),
+    listUsedCompanies(container, session.authContext),
   ]);
   const isSelf = accessUser?.id === session.authContext.uid;
 
@@ -113,7 +115,7 @@ export async function MemberEditPanel({ memberId }: { memberId: string }) {
           action={boundUpdateProfile}
           customProfessions={customProfessions}
         />
-        <CompanyCard member={member} action={boundUpdateProfile} />
+        <CompanyCard member={member} action={boundUpdateProfile} knownCompanies={customCompanies} />
         <ContactsCard member={member} action={boundUpdateProfile} />
         <MemberNotesCard member={member} action={boundUpdateIdentity} />
       </div>

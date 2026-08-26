@@ -176,9 +176,15 @@ function LogoUploader({
 export function EmpresaTab({
   member,
   profile,
+  knownCompanies = [],
+  knownBusinessNames = [],
 }: {
   member: Member;
   profile: MemberCentralProfile | null;
+  /** Empresas empregadoras já usadas no tenant — autocomplete de "Empresa atual". */
+  knownCompanies?: string[];
+  /** Nomes de negócio já usados no tenant — autocomplete de "Nome da empresa" de cada card. */
+  knownBusinessNames?: string[];
 }) {
   const [contentState, contentAction] = useActionState<CentralActionState, FormData>(
     updateCentralProfileAction,
@@ -208,7 +214,7 @@ export function EmpresaTab({
 
   return (
     <div className="flex flex-col gap-4">
-      <CompanyCard member={member} action={updateMyProfileAction} />
+      <CompanyCard member={member} action={updateMyProfileAction} knownCompanies={knownCompanies} />
 
       <FormSectionCard
         icon={Building2}
@@ -216,6 +222,11 @@ export function EmpresaTab({
         description="Até 5 empresas ou negócios que você queira divulgar aos Irmãos, num formato de cartão de divulgação — logo, o que a empresa oferece e como falar com ela. Toda alteração passa por revisão da Administração antes de aparecer no Diretório de Negócios & Serviços."
       >
         <form action={contentAction} className="flex flex-col gap-4">
+          <datalist id="negocios-cadastrados">
+            {knownBusinessNames.map((name) => (
+              <option key={name} value={name} />
+            ))}
+          </datalist>
           {negocios.map((negocio, index) => {
             const status = statusById.get(negocio.id);
             return (
@@ -256,6 +267,7 @@ export function EmpresaTab({
                   <FormField label="Nome da empresa" htmlFor={`negocio-nome-${index}`}>
                     <Input
                       id={`negocio-nome-${index}`}
+                      list="negocios-cadastrados"
                       value={negocio.nomeEmpresa}
                       onChange={(e) => updateNegocio(index, { nomeEmpresa: e.target.value })}
                     />

@@ -63,7 +63,7 @@ export default async function IrmaosDiretorioPage({
 
   return (
     <div className="flex flex-col gap-8">
-      <DirectorySearchPanel filters={filters} options={filterOptions} />
+      <DirectorySearchPanel filters={filters} options={filterOptions} areaFacets={areaFacets} />
 
       <DirectoryMetricsPanel metrics={metrics} />
 

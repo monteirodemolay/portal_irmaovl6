@@ -3,6 +3,8 @@ import { createServerContainer } from '@vl6/infra';
 import { Card, CardContent, Tabs, TabsContent, TabsList, TabsTrigger } from '@vl6/ui';
 import { requireSession } from '@/lib/auth/require-session';
 import { listUsedProfessions } from '@/modules/membership/lib/list-used-professions';
+import { listUsedCompanies } from '@/modules/membership/lib/list-used-companies';
+import { listUsedBusinessNames } from '@/modules/central/lib/list-used-business-names';
 import { ContatosTab } from '@/modules/central/components/meu-espaco/contatos-tab';
 import { EmpresaTab } from '@/modules/central/components/meu-espaco/empresa-tab';
 import { GeralTab } from '@/modules/central/components/meu-espaco/geral-tab';
@@ -48,11 +50,14 @@ export default async function MeuEspacoPage() {
   const session = await requireSession();
   const container = createServerContainer();
 
-  const [member, myCommittees, customProfessions] = await Promise.all([
-    container.repositories.member.findByUserId(session.authContext.tenantId, session.user.id),
-    container.useCases.listMyCommittees.execute(session.authContext),
-    listUsedProfessions(container, session.authContext),
-  ]);
+  const [member, myCommittees, customProfessions, customCompanies, businessNames] =
+    await Promise.all([
+      container.repositories.member.findByUserId(session.authContext.tenantId, session.user.id),
+      container.useCases.listMyCommittees.execute(session.authContext),
+      listUsedProfessions(container, session.authContext),
+      listUsedCompanies(container, session.authContext),
+      listUsedBusinessNames(container, session.authContext),
+    ]);
 
   if (!member) {
     return (
@@ -125,7 +130,12 @@ export default async function MeuEspacoPage() {
           />
         </TabsContent>
         <TabsContent value="empresa" className="pt-6">
-          <EmpresaTab member={member} profile={centralProfile} />
+          <EmpresaTab
+            member={member}
+            profile={centralProfile}
+            knownCompanies={customCompanies}
+            knownBusinessNames={businessNames}
+          />
         </TabsContent>
         <TabsContent value="contatos" className="pt-6">
           <ContatosTab member={member} settings={publicationSettings} />

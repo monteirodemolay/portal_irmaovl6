@@ -13,8 +13,22 @@ import type { ProfileFieldAction, ProfileFieldActionState } from './action-state
  * é da Central, exclusiva do autoatendimento, e fica fora deste cartão.
  * Mesmo componente usado no Meu Espaço e na edição administrativa de
  * qualquer Irmão.
+ *
+ * `knownCompanies` alimenta um `<datalist>` (autocomplete nativo do
+ * navegador, sem JS extra) com as empresas que outros Irmãos já
+ * cadastraram — digitar "cia" já sugere "Cia X" se alguém já usou esse
+ * nome, reduzindo variações do mesmo item no Diretório. Continua sendo um
+ * campo de texto livre: sugerir não é obrigar.
  */
-export function CompanyCard({ member, action }: { member: Member; action: ProfileFieldAction }) {
+export function CompanyCard({
+  member,
+  action,
+  knownCompanies = [],
+}: {
+  member: Member;
+  action: ProfileFieldAction;
+  knownCompanies?: string[];
+}) {
   const [state, formAction] = useActionState<ProfileFieldActionState, FormData>(action, {
     error: null,
   });
@@ -23,7 +37,17 @@ export function CompanyCard({ member, action }: { member: Member; action: Profil
     <FormSectionCard icon={Building2} title="Empresa atual">
       <form action={formAction} className="flex flex-col gap-4">
         <FormField label="Empresa" htmlFor="empresa">
-          <Input id="empresa" name="empresa" defaultValue={member.empresa ?? ''} />
+          <Input
+            id="empresa"
+            name="empresa"
+            list="empresas-cadastradas"
+            defaultValue={member.empresa ?? ''}
+          />
+          <datalist id="empresas-cadastradas">
+            {knownCompanies.map((company) => (
+              <option key={company} value={company} />
+            ))}
+          </datalist>
         </FormField>
         {state.error && <p className="text-sm text-red-600">{state.error}</p>}
         <SubmitButton />

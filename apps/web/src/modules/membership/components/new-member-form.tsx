@@ -22,6 +22,8 @@ export interface NewMemberFormProps {
   roles: Role[];
   /** Profissões já usadas no tenant que não estão na lista pré-definida. */
   customProfessions?: string[];
+  /** Empresas já usadas no tenant — alimenta o autocomplete do campo "Empresa". */
+  customCompanies?: string[];
 }
 
 function PhotoField({ nome }: { nome: string }) {
@@ -62,7 +64,12 @@ function PhotoField({ nome }: { nome: string }) {
  * (`/admin/pessoas/irmaos/[memberId]`), reaproveitados também pelo próprio
  * Irmão no Meu Espaço.
  */
-export function NewMemberForm({ action, roles, customProfessions = [] }: NewMemberFormProps) {
+export function NewMemberForm({
+  action,
+  roles,
+  customProfessions = [],
+  customCompanies = [],
+}: NewMemberFormProps) {
   const [state, formAction] = useActionState<MemberActionState, FormData>(action, {
     error: null,
     memberId: null,
@@ -281,7 +288,12 @@ export function NewMemberForm({ action, roles, customProfessions = [] }: NewMemb
             </FormField>
           )}
           <FormField label="Empresa" htmlFor="empresa">
-            <Input id="empresa" name="empresa" />
+            <Input id="empresa" name="empresa" list="empresas-cadastradas" />
+            <datalist id="empresas-cadastradas">
+              {customCompanies.map((company) => (
+                <option key={company} value={company} />
+              ))}
+            </datalist>
           </FormField>
           <FormField label="Estado civil" htmlFor="estadoCivil">
             <Select

@@ -2,8 +2,8 @@
 
 import { useRef, useState } from 'react';
 import Link from 'next/link';
-import type { DirectoryFilterOptions } from '@vl6/domain';
-import { AREA_ATUACAO_KEYS, AREA_ATUACAO_LABELS, type AreaAtuacaoKey } from '@vl6/shared';
+import type { AreaFacet, DirectoryFilterOptions } from '@vl6/domain';
+import { AREA_ATUACAO_LABELS, type AreaAtuacaoKey } from '@vl6/shared';
 import { ChevronRight, Input, Search, Select, SlidersHorizontal } from '@vl6/ui';
 
 export interface DirectoryFiltersValues {
@@ -74,9 +74,11 @@ function FacetSelect({
 export function DirectorySearchPanel({
   filters,
   options,
+  areaFacets,
 }: {
   filters: DirectoryFiltersValues;
   options: DirectoryFilterOptions;
+  areaFacets: AreaFacet[];
 }) {
   const activeChip = (
     Object.entries(filters) as Array<[keyof DirectoryFiltersValues, string | undefined]>
@@ -86,7 +88,8 @@ export function DirectorySearchPanel({
     options.profissoes.length > 0 ||
     options.tags.length > 0 ||
     options.empresas.length > 0 ||
-    options.cidades.length > 0;
+    options.cidades.length > 0 ||
+    areaFacets.length > 0;
 
   const [advancedOpen, setAdvancedOpen] = useState(Boolean(activeChip));
   const fieldRefs = useRef<Partial<Record<QuickChipField, HTMLElement | null>>>({});
@@ -152,7 +155,7 @@ export function DirectorySearchPanel({
           {QUICK_CHIPS.map((chip) => {
             const chipHasOptions =
               chip.field === 'q' ||
-              chip.field === 'areaAtuacao' ||
+              (chip.field === 'areaAtuacao' && areaFacets.length > 0) ||
               (chip.field === 'profissao' && options.profissoes.length > 0) ||
               (chip.field === 'tag' && options.tags.length > 0) ||
               (chip.field === 'empresa' && options.empresas.length > 0) ||
@@ -201,23 +204,25 @@ export function DirectorySearchPanel({
                 fieldRefs.current.profissao = el;
               }}
             />
-            <label className="flex flex-col gap-1.5 text-sm">
-              Área de atuação
-              <Select
-                ref={(el) => {
-                  fieldRefs.current.areaAtuacao = el;
-                }}
-                name="areaAtuacao"
-                defaultValue={filters.areaAtuacao ?? ''}
-              >
-                <option value="">Todas</option>
-                {AREA_ATUACAO_KEYS.map((key) => (
-                  <option key={key} value={key}>
-                    {AREA_ATUACAO_LABELS[key]}
-                  </option>
-                ))}
-              </Select>
-            </label>
+            {areaFacets.length > 0 && (
+              <label className="flex flex-col gap-1.5 text-sm">
+                Área de atuação
+                <Select
+                  ref={(el) => {
+                    fieldRefs.current.areaAtuacao = el;
+                  }}
+                  name="areaAtuacao"
+                  defaultValue={filters.areaAtuacao ?? ''}
+                >
+                  <option value="">Todas</option>
+                  {areaFacets.map((area) => (
+                    <option key={area.key} value={area.key}>
+                      {AREA_ATUACAO_LABELS[area.key]} ({area.count})
+                    </option>
+                  ))}
+                </Select>
+              </label>
+            )}
             <FacetSelect
               name="tag"
               label="Competência ou serviço"
