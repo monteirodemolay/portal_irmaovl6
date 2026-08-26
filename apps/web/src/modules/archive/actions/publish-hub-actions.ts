@@ -15,6 +15,7 @@ import {
 } from '@vl6/shared';
 import {
   ARCHIVE_ITEM_PUBLICATION_BLOCKER_LABELS,
+  ForbiddenError,
   getArchiveItemPublicationBlockers,
   type Event,
 } from '@vl6/domain';
@@ -175,6 +176,17 @@ export interface UploadArchiveMediaResult {
   duplicateWarning: boolean;
 }
 
+/**
+ * Papéis do sistema não ganham permissões novas automaticamente quando o
+ * vocabulário de RBAC cresce (ex.: `mediaAsset:manage`/`archiveItem:manage`
+ * adicionados com o Acervo VL6) — só na criação do tenant ou ao clicar em
+ * "Sincronizar" em `/admin/pessoas/permissoes` (`SyncSystemRolePermissionsUseCase`).
+ * Por isso um `ForbiddenError` aqui costuma significar papel desatualizado,
+ * não falta de permissão genuína — a mensagem já aponta a correção.
+ */
+const PERMISSION_SYNC_HINT =
+  'Você não tem permissão para publicar mídia no Acervo. Peça a um Administrador para sincronizar as permissões do seu papel em Pessoas & Loja → Permissões.';
+
 function uploadFailure(error: string): UploadArchiveMediaResult {
   return {
     ok: false,
@@ -203,6 +215,22 @@ function uploadFailure(error: string): UploadArchiveMediaResult {
 export async function uploadArchiveMediaAction(
   formData: FormData,
 ): Promise<UploadArchiveMediaResult> {
+  try {
+    return await uploadArchiveMediaInner(formData);
+  } catch (error) {
+    if (error instanceof ForbiddenError) {
+      return uploadFailure(PERMISSION_SYNC_HINT);
+    }
+    logger.error('Falha inesperada no upload de mídia do Acervo', {
+      route: 'uploadArchiveMediaAction',
+      ...errorToLogContext(error),
+    });
+    Sentry.captureException(error, { tags: { route: 'uploadArchiveMediaAction' } });
+    return uploadFailure('Não foi possível enviar o arquivo. Tente novamente em instantes.');
+  }
+}
+
+async function uploadArchiveMediaInner(formData: FormData): Promise<UploadArchiveMediaResult> {
   const session = await requireSession();
 
   const file = formData.get('file');
@@ -620,6 +648,24 @@ export interface UploadArchiveMediaPosterResult {
  * está concluído e nunca é revertido por causa da miniatura).
  */
 export async function uploadArchiveMediaPosterAction(
+  formData: FormData,
+): Promise<UploadArchiveMediaPosterResult> {
+  try {
+    return await uploadArchiveMediaPosterInner(formData);
+  } catch (error) {
+    if (error instanceof ForbiddenError) {
+      return { ok: false, error: PERMISSION_SYNC_HINT, posterMediaAssetId: null };
+    }
+    logger.error('Falha inesperada no upload de miniatura de vídeo do Acervo', {
+      route: 'uploadArchiveMediaPosterAction',
+      ...errorToLogContext(error),
+    });
+    Sentry.captureException(error, { tags: { route: 'uploadArchiveMediaPosterAction' } });
+    return { ok: false, error: 'Não foi possível enviar a miniatura.', posterMediaAssetId: null };
+  }
+}
+
+async function uploadArchiveMediaPosterInner(
   formData: FormData,
 ): Promise<UploadArchiveMediaPosterResult> {
   const session = await requireSession();
