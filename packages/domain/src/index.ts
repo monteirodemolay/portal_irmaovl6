@@ -88,6 +88,7 @@ export * from './modules/central/repositories/publication-settings.repository';
 export * from './modules/central/repositories/publication-consent.repository';
 export * from './modules/central/dtos/public-member-profile.dto';
 export * from './modules/central/dtos/business-directory-entry.dto';
+export * from './modules/central/dtos/business-submission-admin-view.dto';
 export * from './modules/central/lib/resolve-area-atuacao';
 export * from './modules/central/lib/profile-completion';
 export * from './modules/central/lib/directory-metrics';
@@ -100,6 +101,8 @@ export * from './modules/central/use-cases/search-business-directory.use-case';
 export * from './modules/central/use-cases/suspend-central-profile.use-case';
 export * from './modules/central/use-cases/reactivate-central-profile.use-case';
 export * from './modules/central/use-cases/list-central-profiles-admin-view.use-case';
+export * from './modules/central/use-cases/list-business-submissions.use-case';
+export * from './modules/central/use-cases/review-business-submission.use-case';
 
 // Content
 export * from './modules/content/entities/news.entity';

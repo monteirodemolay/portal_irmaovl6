@@ -355,3 +355,25 @@ export async function reactivateCentralProfileAction(memberId: string): Promise<
   revalidatePath('/admin/pessoas/central');
   revalidatePath('/irmaos', 'layout');
 }
+
+export async function reviewBusinessSubmissionAction(
+  memberId: string,
+  businessId: string,
+  decision: 'approve' | 'reject' | 'suspend',
+): Promise<void> {
+  const session = await requireSession();
+  const container = createServerContainer();
+  const result = await container.useCases.reviewBusinessSubmission.execute(
+    session.authContext,
+    memberId,
+    businessId,
+    decision,
+  );
+  if (!result.ok) {
+    throw new Error(result.error.message);
+  }
+
+  revalidatePath('/admin/pessoas/negocios');
+  revalidatePath('/irmaos/negocios');
+  revalidatePath('/irmaos', 'layout');
+}

@@ -1340,6 +1340,9 @@ export class InMemoryMemberCentralProfileRepository implements IMemberCentralPro
       null
     );
   }
+  async listByTenant(tenantId: string) {
+    return [...this.byId.values()].filter((p) => p.tenantId === tenantId);
+  }
   async create(profile: MemberCentralProfile) {
     this.byId.set(profile.id, profile);
   }

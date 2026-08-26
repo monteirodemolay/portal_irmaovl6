@@ -3,9 +3,48 @@ import type { AuthContext } from '../../../shared/auth-context';
 import { requirePermission } from '../../../shared/auth-context';
 import type { IClock, IIdGenerator } from '../../../shared/ports';
 import { NotFoundError, ok, err, type Result } from '../../../shared/result';
-import type { MemberCentralProfile } from '../entities/member-central-profile.entity';
+import type {
+  CentralBusinessEntry,
+  MemberCentralProfile,
+} from '../entities/member-central-profile.entity';
 import type { IMemberCentralProfileRepository } from '../repositories/member-central-profile.repository';
 import type { IMemberRepository } from '../../membership/repositories/member.repository';
+
+/**
+ * `status`/`updatedAt` de cada negócio nunca vêm do formulário (schema de
+ * input só valida conteúdo) — computados aqui comparando contra o que já
+ * existia, casado por `id` (estável, gerado no cliente ao adicionar uma
+ * entrada e mantido entre edições — ver `EmpresaTab`). Entrada nova ou com
+ * conteúdo alterado sempre volta pra fila de revisão (`pending_review`),
+ * mesmo que já estivesse publicada antes — a Administração aprova o
+ * conteúdo, não a intenção de publicar. Entrada idêntica mantém o status e
+ * a data que já tinha (não "reseta a fila" por causa de outro bloco do
+ * formulário ter sido salvo junto).
+ */
+function reconcileNegociosStatus(
+  input: MemberCentralProfileValues['negocios'],
+  currentNegocios: CentralBusinessEntry[],
+  now: Date,
+): CentralBusinessEntry[] {
+  const currentById = new Map(currentNegocios.map((n) => [n.id, n]));
+  return input.map((entry) => {
+    const previous = currentById.get(entry.id);
+    const unchanged =
+      previous &&
+      previous.nomeEmpresa === entry.nomeEmpresa &&
+      previous.segmento === entry.segmento &&
+      previous.cargo === entry.cargo &&
+      previous.descricao === entry.descricao &&
+      previous.cidade === entry.cidade &&
+      previous.telefoneComercial === entry.telefoneComercial &&
+      previous.siteUrl === entry.siteUrl;
+
+    if (unchanged) {
+      return { ...entry, status: previous.status, updatedAt: previous.updatedAt };
+    }
+    return { ...entry, status: 'pending_review' as const, updatedAt: now };
+  });
+}
 
 export interface UpdateCentralProfileDeps {
   memberCentralProfileRepository: IMemberCentralProfileRepository;
@@ -41,14 +80,16 @@ export class UpdateCentralProfileUseCase {
       member.id,
     );
     const now = this.deps.clock.now();
+    const negocios = reconcileNegociosStatus(input.negocios, current?.negocios ?? [], now);
 
     const updated: MemberCentralProfile = current
-      ? { ...current, ...input, updatedAt: now, updatedBy: ctx.uid }
+      ? { ...current, ...input, negocios, updatedAt: now, updatedBy: ctx.uid }
       : {
           id: this.deps.idGenerator.next(),
           tenantId: ctx.tenantId,
           memberId: member.id,
           ...input,
+          negocios,
           createdAt: now,
           updatedAt: now,
           createdBy: ctx.uid,

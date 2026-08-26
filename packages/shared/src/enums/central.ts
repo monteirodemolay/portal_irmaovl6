@@ -42,3 +42,28 @@ export const AREA_ATUACAO_LABELS: Record<AreaAtuacaoKey, string> = {
   artes_cultura: 'Artes e Cultura',
   outra: 'Outra',
 };
+
+/**
+ * Estado de publicação de cada negócio/atividade da Central (Comunidade
+ * VL6 § Negócios & Serviços) — mapa de implantação exige revisão
+ * administrativa antes de qualquer atividade aparecer publicamente.
+ * `draft`: nunca enviado (ou devolvido pela Administração pra revisão).
+ * `pending_review`: o Irmão salvou/alterou o conteúdo, aguardando a
+ * Administração aprovar. `published`: visível no Diretório de Negócios.
+ * `suspended`: já esteve publicado, retirado pela Administração (nunca pelo
+ * próprio Irmão editando — isso volta pra `draft`, ver `UpdateCentralProfileUseCase`).
+ */
+export const BUSINESS_PUBLICATION_STATUS_KEYS = [
+  'draft',
+  'pending_review',
+  'published',
+  'suspended',
+] as const;
+export type BusinessPublicationStatus = (typeof BUSINESS_PUBLICATION_STATUS_KEYS)[number];
+
+export const BUSINESS_PUBLICATION_STATUS_LABELS: Record<BusinessPublicationStatus, string> = {
+  draft: 'Rascunho',
+  pending_review: 'Em revisão',
+  published: 'Publicado',
+  suspended: 'Suspenso',
+};

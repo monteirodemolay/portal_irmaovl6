@@ -1,4 +1,4 @@
-import type { AreaAtuacaoKey } from '@vl6/shared';
+import type { AreaAtuacaoKey, BusinessPublicationStatus } from '@vl6/shared';
 import type { BaseEntity } from '../../../shared/base-entity';
 
 export interface CentralBusinessEntry {
@@ -10,6 +10,14 @@ export interface CentralBusinessEntry {
   cidade: string | null;
   telefoneComercial: string | null;
   siteUrl: string | null;
+  /**
+   * Nunca vem do formulário do Irmão — sempre computado por
+   * `UpdateCentralProfileUseCase` (novo/alterado vira `pending_review`) ou
+   * por `ReviewBusinessSubmissionUseCase` (decisão da Administração).
+   */
+  status: BusinessPublicationStatus;
+  /** Data da última alteração de conteúdo OU decisão de revisão, o que for mais recente. */
+  updatedAt: Date;
 }
 
 export interface CentralExternalLinks {

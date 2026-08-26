@@ -122,6 +122,7 @@ import {
   ListApprovedNewsCommentsUseCase,
   ListAuditLogUseCase,
   ListBoardTermsUseCase,
+  ListBusinessSubmissionsUseCase,
   ListCentralProfilesAdminViewUseCase,
   ListCommitteesByGestaoUseCase,
   ListEventAttendeesUseCase,
@@ -169,6 +170,7 @@ import {
   SetUserStatusUseCase,
   SoftDeleteFileAssetUseCase,
   SoftDeleteMemberUseCase,
+  ReviewBusinessSubmissionUseCase,
   SuspendCentralProfileUseCase,
   ToggleLibraryFavoriteUseCase,
   UpdateCentralProfileUseCase,
@@ -577,6 +579,14 @@ export function createServerContainer() {
     listCentralProfilesAdminView: new ListCentralProfilesAdminViewUseCase({
       publicationSettingsRepository: repositories.publicationSettings,
       memberRepository: repositories.member,
+    }),
+    listBusinessSubmissions: new ListBusinessSubmissionsUseCase({
+      memberCentralProfileRepository: repositories.memberCentralProfile,
+      memberRepository: repositories.member,
+    }),
+    reviewBusinessSubmission: new ReviewBusinessSubmissionUseCase({
+      memberCentralProfileRepository: repositories.memberCentralProfile,
+      clock,
     }),
 
     createNews: new CreateNewsUseCase({ newsRepository: repositories.news, clock, idGenerator }),

@@ -27,6 +27,11 @@ export class FirestoreMemberCentralProfileRepository implements IMemberCentralPr
     return snap.empty ? null : snap.docs[0]!.data();
   }
 
+  async listByTenant(tenantId: string): Promise<MemberCentralProfile[]> {
+    const snap = await this.collection.where('tenantId', '==', tenantId).get();
+    return snap.docs.map((doc) => doc.data());
+  }
+
   async create(profile: MemberCentralProfile): Promise<void> {
     await this.collection.doc(profile.id).set(profile);
   }

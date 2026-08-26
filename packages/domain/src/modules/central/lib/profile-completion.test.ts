@@ -142,6 +142,8 @@ describe('calculateProfileCompletion', () => {
           cidade: null,
           telefoneComercial: null,
           siteUrl: null,
+          status: 'published',
+          updatedAt: new Date('2026-01-01'),
         },
       ],
     });

@@ -95,7 +95,12 @@ export function buildPublicMemberProfileDTO(
           resumoProfissional: profile?.resumoProfissional ?? null,
         }
       : null,
-    negocios: blocks.empresa ? (profile?.negocios ?? []) : null,
+    // Só negócios já aprovados pela Administração — rascunho/em revisão/
+    // suspenso nunca aparecem a terceiros, mesmo com o bloco "empresa" ligado
+    // (ver `ReviewBusinessSubmissionUseCase`).
+    negocios: blocks.empresa
+      ? (profile?.negocios.filter((n) => n.status === 'published') ?? [])
+      : null,
     empresaAtual: blocks.empresa ? member.empresa : null,
     competencias: blocks.competencias ? (profile?.competencias ?? []) : null,
     servicos: blocks.servicos ? (profile?.servicos ?? []) : null,
