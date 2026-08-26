@@ -63,34 +63,25 @@ function TextSeatCard({ seat, label }: { seat: Seat; label: string }) {
   );
 }
 
-function PhotoSeatCard({
-  seat,
-  label,
-  size = 'md',
-}: {
-  seat: Seat;
-  label: string;
-  size?: 'lg' | 'md';
-}) {
+/** Card compacto (foto circular pequena) — lateralizado ao lado do card do Venerável, não abaixo. */
+function VigilanteCard({ seat, label }: { seat: Seat; label: string }) {
   return (
     <Link
       href={`/acervo/pessoas/${seat.memberId}`}
-      className="border-border hover:border-accent group flex flex-col overflow-hidden rounded-lg border transition-colors"
+      className="border-border hover:border-accent group flex flex-1 items-center gap-3 rounded-xl border p-3 transition-colors"
     >
-      <div
-        className={`bg-bg relative flex items-center justify-center ${size === 'lg' ? 'aspect-[4/5]' : 'aspect-square'}`}
-      >
+      <div className="bg-bg flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full">
         {seat.fotoUrl ? (
           <img src={seat.fotoUrl} alt={seat.nomeCompleto} className="h-full w-full object-cover" />
         ) : (
-          <span className="text-muted font-display text-4xl">{initials(seat.nomeCompleto)}</span>
+          <span className="text-muted font-display text-sm">{initials(seat.nomeCompleto)}</span>
         )}
       </div>
-      <div className="p-3">
+      <div className="min-w-0">
         <h3 className="font-display group-hover:text-accent truncate text-sm font-semibold transition-colors">
           {seat.nomeCompleto}
         </h3>
-        <p className="text-accent text-xs font-medium">{label}</p>
+        <p className="text-accent text-[11px] font-semibold uppercase tracking-wide">{label}</p>
       </div>
     </Link>
   );
@@ -196,43 +187,48 @@ export default async function ArchiveBoardTermDetailPage({
         />
       ) : (
         <>
-          {veneravel && (
-            <div className="bg-bg border-border grid grid-cols-1 overflow-hidden rounded-xl border sm:grid-cols-[1fr_auto]">
-              <div className="flex flex-col justify-center gap-1 p-8">
-                <h2 className="font-display text-3xl font-semibold">{veneravel.nomeCompleto}</h2>
-                <p className="text-accent font-medium">Venerável Mestre</p>
-              </div>
-              <div className="bg-surface flex h-48 w-full items-center justify-center sm:h-auto sm:w-64">
-                {veneravel.fotoUrl ? (
-                  <img
-                    src={veneravel.fotoUrl}
-                    alt={veneravel.nomeCompleto}
-                    className="h-full w-full object-cover"
-                  />
-                ) : (
-                  <Avatar className="h-24 w-24">
-                    <AvatarFallback className="text-2xl">
-                      {initials(veneravel.nomeCompleto)}
-                    </AvatarFallback>
-                  </Avatar>
-                )}
-              </div>
-            </div>
-          )}
+          {(veneravel || vigilantes.length > 0) && (
+            <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1fr_15rem]">
+              {veneravel && (
+                <div className="bg-bg border-border grid grid-cols-1 overflow-hidden rounded-xl border sm:grid-cols-[1fr_auto]">
+                  <div className="flex flex-col justify-center gap-1 p-8">
+                    <h2 className="font-display text-3xl font-semibold">
+                      {veneravel.nomeCompleto}
+                    </h2>
+                    <p className="text-accent font-medium">Venerável Mestre</p>
+                  </div>
+                  <div className="bg-surface flex h-48 w-full items-center justify-center sm:h-auto sm:w-56">
+                    {veneravel.fotoUrl ? (
+                      <img
+                        src={veneravel.fotoUrl}
+                        alt={veneravel.nomeCompleto}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <Avatar className="h-24 w-24">
+                        <AvatarFallback className="text-2xl">
+                          {initials(veneravel.nomeCompleto)}
+                        </AvatarFallback>
+                      </Avatar>
+                    )}
+                  </div>
+                </div>
+              )}
 
-          {vigilantes.length > 0 && (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              {vigilantes.map((seat) => (
-                <PhotoSeatCard
-                  key={seat.assignmentId}
-                  seat={seat}
-                  label={getBoardPositionOrdinalLabel(
-                    seat.cargo,
-                    posicaoNoCargo.get(seat.assignmentId) ?? 0,
-                  )}
-                  size="md"
-                />
-              ))}
+              {vigilantes.length > 0 && (
+                <div className="flex flex-col gap-2 sm:flex-row lg:flex-col">
+                  {vigilantes.map((seat) => (
+                    <VigilanteCard
+                      key={seat.assignmentId}
+                      seat={seat}
+                      label={getBoardPositionOrdinalLabel(
+                        seat.cargo,
+                        posicaoNoCargo.get(seat.assignmentId) ?? 0,
+                      )}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
