@@ -42,6 +42,20 @@ export interface PublicMemberProfileDTO {
     cidade: string | null;
     estado: string | null;
   } | null;
+  /**
+   * Trajetória institucional (iniciação/elevação/exaltação + histórico de
+   * cargos) — dado de registro da Loja, não de preferência pessoal, por
+   * isso nunca passa pelos blocos de `PublicationSettings` (mesmo recorte
+   * já usado em `/acervo/pessoas/[memberId]`, que também não gate por
+   * publicação). Preenchido pelo use case, não por `buildPublicMemberProfileDTO`
+   * (precisa de repositórios que a função pura não recebe).
+   */
+  trajetoria: {
+    dataIniciacao: Date | null;
+    dataElevacao: Date | null;
+    dataExaltacao: Date | null;
+    cargos: { cargo: string; gestaoNome: string; dataInicio: Date; dataFim: Date | null }[];
+  } | null;
 }
 
 /**
@@ -126,5 +140,7 @@ export function buildPublicMemberProfileDTO(
           estado: member.endereco?.estado ?? null,
         }
       : null,
+    // Preenchido depois, pelo use case — ver comentário no campo da interface.
+    trajetoria: null,
   };
 }

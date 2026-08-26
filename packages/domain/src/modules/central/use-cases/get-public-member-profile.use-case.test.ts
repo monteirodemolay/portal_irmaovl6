@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import type { AuthContext } from '../../../shared/auth-context';
 import {
+  InMemoryBoardTermRepository,
   InMemoryMemberCentralProfileRepository,
+  InMemoryMemberPositionHistoryRepository,
   InMemoryMemberRepository,
   InMemoryPublicationSettingsRepository,
 } from '../../../test/fakes';
@@ -100,12 +102,22 @@ function buildUseCase() {
   const memberRepository = new InMemoryMemberRepository();
   const memberCentralProfileRepository = new InMemoryMemberCentralProfileRepository();
   const publicationSettingsRepository = new InMemoryPublicationSettingsRepository();
+  const memberPositionHistoryRepository = new InMemoryMemberPositionHistoryRepository();
+  const boardTermRepository = new InMemoryBoardTermRepository();
   const useCase = new GetPublicMemberProfileUseCase({
     memberRepository,
     memberCentralProfileRepository,
     publicationSettingsRepository,
+    memberPositionHistoryRepository,
+    boardTermRepository,
   });
-  return { useCase, memberRepository, publicationSettingsRepository };
+  return {
+    useCase,
+    memberRepository,
+    publicationSettingsRepository,
+    memberPositionHistoryRepository,
+    boardTermRepository,
+  };
 }
 
 describe('GetPublicMemberProfileUseCase', () => {
@@ -122,6 +134,63 @@ describe('GetPublicMemberProfileUseCase', () => {
     expect(result.value?.apresentacao).not.toBeNull();
     expect(result.value?.profissional).toBeNull(); // bloco desligado — chave inteira null
     expect(result.value?.contatos).toBeNull(); // nenhum contato autorizado
+    expect(result.value?.trajetoria).not.toBeNull(); // trajetória não passa pelos blocos
+  });
+
+  it('traz a trajetória institucional independente dos blocos de publicação', async () => {
+    const {
+      useCase,
+      memberRepository,
+      publicationSettingsRepository,
+      memberPositionHistoryRepository,
+      boardTermRepository,
+    } = buildUseCase();
+    await memberRepository.create(
+      buildMember({ dataIniciacao: new Date('2020-03-01'), dataElevacao: new Date('2022-03-01') }),
+    );
+    await publicationSettingsRepository.create(buildSettings());
+    await boardTermRepository.create({
+      id: 'gestao-1',
+      tenantId: 't1',
+      nome: 'Gestão 2024/2025',
+      periodoInicio: new Date('2024-06-01'),
+      periodoFim: new Date('2025-06-01'),
+      createdAt: new Date('2026-01-01'),
+      updatedAt: new Date('2026-01-01'),
+      createdBy: 'user-1',
+      updatedBy: 'user-1',
+      deletedAt: null,
+      status: 'active',
+      ativo: true,
+    });
+    await memberPositionHistoryRepository.create({
+      id: 'history-1',
+      tenantId: 't1',
+      memberId: 'member-1',
+      cargo: 'secretario',
+      gestaoId: 'gestao-1',
+      dataInicio: new Date('2024-06-01'),
+      dataFim: null,
+      observacoes: null,
+      createdAt: new Date('2026-01-01'),
+      updatedAt: new Date('2026-01-01'),
+      createdBy: 'user-1',
+      updatedBy: 'user-1',
+      deletedAt: null,
+      status: 'active',
+      ativo: true,
+    });
+
+    const result = await useCase.execute(ctx, 'member-1');
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value?.trajetoria?.dataIniciacao).toEqual(new Date('2020-03-01'));
+    expect(result.value?.trajetoria?.cargos).toHaveLength(1);
+    expect(result.value?.trajetoria?.cargos[0]).toMatchObject({
+      cargo: 'secretario',
+      gestaoNome: 'Gestão 2024/2025',
+    });
   });
 
   it('devolve null quando nunca publicou', async () => {

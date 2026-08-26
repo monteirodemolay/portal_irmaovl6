@@ -552,6 +552,8 @@ export function createServerContainer() {
       memberRepository: repositories.member,
       memberCentralProfileRepository: repositories.memberCentralProfile,
       publicationSettingsRepository: repositories.publicationSettings,
+      memberPositionHistoryRepository: repositories.memberPositionHistory,
+      boardTermRepository: repositories.boardTerm,
     }),
     searchDirectory: new SearchDirectoryUseCase({
       memberRepository: repositories.member,

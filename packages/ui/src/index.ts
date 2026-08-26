@@ -107,6 +107,7 @@ export {
   Archive,
   Star,
   Send,
+  Milestone,
   ICON_SIZE_DEFAULT,
   ICON_SIZE_LARGE,
   ICON_STROKE_WIDTH,

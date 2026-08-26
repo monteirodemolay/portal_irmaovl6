@@ -1,5 +1,5 @@
 import type { PublicMemberProfileDTO } from '@vl6/domain';
-import { buildWhatsappLink } from '@vl6/shared';
+import { buildWhatsappLink, getBoardPositionLabel } from '@vl6/shared';
 import {
   Briefcase,
   Building2,
@@ -14,6 +14,7 @@ import {
   Mail,
   MapPin,
   MessageCircle,
+  Milestone,
   Phone,
   Quote,
   Sparkles,
@@ -23,6 +24,10 @@ import { MemberAvatar } from '@/components/membership/member-avatar';
 import { MemberDegreeBadge } from '@/components/membership/member-degree-badge';
 
 type IconType = React.ComponentType<{ size?: number; strokeWidth?: number; className?: string }>;
+
+function formatDate(date: Date): string {
+  return new Intl.DateTimeFormat('pt-BR', { dateStyle: 'long' }).format(new Date(date));
+}
 
 function Section({
   title,
@@ -86,6 +91,57 @@ export function PublicMemberProfileView({ profile }: { profile: PublicMemberProf
         </div>
 
         <div className="flex flex-col gap-4">
+          {profile.trajetoria &&
+            (profile.trajetoria.dataIniciacao ||
+              profile.trajetoria.dataElevacao ||
+              profile.trajetoria.dataExaltacao ||
+              profile.trajetoria.cargos.length > 0) && (
+              <Section title="Caminho na Loja" icon={Milestone}>
+                <div className="flex flex-col gap-3">
+                  {(profile.trajetoria.dataIniciacao ||
+                    profile.trajetoria.dataElevacao ||
+                    profile.trajetoria.dataExaltacao) && (
+                    <dl className="flex flex-col gap-1 text-sm">
+                      {profile.trajetoria.dataIniciacao && (
+                        <div className="flex justify-between gap-4">
+                          <dt className="text-muted">Iniciação</dt>
+                          <dd>{formatDate(profile.trajetoria.dataIniciacao)}</dd>
+                        </div>
+                      )}
+                      {profile.trajetoria.dataElevacao && (
+                        <div className="flex justify-between gap-4">
+                          <dt className="text-muted">Elevação</dt>
+                          <dd>{formatDate(profile.trajetoria.dataElevacao)}</dd>
+                        </div>
+                      )}
+                      {profile.trajetoria.dataExaltacao && (
+                        <div className="flex justify-between gap-4">
+                          <dt className="text-muted">Exaltação</dt>
+                          <dd>{formatDate(profile.trajetoria.dataExaltacao)}</dd>
+                        </div>
+                      )}
+                    </dl>
+                  )}
+                  {profile.trajetoria.cargos.length > 0 && (
+                    <ol className="border-border flex flex-col gap-2.5 border-l pl-4">
+                      {profile.trajetoria.cargos.map((entry, index) => (
+                        <li key={index} className="relative">
+                          <span className="bg-accent absolute -left-[19px] top-1.5 h-1.5 w-1.5 rounded-full" />
+                          <p className="text-sm font-semibold">
+                            {getBoardPositionLabel(entry.cargo)}
+                          </p>
+                          <p className="text-muted text-xs">
+                            {entry.gestaoNome} · {formatDate(entry.dataInicio)}
+                            {entry.dataFim ? ` a ${formatDate(entry.dataFim)}` : ' — atual'}
+                          </p>
+                        </li>
+                      ))}
+                    </ol>
+                  )}
+                </div>
+              </Section>
+            )}
+
           {profile.apresentacao?.texto && (
             <Section title="Sobre" icon={Quote}>
               <p className="whitespace-pre-line text-sm">{profile.apresentacao.texto}</p>
