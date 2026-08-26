@@ -24,6 +24,7 @@ import type { PublicMemberProfileDTO } from '@vl6/domain';
 import { createServerContainer } from '@vl6/infra';
 import { requireSession } from '@/lib/auth/require-session';
 import { uploadBusinessLogo, validateLogoFile } from '@/lib/central/business-logo-upload';
+import { lookupCnpj, normalizeCnpj } from '@/lib/central/cnpj-lookup';
 
 /**
  * Busca sob demanda pro painel lateral de perfil (`MemberProfileProvider`) —
@@ -46,6 +47,40 @@ export async function getMemberProfileForDrawerAction(
 
 export interface CentralActionState {
   error: string | null;
+}
+
+export interface LookupBusinessCnpjResult {
+  nomeEmpresa: string;
+  cidade: string | null;
+  error?: string;
+}
+
+/**
+ * Atalho opcional do botão "Buscar CNPJ" em `EmpresaTab` — nunca obrigatório,
+ * o Irmão pode sempre preencher "Nome da empresa" na mão. Chamada direto do
+ * client (não é um `<form>` completo, é um clique isolado no meio do
+ * preenchimento de um card de negócio ainda não salvo), por isso devolve o
+ * resultado em vez de redirecionar/revalidar como as outras ações desta
+ * tela.
+ */
+export async function lookupBusinessCnpjAction(cnpj: string): Promise<LookupBusinessCnpjResult> {
+  await requireSession();
+
+  const digits = normalizeCnpj(cnpj);
+  if (digits.length !== 14) {
+    return { nomeEmpresa: '', cidade: null, error: 'CNPJ inválido — informe os 14 dígitos.' };
+  }
+
+  const result = await lookupCnpj(digits);
+  if (!result) {
+    return {
+      nomeEmpresa: '',
+      cidade: null,
+      error: 'CNPJ não encontrado ou serviço indisponível no momento. Preencha manualmente.',
+    };
+  }
+
+  return result;
 }
 
 /**

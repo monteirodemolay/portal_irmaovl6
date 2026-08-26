@@ -10,6 +10,7 @@ export interface CentralBusinessEntry {
   cidade: string | null;
   telefoneComercial: string | null;
   siteUrl: string | null;
+  cnpj: string | null;
   logoUrl: string | null;
   produtosServicos: string[];
   whatsappComercial: string | null;

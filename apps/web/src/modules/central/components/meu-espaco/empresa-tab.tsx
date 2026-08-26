@@ -16,13 +16,18 @@ import {
   Gift,
   Image as ImageIcon,
   Input,
+  Search,
   Switch,
   Textarea,
   X,
 } from '@vl6/ui';
 import { FormField } from '@/components/forms/form-field';
 import { FormSectionCard } from '@/components/forms/section-card';
-import { updateCentralProfileAction, type CentralActionState } from '../../actions/central-actions';
+import {
+  lookupBusinessCnpjAction,
+  updateCentralProfileAction,
+  type CentralActionState,
+} from '../../actions/central-actions';
 import { updateMyProfileAction } from '@/modules/membership/actions/self-profile-actions';
 import { CompanyCard } from '@/modules/membership/components/profile-fields/company-card';
 
@@ -40,6 +45,7 @@ function emptyNegocio(): NegocioDraft {
     cidade: null,
     telefoneComercial: null,
     siteUrl: null,
+    cnpj: null,
     logoUrl: null,
     produtosServicos: [],
     whatsappComercial: null,
@@ -173,6 +179,70 @@ function LogoUploader({
   );
 }
 
+/**
+ * Atalho opcional — nunca obrigatório. Digitar o CNPJ e clicar em "Buscar"
+ * pré-preenche nome e cidade a partir da BrasilAPI (`lookupBusinessCnpjAction`),
+ * mas o Irmão pode sempre ignorar isso e preencher "Nome da empresa" na mão,
+ * como já funcionava antes deste campo existir.
+ */
+function CnpjLookupField({
+  index,
+  cnpj,
+  onUpdateNegocio,
+}: {
+  index: number;
+  cnpj: string | null;
+  onUpdateNegocio: (index: number, patch: Partial<NegocioDraft>) => void;
+}) {
+  const [draft, setDraft] = useState(cnpj ?? '');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleSearch() {
+    setLoading(true);
+    setError(null);
+    const result = await lookupBusinessCnpjAction(draft);
+    setLoading(false);
+    if (result.error) {
+      setError(result.error);
+      return;
+    }
+    onUpdateNegocio(index, {
+      cnpj: draft.replace(/\D/g, ''),
+      nomeEmpresa: result.nomeEmpresa,
+      cidade: result.cidade,
+    });
+  }
+
+  return (
+    <FormField
+      label="CNPJ (opcional)"
+      htmlFor={`negocio-cnpj-${index}`}
+      description="Preencha e busque pra puxar o nome automaticamente, ou ignore e digite o nome direto abaixo."
+      error={error ?? undefined}
+    >
+      <div className="flex gap-2">
+        <Input
+          id={`negocio-cnpj-${index}`}
+          placeholder="00.000.000/0001-00"
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+        />
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          disabled={loading || draft.replace(/\D/g, '').length !== 14}
+          onClick={handleSearch}
+        >
+          <Search size={14} />
+          {loading ? 'Buscando…' : 'Buscar'}
+        </Button>
+      </div>
+    </FormField>
+  );
+}
+
 export function EmpresaTab({
   member,
   profile,
@@ -262,6 +332,12 @@ export function EmpresaTab({
                     <X size={16} />
                   </button>
                 </div>
+
+                <CnpjLookupField
+                  index={index}
+                  cnpj={negocio.cnpj}
+                  onUpdateNegocio={updateNegocio}
+                />
 
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <FormField label="Nome da empresa" htmlFor={`negocio-nome-${index}`}>

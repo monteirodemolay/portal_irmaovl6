@@ -42,6 +42,7 @@ function reconcileNegociosStatus(
       previous.cidade === entry.cidade &&
       previous.telefoneComercial === entry.telefoneComercial &&
       previous.siteUrl === entry.siteUrl &&
+      previous.cnpj === entry.cnpj &&
       previous.logoUrl === entry.logoUrl &&
       previous.whatsappComercial === entry.whatsappComercial &&
       previous.emailComercial === entry.emailComercial &&

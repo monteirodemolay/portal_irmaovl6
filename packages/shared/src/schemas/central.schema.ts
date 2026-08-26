@@ -28,6 +28,11 @@ export const centralBusinessEntrySchema = z.object({
   cidade: z.string().max(150).nullable(),
   telefoneComercial: z.string().max(30).nullable(),
   siteUrl: z.string().url().nullable(),
+  /** Só dígitos (14), normalizado no servidor — atalho opcional pra preencher nomeEmpresa/cidade via BrasilAPI, nunca obrigatório. */
+  cnpj: z
+    .string()
+    .regex(/^\d{14}$/)
+    .nullable(),
   /** Logo/identidade visual do negócio — sobe pro Blob, aceita várias extensões (ver ALLOWED_LOGO_TYPES). */
   logoUrl: z.string().url().nullable(),
   /** "O que a empresa oferece" — tags curtas, o que mais importa pra busca do Diretório. */

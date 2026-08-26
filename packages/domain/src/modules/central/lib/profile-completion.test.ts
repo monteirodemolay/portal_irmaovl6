@@ -142,6 +142,7 @@ describe('calculateProfileCompletion', () => {
           cidade: null,
           telefoneComercial: null,
           siteUrl: null,
+          cnpj: null,
           logoUrl: null,
           produtosServicos: [],
           whatsappComercial: null,
