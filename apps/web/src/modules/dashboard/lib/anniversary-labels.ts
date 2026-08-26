@@ -1,3 +1,4 @@
+import { BRAZIL_TIME_ZONE } from '@vl6/shared';
 import type { AnniversaryKind, UpcomingAnniversaryEntry } from '@vl6/domain';
 
 export const ANNIVERSARY_KIND_LABELS: Record<AnniversaryKind, string> = {
@@ -8,10 +9,17 @@ export const ANNIVERSARY_KIND_LABELS: Record<AnniversaryKind, string> = {
   conjuge: 'Aniversário da cônjuge',
 };
 
-function dayLabel(diasAte: number): string {
-  if (diasAte === 0) return 'hoje';
-  if (diasAte === 1) return 'amanhã';
-  return `em ${diasAte} dias`;
+function formatShortDate(data: Date): string {
+  return new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeZone: BRAZIL_TIME_ZONE })
+    .format(data)
+    .slice(0, 5);
+}
+
+function dayLabel(diasAte: number, data: Date): string {
+  const dataLabel = formatShortDate(data);
+  if (diasAte === 0) return `hoje (${dataLabel})`;
+  if (diasAte === 1) return `amanhã (${dataLabel})`;
+  return `em ${diasAte} dias (${dataLabel})`;
 }
 
 /**
@@ -22,7 +30,7 @@ function dayLabel(diasAte: number): string {
  * pediu para destacar.
  */
 export function anniversaryHeadline(entry: UpcomingAnniversaryEntry): string {
-  const dia = dayLabel(entry.diasAte);
+  const dia = dayLabel(entry.diasAte, entry.data);
   if (entry.kind === 'nascimento') {
     return `Aniversário ${dia}`;
   }
