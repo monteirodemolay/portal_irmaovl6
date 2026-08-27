@@ -24,7 +24,7 @@ import type { PublicMemberProfileDTO } from '@vl6/domain';
 import { createServerContainer } from '@vl6/infra';
 import { requireSession } from '@/lib/auth/require-session';
 import { uploadBusinessLogo, validateLogoFile } from '@/lib/central/business-logo-upload';
-import { lookupCnpj, normalizeCnpj } from '@/lib/central/cnpj-lookup';
+import { lookupCnpj, type CnpjLookupFailureReason } from '@/lib/central/cnpj-lookup';
 
 /**
  * Busca sob demanda pro painel lateral de perfil (`MemberProfileProvider`) —
@@ -63,21 +63,18 @@ export interface LookupBusinessCnpjResult {
  * resultado em vez de redirecionar/revalidar como as outras ações desta
  * tela.
  */
+const CNPJ_LOOKUP_FAILURE_MESSAGES: Record<CnpjLookupFailureReason, string> = {
+  invalid: 'CNPJ inválido — informe os 14 dígitos.',
+  not_found: 'CNPJ não encontrado na Receita Federal. Confira os números ou preencha manualmente.',
+  unavailable: 'Não foi possível consultar agora (serviço externo instável). Preencha manualmente.',
+};
+
 export async function lookupBusinessCnpjAction(cnpj: string): Promise<LookupBusinessCnpjResult> {
   await requireSession();
 
-  const digits = normalizeCnpj(cnpj);
-  if (digits.length !== 14) {
-    return { nomeEmpresa: '', cidade: null, error: 'CNPJ inválido — informe os 14 dígitos.' };
-  }
-
-  const result = await lookupCnpj(digits);
-  if (!result) {
-    return {
-      nomeEmpresa: '',
-      cidade: null,
-      error: 'CNPJ não encontrado ou serviço indisponível no momento. Preencha manualmente.',
-    };
+  const result = await lookupCnpj(cnpj);
+  if ('reason' in result) {
+    return { nomeEmpresa: '', cidade: null, error: CNPJ_LOOKUP_FAILURE_MESSAGES[result.reason] };
   }
 
   return result;
