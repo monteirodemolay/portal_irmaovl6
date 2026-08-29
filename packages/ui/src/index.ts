@@ -25,6 +25,7 @@ export * from './components/filter-bar';
 export * from './components/video-player';
 export * from './components/pdf-viewer';
 export * from './components/archive-lightbox';
+export * from './components/media-viewer-modal';
 export * from './components/constellation-graph';
 // Reexporte nomeado (não `export *`) — vários ícones do Lucide colidem com
 // nomes de componentes deste barrel (ex.: `Badge`). Adicione aqui só os

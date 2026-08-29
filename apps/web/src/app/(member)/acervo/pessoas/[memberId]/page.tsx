@@ -1,10 +1,10 @@
-import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { createServerContainer } from '@vl6/infra';
 import { getBoardPositionLabel } from '@vl6/shared';
 import { Avatar, AvatarFallback, AvatarImage, Camera, EmptyState, Users } from '@vl6/ui';
 import { requirePagePermission } from '@/lib/auth/require-permission';
 import { AcervoPageHeader } from '@/components/member/acervo-page-header';
+import { PersonPhotoGrid } from '@/modules/archive/components/person-photo-grid';
 import { RelationsSection } from '@/modules/archive/components/relations-section';
 import { isAccessLevelVisible } from '@/modules/archive/lib/access-level-visibility';
 import { MEMBER_DEGREE_LABELS } from '@/lib/membership/member-degree-label';
@@ -189,22 +189,7 @@ export default async function ArchivePersonPage({
             <Camera size={18} />
             Fotografias
           </h2>
-          <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
-            {photos.map((photo) => (
-              <Link
-                key={photo.id}
-                href={`/acervo/eventos/${photo.eventId}`}
-                className="border-border hover:border-accent aspect-square overflow-hidden rounded-lg border transition-colors"
-              >
-                <img
-                  src={photo.src}
-                  alt={photo.caption}
-                  loading="lazy"
-                  className="h-full w-full object-cover"
-                />
-              </Link>
-            ))}
-          </div>
+          <PersonPhotoGrid photos={photos} />
         </section>
       )}
 

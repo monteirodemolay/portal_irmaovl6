@@ -61,6 +61,7 @@ export default async function ArchivePhotosPage({
             <ArchiveItemCard
               key={album.id}
               href={archiveItemHref('gallery-album', album.id)}
+              thumbnailUrl={album.capaUrl}
               kindLabel={album.categoria}
               icon={<GalleryIcon size={14} />}
               titulo={album.titulo}

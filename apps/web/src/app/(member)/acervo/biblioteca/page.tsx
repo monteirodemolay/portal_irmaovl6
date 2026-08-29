@@ -1,13 +1,35 @@
+import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { createServerContainer } from '@vl6/infra';
-import { ArchiveItemCard, BookOpen, EmptyState, FilterBar } from '@vl6/ui';
+import { BookOpen, EmptyState, FileText, FilterBar, Image as ImageIcon, Video } from '@vl6/ui';
+import type { MediaViewerItemKind } from '@vl6/ui';
+import type { FileKind } from '@vl6/shared';
 import { requirePagePermission } from '@/lib/auth/require-permission';
 import { AcervoPageHeader } from '@/components/member/acervo-page-header';
 import { archiveItemHref } from '@/modules/archive/lib/archive-item-id';
+import { DocumentGrid, type DocumentGridItem } from '@/modules/archive/components/document-grid';
 
 function buildHref(categoriaId?: string): string {
   return categoriaId ? `/acervo/biblioteca?categoria=${categoriaId}` : '/acervo/biblioteca';
 }
+
+const VIEWER_KIND_BY_FILE_KIND: Record<FileKind, MediaViewerItemKind> = {
+  imagem: 'imagem',
+  video: 'video',
+  pdf: 'pdf',
+  word: 'outro',
+  excel: 'outro',
+  powerpoint: 'outro',
+};
+
+const ICON_BY_FILE_KIND: Record<FileKind, ReactNode> = {
+  imagem: <ImageIcon size={14} />,
+  video: <Video size={14} />,
+  pdf: <FileText size={14} />,
+  word: <FileText size={14} />,
+  excel: <FileText size={14} />,
+  powerpoint: <FileText size={14} />,
+};
 
 export default async function ArchiveLibraryPage({
   searchParams,
@@ -61,23 +83,34 @@ export default async function ArchiveLibraryPage({
           description="Livros, estudos e leituras selecionadas para os Irmãos aparecerão aqui assim que forem catalogados."
         />
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {filteredItems.flatMap((item) => {
+        <DocumentGrid
+          items={filteredItems.flatMap((item): DocumentGridItem[] => {
             const file = fileById.get(item.id);
             if (!file) return [];
             return [
-              <ArchiveItemCard
-                key={item.id}
-                href={archiveItemHref('library', item.id)}
-                kindLabel={categoryNameById.get(item.categoriaId) ?? 'Biblioteca'}
-                icon={<BookOpen size={14} />}
-                titulo={file.titulo}
-                descricao={file.descricao}
-                linkComponent={Link}
-              />,
+              {
+                id: item.id,
+                href: archiveItemHref('library', item.id),
+                kindLabel: categoryNameById.get(item.categoriaId) ?? 'Biblioteca',
+                icon: ICON_BY_FILE_KIND[file.tipo] ?? <BookOpen size={14} />,
+                titulo: file.titulo,
+                descricao: file.descricao,
+                thumbnailUrl: file.urlMiniatura,
+                viewer: {
+                  kind: VIEWER_KIND_BY_FILE_KIND[file.tipo],
+                  src: `/api/library-items/${item.id}`,
+                  title: file.titulo,
+                  caption: file.descricao,
+                  externalHref: `/api/library-items/${item.id}`,
+                  downloadHref: file.permitirDownload
+                    ? `/api/library-items/${item.id}?mode=download`
+                    : null,
+                  downloadName: file.titulo,
+                },
+              },
             ];
           })}
-        </div>
+        />
       )}
     </div>
   );
