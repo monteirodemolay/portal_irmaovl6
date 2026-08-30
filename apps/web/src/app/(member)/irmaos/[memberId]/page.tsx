@@ -1,9 +1,10 @@
 import Link from 'next/link';
-import { hasPermission } from '@vl6/domain';
+import { hasPermission, type PublicMemberProfileDTO } from '@vl6/domain';
 import { createServerContainer } from '@vl6/infra';
 import { ArrowLeft, Card, CardContent, EmptyState, Lock } from '@vl6/ui';
 import { requireSession } from '@/lib/auth/require-session';
 import { PublicMemberProfileView } from '@/modules/central/components/public-member-profile-view';
+import { SeeAlsoSection } from '@/modules/central/components/directorio/see-also-section';
 import { RelationsSection } from '@/modules/archive/components/relations-section';
 
 export default async function IrmaoProfilePage({
@@ -30,6 +31,22 @@ export default async function IrmaoProfilePage({
     memberId,
   );
   const profile = result.ok ? result.value : null;
+  const canViewAcervo = hasPermission(session.authContext, 'member:read');
+
+  // "Ver também" — Fase F, mesma área de atuação é o elo mais direto entre
+  // dois Irmãos que ainda não se conhecem (docs/architecture).
+  let seeAlsoMembers: PublicMemberProfileDTO[] = [];
+  const areaAtuacaoKey = profile?.profissional?.areaAtuacaoKey;
+  if (areaAtuacaoKey) {
+    const searchResult = await container.useCases.searchDirectory.execute(session.authContext, {
+      areaAtuacao: areaAtuacaoKey,
+    });
+    if (searchResult.ok) {
+      seeAlsoMembers = searchResult.value.items
+        .filter((item) => item.memberId !== memberId)
+        .slice(0, 4);
+    }
+  }
 
   return (
     <div className="flex flex-col gap-8">
@@ -43,7 +60,7 @@ export default async function IrmaoProfilePage({
 
       {profile ? (
         <div className="flex max-w-2xl flex-col gap-6">
-          <PublicMemberProfileView profile={profile} />
+          <PublicMemberProfileView profile={profile} canViewAcervo={canViewAcervo} />
         </div>
       ) : (
         <Card className="max-w-2xl">
@@ -51,6 +68,13 @@ export default async function IrmaoProfilePage({
             Este Irmão optou por não disponibilizar um perfil no Diretório.
           </CardContent>
         </Card>
+      )}
+
+      {profile && seeAlsoMembers.length > 0 && (
+        <SeeAlsoSection
+          areaLabel={profile.profissional?.areaAtuacao ?? ''}
+          members={seeAlsoMembers}
+        />
       )}
 
       {profile && (

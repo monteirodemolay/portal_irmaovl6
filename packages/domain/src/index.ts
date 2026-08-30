@@ -70,6 +70,7 @@ export * from './modules/governance/entities/committee.entity';
 export * from './modules/governance/repositories/board-term.repository';
 export * from './modules/governance/repositories/board-position-assignment.repository';
 export * from './modules/governance/repositories/committee.repository';
+export * from './modules/governance/lib/get-member-journey';
 export * from './modules/governance/use-cases/create-board-term.use-case';
 export * from './modules/governance/use-cases/assign-board-position.use-case';
 export * from './modules/governance/use-cases/get-active-board.use-case';

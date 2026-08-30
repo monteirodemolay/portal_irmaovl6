@@ -5,6 +5,7 @@ import {
   Briefcase,
   Building2,
   Button,
+  Camera,
   CheckCircle2,
   Compass,
   EyeOff,
@@ -116,6 +117,12 @@ export function PrivacidadeTab({ settings }: { settings: PublicationSettings | n
               label: 'Endereço',
               icon: MapPin,
               defaultChecked: settings?.blocks.endereco ?? false,
+            },
+            {
+              key: 'memoriaFotografica',
+              label: 'Memória fotográfica (Acervo VL6)',
+              icon: Camera,
+              defaultChecked: settings?.blocks.memoriaFotografica ?? false,
             },
           ]}
         />

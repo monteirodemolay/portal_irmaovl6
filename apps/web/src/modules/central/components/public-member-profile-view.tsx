@@ -1,8 +1,11 @@
+import Link from 'next/link';
 import type { PublicMemberProfileDTO } from '@vl6/domain';
 import { buildWhatsappLink, getBoardPositionLabel } from '@vl6/shared';
 import {
+  ArrowUpRight,
   Briefcase,
   Building2,
+  Camera,
   Card,
   CardContent,
   Compass,
@@ -22,6 +25,7 @@ import {
 } from '@vl6/ui';
 import { MemberAvatar } from '@/components/membership/member-avatar';
 import { MemberDegreeBadge } from '@/components/membership/member-degree-badge';
+import { MemberPhotoGrid } from './member-photo-grid';
 
 type IconType = React.ComponentType<{ size?: number; strokeWidth?: number; className?: string }>;
 
@@ -70,7 +74,14 @@ function LinkPill({ href, label, icon: Icon }: { href: string; label: string; ic
  * preview "como os outros veem" (`/perfil`) quanto pelo perfil de terceiro
  * (`/central/[memberId]`).
  */
-export function PublicMemberProfileView({ profile }: { profile: PublicMemberProfileDTO }) {
+export function PublicMemberProfileView({
+  profile,
+  canViewAcervo = false,
+}: {
+  profile: PublicMemberProfileDTO;
+  /** Gate do link "Ver Memória VL6 completa" — ponte Diretório → Acervo (Fase B/C). */
+  canViewAcervo?: boolean;
+}) {
   const hasContatos = profile.contatos && Object.values(profile.contatos).some(Boolean);
   const hasRedes = profile.redes && Object.values(profile.redes).some(Boolean);
 
@@ -141,6 +152,22 @@ export function PublicMemberProfileView({ profile }: { profile: PublicMemberProf
                 </div>
               </Section>
             )}
+
+          {profile.memoriaFotografica && profile.memoriaFotografica.length > 0 && (
+            <Section title="Memória fotográfica" icon={Camera}>
+              <MemberPhotoGrid photos={profile.memoriaFotografica} />
+            </Section>
+          )}
+
+          {canViewAcervo && (
+            <Link
+              href={`/acervo/pessoas/${profile.memberId}`}
+              className="text-accent flex w-fit items-center gap-1 text-xs font-medium hover:underline"
+            >
+              Ver Memória VL6 completa
+              <ArrowUpRight size={13} strokeWidth={2} />
+            </Link>
+          )}
 
           {profile.apresentacao?.texto && (
             <Section title="Sobre" icon={Quote}>

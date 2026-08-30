@@ -28,6 +28,7 @@ const EMPTY_PUBLICATION_SETTINGS: Omit<
     competencias: false,
     servicos: false,
     endereco: false,
+    memoriaFotografica: false,
   },
   contacts: { telefone: false, whatsapp: false, email: false },
   externalLinks: {

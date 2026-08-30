@@ -9,6 +9,14 @@ export interface PublicMemberProfileDTO {
   nomeCompleto: string;
   fotoUrl: string | null;
   grau: Member['grau'];
+  /**
+   * Data de iniciação — registro institucional da Loja, mesmo espírito de
+   * `grau` acima: nunca passa pelos blocos de `PublicationSettings`. Base
+   * do "Selo de Trajetória" (`LodgeTenureBadge`) nos cards do Diretório e
+   * de Negócios & Serviços — não exige nenhuma consulta extra, `Member` já
+   * vem carregado por quem monta este DTO.
+   */
+  dataIniciacao: Date | null;
   apresentacao: { texto: string | null } | null;
   informacoesPessoais: { interesses: string | null; cidadeExibicao: string | null } | null;
   profissional: {
@@ -56,6 +64,14 @@ export interface PublicMemberProfileDTO {
     dataExaltacao: Date | null;
     cargos: { cargo: string; gestaoNome: string; dataInicio: Date; dataFim: Date | null }[];
   } | null;
+  /**
+   * Fotografias do Acervo VL6 em que este Irmão está identificado — ponte
+   * Diretório → Acervo (docs/architecture, princípio da Cadeia de União).
+   * Gated pelo bloco `memoriaFotografica` (diferente de `trajetoria`: aqui é
+   * claramente uma preferência pessoal do Irmão, não um registro da Loja).
+   * Preenchido pelo use case, mesmo motivo de `trajetoria`.
+   */
+  memoriaFotografica: { id: string; src: string; caption: string }[] | null;
 }
 
 /**
@@ -79,6 +95,7 @@ export function buildPublicMemberProfileDTO(
     nomeCompleto: member.nomeCompleto,
     fotoUrl: member.fotoUrl,
     grau: member.grau,
+    dataIniciacao: member.dataIniciacao,
     apresentacao: blocks.apresentacao ? { texto: profile?.apresentacao ?? null } : null,
     informacoesPessoais: blocks.informacoesPessoais
       ? {
@@ -147,5 +164,6 @@ export function buildPublicMemberProfileDTO(
       : null,
     // Preenchido depois, pelo use case — ver comentário no campo da interface.
     trajetoria: null,
+    memoriaFotografica: null,
   };
 }

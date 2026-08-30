@@ -350,6 +350,11 @@ export async function updatePublicationSettingsAction(
         ),
         servicos: bool('blocks.servicos', blocksIncluded, current?.blocks.servicos ?? false),
         endereco: bool('blocks.endereco', blocksIncluded, current?.blocks.endereco ?? false),
+        memoriaFotografica: bool(
+          'blocks.memoriaFotografica',
+          blocksIncluded,
+          current?.blocks.memoriaFotografica ?? false,
+        ),
       },
       contacts: {
         telefone: bool('contacts.telefone', contactsIncluded, current?.contacts.telefone ?? false),

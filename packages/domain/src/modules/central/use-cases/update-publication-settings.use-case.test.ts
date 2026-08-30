@@ -72,6 +72,7 @@ const NO_BLOCKS = {
   competencias: false,
   servicos: false,
   endereco: false,
+  memoriaFotografica: false,
 };
 const NO_CONTACTS = { telefone: false, whatsapp: false, email: false };
 const NO_LINKS = {

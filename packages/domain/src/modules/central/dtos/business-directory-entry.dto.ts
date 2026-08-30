@@ -22,5 +22,6 @@ export interface BusinessDirectoryEntryDTO {
     memberId: string;
     nomeCompleto: string;
     fotoUrl: string | null;
+    dataIniciacao: Date | null;
   };
 }

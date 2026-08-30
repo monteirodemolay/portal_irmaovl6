@@ -11,6 +11,9 @@ import type { IPublicationSettingsRepository } from '../repositories/publication
 import type { IMemberRepository } from '../../membership/repositories/member.repository';
 import type { IMemberPositionHistoryRepository } from '../../membership/repositories/member-position-history.repository';
 import type { IBoardTermRepository } from '../../governance/repositories/board-term.repository';
+import { getMemberJourneyCargos } from '../../governance/lib/get-member-journey';
+import type { IArchiveMediaRepository } from '../../archive/repositories/archive-media.repository';
+import type { IMediaAssetRepository } from '../../archive/repositories/media-asset.repository';
 
 export interface GetPublicMemberProfileDeps {
   memberRepository: IMemberRepository;
@@ -18,6 +21,8 @@ export interface GetPublicMemberProfileDeps {
   publicationSettingsRepository: IPublicationSettingsRepository;
   memberPositionHistoryRepository: IMemberPositionHistoryRepository;
   boardTermRepository: IBoardTermRepository;
+  archiveMediaRepository: IArchiveMediaRepository;
+  mediaAssetRepository: IMediaAssetRepository;
 }
 
 /**
@@ -59,22 +64,41 @@ export class GetPublicMemberProfileUseCase {
     // Loja, não preferência pessoal), por isso não passa pelos blocos de
     // `PublicationSettings`: se o perfil chegou até aqui (já visível), a
     // trajetória sempre acompanha.
-    const history = await this.deps.memberPositionHistoryRepository.listByMemberId(targetMemberId);
-    const gestaoIds = [...new Set(history.map((entry) => entry.gestaoId))];
-    const terms = await Promise.all(
-      gestaoIds.map((gestaoId) => this.deps.boardTermRepository.findById(gestaoId)),
-    );
-    const termNameById = new Map(
-      terms.filter((term) => term !== null).map((term) => [term.id, term.nome]),
-    );
-    const cargos = [...history]
-      .sort((a, b) => new Date(b.dataInicio).getTime() - new Date(a.dataInicio).getTime())
-      .map((entry) => ({
-        cargo: entry.cargo,
-        gestaoNome: termNameById.get(entry.gestaoId) ?? 'Gestão',
-        dataInicio: entry.dataInicio,
-        dataFim: entry.dataFim,
-      }));
+    const cargos = await getMemberJourneyCargos(this.deps, targetMemberId);
+
+    // Memória fotográfica — ponte Diretório → Acervo (Fase B). Ao contrário
+    // da trajetória institucional, é claramente preferência do titular, por
+    // isso passa pelo bloco `memoriaFotografica`. Filtro deliberadamente
+    // conservador: só publicado e nunca nível "administracao", mesmo para
+    // quem vê o Diretório com sessão de Administrador — o Acervo VL6 é a
+    // superfície certa para mídia restrita, não o perfil público.
+    let memoriaFotografica: PublicMemberProfileDTO['memoriaFotografica'] = null;
+    if (settings.blocks.memoriaFotografica) {
+      const taggedMedia = await this.deps.archiveMediaRepository.findByPessoaIdentificada(
+        ctx.tenantId,
+        targetMemberId,
+      );
+      const publishedMedia = taggedMedia.filter(
+        (media) =>
+          media.mediaType === 'foto' &&
+          media.publicacaoStatus === 'publicado' &&
+          media.accessLevel !== 'administracao',
+      );
+      const assets = await Promise.all(
+        publishedMedia.map((media) => this.deps.mediaAssetRepository.findById(media.mediaAssetId)),
+      );
+      memoriaFotografica = publishedMedia
+        .map((media, index) => {
+          const asset = assets[index];
+          if (!asset || asset.deletedAt) return null;
+          return {
+            id: media.id,
+            src: `/api/archive-media/${media.id}`,
+            caption: media.caption ?? asset.originalName,
+          };
+        })
+        .filter((entry): entry is { id: string; src: string; caption: string } => entry !== null);
+    }
 
     return ok({
       ...dto,
@@ -84,6 +108,7 @@ export class GetPublicMemberProfileUseCase {
         dataExaltacao: member.dataExaltacao,
         cargos,
       },
+      memoriaFotografica,
     });
   }
 }

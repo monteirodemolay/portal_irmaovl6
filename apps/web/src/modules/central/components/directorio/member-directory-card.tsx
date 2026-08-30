@@ -1,5 +1,5 @@
 import type { PublicMemberProfileDTO } from '@vl6/domain';
-import { Briefcase, Building2, Card, CardContent, ChevronRight } from '@vl6/ui';
+import { Briefcase, Building2, Card, CardContent, ChevronRight, LodgeTenureBadge } from '@vl6/ui';
 import { MemberAvatar } from '@/components/membership/member-avatar';
 import { MemberDegreeBadge } from '@/components/membership/member-degree-badge';
 
@@ -27,7 +27,10 @@ export function MemberDirectoryCard({
               />
               <div className="flex min-w-0 flex-col gap-1">
                 <p className="line-clamp-2 font-medium leading-snug">{profile.nomeCompleto}</p>
-                <MemberDegreeBadge grau={profile.grau} compact />
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <MemberDegreeBadge grau={profile.grau} compact />
+                  <LodgeTenureBadge dataIniciacao={profile.dataIniciacao} />
+                </div>
               </div>
             </div>
             <ChevronRight

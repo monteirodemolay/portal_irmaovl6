@@ -34,6 +34,7 @@ function buildSettings(): PublicationSettings {
       competencias: false,
       servicos: false,
       endereco: false,
+      memoriaFotografica: false,
     },
     contacts: { telefone: false, whatsapp: false, email: false },
     externalLinks: {

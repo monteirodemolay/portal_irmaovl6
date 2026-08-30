@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import type { BusinessDirectoryEntryDTO } from '@vl6/domain';
 import { FORMA_ATENDIMENTO_LABELS } from '@vl6/shared';
-import { Building2, Card, CardContent, Clock, Gift, MapPin } from '@vl6/ui';
+import { Building2, Card, CardContent, Clock, Gift, LodgeTenureBadge, MapPin } from '@vl6/ui';
 import { MemberAvatar } from '@/components/membership/member-avatar';
 
 function BusinessLogo({ logoUrl, nomeEmpresa }: { logoUrl: string | null; nomeEmpresa: string }) {
@@ -84,12 +84,13 @@ export function BusinessDirectoryCard({ entry }: { entry: BusinessDirectoryEntry
             nome={entry.responsavel.nomeCompleto}
             className="h-7 w-7"
           />
-          <span className="min-w-0">
+          <span className="min-w-0 flex-1">
             <span className="text-muted block text-[11px] leading-none">Irmão responsável</span>
             <span className="block truncate font-medium leading-tight">
               {entry.responsavel.nomeCompleto}
             </span>
           </span>
+          <LodgeTenureBadge dataIniciacao={entry.responsavel.dataIniciacao} className="shrink-0" />
         </Link>
       </CardContent>
     </Card>

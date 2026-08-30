@@ -1,7 +1,16 @@
 import { notFound } from 'next/navigation';
 import { createServerContainer } from '@vl6/infra';
+import { getMemberJourneyCargos } from '@vl6/domain';
 import { getBoardPositionLabel } from '@vl6/shared';
-import { Avatar, AvatarFallback, AvatarImage, Camera, EmptyState, Users } from '@vl6/ui';
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+  Camera,
+  EmptyState,
+  LodgeTenureBadge,
+  Users,
+} from '@vl6/ui';
 import { requirePagePermission } from '@/lib/auth/require-permission';
 import { AcervoPageHeader } from '@/components/member/acervo-page-header';
 import { PersonPhotoGrid } from '@/modules/archive/components/person-photo-grid';
@@ -48,8 +57,14 @@ export default async function ArchivePersonPage({
     dataExaltacao: member.dataExaltacao,
   };
 
-  const [history, publicationSettings, taggedMedia] = await Promise.all([
-    container.repositories.memberPositionHistory.listByMemberId(memberId),
+  const [cargos, publicationSettings, taggedMedia] = await Promise.all([
+    getMemberJourneyCargos(
+      {
+        memberPositionHistoryRepository: container.repositories.memberPositionHistory,
+        boardTermRepository: container.repositories.boardTerm,
+      },
+      memberId,
+    ),
     container.repositories.publicationSettings.findByMemberId(tenantId, memberId),
     container.repositories.archiveMedia.findByPessoaIdentificada(tenantId, memberId),
   ]);
@@ -85,17 +100,6 @@ export default async function ArchivePersonPage({
         entry !== null,
     );
 
-  const sortedHistory = [...history].sort(
-    (a, b) => new Date(b.dataInicio).getTime() - new Date(a.dataInicio).getTime(),
-  );
-  const gestaoIds = [...new Set(sortedHistory.map((entry) => entry.gestaoId))];
-  const terms = await Promise.all(
-    gestaoIds.map((gestaoId) => container.repositories.boardTerm.findById(gestaoId)),
-  );
-  const termNameById = new Map(
-    terms.filter((term) => term !== null).map((term) => [term.id, term.nome]),
-  );
-
   const hasPublishedCentralProfile =
     publicationSettings?.profilePublished === true && publicationSettings.suspendedAt === null;
 
@@ -108,9 +112,16 @@ export default async function ArchivePersonPage({
           {identity.fotoUrl && <AvatarImage src={identity.fotoUrl} alt="" />}
           <AvatarFallback className="text-lg">{initials(identity.nomeCompleto)}</AvatarFallback>
         </Avatar>
-        <div>
+        <div className="flex flex-col gap-1.5">
           <h1 className="font-display text-2xl font-semibold">{identity.nomeCompleto}</h1>
-          <p className="text-muted text-sm">{MEMBER_DEGREE_LABELS[identity.grau]}</p>
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="text-muted text-sm">{MEMBER_DEGREE_LABELS[identity.grau]}</p>
+            <LodgeTenureBadge
+              dataIniciacao={identity.dataIniciacao}
+              participacoes={photos.length}
+              participacoesLabel="fotografias"
+            />
+          </div>
         </div>
       </div>
 
@@ -156,7 +167,7 @@ export default async function ArchivePersonPage({
           Trajetória institucional
         </h2>
 
-        {sortedHistory.length === 0 ? (
+        {cargos.length === 0 ? (
           <div className="mt-4">
             <EmptyState
               icon={<Users size={22} />}
@@ -166,12 +177,12 @@ export default async function ArchivePersonPage({
           </div>
         ) : (
           <ol className="border-border mt-4 flex flex-col gap-3 border-l pl-5">
-            {sortedHistory.map((entry) => (
-              <li key={entry.id} className="relative">
+            {cargos.map((entry, index) => (
+              <li key={index} className="relative">
                 <span className="bg-accent absolute -left-[23px] top-1.5 h-2 w-2 rounded-full" />
                 <p className="font-display font-semibold">{getBoardPositionLabel(entry.cargo)}</p>
                 <p className="text-muted text-xs">
-                  {termNameById.get(entry.gestaoId) ?? 'Gestão'} · {formatDate(entry.dataInicio)}
+                  {entry.gestaoNome} · {formatDate(entry.dataInicio)}
                   {entry.dataFim ? ` a ${formatDate(entry.dataFim)}` : ' — atual'}
                 </p>
               </li>

@@ -89,6 +89,7 @@ const CENTRAL_BLOCK_KEYS = [
   'competencias',
   'servicos',
   'endereco',
+  'memoriaFotografica',
 ] as const;
 
 /**

@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import type { AuthContext } from '../../../shared/auth-context';
 import {
+  InMemoryArchiveMediaRepository,
   InMemoryBoardTermRepository,
+  InMemoryMediaAssetRepository,
   InMemoryMemberCentralProfileRepository,
   InMemoryMemberPositionHistoryRepository,
   InMemoryMemberRepository,
@@ -74,6 +76,7 @@ function buildSettings(overrides: Partial<PublicationSettings> = {}): Publicatio
       competencias: false,
       servicos: false,
       endereco: false,
+      memoriaFotografica: false,
     },
     contacts: { telefone: false, whatsapp: false, email: false },
     externalLinks: {
@@ -104,12 +107,16 @@ function buildUseCase() {
   const publicationSettingsRepository = new InMemoryPublicationSettingsRepository();
   const memberPositionHistoryRepository = new InMemoryMemberPositionHistoryRepository();
   const boardTermRepository = new InMemoryBoardTermRepository();
+  const archiveMediaRepository = new InMemoryArchiveMediaRepository();
+  const mediaAssetRepository = new InMemoryMediaAssetRepository();
   const useCase = new GetPublicMemberProfileUseCase({
     memberRepository,
     memberCentralProfileRepository,
     publicationSettingsRepository,
     memberPositionHistoryRepository,
     boardTermRepository,
+    archiveMediaRepository,
+    mediaAssetRepository,
   });
   return {
     useCase,
@@ -117,6 +124,8 @@ function buildUseCase() {
     publicationSettingsRepository,
     memberPositionHistoryRepository,
     boardTermRepository,
+    archiveMediaRepository,
+    mediaAssetRepository,
   };
 }
 
@@ -191,6 +200,126 @@ describe('GetPublicMemberProfileUseCase', () => {
       cargo: 'secretario',
       gestaoNome: 'Gestão 2024/2025',
     });
+  });
+
+  it('traz a memória fotográfica só quando o bloco memoriaFotografica está ligado', async () => {
+    const {
+      useCase,
+      memberRepository,
+      publicationSettingsRepository,
+      archiveMediaRepository,
+      mediaAssetRepository,
+    } = buildUseCase();
+    await memberRepository.create(buildMember());
+    await publicationSettingsRepository.create(
+      buildSettings({ blocks: { ...buildSettings().blocks, memoriaFotografica: true } }),
+    );
+    await mediaAssetRepository.create({
+      id: 'asset-1',
+      tenantId: 't1',
+      originalName: 'foto.jpg',
+      normalizedName: 'foto.jpg',
+      mimeType: 'image/jpeg',
+      extension: 'jpg',
+      size: 1000,
+      sha256: 'abc',
+      provider: 'vercel_blob',
+      storageKey: 'foto.jpg',
+      processingStatus: 'concluido',
+      width: 800,
+      height: 600,
+      duration: null,
+      createdAt: new Date('2026-01-01'),
+      updatedAt: new Date('2026-01-01'),
+      createdBy: 'user-1',
+      updatedBy: 'user-1',
+      deletedAt: null,
+      status: 'active',
+      ativo: true,
+    });
+    await mediaAssetRepository.create({
+      id: 'asset-restrito',
+      tenantId: 't1',
+      originalName: 'restrito.jpg',
+      normalizedName: 'restrito.jpg',
+      mimeType: 'image/jpeg',
+      extension: 'jpg',
+      size: 1000,
+      sha256: 'def',
+      provider: 'vercel_blob',
+      storageKey: 'restrito.jpg',
+      processingStatus: 'concluido',
+      width: 800,
+      height: 600,
+      duration: null,
+      createdAt: new Date('2026-01-01'),
+      updatedAt: new Date('2026-01-01'),
+      createdBy: 'user-1',
+      updatedBy: 'user-1',
+      deletedAt: null,
+      status: 'active',
+      ativo: true,
+    });
+    const baseMedia = {
+      tenantId: 't1',
+      boardTermId: null,
+      archiveItemId: 'item-1',
+      mediaType: 'foto' as const,
+      documentType: null,
+      role: null,
+      order: 0,
+      caption: null,
+      altText: null,
+      isCover: false,
+      isFeatured: false,
+      allowDownload: true,
+      autor: null,
+      tags: [],
+      pessoasIdentificadas: ['member-1'],
+      createdAt: new Date('2026-01-01'),
+      updatedAt: new Date('2026-01-01'),
+      createdBy: 'user-1',
+      updatedBy: 'user-1',
+      deletedAt: null,
+      status: 'active' as const,
+      ativo: true,
+    };
+    await archiveMediaRepository.create({
+      ...baseMedia,
+      id: 'media-1',
+      eventId: 'event-1',
+      mediaAssetId: 'asset-1',
+      accessLevel: 'publico',
+      publicacaoStatus: 'publicado',
+    });
+    // Nível "administracao" nunca aparece no Diretório, mesmo com o bloco ligado.
+    await archiveMediaRepository.create({
+      ...baseMedia,
+      id: 'media-restrito',
+      eventId: 'event-1',
+      mediaAssetId: 'asset-restrito',
+      accessLevel: 'administracao',
+      publicacaoStatus: 'publicado',
+    });
+
+    const result = await useCase.execute(ctx, 'member-1');
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value?.memoriaFotografica).toHaveLength(1);
+    expect(result.value?.memoriaFotografica?.[0]).toMatchObject({ id: 'media-1' });
+  });
+
+  it('não traz memória fotográfica quando o bloco memoriaFotografica está desligado', async () => {
+    const { useCase, memberRepository, publicationSettingsRepository } = buildUseCase();
+    await memberRepository.create(buildMember());
+    await publicationSettingsRepository.create(buildSettings());
+
+    const result = await useCase.execute(ctx, 'member-1');
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value?.memoriaFotografica).toBeNull();
   });
 
   it('devolve null quando nunca publicou', async () => {

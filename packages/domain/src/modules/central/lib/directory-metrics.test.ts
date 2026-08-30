@@ -8,6 +8,7 @@ function buildDto(overrides: Partial<PublicMemberProfileDTO> = {}): PublicMember
     nomeCompleto: 'Irmão de Teste',
     fotoUrl: null,
     grau: 'mestre',
+    dataIniciacao: null,
     apresentacao: null,
     informacoesPessoais: null,
     profissional: null,
@@ -20,6 +21,7 @@ function buildDto(overrides: Partial<PublicMemberProfileDTO> = {}): PublicMember
     informacoesMaconicas: null,
     endereco: null,
     trajetoria: null,
+    memoriaFotografica: null,
     ...overrides,
   };
 }
