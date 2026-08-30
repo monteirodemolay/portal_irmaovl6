@@ -278,6 +278,7 @@ export * from './modules/gallery/entities/gallery-media.entity';
 export * from './modules/gallery/repositories/gallery-album.repository';
 export * from './modules/gallery/repositories/gallery-media.repository';
 export * from './modules/gallery/use-cases/create-gallery-album.use-case';
+export * from './modules/gallery/use-cases/delete-gallery-album.use-case';
 export * from './modules/gallery/use-cases/list-gallery-albums.use-case';
 export * from './modules/gallery/use-cases/add-gallery-media.use-case';
 export * from './modules/gallery/use-cases/list-gallery-media.use-case';

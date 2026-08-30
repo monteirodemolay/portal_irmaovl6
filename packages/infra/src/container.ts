@@ -100,6 +100,7 @@ import {
   CreateFileAssetUseCase,
   CreateFileCategoryUseCase,
   CreateGalleryAlbumUseCase,
+  DeleteGalleryAlbumUseCase,
   CreateLibraryCategoryUseCase,
   CreateLinkUseCase,
   CreateNewsCommentUseCase,
@@ -1046,6 +1047,10 @@ export function createServerContainer() {
       galleryAlbumRepository: repositories.galleryAlbum,
       clock,
       idGenerator,
+    }),
+    deleteGalleryAlbum: new DeleteGalleryAlbumUseCase({
+      galleryAlbumRepository: repositories.galleryAlbum,
+      clock,
     }),
     listGalleryAlbums: new ListGalleryAlbumsUseCase({
       galleryAlbumRepository: repositories.galleryAlbum,

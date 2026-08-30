@@ -44,6 +44,17 @@ export async function createGalleryAlbumAction(
   redirect(`/admin/acervo/galeria/${result.value.id}`);
 }
 
+export async function deleteGalleryAlbumAction(albumId: string): Promise<void> {
+  const session = await requireSession();
+  const container = createServerContainer();
+  const result = await container.useCases.deleteGalleryAlbum.execute(session.authContext, albumId);
+  if (!result.ok) throw new Error(result.error.message);
+
+  revalidatePath('/admin/acervo/galeria');
+  revalidatePath('/galeria');
+  revalidatePath('/acervo/fotografias');
+}
+
 export async function addGalleryMediaAction(
   albumId: string,
   _prevState: GalleryActionState,

@@ -3,6 +3,8 @@ import { createServerContainer } from '@vl6/infra';
 import { Badge, Card, CardContent, CardHeader, CardTitle, EmptyState } from '@vl6/ui';
 import { requirePagePermission } from '@/lib/auth/require-permission';
 import { GalleryMediaForm } from '@/modules/gallery/components/gallery-media-form';
+import { DeleteButton } from '@/components/admin/delete-button';
+import { deleteGalleryAlbumAction } from '@/modules/gallery/actions/gallery-actions';
 
 function formatDate(date: Date): string {
   return new Intl.DateTimeFormat('pt-BR').format(new Date(date));
@@ -27,11 +29,19 @@ export default async function GalleryAlbumDetailPage({
 
   return (
     <div className="flex flex-col gap-8">
-      <div>
-        <h1 className="font-display text-2xl font-semibold">{album.titulo}</h1>
-        <p className="text-muted">
-          {album.categoria} · {formatDate(album.dataEvento)}
-        </p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="font-display text-2xl font-semibold">{album.titulo}</h1>
+          <p className="text-muted">
+            {album.categoria} · {formatDate(album.dataEvento)}
+          </p>
+        </div>
+        <DeleteButton
+          action={deleteGalleryAlbumAction.bind(null, album.id)}
+          confirmMessage={`Excluir o álbum "${album.titulo}"? As mídias enviadas deixam de aparecer no Portal.`}
+          variant="destructive"
+          redirectTo="/admin/acervo/galeria"
+        />
       </div>
 
       <Card className="max-w-md">
