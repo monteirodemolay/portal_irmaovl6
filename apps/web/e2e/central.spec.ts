@@ -58,4 +58,31 @@ test.describe('Comunidade VL6 (Diretório + Negócios + Meu Espaço unificados)'
     await page.goto('/admin/pessoas/central');
     await expect(page.getByRole('heading', { name: 'Central VL6' })).toBeVisible();
   });
+
+  // Regra central da Fase 1: todo Irmão institucional não excluído pertence
+  // ao Diretório, publicado ou não — sem filtro de situação, o padrão é
+  // "Todos" (nunca só `ativo`), então o total de resultados nunca fica em 0
+  // quando existe ao menos um Irmão cadastrado.
+  test('/irmaos lista Irmãos institucionais mesmo sem perfil voluntário publicado', async ({
+    page,
+  }) => {
+    await loginAsAdmin(page);
+
+    await page.goto('/irmaos?tipo=irmaos');
+    await expect(page.getByText('Algo deu errado')).toHaveCount(0);
+    await expect(page.getByText('A Comunidade ainda está começando')).toHaveCount(0);
+    await expect(page.getByRole('heading', { name: 'Irmãos', exact: true })).toBeVisible();
+  });
+
+  test('abrir o perfil de um Irmão a partir do Diretório nunca devolve 404', async ({ page }) => {
+    await loginAsAdmin(page);
+
+    await page.goto('/irmaos?tipo=irmaos');
+    const firstCard = page.locator('a[href^="/irmaos/"]').first();
+    await expect(firstCard).toBeVisible();
+    const href = await firstCard.getAttribute('href');
+    const response = await page.goto(href!);
+    expect(response?.status()).not.toBe(404);
+    await expect(page.getByText('Algo deu errado')).toHaveCount(0);
+  });
 });

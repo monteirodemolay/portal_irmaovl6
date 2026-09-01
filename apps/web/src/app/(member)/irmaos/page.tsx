@@ -1,9 +1,9 @@
 import {
   hasPermission,
-  type PublicMemberProfileDTO,
+  type DirectoryMemberDTO,
   type BusinessDirectoryEntryDTO,
 } from '@vl6/domain';
-import type { AreaAtuacaoKey } from '@vl6/shared';
+import type { AreaAtuacaoKey, MemberDegree, MemberSituationStatus } from '@vl6/shared';
 import { createServerContainer } from '@vl6/infra';
 import { EmptyState, Lock, Search } from '@vl6/ui';
 import { requireSession } from '@/lib/auth/require-session';
@@ -55,6 +55,12 @@ export default async function ComunidadeVL6Page({
     segmento: params.segmento || undefined,
     online: params.online === '1' || undefined,
     desconto: params.desconto === '1' || undefined,
+    grau: (params.grau as MemberDegree) || undefined,
+    situacao: (params.situacao as MemberSituationStatus) || undefined,
+    cargo: params.cargo || undefined,
+    comissao: params.comissao || undefined,
+    perfilEnriquecido: params.perfilEnriquecido === '1' || undefined,
+    negocioPublicado: params.negocioPublicado === '1' || undefined,
   };
 
   // Cartão pessoal — mesma leitura que alimentaria `SpaceHeader`/`CompletionRing`
@@ -90,6 +96,12 @@ export default async function ComunidadeVL6Page({
           tag: filters.tag,
           empresa: filters.empresa,
           cidade: filters.cidade,
+          grau: filters.grau,
+          situacao: filters.situacao,
+          cargo: filters.cargo,
+          comissao: filters.comissao,
+          perfilEnriquecido: filters.perfilEnriquecido,
+          negocioPublicado: filters.negocioPublicado,
         })
       : null,
     tipo !== 'irmaos'
@@ -106,9 +118,7 @@ export default async function ComunidadeVL6Page({
     return <EmptyState title="Não foi possível carregar a Comunidade VL6." />;
   }
 
-  const memberItems: PublicMemberProfileDTO[] = directoryResult?.ok
-    ? directoryResult.value.items
-    : [];
+  const memberItems: DirectoryMemberDTO[] = directoryResult?.ok ? directoryResult.value.items : [];
   let businessItems: BusinessDirectoryEntryDTO[] = businessResult?.ok
     ? businessResult.value.items
     : [];
@@ -123,7 +133,7 @@ export default async function ComunidadeVL6Page({
   const areaFacets = directoryResult?.ok ? directoryResult.value.areaFacets : [];
   const directoryOptions = directoryResult?.ok
     ? directoryResult.value.filterOptions
-    : { profissoes: [], cidades: [], tags: [], empresas: [] };
+    : { profissoes: [], cidades: [], tags: [], empresas: [], cargos: [], comissoes: [] };
   const businessOptions = businessResult?.ok
     ? businessResult.value.filterOptions
     : { segmentos: [], cidades: [] };

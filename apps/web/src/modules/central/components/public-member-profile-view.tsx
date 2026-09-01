@@ -103,6 +103,20 @@ export function PublicMemberProfileView({
 }) {
   const hasContatos = profile.contatos && Object.values(profile.contatos).some(Boolean);
   const hasRedes = profile.redes && Object.values(profile.redes).some(Boolean);
+  const hasVoluntaryContent = Boolean(
+    profile.apresentacao?.texto ||
+    profile.informacoesPessoais ||
+    profile.endereco ||
+    profile.profissional ||
+    (profile.competencias && profile.competencias.length > 0) ||
+    (profile.servicos && profile.servicos.length > 0) ||
+    profile.empresaAtual ||
+    (profile.negocios && profile.negocios.length > 0) ||
+    hasContatos ||
+    hasRedes ||
+    profile.informacoesMaconicas ||
+    (profile.memoriaFotografica && profile.memoriaFotografica.length > 0),
+  );
 
   return (
     <Card className="overflow-hidden">
@@ -186,6 +200,25 @@ export function PublicMemberProfileView({
             <Section title="Memória fotográfica" icon={Camera}>
               <MemberPhotoGrid photos={profile.memoriaFotografica} />
             </Section>
+          )}
+
+          {!hasVoluntaryContent && (
+            <div className="border-border bg-background text-muted rounded-xl border border-dashed p-4 text-sm">
+              {isOwnProfile ? (
+                <>
+                  Você ainda não compartilhou informações pessoais ou profissionais no seu perfil.{' '}
+                  <Link
+                    href="/irmaos/meu-espaco"
+                    className="text-accent font-medium hover:underline"
+                  >
+                    Complete seu espaço na Comunidade VL6
+                  </Link>
+                  .
+                </>
+              ) : (
+                'Este Irmão ainda não compartilhou informações pessoais ou profissionais no Diretório.'
+              )}
+            </div>
           )}
 
           {canViewAcervo && (

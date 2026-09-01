@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { hasPermission, type PublicMemberProfileDTO } from '@vl6/domain';
+import { hasPermission, type DirectoryMemberDTO } from '@vl6/domain';
 import { createServerContainer } from '@vl6/infra';
 import { ArrowLeft, Card, CardContent, EmptyState, Lock } from '@vl6/ui';
 import { requireSession } from '@/lib/auth/require-session';
@@ -44,7 +44,7 @@ export default async function IrmaoProfilePage({
 
   // "Ver também" — Fase F, mesma área de atuação é o elo mais direto entre
   // dois Irmãos que ainda não se conhecem (docs/architecture).
-  let seeAlsoMembers: PublicMemberProfileDTO[] = [];
+  let seeAlsoMembers: DirectoryMemberDTO[] = [];
   const areaAtuacaoKey = profile?.profissional?.areaAtuacaoKey;
   if (areaAtuacaoKey) {
     const searchResult = await container.useCases.searchDirectory.execute(session.authContext, {
@@ -78,7 +78,7 @@ export default async function IrmaoProfilePage({
       ) : (
         <Card className="max-w-2xl">
           <CardContent className="text-muted p-6 text-sm">
-            Este Irmão optou por não disponibilizar um perfil no Diretório.
+            Não encontramos este Irmão no Diretório.
           </CardContent>
         </Card>
       )}

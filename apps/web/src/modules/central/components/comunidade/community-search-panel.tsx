@@ -7,8 +7,17 @@ import type {
   BusinessDirectoryFilterOptions,
   DirectoryFilterOptions,
 } from '@vl6/domain';
-import { AREA_ATUACAO_LABELS, type AreaAtuacaoKey } from '@vl6/shared';
+import {
+  AREA_ATUACAO_LABELS,
+  MEMBER_DEGREES,
+  MEMBER_SITUATION_STATUS_LABELS,
+  MEMBER_SITUATION_STATUSES,
+  type AreaAtuacaoKey,
+  type MemberDegree,
+  type MemberSituationStatus,
+} from '@vl6/shared';
 import { ChevronRight, Input, Search, Select, SlidersHorizontal, X } from '@vl6/ui';
+import { MEMBER_DEGREE_LABELS } from '@/lib/membership/member-degree-label';
 
 export type CommunityTipo = 'tudo' | 'irmaos' | 'negocios';
 
@@ -22,6 +31,13 @@ export interface CommunityFiltersValues {
   segmento?: string;
   online?: boolean;
   desconto?: boolean;
+  grau?: MemberDegree;
+  /** Situação institucional — sem este filtro, "Todos" (nenhuma situação é excluída por padrão). */
+  situacao?: MemberSituationStatus;
+  cargo?: string;
+  comissao?: string;
+  perfilEnriquecido?: boolean;
+  negocioPublicado?: boolean;
 }
 
 const TIPO_LABELS: Record<CommunityTipo, string> = {
@@ -50,9 +66,9 @@ function removeParamHref(current: URLSearchParams, key: string): string {
  * Busca unificada da Comunidade VL6 — um único campo de texto + controle
  * segmentado Tudo/Irmãos/Negócios, com filtros progressivos que trocam de
  * conjunto conforme `tipo` (documento de referência, "Filtros progressivos").
- * Reaproveita só os campos que os casos de uso de busca já suportam de
- * verdade (`SearchDirectoryUseCase`/`SearchBusinessDirectoryUseCase`) — sem
- * inventar filtro de grau, cargo ou comissão, que a busca não tem hoje.
+ * Situação nunca tem valor padrão diferente de "Todos" — todo Irmão
+ * institucional pertence ao Diretório, então o filtro só EXCLUI quando o
+ * usuário escolhe algo (regra central desta fase).
  */
 export function CommunitySearchPanel({
   tipo,
@@ -72,7 +88,9 @@ export function CommunitySearchPanel({
   const hasAnyAdvancedOption =
     directoryOptions.profissoes.length > 0 ||
     directoryOptions.tags.length > 0 ||
-    directoryOptions.empresas.length > 0;
+    directoryOptions.empresas.length > 0 ||
+    directoryOptions.cargos.length > 0 ||
+    directoryOptions.comissoes.length > 0;
 
   const activeAdvancedCount = [
     filters.areaAtuacao,
@@ -82,6 +100,10 @@ export function CommunitySearchPanel({
     filters.segmento,
     filters.online,
     filters.desconto,
+    filters.cargo,
+    filters.comissao,
+    filters.perfilEnriquecido,
+    filters.negocioPublicado,
   ].filter(Boolean).length;
 
   const [advancedOpen, setAdvancedOpen] = useState(activeAdvancedCount > 0);
@@ -97,6 +119,12 @@ export function CommunitySearchPanel({
   if (filters.segmento) currentParams.set('segmento', filters.segmento);
   if (filters.online) currentParams.set('online', '1');
   if (filters.desconto) currentParams.set('desconto', '1');
+  if (filters.grau) currentParams.set('grau', filters.grau);
+  if (filters.situacao) currentParams.set('situacao', filters.situacao);
+  if (filters.cargo) currentParams.set('cargo', filters.cargo);
+  if (filters.comissao) currentParams.set('comissao', filters.comissao);
+  if (filters.perfilEnriquecido) currentParams.set('perfilEnriquecido', '1');
+  if (filters.negocioPublicado) currentParams.set('negocioPublicado', '1');
 
   const cidadeOptions =
     tipo === 'negocios'
@@ -111,6 +139,19 @@ export function CommunitySearchPanel({
     chips.push({ key: 'areaAtuacao', label: `Área: ${AREA_ATUACAO_LABELS[filters.areaAtuacao]}` });
   if (filters.profissao) chips.push({ key: 'profissao', label: `Profissão: ${filters.profissao}` });
   if (filters.tag) chips.push({ key: 'tag', label: `Competência/serviço: ${filters.tag}` });
+  if (filters.grau)
+    chips.push({ key: 'grau', label: `Grau: ${MEMBER_DEGREE_LABELS[filters.grau]}` });
+  if (filters.situacao)
+    chips.push({
+      key: 'situacao',
+      label: `Situação: ${MEMBER_SITUATION_STATUS_LABELS[filters.situacao]}`,
+    });
+  if (filters.cargo) chips.push({ key: 'cargo', label: `Cargo: ${filters.cargo}` });
+  if (filters.comissao) chips.push({ key: 'comissao', label: `Comissão: ${filters.comissao}` });
+  if (filters.perfilEnriquecido)
+    chips.push({ key: 'perfilEnriquecido', label: 'Possui perfil enriquecido' });
+  if (filters.negocioPublicado)
+    chips.push({ key: 'negocioPublicado', label: 'Possui negócio publicado' });
   if (filters.empresa) chips.push({ key: 'empresa', label: `Empresa: ${filters.empresa}` });
   if (filters.segmento) chips.push({ key: 'segmento', label: `Segmento: ${filters.segmento}` });
   if (filters.online) chips.push({ key: 'online', label: 'Atende online/remoto' });
@@ -188,6 +229,32 @@ export function CommunitySearchPanel({
         </div>
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          {tipo !== 'negocios' && (
+            <label className="flex flex-col gap-1.5 text-sm">
+              Situação
+              <Select name="situacao" defaultValue={filters.situacao ?? ''}>
+                <option value="">Todos</option>
+                {MEMBER_SITUATION_STATUSES.map((situacao) => (
+                  <option key={situacao} value={situacao}>
+                    {MEMBER_SITUATION_STATUS_LABELS[situacao]}
+                  </option>
+                ))}
+              </Select>
+            </label>
+          )}
+          {tipo !== 'negocios' && (
+            <label className="flex flex-col gap-1.5 text-sm">
+              Grau
+              <Select name="grau" defaultValue={filters.grau ?? ''}>
+                <option value="">Todos</option>
+                {MEMBER_DEGREES.map((grau) => (
+                  <option key={grau} value={grau}>
+                    {MEMBER_DEGREE_LABELS[grau]}
+                  </option>
+                ))}
+              </Select>
+            </label>
+          )}
           {tipo !== 'negocios' && areaFacets.length > 0 && (
             <label className="flex flex-col gap-1.5 text-sm">
               Área de atuação
@@ -274,6 +341,57 @@ export function CommunitySearchPanel({
                   </Select>
                 </label>
               )}
+              {directoryOptions.cargos.length > 0 && (
+                <label className="flex flex-col gap-1.5 text-sm">
+                  Cargo
+                  <Select name="cargo" defaultValue={filters.cargo ?? ''}>
+                    <option value="">Todos</option>
+                    {directoryOptions.cargos.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.value} ({opt.count})
+                      </option>
+                    ))}
+                  </Select>
+                </label>
+              )}
+              {directoryOptions.comissoes.length > 0 && (
+                <label className="flex flex-col gap-1.5 text-sm">
+                  Comissão
+                  <Select name="comissao" defaultValue={filters.comissao ?? ''}>
+                    <option value="">Todas</option>
+                    {directoryOptions.comissoes.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.value} ({opt.count})
+                      </option>
+                    ))}
+                  </Select>
+                </label>
+              )}
+            </div>
+          )}
+
+          {tipo !== 'negocios' && (
+            <div className="flex flex-wrap gap-4">
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  name="perfilEnriquecido"
+                  value="1"
+                  defaultChecked={Boolean(filters.perfilEnriquecido)}
+                  className="accent-primary"
+                />
+                Possui perfil enriquecido
+              </label>
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  name="negocioPublicado"
+                  value="1"
+                  defaultChecked={Boolean(filters.negocioPublicado)}
+                  className="accent-primary"
+                />
+                Possui negócio publicado
+              </label>
             </div>
           )}
 

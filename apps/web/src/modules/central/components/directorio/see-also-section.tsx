@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import type { PublicMemberProfileDTO } from '@vl6/domain';
+import type { DirectoryMemberDTO } from '@vl6/domain';
 import { Users } from '@vl6/ui';
 import { MemberAvatar } from '@/components/membership/member-avatar';
 
@@ -15,7 +15,7 @@ export function SeeAlsoSection({
   members,
 }: {
   areaLabel: string;
-  members: Pick<PublicMemberProfileDTO, 'memberId' | 'nomeCompleto' | 'fotoUrl'>[];
+  members: Pick<DirectoryMemberDTO, 'memberId' | 'nomeCompleto' | 'fotoUrl'>[];
 }) {
   if (members.length === 0) return null;
 
