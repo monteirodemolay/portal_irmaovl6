@@ -104,6 +104,13 @@ describe('RegisterMemberSituationUseCase', () => {
       vigente: true,
       dataInicioEstimada: false,
       justificativaEdicaoRetroativa: null,
+      origem: null,
+      sourceCode: null,
+      sourceLabel: null,
+      recordKind: null,
+      lojaOrigemId: null,
+      lojaDestinoId: null,
+      importBatchId: null,
       createdAt: new Date('2015-10-21T00:00:00Z'),
       updatedAt: new Date('2015-10-21T00:00:00Z'),
       createdBy: 'admin-1',
@@ -158,6 +165,13 @@ describe('RegisterMemberSituationUseCase', () => {
       vigente: true,
       dataInicioEstimada: false,
       justificativaEdicaoRetroativa: null,
+      origem: null,
+      sourceCode: null,
+      sourceLabel: null,
+      recordKind: null,
+      lojaOrigemId: null,
+      lojaDestinoId: null,
+      importBatchId: null,
       createdAt: new Date('2023-03-15T00:00:00Z'),
       updatedAt: new Date('2023-03-15T00:00:00Z'),
       createdBy: 'admin-1',
@@ -235,6 +249,13 @@ describe('RegisterMemberSituationUseCase', () => {
       vigente: true,
       dataInicioEstimada: false,
       justificativaEdicaoRetroativa: null,
+      origem: null,
+      sourceCode: null,
+      sourceLabel: null,
+      recordKind: null,
+      lojaOrigemId: null,
+      lojaDestinoId: null,
+      importBatchId: null,
       createdAt: new Date('2026-01-01T00:00:00Z'),
       updatedAt: new Date('2026-01-01T00:00:00Z'),
       createdBy: 'admin-1',
@@ -266,5 +287,54 @@ describe('RegisterMemberSituationUseCase', () => {
         dataInicio: new Date('2026-08-10T00:00:00Z'),
       }),
     ).rejects.toThrow(ForbiddenError);
+  });
+
+  it('preserva os campos de proveniência GLEG exatamente como informados, sem normalizar sourceLabel', async () => {
+    const { useCase } = buildUseCase(buildMember());
+
+    const result = await useCase.execute(ctx, 'm1', {
+      situacao: 'desligado',
+      motivo: 'quite_placet',
+      dataInicio: new Date('2026-08-10T00:00:00Z'),
+      documentoNumero: '012/2023',
+      origem: 'gleg_document',
+      recordKind: 'quite_placet',
+      sourceCode: 'GLEG-QP-012',
+      sourceLabel: '  Quite-Placet — Loja Vale do Lago  ',
+      lojaOrigemId: 'loja-origem-1',
+      lojaDestinoId: 'loja-destino-1',
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    // `sourceLabel` nunca é reescrito/normalizado — byte-a-byte o que foi digitado.
+    expect(result.value.record.sourceLabel).toBe('  Quite-Placet — Loja Vale do Lago  ');
+    expect(result.value.record.origem).toBe('gleg_document');
+    expect(result.value.record.recordKind).toBe('quite_placet');
+    expect(result.value.record.sourceCode).toBe('GLEG-QP-012');
+    expect(result.value.record.lojaOrigemId).toBe('loja-origem-1');
+    expect(result.value.record.lojaDestinoId).toBe('loja-destino-1');
+    // `recordKind` é metadado independente — não substitui a escolha explícita de `situacao`.
+    expect(result.value.record.situacao).toBe('desligado');
+  });
+
+  it('registra situação sem proveniência GLEG (registro local) com todos os campos de origem nulos — regressão', async () => {
+    const { useCase } = buildUseCase(buildMember());
+
+    const result = await useCase.execute(ctx, 'm1', {
+      situacao: 'licenciado',
+      motivo: 'licenca_saude',
+      dataInicio: new Date('2026-08-10T00:00:00Z'),
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value.record.origem).toBeNull();
+    expect(result.value.record.sourceCode).toBeNull();
+    expect(result.value.record.sourceLabel).toBeNull();
+    expect(result.value.record.recordKind).toBeNull();
+    expect(result.value.record.lojaOrigemId).toBeNull();
+    expect(result.value.record.lojaDestinoId).toBeNull();
+    expect(result.value.record.importBatchId).toBeNull();
   });
 });

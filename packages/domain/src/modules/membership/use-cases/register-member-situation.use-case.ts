@@ -2,6 +2,8 @@ import {
   MEMBER_SITUATION_REASONS,
   TERMINAL_MEMBER_SITUATION_STATUSES,
   type MemberSituationStatus,
+  type MemberStatusRecordKind,
+  type MemberStatusRecordOrigin,
 } from '@vl6/shared';
 import type { AuthContext } from '../../../shared/auth-context';
 import { requirePermission } from '../../../shared/auth-context';
@@ -42,6 +44,18 @@ export interface RegisterMemberSituationInput {
   documentoData?: Date | null;
   observacoes?: string | null;
   anexos?: MemberSituationAttachment[];
+  /**
+   * Proveniência GLEG — todos opcionais, `undefined`/omitidos equivalem a
+   * `null` (registro local, comportamento padrão inalterado). Ver
+   * `MemberSituationRecord` para o significado de cada campo.
+   */
+  origem?: MemberStatusRecordOrigin | null;
+  sourceCode?: string | null;
+  sourceLabel?: string | null;
+  recordKind?: MemberStatusRecordKind | null;
+  lojaOrigemId?: string | null;
+  lojaDestinoId?: string | null;
+  importBatchId?: string | null;
 }
 
 export interface RegisterMemberSituationOutput {
@@ -124,6 +138,13 @@ export class RegisterMemberSituationUseCase {
       vigente: true,
       dataInicioEstimada: false,
       justificativaEdicaoRetroativa: null,
+      origem: input.origem ?? null,
+      sourceCode: input.sourceCode ?? null,
+      sourceLabel: input.sourceLabel ?? null,
+      recordKind: input.recordKind ?? null,
+      lojaOrigemId: input.lojaOrigemId ?? null,
+      lojaDestinoId: input.lojaDestinoId ?? null,
+      importBatchId: input.importBatchId ?? null,
       createdAt: now,
       updatedAt: now,
       createdBy: ctx.uid,

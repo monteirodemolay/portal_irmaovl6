@@ -8,6 +8,10 @@ import {
   MEMBER_SITUATION_REASONS,
   MEMBER_SITUATION_STATUS_LABELS,
   MEMBER_SITUATION_STATUSES,
+  MEMBER_STATUS_RECORD_KIND_LABELS,
+  MEMBER_STATUS_RECORD_KINDS,
+  MEMBER_STATUS_RECORD_ORIGIN_LABELS,
+  MEMBER_STATUS_RECORD_ORIGINS,
   type MemberSituationStatus,
 } from '@vl6/shared';
 import {
@@ -95,6 +99,7 @@ export function RegisterSituationDialog({
   const [motivo, setMotivo] = useState('');
   const [motivoOutroDescricao, setMotivoOutroDescricao] = useState('');
   const [dataInicio, setDataInicio] = useState('');
+  const [glegOrigem, setGlegOrigem] = useState(false);
 
   const motivosDisponiveis = config.motivos ?? MEMBER_SITUATION_REASONS[situacao];
 
@@ -106,6 +111,7 @@ export function RegisterSituationDialog({
       setMotivo('');
       setMotivoOutroDescricao('');
       setDataInicio('');
+      setGlegOrigem(false);
     }
   }
 
@@ -229,6 +235,80 @@ export function RegisterSituationDialog({
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="observacoes">Observações internas</Label>
                 <Textarea id="observacoes" name="observacoes" rows={3} />
+              </div>
+
+              <div className="border-border flex flex-col gap-3 rounded-lg border p-3">
+                <label className="flex items-center gap-2 text-sm font-medium">
+                  <input
+                    type="checkbox"
+                    name="glegOrigem"
+                    className="accent-primary h-4 w-4"
+                    checked={glegOrigem}
+                    onChange={(e) => setGlegOrigem(e.target.checked)}
+                  />
+                  Origem: Grande Loja (GLEG)
+                </label>
+
+                {glegOrigem && (
+                  <div className="flex flex-col gap-3">
+                    <p className="text-muted text-xs">
+                      Preencha só quando esta ocorrência tem proveniência formal da GLEG (ex.:
+                      documento de Quite-Placet). O texto de &quot;Origem exata&quot; deve ser
+                      digitado exatamente como recebido/lançado — nunca reescrito.
+                    </p>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="flex flex-col gap-1.5">
+                        <Label htmlFor="origem">Tipo de origem</Label>
+                        <Select
+                          id="origem"
+                          name="origem"
+                          defaultValue={MEMBER_STATUS_RECORD_ORIGINS[1]}
+                        >
+                          {MEMBER_STATUS_RECORD_ORIGINS.map((o) => (
+                            <option key={o} value={o}>
+                              {MEMBER_STATUS_RECORD_ORIGIN_LABELS[o]}
+                            </option>
+                          ))}
+                        </Select>
+                      </div>
+                      <div className="flex flex-col gap-1.5">
+                        <Label htmlFor="recordKind">Natureza do ato</Label>
+                        <Select id="recordKind" name="recordKind" defaultValue="">
+                          <option value="" disabled>
+                            Selecione…
+                          </option>
+                          {MEMBER_STATUS_RECORD_KINDS.map((k) => (
+                            <option key={k} value={k}>
+                              {MEMBER_STATUS_RECORD_KIND_LABELS[k]}
+                            </option>
+                          ))}
+                        </Select>
+                      </div>
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <Label htmlFor="sourceLabel">Origem exata (rótulo do documento)</Label>
+                      <Input
+                        id="sourceLabel"
+                        name="sourceLabel"
+                        placeholder='Ex.: "Quite-Placet" — exatamente como consta no documento'
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="flex flex-col gap-1.5">
+                        <Label htmlFor="sourceCode">Código GLEG (opcional)</Label>
+                        <Input id="sourceCode" name="sourceCode" />
+                      </div>
+                      <div className="flex flex-col gap-1.5">
+                        <Label htmlFor="lojaOrigemId">Loja de origem (opcional)</Label>
+                        <Input id="lojaOrigemId" name="lojaOrigemId" />
+                      </div>
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <Label htmlFor="lojaDestinoId">Loja de destino (opcional)</Label>
+                      <Input id="lojaDestinoId" name="lojaDestinoId" />
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="flex flex-col gap-1.5">

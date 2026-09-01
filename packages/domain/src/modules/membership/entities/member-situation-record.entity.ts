@@ -1,4 +1,8 @@
-import type { MemberSituationStatus } from '@vl6/shared';
+import type {
+  MemberSituationStatus,
+  MemberStatusRecordKind,
+  MemberStatusRecordOrigin,
+} from '@vl6/shared';
 import type { BaseEntity } from '../../../shared/base-entity';
 
 export interface MemberSituationAttachment {
@@ -42,4 +46,32 @@ export interface MemberSituationRecord extends BaseEntity {
   dataInicioEstimada: boolean;
   /** Preenchida só quando este registro é uma correção retroativa de um registro já existente (ver `EditMemberSituationRecordUseCase`). */
   justificativaEdicaoRetroativa: string | null;
+
+  /**
+   * Campos de proveniência GLEG — todos opcionais/nulos, adicionados sem
+   * quebrar nenhum registro/fluxo existente. `null` em todos é o estado de
+   * todo registro lançado localmente antes desta feature existir (e
+   * continua sendo o estado padrão de "Alterar situação"/"Registrar
+   * licença"/"Registrar retorno" quando o Administrador não marca a origem
+   * como GLEG) — ver `RegisterMemberSituationUseCase`.
+   */
+  /** `null` = registro local, sem proveniência externa explícita. */
+  origem: MemberStatusRecordOrigin | null;
+  /** Código original recebido da GLEG, se houver (ex.: código de um relatório de importação). */
+  sourceCode: string | null;
+  /**
+   * Rótulo original EXATO como recebido/lançado (ex.: "Quite-Placet",
+   * "Placet ex officio ..."). Nunca reescrito/normalizado por código —
+   * sempre texto digitado por um humano a partir de um documento real.
+   */
+  sourceLabel: string | null;
+  /**
+   * Natureza do ato/ocorrência — metadado independente de `situacao`, nunca
+   * a substitui nem a deriva automaticamente (ver `MemberStatusRecordKind`).
+   */
+  recordKind: MemberStatusRecordKind | null;
+  lojaOrigemId: string | null;
+  lojaDestinoId: string | null;
+  /** Referência ao lote de importação, quando o registro veio de um arquivo (mecanismo de importação ainda não construído nesta fase). */
+  importBatchId: string | null;
 }

@@ -100,6 +100,50 @@ export const MEMBER_SITUATION_REASON_LABELS: Record<MemberSituationReasonKey, st
   outro: 'Outro',
 };
 
+/**
+ * Origem de um `MemberSituationRecord` — de onde a informação chegou.
+ * `null` (não incluso aqui, ver o campo na entidade) representa todo
+ * registro lançado localmente antes desta distinção existir, e continua
+ * representando isso: lançamento local pela Loja, sem proveniência
+ * explícita da GLEG. Nunca inferido automaticamente — sempre escolhido
+ * explicitamente por quem lança o registro.
+ */
+export const MEMBER_STATUS_RECORD_ORIGINS = [
+  'gleg_import',
+  'gleg_document',
+  'lodge_entry',
+  'historical_migration',
+] as const;
+export type MemberStatusRecordOrigin = (typeof MEMBER_STATUS_RECORD_ORIGINS)[number];
+
+export const MEMBER_STATUS_RECORD_ORIGIN_LABELS: Record<MemberStatusRecordOrigin, string> = {
+  gleg_import: 'Importação de arquivo da GLEG',
+  gleg_document: 'Documento da GLEG (Quite-Placet, Placet ex officio etc.)',
+  lodge_entry: 'Lançamento pela própria Loja',
+  historical_migration: 'Migração de histórico anterior',
+};
+
+/**
+ * Natureza do ato/ocorrência que originou o registro — metadado
+ * independente de `situacao`: um Quite-Placet (`recordKind: 'quite_placet'`)
+ * ainda exige que o Administrador escolha a `situacao` resultante
+ * (normalmente `desligado`), nunca a substitui nem a deriva automaticamente.
+ */
+export const MEMBER_STATUS_RECORD_KINDS = [
+  'situacao',
+  'quite_placet',
+  'placet_ex_officio',
+  'outro',
+] as const;
+export type MemberStatusRecordKind = (typeof MEMBER_STATUS_RECORD_KINDS)[number];
+
+export const MEMBER_STATUS_RECORD_KIND_LABELS: Record<MemberStatusRecordKind, string> = {
+  situacao: 'Situação',
+  quite_placet: 'Quite-Placet',
+  placet_ex_officio: 'Placet ex officio',
+  outro: 'Outro',
+};
+
 export const MARITAL_STATUSES = [
   'solteiro',
   'casado',

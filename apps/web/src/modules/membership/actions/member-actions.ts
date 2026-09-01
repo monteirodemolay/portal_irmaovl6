@@ -12,10 +12,14 @@ import {
   MEMBER_DEGREES,
   MEMBER_SITUATION_REASONS,
   MEMBER_SITUATION_STATUSES,
+  MEMBER_STATUS_RECORD_KINDS,
+  MEMBER_STATUS_RECORD_ORIGINS,
   normalizeConjugeFields,
   type BoardPositionKey,
   type MemberFormValues,
   type MemberSituationStatus,
+  type MemberStatusRecordKind,
+  type MemberStatusRecordOrigin,
 } from '@vl6/shared';
 import {
   createServerContainer,
@@ -612,6 +616,31 @@ export async function registerMemberSituationAction(
     return { error: uploadResult.error, success: false };
   }
 
+  // Origem GLEG — toggle opcional na UI ("Origem: Grande Loja (GLEG)"). Sem
+  // marcar, tudo fica `null` (comportamento local inalterado, ver
+  // `RegisterMemberSituationUseCase`).
+  const glegAtivo = formData.get('glegOrigem') === 'on';
+  const origemRaw = String(formData.get('origem') ?? '');
+  const origem: MemberStatusRecordOrigin | null =
+    glegAtivo && MEMBER_STATUS_RECORD_ORIGINS.includes(origemRaw as MemberStatusRecordOrigin)
+      ? (origemRaw as MemberStatusRecordOrigin)
+      : null;
+  const recordKindRaw = String(formData.get('recordKind') ?? '');
+  const recordKind: MemberStatusRecordKind | null =
+    glegAtivo && MEMBER_STATUS_RECORD_KINDS.includes(recordKindRaw as MemberStatusRecordKind)
+      ? (recordKindRaw as MemberStatusRecordKind)
+      : null;
+  const sourceCode =
+    glegAtivo && formData.get('sourceCode') ? String(formData.get('sourceCode')) : null;
+  // `sourceLabel` é sempre o texto exato digitado a partir de um documento
+  // real — nunca reescrito/normalizado aqui.
+  const sourceLabel =
+    glegAtivo && formData.get('sourceLabel') ? String(formData.get('sourceLabel')) : null;
+  const lojaOrigemId =
+    glegAtivo && formData.get('lojaOrigemId') ? String(formData.get('lojaOrigemId')) : null;
+  const lojaDestinoId =
+    glegAtivo && formData.get('lojaDestinoId') ? String(formData.get('lojaDestinoId')) : null;
+
   const container = createServerContainer();
   const result = await container.useCases.registerMemberSituation.execute(
     session.authContext,
@@ -629,6 +658,12 @@ export async function registerMemberSituationAction(
       documentoData: parseSituationDate(formData, 'documentoData'),
       observacoes: formData.get('observacoes') ? String(formData.get('observacoes')) : null,
       anexos: uploadResult.anexos,
+      origem,
+      recordKind,
+      sourceCode,
+      sourceLabel,
+      lojaOrigemId,
+      lojaDestinoId,
     },
   );
   if (!result.ok) {
