@@ -6,6 +6,7 @@ import {
   Camera,
   Download,
   FileText,
+  MediaViewerModal,
   Music,
   Tabs,
   TabsContent,
@@ -14,6 +15,7 @@ import {
   Video,
   VideoPlayer,
   type ArchiveLightboxPhoto,
+  type MediaViewerItem,
 } from '@vl6/ui';
 import type { EventAlbumMediaItem } from '../lib/load-event-album';
 
@@ -29,9 +31,21 @@ function formatBytes(bytes: number): string {
   return `${value.toFixed(1)} ${units[unitIndex]}`;
 }
 
-/** `true` quando o navegador consegue exibir o documento embutido numa nova aba (imagem/PDF). */
-function isPreviewableInline(mimeType: string): boolean {
-  return mimeType === 'application/pdf' || mimeType.startsWith('image/');
+function toDocumentViewerKind(mimeType: string): MediaViewerItem['kind'] {
+  if (mimeType === 'application/pdf') return 'pdf';
+  if (mimeType.startsWith('image/')) return 'imagem';
+  return 'outro';
+}
+
+function toDocumentViewerItem(doc: EventAlbumMediaItem): MediaViewerItem {
+  return {
+    kind: toDocumentViewerKind(doc.mimeType),
+    src: doc.src,
+    title: doc.caption ?? doc.originalName,
+    caption: doc.caption,
+    downloadHref: doc.allowDownload ? doc.src : null,
+    downloadName: doc.originalName,
+  };
 }
 
 function toLightboxPhoto(media: EventAlbumMediaItem): ArchiveLightboxPhoto {
@@ -136,13 +150,18 @@ function AudioList({ audios }: { audios: EventAlbumMediaItem[] }) {
   );
 }
 
-function DocumentList({ documents }: { documents: EventAlbumMediaItem[] }) {
+function DocumentList({
+  documents,
+  onOpen,
+}: {
+  documents: EventAlbumMediaItem[];
+  onOpen: (index: number) => void;
+}) {
   if (documents.length === 0) return null;
   return (
     <ul className="flex flex-col gap-2">
-      {documents.map((doc) => {
-        const previewable = isPreviewableInline(doc.mimeType);
-        const canOfferLink = doc.allowDownload || previewable;
+      {documents.map((doc, index) => {
+        const canOpen = doc.allowDownload || toDocumentViewerKind(doc.mimeType) !== 'outro';
         return (
           <li key={doc.id} className="border-border flex items-center gap-3 rounded-lg border p-3">
             <FileText size={18} className="text-accent shrink-0" />
@@ -150,16 +169,14 @@ function DocumentList({ documents }: { documents: EventAlbumMediaItem[] }) {
               <p className="truncate text-sm font-medium">{doc.caption ?? doc.originalName}</p>
               <p className="text-muted text-xs">{formatBytes(doc.sizeBytes)}</p>
             </div>
-            {canOfferLink ? (
-              <a
-                href={doc.src}
-                target="_blank"
-                rel="noreferrer"
-                download={doc.allowDownload ? doc.originalName : undefined}
+            {canOpen ? (
+              <button
+                type="button"
+                onClick={() => onOpen(index)}
                 className="border-border hover:border-accent shrink-0 rounded-md border px-3 py-1.5 text-xs font-medium transition-colors"
               >
-                {doc.allowDownload ? 'Baixar' : 'Visualizar'}
-              </a>
+                Visualizar
+              </button>
             ) : (
               <span className="text-muted shrink-0 text-xs">Reservado</span>
             )}
@@ -188,6 +205,9 @@ export function ArchiveEventAlbum({ media }: { media: EventAlbumMediaItem[] }) {
 
   const lightboxPhotos = React.useMemo(() => photos.map(toLightboxPhoto), [photos]);
   const [lightboxIndex, setLightboxIndex] = React.useState<number | null>(null);
+
+  const documentViewerItems = React.useMemo(() => documents.map(toDocumentViewerItem), [documents]);
+  const [documentViewerIndex, setDocumentViewerIndex] = React.useState<number | null>(null);
 
   const tabs: { value: string; label: string }[] = [{ value: 'tudo', label: 'Tudo' }];
   if (photos.length > 0) tabs.push({ value: 'fotos', label: 'Fotografias' });
@@ -248,7 +268,7 @@ export function ArchiveEventAlbum({ media }: { media: EventAlbumMediaItem[] }) {
                   Documentos
                 </h2>
               )}
-              <DocumentList documents={documents} />
+              <DocumentList documents={documents} onOpen={setDocumentViewerIndex} />
             </section>
           )}
         </TabsContent>
@@ -270,7 +290,7 @@ export function ArchiveEventAlbum({ media }: { media: EventAlbumMediaItem[] }) {
         )}
         {documents.length > 0 && (
           <TabsContent value="documentos" className="mt-4">
-            <DocumentList documents={documents} />
+            <DocumentList documents={documents} onOpen={setDocumentViewerIndex} />
           </TabsContent>
         )}
       </Tabs>
@@ -281,6 +301,15 @@ export function ArchiveEventAlbum({ media }: { media: EventAlbumMediaItem[] }) {
           index={lightboxIndex}
           onIndexChange={setLightboxIndex}
           onClose={() => setLightboxIndex(null)}
+        />
+      )}
+
+      {documentViewerIndex !== null && (
+        <MediaViewerModal
+          items={documentViewerItems}
+          index={documentViewerIndex}
+          onIndexChange={setDocumentViewerIndex}
+          onClose={() => setDocumentViewerIndex(null)}
         />
       )}
     </div>
