@@ -111,6 +111,10 @@ export * from './modules/central/use-cases/reactivate-central-profile.use-case';
 export * from './modules/central/use-cases/list-central-profiles-admin-view.use-case';
 export * from './modules/central/use-cases/list-business-submissions.use-case';
 export * from './modules/central/use-cases/review-business-submission.use-case';
+export * from './modules/central/use-cases/update-member-central-profile-assisted.use-case';
+export * from './modules/central/use-cases/record-member-profile-consent.use-case';
+export * from './modules/central/use-cases/revoke-member-profile-consent.use-case';
+export * from './modules/central/use-cases/publish-member-profile-blocks.use-case';
 
 // Content
 export * from './modules/content/entities/news.entity';

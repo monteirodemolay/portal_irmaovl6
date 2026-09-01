@@ -1,5 +1,19 @@
 export type AuditAction =
-  'create' | 'update' | 'delete' | 'restore' | 'login' | 'permission_change';
+  | 'create'
+  | 'update'
+  | 'delete'
+  | 'restore'
+  | 'login'
+  | 'permission_change'
+  // Fluxo de cadastro assistido da Central VL6 (Fase 2, docs/architecture) —
+  // eventos nomeados explicitamente pedidos pelo requisito de auditoria,
+  // gravados via `RecordAuditEntryUseCase` (mesmo mecanismo, união apenas
+  // estendida — não é um log paralelo).
+  | 'member_profile_assisted_started'
+  | 'member_profile_assisted_updated'
+  | 'member_profile_consent_recorded'
+  | 'member_profile_blocks_published'
+  | 'member_profile_consent_revoked';
 
 /**
  * Registro de auditoria — imutável e append-only, por isso NÃO estende

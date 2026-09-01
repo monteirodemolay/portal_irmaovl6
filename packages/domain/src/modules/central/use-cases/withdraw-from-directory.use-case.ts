@@ -60,6 +60,10 @@ export class WithdrawFromDirectoryUseCase {
       blocksAuthorized: [],
       contactsAuthorized: [],
       externalLinksAuthorized: [],
+      source: 'self_service',
+      recordedBy: ctx.uid,
+      confirmationChannel: null,
+      note: null,
     });
 
     return ok(updated);

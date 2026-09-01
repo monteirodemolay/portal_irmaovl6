@@ -25,7 +25,7 @@ function sameStringArray(a: string[], b: string[]): boolean {
   return a.length === b.length && a.every((value, i) => value === b[i]);
 }
 
-function reconcileNegociosStatus(
+export function reconcileNegociosStatus(
   input: MemberCentralProfileValues['negocios'],
   currentNegocios: CentralBusinessEntry[],
   now: Date,

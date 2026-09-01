@@ -130,6 +130,10 @@ export class UpdatePublicationSettingsUseCase {
         blocksAuthorized: grantedBlocks,
         contactsAuthorized: grantedContacts,
         externalLinksAuthorized: grantedLinks,
+        source: 'self_service',
+        recordedBy: ctx.uid,
+        confirmationChannel: null,
+        note: null,
       });
     }
     if (revokedBlocks.length || revokedContacts.length || revokedLinks.length) {
@@ -143,6 +147,10 @@ export class UpdatePublicationSettingsUseCase {
         blocksAuthorized: revokedBlocks,
         contactsAuthorized: revokedContacts,
         externalLinksAuthorized: revokedLinks,
+        source: 'self_service',
+        recordedBy: ctx.uid,
+        confirmationChannel: null,
+        note: null,
       });
     }
 

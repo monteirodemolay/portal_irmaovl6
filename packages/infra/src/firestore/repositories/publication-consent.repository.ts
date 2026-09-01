@@ -12,6 +12,15 @@ const COLLECTION = 'publicationConsents';
  * `PublicationConsent` não estende `BaseEntity` (é append-only, sem soft
  * delete — mesma natureza de `AuditLog`) — converter dedicado, mesmo padrão
  * de `audit-log.repository.ts`.
+ *
+ * `source`/`recordedBy`/`confirmationChannel`/`note` chegaram na Fase 2
+ * (cadastro assistido) — registros gravados antes disso não têm esses
+ * campos no Firestore. Aplica defaults seguros na leitura, nunca fabricando
+ * um aceite retroativo: todo registro anterior à Fase 2 só podia vir do
+ * autoatendimento (`source: 'self_service'`), sem canal de confirmação
+ * (`confirmationChannel: null`) nem nota (`note: null`); `recordedBy` cai
+ * pro próprio `memberId` quando ausente (era sempre o titular agindo sobre
+ * si mesmo antes deste campo existir).
  */
 const publicationConsentConverter: FirestoreDataConverter<PublicationConsent> = {
   toFirestore(entry: PublicationConsent) {
@@ -22,7 +31,15 @@ const publicationConsentConverter: FirestoreDataConverter<PublicationConsent> = 
     const data = snapshot.data() as Omit<PublicationConsent, 'id' | 'acceptedAt'> & {
       acceptedAt: Timestamp;
     };
-    return { ...data, id: snapshot.id, acceptedAt: data.acceptedAt.toDate() };
+    return {
+      ...data,
+      id: snapshot.id,
+      acceptedAt: data.acceptedAt.toDate(),
+      source: data.source ?? 'self_service',
+      recordedBy: data.recordedBy ?? data.memberId,
+      confirmationChannel: data.confirmationChannel ?? null,
+      note: data.note ?? null,
+    };
   },
 };
 
