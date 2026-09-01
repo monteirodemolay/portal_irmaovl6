@@ -104,6 +104,7 @@ export * from './modules/central/use-cases/withdraw-from-directory.use-case';
 export * from './modules/central/use-cases/get-public-member-profile.use-case';
 export * from './modules/central/use-cases/search-directory.use-case';
 export * from './modules/central/use-cases/search-business-directory.use-case';
+export * from './modules/central/use-cases/get-business-directory-entry.use-case';
 export * from './modules/central/use-cases/suspend-central-profile.use-case';
 export * from './modules/central/use-cases/reactivate-central-profile.use-case';
 export * from './modules/central/use-cases/list-central-profiles-admin-view.use-case';

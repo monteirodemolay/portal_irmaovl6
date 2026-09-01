@@ -168,6 +168,7 @@ import {
   ResolveTenantByHostUseCase,
   RevokeApiKeyUseCase,
   SearchBusinessDirectoryUseCase,
+  GetBusinessDirectoryEntryUseCase,
   SearchDirectoryUseCase,
   SearchMembersUseCase,
   ListUpcomingAnniversariesUseCase,
@@ -589,6 +590,11 @@ export function createServerContainer() {
       publicationSettingsRepository: repositories.publicationSettings,
     }),
     searchBusinessDirectory: new SearchBusinessDirectoryUseCase({
+      memberRepository: repositories.member,
+      memberCentralProfileRepository: repositories.memberCentralProfile,
+      publicationSettingsRepository: repositories.publicationSettings,
+    }),
+    getBusinessDirectoryEntry: new GetBusinessDirectoryEntryUseCase({
       memberRepository: repositories.member,
       memberCentralProfileRepository: repositories.memberCentralProfile,
       publicationSettingsRepository: repositories.publicationSettings,
