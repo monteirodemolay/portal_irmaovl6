@@ -6,6 +6,7 @@ import { isAccessLevelVisible } from './access-level-visibility';
 
 export interface EventAlbumMediaItem {
   id: string;
+  archiveItemId: string;
   mediaType: ArchiveMediaTypeKey;
   order: number;
   caption: string | null;
@@ -30,6 +31,9 @@ export interface EventAlbumMediaItem {
    * `Member`s excluídos/de outro tenant nunca aparecem aqui.
    */
   pessoasIdentificadas: { id: string; nomeCompleto: string }[];
+  /** Ponto focal do recorte (0-100) — `null` usa o centro padrão do navegador. */
+  focalX: number | null;
+  focalY: number | null;
 }
 
 export interface EventAlbumData {
@@ -114,6 +118,7 @@ export async function loadEventAlbum(
       if (!asset || asset.tenantId !== authContext.tenantId || asset.deletedAt) return null;
       const item: EventAlbumMediaItem = {
         id: archiveMedia.id,
+        archiveItemId: archiveMedia.archiveItemId,
         mediaType: archiveMedia.mediaType,
         order: archiveMedia.order,
         caption: archiveMedia.caption,
@@ -132,6 +137,8 @@ export async function loadEventAlbum(
         pessoasIdentificadas: (archiveMedia.pessoasIdentificadas ?? [])
           .filter((memberId) => memberNameById.has(memberId))
           .map((memberId) => ({ id: memberId, nomeCompleto: memberNameById.get(memberId)! })),
+        focalX: archiveMedia.focalX ?? null,
+        focalY: archiveMedia.focalY ?? null,
       };
       return item;
     })

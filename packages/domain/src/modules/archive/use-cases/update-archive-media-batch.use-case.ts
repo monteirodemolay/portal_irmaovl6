@@ -40,6 +40,14 @@ export interface UpdateArchiveMediaBatchFields {
    * quanto a uma única mídia.
    */
   pessoasIdentificadas?: string[];
+  /**
+   * Ponto focal do recorte (0-100) — sempre os dois juntos ou nenhum,
+   * ajustado pelo picker de arrastar-e-soltar sobre a própria foto (não
+   * faz sentido em lote na prática, mas reaproveita a mesma regra de "só
+   * sobrescreve o que foi informado").
+   */
+  focalX?: number | null;
+  focalY?: number | null;
 }
 
 export interface UpdateArchiveMediaBatchInput {
@@ -107,6 +115,8 @@ export class UpdateArchiveMediaBatchUseCase {
       ...(input.fields.pessoasIdentificadas !== undefined
         ? { pessoasIdentificadas: input.fields.pessoasIdentificadas }
         : {}),
+      ...(input.fields.focalX !== undefined ? { focalX: input.fields.focalX } : {}),
+      ...(input.fields.focalY !== undefined ? { focalY: input.fields.focalY } : {}),
       updatedAt: now,
       updatedBy: ctx.uid,
     }));

@@ -1,9 +1,12 @@
 import { notFound } from 'next/navigation';
+import { hasPermission } from '@vl6/domain';
 import { createServerContainer } from '@vl6/infra';
 import { CalendarDays, Download, EmptyState, FileArchive, MapPin } from '@vl6/ui';
 import { requireSession } from '@/lib/auth/require-session';
 import { AcervoPageHeader } from '@/components/member/acervo-page-header';
 import { ArchiveEventAlbum } from '@/modules/archive/components/archive-event-album';
+import { CoverPositionPicker } from '@/modules/archive/components/cover-position-picker';
+import { updateArchiveMediaFocalPointAction } from '@/modules/archive/actions/publish-hub-actions';
 import { loadEventAlbum } from '@/modules/archive/lib/load-event-album';
 
 function formatDate(date: Date): string {
@@ -30,6 +33,7 @@ export default async function EventAlbumPage({ params }: { params: Promise<{ eve
 
   const album = await loadEventAlbum(container, session.authContext, session.role, eventId);
   const hasDownloadableMedia = Boolean(album?.media.some((item) => item.allowDownload));
+  const canAdjustCover = hasPermission(session.authContext, 'archiveMedia:update');
 
   return (
     <div className="flex flex-col gap-6">
@@ -56,13 +60,34 @@ export default async function EventAlbumPage({ params }: { params: Promise<{ eve
         </div>
       )}
 
-      {album?.coverMedia && (
-        <img
-          src={album.coverMedia.src}
-          alt={album.coverMedia.altText ?? event.titulo}
-          className="border-border max-h-[50vh] w-full rounded-lg border object-cover"
-        />
-      )}
+      {album?.coverMedia &&
+        (canAdjustCover ? (
+          <div className="border-border overflow-hidden rounded-lg border">
+            <CoverPositionPicker
+              src={album.coverMedia.src}
+              alt={album.coverMedia.altText ?? event.titulo}
+              focalX={album.coverMedia.focalX}
+              focalY={album.coverMedia.focalY}
+              className="h-72 sm:h-96"
+              onSave={updateArchiveMediaFocalPointAction.bind(
+                null,
+                album.coverMedia.archiveItemId,
+                album.coverMedia.id,
+              )}
+            />
+          </div>
+        ) : (
+          <img
+            src={album.coverMedia.src}
+            alt={album.coverMedia.altText ?? event.titulo}
+            className="border-border max-h-[50vh] w-full rounded-lg border object-cover"
+            style={
+              album.coverMedia.focalX !== null && album.coverMedia.focalY !== null
+                ? { objectPosition: `${album.coverMedia.focalX}% ${album.coverMedia.focalY}%` }
+                : undefined
+            }
+          />
+        ))}
 
       <div className="text-muted flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
         <span className="inline-flex items-center gap-1.5">

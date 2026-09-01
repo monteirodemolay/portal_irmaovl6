@@ -205,6 +205,22 @@ describe('UpdateArchiveMediaBatchUseCase', () => {
     expect(result.error).toBeInstanceOf(NotFoundError);
   });
 
+  it('atualiza o ponto focal (focalX/focalY) da mídia', async () => {
+    const { useCase, archiveMediaRepository } = buildUseCase();
+    await archiveMediaRepository.create(buildMedia({ id: 'media-1' }));
+
+    const result = await useCase.execute(ctx, {
+      archiveItemId: 'item-1',
+      archiveMediaIds: ['media-1'],
+      fields: { focalX: 20, focalY: 80 },
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value[0]?.focalX).toBe(20);
+    expect(result.value[0]?.focalY).toBe(80);
+  });
+
   it('lança ForbiddenError quando falta a permissão archiveMedia:update', async () => {
     const { useCase, archiveMediaRepository } = buildUseCase();
     await archiveMediaRepository.create(buildMedia({ id: 'media-1' }));

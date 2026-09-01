@@ -2,6 +2,8 @@
 
 import Link from 'next/link';
 import { Button, EmptyState } from '@vl6/ui';
+import { updateArchiveMediaFieldsAction } from '../../actions/publish-hub-actions';
+import { CoverPositionPicker } from '../cover-position-picker';
 import { EventContextBar, StepTitle } from './wizard-chrome';
 import type { ArchiveItemWorkspace } from './use-archive-item-workspace';
 
@@ -56,17 +58,26 @@ export function ReviewSummaryStep({
 
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.5fr_1fr]">
           <div className="border-border overflow-hidden rounded-xl border">
-            <div className="from-primary to-primary-dark relative flex h-44 items-center justify-center bg-gradient-to-br">
-              {cover ? (
-                <img
+            {cover ? (
+              <div className="p-3 pb-0">
+                <CoverPositionPicker
                   src={`/api/archive-media/${cover.id}`}
                   alt={cover.altText ?? summary.titulo}
-                  className="h-full w-full object-cover"
+                  focalX={cover.focalX}
+                  focalY={cover.focalY}
+                  onSave={async (focalX, focalY) => {
+                    await updateArchiveMediaFieldsAction(summary.archiveItemId, cover.id, {
+                      focalX,
+                      focalY,
+                    });
+                  }}
                 />
-              ) : (
+              </div>
+            ) : (
+              <div className="from-primary to-primary-dark relative flex h-44 items-center justify-center bg-gradient-to-br">
                 <span className="text-sm text-white/70">Sem capa definida</span>
-              )}
-            </div>
+              </div>
+            )}
             <div className="p-4">
               <h2 className="font-display text-lg font-semibold">{summary.titulo}</h2>
               <p className="text-muted text-sm">

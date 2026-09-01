@@ -68,4 +68,17 @@ export interface ArchiveMedia extends BaseEntity {
    * lê, mesmo padrão de `pessoasIdentificadas`.
    */
   contagemVisualizacoes?: number;
+  /**
+   * Ponto focal do recorte de exibição — percentuais 0-100 de `object-position`
+   * (0,0 = canto superior esquerdo; 50,50 = centro, comportamento padrão).
+   * Só faz sentido pra `mediaType === 'foto'`; toda superfície que exibe
+   * esta mídia em `object-cover` (capa de evento, cards do Acervo, prévia
+   * da Central de Publicação) usa o mesmo par de campos, pra nunca haver
+   * dois recortes diferentes da mesma foto. Campo aditivo opcional, mesmo
+   * padrão de `pessoasIdentificadas` — ausente/`undefined`/`null` equivale
+   * a "sem ajuste", cai no centro (`object-position: 50% 50%`, o padrão
+   * do navegador).
+   */
+  focalX?: number | null;
+  focalY?: number | null;
 }

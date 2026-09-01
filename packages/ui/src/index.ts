@@ -35,6 +35,7 @@ export {
   WifiOff,
   ArrowLeft,
   ArrowUpRight,
+  Move,
   Download,
   Megaphone,
   CalendarDays,

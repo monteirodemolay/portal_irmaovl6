@@ -389,6 +389,8 @@ export interface UpdateArchiveMediaBatchFieldsInput {
   role?: string | null;
   isFeatured?: boolean;
   pessoasIdentificadas?: string[];
+  focalX?: number | null;
+  focalY?: number | null;
 }
 
 export interface UpdateArchiveMediaBatchActionState {
@@ -426,6 +428,8 @@ export async function updateArchiveMediaBatchAction(
       role: input.role,
       isFeatured: input.isFeatured,
       pessoasIdentificadas: input.pessoasIdentificadas,
+      focalX: input.focalX,
+      focalY: input.focalY,
     },
   });
   if (!result.ok) return { ok: false, error: result.error.message };
@@ -508,6 +512,24 @@ export async function updateArchiveMediaFieldsAction(
   fields: UpdateArchiveMediaBatchFieldsInput,
 ): Promise<UpdateArchiveMediaBatchActionState> {
   return updateArchiveMediaBatchAction(archiveItemId, [archiveMediaId], fields);
+}
+
+/**
+ * Ajuste de ponto focal — assinatura própria (`.bind(null, archiveItemId,
+ * archiveMediaId)`) pra poder ser passada como Server Action direto de um
+ * Server Component pro `<CoverPositionPicker>` (Client Component), sem
+ * um closure intermediário que o Next.js recusaria serializar. Usada na
+ * página pública do evento (`/acervo/eventos/[eventId]`), onde o
+ * Administrador reajusta a capa de um item já publicado.
+ */
+export async function updateArchiveMediaFocalPointAction(
+  archiveItemId: string,
+  archiveMediaId: string,
+  focalX: number,
+  focalY: number,
+): Promise<void> {
+  await updateArchiveMediaFieldsAction(archiveItemId, archiveMediaId, { focalX, focalY });
+  revalidatePath('/acervo/eventos/[eventId]', 'page');
 }
 
 export interface PublicationChecklistResult {
@@ -761,6 +783,8 @@ export interface ArchiveItemSummaryMedia {
   isCover: boolean;
   isFeatured: boolean;
   pessoasIdentificadas: string[];
+  focalX: number | null;
+  focalY: number | null;
 }
 
 export interface ArchiveItemSummary {
@@ -819,6 +843,8 @@ export async function loadArchiveItemSummaryAction(
           isCover: media.isCover,
           isFeatured: media.isFeatured,
           pessoasIdentificadas: media.pessoasIdentificadas ?? [],
+          focalX: media.focalX ?? null,
+          focalY: media.focalY ?? null,
         };
       }),
   };
