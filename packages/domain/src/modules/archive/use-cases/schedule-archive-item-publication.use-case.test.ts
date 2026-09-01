@@ -119,16 +119,14 @@ describe('ScheduleArchiveItemPublicationUseCase', () => {
     expect(result.value.publicarEm).toBeNull();
   });
 
-  it('bloqueia agendamento quando há pendências (ex.: sem Gestão)', async () => {
+  it('agenda mesmo sem Gestão vinculada (nenhum campo é obrigatório)', async () => {
     const { useCase, archiveItemRepository, archiveMediaRepository } = buildUseCase();
     await archiveItemRepository.create(buildItem({ boardTermId: null }));
     await archiveMediaRepository.create(buildMedia());
 
     const result = await useCase.execute(ctx, 'item-1', FUTURE);
 
-    expect(result.ok).toBe(false);
-    if (result.ok) return;
-    expect(result.error).toBeInstanceOf(ValidationError);
+    expect(result.ok).toBe(true);
   });
 
   it('rejeita data no passado', async () => {

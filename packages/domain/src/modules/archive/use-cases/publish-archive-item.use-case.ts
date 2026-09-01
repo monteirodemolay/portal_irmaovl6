@@ -34,38 +34,20 @@ export const ARCHIVE_ITEM_PUBLICATION_BLOCKER_LABELS: Record<
 };
 
 /**
- * Calcula as pendências que bloqueiam a transição de `publicacaoStatus`
- * para `publicado` — regra central da Fase 3: (a) sem `boardTermId` no
- * item (que já herda a Gestão identificada para a data do Evento vinculado,
- * ver `CreateArchiveItemUseCase`); (b) há fotografia (`mediaType ===
- * 'foto'`) sem nenhuma marcada `isCover`; (c) qualquer mídia não excluída
- * sem `caption` preenchido. Rascunho continua permitido com pendências —
- * só a publicação definitiva é bloqueada.
+ * Decisão explícita do Administrador: nenhum campo (Gestão, capa,
+ * legenda) trava a publicação — o registro do acontecimento precisa
+ * fluir mesmo incompleto, com esses dados completados depois. Antes
+ * disso, gestão/capa/legenda ausentes eram bloqueadas aqui; a função
+ * (e o tipo `ArchiveItemPublicationBlocker`) continuam existindo só
+ * pra não obrigar reescrever o checklist visual do passo "Revisão" e
+ * `PublishArchiveItemUseCase`/`ScheduleArchiveItemPublicationUseCase`,
+ * que já consultam este ponto único — sempre "sem pendências" agora.
  */
 export function getArchiveItemPublicationBlockers(
-  item: Pick<ArchiveItem, 'boardTermId'>,
-  medias: Pick<ArchiveMedia, 'mediaType' | 'isCover' | 'caption'>[],
+  _item: Pick<ArchiveItem, 'boardTermId'>,
+  _medias: Pick<ArchiveMedia, 'mediaType' | 'isCover' | 'caption'>[],
 ): ArchiveItemPublicationBlocker[] {
-  const blockers: ArchiveItemPublicationBlocker[] = [];
-
-  if (!item.boardTermId) {
-    blockers.push('sem_gestao');
-  }
-
-  const hasPhoto = medias.some((media) => media.mediaType === 'foto');
-  const hasCover = medias.some((media) => media.isCover);
-  if (hasPhoto && !hasCover) {
-    blockers.push('sem_capa');
-  }
-
-  const hasMissingCaption = medias.some(
-    (media) => !media.caption || media.caption.trim().length === 0,
-  );
-  if (hasMissingCaption) {
-    blockers.push('legendas_pendentes');
-  }
-
-  return blockers;
+  return [];
 }
 
 /**

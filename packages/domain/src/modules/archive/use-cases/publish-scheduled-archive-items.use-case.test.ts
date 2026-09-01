@@ -138,12 +138,10 @@ describe('PublishScheduledArchiveItemsUseCase', () => {
     expect(result.value.publicados).toEqual([]);
   });
 
-  it('registra falha individual sem impedir os demais itens do lote', async () => {
+  it('publica todos os itens do lote mesmo sem Gestão vinculada (nenhum campo é obrigatório)', async () => {
     const { useCase, archiveItemRepository, archiveMediaRepository } = buildUseCase();
-    // item-1: sem Gestão -> falha na publicação de verdade (pendência surgida depois do agendamento)
     await archiveItemRepository.create(buildItem({ id: 'item-1', boardTermId: null }));
     await archiveMediaRepository.create(buildMedia({ id: 'media-1', archiveItemId: 'item-1' }));
-    // item-2: ok
     await archiveItemRepository.create(buildItem({ id: 'item-2' }));
     await archiveMediaRepository.create(buildMedia({ id: 'media-2', archiveItemId: 'item-2' }));
 
@@ -151,9 +149,8 @@ describe('PublishScheduledArchiveItemsUseCase', () => {
 
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    expect(result.value.publicados).toEqual(['item-2']);
-    expect(result.value.falhas).toHaveLength(1);
-    expect(result.value.falhas[0]?.archiveItemId).toBe('item-1');
+    expect(result.value.publicados).toEqual(['item-1', 'item-2']);
+    expect(result.value.falhas).toHaveLength(0);
   });
 
   it('isola por tenant', async () => {

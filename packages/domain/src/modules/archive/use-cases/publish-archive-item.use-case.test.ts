@@ -87,37 +87,13 @@ function buildUseCase() {
 }
 
 describe('getArchiveItemPublicationBlockers', () => {
-  it('sem pendências quando há Gestão, capa definida e todas as legendas preenchidas', () => {
-    const blockers = getArchiveItemPublicationBlockers({ boardTermId: 'term-1' }, [
-      buildMedia({ isCover: true, caption: 'ok' }),
-    ]);
-    expect(blockers).toEqual([]);
-  });
-
-  it('bloqueia sem Gestão (boardTermId nulo)', () => {
-    const blockers = getArchiveItemPublicationBlockers({ boardTermId: null }, []);
-    expect(blockers).toContain('sem_gestao');
-  });
-
-  it('bloqueia fotografia sem nenhuma capa marcada', () => {
-    const blockers = getArchiveItemPublicationBlockers({ boardTermId: 'term-1' }, [
-      buildMedia({ mediaType: 'foto', isCover: false, caption: 'ok' }),
-    ]);
-    expect(blockers).toContain('sem_capa');
-  });
-
-  it('não bloqueia por capa quando não há fotografias (só documentos)', () => {
-    const blockers = getArchiveItemPublicationBlockers({ boardTermId: 'term-1' }, [
-      buildMedia({ mediaType: 'documento', isCover: false, caption: 'ok' }),
-    ]);
-    expect(blockers).not.toContain('sem_capa');
-  });
-
-  it('bloqueia mídia sem legenda', () => {
-    const blockers = getArchiveItemPublicationBlockers({ boardTermId: 'term-1' }, [
-      buildMedia({ isCover: true, caption: null }),
-    ]);
-    expect(blockers).toContain('legendas_pendentes');
+  it('nunca bloqueia — Gestão, capa e legenda são opcionais na publicação (decisão do Administrador)', () => {
+    expect(getArchiveItemPublicationBlockers({ boardTermId: null }, [])).toEqual([]);
+    expect(
+      getArchiveItemPublicationBlockers({ boardTermId: 'term-1' }, [
+        buildMedia({ mediaType: 'foto', isCover: false, caption: null }),
+      ]),
+    ).toEqual([]);
   });
 });
 
@@ -137,42 +113,16 @@ describe('PublishArchiveItemUseCase', () => {
     expect((await archiveMediaRepository.findById('media-2'))?.publicacaoStatus).toBe('publicado');
   });
 
-  it('bloqueia (ValidationError, não exceção) quando não há Gestão vinculada', async () => {
+  it('publica mesmo sem Gestão, capa ou legenda (nenhum campo é obrigatório)', async () => {
     const { useCase, archiveItemRepository, archiveMediaRepository } = buildUseCase();
     await archiveItemRepository.create(buildItem({ boardTermId: null }));
-    await archiveMediaRepository.create(buildMedia());
+    await archiveMediaRepository.create(buildMedia({ isCover: false, caption: null }));
 
     const result = await useCase.execute(ctx, 'item-1');
 
-    expect(result.ok).toBe(false);
-    if (result.ok) return;
-    expect(result.error).toBeInstanceOf(ValidationError);
-    const item = await archiveItemRepository.findById('item-1');
-    expect(item?.publicacaoStatus).toBe('rascunho');
-  });
-
-  it('bloqueia quando há fotografia sem capa', async () => {
-    const { useCase, archiveItemRepository, archiveMediaRepository } = buildUseCase();
-    await archiveItemRepository.create(buildItem());
-    await archiveMediaRepository.create(buildMedia({ isCover: false }));
-
-    const result = await useCase.execute(ctx, 'item-1');
-
-    expect(result.ok).toBe(false);
-    if (result.ok) return;
-    expect(result.error).toBeInstanceOf(ValidationError);
-  });
-
-  it('bloqueia quando alguma mídia não tem legenda', async () => {
-    const { useCase, archiveItemRepository, archiveMediaRepository } = buildUseCase();
-    await archiveItemRepository.create(buildItem());
-    await archiveMediaRepository.create(buildMedia({ caption: null }));
-
-    const result = await useCase.execute(ctx, 'item-1');
-
-    expect(result.ok).toBe(false);
-    if (result.ok) return;
-    expect(result.error).toBeInstanceOf(ValidationError);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value.publicacaoStatus).toBe('publicado');
   });
 
   it('permite publicar a partir de pronto_para_publicar', async () => {
