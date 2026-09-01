@@ -23,8 +23,17 @@ function BusinessLogo({ logoUrl, nomeEmpresa }: { logoUrl: string | null; nomeEm
 
 export function BusinessDirectoryCard({ entry }: { entry: BusinessDirectoryEntryDTO }) {
   return (
-    <Card className="hover:border-primary h-full transition-colors hover:shadow-md">
-      <CardContent className="flex h-full flex-col gap-3 p-5">
+    <Card className="hover:border-primary focus-within:ring-primary relative h-full transition-colors focus-within:ring-2 focus-within:ring-offset-2 hover:shadow-md">
+      {/* Superfície inteira do card leva à página da empresa — link cobre toda a área,
+          exceto a faixa do responsável abaixo (z-index maior, ver comentário lá). */}
+      <Link
+        href={`/irmaos/negocios/${entry.businessId}`}
+        className="absolute inset-0 z-0 rounded-[inherit]"
+        aria-label={`Conhecer a empresa ${entry.nomeEmpresa}`}
+      >
+        <span className="sr-only">Conhecer a empresa {entry.nomeEmpresa}</span>
+      </Link>
+      <CardContent className="pointer-events-none relative z-[1] flex h-full flex-col gap-3 p-5">
         <div className="flex items-start gap-3">
           <BusinessLogo logoUrl={entry.logoUrl} nomeEmpresa={entry.nomeEmpresa} />
           <div className="min-w-0">
@@ -75,9 +84,11 @@ export function BusinessDirectoryCard({ entry }: { entry: BusinessDirectoryEntry
           </p>
         )}
 
+        {/* Escape hatch: fica acima do link de cobertura do card (pointer-events
+            reativado + z-index maior) pra abrir o perfil do Irmão, não a empresa. */}
         <Link
           href={`/irmaos/${entry.responsavel.memberId}`}
-          className="border-border hover:border-primary mt-auto flex items-center gap-2 rounded-lg border px-2.5 py-2 text-sm transition-colors"
+          className="border-border hover:border-primary pointer-events-auto relative z-[2] mt-auto flex items-center gap-2 rounded-lg border px-2.5 py-2 text-sm transition-colors"
         >
           <MemberAvatar
             fotoUrl={entry.responsavel.fotoUrl}
