@@ -78,4 +78,13 @@ export interface ArchiveItem extends BaseEntity {
    * (mesmo padrão de `pessoasIdentificadas` em `ArchiveMedia`).
    */
   contagemVisualizacoes?: number;
+  /**
+   * URL do post no Instagram onde este mesmo conteúdo também foi
+   * divulgado — puro registro institucional (nunca publica nada
+   * automaticamente na rede social), editável no passo "Publicação" da
+   * Central de Publicação depois que o item já foi publicado no Portal.
+   * Campo aditivo opcional, mesmo padrão de `origemGalleryAlbumId` —
+   * ausente/`undefined`/`null` equivale a "não divulgado lá (ainda)".
+   */
+  instagramUrl?: string | null;
 }

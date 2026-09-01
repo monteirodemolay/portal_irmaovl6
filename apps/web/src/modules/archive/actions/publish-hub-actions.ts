@@ -9,6 +9,7 @@ import {
   logger,
   parseBrazilDateTimeLocal,
   updateArchiveMediaBatchSchema,
+  validateInstagramPostUrl,
   type AccessLevel,
   type ArchiveItemTypeKey,
   type ArchiveMediaTypeKey,
@@ -489,6 +490,38 @@ export async function setArchiveItemCoverAction(
   return { ok: true, error: null };
 }
 
+/**
+ * Registra (ou limpa, com string vazia) o link do post no Instagram onde
+ * este item também foi divulgado — puro registro institucional, chamado
+ * do passo "Publicação" depois que o item já está publicado no Portal.
+ */
+export async function setArchiveItemInstagramLinkAction(
+  archiveItemId: string,
+  instagramUrl: string,
+): Promise<SimpleActionState> {
+  const session = await requireSession();
+
+  const trimmed = instagramUrl.trim();
+  let normalized: string | null = null;
+  if (trimmed) {
+    normalized = validateInstagramPostUrl(trimmed);
+    if (!normalized) {
+      return { ok: false, error: 'Link inválido — precisa ser uma URL do instagram.com.' };
+    }
+  }
+
+  const container = createServerContainer();
+  const result = await container.useCases.setArchiveItemInstagramLink.execute(
+    session.authContext,
+    archiveItemId,
+    normalized,
+  );
+  if (!result.ok) return { ok: false, error: result.error.message };
+
+  revalidatePath(PUBLISH_HUB_PATH);
+  return { ok: true, error: null };
+}
+
 /** Move uma única mídia para a lixeira — o item e as demais mídias seguem intactos. */
 export async function softDeleteArchiveMediaAction(
   archiveMediaId: string,
@@ -791,9 +824,12 @@ export interface ArchiveItemSummary {
   archiveItemId: string;
   titulo: string;
   eventoTitulo: string;
+  eventoId: string;
   gestaoNome: string | null;
   /** ISO 8601, ou `null` sem agendamento — Fase B "Publicação avançada". */
   publicarEm: string | null;
+  /** Link do post/reel no Instagram onde este conteúdo também foi divulgado — puro registro, `null` até ser preenchido. */
+  instagramUrl: string | null;
   medias: ArchiveItemSummaryMedia[];
 }
 
@@ -820,8 +856,10 @@ export async function loadArchiveItemSummaryAction(
     archiveItemId: item.id,
     titulo: item.titulo,
     eventoTitulo: event?.titulo ?? '—',
+    eventoId: item.eventId,
     gestaoNome: boardTerm?.nome ?? null,
     publicarEm: item.publicarEm ? item.publicarEm.toISOString() : null,
+    instagramUrl: item.instagramUrl ?? null,
     medias: medias
       .slice()
       .sort((a, b) => a.order - b.order)

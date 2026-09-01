@@ -59,6 +59,7 @@ import {
   RegisterMediaAssetUseCase,
   AttachMediaToArchiveItemUseCase,
   SetArchiveItemCoverUseCase,
+  SetArchiveItemInstagramLinkUseCase,
   SoftDeleteArchiveItemUseCase,
   RestoreArchiveItemUseCase,
   UpdateArchiveMediaBatchUseCase,
@@ -1183,6 +1184,10 @@ export function createServerContainer() {
     setArchiveItemCover: new SetArchiveItemCoverUseCase({
       archiveItemRepository: repositories.archiveItem,
       archiveMediaRepository: repositories.archiveMedia,
+      clock,
+    }),
+    setArchiveItemInstagramLink: new SetArchiveItemInstagramLinkUseCase({
+      archiveItemRepository: repositories.archiveItem,
       clock,
     }),
     softDeleteArchiveItem: new SoftDeleteArchiveItemUseCase({

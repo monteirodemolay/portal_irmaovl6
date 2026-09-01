@@ -48,6 +48,8 @@ export interface EventAlbumData {
   boardTermNome: string | null;
   coverMedia: EventAlbumMediaItem | null;
   media: EventAlbumMediaItem[];
+  /** Link do post no Instagram registrado em algum `ArchiveItem` deste Evento — puro registro, `null` se nunca preenchido. */
+  instagramUrl: string | null;
 }
 
 /**
@@ -165,6 +167,7 @@ export async function loadEventAlbum(
     boardTermNome: boardTerm?.nome ?? null,
     coverMedia,
     media,
+    instagramUrl: items.find((item) => item.instagramUrl)?.instagramUrl ?? null,
   };
 }
 

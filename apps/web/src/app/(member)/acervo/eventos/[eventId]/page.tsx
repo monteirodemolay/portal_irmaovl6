@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation';
 import { hasPermission } from '@vl6/domain';
 import { createServerContainer } from '@vl6/infra';
-import { CalendarDays, Download, EmptyState, FileArchive, MapPin } from '@vl6/ui';
+import { CalendarDays, Download, EmptyState, FileArchive, Instagram, MapPin } from '@vl6/ui';
 import { requireSession } from '@/lib/auth/require-session';
 import { AcervoPageHeader } from '@/components/member/acervo-page-header';
 import { ArchiveEventAlbum } from '@/modules/archive/components/archive-event-album';
@@ -99,6 +99,17 @@ export default async function EventAlbumPage({ params }: { params: Promise<{ eve
           {event.local}
         </span>
         {album?.boardTermNome && <span>{album.boardTermNome}</span>}
+        {album?.instagramUrl && (
+          <a
+            href={album.instagramUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="text-accent inline-flex items-center gap-1.5 hover:underline"
+          >
+            <Instagram size={15} />
+            Ver no Instagram
+          </a>
+        )}
       </div>
 
       {event.descricao && (

@@ -329,6 +329,7 @@ export * from './modules/archive/use-cases/create-archive-item.use-case';
 export * from './modules/archive/use-cases/register-media-asset.use-case';
 export * from './modules/archive/use-cases/attach-media-to-archive-item.use-case';
 export * from './modules/archive/use-cases/set-archive-item-cover.use-case';
+export * from './modules/archive/use-cases/set-archive-item-instagram-link.use-case';
 export * from './modules/archive/use-cases/soft-delete-archive-item.use-case';
 export * from './modules/archive/use-cases/restore-archive-item.use-case';
 export * from './modules/archive/use-cases/update-archive-media-batch.use-case';

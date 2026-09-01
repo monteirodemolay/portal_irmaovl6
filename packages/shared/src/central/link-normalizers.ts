@@ -60,6 +60,17 @@ export function normalizeInstagram(raw: string): string | null {
   return `https://instagram.com/${handle}`;
 }
 
+/**
+ * Diferente de `normalizeInstagram` (perfil da Central dos Irmãos, sempre
+ * normalizado pra raiz `instagram.com/usuario`): aqui o link aponta pra um
+ * post/reel específico (`instagram.com/p/...`), registrado no Acervo VL6
+ * como referência de onde o mesmo conteúdo também foi divulgado — por
+ * isso só valida domínio/protocolo, nunca reescreve o caminho.
+ */
+export function validateInstagramPostUrl(raw: string): string | null {
+  return validateUrlOnDomain(raw, ['instagram.com']);
+}
+
 export function validateFacebookUrl(raw: string): string | null {
   return validateUrlOnDomain(raw, ['facebook.com', 'fb.com']);
 }

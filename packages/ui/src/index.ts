@@ -36,6 +36,8 @@ export {
   ArrowLeft,
   ArrowUpRight,
   Move,
+  Copy,
+  Check,
   Download,
   Megaphone,
   CalendarDays,

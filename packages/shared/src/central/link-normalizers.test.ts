@@ -5,6 +5,7 @@ import {
   normalizeInstagram,
   normalizeWhatsapp,
   validateFacebookUrl,
+  validateInstagramPostUrl,
   validateLattesUrl,
   validateLinkedInUrl,
   validateWebsiteUrl,
@@ -57,6 +58,12 @@ describe('validadores de domínio fixo', () => {
   it('valida Lattes', () => {
     expect(validateLattesUrl('http://lattes.cnpq.br/123456')).toBe('http://lattes.cnpq.br/123456');
     expect(validateLattesUrl('https://lattes.fake.com/123456')).toBeNull();
+  });
+  it('valida link de post do Instagram, sem reescrever o caminho', () => {
+    expect(validateInstagramPostUrl('https://instagram.com/p/abc123')).toBe(
+      'https://instagram.com/p/abc123',
+    );
+    expect(validateInstagramPostUrl('https://evil.example.com/p/abc123')).toBeNull();
   });
 });
 

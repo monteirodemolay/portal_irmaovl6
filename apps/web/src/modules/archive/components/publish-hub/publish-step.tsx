@@ -1,6 +1,8 @@
 'use client';
 
-import { Button, EmptyState, Input } from '@vl6/ui';
+import { useState, useTransition } from 'react';
+import { Button, Check, Copy, EmptyState, Input, Instagram } from '@vl6/ui';
+import { setArchiveItemInstagramLinkAction } from '../../actions/publish-hub-actions';
 import { EventContextBar, StepTitle } from './wizard-chrome';
 import type { ArchiveItemWorkspace } from './use-archive-item-workspace';
 
@@ -11,6 +13,105 @@ export interface PublishStepProps {
   eventLocal: string;
   onBack: () => void;
   onDone: () => void;
+}
+
+/**
+ * Link do evento no Portal + registro do link do post no Instagram (puro
+ * registro institucional, nunca publica nada na rede social) — pedido
+ * explícito do Administrador: "onde foi publicado" precisa ficar
+ * registrado nos dois lugares, Portal e Instagram, a partir da mesma tela
+ * de conclusão da Central de Publicação.
+ */
+function PublishedLinksPanel({
+  archiveItemId,
+  eventId,
+  initialInstagramUrl,
+}: {
+  archiveItemId: string;
+  eventId: string;
+  initialInstagramUrl: string | null;
+}) {
+  const portalUrl =
+    typeof window !== 'undefined'
+      ? `${window.location.origin}/acervo/eventos/${eventId}`
+      : `/acervo/eventos/${eventId}`;
+  const [copied, setCopied] = useState(false);
+  const [instagramValue, setInstagramValue] = useState(initialInstagramUrl ?? '');
+  const [isSaving, startSaving] = useTransition();
+  const [error, setError] = useState<string | null>(null);
+  const [saved, setSaved] = useState(false);
+
+  function handleCopy() {
+    navigator.clipboard.writeText(portalUrl).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }
+
+  function handleSaveInstagram() {
+    setError(null);
+    setSaved(false);
+    startSaving(async () => {
+      const result = await setArchiveItemInstagramLinkAction(archiveItemId, instagramValue);
+      if (!result.ok) {
+        setError(result.error);
+        return;
+      }
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    });
+  }
+
+  return (
+    <div className="mt-2 flex w-full max-w-md flex-col gap-3 text-left">
+      <div className="border-border flex flex-col gap-1.5 rounded-lg border p-3">
+        <span className="text-muted text-xs font-semibold">Link no Portal VL6</span>
+        <div className="flex items-center gap-2">
+          <a
+            href={portalUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="text-accent min-w-0 flex-1 truncate text-xs hover:underline"
+          >
+            {portalUrl}
+          </a>
+          <Button type="button" variant="outline" size="sm" onClick={handleCopy}>
+            {copied ? <Check size={14} /> : <Copy size={14} />}
+          </Button>
+        </div>
+      </div>
+
+      <div className="border-border flex flex-col gap-1.5 rounded-lg border p-3">
+        <span className="text-muted flex items-center gap-1.5 text-xs font-semibold">
+          <Instagram size={13} />
+          Link do post no Instagram (opcional)
+        </span>
+        <div className="flex items-center gap-2">
+          <Input
+            type="url"
+            placeholder="https://instagram.com/p/..."
+            value={instagramValue}
+            onChange={(event) => setInstagramValue(event.target.value)}
+            className="text-xs"
+          />
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={handleSaveInstagram}
+            disabled={isSaving}
+          >
+            {isSaving ? '…' : saved ? <Check size={14} /> : 'Salvar'}
+          </Button>
+        </div>
+        {error && <p className="text-xs text-red-600">{error}</p>}
+        <p className="text-muted text-[11px]">
+          Só um registro de onde esse mesmo conteúdo também foi divulgado — nada é postado
+          automaticamente.
+        </p>
+      </div>
+    </div>
+  );
 }
 
 function formatScheduledLabel(publicarEmIso: string): string {
@@ -79,6 +180,13 @@ export function PublishStep({
           )}
           <span className="bg-bg rounded-full px-3 py-1.5">▦ Acervo VL6</span>
         </div>
+
+        <PublishedLinksPanel
+          archiveItemId={summary.archiveItemId}
+          eventId={summary.eventoId}
+          initialInstagramUrl={summary.instagramUrl}
+        />
+
         <Button type="button" variant="outline" onClick={onDone} className="mt-2">
           Publicar outro evento
         </Button>
