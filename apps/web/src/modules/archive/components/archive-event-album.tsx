@@ -161,7 +161,7 @@ function DocumentList({
   return (
     <ul className="flex flex-col gap-2">
       {documents.map((doc, index) => {
-        const canOpen = doc.allowDownload || toDocumentViewerKind(doc.mimeType) !== 'outro';
+        const previewable = toDocumentViewerKind(doc.mimeType) !== 'outro';
         return (
           <li key={doc.id} className="border-border flex items-center gap-3 rounded-lg border p-3">
             <FileText size={18} className="text-accent shrink-0" />
@@ -169,17 +169,30 @@ function DocumentList({
               <p className="truncate text-sm font-medium">{doc.caption ?? doc.originalName}</p>
               <p className="text-muted text-xs">{formatBytes(doc.sizeBytes)}</p>
             </div>
-            {canOpen ? (
-              <button
-                type="button"
-                onClick={() => onOpen(index)}
-                className="border-border hover:border-accent shrink-0 rounded-md border px-3 py-1.5 text-xs font-medium transition-colors"
-              >
-                Visualizar
-              </button>
-            ) : (
-              <span className="text-muted shrink-0 text-xs">Reservado</span>
-            )}
+            <div className="flex shrink-0 items-center gap-2">
+              {previewable && (
+                <button
+                  type="button"
+                  onClick={() => onOpen(index)}
+                  className="border-border hover:border-accent rounded-md border px-3 py-1.5 text-xs font-medium transition-colors"
+                >
+                  Visualizar
+                </button>
+              )}
+              {doc.allowDownload && (
+                <a
+                  href={doc.src}
+                  download={doc.originalName}
+                  className="border-border hover:border-accent inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-medium transition-colors"
+                >
+                  <Download size={13} />
+                  Baixar
+                </a>
+              )}
+              {!previewable && !doc.allowDownload && (
+                <span className="text-muted text-xs">Reservado</span>
+              )}
+            </div>
           </li>
         );
       })}

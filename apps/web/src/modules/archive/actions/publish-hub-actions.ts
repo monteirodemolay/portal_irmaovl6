@@ -245,6 +245,7 @@ async function uploadArchiveMediaInner(formData: FormData): Promise<UploadArchiv
   const archiveItemIdRaw = formData.get('archiveItemId');
   const archiveItemId =
     typeof archiveItemIdRaw === 'string' && archiveItemIdRaw.length > 0 ? archiveItemIdRaw : null;
+  const allowDownload = formData.get('allowDownload') === 'true';
 
   const mediaType = classifyMediaType(file.type);
   if (!mediaType) {
@@ -357,7 +358,9 @@ async function uploadArchiveMediaInner(formData: FormData): Promise<UploadArchiv
       // Herdado do evento por padrão — o painel de metadados em lote
       // permite sobrescrever depois (item 3 do escopo da Fase 2).
       accessLevel: event.nivelAcesso,
-      allowDownload: false,
+      // Escolhido por quem envia, no próprio passo de upload — "só
+      // visualizável no site" (padrão) ou "pode ser baixado".
+      allowDownload,
     },
   );
   if (!attachResult.ok) {
@@ -414,9 +417,10 @@ export async function importPostImageAction(
   eventId: string,
   archiveItemId: string | null,
   imageUrl: string,
+  allowDownload = false,
 ): Promise<UploadArchiveMediaResult> {
   try {
-    return await importPostImageInner(eventId, archiveItemId, imageUrl);
+    return await importPostImageInner(eventId, archiveItemId, imageUrl, allowDownload);
   } catch (error) {
     if (error instanceof ForbiddenError) {
       return uploadFailure(PERMISSION_SYNC_HINT);
@@ -435,6 +439,7 @@ async function importPostImageInner(
   eventId: string,
   archiveItemId: string | null,
   imageUrl: string,
+  allowDownload: boolean,
 ): Promise<UploadArchiveMediaResult> {
   const session = await requireSession();
 
@@ -569,7 +574,7 @@ async function importPostImageInner(
       caption: null,
       altText: null,
       accessLevel: event.nivelAcesso,
-      allowDownload: false,
+      allowDownload,
     },
   );
   if (!attachResult.ok) {

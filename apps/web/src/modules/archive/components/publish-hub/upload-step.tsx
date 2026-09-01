@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { ArchiveMediaCounts, Event } from '@vl6/domain';
 import type { ArchiveMediaTypeKey } from '@vl6/shared';
-import { Badge, Button } from '@vl6/ui';
+import { Badge, Button, Switch } from '@vl6/ui';
 import {
   importPostImageAction,
   loadArchiveItemSummaryAction,
@@ -32,6 +32,8 @@ interface QueueItem {
   error: string | null;
   /** Preenchido quando a imagem foi redimensionada/recomprimida no browser antes do envio. */
   optimizedFrom: number | null;
+  /** Escolhido no momento do envio — "só visualizável no site" (padrão) ou "pode ser baixado". */
+  allowDownload: boolean;
 }
 
 const MEDIA_TYPE_LABELS: Record<ArchiveMediaTypeKey, string> = {
@@ -80,6 +82,10 @@ export interface UploadStepProps {
  * de concorrência, evitando criar mais de um item para o mesmo lote.
  */
 export function UploadStep({ event, initialArchiveItemId, onBack, onContinue }: UploadStepProps) {
+  // Escolhido antes de soltar os arquivos — aplica a todo o lote que for
+  // enviado a partir daqui. Padrão "só visualizável no site" (mais
+  // restritivo); marcar libera baixar o arquivo original.
+  const [allowDownload, setAllowDownload] = useState(false);
   const [archiveItemId, setArchiveItemId] = useState<string | null>(initialArchiveItemId);
   const archiveItemIdRef = useRef<string | null>(initialArchiveItemId);
   const [items, setItems] = useState<QueueItem[]>([]);
@@ -103,6 +109,7 @@ export function UploadStep({ event, initialArchiveItemId, onBack, onContinue }: 
           duplicateWarning: false,
           error: null,
           optimizedFrom: null,
+          allowDownload: false,
         })),
       );
       setIsLoadingExisting(false);
@@ -140,6 +147,7 @@ export function UploadStep({ event, initialArchiveItemId, onBack, onContinue }: 
       const formData = new FormData();
       formData.set('file', fileToUpload);
       formData.set('eventId', event.id);
+      formData.set('allowDownload', String(item.allowDownload));
       if (archiveItemIdRef.current) {
         formData.set('archiveItemId', archiveItemIdRef.current);
       }
@@ -178,6 +186,7 @@ export function UploadStep({ event, initialArchiveItemId, onBack, onContinue }: 
         event.id,
         archiveItemIdRef.current,
         item.sourceUrl,
+        item.allowDownload,
       );
       if (result.ok && result.archiveItemId) {
         if (!archiveItemIdRef.current) {
@@ -253,6 +262,7 @@ export function UploadStep({ event, initialArchiveItemId, onBack, onContinue }: 
       duplicateWarning: false,
       error: null,
       optimizedFrom: null,
+      allowDownload,
     }));
     setItems((prev) => [...prev, ...newItems]);
     void runQueue(newItems);
@@ -271,6 +281,7 @@ export function UploadStep({ event, initialArchiveItemId, onBack, onContinue }: 
       duplicateWarning: false,
       error: null,
       optimizedFrom: null,
+      allowDownload,
     }));
     setItems((prev) => [...prev, ...newItems]);
     void runQueue(newItems);
@@ -306,6 +317,11 @@ export function UploadStep({ event, initialArchiveItemId, onBack, onContinue }: 
           title="Adicione todos os arquivos de uma só vez"
           text="Fotografias, vídeos, áudios e documentos podem ser enviados no mesmo lote."
         />
+
+        <label className="mb-3 flex items-center gap-2 text-sm">
+          <Switch checked={allowDownload} onChange={(e) => setAllowDownload(e.target.checked)} />
+          Permitir baixar os arquivos deste envio (padrão: só visualizável no site)
+        </label>
 
         <UnifiedDropzone onFilesSelected={handleFilesSelected} disabled={isLoadingExisting} />
 
