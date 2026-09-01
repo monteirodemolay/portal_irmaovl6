@@ -48,10 +48,24 @@ Objetivo: a Loja consegue operar o essencial no dia a dia.
 
 ## v1.2 — Comunidade e engajamento
 
+- **Comunidade VL6** ✅ — Diretório, Negócios & Serviços e Meu Espaço
+  unificados numa única experiência em `/irmaos` (busca unificada com
+  controle segmentado Tudo/Irmãos/Negócios, filtros progressivos na URL,
+  cartão pessoal resumido substituindo a aba "Meu Espaço", perfil do Irmão
+  reorganizado em blocos editáveis contextualmente, página própria por
+  empresa/atividade em `/irmaos/negocios/[businessId]`). Reaproveita
+  integralmente `SearchDirectoryUseCase`/`SearchBusinessDirectoryUseCase`
+  (nenhuma regra de busca nova) + novo `GetBusinessDirectoryEntryUseCase`
+  (composição sobre o de busca, sem duplicar filtro de publicação/tenant).
+  URLs antigas preservadas via redirecionamento
+  (`/irmaos/negocios` → `/irmaos?tipo=negocios`) ou mantidas como estão
+  (`/irmaos/meu-espaco`, `/irmaos/configuracoes`).
 - **Comissões** completas (vínculo com gestão + permissões de escopo).
 - **Galeria** (álbuns, fotos, vídeos, categorias, busca).
 - **Pesquisa de Irmãos** avançada (filtros por grau, cargo, cidade, CIM,
-  situação).
+  situação) — parcialmente coberto pela Comunidade VL6 acima; grau/cargo/
+  comissão como filtro de busca seguem pendentes (a busca atual não os
+  suporta, ver decisão registrada no relatório de entrega).
 - Comentários moderados em Notícias.
 - MFA opcional (TOTP) para contas administrativas.
 - Backup automático diário + exportação Excel/PDF.
