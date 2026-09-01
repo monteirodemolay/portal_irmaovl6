@@ -33,21 +33,37 @@ function formatDate(date: Date): string {
   return new Intl.DateTimeFormat('pt-BR', { dateStyle: 'long' }).format(new Date(date));
 }
 
+/** Tabs de Meu Espaço que cada bloco do perfil edita — ver comentário em `Section`. */
+type EditTab = 'geral' | 'pessoal' | 'profissional' | 'empresa' | 'contatos' | 'redes';
+
 function Section({
   title,
   icon: Icon,
+  editTab,
   children,
 }: {
   title: string;
   icon: IconType;
+  /** Presente + dono do próprio perfil → mostra "Editar" abrindo a aba certa de Meu Espaço. */
+  editTab?: EditTab;
   children: React.ReactNode;
 }) {
   return (
     <div className="border-border bg-background flex flex-col gap-2.5 rounded-xl border p-4">
-      <h3 className="text-muted flex items-center gap-2 text-xs font-semibold uppercase tracking-wide">
-        <Icon size={14} strokeWidth={1.75} />
-        {title}
-      </h3>
+      <div className="flex items-center justify-between gap-2">
+        <h3 className="text-muted flex items-center gap-2 text-xs font-semibold uppercase tracking-wide">
+          <Icon size={14} strokeWidth={1.75} />
+          {title}
+        </h3>
+        {editTab && (
+          <Link
+            href={`/irmaos/meu-espaco?tab=${editTab}`}
+            className="text-accent text-xs font-medium hover:underline"
+          >
+            Editar
+          </Link>
+        )}
+      </div>
       {children}
     </div>
   );
@@ -77,10 +93,13 @@ function LinkPill({ href, label, icon: Icon }: { href: string; label: string; ic
 export function PublicMemberProfileView({
   profile,
   canViewAcervo = false,
+  isOwnProfile = false,
 }: {
   profile: PublicMemberProfileDTO;
   /** Gate do link "Ver Memória VL6 completa" — ponte Diretório → Acervo (Fase B/C). */
   canViewAcervo?: boolean;
+  /** Sessão atual == dono deste perfil → mostra "Editar meu perfil" e "Editar" por bloco. */
+  isOwnProfile?: boolean;
 }) {
   const hasContatos = profile.contatos && Object.values(profile.contatos).some(Boolean);
   const hasRedes = profile.redes && Object.values(profile.redes).some(Boolean);
@@ -90,11 +109,21 @@ export function PublicMemberProfileView({
       <div className="from-primary to-primary-dark h-20 bg-gradient-to-br sm:h-24" />
       <CardContent className="flex flex-col gap-6 px-6 pb-6 pt-0">
         <div className="flex flex-col gap-3">
-          <MemberAvatar
-            fotoUrl={profile.fotoUrl}
-            nome={profile.nomeCompleto}
-            className="border-surface -mt-10 h-20 w-20 border-4 shadow-sm sm:-mt-12 sm:h-24 sm:w-24"
-          />
+          <div className="flex items-end justify-between gap-3">
+            <MemberAvatar
+              fotoUrl={profile.fotoUrl}
+              nome={profile.nomeCompleto}
+              className="border-surface -mt-10 h-20 w-20 border-4 shadow-sm sm:-mt-12 sm:h-24 sm:w-24"
+            />
+            {isOwnProfile && (
+              <Link
+                href="/irmaos/meu-espaco"
+                className="border-border bg-surface hover:border-primary hover:text-primary flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium transition-colors"
+              >
+                Editar meu perfil
+              </Link>
+            )}
+          </div>
           <div className="flex flex-col gap-1.5">
             <p className="font-display text-xl font-semibold">{profile.nomeCompleto}</p>
             <MemberDegreeBadge grau={profile.grau} />
@@ -170,7 +199,7 @@ export function PublicMemberProfileView({
           )}
 
           {profile.apresentacao?.texto && (
-            <Section title="Sobre" icon={Quote}>
+            <Section title="Sobre" icon={Quote} editTab={isOwnProfile ? 'geral' : undefined}>
               <p className="whitespace-pre-line text-sm">{profile.apresentacao.texto}</p>
             </Section>
           )}
@@ -178,7 +207,11 @@ export function PublicMemberProfileView({
           {profile.informacoesPessoais &&
             (profile.informacoesPessoais.interesses ||
               profile.informacoesPessoais.cidadeExibicao) && (
-              <Section title="Informações pessoais" icon={UserCircle}>
+              <Section
+                title="Informações pessoais"
+                icon={UserCircle}
+                editTab={isOwnProfile ? 'pessoal' : undefined}
+              >
                 <dl className="flex flex-col gap-1 text-sm">
                   {profile.informacoesPessoais.cidadeExibicao && (
                     <div className="flex justify-between gap-4">
@@ -198,7 +231,11 @@ export function PublicMemberProfileView({
 
           {profile.endereco &&
             (profile.endereco.logradouro || profile.endereco.bairro || profile.endereco.cidade) && (
-              <Section title="Endereço" icon={MapPin}>
+              <Section
+                title="Endereço"
+                icon={MapPin}
+                editTab={isOwnProfile ? 'pessoal' : undefined}
+              >
                 <p className="text-sm">
                   {[
                     [profile.endereco.logradouro, profile.endereco.numero]
@@ -218,7 +255,11 @@ export function PublicMemberProfileView({
               profile.profissional.areaAtuacao ||
               profile.profissional.formacao ||
               profile.profissional.resumoProfissional) && (
-              <Section title="Atuação profissional" icon={Briefcase}>
+              <Section
+                title="Atuação profissional"
+                icon={Briefcase}
+                editTab={isOwnProfile ? 'profissional' : undefined}
+              >
                 <dl className="flex flex-col gap-1 text-sm">
                   {profile.profissional.profissao && (
                     <div className="flex justify-between gap-4">
@@ -249,7 +290,11 @@ export function PublicMemberProfileView({
 
           {((profile.competencias && profile.competencias.length > 0) ||
             (profile.servicos && profile.servicos.length > 0)) && (
-            <Section title="Competências e serviços" icon={Sparkles}>
+            <Section
+              title="Competências e serviços"
+              icon={Sparkles}
+              editTab={isOwnProfile ? 'profissional' : undefined}
+            >
               <div className="flex flex-wrap gap-1.5">
                 {[...(profile.competencias ?? []), ...(profile.servicos ?? [])].map((tag) => (
                   <span key={tag} className="bg-background text-muted rounded-md px-2 py-1 text-xs">
@@ -261,24 +306,32 @@ export function PublicMemberProfileView({
           )}
 
           {(profile.empresaAtual || (profile.negocios && profile.negocios.length > 0)) && (
-            <Section title="Empresa" icon={Building2}>
+            <Section
+              title="Negócios vinculados"
+              icon={Building2}
+              editTab={isOwnProfile ? 'empresa' : undefined}
+            >
               <div className="flex flex-col gap-3">
                 {profile.empresaAtual && (
                   <p className="text-sm font-medium">{profile.empresaAtual}</p>
                 )}
                 {profile.negocios?.map((negocio) => (
-                  <div key={negocio.id} className="text-sm">
+                  <Link
+                    key={negocio.id}
+                    href={`/irmaos/negocios/${negocio.id}`}
+                    className="border-border hover:border-primary flex flex-col gap-0.5 rounded-lg border p-3 text-sm transition-colors"
+                  >
                     <p className="font-medium">{negocio.nomeEmpresa}</p>
                     {negocio.segmento && <p className="text-muted">{negocio.segmento}</p>}
                     {negocio.descricao && <p className="mt-1">{negocio.descricao}</p>}
-                  </div>
+                  </Link>
                 ))}
               </div>
             </Section>
           )}
 
           {hasContatos && (
-            <Section title="Contatos" icon={Phone}>
+            <Section title="Contatos" icon={Phone} editTab={isOwnProfile ? 'contatos' : undefined}>
               <div className="flex flex-col gap-2">
                 {profile.contatos?.whatsapp && (
                   <LinkPill
@@ -306,7 +359,11 @@ export function PublicMemberProfileView({
           )}
 
           {hasRedes && (
-            <Section title="Redes e perfis" icon={Globe}>
+            <Section
+              title="Redes e perfis"
+              icon={Globe}
+              editTab={isOwnProfile ? 'redes' : undefined}
+            >
               <div className="flex flex-wrap gap-2">
                 {profile.redes?.whatsapp && (
                   <LinkPill
@@ -341,7 +398,11 @@ export function PublicMemberProfileView({
           {profile.informacoesMaconicas &&
             (profile.informacoesMaconicas.lojasVisitadas ||
               profile.informacoesMaconicas.interessesMaconicos) && (
-              <Section title="Informações maçônicas" icon={Compass}>
+              <Section
+                title="Informações maçônicas"
+                icon={Compass}
+                editTab={isOwnProfile ? 'pessoal' : undefined}
+              >
                 <dl className="flex flex-col gap-1 text-sm">
                   {profile.informacoesMaconicas.lojasVisitadas && (
                     <div className="flex justify-between gap-4">
