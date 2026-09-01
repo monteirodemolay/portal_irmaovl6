@@ -5,12 +5,14 @@ import type { ArchiveMediaCounts, Event } from '@vl6/domain';
 import type { ArchiveMediaTypeKey } from '@vl6/shared';
 import { Badge, Button } from '@vl6/ui';
 import {
+  importPostImageAction,
   loadArchiveItemSummaryAction,
   uploadArchiveMediaAction,
   uploadArchiveMediaPosterAction,
 } from '../../actions/publish-hub-actions';
 import { captureVideoPosterFrame } from '../../lib/capture-video-poster';
 import { optimizeImageUpload } from '../../lib/optimize-image-upload';
+import { ImportFromUrlPanel } from './import-from-url-panel';
 import { UnifiedDropzone } from './unified-dropzone';
 import { EventContextBar, MediaStatsRow, StepTitle } from './wizard-chrome';
 
@@ -21,6 +23,8 @@ interface QueueItem {
   fileName: string;
   fileSize: number;
   file: File | null;
+  /** Preenchido pra itens vindos de "Importar de URL" — mutuamente exclusivo com `file`. */
+  sourceUrl: string | null;
   status: QueueItemStatus;
   mediaType: ArchiveMediaTypeKey | null;
   archiveMediaId: string | null;
@@ -92,6 +96,7 @@ export function UploadStep({ event, initialArchiveItemId, onBack, onContinue }: 
           fileName: media.originalName,
           fileSize: media.size,
           file: null,
+          sourceUrl: null,
           status: 'concluido',
           mediaType: media.mediaType,
           archiveMediaId: media.id,
@@ -165,6 +170,40 @@ export function UploadStep({ event, initialArchiveItemId, onBack, onContinue }: 
     }
   }
 
+  async function importOne(item: QueueItem) {
+    if (!item.sourceUrl) return;
+    updateItem(item.id, { status: 'enviando', error: null });
+    try {
+      const result = await importPostImageAction(
+        event.id,
+        archiveItemIdRef.current,
+        item.sourceUrl,
+      );
+      if (result.ok && result.archiveItemId) {
+        if (!archiveItemIdRef.current) {
+          archiveItemIdRef.current = result.archiveItemId;
+          setArchiveItemId(result.archiveItemId);
+        }
+        updateItem(item.id, {
+          status: 'concluido',
+          mediaType: result.mediaType,
+          archiveMediaId: result.archiveMediaId,
+          duplicateWarning: result.duplicateWarning,
+          fileName: result.originalName ?? item.fileName,
+        });
+      } else {
+        updateItem(item.id, { status: 'erro', error: result.error ?? 'Falha na importação.' });
+      }
+    } catch {
+      updateItem(item.id, { status: 'erro', error: 'Falha inesperada na importação.' });
+    }
+  }
+
+  async function processOne(item: QueueItem) {
+    if (item.sourceUrl) return importOne(item);
+    return uploadOne(item);
+  }
+
   async function generateAndUploadPoster(videoFile: File, archiveMediaId: string) {
     try {
       const posterBlob = await captureVideoPosterFrame(videoFile);
@@ -185,7 +224,7 @@ export function UploadStep({ event, initialArchiveItemId, onBack, onContinue }: 
     // resto entrar no pool, para nunca criar mais de um item por lote.
     if (!archiveItemIdRef.current && pending.length > 0) {
       const first = pending.shift()!;
-      await uploadOne(first);
+      await processOne(first);
     }
 
     let cursor = 0;
@@ -193,7 +232,7 @@ export function UploadStep({ event, initialArchiveItemId, onBack, onContinue }: 
       while (cursor < pending.length) {
         const current = pending[cursor]!;
         cursor += 1;
-        await uploadOne(current);
+        await processOne(current);
       }
     }
     await Promise.all(
@@ -207,6 +246,25 @@ export function UploadStep({ event, initialArchiveItemId, onBack, onContinue }: 
       fileName: file.name,
       fileSize: file.size,
       file,
+      sourceUrl: null,
+      status: 'pendente',
+      mediaType: null,
+      archiveMediaId: null,
+      duplicateWarning: false,
+      error: null,
+      optimizedFrom: null,
+    }));
+    setItems((prev) => [...prev, ...newItems]);
+    void runQueue(newItems);
+  }
+
+  function handleUrlsSelected(urls: string[]) {
+    const newItems: QueueItem[] = urls.map((url) => ({
+      id: crypto.randomUUID(),
+      fileName: url.split('/').pop() || 'imagem.jpg',
+      fileSize: 0,
+      file: null,
+      sourceUrl: url,
       status: 'pendente',
       mediaType: null,
       archiveMediaId: null,
@@ -219,7 +277,7 @@ export function UploadStep({ event, initialArchiveItemId, onBack, onContinue }: 
   }
 
   function handleRetry(item: QueueItem) {
-    void uploadOne(item);
+    void processOne(item);
   }
 
   const hasInFlight = items.some(
@@ -250,6 +308,8 @@ export function UploadStep({ event, initialArchiveItemId, onBack, onContinue }: 
         />
 
         <UnifiedDropzone onFilesSelected={handleFilesSelected} disabled={isLoadingExisting} />
+
+        <ImportFromUrlPanel onImportUrls={handleUrlsSelected} />
 
         {items.length > 0 && (
           <div className="mt-5 flex flex-col gap-3">

@@ -4,7 +4,9 @@ import { useState, useTransition } from 'react';
 import { Button, Check, Copy, EmptyState, Input, Instagram } from '@vl6/ui';
 import { setArchiveItemInstagramLinkAction } from '../../actions/publish-hub-actions';
 import { EventContextBar, StepTitle } from './wizard-chrome';
+import { InstagramPreviewCard, PortalPreviewCard } from './publication-preview-cards';
 import type { ArchiveItemWorkspace } from './use-archive-item-workspace';
+import type { ArchiveItemSummaryMedia } from '../../actions/publish-hub-actions';
 
 export interface PublishStepProps {
   workspace: ArchiveItemWorkspace;
@@ -25,16 +27,22 @@ export interface PublishStepProps {
 function PublishedLinksPanel({
   archiveItemId,
   eventId,
+  eventTitulo,
+  medias,
   initialInstagramUrl,
 }: {
   archiveItemId: string;
   eventId: string;
+  eventTitulo: string;
+  medias: ArchiveItemSummaryMedia[];
   initialInstagramUrl: string | null;
 }) {
   const portalUrl =
     typeof window !== 'undefined'
       ? `${window.location.origin}/acervo/eventos/${eventId}`
       : `/acervo/eventos/${eventId}`;
+  const coverMedia = medias.find((m) => m.isCover);
+  const coverUrl = coverMedia ? `/api/archive-media/${coverMedia.id}` : null;
   const [copied, setCopied] = useState(false);
   const [instagramValue, setInstagramValue] = useState(initialInstagramUrl ?? '');
   const [isSaving, startSaving] = useTransition();
@@ -66,15 +74,14 @@ function PublishedLinksPanel({
     <div className="mt-2 flex w-full max-w-md flex-col gap-3 text-left">
       <div className="border-border flex flex-col gap-1.5 rounded-lg border p-3">
         <span className="text-muted text-xs font-semibold">Link no Portal VL6</span>
+        <PortalPreviewCard
+          href={portalUrl}
+          titulo={eventTitulo}
+          coverUrl={coverUrl}
+          legenda={`${medias.length} ${medias.length === 1 ? 'arquivo' : 'arquivos'}`}
+        />
         <div className="flex items-center gap-2">
-          <a
-            href={portalUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="text-accent min-w-0 flex-1 truncate text-xs hover:underline"
-          >
-            {portalUrl}
-          </a>
+          <span className="text-muted min-w-0 flex-1 truncate text-xs">{portalUrl}</span>
           <Button type="button" variant="outline" size="sm" onClick={handleCopy}>
             {copied ? <Check size={14} /> : <Copy size={14} />}
           </Button>
@@ -86,6 +93,7 @@ function PublishedLinksPanel({
           <Instagram size={13} />
           Link do post no Instagram (opcional)
         </span>
+        {initialInstagramUrl && <InstagramPreviewCard href={initialInstagramUrl} />}
         <div className="flex items-center gap-2">
           <Input
             type="url"
@@ -184,6 +192,8 @@ export function PublishStep({
         <PublishedLinksPanel
           archiveItemId={summary.archiveItemId}
           eventId={summary.eventoId}
+          eventTitulo={summary.titulo}
+          medias={summary.medias}
           initialInstagramUrl={summary.instagramUrl}
         />
 

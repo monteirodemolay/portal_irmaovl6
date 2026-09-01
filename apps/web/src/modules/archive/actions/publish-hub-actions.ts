@@ -379,6 +379,218 @@ async function uploadArchiveMediaInner(formData: FormData): Promise<UploadArchiv
   };
 }
 
+export interface ScanPostImagesState {
+  ok: boolean;
+  error: string | null;
+  images: string[];
+}
+
+/**
+ * 1ª etapa da importação "de URL" — só busca a página e lista as imagens
+ * encontradas, sem gravar nada. Reaproveita o mesmo padrão de preview
+ * antes de gravar já usado na importação em massa de Irmãos.
+ */
+export async function scanPostImagesAction(pageUrl: string): Promise<ScanPostImagesState> {
+  await requireSession();
+  const { scrapePostImages } = await import('@/lib/archive/scrape-post-images');
+
+  const result = await scrapePostImages(pageUrl);
+  if (!result.ok) {
+    return { ok: false, error: result.error, images: [] };
+  }
+  return { ok: true, error: null, images: result.images };
+}
+
+/**
+ * Importa UMA imagem já encontrada por `scanPostImagesAction` — busca o
+ * binário no servidor (nunca no browser, evita problema de CORS com o
+ * site de origem) e segue exatamente o mesmo caminho de
+ * `uploadArchiveMediaInner` (dedupe por hash, registro do MediaAsset,
+ * criação/anexo ao ArchiveItem) a partir daí. Chamada uma vez por imagem
+ * selecionada, mesmo padrão de "uma Server Action por arquivo" do upload
+ * comum — tolera falha parcial sem travar o restante do lote.
+ */
+export async function importPostImageAction(
+  eventId: string,
+  archiveItemId: string | null,
+  imageUrl: string,
+): Promise<UploadArchiveMediaResult> {
+  try {
+    return await importPostImageInner(eventId, archiveItemId, imageUrl);
+  } catch (error) {
+    if (error instanceof ForbiddenError) {
+      return uploadFailure(PERMISSION_SYNC_HINT);
+    }
+    logger.error('Falha inesperada ao importar imagem de URL', {
+      route: 'importPostImageAction',
+      imageUrl,
+      ...errorToLogContext(error),
+    });
+    Sentry.captureException(error, { tags: { route: 'importPostImageAction' } });
+    return uploadFailure('Não foi possível importar essa imagem. Tente novamente em instantes.');
+  }
+}
+
+async function importPostImageInner(
+  eventId: string,
+  archiveItemId: string | null,
+  imageUrl: string,
+): Promise<UploadArchiveMediaResult> {
+  const session = await requireSession();
+
+  let parsedUrl: URL;
+  try {
+    parsedUrl = new URL(imageUrl);
+  } catch {
+    return uploadFailure('URL de imagem inválida.');
+  }
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 15_000);
+  let response: Response;
+  try {
+    response = await fetch(imageUrl, { signal: controller.signal });
+  } catch {
+    return uploadFailure('Não foi possível baixar essa imagem.');
+  } finally {
+    clearTimeout(timeout);
+  }
+  if (!response.ok) {
+    return uploadFailure(`Não foi possível baixar essa imagem (HTTP ${response.status}).`);
+  }
+
+  const contentType = response.headers.get('content-type') ?? 'image/jpeg';
+  const mediaType = classifyMediaType(contentType);
+  if (mediaType !== 'foto') {
+    return uploadFailure(`Tipo de arquivo não suportado: ${contentType}.`);
+  }
+
+  const arrayBuffer = await response.arrayBuffer();
+  if (arrayBuffer.byteLength === 0) {
+    return uploadFailure('Imagem vazia.');
+  }
+  if (arrayBuffer.byteLength > MAX_FILE_SIZE_BYTES) {
+    return uploadFailure('Imagem muito grande: o limite é 10 MB.');
+  }
+  const buffer = Buffer.from(arrayBuffer);
+
+  const container = createServerContainer();
+  const event = await container.repositories.event.findById(eventId);
+  if (!event || event.tenantId !== session.authContext.tenantId) {
+    return uploadFailure('Evento não encontrado.');
+  }
+  if (archiveItemId) {
+    const existingItem = await container.repositories.archiveItem.findById(archiveItemId);
+    if (!existingItem || existingItem.tenantId !== session.authContext.tenantId) {
+      return uploadFailure('Item do Acervo do lote não encontrado.');
+    }
+  }
+
+  const sha256 = createHash('sha256').update(buffer).digest('hex');
+  const originalName = decodeURIComponent(parsedUrl.pathname.split('/').pop() || 'imagem.jpg');
+  const safeName = sanitizeFileName(originalName);
+  const storage = new VercelBlobStorageAdapter();
+  const path = `tenants/${session.authContext.tenantId}/archive/${randomUUID()}-${safeName}`;
+
+  let upload;
+  try {
+    upload = await storage.upload({ path, buffer, contentType });
+  } catch (error) {
+    logger.error('Falha ao enviar imagem importada de URL para o storage', {
+      route: 'importPostImageAction',
+      ...errorToLogContext(error),
+    });
+    Sentry.captureException(error, { tags: { route: 'importPostImageAction' } });
+    return uploadFailure('Não foi possível enviar o arquivo. Tente novamente em instantes.');
+  }
+
+  const rollbackUpload = async () => {
+    try {
+      await storage.delete(path);
+    } catch (error) {
+      logger.error('Falha ao reverter upload órfão de imagem importada de URL', {
+        route: 'importPostImageAction:rollback',
+        path,
+        ...errorToLogContext(error),
+      });
+      Sentry.captureException(error, { tags: { route: 'importPostImageAction:rollback' } });
+    }
+  };
+
+  const extension = safeName.includes('.') ? (safeName.split('.').pop() ?? '') : '';
+
+  const registerResult = await container.useCases.registerMediaAsset.execute(session.authContext, {
+    originalName,
+    normalizedName: safeName,
+    mimeType: contentType,
+    extension,
+    size: upload.sizeBytes,
+    sha256,
+    provider: 'vercel_blob',
+    storageKey: path,
+    width: null,
+    height: null,
+    duration: null,
+  });
+  if (!registerResult.ok) {
+    await rollbackUpload();
+    return uploadFailure(registerResult.error.message);
+  }
+
+  let resolvedArchiveItemId = archiveItemId;
+  if (!resolvedArchiveItemId) {
+    const createItemResult = await container.useCases.createArchiveItem.execute(
+      session.authContext,
+      {
+        eventId: event.id,
+        boardTermId: event.boardTermId,
+        titulo: event.titulo,
+        tipo: ARCHIVE_ITEM_TYPE_BY_MEDIA_TYPE[mediaType],
+        descricao: null,
+        nivelAcesso: event.nivelAcesso,
+      },
+    );
+    if (!createItemResult.ok) {
+      await rollbackUpload();
+      return uploadFailure(createItemResult.error.message);
+    }
+    resolvedArchiveItemId = createItemResult.value.id;
+  }
+
+  const attachResult = await container.useCases.attachMediaToArchiveItem.execute(
+    session.authContext,
+    {
+      archiveItemId: resolvedArchiveItemId,
+      mediaAssetId: registerResult.value.mediaAsset.id,
+      mediaType,
+      documentType: null,
+      role: null,
+      order: 0,
+      caption: null,
+      altText: null,
+      accessLevel: event.nivelAcesso,
+      allowDownload: false,
+    },
+  );
+  if (!attachResult.ok) {
+    await rollbackUpload();
+    return uploadFailure(attachResult.error.message);
+  }
+
+  revalidatePath(PUBLISH_HUB_PATH);
+
+  return {
+    ok: true,
+    error: null,
+    archiveItemId: resolvedArchiveItemId,
+    archiveMediaId: attachResult.value.id,
+    mediaAssetId: registerResult.value.mediaAsset.id,
+    mediaType,
+    originalName,
+    duplicateWarning: registerResult.value.possivelDuplicata !== null,
+  };
+}
+
 export interface UpdateArchiveMediaBatchFieldsInput {
   autor?: string | null;
   tags?: string[];
