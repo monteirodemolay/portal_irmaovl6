@@ -51,13 +51,17 @@ export * from './modules/identity-access/use-cases/authenticate-api-key.use-case
 // Membership
 export * from './modules/membership/entities/member.entity';
 export * from './modules/membership/entities/member-position-history.entity';
+export * from './modules/membership/entities/member-situation-record.entity';
 export * from './modules/membership/repositories/member.repository';
 export * from './modules/membership/repositories/member-position-history.repository';
+export * from './modules/membership/repositories/member-situation-record.repository';
 export * from './modules/membership/use-cases/register-member.use-case';
 export * from './modules/membership/use-cases/update-member.use-case';
 export * from './modules/membership/use-cases/update-my-photo.use-case';
 export * from './modules/membership/use-cases/update-my-profile.use-case';
-export * from './modules/membership/use-cases/update-member-situation.use-case';
+export * from './modules/membership/use-cases/register-member-situation.use-case';
+export * from './modules/membership/use-cases/edit-member-situation-record.use-case';
+export * from './modules/membership/use-cases/seed-member-situation-history.use-case';
 export * from './modules/membership/use-cases/search-members.use-case';
 export * from './modules/membership/use-cases/list-upcoming-anniversaries.use-case';
 export * from './modules/membership/use-cases/soft-delete-member.use-case';

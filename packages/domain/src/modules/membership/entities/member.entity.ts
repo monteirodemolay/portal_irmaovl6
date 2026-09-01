@@ -1,4 +1,4 @@
-import type { MaritalStatus, MemberDegree, MemberSituation } from '@vl6/shared';
+import type { MaritalStatus, MemberDegree, MemberSituationStatus } from '@vl6/shared';
 import type { BaseEntity } from '../../../shared/base-entity';
 import type { Address } from '../../../shared/address';
 
@@ -26,7 +26,8 @@ export interface Member extends BaseEntity {
   cim: string | null;
   grau: MemberDegree;
   cargoAtualId: string | null;
-  situacao: MemberSituation;
+  /** Espelho do registro vigente de `MemberSituationRecord` — nunca editar direto, sempre via `RegisterMemberSituationUseCase`. */
+  situacao: MemberSituationStatus;
   lojaId: string;
   potencia: string;
   profissao: string | null;

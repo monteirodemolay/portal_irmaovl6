@@ -1,16 +1,7 @@
 import type { Member } from '@vl6/domain';
-import type { MemberSituation } from '@vl6/shared';
+import { MEMBER_SITUATION_STATUS_LABELS } from '@vl6/shared';
 import { MARITAL_STATUS_LABELS } from '@/lib/membership/marital-status-label';
 import { MEMBER_DEGREE_LABELS } from '@/lib/membership/member-degree-label';
-
-const SITUATION_LABELS: Record<MemberSituation, string> = {
-  regular: 'Regular',
-  irregular: 'Irregular',
-  remido: 'Remido',
-  inativo: 'Inativo',
-  falecido: 'Falecido',
-  transferido: 'Transferido',
-};
 
 function formatDate(date: Date | null): string {
   return date ? new Intl.DateTimeFormat('pt-BR').format(new Date(date)) : '—';
@@ -43,7 +34,7 @@ export const MEMBER_REPORT_COLUMNS: MemberReportColumnDef[] = [
     key: 'situacao',
     label: 'Situação',
     defaultSelected: true,
-    getValue: (m) => SITUATION_LABELS[m.situacao],
+    getValue: (m) => MEMBER_SITUATION_STATUS_LABELS[m.situacao],
   },
   { key: 'email', label: 'E-mail', defaultSelected: true, getValue: (m) => m.email ?? '—' },
   {

@@ -1,4 +1,4 @@
-import { TERMINAL_MEMBER_SITUATIONS, type MemberDegree } from '@vl6/shared';
+import { TERMINAL_MEMBER_SITUATION_STATUSES, type MemberDegree } from '@vl6/shared';
 import type { AuthContext } from '../../../shared/auth-context';
 import { requirePermission } from '../../../shared/auth-context';
 import type { IClock } from '../../../shared/ports';
@@ -66,7 +66,7 @@ export class ListUpcomingAnniversariesUseCase {
 
     const entries: UpcomingAnniversaryEntry[] = [];
     for (const member of items) {
-      if (TERMINAL_MEMBER_SITUATIONS.includes(member.situacao)) continue;
+      if (TERMINAL_MEMBER_SITUATION_STATUSES.includes(member.situacao)) continue;
 
       for (const [kind, field] of KIND_FIELDS) {
         const data = member[field];

@@ -6,7 +6,8 @@ import {
   BOARD_POSITION_KEYS,
   BOARD_POSITION_LABELS,
   MEMBER_DEGREES,
-  MEMBER_SITUATIONS,
+  MEMBER_SITUATION_STATUSES,
+  MEMBER_SITUATION_STATUS_LABELS,
 } from '@vl6/shared';
 import { Button, Input, Select } from '@vl6/ui';
 import { MEMBER_REPORT_COLUMNS } from '@/modules/membership/reports/member-report-columns';
@@ -87,9 +88,9 @@ function ConfigStep({
           </Select>
           <Select name="situacao" defaultValue={initialFilters.situacao ?? ''}>
             <option value="">Situação (todas)</option>
-            {MEMBER_SITUATIONS.map((situacao) => (
+            {MEMBER_SITUATION_STATUSES.map((situacao) => (
               <option key={situacao} value={situacao}>
-                {situacao}
+                {MEMBER_SITUATION_STATUS_LABELS[situacao]}
               </option>
             ))}
           </Select>

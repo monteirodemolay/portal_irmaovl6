@@ -4,7 +4,8 @@ import {
   BOARD_POSITION_KEYS,
   BOARD_POSITION_LABELS,
   MEMBER_DEGREES,
-  MEMBER_SITUATIONS,
+  MEMBER_SITUATION_STATUSES,
+  MEMBER_SITUATION_STATUS_LABELS,
 } from '@vl6/shared';
 import { createServerContainer } from '@vl6/infra';
 import { hasPermission } from '@vl6/domain';
@@ -28,15 +29,14 @@ import {
 } from '@/modules/identity-access/user-status-labels';
 
 const SITUATION_VARIANT: Record<
-  (typeof MEMBER_SITUATIONS)[number],
+  (typeof MEMBER_SITUATION_STATUSES)[number],
   'default' | 'success' | 'warning' | 'destructive'
 > = {
-  regular: 'success',
-  irregular: 'warning',
-  remido: 'default',
-  inativo: 'default',
+  ativo: 'success',
+  licenciado: 'warning',
+  suspenso: 'warning',
+  desligado: 'default',
   falecido: 'destructive',
-  transferido: 'default',
 };
 
 const PAGE_SIZE = 50;
@@ -153,7 +153,11 @@ export default async function MembersPage({
     {
       key: 'situacao',
       header: 'Situação',
-      cell: (m) => <Badge variant={SITUATION_VARIANT[m.situacao]}>{m.situacao}</Badge>,
+      cell: (m) => (
+        <Badge variant={SITUATION_VARIANT[m.situacao]}>
+          {MEMBER_SITUATION_STATUS_LABELS[m.situacao]}
+        </Badge>
+      ),
     },
     {
       key: 'acesso',
@@ -192,6 +196,9 @@ export default async function MembersPage({
               (mesmo sendo uma pasta estática como "relatorio"/"importar"/"novo"),
               então um <Link> aqui abriria o drawer de edição em vez da página. */}
           <Button asChild variant="outline">
+            <a href="/admin/pessoas/situacao-migracao">Migrar Situação Maçônica</a>
+          </Button>
+          <Button asChild variant="outline">
             <a href={`/admin/pessoas/irmaos/relatorio?${filtersQuery}`}>Gerar relatório</a>
           </Button>
           <Button asChild variant="outline">
@@ -217,9 +224,9 @@ export default async function MembersPage({
         </Select>
         <Select name="situacao" defaultValue={filters.situacao ?? ''}>
           <option value="">Situação (todas)</option>
-          {MEMBER_SITUATIONS.map((situacao) => (
+          {MEMBER_SITUATION_STATUSES.map((situacao) => (
             <option key={situacao} value={situacao}>
-              {situacao}
+              {MEMBER_SITUATION_STATUS_LABELS[situacao]}
             </option>
           ))}
         </Select>

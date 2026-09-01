@@ -21,7 +21,7 @@ function buildEntry(overrides: Partial<AuditLog> = {}): AuditLog {
     usuarioId: 'admin-1',
     ip: '127.0.0.1',
     dispositivo: 'web',
-    valorAnterior: { situacao: 'regular' },
+    valorAnterior: { situacao: 'ativo' },
     valorNovo: { situacao: 'irregular' },
     timestamp: new Date('2026-01-01T00:00:00Z'),
     ...overrides,

@@ -1,12 +1,10 @@
 import { notFound } from 'next/navigation';
-import { MEMBER_SITUATIONS } from '@vl6/shared';
 import { createServerContainer } from '@vl6/infra';
-import { Button, Card, CardContent, CardHeader, CardTitle, Select } from '@vl6/ui';
+import { Card, CardContent, CardHeader, CardTitle } from '@vl6/ui';
 import { requirePagePermission } from '@/lib/auth/require-permission';
 import {
   updateMemberIdentityAction,
   updateMemberProfileAction,
-  updateMemberSituationAction,
 } from '@/modules/membership/actions/member-actions';
 import { DeleteMemberButton } from '@/modules/membership/components/delete-member-button';
 import { AccessCard } from '@/modules/membership/components/access-card';
@@ -17,19 +15,11 @@ import { AddressMaritalCard } from '@/modules/membership/components/profile-fiel
 import { ProfessionalCard } from '@/modules/membership/components/profile-fields/professional-card';
 import { CompanyCard } from '@/modules/membership/components/profile-fields/company-card';
 import { ContactsCard } from '@/modules/membership/components/profile-fields/contacts-card';
+import { SituacaoMaconicaCard } from '@/modules/membership/components/situacao/situacao-maconica-card';
 import { listUsedProfessions } from '@/modules/membership/lib/list-used-professions';
 import { listUsedCompanies } from '@/modules/membership/lib/list-used-companies';
 import { MemberAvatar } from '@/components/membership/member-avatar';
 import { MemberDegreeBadge } from '@/components/membership/member-degree-badge';
-
-const SITUATION_LABELS: Record<(typeof MEMBER_SITUATIONS)[number], string> = {
-  regular: 'Regular',
-  irregular: 'Irregular',
-  remido: 'Remido',
-  inativo: 'Inativo',
-  falecido: 'Falecido',
-  transferido: 'Transferido',
-};
 
 /**
  * Corpo completo de edição de um Irmão (permissão + fetch + os 9 cartões) —
@@ -45,15 +35,23 @@ export async function MemberEditPanel({ memberId }: { memberId: string }) {
   const member = await container.repositories.member.findById(memberId);
   if (!member || member.deletedAt) notFound();
 
-  const [roles, accessUser, customProfessions, customCompanies] = await Promise.all([
+  const [
+    roles,
+    accessUser,
+    customProfessions,
+    customCompanies,
+    situacaoVigente,
+    situacaoHistorico,
+  ] = await Promise.all([
     container.useCases.listRoles.execute(session.authContext),
     member.userId ? container.repositories.user.findById(member.userId) : Promise.resolve(null),
     listUsedProfessions(container, session.authContext),
     listUsedCompanies(container, session.authContext),
+    container.repositories.memberSituationRecord.findVigenteByMemberId(memberId),
+    container.repositories.memberSituationRecord.listByMemberId(memberId),
   ]);
   const isSelf = accessUser?.id === session.authContext.uid;
 
-  const boundUpdateSituation = updateMemberSituationAction.bind(null, memberId);
   const boundUpdateProfile = updateMemberProfileAction.bind(null, memberId);
   const boundUpdateIdentity = updateMemberIdentityAction.bind(null, memberId);
 
@@ -70,41 +68,20 @@ export async function MemberEditPanel({ memberId }: { memberId: string }) {
         <DeleteMemberButton memberId={member.id} memberName={member.nomeCompleto} />
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Situação</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form action={boundUpdateSituation} className="flex items-end gap-2">
-              <Select name="situacao" defaultValue={member.situacao} className="flex-1">
-                {MEMBER_SITUATIONS.map((s) => (
-                  <option key={s} value={s}>
-                    {SITUATION_LABELS[s]}
-                  </option>
-                ))}
-              </Select>
-              <Button type="submit" variant="outline" size="sm">
-                Atualizar
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
+      <SituacaoMaconicaCard
+        member={member}
+        vigente={situacaoVigente}
+        historico={situacaoHistorico}
+      />
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Acesso ao Portal</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <AccessCard
-              memberId={member.id}
-              roles={roles}
-              accessUser={accessUser}
-              isSelf={isSelf}
-            />
-          </CardContent>
-        </Card>
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Acesso ao Portal</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <AccessCard memberId={member.id} roles={roles} accessUser={accessUser} isSelf={isSelf} />
+        </CardContent>
+      </Card>
 
       <div className="flex max-w-3xl flex-col gap-4">
         <MemberIdentityCard member={member} action={boundUpdateIdentity} />

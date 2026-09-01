@@ -2,7 +2,12 @@ import { describe, expect, it } from 'vitest';
 import type { MemberFormValues } from '@vl6/shared';
 import type { AuthContext } from '../../../shared/auth-context';
 import { ForbiddenError } from '../../../shared/result';
-import { FixedClock, InMemoryMemberRepository, SequentialIdGenerator } from '../../../test/fakes';
+import {
+  FixedClock,
+  InMemoryMemberRepository,
+  InMemoryMemberSituationRecordRepository,
+  SequentialIdGenerator,
+} from '../../../test/fakes';
 import { RegisterMemberUseCase } from './register-member.use-case';
 
 const ctx: AuthContext = {
@@ -32,7 +37,7 @@ const input: MemberFormValues = {
   dataExaltacao: null,
   cim: '123',
   grau: 'mestre',
-  situacao: 'regular',
+  situacao: 'ativo',
   lojaId: 't1',
   potencia: 'GLEG',
   profissao: null,
@@ -48,12 +53,14 @@ const input: MemberFormValues = {
 
 function buildUseCase() {
   const memberRepository = new InMemoryMemberRepository();
+  const situationRecordRepository = new InMemoryMemberSituationRecordRepository();
   const useCase = new RegisterMemberUseCase({
     memberRepository,
+    situationRecordRepository,
     clock: new FixedClock(new Date('2026-06-01T00:00:00Z')),
     idGenerator: new SequentialIdGenerator(),
   });
-  return { useCase, memberRepository };
+  return { useCase, memberRepository, situationRecordRepository };
 }
 
 describe('RegisterMemberUseCase', () => {
@@ -71,6 +78,20 @@ describe('RegisterMemberUseCase', () => {
 
     const stored = await memberRepository.findById('id-1');
     expect(stored).not.toBeNull();
+  });
+
+  it('cria o primeiro registro vigente na Situação Maçônica junto do cadastro', async () => {
+    const { useCase, situationRecordRepository } = buildUseCase();
+
+    const result = await useCase.execute(ctx, input);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    const historico = await situationRecordRepository.listByMemberId(result.value.id);
+    expect(historico).toHaveLength(1);
+    expect(historico[0]?.situacao).toBe('ativo');
+    expect(historico[0]?.vigente).toBe(true);
+    expect(historico[0]?.dataFim).toBeNull();
   });
 
   it('lança ForbiddenError quando falta a permissão member:create', async () => {
@@ -95,7 +116,7 @@ describe('RegisterMemberUseCase', () => {
     if (!second.ok) return;
     expect(second.value.cim).toBeNull();
 
-    const stored = await memberRepository.findById('id-2');
+    const stored = await memberRepository.findById(second.value.id);
     expect(stored).not.toBeNull();
   });
 

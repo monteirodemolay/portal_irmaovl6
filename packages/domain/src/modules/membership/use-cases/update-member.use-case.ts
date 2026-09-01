@@ -37,6 +37,10 @@ export class UpdateMemberUseCase {
     const updated: Member = {
       ...current,
       ...input,
+      // Nunca através da edição administrativa geral — só
+      // `RegisterMemberSituationUseCase` pode mudar a situação (regra de
+      // integridade: cada mudança precisa passar pelo histórico).
+      situacao: current.situacao,
       redesSociais: {
         instagram: input.redesSociais.instagram ?? null,
         facebook: input.redesSociais.facebook ?? null,

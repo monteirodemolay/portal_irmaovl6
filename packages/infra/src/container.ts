@@ -161,6 +161,9 @@ import {
   RecordLibraryDownloadUseCase,
   RecordLibraryViewUseCase,
   RegisterMemberUseCase,
+  RegisterMemberSituationUseCase,
+  EditMemberSituationRecordUseCase,
+  SeedMemberSituationHistoryUseCase,
   RequestDomainVerificationUseCase,
   ResolveTenantByHostUseCase,
   RevokeApiKeyUseCase,
@@ -178,7 +181,6 @@ import {
   UpdateCentralProfileUseCase,
   UpdateCommitteeUseCase,
   UpdateFileAssetUseCase,
-  UpdateMemberSituationUseCase,
   UpdateMemberUseCase,
   UpdateMyPhotoUseCase,
   UpdateMyProfileUseCase,
@@ -250,6 +252,7 @@ import { FirestoreLibraryItemRepository } from './firestore/repositories/library
 import { FirestoreLinkRepository } from './firestore/repositories/link.repository';
 import { FirestoreMemberCentralProfileRepository } from './firestore/repositories/member-central-profile.repository';
 import { FirestoreMemberPositionHistoryRepository } from './firestore/repositories/member-position-history.repository';
+import { FirestoreMemberSituationRecordRepository } from './firestore/repositories/member-situation-record.repository';
 import { FirestoreMemberRepository } from './firestore/repositories/member.repository';
 import { FirestoreNewsCommentRepository } from './firestore/repositories/news-comment.repository';
 import { FirestoreNewsRepository } from './firestore/repositories/news.repository';
@@ -306,6 +309,11 @@ export function createServerContainer() {
     role: withAudit(new FirestoreRoleRepository(db), 'roles', auditDeps),
     member: withAudit(new FirestoreMemberRepository(db), 'members', auditDeps),
     memberPositionHistory: new FirestoreMemberPositionHistoryRepository(db),
+    memberSituationRecord: withAudit(
+      new FirestoreMemberSituationRecordRepository(db),
+      'memberSituationHistory',
+      auditDeps,
+    ),
     boardTerm: withAudit(new FirestoreBoardTermRepository(db), 'boardTerms', auditDeps),
     boardPositionAssignment: withAudit(
       new FirestoreBoardPositionAssignmentRepository(db),
@@ -464,6 +472,7 @@ export function createServerContainer() {
 
     registerMember: new RegisterMemberUseCase({
       memberRepository: repositories.member,
+      situationRecordRepository: repositories.memberSituationRecord,
       clock,
       idGenerator,
     }),
@@ -474,10 +483,22 @@ export function createServerContainer() {
       memberRepository: repositories.member,
       clock,
     }),
-    updateMemberSituation: new UpdateMemberSituationUseCase({
+    registerMemberSituation: new RegisterMemberSituationUseCase({
       memberRepository: repositories.member,
+      situationRecordRepository: repositories.memberSituationRecord,
       positionHistoryRepository: repositories.memberPositionHistory,
       clock,
+      idGenerator,
+    }),
+    editMemberSituationRecord: new EditMemberSituationRecordUseCase({
+      situationRecordRepository: repositories.memberSituationRecord,
+      clock,
+    }),
+    seedMemberSituationHistory: new SeedMemberSituationHistoryUseCase({
+      memberRepository: repositories.member,
+      situationRecordRepository: repositories.memberSituationRecord,
+      clock,
+      idGenerator,
     }),
     searchMembers: new SearchMembersUseCase({
       memberRepository: repositories.member,

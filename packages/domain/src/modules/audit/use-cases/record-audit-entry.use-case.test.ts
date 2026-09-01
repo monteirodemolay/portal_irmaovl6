@@ -24,7 +24,7 @@ describe('RecordAuditEntryUseCase', () => {
       usuarioId: 'admin-1',
       ip: '127.0.0.1',
       dispositivo: 'web',
-      valorAnterior: { situacao: 'regular' },
+      valorAnterior: { situacao: 'ativo' },
       valorNovo: { situacao: 'irregular' },
     });
 
@@ -48,7 +48,7 @@ describe('RecordAuditEntryUseCase', () => {
       ip: null,
       dispositivo: null,
       valorAnterior: null,
-      valorNovo: { situacao: 'regular' },
+      valorNovo: { situacao: 'ativo' },
     });
 
     expect(entry.ip).toBeNull();

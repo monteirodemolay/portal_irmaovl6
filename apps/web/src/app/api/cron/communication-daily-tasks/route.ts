@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { logger, TERMINAL_MEMBER_SITUATIONS } from '@vl6/shared';
+import { logger, TERMINAL_MEMBER_SITUATION_STATUSES } from '@vl6/shared';
 import { createServerContainer, getAdminFirestore } from '@vl6/infra';
 import { withApiLogging } from '@/lib/api/with-api-logging';
 import { requireCronSecret } from '@/lib/api/require-cron-secret';
@@ -55,7 +55,7 @@ export const GET = withApiLogging(ROUTE, async (request: NextRequest) => {
       (member) =>
         member.dataNascimento !== null &&
         member.autorizaDivulgacaoExterna &&
-        !TERMINAL_MEMBER_SITUATIONS.includes(member.situacao) &&
+        !TERMINAL_MEMBER_SITUATION_STATUSES.includes(member.situacao) &&
         member.dataNascimento.getMonth() === month &&
         member.dataNascimento.getDate() === day,
     );

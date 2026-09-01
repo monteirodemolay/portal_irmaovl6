@@ -36,7 +36,7 @@ const baseMember: Member = {
   cim: '123',
   grau: 'mestre',
   cargoAtualId: null,
-  situacao: 'regular',
+  situacao: 'ativo',
   lojaId: 't1',
   potencia: 'GLEG',
   profissao: null,

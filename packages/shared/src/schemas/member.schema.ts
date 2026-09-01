@@ -3,7 +3,7 @@ import {
   MARITAL_STATUSES,
   MARITAL_STATUSES_WITH_SPOUSE,
   MEMBER_DEGREES,
-  MEMBER_SITUATIONS,
+  MEMBER_SITUATION_STATUSES,
   type MaritalStatus,
 } from '../enums/membership';
 import { addressSchema } from './tenant.schema';
@@ -23,7 +23,8 @@ const memberBaseSchema = z.object({
   /** Identificador único do Irmão na Loja — mesmo valor antes espalhado entre "matrícula" e "CIM". */
   cim: z.string().nullable(),
   grau: z.enum(MEMBER_DEGREES),
-  situacao: z.enum(MEMBER_SITUATIONS),
+  /** Espelho do registro vigente em `MemberSituationRecord` — nunca editável direto por este schema/formulário; ver `RegisterMemberSituationUseCase`. */
+  situacao: z.enum(MEMBER_SITUATION_STATUSES),
   lojaId: z.string().min(1),
   potencia: z.string().min(1),
   profissao: z.string().nullable(),

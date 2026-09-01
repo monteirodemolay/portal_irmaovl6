@@ -2,7 +2,7 @@
 
 import { useActionState, useMemo, useState } from 'react';
 import { useFormStatus } from 'react-dom';
-import type { MemberSituation } from '@vl6/shared';
+import { MEMBER_SITUATION_STATUS_LABELS } from '@vl6/shared';
 import { AlertTriangle, Badge, Button, CheckCircle2 } from '@vl6/ui';
 import { MEMBER_DEGREE_LABELS } from '@/lib/membership/member-degree-label';
 import {
@@ -15,15 +15,6 @@ import {
 
 const PARSE_EMPTY_STATE: ParseMembersFileState = { error: null, rows: null };
 const CONFIRM_EMPTY_STATE: ImportMembersActionState = { error: null, resultados: null };
-
-const SITUACAO_LABELS: Record<MemberSituation, string> = {
-  regular: 'Regular',
-  irregular: 'Irregular',
-  remido: 'Remido',
-  inativo: 'Inativo',
-  falecido: 'Falecido',
-  transferido: 'Transferido',
-};
 
 /**
  * Importação em massa em 3 telas: escolher arquivo → revisar/selecionar
@@ -206,7 +197,7 @@ function PreviewStep({
                 <td className="p-2">{row.nome}</td>
                 <td className="p-2">{row.cim ?? '—'}</td>
                 <td className="p-2">{MEMBER_DEGREE_LABELS[row.grau]}</td>
-                <td className="p-2">{SITUACAO_LABELS[row.situacao]}</td>
+                <td className="p-2">{MEMBER_SITUATION_STATUS_LABELS[row.situacao]}</td>
                 <td className="p-2">{row.email ?? '—'}</td>
                 <td className="p-2">
                   {row.valido ? (

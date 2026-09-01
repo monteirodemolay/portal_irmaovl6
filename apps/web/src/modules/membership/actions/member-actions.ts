@@ -10,11 +10,12 @@ import {
   logger,
   memberSchema,
   MEMBER_DEGREES,
-  MEMBER_SITUATIONS,
+  MEMBER_SITUATION_REASONS,
+  MEMBER_SITUATION_STATUSES,
   normalizeConjugeFields,
   type BoardPositionKey,
   type MemberFormValues,
-  type MemberSituation,
+  type MemberSituationStatus,
 } from '@vl6/shared';
 import {
   createServerContainer,
@@ -22,7 +23,12 @@ import {
   syncUserClaims,
   type ServerContainer,
 } from '@vl6/infra';
-import { requirePermission, type Member } from '@vl6/domain';
+import {
+  requirePermission,
+  type Member,
+  type MemberSituationAttachment,
+  type SeedMemberSituationHistoryReportRow,
+} from '@vl6/domain';
 import { generateTemporaryPassword } from '@/lib/auth/generate-temporary-password';
 import { requireSession } from '@/lib/auth/require-session';
 import type { CurrentSession } from '@/lib/auth/get-current-session';
@@ -185,10 +191,11 @@ export async function createMemberAction(
 
   formData.set('lojaId', current.tenant.id);
   formData.set('potencia', current.tenant.potencia);
-  // Todo Irmão nasce com situação "regular" — mudanças de situação depois
-  // disso passam exclusivamente por updateMemberSituationAction, que
-  // implementa a regra de encerrar o cargo ativo (docs/architecture/06 §6.1).
-  formData.set('situacao', 'regular');
+  // Todo Irmão nasce com situação "ativo" — mudanças de situação depois
+  // disso passam exclusivamente por registerMemberSituationAction, que
+  // implementa a regra de encerrar o cargo ativo quando a situação vira
+  // terminal (docs/architecture/06 §6.1).
+  formData.set('situacao', 'ativo');
 
   const fotoFile = formData.get('foto');
   if (fotoFile instanceof File && fotoFile.size > 0) {
@@ -519,25 +526,216 @@ export async function activateMemberAccessAction(
   return { error: null, memberId, temporaryPassword: accessResult.temporaryPassword };
 }
 
-export async function updateMemberSituationAction(
-  memberId: string,
+export interface SituationActionState {
+  error: string | null;
+  success: boolean;
+}
+
+function parseSituationDate(formData: FormData, key: string): Date | null {
+  const raw = formData.get(key);
+  if (typeof raw !== 'string' || !raw.trim()) return null;
+  const date = new Date(raw);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+async function uploadSituationAttachments(
   formData: FormData,
-): Promise<void> {
+  tenantId: string,
+  memberId: string,
+): Promise<{ error: string } | { anexos: MemberSituationAttachment[] }> {
+  const { uploadMemberSituationAttachment, validateSituationAttachmentFile } =
+    await import('@/lib/membership/member-situation-attachment-upload');
+  const files = formData.getAll('anexos').filter((f): f is File => f instanceof File && f.size > 0);
+  if (files.length === 0) return { anexos: [] };
+
+  for (const file of files) {
+    const error = validateSituationAttachmentFile(file);
+    if (error) return { error };
+  }
+
+  try {
+    const anexos = await Promise.all(
+      files.map(async (file) => ({
+        nome: file.name,
+        url: await uploadMemberSituationAttachment(file, tenantId, memberId),
+      })),
+    );
+    return { anexos };
+  } catch (error) {
+    logger.error('Falha ao enviar anexo da Situação Maçônica', {
+      route: 'uploadSituationAttachments',
+      memberId,
+      ...errorToLogContext(error),
+    });
+    Sentry.captureException(error, { tags: { route: 'uploadSituationAttachments' } });
+    return { error: 'Não foi possível enviar os anexos. Tente novamente em instantes.' };
+  }
+}
+
+/**
+ * Único ponto de escrita da Situação Maçônica no lado do servidor — cobre
+ * "Alterar situação", "Registrar licença" e "Registrar retorno" da UI
+ * (todas chamam esta mesma action; só o motivo sugerido no formulário
+ * muda por tela). RBAC (`member:update`) é checada dentro do Use Case.
+ */
+export async function registerMemberSituationAction(
+  memberId: string,
+  _prevState: SituationActionState,
+  formData: FormData,
+): Promise<SituationActionState> {
   const session = await requireSession();
-  const novaSituacao = formData.get('situacao') as MemberSituation;
+
+  const situacao = formData.get('situacao') as MemberSituationStatus;
+  if (!MEMBER_SITUATION_STATUSES.includes(situacao)) {
+    return { error: 'Situação inválida.', success: false };
+  }
+  const motivo = String(formData.get('motivo') ?? '');
+  const motivosValidos: readonly string[] = MEMBER_SITUATION_REASONS[situacao];
+  if (!motivosValidos.includes(motivo)) {
+    return { error: 'Motivo inválido para a situação selecionada.', success: false };
+  }
+  const dataInicio = parseSituationDate(formData, 'dataInicio');
+  if (!dataInicio) {
+    return { error: 'Data de início é obrigatória.', success: false };
+  }
+  const motivoOutroDescricao = String(formData.get('motivoOutroDescricao') ?? '').trim();
+  if (motivo === 'outro' && !motivoOutroDescricao) {
+    return { error: 'Descreva o motivo quando escolher "Outro".', success: false };
+  }
+
+  const uploadResult = await uploadSituationAttachments(
+    formData,
+    session.authContext.tenantId,
+    memberId,
+  );
+  if ('error' in uploadResult) {
+    return { error: uploadResult.error, success: false };
+  }
 
   const container = createServerContainer();
-  const result = await container.useCases.updateMemberSituation.execute(
+  const result = await container.useCases.registerMemberSituation.execute(
     session.authContext,
     memberId,
-    novaSituacao,
+    {
+      situacao,
+      motivo,
+      motivoOutroDescricao: motivo === 'outro' ? motivoOutroDescricao : null,
+      dataInicio,
+      lojaId: formData.get('lojaId') ? String(formData.get('lojaId')) : null,
+      potencia: formData.get('potencia') ? String(formData.get('potencia')) : null,
+      documentoNumero: formData.get('documentoNumero')
+        ? String(formData.get('documentoNumero'))
+        : null,
+      documentoData: parseSituationDate(formData, 'documentoData'),
+      observacoes: formData.get('observacoes') ? String(formData.get('observacoes')) : null,
+      anexos: uploadResult.anexos,
+    },
   );
   if (!result.ok) {
-    throw new Error(result.error.message);
+    return { error: result.error.message, success: false };
   }
 
   revalidatePath('/admin/pessoas/irmaos');
   revalidatePath(`/admin/pessoas/irmaos/${memberId}`);
+  return { error: null, success: true };
+}
+
+/**
+ * Correção de um registro já lançado no histórico (nunca cria/apaga
+ * registro) — a única porta pra ajustar motivo/documento/anexos/data de um
+ * lançamento anterior, sempre com justificativa.
+ */
+export async function editMemberSituationRecordAction(
+  recordId: string,
+  _prevState: SituationActionState,
+  formData: FormData,
+): Promise<SituationActionState> {
+  const session = await requireSession();
+
+  const justificativa = String(formData.get('justificativa') ?? '').trim();
+  if (!justificativa) {
+    return {
+      error: 'Justificativa obrigatória para editar um registro do histórico.',
+      success: false,
+    };
+  }
+
+  const memberId = String(formData.get('memberId') ?? '');
+  const uploadResult = await uploadSituationAttachments(
+    formData,
+    session.authContext.tenantId,
+    memberId,
+  );
+  if ('error' in uploadResult) {
+    return { error: uploadResult.error, success: false };
+  }
+
+  const motivo = formData.get('motivo') ? String(formData.get('motivo')) : undefined;
+  const motivoOutroDescricao = String(formData.get('motivoOutroDescricao') ?? '').trim();
+  const dataInicio = parseSituationDate(formData, 'dataInicio') ?? undefined;
+
+  const container = createServerContainer();
+
+  // Anexo novo soma aos já existentes — nunca substitui (o Use Case
+  // sobrescreve `anexos` por completo quando o input traz o campo).
+  let anexos: MemberSituationAttachment[] | undefined;
+  if (uploadResult.anexos.length > 0) {
+    const current = await container.repositories.memberSituationRecord.findById(recordId);
+    anexos = [...(current?.anexos ?? []), ...uploadResult.anexos];
+  }
+
+  const result = await container.useCases.editMemberSituationRecord.execute(
+    session.authContext,
+    recordId,
+    {
+      motivo,
+      motivoOutroDescricao: motivo === 'outro' ? motivoOutroDescricao : null,
+      dataInicio,
+      documentoNumero: formData.get('documentoNumero')
+        ? String(formData.get('documentoNumero'))
+        : null,
+      documentoData: parseSituationDate(formData, 'documentoData'),
+      observacoes: formData.get('observacoes') ? String(formData.get('observacoes')) : null,
+      anexos,
+      justificativa,
+    },
+  );
+  if (!result.ok) {
+    return { error: result.error.message, success: false };
+  }
+
+  revalidatePath('/admin/pessoas/irmaos');
+  if (memberId) revalidatePath(`/admin/pessoas/irmaos/${memberId}`);
+  return { error: null, success: true };
+}
+
+export interface SeedSituationHistoryState {
+  error: string | null;
+  report: SeedMemberSituationHistoryReportRow[] | null;
+}
+
+/**
+ * Migração assistida — cria o primeiro registro de Situação Maçônica pra
+ * todo Irmão que ainda não tem nenhum, a partir do `situacao` legado.
+ * Idempotente: rodar de novo só cobre quem ficou de fora da vez anterior.
+ */
+export async function seedMemberSituationHistoryAction(): Promise<SeedSituationHistoryState> {
+  const session = await requireSession();
+  const container = createServerContainer();
+
+  try {
+    const report = await container.useCases.seedMemberSituationHistory.execute(session.authContext);
+    revalidatePath('/admin/pessoas/irmaos');
+    revalidatePath('/admin/pessoas/situacao-migracao');
+    return { error: null, report };
+  } catch (error) {
+    logger.error('Falha na migração da Situação Maçônica', {
+      route: 'seedMemberSituationHistoryAction',
+      ...errorToLogContext(error),
+    });
+    Sentry.captureException(error, { tags: { route: 'seedMemberSituationHistoryAction' } });
+    return { error: 'Não foi possível concluir a migração. Tente novamente.', report: null };
+  }
 }
 
 export async function softDeleteMemberAction(memberId: string): Promise<void> {
@@ -583,7 +781,7 @@ interface ImportCandidateRow {
   nome: string;
   cim: string | null;
   grau: (typeof MEMBER_DEGREES)[number];
-  situacao: (typeof MEMBER_SITUATIONS)[number];
+  situacao: (typeof MEMBER_SITUATION_STATUSES)[number];
   email: string | null;
 }
 
@@ -715,7 +913,7 @@ async function buildXlsxPreviewRows(
         nome,
         cim,
         grau,
-        situacao: 'regular',
+        situacao: 'ativo',
         email,
         valido: false,
         motivo: `Grau "${grauRaw}" inválido.`,
@@ -723,9 +921,9 @@ async function buildXlsxPreviewRows(
       continue;
     }
     const situacaoMatch = situacaoRaw
-      ? matchEnumCaseInsensitive(MEMBER_SITUATIONS, situacaoRaw)
-      : 'regular';
-    const situacao = situacaoMatch ?? 'regular';
+      ? matchEnumCaseInsensitive(MEMBER_SITUATION_STATUSES, situacaoRaw)
+      : 'ativo';
+    const situacao = situacaoMatch ?? 'ativo';
     if (!situacaoMatch) {
       rows.push({
         linha: rowNumber,
@@ -853,7 +1051,7 @@ async function buildPdfPreviewRows(
       nome: parsedLine.nome,
       cim: parsedLine.cim,
       grau: parsedLine.grau,
-      situacao: 'regular',
+      situacao: 'ativo',
       email: null,
       valido: cimCheck.ok,
       motivo: cimCheck.ok ? undefined : cimCheck.motivo,

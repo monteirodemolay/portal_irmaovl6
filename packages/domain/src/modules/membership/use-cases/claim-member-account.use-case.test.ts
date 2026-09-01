@@ -21,7 +21,7 @@ function buildMember(overrides: Partial<Member> = {}): Member {
     cim: '12566',
     grau: 'mestre',
     cargoAtualId: null,
-    situacao: 'regular',
+    situacao: 'ativo',
     lojaId: 't1',
     potencia: 'GLEG',
     profissao: null,

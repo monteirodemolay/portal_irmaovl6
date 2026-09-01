@@ -1,6 +1,6 @@
-import type { AreaAtuacaoKey } from '@vl6/shared';
+import type { AreaAtuacaoKey, MemberSituationStatus } from '@vl6/shared';
 import type { AuthContext } from '../../../shared/auth-context';
-import { requirePermission } from '../../../shared/auth-context';
+import { hasPermission, requirePermission } from '../../../shared/auth-context';
 import { ok, type Result } from '../../../shared/result';
 import {
   buildPublicMemberProfileDTO,
@@ -34,6 +34,14 @@ export interface SearchDirectoryInput {
   tag?: string;
   empresa?: string;
   cidade?: string;
+  /**
+   * Só quem tem `member:read` pode pedir uma situação diferente de `ativo`
+   * (docs pedidos pelo Administrador §10: "permitir filtros autorizados
+   * por situação"). Sem esse filtro, o Diretório sempre mostra só Irmãos
+   * `ativo` — quem está licenciado, suspenso, desligado ou falecido não
+   * aparece na busca comum, mesmo com o perfil publicado.
+   */
+  situacao?: MemberSituationStatus;
 }
 
 export interface SearchDirectoryOutput {
@@ -64,6 +72,13 @@ export class SearchDirectoryUseCase {
   ): Promise<Result<SearchDirectoryOutput>> {
     requirePermission(ctx, 'memberDirectory:read');
 
+    // Sem `situacao` explícito, o Diretório só mostra Irmãos `ativo` (docs
+    // pedidos pelo Administrador §10) — quem pede uma situação diferente
+    // (licenciado/suspenso/desligado/falecido) precisa de `member:read`,
+    // mesma permissão que já dá acesso à ficha administrativa do Irmão.
+    const situacaoFiltro =
+      input.situacao && hasPermission(ctx, 'member:read') ? input.situacao : 'ativo';
+
     const refs = await this.deps.publicationSettingsRepository.listPublishedByTenant(ctx.tenantId);
 
     const dtos = await Promise.all(
@@ -74,6 +89,7 @@ export class SearchDirectoryUseCase {
           this.deps.memberCentralProfileRepository.findByMemberId(ctx.tenantId, ref.memberId),
         ]);
         if (!member || !settings) return null;
+        if (member.situacao !== situacaoFiltro) return null;
         return buildPublicMemberProfileDTO(member, profile, settings);
       }),
     );

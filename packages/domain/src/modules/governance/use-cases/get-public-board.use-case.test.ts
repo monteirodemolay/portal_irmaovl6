@@ -42,7 +42,7 @@ function buildMember(id: string): Member {
     cim: id,
     grau: 'mestre',
     cargoAtualId: null,
-    situacao: 'regular',
+    situacao: 'ativo',
     lojaId: 't1',
     potencia: 'GLEG',
     profissao: null,

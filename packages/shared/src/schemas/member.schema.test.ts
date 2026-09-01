@@ -10,7 +10,7 @@ const BASE: Omit<MemberFormValues, 'grau' | 'dataIniciacao' | 'dataElevacao' | '
   endereco: null,
   dataNascimento: null,
   cim: 'M-1',
-  situacao: 'regular',
+  situacao: 'ativo',
   lojaId: 'tenant-1',
   potencia: 'GOB',
   profissao: null,

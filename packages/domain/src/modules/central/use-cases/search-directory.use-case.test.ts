@@ -35,7 +35,7 @@ function buildMember(overrides: Partial<Member> = {}): Member {
     cim: null,
     grau: 'mestre',
     cargoAtualId: null,
-    situacao: 'regular',
+    situacao: 'ativo',
     lojaId: 't1',
     potencia: 'GOB',
     profissao: 'Advogado',
@@ -290,6 +290,79 @@ describe('SearchDirectoryUseCase', () => {
         { key: 'engenharia', label: 'Engenharia', count: 1 },
       ]),
     );
+  });
+
+  it('não mostra Irmão desligado por padrão, mesmo com perfil publicado', async () => {
+    const {
+      useCase,
+      memberRepository,
+      memberCentralProfileRepository,
+      publicationSettingsRepository,
+    } = buildUseCase();
+    await seedPublished(
+      memberRepository,
+      memberCentralProfileRepository,
+      publicationSettingsRepository,
+      {
+        member: { situacao: 'desligado' },
+      },
+    );
+
+    const result = await useCase.execute(ctx);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value.items).toHaveLength(0);
+  });
+
+  it('mostra Irmão desligado quando pedido explicitamente por quem tem member:read', async () => {
+    const {
+      useCase,
+      memberRepository,
+      memberCentralProfileRepository,
+      publicationSettingsRepository,
+    } = buildUseCase();
+    await seedPublished(
+      memberRepository,
+      memberCentralProfileRepository,
+      publicationSettingsRepository,
+      {
+        member: { situacao: 'desligado' },
+      },
+    );
+    const ctxComMemberRead: AuthContext = {
+      ...ctx,
+      permissions: ['memberDirectory:read', 'member:read'],
+    };
+
+    const result = await useCase.execute(ctxComMemberRead, { situacao: 'desligado' });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value.items).toHaveLength(1);
+  });
+
+  it('ignora o filtro de situação de quem não tem member:read', async () => {
+    const {
+      useCase,
+      memberRepository,
+      memberCentralProfileRepository,
+      publicationSettingsRepository,
+    } = buildUseCase();
+    await seedPublished(
+      memberRepository,
+      memberCentralProfileRepository,
+      publicationSettingsRepository,
+      {
+        member: { situacao: 'desligado' },
+      },
+    );
+
+    const result = await useCase.execute(ctx, { situacao: 'desligado' });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value.items).toHaveLength(0);
   });
 
   it('lança ForbiddenError sem memberDirectory:read', async () => {
