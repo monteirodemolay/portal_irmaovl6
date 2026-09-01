@@ -71,6 +71,7 @@ export default async function MemberLayout({ children }: { children: React.React
               roleLabel={roleDisplayLabel(session.role)}
               email={session.user.email}
               grau={member?.grau ?? null}
+              memberId={member?.id ?? null}
               notifications={notificationsPage.items}
               unreadCount={unreadCount}
             />

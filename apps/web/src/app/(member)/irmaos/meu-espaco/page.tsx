@@ -1,6 +1,7 @@
+import Link from 'next/link';
 import { buildPublicMemberProfileDTO, type PublicationSettings } from '@vl6/domain';
 import { createServerContainer } from '@vl6/infra';
-import { Card, CardContent, Tabs, TabsContent, TabsList, TabsTrigger } from '@vl6/ui';
+import { ArrowLeft, Card, CardContent, Tabs, TabsContent, TabsList, TabsTrigger } from '@vl6/ui';
 import { requireSession } from '@/lib/auth/require-session';
 import { listUsedProfessions } from '@/modules/membership/lib/list-used-professions';
 import { listUsedCompanies } from '@/modules/membership/lib/list-used-companies';
@@ -47,9 +48,27 @@ const EMPTY_PUBLICATION_SETTINGS: Omit<
   ativo: true,
 };
 
-export default async function MeuEspacoPage() {
+const VALID_TABS = [
+  'geral',
+  'pessoal',
+  'profissional',
+  'empresa',
+  'contatos',
+  'redes',
+  'privacidade',
+] as const;
+
+export default async function MeuEspacoPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ tab?: string }>;
+}) {
   const session = await requireSession();
   const container = createServerContainer();
+  const { tab } = await searchParams;
+  // `?tab=` — usado pelos botões "Editar" contextuais do perfil (Comunidade
+  // VL6) e pelo menu do usuário, pra abrir a seção certa deste editor.
+  const initialTab = (VALID_TABS as readonly string[]).includes(tab ?? '') ? tab! : 'geral';
 
   const [member, myCommittees, customProfessions, customCompanies, businessNames] =
     await Promise.all([
@@ -99,6 +118,14 @@ export default async function MeuEspacoPage() {
 
   return (
     <div className="flex max-w-4xl flex-col gap-6">
+      <Link
+        href="/irmaos"
+        className="border-border bg-surface hover:border-primary hover:text-primary flex w-fit items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm transition-colors"
+      >
+        <ArrowLeft size={16} />
+        Voltar à Comunidade VL6
+      </Link>
+
       <SpaceHeader
         member={member}
         profile={centralProfile}
@@ -106,7 +133,7 @@ export default async function MeuEspacoPage() {
         previewDto={previewDto}
       />
 
-      <Tabs defaultValue="geral">
+      <Tabs defaultValue={initialTab}>
         <TabsList className="flex-wrap">
           <TabsTrigger value="geral">Geral</TabsTrigger>
           <TabsTrigger value="pessoal">Pessoal</TabsTrigger>
