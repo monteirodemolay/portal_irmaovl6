@@ -8,6 +8,7 @@ import { requirePagePermission } from '@/lib/auth/require-permission';
 import { AcervoPageHeader } from '@/components/member/acervo-page-header';
 import { archiveItemHref } from '@/modules/archive/lib/archive-item-id';
 import { DocumentGrid, type DocumentGridItem } from '@/modules/archive/components/document-grid';
+import { loadPublishedArchiveDocuments } from '@/modules/archive/lib/load-published-archive-events';
 
 function buildHref(categoriaId?: string): string {
   return categoriaId ? `/acervo/documentos?categoria=${categoriaId}` : '/acervo/documentos';
@@ -40,10 +41,11 @@ export default async function ArchiveDocumentsPage({
   const params = await searchParams;
 
   const container = createServerContainer();
-  const [filesPage, categories, libraryItems] = await Promise.all([
+  const [filesPage, categories, libraryItems, archiveDocuments] = await Promise.all([
     container.useCases.listAllFileAssets.execute(session.authContext, { limit: 200 }),
     container.useCases.listFileCategories.execute(session.authContext),
     container.repositories.libraryItem.listByTenant(session.authContext.tenantId),
+    loadPublishedArchiveDocuments(container, session.authContext, session.role),
   ]);
 
   const categoryNameById = new Map(categories.map((c) => [c.id, c.nome]));
@@ -53,17 +55,35 @@ export default async function ArchiveDocumentsPage({
     .filter((file) => file.publicado && !libraryFileIds.has(file.id))
     .filter((file) => !params.categoria || file.categoriaId === params.categoria);
 
-  const filterItems = categories.map((category) => ({
-    value: category.id,
-    label: category.nome,
-    href: buildHref(params.categoria === category.id ? undefined : category.id),
-  }));
+  // Categoria "Evento" é sintética — documentos publicados pela Central de
+  // Publicação não têm `FileCategory` própria (o modelo de dados nem tem
+  // esse campo), então nunca aparecem escondidos atrás de um filtro que
+  // não corresponde a eles.
+  const showArchiveDocuments = !params.categoria || params.categoria === 'evento';
+  const visibleArchiveDocuments = showArchiveDocuments ? archiveDocuments : [];
+
+  const filterItems = [
+    ...categories.map((category) => ({
+      value: category.id,
+      label: category.nome,
+      href: buildHref(params.categoria === category.id ? undefined : category.id),
+    })),
+    ...(archiveDocuments.length > 0
+      ? [
+          {
+            value: 'evento',
+            label: 'Evento',
+            href: buildHref(params.categoria === 'evento' ? undefined : 'evento'),
+          },
+        ]
+      : []),
+  ];
 
   return (
     <div className="flex flex-col gap-6">
       <AcervoPageHeader title="Documentos" backHref="/acervo" />
 
-      {categories.length > 0 && (
+      {filterItems.length > 0 && (
         <FilterBar
           items={filterItems}
           activeValue={params.categoria}
@@ -72,7 +92,7 @@ export default async function ArchiveDocumentsPage({
         />
       )}
 
-      {documents.length === 0 ? (
+      {documents.length === 0 && visibleArchiveDocuments.length === 0 ? (
         <EmptyState
           icon={<FileText size={22} />}
           title="Nenhum documento publicado ainda"
@@ -80,24 +100,44 @@ export default async function ArchiveDocumentsPage({
         />
       ) : (
         <DocumentGrid
-          items={documents.map((file): DocumentGridItem => ({
-            id: file.id,
-            href: archiveItemHref('file', file.id),
-            kindLabel: categoryNameById.get(file.categoriaId) ?? 'Documento',
-            icon: ICON_BY_FILE_KIND[file.tipo],
-            titulo: file.titulo,
-            descricao: file.descricao,
-            thumbnailUrl: file.urlMiniatura,
-            viewer: {
-              kind: VIEWER_KIND_BY_FILE_KIND[file.tipo],
-              src: `/api/files/${file.id}`,
-              title: file.titulo,
-              caption: file.descricao,
-              externalHref: `/api/files/${file.id}`,
-              downloadHref: file.permitirDownload ? `/api/files/${file.id}?mode=download` : null,
-              downloadName: file.titulo,
-            },
-          }))}
+          items={[
+            ...documents.map((file): DocumentGridItem => ({
+              id: file.id,
+              href: archiveItemHref('file', file.id),
+              kindLabel: categoryNameById.get(file.categoriaId) ?? 'Documento',
+              icon: ICON_BY_FILE_KIND[file.tipo],
+              titulo: file.titulo,
+              descricao: file.descricao,
+              thumbnailUrl: file.urlMiniatura,
+              viewer: {
+                kind: VIEWER_KIND_BY_FILE_KIND[file.tipo],
+                src: `/api/files/${file.id}`,
+                title: file.titulo,
+                caption: file.descricao,
+                externalHref: `/api/files/${file.id}`,
+                downloadHref: file.permitirDownload ? `/api/files/${file.id}?mode=download` : null,
+                downloadName: file.titulo,
+              },
+            })),
+            ...visibleArchiveDocuments.map((doc): DocumentGridItem => ({
+              id: doc.id,
+              href: `/acervo/eventos/${doc.eventId}`,
+              kindLabel: 'Evento',
+              icon: <FileText size={14} />,
+              titulo: doc.titulo,
+              descricao: doc.eventTitulo,
+              thumbnailUrl: null,
+              viewer: {
+                kind: doc.mimeType === 'application/pdf' ? 'pdf' : 'outro',
+                src: doc.src,
+                title: doc.titulo,
+                caption: doc.caption,
+                externalHref: `/acervo/eventos/${doc.eventId}`,
+                downloadHref: doc.allowDownload ? doc.src : null,
+                downloadName: doc.titulo,
+              },
+            })),
+          ]}
         />
       )}
     </div>

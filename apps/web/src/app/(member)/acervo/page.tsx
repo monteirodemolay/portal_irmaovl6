@@ -24,6 +24,10 @@ import {
   matchesArchiveSearch,
   type ArchiveSearchKind,
 } from '@/modules/archive/lib/search-archive';
+import {
+  loadPublishedArchiveDocuments,
+  loadPublishedArchiveEventCards,
+} from '@/modules/archive/lib/load-published-archive-events';
 
 function formatCount(value: number | null, singular: string, plural: string): string {
   if (value === null) return 'Acesso conforme sua permissão';
@@ -48,7 +52,15 @@ export default async function AcervoPage({
   const canReadGallery = hasPermission(authContext, 'gallery:read');
   const container = createServerContainer();
 
-  const [allResults, favorites, documentCount, libraryCount, albumCount] = await Promise.all([
+  const [
+    allResults,
+    favorites,
+    legacyDocumentCount,
+    libraryCount,
+    legacyAlbumCount,
+    archiveDocuments,
+    archiveEventCards,
+  ] = await Promise.all([
     loadArchiveSearchResults(authContext, container, role),
     canReadLibrary ? container.useCases.listMyFavorites.execute(authContext) : Promise.resolve([]),
     canReadFiles
@@ -60,7 +72,25 @@ export default async function AcervoPage({
     canReadGallery
       ? container.repositories.galleryAlbum.countByTenant(authContext.tenantId)
       : Promise.resolve(null),
+    canReadFiles
+      ? loadPublishedArchiveDocuments(container, authContext, role)
+      : Promise.resolve([]),
+    canReadGallery
+      ? loadPublishedArchiveEventCards(container, authContext, role)
+      : Promise.resolve([]),
   ]);
+
+  // Conta os dois modelos que hoje coexistem por trás de "Documentos"/"Fotos
+  // e Vídeos" (`FileAsset`/`GalleryAlbum` legados + `ArchiveItem` publicado
+  // pela Central de Publicação) — nunca só o legado, senão o card mostra
+  // "0" mesmo com conteúdo publicado de verdade (ver `/acervo/documentos`
+  // e `/acervo/fotografias`, que já juntam as duas fontes).
+  const documentCount =
+    legacyDocumentCount === null ? null : legacyDocumentCount + archiveDocuments.length;
+  const eventPhotoAlbumCount = archiveEventCards.filter(
+    (card) => card.counts.foto + card.counts.video > 0,
+  ).length;
+  const albumCount = legacyAlbumCount === null ? null : legacyAlbumCount + eventPhotoAlbumCount;
 
   const query = params.q?.trim() ?? '';
   const requestedKind = params.tipo as ArchiveSearchKind | undefined;
@@ -297,6 +327,7 @@ export default async function AcervoPage({
                     {result.kind === 'documento' && <FileText size={14} />}
                     {result.kind === 'biblioteca' && <BookOpen size={14} />}
                     {result.kind === 'fotografia' && <GalleryIcon size={14} />}
+                    {result.kind === 'evento' && <CalendarDays size={14} />}
                     {ARCHIVE_SEARCH_KIND_LABELS[result.kind]}
                   </div>
                   <h3 className="font-display group-hover:text-accent mt-2 line-clamp-2 font-semibold transition-colors">
