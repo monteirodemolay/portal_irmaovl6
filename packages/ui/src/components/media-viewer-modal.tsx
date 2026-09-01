@@ -55,10 +55,6 @@ function MediaBody({ item }: { item: MediaViewerItem }) {
     return (
       <div className="flex h-full w-full max-w-4xl flex-col gap-2 px-2">
         <PdfViewer src={item.src} title={item.title} className="h-full" />
-        <p className="text-center text-xs text-white/60">
-          Prévia pode não funcionar em todos os navegadores móveis — use &quot;Abrir em nova
-          aba&quot; se não carregar.
-        </p>
       </div>
     );
   }

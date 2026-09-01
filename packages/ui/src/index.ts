@@ -38,6 +38,7 @@ export {
   Move,
   Copy,
   Check,
+  Play,
   Download,
   Megaphone,
   CalendarDays,
