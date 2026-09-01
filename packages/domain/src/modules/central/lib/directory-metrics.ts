@@ -1,5 +1,5 @@
 import { AREA_ATUACAO_LABELS, type AreaAtuacaoKey } from '@vl6/shared';
-import type { PublicMemberProfileDTO } from '../dtos/public-member-profile.dto';
+import type { DirectoryMemberDTO } from '../dtos/directory-member.dto';
 
 export interface DirectoryMetrics {
   totalIrmaos: number;
@@ -19,22 +19,24 @@ function normalize(value: string): string {
 }
 
 /**
- * Indicadores-resumo do Diretório — sempre computados sobre o conjunto
- * COMPLETO de perfis publicados (nunca sobre o resultado já filtrado por
- * busca), pra que os cards de indicadores reflitam o diretório inteiro
- * independente do termo pesquisado no momento.
+ * Indicadores-resumo do Diretório — computados sobre o conjunto COMPLETO de
+ * Irmãos institucionais (nunca sobre o resultado já filtrado por busca),
+ * pra que os cards de indicadores reflitam o diretório inteiro independente
+ * do termo pesquisado no momento. Só o conteúdo AUTORIZADO
+ * (`dto.optional.*`) entra nas contagens — Irmãos sem perfil publicado
+ * contam só pra `totalIrmaos`.
  */
-export function computeDirectoryMetrics(dtos: PublicMemberProfileDTO[]): DirectoryMetrics {
+export function computeDirectoryMetrics(dtos: DirectoryMemberDTO[]): DirectoryMetrics {
   const areas = new Set<string>();
   const empresas = new Set<string>();
   const competencias = new Set<string>();
 
   for (const dto of dtos) {
-    if (dto.profissional?.areaAtuacaoKey) areas.add(dto.profissional.areaAtuacaoKey);
-    if (dto.empresaAtual) empresas.add(normalize(dto.empresaAtual));
-    for (const negocio of dto.negocios ?? []) empresas.add(normalize(negocio.nomeEmpresa));
-    for (const item of dto.competencias ?? []) competencias.add(normalize(item));
-    for (const item of dto.servicos ?? []) competencias.add(normalize(item));
+    if (dto.optional.profissional?.areaAtuacaoKey) areas.add(dto.optional.profissional.areaAtuacaoKey);
+    if (dto.optional.empresaAtual) empresas.add(normalize(dto.optional.empresaAtual));
+    for (const negocio of dto.optional.negocios ?? []) empresas.add(normalize(negocio.nomeEmpresa));
+    for (const item of dto.optional.competencias ?? []) competencias.add(normalize(item));
+    for (const item of dto.optional.servicos ?? []) competencias.add(normalize(item));
   }
 
   return {
@@ -46,11 +48,11 @@ export function computeDirectoryMetrics(dtos: PublicMemberProfileDTO[]): Directo
 }
 
 /** Contagem de Irmãos por área de atuação — só áreas com pelo menos 1, ordenado desc. */
-export function computeAreaFacets(dtos: PublicMemberProfileDTO[]): AreaFacet[] {
+export function computeAreaFacets(dtos: DirectoryMemberDTO[]): AreaFacet[] {
   const counts = new Map<AreaAtuacaoKey, number>();
 
   for (const dto of dtos) {
-    const key = dto.profissional?.areaAtuacaoKey;
+    const key = dto.optional.profissional?.areaAtuacaoKey;
     if (!key) continue;
     counts.set(key, (counts.get(key) ?? 0) + 1);
   }
@@ -71,6 +73,10 @@ export interface DirectoryFilterOptions {
   /** Competências e serviços mesclados num único conjunto — mesmo critério já usado em `computeDirectoryMetrics`. */
   tags: DirectoryFilterOption[];
   empresas: DirectoryFilterOption[];
+  /** Cargos institucionais (gestão vigente) ocupados por algum Irmão do conjunto — sempre institucional, nunca depende de publicação. */
+  cargos: DirectoryFilterOption[];
+  /** Comissões (gestão vigente) com pelo menos um Irmão do conjunto. */
+  comissoes: DirectoryFilterOption[];
 }
 
 function countDistinct(values: Iterable<string>): DirectoryFilterOption[] {
@@ -89,32 +95,40 @@ function countDistinct(values: Iterable<string>): DirectoryFilterOption[] {
 }
 
 /**
- * "Só o que realmente existe cadastrado" — o Diretório trocou campos de
- * texto livre por seletores fechados nessas opções (docs/architecture),
- * pra nunca deixar o Irmão filtrar/buscar por algo que ninguém publicou.
- * Sempre computado sobre o conjunto COMPLETO de perfis publicados, igual
- * `computeDirectoryMetrics`/`computeAreaFacets` — os filtros disponíveis
- * não encolhem conforme o usuário já filtra.
+ * "Só o que realmente existe cadastrado" — o Diretório usa seletores
+ * fechados nessas opções (docs/architecture), pra nunca deixar o Irmão
+ * filtrar/buscar por algo que ninguém tem. Sempre computado sobre o
+ * conjunto COMPLETO de Irmãos institucionais, igual `computeDirectoryMetrics`/
+ * `computeAreaFacets` — os filtros disponíveis não encolhem conforme o
+ * usuário já filtra. `profissoes`/`tags`/`empresas` só refletem conteúdo já
+ * autorizado (`optional.*`); `cargos`/`comissoes` são institucionais, nunca
+ * gated por publicação.
  */
-export function computeDirectoryFilterOptions(dtos: PublicMemberProfileDTO[]): DirectoryFilterOptions {
+export function computeDirectoryFilterOptions(dtos: DirectoryMemberDTO[]): DirectoryFilterOptions {
   function* profissoes() {
-    for (const dto of dtos) if (dto.profissional?.profissao) yield dto.profissional.profissao;
+    for (const dto of dtos)
+      if (dto.optional.profissional?.profissao) yield dto.optional.profissional.profissao;
   }
   function* cidades() {
-    for (const dto of dtos)
-      if (dto.informacoesPessoais?.cidadeExibicao) yield dto.informacoesPessoais.cidadeExibicao;
+    for (const dto of dtos) if (dto.optional.cidadeExibicao) yield dto.optional.cidadeExibicao;
   }
   function* tags() {
     for (const dto of dtos) {
-      yield* dto.competencias ?? [];
-      yield* dto.servicos ?? [];
+      yield* dto.optional.competencias ?? [];
+      yield* dto.optional.servicos ?? [];
     }
   }
   function* empresas() {
     for (const dto of dtos) {
-      if (dto.empresaAtual) yield dto.empresaAtual;
-      for (const negocio of dto.negocios ?? []) yield negocio.nomeEmpresa;
+      if (dto.optional.empresaAtual) yield dto.optional.empresaAtual;
+      for (const negocio of dto.optional.negocios ?? []) yield negocio.nomeEmpresa;
     }
+  }
+  function* cargos() {
+    for (const dto of dtos) if (dto.cargoAtual) yield dto.cargoAtual;
+  }
+  function* comissoes() {
+    for (const dto of dtos) for (const c of dto.comissoes) yield c.nome;
   }
 
   return {
@@ -122,5 +136,7 @@ export function computeDirectoryFilterOptions(dtos: PublicMemberProfileDTO[]): D
     cidades: countDistinct(cidades()),
     tags: countDistinct(tags()),
     empresas: countDistinct(empresas()),
+    cargos: countDistinct(cargos()),
+    comissoes: countDistinct(comissoes()),
   };
 }

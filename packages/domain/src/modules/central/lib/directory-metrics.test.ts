@@ -1,28 +1,30 @@
 import { describe, expect, it } from 'vitest';
-import type { PublicMemberProfileDTO } from '../dtos/public-member-profile.dto';
-import { computeAreaFacets, computeDirectoryMetrics } from './directory-metrics';
+import type { DirectoryMemberDTO } from '../dtos/directory-member.dto';
+import { computeAreaFacets, computeDirectoryFilterOptions, computeDirectoryMetrics } from './directory-metrics';
 
-function buildDto(overrides: Partial<PublicMemberProfileDTO> = {}): PublicMemberProfileDTO {
+const EMPTY_OPTIONAL: DirectoryMemberDTO['optional'] = {
+  apresentacao: null,
+  profissional: null,
+  competencias: null,
+  servicos: null,
+  negocios: null,
+  empresaAtual: null,
+  cidadeExibicao: null,
+};
+
+function buildDto(overrides: Partial<DirectoryMemberDTO> = {}): DirectoryMemberDTO {
   return {
     memberId: 'member-1',
     nomeCompleto: 'Irmão de Teste',
     fotoUrl: null,
     grau: 'mestre',
+    situacao: 'ativo',
     dataIniciacao: null,
-    apresentacao: null,
-    informacoesPessoais: null,
-    profissional: null,
-    negocios: null,
-    empresaAtual: null,
-    competencias: null,
-    servicos: null,
-    contatos: null,
-    redes: null,
-    informacoesMaconicas: null,
-    endereco: null,
-    trajetoria: null,
-    memoriaFotografica: null,
+    cargoAtual: null,
+    comissoes: [],
+    profileState: 'institutional_only',
     ...overrides,
+    optional: { ...EMPTY_OPTIONAL, ...overrides.optional },
   };
 }
 
@@ -36,53 +38,50 @@ describe('computeDirectoryMetrics', () => {
     });
   });
 
+  it('conta Irmãos institucionais mesmo sem nenhum bloco publicado', () => {
+    const dtos = [buildDto(), buildDto({ memberId: 'member-2', profileState: 'draft' })];
+    expect(computeDirectoryMetrics(dtos).totalIrmaos).toBe(2);
+    expect(computeDirectoryMetrics(dtos).totalAreas).toBe(0);
+  });
+
   it('deduplica empresas e competências (case-insensitive, com espaços)', () => {
     const dtos = [
       buildDto({
-        profissional: {
-          profissao: 'Advogado',
-          areaAtuacao: 'Direito',
-          areaAtuacaoKey: 'direito',
-          formacao: null,
-          resumoProfissional: null,
+        profileState: 'published',
+        optional: {
+          apresentacao: null,
+          profissional: {
+            profissao: 'Advogado',
+            areaAtuacao: 'Direito',
+            areaAtuacaoKey: 'direito',
+            formacao: null,
+            resumoProfissional: null,
+          },
+          empresaAtual: 'ACME Ltda',
+          competencias: ['Negociação'],
+          servicos: null,
+          negocios: null,
+          cidadeExibicao: null,
         },
-        empresaAtual: 'ACME Ltda',
-        competencias: ['Negociação'],
       }),
       buildDto({
         memberId: 'member-2',
-        profissional: {
-          profissao: 'Sócio',
-          areaAtuacao: 'Direito',
-          areaAtuacaoKey: 'direito',
-          formacao: null,
-          resumoProfissional: null,
-        },
-        negocios: [
-          {
-            id: 'n1',
-            nomeEmpresa: '  acme ltda  ',
-            segmento: null,
-            cargo: null,
-            descricao: null,
-            cidade: null,
-            telefoneComercial: null,
-            siteUrl: null,
-            cnpj: null,
-            logoUrl: null,
-            produtosServicos: [],
-            whatsappComercial: null,
-            emailComercial: null,
-            instagramComercial: null,
-            formasAtendimento: [],
-            horarioFuncionamento: null,
-            ofereceDescontoIrmaos: false,
-            descontoDescricao: null,
-            status: 'published',
-            updatedAt: new Date('2026-01-01'),
+        profileState: 'published',
+        optional: {
+          apresentacao: null,
+          profissional: {
+            profissao: 'Sócio',
+            areaAtuacao: 'Direito',
+            areaAtuacaoKey: 'direito',
+            formacao: null,
+            resumoProfissional: null,
           },
-        ],
-        servicos: ['negociação'],
+          negocios: [{ businessId: 'n1', nomeEmpresa: '  acme ltda  ', segmento: null }],
+          competencias: null,
+          servicos: ['negociação'],
+          empresaAtual: null,
+          cidadeExibicao: null,
+        },
       }),
     ];
 
@@ -98,27 +97,58 @@ describe('computeAreaFacets', () => {
   it('conta só áreas com pelo menos 1 Irmão, ordenado desc', () => {
     const dtos = [
       buildDto({
-        profissional: {
-          profissao: null,
-          areaAtuacao: 'Direito',
-          areaAtuacaoKey: 'direito',
-          formacao: null,
-          resumoProfissional: null,
+        profileState: 'published',
+        optional: {
+          apresentacao: null,
+          profissional: {
+            profissao: null,
+            areaAtuacao: 'Direito',
+            areaAtuacaoKey: 'direito',
+            formacao: null,
+            resumoProfissional: null,
+          },
+          competencias: null,
+          servicos: null,
+          negocios: null,
+          empresaAtual: null,
+          cidadeExibicao: null,
         },
       }),
       buildDto({
         memberId: 'member-2',
-        profissional: {
-          profissao: null,
-          areaAtuacao: 'Direito',
-          areaAtuacaoKey: 'direito',
-          formacao: null,
-          resumoProfissional: null,
+        profileState: 'published',
+        optional: {
+          apresentacao: null,
+          profissional: {
+            profissao: null,
+            areaAtuacao: 'Direito',
+            areaAtuacaoKey: 'direito',
+            formacao: null,
+            resumoProfissional: null,
+          },
+          competencias: null,
+          servicos: null,
+          negocios: null,
+          empresaAtual: null,
+          cidadeExibicao: null,
         },
       }),
-      buildDto({ memberId: 'member-3', profissional: null }),
+      buildDto({ memberId: 'member-3' }),
     ];
 
     expect(computeAreaFacets(dtos)).toEqual([{ key: 'direito', label: 'Direito', count: 2 }]);
+  });
+});
+
+describe('computeDirectoryFilterOptions', () => {
+  it('cargos e comissões são institucionais — não dependem de publicação', () => {
+    const dtos = [
+      buildDto({ cargoAtual: 'Secretário', comissoes: [{ id: 'c1', nome: 'Beneficência' }] }),
+      buildDto({ memberId: 'member-2', profileState: 'draft' }),
+    ];
+
+    const options = computeDirectoryFilterOptions(dtos);
+    expect(options.cargos).toEqual([{ value: 'Secretário', count: 1 }]);
+    expect(options.comissoes).toEqual([{ value: 'Beneficência', count: 1 }]);
   });
 });

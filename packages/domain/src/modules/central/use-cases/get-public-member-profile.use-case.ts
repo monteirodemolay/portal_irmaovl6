@@ -26,11 +26,15 @@ export interface GetPublicMemberProfileDeps {
 }
 
 /**
- * Perfil de terceiro na Central — `null` cobre igualmente "nunca publicou"
- * e "suspenso pela Administração" (nunca revela qual dos dois é, requisito
- * de privacidade explícito). Isolamento multi-tenant: `memberId` de outro
- * tenant também devolve `null`, nunca um erro que revele a existência do
- * documento.
+ * Perfil de terceiro na Central — regra central desta fase: todo Irmão
+ * institucional não excluído tem uma ficha que abre (nunca 404), mesmo sem
+ * nenhum conteúdo voluntário publicado. `null` fica reservado só pra "esse
+ * Irmão não existe neste tenant" (Irmão não encontrado, outro tenant, ou
+ * excluído) — nunca mais representa "não publicou"/"suspenso", que agora é
+ * uma ficha institucional normal com os blocos voluntários vazios (mesmo
+ * tratamento pro titular que nunca publicou e pro suspenso pela
+ * Administração — nunca revela qual dos dois é, requisito de privacidade
+ * explícito).
  */
 export class GetPublicMemberProfileUseCase {
   constructor(private readonly deps: GetPublicMemberProfileDeps) {}
@@ -50,20 +54,23 @@ export class GetPublicMemberProfileUseCase {
       ctx.tenantId,
       targetMemberId,
     );
-    if (!isCentralProfileVisible(settings)) {
-      return ok(null);
-    }
+    // `null` aqui cobre igualmente "nunca publicou" e "suspenso" — os dois
+    // casos devolvem a mesma ficha institucional com blocos voluntários
+    // fechados (`buildPublicMemberProfileDTO` trata `settings: null` como
+    // "tudo fechado"), nunca `ok(null)`: só um Irmão que não existe neste
+    // tenant (não encontrado/outro tenant/excluído) devolve null.
+    const visibleSettings = isCentralProfileVisible(settings) ? settings : null;
 
     const profile = await this.deps.memberCentralProfileRepository.findByMemberId(
       ctx.tenantId,
       targetMemberId,
     );
-    const dto = buildPublicMemberProfileDTO(member, profile, settings);
+    const dto = buildPublicMemberProfileDTO(member, profile, visibleSettings);
 
     // Trajetória institucional — mesmo recorte do Acervo VL6 (registro da
     // Loja, não preferência pessoal), por isso não passa pelos blocos de
-    // `PublicationSettings`: se o perfil chegou até aqui (já visível), a
-    // trajetória sempre acompanha.
+    // `PublicationSettings`: todo Irmão institucional tem sua trajetória
+    // exibida, publicado ou não.
     const cargos = await getMemberJourneyCargos(this.deps, targetMemberId);
 
     // Memória fotográfica — ponte Diretório → Acervo (Fase B). Ao contrário
@@ -73,7 +80,7 @@ export class GetPublicMemberProfileUseCase {
     // quem vê o Diretório com sessão de Administrador — o Acervo VL6 é a
     // superfície certa para mídia restrita, não o perfil público.
     let memoriaFotografica: PublicMemberProfileDTO['memoriaFotografica'] = null;
-    if (settings.blocks.memoriaFotografica) {
+    if (visibleSettings?.blocks.memoriaFotografica) {
       const taggedMedia = await this.deps.archiveMediaRepository.findByPessoaIdentificada(
         ctx.tenantId,
         targetMemberId,

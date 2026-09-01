@@ -74,6 +74,18 @@ export interface PublicMemberProfileDTO {
   memoriaFotografica: { id: string; src: string; caption: string }[] | null;
 }
 
+const CLOSED_BLOCKS: PublicationSettings['blocks'] = {
+  apresentacao: false,
+  informacoesPessoais: false,
+  profissional: false,
+  empresa: false,
+  informacoesMaconicas: false,
+  competencias: false,
+  servicos: false,
+  endereco: false,
+  memoriaFotografica: false,
+};
+
 /**
  * Filtragem server-side do perfil da Central (docs/architecture) — nunca
  * busca tudo pra esconder no client. Um bloco desligado em
@@ -82,13 +94,19 @@ export interface PublicMemberProfileDTO {
  * pra chave, sem precisar saber a regra de visibilidade de novo. Reusada
  * tanto pelo perfil real (`GetPublicMemberProfileUseCase`) quanto pelo
  * preview "como os outros veem" (mesma função, mesmo filtro).
+ *
+ * `settings === null` cobre o Irmão institucional sem nenhum conteúdo
+ * voluntário liberado (nunca publicou, ou está suspenso pela Administração
+ * — o chamador decide qual dos dois, mas pra este builder os dois casos são
+ * idênticos: todo bloco fechado) — usado por `GetPublicMemberProfileUseCase`
+ * pra nunca devolver 404 pra um Irmão institucional sem perfil voluntário.
  */
 export function buildPublicMemberProfileDTO(
   member: Member,
   profile: MemberCentralProfile | null,
-  settings: PublicationSettings,
+  settings: PublicationSettings | null,
 ): PublicMemberProfileDTO {
-  const blocks = settings.blocks;
+  const blocks = settings?.blocks ?? CLOSED_BLOCKS;
 
   return {
     memberId: member.id,
@@ -122,31 +140,33 @@ export function buildPublicMemberProfileDTO(
     competencias: blocks.competencias ? (profile?.competencias ?? []) : null,
     servicos: blocks.servicos ? (profile?.servicos ?? []) : null,
     contatos:
-      settings.contacts.telefone || settings.contacts.whatsapp || settings.contacts.email
+      settings &&
+      (settings.contacts.telefone || settings.contacts.whatsapp || settings.contacts.email)
         ? {
             telefone: settings.contacts.telefone ? member.telefone : null,
             whatsapp: settings.contacts.whatsapp ? member.whatsapp : null,
             email: settings.contacts.email ? member.email : null,
           }
         : null,
-    redes: Object.values(settings.externalLinks).some(Boolean)
-      ? {
-          whatsapp: settings.externalLinks.whatsapp
-            ? (profile?.externalLinks.whatsapp ?? null)
-            : null,
-          instagram: settings.externalLinks.instagram
-            ? (profile?.externalLinks.instagram ?? null)
-            : null,
-          facebook: settings.externalLinks.facebook
-            ? (profile?.externalLinks.facebook ?? null)
-            : null,
-          linkedin: settings.externalLinks.linkedin
-            ? (profile?.externalLinks.linkedin ?? null)
-            : null,
-          lattes: settings.externalLinks.lattes ? (profile?.externalLinks.lattes ?? null) : null,
-          site: settings.externalLinks.site ? (profile?.externalLinks.site ?? null) : null,
-        }
-      : null,
+    redes:
+      settings && Object.values(settings.externalLinks).some(Boolean)
+        ? {
+            whatsapp: settings.externalLinks.whatsapp
+              ? (profile?.externalLinks.whatsapp ?? null)
+              : null,
+            instagram: settings.externalLinks.instagram
+              ? (profile?.externalLinks.instagram ?? null)
+              : null,
+            facebook: settings.externalLinks.facebook
+              ? (profile?.externalLinks.facebook ?? null)
+              : null,
+            linkedin: settings.externalLinks.linkedin
+              ? (profile?.externalLinks.linkedin ?? null)
+              : null,
+            lattes: settings.externalLinks.lattes ? (profile?.externalLinks.lattes ?? null) : null,
+            site: settings.externalLinks.site ? (profile?.externalLinks.site ?? null) : null,
+          }
+        : null,
     informacoesMaconicas: blocks.informacoesMaconicas
       ? {
           lojasVisitadas: profile?.lojasVisitadas ?? null,

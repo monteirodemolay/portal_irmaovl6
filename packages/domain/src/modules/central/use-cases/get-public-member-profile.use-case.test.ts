@@ -322,7 +322,7 @@ describe('GetPublicMemberProfileUseCase', () => {
     expect(result.value?.memoriaFotografica).toBeNull();
   });
 
-  it('devolve null quando nunca publicou', async () => {
+  it('nunca devolve null pra Irmão institucional sem perfil — abre com os blocos voluntários fechados', async () => {
     const { useCase, memberRepository } = buildUseCase();
     await memberRepository.create(buildMember());
 
@@ -330,10 +330,14 @@ describe('GetPublicMemberProfileUseCase', () => {
 
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    expect(result.value).toBeNull();
+    expect(result.value).not.toBeNull();
+    expect(result.value?.memberId).toBe('member-1');
+    expect(result.value?.profissional).toBeNull();
+    expect(result.value?.apresentacao).toBeNull();
+    expect(result.value?.contatos).toBeNull();
   });
 
-  it('devolve null quando suspenso pela Administração (mesmo com profilePublished true)', async () => {
+  it('nunca devolve null quando suspenso pela Administração — mesma ficha institucional, sem o conteúdo voluntário', async () => {
     const { useCase, memberRepository, publicationSettingsRepository } = buildUseCase();
     await memberRepository.create(buildMember());
     await publicationSettingsRepository.create(
@@ -344,7 +348,8 @@ describe('GetPublicMemberProfileUseCase', () => {
 
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    expect(result.value).toBeNull();
+    expect(result.value).not.toBeNull();
+    expect(result.value?.profissional).toBeNull();
   });
 
   it('devolve null pra membro de outro tenant (isolamento multi-tenant)', async () => {
