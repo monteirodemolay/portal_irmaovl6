@@ -5,6 +5,16 @@ import type { PDFDocumentProxy } from 'pdfjs-dist';
 import { cn } from '../lib/cn';
 import { ChevronLeft, ChevronRight, Loader2, Minus, Plus } from '../icons';
 
+// Servido como asset estático em apps/web/public/pdf.worker.min.mjs (cópia
+// do arquivo de mesmo nome em node_modules/pdfjs-dist/build, versão pinada
+// em apps/web/package.json). Evita por completo o import do worker via
+// especificador de módulo: o Next.js trata `pdfjs-dist` como pacote ESM
+// externo e a resolução de tipos de um sufixo `?url` (asset module do
+// webpack) se mostrou inconsistente entre ambiente local e o build limpo
+// do Vercel — um caminho de asset estático simples não depende de nenhum
+// dos dois.
+const PDF_WORKER_URL = '/pdf.worker.min.mjs';
+
 export interface PdfViewerProps {
   src: string;
   title: string;
@@ -43,18 +53,8 @@ export function PdfViewer({ src, title, className }: PdfViewerProps) {
     setPageNumber(1);
     setScale(1);
 
-    // Query `?url` (asset module do webpack) em vez de `new URL(...,
-    // import.meta.url)` — o Next.js trata `pdfjs-dist` como pacote ESM
-    // externo e recusa o padrão de URL direto ("ESM packages need to be
-    // imported"). O sufixo `?url` resolve o arquivo como asset estático,
-    // contornando essa checagem por completo. Sem tipos disponíveis pra
-    // esse especificador — só existe em tempo de build do webpack.
-    // @ts-expect-error -- asset import só resolvido pelo bundler, sem .d.ts
-    const workerUrlPromise: Promise<string> =
-      import('pdfjs-dist/build/pdf.worker.min.mjs?url').then((mod) => mod.default as string);
-
-    Promise.all([import('pdfjs-dist'), workerUrlPromise]).then(([pdfjsLib, workerUrl]) => {
-      pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl;
+    import('pdfjs-dist').then((pdfjsLib) => {
+      pdfjsLib.GlobalWorkerOptions.workerSrc = PDF_WORKER_URL;
 
       pdfjsLib
         .getDocument(src)
