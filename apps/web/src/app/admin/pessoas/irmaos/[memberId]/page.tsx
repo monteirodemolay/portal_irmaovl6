@@ -1,4 +1,4 @@
-import { MemberEditPanel } from '@/modules/membership/components/member-edit-panel';
+import { AssistedMemberEditor } from '@/modules/central/components/assisted/assisted-member-editor';
 
 export default async function EditMemberPage({
   params,
@@ -6,5 +6,5 @@ export default async function EditMemberPage({
   params: Promise<{ memberId: string }>;
 }) {
   const { memberId } = await params;
-  return <MemberEditPanel memberId={memberId} />;
+  return <AssistedMemberEditor memberId={memberId} />;
 }
