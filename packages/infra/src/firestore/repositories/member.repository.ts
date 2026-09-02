@@ -86,9 +86,21 @@ export class FirestoreMemberRepository implements IMemberRepository {
       .where('deletedAt', '==', null)
       .orderBy('nomeCompleto');
 
-    if (filters.grau) query = query.where('grau', '==', filters.grau);
-    if (filters.situacao) query = query.where('situacao', '==', filters.situacao);
-    if (filters.cim) query = query.where('cim', '==', filters.cim);
+    // Só um filtro opcional por vez entra na consulta do Firestore — cada
+    // um (`situacao`, `grau`) tem seu próprio índice composto dedicado
+    // (tenantId+deletedAt+situacao+nomeCompleto / .../grau/...), mas não
+    // existe (nem faria sentido criar) um índice para toda combinação
+    // possível entre eles + `cim`. Pedir os dois de uma vez sem essa regra
+    // gera uma consulta sem índice — passa liso no emulador de testes, mas
+    // derruba a página em produção (`FAILED_PRECONDITION`), como já
+    // aconteceu antes neste projeto com `boardTerms`. `cim` nunca vai pro
+    // Firestore: não tem índice próprio e é seletivo o bastante pra filtrar
+    // em memória, mesmo padrão já usado abaixo pra `nome`/`cidade`.
+    if (filters.situacao) {
+      query = query.where('situacao', '==', filters.situacao);
+    } else if (filters.grau) {
+      query = query.where('grau', '==', filters.grau);
+    }
 
     if (page.cursor) {
       const cursorDoc = await this.collection.doc(page.cursor).get();
@@ -100,6 +112,12 @@ export class FirestoreMemberRepository implements IMemberRepository {
     const hasMore = snap.docs.length > page.limit;
 
     let items = docs.map((doc) => normalizeMemberName(doc.data()));
+    if (filters.situacao && filters.grau) {
+      items = items.filter((m) => m.grau === filters.grau);
+    }
+    if (filters.cim) {
+      items = items.filter((m) => m.cim === filters.cim);
+    }
     if (filters.nome) {
       const needle = filters.nome.toLowerCase();
       items = items.filter((m) => m.nomeCompleto.toLowerCase().includes(needle));
