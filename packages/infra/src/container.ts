@@ -56,6 +56,7 @@ import {
   ListArchiveContributionsUseCase,
   ModerateArchiveContributionUseCase,
   CreateArchiveItemUseCase,
+  CreateInitiationArchiveItemUseCase,
   RegisterMediaAssetUseCase,
   AttachMediaToArchiveItemUseCase,
   SetArchiveItemCoverUseCase,
@@ -164,6 +165,7 @@ import {
   RegisterMemberSituationUseCase,
   EditMemberSituationRecordUseCase,
   SeedMemberSituationHistoryUseCase,
+  SeedInitiationArchiveItemsUseCase,
   RequestDomainVerificationUseCase,
   ResolveTenantByHostUseCase,
   RevokeApiKeyUseCase,
@@ -504,6 +506,23 @@ export function createServerContainer() {
       situationRecordRepository: repositories.memberSituationRecord,
       clock,
       idGenerator,
+    }),
+    // Fase 1 da Fundação do Acervo VL6 (docs/architecture/11-acervo-vl6.md
+    // §11.5) — backfill retroativo, disparado manualmente pelo Admin em
+    // /admin/acervo/iniciacao-migracao. Mesma técnica de
+    // `publishScheduledArchiveItems` abaixo: instancia seu próprio
+    // `CreateInitiationArchiveItemUseCase` (não pode referenciar
+    // `useCases.createInitiationArchiveItem`, definido mais abaixo neste
+    // mesmo literal).
+    seedInitiationArchiveItems: new SeedInitiationArchiveItemsUseCase({
+      memberRepository: repositories.member,
+      createInitiationArchiveItem: new CreateInitiationArchiveItemUseCase({
+        archiveItemRepository: repositories.archiveItem,
+        eventRepository: repositories.event,
+        boardTermRepository: repositories.boardTerm,
+        clock,
+        idGenerator,
+      }),
     }),
     searchMembers: new SearchMembersUseCase({
       memberRepository: repositories.member,
@@ -1228,6 +1247,13 @@ export function createServerContainer() {
       boardTermRepository: repositories.boardTerm,
     }),
     createArchiveItem: new CreateArchiveItemUseCase({
+      archiveItemRepository: repositories.archiveItem,
+      eventRepository: repositories.event,
+      boardTermRepository: repositories.boardTerm,
+      clock,
+      idGenerator,
+    }),
+    createInitiationArchiveItem: new CreateInitiationArchiveItemUseCase({
       archiveItemRepository: repositories.archiveItem,
       eventRepository: repositories.event,
       boardTermRepository: repositories.boardTerm,
