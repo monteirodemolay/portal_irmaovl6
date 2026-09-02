@@ -120,6 +120,7 @@ export class GetConstellationRootsUseCase {
       href: null,
       childCount: groups.length,
       expandable: groups.length > 0,
+      date: null,
     };
 
     return { root, groups };
@@ -143,5 +144,6 @@ function buildGroupNode(
     href: null,
     childCount: count,
     expandable: count > 0,
+    date: null,
   };
 }

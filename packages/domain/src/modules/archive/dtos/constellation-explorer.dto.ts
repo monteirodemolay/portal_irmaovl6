@@ -25,6 +25,8 @@ export interface ExplorerNode {
   href: string | null;
   childCount: number;
   expandable: boolean;
+  /** Data de referência do nó (ex.: `Event.dataInicio`) — usada só pelo filtro de período de "Meu quadro"; `null` quando o nó não tem uma data única que faça sentido (Pessoa, Gestão, grupo, raiz). */
+  date: Date | null;
 }
 
 export interface ExplorerEdge {

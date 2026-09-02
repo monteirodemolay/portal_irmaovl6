@@ -127,6 +127,12 @@ import type { FamilyRelationship } from '../modules/family-legacy/entities/famil
 import type { PersonFraternalRecord } from '../modules/family-legacy/entities/person-fraternal-record.entity';
 import type { IFamilyPersonRepository } from '../modules/family-legacy/repositories/family-person.repository';
 import type { IFamilyRelationshipRepository } from '../modules/family-legacy/repositories/family-relationship.repository';
+import type {
+  ConstellationView,
+  ConstellationViewRevision,
+} from '../modules/archive/entities/constellation-view.entity';
+import type { IConstellationViewRepository } from '../modules/archive/repositories/constellation-view.repository';
+import type { IConstellationViewRevisionRepository } from '../modules/archive/repositories/constellation-view-revision.repository';
 import type { IPersonFraternalRecordRepository } from '../modules/family-legacy/repositories/person-fraternal-record.repository';
 
 export class FixedClock implements IClock {
@@ -1754,5 +1760,33 @@ export class InMemoryPersonFraternalRecordRepository implements IPersonFraternal
   }
   async update(entity: PersonFraternalRecord) {
     this.byId.set(entity.id, entity);
+  }
+}
+
+export class InMemoryConstellationViewRepository implements IConstellationViewRepository {
+  private readonly byId = new Map<string, ConstellationView>();
+
+  async findById(id: string) {
+    return this.byId.get(id) ?? null;
+  }
+  async listByOwner(tenantId: string, ownerId: string) {
+    return [...this.byId.values()].filter((v) => v.tenantId === tenantId && v.ownerId === ownerId);
+  }
+  async create(view: ConstellationView) {
+    this.byId.set(view.id, view);
+  }
+  async update(view: ConstellationView) {
+    this.byId.set(view.id, view);
+  }
+}
+
+export class InMemoryConstellationViewRevisionRepository implements IConstellationViewRevisionRepository {
+  private readonly items: ConstellationViewRevision[] = [];
+
+  async create(revision: ConstellationViewRevision) {
+    this.items.push(revision);
+  }
+  async listByView(tenantId: string, viewId: string) {
+    return this.items.filter((r) => r.tenantId === tenantId && r.viewId === viewId);
   }
 }

@@ -578,6 +578,7 @@ function groupCenterNode(groupId: string, label: string): ExplorerNode {
     href: null,
     childCount: 0,
     expandable: true,
+    date: null,
   };
 }
 
@@ -593,6 +594,7 @@ function archiveItemNode(item: ArchiveItem): ExplorerNode {
     href: `/acervo/item/archive-item_${item.id}`,
     childCount: 0,
     expandable: true,
+    date: null,
   };
 }
 
@@ -608,6 +610,7 @@ function memberNode(member: Member): ExplorerNode {
     href: `/acervo/pessoas/${member.id}`,
     childCount: 0,
     expandable: true,
+    date: null,
   };
 }
 
@@ -623,6 +626,7 @@ function boardTermNode(term: BoardTerm): ExplorerNode {
     href: `/acervo/gestoes/${term.id}`,
     childCount: 0,
     expandable: true,
+    date: null,
   };
 }
 
@@ -638,6 +642,7 @@ function eventNode(event: Event): ExplorerNode {
     href: `/eventos/${event.id}`,
     childCount: 0,
     expandable: true,
+    date: event.dataInicio,
   };
 }
 
@@ -653,6 +658,7 @@ function collectionNode(collection: ArchiveCollection): ExplorerNode {
     href: `/acervo/colecoes/${collection.slug}`,
     childCount: 0,
     expandable: true,
+    date: null,
   };
 }
 
