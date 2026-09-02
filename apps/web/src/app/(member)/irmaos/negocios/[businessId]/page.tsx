@@ -85,7 +85,17 @@ export default async function BusinessDetailPage({
       <Card className="overflow-hidden">
         <div className="from-primary to-primary-dark h-16 bg-gradient-to-br sm:h-20" />
         <CardContent className="flex flex-col gap-6 px-6 pb-6 pt-0">
-          <div className="-mt-8 flex items-end gap-4 sm:-mt-10">
+          {/*
+            Só a logo sobrepõe a faixa gradiente (tem fundo/borda próprios,
+            sempre legível ali) — o nome fica num bloco à parte, sempre
+            abaixo da faixa, nunca sobre ela. Antes os dois dividiam a mesma
+            linha com `items-end`: um nome comprido o bastante pra ocupar a
+            altura toda ficava com o topo do texto (sem cor definida, herda
+            o texto escuro padrão) sobre o azul escuro do gradiente —
+            ilegível. Sem depender de acertar quantas linhas o nome vai
+            ocupar, isso nunca mais volta a acontecer.
+          */}
+          <div className="-mt-8 sm:-mt-10">
             {entry.logoUrl ? (
               <img
                 src={entry.logoUrl}
@@ -97,12 +107,10 @@ export default async function BusinessDetailPage({
                 <Building2 size={28} strokeWidth={1.75} />
               </span>
             )}
-            <div className="flex flex-col gap-1 pb-1">
-              <h1 className="font-display text-xl font-semibold sm:text-2xl">
-                {entry.nomeEmpresa}
-              </h1>
-              {entry.segmento && <p className="text-muted text-sm">{entry.segmento}</p>}
-            </div>
+          </div>
+          <div className="flex flex-col gap-1">
+            <h1 className="font-display text-xl font-semibold sm:text-2xl">{entry.nomeEmpresa}</h1>
+            {entry.segmento && <p className="text-muted text-sm">{entry.segmento}</p>}
           </div>
 
           <p className="border-border bg-background flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium">

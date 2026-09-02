@@ -44,12 +44,12 @@ export function AgendaDrawer() {
         </header>
 
         <div className="flex min-h-0 flex-1 flex-col gap-3.5 overflow-y-auto bg-[#f8f9fb] p-3.5 lg:grid lg:grid-cols-[300px_minmax(0,1fr)] lg:overflow-hidden">
-          <div className="flex flex-col gap-3 lg:min-h-0 lg:overflow-y-auto">
+          <div className="flex min-h-0 flex-col gap-3 overflow-y-auto lg:overflow-y-auto">
             <AgendaEventList />
             <AgendaCalendar />
           </div>
 
-          <div className="border-border shrink-0 overflow-hidden rounded-xl border bg-white lg:min-h-0 lg:overflow-y-auto">
+          <div className="border-border min-h-0 shrink-0 overflow-y-auto rounded-xl border bg-white lg:overflow-y-auto">
             {selectedEvent ? (
               <AgendaEventDetails
                 event={selectedEvent}
