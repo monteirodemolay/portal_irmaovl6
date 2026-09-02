@@ -1,4 +1,5 @@
 import type { Event, PersonalEvent } from '@vl6/domain';
+import type { SessionAccessKind, SessionType, SessionWorkDegree } from '@vl6/shared';
 
 export type CalendarSource = 'vl6' | 'google' | 'personal';
 
@@ -34,6 +35,13 @@ export interface CalendarItem {
   local: string | null;
   /** `Event.tipo === 'aniversario'` — chip informativo, não clicável, ignorado na detecção de conflito. */
   isBirthday: boolean;
+  /** Classificação estruturada da Sessão — só presente em itens `source: 'vl6'` com `Event.tipo === 'sessao'` já classificado. */
+  session: {
+    sessionType: SessionType;
+    sessionNature: string;
+    degreeWork: SessionWorkDegree | null;
+    access: SessionAccessKind | null;
+  } | null;
 }
 
 export function toCalendarItems(
@@ -51,6 +59,15 @@ export function toCalendarItems(
         fim: event.dataFim,
         local: event.local,
         isBirthday: event.tipo === 'aniversario',
+        session:
+          event.tipo === 'sessao' && event.sessionType && event.sessionNature
+            ? {
+                sessionType: event.sessionType,
+                sessionNature: event.sessionNature,
+                degreeWork: event.degreeWork ?? null,
+                access: event.access ?? null,
+              }
+            : null,
       }),
     ),
     ...personal.map(
@@ -62,6 +79,7 @@ export function toCalendarItems(
         fim: event.dataFim,
         local: event.local,
         isBirthday: false,
+        session: null,
       }),
     ),
     ...google.map(
@@ -73,6 +91,7 @@ export function toCalendarItems(
         fim: event.fim,
         local: event.local,
         isBirthday: false,
+        session: null,
       }),
     ),
   ];

@@ -104,9 +104,10 @@ export default async function AgendaPage({
     );
   }
 
-  const page = await container.useCases.listUpcomingEvents.execute(session.authContext, {
-    limit: 50,
-  });
+  const [page, pendingReview] = await Promise.all([
+    container.useCases.listUpcomingEvents.execute(session.authContext, { limit: 50 }),
+    container.useCases.listSessionsPendingReview.execute(session.authContext),
+  ]);
 
   const columns: DataTableColumn<Event>[] = [
     {
@@ -173,6 +174,16 @@ export default async function AgendaPage({
       <div className="flex items-center justify-between">
         <h1 className="font-display text-2xl font-semibold">Agenda / Eventos</h1>
         <div className="flex gap-2">
+          {pendingReview.length > 0 && (
+            <Button asChild variant="outline">
+              <Link href={`${BASE_PATH}/revisao`}>
+                Revisar classificação
+                <Badge variant="warning" className="ml-1.5">
+                  {pendingReview.length}
+                </Badge>
+              </Link>
+            </Button>
+          )}
           <Button asChild variant="outline">
             <Link href={`${BASE_PATH}/classificacao-migracao`}>Classificar Sessões</Link>
           </Button>

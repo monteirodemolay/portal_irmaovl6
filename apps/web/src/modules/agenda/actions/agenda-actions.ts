@@ -9,6 +9,9 @@ import {
   eventSchema,
   logger,
   parseBrazilDateTimeLocal,
+  type SessionAccessKind,
+  type SessionType,
+  type SessionWorkDegree,
 } from '@vl6/shared';
 import type { AttendanceResponse, Event } from '@vl6/domain';
 import { createServerContainer, type ServerContainer } from '@vl6/infra';
@@ -267,6 +270,41 @@ export async function hardDeleteEventAction(eventId: string): Promise<void> {
   if (!result.ok) throw new Error(result.error.message);
 
   revalidatePath('/admin/conteudo/agenda');
+}
+
+export interface ReclassifySessionActionState {
+  error: string | null;
+}
+
+/** Painel de revisão em lote — corrige a classificação de uma Sessão pendente sem abrir a edição completa do Evento. */
+export async function reclassifySessionAction(
+  eventId: string,
+  _prevState: ReclassifySessionActionState,
+  formData: FormData,
+): Promise<ReclassifySessionActionState> {
+  const session = await requireSession();
+  const container = createServerContainer();
+
+  const sessionType = formData.get('sessionType');
+  const sessionNature = formData.get('sessionNature');
+  if (!sessionType || !sessionNature) {
+    return { error: 'Escolha o Tipo e a Natureza da Sessão.' };
+  }
+
+  const degreeWork = formData.get('degreeWork');
+  const access = formData.get('access');
+
+  const result = await container.useCases.reclassifySession.execute(session.authContext, eventId, {
+    sessionType: String(sessionType) as SessionType,
+    sessionNature: String(sessionNature),
+    degreeWork: degreeWork ? (String(degreeWork) as SessionWorkDegree) : null,
+    access: access ? (String(access) as SessionAccessKind) : null,
+  });
+  if (!result.ok) return { error: result.error.message };
+
+  revalidatePath('/admin/conteudo/agenda/revisao');
+  revalidatePath('/admin/conteudo/agenda');
+  return { error: null };
 }
 
 /** Arquivos do Acervo VL6 anexados a um evento, resolvidos a partir dos IDs compostos gravados nele — sem duplicar nenhum registro de origem. */

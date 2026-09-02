@@ -39,6 +39,15 @@ import {
   GetArchiveCollectionBySlugUseCase,
   CreateArchiveRelationUseCase,
   ListArchiveRelationsUseCase,
+  GetConstellationRootsUseCase,
+  ExpandConstellationNodeUseCase,
+  CreateConstellationViewUseCase,
+  UpdateConstellationViewUseCase,
+  DeleteConstellationViewUseCase,
+  ListMyConstellationViewsUseCase,
+  GetConstellationViewUseCase,
+  ListConstellationViewRevisionsUseCase,
+  RestoreConstellationViewRevisionUseCase,
   ListRelationsForNodeUseCase,
   SoftDeleteArchiveRelationUseCase,
   CreateArchiveExhibitionUseCase,
@@ -97,6 +106,8 @@ import {
   CreateCommitteeUseCase,
   CreateEventUseCase,
   SeedSessionClassificationUseCase,
+  ListSessionsPendingReviewUseCase,
+  ReclassifySessionUseCase,
   UpdateEventUseCase,
   CreatePersonalEventUseCase,
   UpdatePersonalEventUseCase,
@@ -246,6 +257,8 @@ import { FirestoreInspirationalQuoteRepository } from './firestore/repositories/
 import { FirestoreApiKeyRepository } from './firestore/repositories/api-key.repository';
 import { FirestoreArchiveCollectionRepository } from './firestore/repositories/archive-collection.repository';
 import { FirestoreArchiveRelationRepository } from './firestore/repositories/archive-relation.repository';
+import { FirestoreConstellationViewRepository } from './firestore/repositories/constellation-view.repository';
+import { FirestoreConstellationViewRevisionRepository } from './firestore/repositories/constellation-view-revision.repository';
 import { FirestoreArchiveExhibitionRepository } from './firestore/repositories/archive-exhibition.repository';
 import { FirestoreArchiveCatalogEntryRepository } from './firestore/repositories/archive-catalog-entry.repository';
 import { FirestoreArchiveContributionRepository } from './firestore/repositories/archive-contribution.repository';
@@ -392,6 +405,12 @@ export function createServerContainer() {
       'archiveCollections',
       auditDeps,
     ),
+    constellationView: withAudit(
+      new FirestoreConstellationViewRepository(db),
+      'constellationViews',
+      auditDeps,
+    ),
+    constellationViewRevision: new FirestoreConstellationViewRevisionRepository(db),
     archiveRelation: withAudit(
       new FirestoreArchiveRelationRepository(db),
       'archiveRelations',
@@ -925,6 +944,13 @@ export function createServerContainer() {
       eventRepository: repositories.event,
       clock,
     }),
+    listSessionsPendingReview: new ListSessionsPendingReviewUseCase({
+      eventRepository: repositories.event,
+    }),
+    reclassifySession: new ReclassifySessionUseCase({
+      eventRepository: repositories.event,
+      clock,
+    }),
     updateEvent: new UpdateEventUseCase({
       eventRepository: repositories.event,
       boardTermRepository: repositories.boardTerm,
@@ -1245,6 +1271,58 @@ export function createServerContainer() {
     softDeleteArchiveRelation: new SoftDeleteArchiveRelationUseCase({
       archiveRelationRepository: repositories.archiveRelation,
       clock,
+    }),
+    // Constelação da Memória explorável (pacote de implantação do
+    // Administrador) — camada de leitura que nunca depende só de
+    // `archiveRelation`.
+    getConstellationRoots: new GetConstellationRootsUseCase({
+      archiveItemRepository: repositories.archiveItem,
+      memberRepository: repositories.member,
+      eventRepository: repositories.event,
+      boardTermRepository: repositories.boardTerm,
+      archiveCollectionRepository: repositories.archiveCollection,
+    }),
+    expandConstellationNode: new ExpandConstellationNodeUseCase({
+      archiveItemRepository: repositories.archiveItem,
+      archiveMediaRepository: repositories.archiveMedia,
+      archiveRelationRepository: repositories.archiveRelation,
+      archiveCollectionRepository: repositories.archiveCollection,
+      memberRepository: repositories.member,
+      eventRepository: repositories.event,
+      boardTermRepository: repositories.boardTerm,
+    }),
+    // "Meu quadro" — recorte pessoal e salvo/versionado da Constelação.
+    createConstellationView: new CreateConstellationViewUseCase({
+      constellationViewRepository: repositories.constellationView,
+      constellationViewRevisionRepository: repositories.constellationViewRevision,
+      clock,
+      idGenerator,
+    }),
+    updateConstellationView: new UpdateConstellationViewUseCase({
+      constellationViewRepository: repositories.constellationView,
+      constellationViewRevisionRepository: repositories.constellationViewRevision,
+      clock,
+      idGenerator,
+    }),
+    deleteConstellationView: new DeleteConstellationViewUseCase({
+      constellationViewRepository: repositories.constellationView,
+      clock,
+    }),
+    listMyConstellationViews: new ListMyConstellationViewsUseCase({
+      constellationViewRepository: repositories.constellationView,
+    }),
+    getConstellationView: new GetConstellationViewUseCase({
+      constellationViewRepository: repositories.constellationView,
+    }),
+    listConstellationViewRevisions: new ListConstellationViewRevisionsUseCase({
+      constellationViewRepository: repositories.constellationView,
+      constellationViewRevisionRepository: repositories.constellationViewRevision,
+    }),
+    restoreConstellationViewRevision: new RestoreConstellationViewRevisionUseCase({
+      constellationViewRepository: repositories.constellationView,
+      constellationViewRevisionRepository: repositories.constellationViewRevision,
+      clock,
+      idGenerator,
     }),
     createArchiveExhibition: new CreateArchiveExhibitionUseCase({
       archiveExhibitionRepository: repositories.archiveExhibition,

@@ -33,6 +33,7 @@ export * from './components/constellation-graph';
 // ícones realmente usados por algum consumidor.
 export {
   WifiOff,
+  RotateCcw,
   ArrowLeft,
   ArrowUpRight,
   Move,
@@ -118,6 +119,10 @@ export {
   Star,
   Send,
   Milestone,
+  Save,
+  Bookmark,
+  Maximize2,
+  Minimize2,
   ICON_SIZE_DEFAULT,
   ICON_SIZE_LARGE,
   ICON_STROKE_WIDTH,
