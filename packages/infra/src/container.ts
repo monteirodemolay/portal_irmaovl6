@@ -57,6 +57,8 @@ import {
   ModerateArchiveContributionUseCase,
   CreateArchiveItemUseCase,
   CreateInitiationArchiveItemUseCase,
+  CreateElevationArchiveItemUseCase,
+  CreateExaltationArchiveItemUseCase,
   RegisterMediaAssetUseCase,
   AttachMediaToArchiveItemUseCase,
   SetArchiveItemCoverUseCase,
@@ -176,6 +178,8 @@ import {
   EditMemberSituationRecordUseCase,
   SeedMemberSituationHistoryUseCase,
   SeedInitiationArchiveItemsUseCase,
+  SeedElevationArchiveItemsUseCase,
+  SeedExaltationArchiveItemsUseCase,
   RequestDomainVerificationUseCase,
   ResolveTenantByHostUseCase,
   RevokeApiKeyUseCase,
@@ -541,6 +545,31 @@ export function createServerContainer() {
     seedInitiationArchiveItems: new SeedInitiationArchiveItemsUseCase({
       memberRepository: repositories.member,
       createInitiationArchiveItem: new CreateInitiationArchiveItemUseCase({
+        archiveItemRepository: repositories.archiveItem,
+        eventRepository: repositories.event,
+        boardTermRepository: repositories.boardTerm,
+        tenantRepository: repositories.tenant,
+        clock,
+        idGenerator,
+      }),
+    }),
+    // Mesma técnica acima, agora para elevação (2º grau) e exaltação (3º
+    // grau) — backfills disparados manualmente em
+    // /admin/acervo/elevacao-migracao e /admin/acervo/exaltacao-migracao.
+    seedElevationArchiveItems: new SeedElevationArchiveItemsUseCase({
+      memberRepository: repositories.member,
+      createElevationArchiveItem: new CreateElevationArchiveItemUseCase({
+        archiveItemRepository: repositories.archiveItem,
+        eventRepository: repositories.event,
+        boardTermRepository: repositories.boardTerm,
+        tenantRepository: repositories.tenant,
+        clock,
+        idGenerator,
+      }),
+    }),
+    seedExaltationArchiveItems: new SeedExaltationArchiveItemsUseCase({
+      memberRepository: repositories.member,
+      createExaltationArchiveItem: new CreateExaltationArchiveItemUseCase({
         archiveItemRepository: repositories.archiveItem,
         eventRepository: repositories.event,
         boardTermRepository: repositories.boardTerm,
@@ -1279,6 +1308,22 @@ export function createServerContainer() {
       idGenerator,
     }),
     createInitiationArchiveItem: new CreateInitiationArchiveItemUseCase({
+      archiveItemRepository: repositories.archiveItem,
+      eventRepository: repositories.event,
+      boardTermRepository: repositories.boardTerm,
+      tenantRepository: repositories.tenant,
+      clock,
+      idGenerator,
+    }),
+    createElevationArchiveItem: new CreateElevationArchiveItemUseCase({
+      archiveItemRepository: repositories.archiveItem,
+      eventRepository: repositories.event,
+      boardTermRepository: repositories.boardTerm,
+      tenantRepository: repositories.tenant,
+      clock,
+      idGenerator,
+    }),
+    createExaltationArchiveItem: new CreateExaltationArchiveItemUseCase({
       archiveItemRepository: repositories.archiveItem,
       eventRepository: repositories.event,
       boardTermRepository: repositories.boardTerm,

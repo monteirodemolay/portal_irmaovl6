@@ -15,6 +15,10 @@ export interface IArchiveItemRepository {
    * mesmo que o primeiro tenha ido pra lixeira.
    */
   findByOrigemIniciacaoMemberId(tenantId: string, memberId: string): Promise<ArchiveItem | null>;
+  /** Mesmo papel de `findByOrigemIniciacaoMemberId`, para o item de elevação (2º grau) — `CreateElevationArchiveItemUseCase`. */
+  findByOrigemElevacaoMemberId(tenantId: string, memberId: string): Promise<ArchiveItem | null>;
+  /** Mesmo papel de `findByOrigemIniciacaoMemberId`, para o item de exaltação (3º grau) — `CreateExaltationArchiveItemUseCase`. */
+  findByOrigemExaltacaoMemberId(tenantId: string, memberId: string): Promise<ArchiveItem | null>;
   /** Lixeira administrativa (Fase 3) — itens do tenant com `deletedAt` preenchido. */
   findDeletedByTenant(tenantId: string, page: PageRequest): Promise<PageResult<ArchiveItem>>;
   /**

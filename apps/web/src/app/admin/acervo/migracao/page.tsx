@@ -38,9 +38,17 @@ export default async function MigracaoPage() {
             novo do Acervo, um de cada vez. O registro original nunca é apagado nem alterado.
           </p>
         </div>
-        <Button asChild variant="outline" className="shrink-0">
-          <a href="/admin/acervo/iniciacao-migracao">Backfill de iniciações</a>
-        </Button>
+        <div className="flex shrink-0 flex-col gap-2">
+          <Button asChild variant="outline">
+            <a href="/admin/acervo/iniciacao-migracao">Backfill de iniciações</a>
+          </Button>
+          <Button asChild variant="outline">
+            <a href="/admin/acervo/elevacao-migracao">Backfill de elevações</a>
+          </Button>
+          <Button asChild variant="outline">
+            <a href="/admin/acervo/exaltacao-migracao">Backfill de exaltações</a>
+          </Button>
+        </div>
       </div>
       <MigrationManager
         galleryCandidates={galleryCandidates}

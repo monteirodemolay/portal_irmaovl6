@@ -73,6 +73,22 @@ export interface ArchiveItem extends BaseEntity {
    */
   origemIniciacaoMemberId?: string | null;
   /**
+   * `Member.id` de origem quando este item nasceu automaticamente do
+   * registro da data de elevação (2º grau, Companheiro) de um Irmão
+   * (`CreateElevationArchiveItemUseCase`) — mesmo papel de
+   * `origemIniciacaoMemberId`, campo próprio porque um mesmo Irmão pode ter
+   * um item de iniciação E um de elevação (marcos distintos), nunca o
+   * mesmo `ArchiveItem`.
+   */
+  origemElevacaoMemberId?: string | null;
+  /**
+   * `Member.id` de origem quando este item nasceu automaticamente do
+   * registro da data de exaltação (3º grau, Mestre) de um Irmão
+   * (`CreateExaltationArchiveItemUseCase`) — mesmo papel de
+   * `origemIniciacaoMemberId`/`origemElevacaoMemberId`.
+   */
+  origemExaltacaoMemberId?: string | null;
+  /**
    * Data/hora futura para publicação automática — Fase B "Publicação
    * avançada" (`ScheduleArchiveItemPublicationUseCase`,
    * `PublishScheduledArchiveItemsUseCase`). `null` (padrão) para todo item

@@ -63,6 +63,8 @@ export * from './modules/membership/use-cases/register-member-situation.use-case
 export * from './modules/membership/use-cases/edit-member-situation-record.use-case';
 export * from './modules/membership/use-cases/seed-member-situation-history.use-case';
 export * from './modules/membership/use-cases/seed-initiation-archive-items.use-case';
+export * from './modules/membership/use-cases/seed-elevation-archive-items.use-case';
+export * from './modules/membership/use-cases/seed-exaltation-archive-items.use-case';
 export * from './modules/membership/use-cases/search-members.use-case';
 export * from './modules/membership/use-cases/list-upcoming-anniversaries.use-case';
 export * from './modules/membership/use-cases/soft-delete-member.use-case';
@@ -338,6 +340,8 @@ export * from './modules/archive/entities/archive-media.entity';
 export * from './modules/archive/repositories/archive-media.repository';
 export * from './modules/archive/use-cases/create-archive-item.use-case';
 export * from './modules/archive/use-cases/create-initiation-archive-item.use-case';
+export * from './modules/archive/use-cases/create-elevation-archive-item.use-case';
+export * from './modules/archive/use-cases/create-exaltation-archive-item.use-case';
 export * from './modules/archive/use-cases/register-media-asset.use-case';
 export * from './modules/archive/use-cases/attach-media-to-archive-item.use-case';
 export * from './modules/archive/use-cases/set-archive-item-cover.use-case';

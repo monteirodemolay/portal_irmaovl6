@@ -238,14 +238,18 @@ export async function createMemberAction(
   }
 
   // Objetivo do Acervo VL6 (docs/architecture/11-acervo-vl6.md §11.5): toda
-  // vez que a data de iniciação de um Irmão é registrada, nasce uma
-  // entrada correspondente no Acervo. Orquestrado aqui na Server Action
-  // (não dentro de `RegisterMemberUseCase`) de propósito: é um efeito
-  // colateral não crítico — se achar/criar o Evento ou o ArchiveItem falhar
-  // por qualquer motivo, o cadastro do Irmão (o caminho crítico) precisa
-  // continuar valendo mesmo assim, mesmo padrão defensivo já usado abaixo
-  // pro upload de foto e pra criação de acesso (`partialFailures`).
-  let initiationArchiveError: string | null = null;
+  // vez que a data de iniciação/elevação/exaltação de um Irmão é
+  // registrada, nasce uma entrada correspondente no Acervo — os 3 marcos da
+  // trajetória maçônica (Aprendiz/Companheiro/Mestre), cada um vinculado a
+  // um Evento na Agenda (reaproveitando um já existente na mesma data, ou
+  // criando um novo automaticamente quando não há nenhum). Orquestrado aqui
+  // na Server Action (não dentro de `RegisterMemberUseCase`) de propósito:
+  // é um efeito colateral não crítico — se achar/criar o Evento ou o
+  // ArchiveItem falhar por qualquer motivo, o cadastro do Irmão (o caminho
+  // crítico) precisa continuar valendo mesmo assim, mesmo padrão defensivo
+  // já usado abaixo pro upload de foto e pra criação de acesso
+  // (`partialFailures`).
+  const gradeArchiveErrors: string[] = [];
   if (member.dataIniciacao) {
     try {
       await container.useCases.createInitiationArchiveItem.execute(session.authContext, {
@@ -260,7 +264,41 @@ export async function createMemberAction(
         ...errorToLogContext(error),
       });
       Sentry.captureException(error, { tags: { route: 'createMemberAction:acervoIniciacao' } });
-      initiationArchiveError = 'o registro da iniciação no Acervo VL6 não pôde ser criado';
+      gradeArchiveErrors.push('o registro da iniciação no Acervo VL6 não pôde ser criado');
+    }
+  }
+  if (member.dataElevacao) {
+    try {
+      await container.useCases.createElevationArchiveItem.execute(session.authContext, {
+        memberId: member.id,
+        nomeCompleto: member.nomeCompleto,
+        dataElevacao: member.dataElevacao,
+      });
+    } catch (error) {
+      logger.error('Falha ao criar item de elevação no Acervo VL6', {
+        route: 'createMemberAction',
+        memberId: member.id,
+        ...errorToLogContext(error),
+      });
+      Sentry.captureException(error, { tags: { route: 'createMemberAction:acervoElevacao' } });
+      gradeArchiveErrors.push('o registro da elevação no Acervo VL6 não pôde ser criado');
+    }
+  }
+  if (member.dataExaltacao) {
+    try {
+      await container.useCases.createExaltationArchiveItem.execute(session.authContext, {
+        memberId: member.id,
+        nomeCompleto: member.nomeCompleto,
+        dataExaltacao: member.dataExaltacao,
+      });
+    } catch (error) {
+      logger.error('Falha ao criar item de exaltação no Acervo VL6', {
+        route: 'createMemberAction',
+        memberId: member.id,
+        ...errorToLogContext(error),
+      });
+      Sentry.captureException(error, { tags: { route: 'createMemberAction:acervoExaltacao' } });
+      gradeArchiveErrors.push('o registro da exaltação no Acervo VL6 não pôde ser criado');
     }
   }
 
@@ -296,7 +334,7 @@ export async function createMemberAction(
   const partialFailures = [
     accessError && `o acesso não pôde ser criado: ${accessError}`,
     fotoError,
-    initiationArchiveError,
+    ...gradeArchiveErrors,
   ].filter((message): message is string => Boolean(message));
 
   if (partialFailures.length > 0) {
@@ -513,13 +551,14 @@ export async function updateMemberIdentityAction(
     return { error: result.error.message };
   }
 
-  // Mesma automação do Acervo VL6 disparada em `createMemberAction` — a
-  // data de iniciação também pode ser preenchida/corrigida aqui, na edição
-  // administrativa (docs/architecture/11-acervo-vl6.md §11.5). Idempotente
-  // (`CreateInitiationArchiveItemUseCase` checa `origemIniciacaoMemberId`
-  // antes de criar), então chamar de novo numa edição que não mudou
-  // `dataIniciacao` é inofensivo. Mesmo tratamento defensivo — nunca falha
-  // a edição do Irmão por causa deste efeito colateral.
+  // Mesma automação do Acervo VL6 disparada em `createMemberAction` — as
+  // datas de iniciação/elevação/exaltação também podem ser preenchidas/
+  // corrigidas aqui, na edição administrativa (docs/architecture/
+  // 11-acervo-vl6.md §11.5). Idempotente (cada `CreateXArchiveItemUseCase`
+  // checa seu próprio marcador `origemXMemberId` antes de criar), então
+  // chamar de novo numa edição que não mudou a data é inofensivo. Mesmo
+  // tratamento defensivo — nunca falha a edição do Irmão por causa deste
+  // efeito colateral.
   if (result.value.dataIniciacao) {
     try {
       await container.useCases.createInitiationArchiveItem.execute(session.authContext, {
@@ -535,6 +574,42 @@ export async function updateMemberIdentityAction(
       });
       Sentry.captureException(error, {
         tags: { route: 'updateMemberIdentityAction:acervoIniciacao' },
+      });
+    }
+  }
+  if (result.value.dataElevacao) {
+    try {
+      await container.useCases.createElevationArchiveItem.execute(session.authContext, {
+        memberId: result.value.id,
+        nomeCompleto: result.value.nomeCompleto,
+        dataElevacao: result.value.dataElevacao,
+      });
+    } catch (error) {
+      logger.error('Falha ao criar item de elevação no Acervo VL6', {
+        route: 'updateMemberIdentityAction',
+        memberId: result.value.id,
+        ...errorToLogContext(error),
+      });
+      Sentry.captureException(error, {
+        tags: { route: 'updateMemberIdentityAction:acervoElevacao' },
+      });
+    }
+  }
+  if (result.value.dataExaltacao) {
+    try {
+      await container.useCases.createExaltationArchiveItem.execute(session.authContext, {
+        memberId: result.value.id,
+        nomeCompleto: result.value.nomeCompleto,
+        dataExaltacao: result.value.dataExaltacao,
+      });
+    } catch (error) {
+      logger.error('Falha ao criar item de exaltação no Acervo VL6', {
+        route: 'updateMemberIdentityAction',
+        memberId: result.value.id,
+        ...errorToLogContext(error),
+      });
+      Sentry.captureException(error, {
+        tags: { route: 'updateMemberIdentityAction:acervoExaltacao' },
       });
     }
   }
