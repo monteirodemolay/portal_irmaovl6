@@ -15,17 +15,26 @@ function formatEventDate(date: Date): string {
   }).format(new Date(date));
 }
 
+/**
+ * Dia e mês formatados separadamente, cada um com seu próprio
+ * `Intl.DateTimeFormat` — juntar os dois numa formatação só ("03 de set.")
+ * e tentar separar por espaço quebrava em pt-BR: o conector "de" vem no
+ * meio ("03 de set."), então `split(' ')[1]` pegava "de" em vez do mês.
+ */
 function calendarBadgeParts(date: Date): [string, string] {
-  const label = new Intl.DateTimeFormat('pt-BR', {
+  const value = new Date(date);
+  const day = new Intl.DateTimeFormat('pt-BR', {
     day: '2-digit',
+    timeZone: BRAZIL_TIME_ZONE,
+  }).format(value);
+  const month = new Intl.DateTimeFormat('pt-BR', {
     month: 'short',
     timeZone: BRAZIL_TIME_ZONE,
   })
-    .format(new Date(date))
+    .format(value)
     .replace('.', '')
     .toUpperCase();
-  const [day, month] = label.split(' ');
-  return [day ?? '--', month ?? ''];
+  return [day, month];
 }
 
 const EMPTY_COUNTS: ArchiveMediaCounts = { foto: 0, video: 0, audio: 0, documento: 0 };
@@ -73,10 +82,35 @@ export function EventStep({
     return map;
   }, [boardTerms]);
 
+  // `event.boardTermId` só existe quando a Gestão já estava cadastrada no
+  // momento da criação do Evento — nunca é recalculado depois. Um Evento
+  // criado antes disso (ou criado por uma automação que não resolveu a
+  // Gestão) fica com `boardTermId: null` pra sempre, mesmo com a data
+  // caindo dentro do período de uma Gestão já cadastrada agora. Filtrar só
+  // por `boardTermId` escondia esses Eventos do filtro sem aviso nenhum —
+  // aqui a Gestão efetiva é recalculada pela data quando o campo estiver
+  // vazio, então o filtro sempre reflete a Gestão real do Evento.
+  const effectiveBoardTermId = useMemo(() => {
+    const map = new Map<string, string | null>();
+    for (const event of events) {
+      if (event.boardTermId) {
+        map.set(event.id, event.boardTermId);
+        continue;
+      }
+      const term = boardTerms.find(
+        (candidate) =>
+          event.dataInicio >= candidate.periodoInicio &&
+          (!candidate.periodoFim || event.dataInicio <= candidate.periodoFim),
+      );
+      map.set(event.id, term?.id ?? null);
+    }
+    return map;
+  }, [events, boardTerms]);
+
   const filteredEvents = useMemo(() => {
     const normalizedQuery = normalizeSearchText(query);
     return events
-      .filter((event) => !boardTermFilter || event.boardTermId === boardTermFilter)
+      .filter((event) => !boardTermFilter || effectiveBoardTermId.get(event.id) === boardTermFilter)
       .filter((event) => {
         if (!normalizedQuery) return true;
         const haystack = normalizeSearchText(
@@ -85,7 +119,7 @@ export function EventStep({
         return haystack.includes(normalizedQuery);
       })
       .sort((a, b) => a.dataInicio.getTime() - b.dataInicio.getTime());
-  }, [events, query, boardTermFilter]);
+  }, [events, query, boardTermFilter, effectiveBoardTermId]);
 
   return (
     <div className="border-border bg-surface rounded-xl border p-6 shadow-sm">
@@ -184,9 +218,9 @@ export function EventStep({
                     <small className="text-[8px] font-semibold">{month}</small>
                   </span>
                   <Badge variant="accent">{EVENT_KIND_LABELS[event.tipo]}</Badge>
-                  {event.boardTermId && (
+                  {effectiveBoardTermId.get(event.id) && (
                     <span className="text-muted ml-auto text-[11px]">
-                      {boardTermNameById.get(event.boardTermId) ?? 'Gestão'}
+                      {boardTermNameById.get(effectiveBoardTermId.get(event.id)!) ?? 'Gestão'}
                     </span>
                   )}
                 </div>
