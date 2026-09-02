@@ -122,6 +122,12 @@ import type {
   IGoogleCalendarService,
 } from '../modules/integrations/services/google-calendar.service';
 import type { ITokenCipher, IOAuthStateSigner, OAuthStatePayload } from '../shared/ports';
+import type { FamilyPerson } from '../modules/family-legacy/entities/family-person.entity';
+import type { FamilyRelationship } from '../modules/family-legacy/entities/family-relationship.entity';
+import type { PersonFraternalRecord } from '../modules/family-legacy/entities/person-fraternal-record.entity';
+import type { IFamilyPersonRepository } from '../modules/family-legacy/repositories/family-person.repository';
+import type { IFamilyRelationshipRepository } from '../modules/family-legacy/repositories/family-relationship.repository';
+import type { IPersonFraternalRecordRepository } from '../modules/family-legacy/repositories/person-fraternal-record.repository';
 
 export class FixedClock implements IClock {
   constructor(private readonly fixed: Date = new Date('2026-01-01T00:00:00Z')) {}
@@ -1638,5 +1644,101 @@ export class InMemoryPublicationRepository implements IPublicationRepository {
   }
   async update(publication: Publication) {
     this.byId.set(publication.id, publication);
+  }
+}
+
+export class InMemoryFamilyPersonRepository implements IFamilyPersonRepository {
+  private readonly byId = new Map<string, FamilyPerson>();
+
+  async findById(id: string) {
+    return this.byId.get(id) ?? null;
+  }
+  async findByLinkedMemberId(tenantId: string, memberId: string) {
+    return (
+      [...this.byId.values()].find(
+        (p) => p.tenantId === tenantId && p.linkedMemberId === memberId && !p.deletedAt,
+      ) ?? null
+    );
+  }
+  async searchByNormalizedName(tenantId: string, nomeBusca: string, limit: number) {
+    return [...this.byId.values()]
+      .filter((p) => p.tenantId === tenantId && !p.deletedAt && p.nomeBusca.includes(nomeBusca))
+      .slice(0, limit);
+  }
+  async listManagedByMember(tenantId: string, memberId: string) {
+    return [...this.byId.values()].filter(
+      (p) => p.tenantId === tenantId && p.managedByMemberId === memberId && !p.deletedAt,
+    );
+  }
+  async listByIds(tenantId: string, ids: string[]) {
+    const idSet = new Set(ids);
+    return [...this.byId.values()].filter((p) => p.tenantId === tenantId && idSet.has(p.id));
+  }
+  async create(entity: FamilyPerson) {
+    this.byId.set(entity.id, entity);
+  }
+  async update(entity: FamilyPerson) {
+    this.byId.set(entity.id, entity);
+  }
+}
+
+export class InMemoryFamilyRelationshipRepository implements IFamilyRelationshipRepository {
+  private readonly byId = new Map<string, FamilyRelationship>();
+
+  async findById(id: string) {
+    return this.byId.get(id) ?? null;
+  }
+  async listByEndpoint(tenantId: string, kind: string, id: string) {
+    return [...this.byId.values()].filter(
+      (r) =>
+        r.tenantId === tenantId &&
+        !r.deletedAt &&
+        ((r.fromKind === kind && r.fromId === id) || (r.toKind === kind && r.toId === id)),
+    );
+  }
+  async listByTenant(tenantId: string) {
+    return [...this.byId.values()].filter((r) => r.tenantId === tenantId);
+  }
+  async findEquivalent(
+    tenantId: string,
+    relation: Pick<FamilyRelationship, 'fromKind' | 'fromId' | 'toKind' | 'toId' | 'relationKind'>,
+  ) {
+    return (
+      [...this.byId.values()].find(
+        (r) =>
+          r.tenantId === tenantId &&
+          !r.deletedAt &&
+          r.fromKind === relation.fromKind &&
+          r.fromId === relation.fromId &&
+          r.toKind === relation.toKind &&
+          r.toId === relation.toId &&
+          r.relationKind === relation.relationKind,
+      ) ?? null
+    );
+  }
+  async create(entity: FamilyRelationship) {
+    this.byId.set(entity.id, entity);
+  }
+  async update(entity: FamilyRelationship) {
+    this.byId.set(entity.id, entity);
+  }
+}
+
+export class InMemoryPersonFraternalRecordRepository implements IPersonFraternalRecordRepository {
+  private readonly byId = new Map<string, PersonFraternalRecord>();
+
+  async findById(id: string) {
+    return this.byId.get(id) ?? null;
+  }
+  async listByPerson(tenantId: string, kind: string, id: string) {
+    return [...this.byId.values()].filter(
+      (r) => r.tenantId === tenantId && !r.deletedAt && r.personKind === kind && r.personId === id,
+    );
+  }
+  async create(entity: PersonFraternalRecord) {
+    this.byId.set(entity.id, entity);
+  }
+  async update(entity: PersonFraternalRecord) {
+    this.byId.set(entity.id, entity);
   }
 }

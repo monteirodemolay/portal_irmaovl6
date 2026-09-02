@@ -369,3 +369,23 @@ export * from './modules/archive/use-cases/record-archive-media-view.use-case';
 export * from './modules/archive/use-cases/list-most-viewed-archive-items.use-case';
 export * from './modules/archive/use-cases/get-storage-usage-by-board-term.use-case';
 export * from './modules/archive/use-cases/get-archive-media-counts-by-event.use-case';
+
+// Família e Legado VL6 — parentesco privado (Etapas 1-4 do pacote de
+// implantação: fundação, domínio, persistência e fluxo pessoal mínimo).
+export * from './modules/family-legacy/entities/family-person.entity';
+export * from './modules/family-legacy/entities/family-relationship.entity';
+export * from './modules/family-legacy/entities/person-fraternal-record.entity';
+export * from './modules/family-legacy/repositories/family-person.repository';
+export * from './modules/family-legacy/repositories/family-relationship.repository';
+export * from './modules/family-legacy/repositories/person-fraternal-record.repository';
+export * from './modules/family-legacy/services/derive-kinships';
+export * from './modules/family-legacy/use-cases/search-family-person-candidates.use-case';
+export * from './modules/family-legacy/use-cases/create-family-person.use-case';
+export * from './modules/family-legacy/use-cases/update-family-person.use-case';
+export * from './modules/family-legacy/use-cases/create-family-relationship.use-case';
+export * from './modules/family-legacy/use-cases/confirm-family-relationship.use-case';
+export * from './modules/family-legacy/use-cases/decline-family-relationship.use-case';
+export * from './modules/family-legacy/use-cases/soft-delete-family-relationship.use-case';
+export * from './modules/family-legacy/use-cases/derive-family-kinships.use-case';
+export * from './modules/family-legacy/use-cases/list-owner-family-network.use-case';
+export * from './modules/family-legacy/use-cases/create-person-fraternal-record.use-case';

@@ -29,3 +29,18 @@ function capitalizeWord(lowerWord: string): string {
     .map((part) => (part ? part.charAt(0).toLocaleUpperCase('pt-BR') + part.slice(1) : part))
     .join('-');
 }
+
+/**
+ * Minúsculo, sem acento, espaços colapsados — base de comparação para a
+ * busca de deduplicação de `FamilyPerson` (04_TELAS_E_FLUXOS.md §3: "o botão
+ * de criação deve ficar desabilitado enquanto existir candidato provável não
+ * analisado"). Não é exibido em tela nenhuma, só usado como chave de busca.
+ */
+export function normalizeNameForSearch(raw: string): string {
+  return raw
+    .trim()
+    .toLocaleLowerCase('pt-BR')
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .replace(/\s+/g, ' ');
+}
