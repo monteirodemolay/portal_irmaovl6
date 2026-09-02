@@ -87,6 +87,17 @@ export const RESOURCE_KEYS = [
   // em vez de reaproveitar `announcement`/`news`: rotação e exibição têm
   // regras de negócio (modo/intervalo) e ciclo de vida diferentes.
   'quote',
+  // Família e Legado VL6 — parentesco privado (`familyPersons`,
+  // `familyRelationships`, `personFraternalRecords`). Recurso próprio: não
+  // reaproveita `member` (uma `FamilyPerson` nunca é um `Member`, ver
+  // Decisão não-negociável do pacote de implantação) nem `archiveRelation`
+  // (parentesco tem privacidade, confirmação, direção e derivação — não é
+  // uma aresta simples da Constelação da Memória). `membro` só lê porque a
+  // escrita PESSOAL (cadastrar/editar o próprio familiar) segue o mesmo
+  // padrão de "ação pessoal" de `memberCentral`/`archiveContribution`: o
+  // caso de uso confirma posse (`Member` resolvido pelo `uid`, parte de uma
+  // das pontas da relação) em vez de exigir `familyLegacy:create/update`.
+  'familyLegacy',
   // Central de Avisos (docs/architecture) — só a ADMINISTRAÇÃO de
   // notificações (compor/enviar aviso manual, ver relatórios de leitura,
   // Fase 3) passa por `notification:manage`. Ler/marcar como
@@ -168,6 +179,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<RoleKey, PermissionKey[]> = {
     'quote:manage',
     'notification:manage',
     'communication:manage',
+    'familyLegacy:manage',
   ],
   membro: [
     'tenant:read',
@@ -191,5 +203,6 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<RoleKey, PermissionKey[]> = {
     'mediaAsset:read',
     'archiveMedia:read',
     'quote:read',
+    'familyLegacy:read',
   ],
 };
