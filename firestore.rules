@@ -405,5 +405,30 @@ service cloud.firestore {
       allow create: if sameTenant(request.resource.data) && isSelfCentralProfile(request.resource.data);
       allow update, delete: if false; // append-only, igual auditLogs
     }
+
+    // ---------------------------------------------------------------
+    // Família e Legado VL6 — parentesco privado (pacote de implantação,
+    // Etapa 3). `membro` só tem `familyLegacy:read` no seed de fábrica
+    // (docs/architecture/08 §8.2-equivalente deste módulo) e mesmo essa
+    // leitura nunca é usada por client direto nesta implantação: toda tela
+    // (Meu Espaço) busca através de Server Action + DTO filtrado no
+    // servidor, nunca "ler tudo e esconder com CSS". A escrita — pessoal ou
+    // administrativa — passa exclusivamente por Server Action com Admin
+    // SDK, mesmo padrão de `auditLogs`/`archiveContributions`: nenhuma
+    // condição de posse aqui substitui a checagem de "parte da relação"
+    // que já acontece dentro do caso de uso de domínio.
+    // ---------------------------------------------------------------
+    match /familyPersons/{id} {
+      allow read: if sameTenant(resource.data) && hasPermission('familyLegacy:read');
+      allow write: if false;
+    }
+    match /familyRelationships/{id} {
+      allow read: if sameTenant(resource.data) && hasPermission('familyLegacy:read');
+      allow write: if false;
+    }
+    match /personFraternalRecords/{id} {
+      allow read: if sameTenant(resource.data) && hasPermission('familyLegacy:read');
+      allow write: if false;
+    }
   }
 }

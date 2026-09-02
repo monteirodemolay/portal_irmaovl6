@@ -80,6 +80,16 @@ import {
   ListMostViewedArchiveItemsUseCase,
   GetStorageUsageByBoardTermUseCase,
   GetArchiveMediaCountsByEventUseCase,
+  SearchFamilyPersonCandidatesUseCase,
+  CreateFamilyPersonUseCase,
+  UpdateFamilyPersonUseCase,
+  CreateFamilyRelationshipUseCase,
+  ConfirmFamilyRelationshipUseCase,
+  DeclineFamilyRelationshipUseCase,
+  SoftDeleteFamilyRelationshipUseCase,
+  DeriveFamilyKinshipsUseCase,
+  ListOwnerFamilyNetworkUseCase,
+  CreatePersonFraternalRecordUseCase,
   FindBoardTermForDateUseCase,
   CreateBoardTermUseCase,
   CreateCommitteeUseCase,
@@ -237,6 +247,9 @@ import { FirestoreArchiveContributionRepository } from './firestore/repositories
 import { FirestoreArchiveItemRepository } from './firestore/repositories/archive-item.repository';
 import { FirestoreMediaAssetRepository } from './firestore/repositories/media-asset.repository';
 import { FirestoreArchiveMediaRepository } from './firestore/repositories/archive-media.repository';
+import { FirestoreFamilyPersonRepository } from './firestore/repositories/family-person.repository';
+import { FirestoreFamilyRelationshipRepository } from './firestore/repositories/family-relationship.repository';
+import { FirestorePersonFraternalRecordRepository } from './firestore/repositories/person-fraternal-record.repository';
 import { FirestoreAuditLogRepository } from './firestore/repositories/audit-log.repository';
 import { FirestoreBoardPositionAssignmentRepository } from './firestore/repositories/board-position-assignment.repository';
 import { FirestoreBoardTermRepository } from './firestore/repositories/board-term.repository';
@@ -397,6 +410,17 @@ export function createServerContainer() {
     archiveItem: withAudit(new FirestoreArchiveItemRepository(db), 'archiveItems', auditDeps),
     mediaAsset: withAudit(new FirestoreMediaAssetRepository(db), 'mediaAssets', auditDeps),
     archiveMedia: withAudit(new FirestoreArchiveMediaRepository(db), 'archiveMedia', auditDeps),
+    familyPerson: withAudit(new FirestoreFamilyPersonRepository(db), 'familyPersons', auditDeps),
+    familyRelationship: withAudit(
+      new FirestoreFamilyRelationshipRepository(db),
+      'familyRelationships',
+      auditDeps,
+    ),
+    personFraternalRecord: withAudit(
+      new FirestorePersonFraternalRecordRepository(db),
+      'personFraternalRecords',
+      auditDeps,
+    ),
   };
 
   const notificationGateway = new NoopNotificationGateway();
@@ -1392,6 +1416,50 @@ export function createServerContainer() {
     getArchiveMediaCountsByEvent: new GetArchiveMediaCountsByEventUseCase({
       archiveItemRepository: repositories.archiveItem,
       archiveMediaRepository: repositories.archiveMedia,
+    }),
+    searchFamilyPersonCandidates: new SearchFamilyPersonCandidatesUseCase({
+      familyPersonRepository: repositories.familyPerson,
+      memberRepository: repositories.member,
+    }),
+    createFamilyPerson: new CreateFamilyPersonUseCase({
+      familyPersonRepository: repositories.familyPerson,
+      clock,
+      idGenerator,
+    }),
+    updateFamilyPerson: new UpdateFamilyPersonUseCase({
+      familyPersonRepository: repositories.familyPerson,
+      clock,
+    }),
+    createFamilyRelationship: new CreateFamilyRelationshipUseCase({
+      familyRelationshipRepository: repositories.familyRelationship,
+      familyPersonRepository: repositories.familyPerson,
+      clock,
+      idGenerator,
+    }),
+    confirmFamilyRelationship: new ConfirmFamilyRelationshipUseCase({
+      familyRelationshipRepository: repositories.familyRelationship,
+      clock,
+    }),
+    declineFamilyRelationship: new DeclineFamilyRelationshipUseCase({
+      familyRelationshipRepository: repositories.familyRelationship,
+      clock,
+    }),
+    softDeleteFamilyRelationship: new SoftDeleteFamilyRelationshipUseCase({
+      familyRelationshipRepository: repositories.familyRelationship,
+      clock,
+    }),
+    deriveFamilyKinships: new DeriveFamilyKinshipsUseCase({
+      familyRelationshipRepository: repositories.familyRelationship,
+    }),
+    listOwnerFamilyNetwork: new ListOwnerFamilyNetworkUseCase({
+      familyRelationshipRepository: repositories.familyRelationship,
+      familyPersonRepository: repositories.familyPerson,
+    }),
+    createPersonFraternalRecord: new CreatePersonFraternalRecordUseCase({
+      personFraternalRecordRepository: repositories.personFraternalRecord,
+      familyPersonRepository: repositories.familyPerson,
+      clock,
+      idGenerator,
     }),
   };
 
