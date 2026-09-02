@@ -224,18 +224,26 @@ function AddFamilyMemberForm({
   const [candidates, setCandidates] = useState<FamilyPersonCandidate[]>([]);
   const [selected, setSelected] = useState<FamilyPersonCandidate | null>(null);
   const [dismissedCandidates, setDismissedCandidates] = useState(false);
+  const [searching, setSearching] = useState(false);
   const [linkKind, setLinkKind] = useState<DirectLinkKind>('mae');
 
   useEffect(() => {
     if (selected) return;
     if (query.trim().length < 3) {
       setCandidates([]);
+      setSearching(false);
       return;
     }
     let active = true;
+    setSearching(true);
     const timeout = setTimeout(() => {
       searchFamilyPersonCandidatesAction(query).then((results) => {
-        if (active) setCandidates(results);
+        if (!active) return;
+        setCandidates(results);
+        setSearching(false);
+        // Nova busca pode achar gente que a anterior não achou — nunca deixa
+        // um "nenhuma dessas" de um nome antigo escondendo resultado novo.
+        setDismissedCandidates(false);
       });
     }, 300);
     return () => {
@@ -249,6 +257,8 @@ function AddFamilyMemberForm({
   }, [state, onDone]);
 
   const hasUnanalyzedCandidates = candidates.length > 0 && !selected && !dismissedCandidates;
+  const hasSearchedWithNoMatch =
+    !selected && !searching && query.trim().length >= 3 && candidates.length === 0;
   const showCreationFields = !selected && (dismissedCandidates || candidates.length === 0);
 
   return (
@@ -302,6 +312,12 @@ function AddFamilyMemberForm({
             required={!selected}
           />
         </div>
+        {searching && <p className="text-muted mt-1 text-xs">Verificando se já está cadastrado…</p>}
+        {hasSearchedWithNoMatch && (
+          <p className="text-muted mt-1 text-xs">
+            Ninguém com esse nome encontrado — pode cadastrar como pessoa nova.
+          </p>
+        )}
       </FormField>
 
       {selected && (

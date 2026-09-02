@@ -24,8 +24,7 @@ export function classifyFamilyDisplayGroup(label: string): FamilyDisplayGroup {
 export const DIRECT_LINK_KINDS = [
   'mae',
   'pai',
-  'filho',
-  'filha',
+  'filho_filha',
   'conjuge',
   'companheiro',
   'irmao_irma',
@@ -38,8 +37,7 @@ export type DirectLinkKind = (typeof DIRECT_LINK_KINDS)[number];
 export const DIRECT_LINK_LABELS: Record<DirectLinkKind, string> = {
   mae: 'É mãe de',
   pai: 'É pai de',
-  filho: 'É filho de',
-  filha: 'É filha de',
+  filho_filha: 'É filho(a) de',
   conjuge: 'É cônjuge de',
   companheiro: 'É companheiro(a) de',
   irmao_irma: 'É irmão ou irmã de',
@@ -97,7 +95,7 @@ export function resolveRelationEndpoints(
         parentRole: 'pai',
         childRole: null,
       };
-    case 'filho':
+    case 'filho_filha':
       return {
         fromKind: anchor.kind,
         fromId: anchor.id,
@@ -105,17 +103,11 @@ export function resolveRelationEndpoints(
         toId: person.id,
         relationKind: 'parent_of',
         parentRole: null,
-        childRole: 'filho',
-      };
-    case 'filha':
-      return {
-        fromKind: anchor.kind,
-        fromId: anchor.id,
-        toKind: person.kind,
-        toId: person.id,
-        relationKind: 'parent_of',
-        parentRole: null,
-        childRole: 'filha',
+        // Rótulo exibido é sempre "Filho ou filha" (deriveKinships,
+        // classifyFamilyDisplayGroup) independente do gênero — não há
+        // opção separada "filho"/"filha" no formulário, então
+        // `descendente` cobre ambos sem forçar essa distinção.
+        childRole: 'descendente',
       };
     case 'conjuge':
       return {

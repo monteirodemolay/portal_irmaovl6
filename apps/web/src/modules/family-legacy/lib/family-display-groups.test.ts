@@ -39,15 +39,15 @@ describe('resolveRelationEndpoints', () => {
     });
   });
 
-  it('filho: a âncora é a origem da relação parent_of', () => {
-    const endpoints = resolveRelationEndpoints('filho', anchor, person);
+  it('filho_filha: a âncora é a origem da relação parent_of', () => {
+    const endpoints = resolveRelationEndpoints('filho_filha', anchor, person);
     expect(endpoints).toMatchObject({
       fromKind: 'member',
       fromId: 'luis',
       toKind: 'familyPerson',
       toId: 'mae-1',
       relationKind: 'parent_of',
-      childRole: 'filho',
+      childRole: 'descendente',
     });
   });
 
