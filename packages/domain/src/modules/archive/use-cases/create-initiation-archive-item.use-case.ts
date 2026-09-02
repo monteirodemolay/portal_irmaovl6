@@ -1,3 +1,4 @@
+import { formatSessionName } from '@vl6/shared';
 import type { AuthContext } from '../../../shared/auth-context';
 import type { IClock, IIdGenerator } from '../../../shared/ports';
 import type { Address } from '../../../shared/address';
@@ -123,7 +124,7 @@ export class CreateInitiationArchiveItemUseCase {
         id: this.deps.idGenerator.next(),
         tenantId: ctx.tenantId,
         tipo: 'sessao',
-        titulo: `Sessão de Iniciação — ${formatDateBR(input.dataIniciacao)}`,
+        titulo: `${formatSessionName({ sessionType: 'magna', sessionNature: 'iniciacao' })} — ${formatDateBR(input.dataIniciacao)}`,
         descricao: null,
         local,
         dataInicio: input.dataIniciacao,
@@ -141,6 +142,12 @@ export class CreateInitiationArchiveItemUseCase {
         nivelAcesso: 'irmaos',
         exibirNaLinhaDoTempo: true,
         grau: 'aprendiz',
+        sessionType: 'magna',
+        sessionNature: 'iniciacao',
+        degreeWork: 'aprendiz',
+        access: 'privativa_macons',
+        isJointSession: false,
+        participatingLodges: [],
         createdAt: now,
         updatedAt: now,
         createdBy: ctx.uid,

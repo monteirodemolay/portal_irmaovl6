@@ -148,8 +148,32 @@ function parseEventForm(formData: FormData) {
   const capacidadeMaxima = formData.get('capacidadeMaxima');
   const dataInicioRaw = formData.get('dataInicio');
   const dataFimRaw = formData.get('dataFim');
+  const tipo = formData.get('tipo');
+  const isSessao = tipo === 'sessao';
+
+  // Campos de classificação da Sessão só existem no formulário quando
+  // `tipo === 'sessao'` (ver `EventForm`) — fora disso ficam sempre `null`,
+  // nunca herdados de um envio anterior.
+  const isJointSession = isSessao && formData.get('isJointSession') === 'on';
+  const lodgeNomes = formData.getAll('lodgeNome').map(String);
+  const lodgeNumeros = formData.getAll('lodgeNumero').map(String);
+  const lodgeOrientes = formData.getAll('lodgeOriente').map(String);
+  const lodgePotencias = formData.getAll('lodgePotencia').map(String);
+  const lodgeObservacoes = formData.getAll('lodgeObservacao').map(String);
+  const participatingLodges = isJointSession
+    ? lodgeNomes
+        .map((nome, index) => ({
+          nome,
+          numero: lodgeNumeros[index] || null,
+          oriente: lodgeOrientes[index] || null,
+          potencia: lodgePotencias[index] || null,
+          observacao: lodgeObservacoes[index] || null,
+        }))
+        .filter((lodge) => lodge.nome.trim())
+    : [];
+
   return eventSchema.parse({
-    tipo: formData.get('tipo'),
+    tipo,
     titulo: formData.get('titulo'),
     descricao: formData.get('descricao') || null,
     local: formData.get('local'),
@@ -162,6 +186,12 @@ function parseEventForm(formData: FormData) {
     chegadaSugerida: formData.get('chegadaSugerida') || null,
     observacoes: formData.get('observacoes') || null,
     arquivosRelacionados: formData.getAll('arquivosRelacionados').map(String),
+    sessionType: isSessao ? formData.get('sessionType') || null : null,
+    sessionNature: isSessao ? formData.get('sessionNature') || null : null,
+    degreeWork: isSessao ? formData.get('degreeWork') || null : null,
+    access: isSessao ? formData.get('access') || null : null,
+    isJointSession,
+    participatingLodges,
   });
 }
 

@@ -1,3 +1,4 @@
+import { formatSessionName } from '@vl6/shared';
 import type { AuthContext } from '../../../shared/auth-context';
 import type { IClock, IIdGenerator } from '../../../shared/ports';
 import type { Address } from '../../../shared/address';
@@ -99,7 +100,7 @@ export class CreateExaltationArchiveItemUseCase {
         id: this.deps.idGenerator.next(),
         tenantId: ctx.tenantId,
         tipo: 'sessao',
-        titulo: `Sessão de Exaltação — ${formatDateBR(input.dataExaltacao)}`,
+        titulo: `${formatSessionName({ sessionType: 'magna', sessionNature: 'exaltacao' })} — ${formatDateBR(input.dataExaltacao)}`,
         descricao: null,
         local,
         dataInicio: input.dataExaltacao,
@@ -117,6 +118,12 @@ export class CreateExaltationArchiveItemUseCase {
         nivelAcesso: 'irmaos',
         exibirNaLinhaDoTempo: true,
         grau: 'mestre',
+        sessionType: 'magna',
+        sessionNature: 'exaltacao',
+        degreeWork: 'mestre',
+        access: 'privativa_macons',
+        isJointSession: false,
+        participatingLodges: [],
         createdAt: now,
         updatedAt: now,
         createdBy: ctx.uid,

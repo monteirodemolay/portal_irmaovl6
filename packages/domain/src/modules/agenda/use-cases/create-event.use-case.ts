@@ -1,4 +1,12 @@
-import type { AccessLevel, EventKind, SessionDegree } from '@vl6/shared';
+import type {
+  AccessLevel,
+  EventKind,
+  JointLodgeReference,
+  SessionAccessKind,
+  SessionDegree,
+  SessionType,
+  SessionWorkDegree,
+} from '@vl6/shared';
 import type { AuthContext } from '../../../shared/auth-context';
 import { requirePermission } from '../../../shared/auth-context';
 import type { IClock, IIdGenerator } from '../../../shared/ports';
@@ -23,7 +31,14 @@ export interface CreateEventInput {
   boardTermId: string | null;
   nivelAcesso: AccessLevel;
   exibirNaLinhaDoTempo: boolean;
+  /** @deprecated ver `Event.grau`. */
   grau: SessionDegree | null;
+  sessionType?: SessionType | null;
+  sessionNature?: string | null;
+  degreeWork?: SessionWorkDegree | null;
+  access?: SessionAccessKind | null;
+  isJointSession?: boolean;
+  participatingLodges?: JointLodgeReference[];
 }
 
 export interface CreateEventDeps {

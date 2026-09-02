@@ -1,8 +1,9 @@
-import { BRAZIL_TIME_ZONE } from '@vl6/shared';
+import { BRAZIL_TIME_ZONE, SESSION_DEGREE_LABELS, SESSION_WORK_DEGREE_LABELS } from '@vl6/shared';
 import type { AuthContext } from '../../../shared/auth-context';
 import { requirePermission } from '../../../shared/auth-context';
 import type { IClock, IIdGenerator } from '../../../shared/ports';
 import { NotFoundError, ok, err, type Result } from '../../../shared/result';
+import type { Event } from '../../agenda/entities/event.entity';
 import type { IEventRepository } from '../../agenda/repositories/event.repository';
 import type { Publication } from '../entities/publication.entity';
 import type { IArtTemplateRepository } from '../repositories/art-template.repository';
@@ -16,13 +17,21 @@ export interface CreatePublicationFromEventDeps {
   idGenerator: IIdGenerator;
 }
 
-const SESSION_DEGREE_LABELS: Record<string, string> = {
-  aprendiz: 'Grau Aprendiz',
-  companheiro: 'Grau Companheiro',
-  mestre: 'Grau Mestre',
-  magna: 'Sessão Magna',
-  publica: 'Sessão Pública',
-};
+/**
+ * Prefere `degreeWork` (classificação estruturada — Grau dos trabalhos,
+ * nunca misturado com Tipo/Acesso) e só cai pro `grau` legado quando o
+ * Evento ainda não foi classificado/migrado.
+ */
+function resolveDegreeLabel(event: Event): string {
+  if (
+    event.degreeWork &&
+    event.degreeWork !== 'nao_se_aplica' &&
+    event.degreeWork !== 'a_definir'
+  ) {
+    return SESSION_WORK_DEGREE_LABELS[event.degreeWork];
+  }
+  return event.grau ? (SESSION_DEGREE_LABELS[event.grau] ?? event.grau) : '';
+}
 
 /**
  * "Gerar arte" a partir de um Evento da Agenda — busca o registro existente
@@ -83,7 +92,7 @@ export class CreatePublicationFromEventUseCase {
           timeStyle: 'short',
           timeZone: BRAZIL_TIME_ZONE,
         }).format(event.dataInicio),
-        degree: event.grau ? (SESSION_DEGREE_LABELS[event.grau] ?? event.grau) : '',
+        degree: resolveDegreeLabel(event),
         location: event.local,
       },
       caption: null,

@@ -96,6 +96,7 @@ import {
   CreateBoardTermUseCase,
   CreateCommitteeUseCase,
   CreateEventUseCase,
+  SeedSessionClassificationUseCase,
   UpdateEventUseCase,
   CreatePersonalEventUseCase,
   UpdatePersonalEventUseCase,
@@ -919,6 +920,10 @@ export function createServerContainer() {
       boardTermRepository: repositories.boardTerm,
       clock,
       idGenerator,
+    }),
+    seedSessionClassification: new SeedSessionClassificationUseCase({
+      eventRepository: repositories.event,
+      clock,
     }),
     updateEvent: new UpdateEventUseCase({
       eventRepository: repositories.event,

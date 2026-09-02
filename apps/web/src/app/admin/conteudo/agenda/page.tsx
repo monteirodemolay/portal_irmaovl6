@@ -1,8 +1,21 @@
 import Link from 'next/link';
 import { createServerContainer } from '@vl6/infra';
 import { hasPermission, type Event } from '@vl6/domain';
-import { BRAZIL_TIME_ZONE, EVENT_KIND_LABELS } from '@vl6/shared';
-import { Button, DataTable, EmptyState, Pagination, type DataTableColumn } from '@vl6/ui';
+import {
+  BRAZIL_TIME_ZONE,
+  EVENT_KIND_LABELS,
+  formatSessionName,
+  SESSION_TYPE_LABELS,
+} from '@vl6/shared';
+import {
+  AlertTriangle,
+  Badge,
+  Button,
+  DataTable,
+  EmptyState,
+  Pagination,
+  type DataTableColumn,
+} from '@vl6/ui';
 import { requirePagePermission } from '@/lib/auth/require-permission';
 import { deleteEventAction, hardDeleteEventAction } from '@/modules/agenda/actions/agenda-actions';
 import { startPublicationFromEventAction } from '@/modules/communication/actions/communication-actions';
@@ -11,6 +24,18 @@ import { ConcludedTabNav } from '@/components/admin/concluded-tab-nav';
 
 const BASE_PATH = '/admin/conteudo/agenda';
 const PAGE_SIZE = 20;
+
+/** Nome estruturado quando a Sessão já foi classificada; cai no rótulo genérico do Tipo de Evento senão. */
+function sessionOrKindLabel(event: Event): string {
+  if (event.tipo === 'sessao' && event.sessionType && event.sessionNature) {
+    return formatSessionName({
+      sessionType: event.sessionType,
+      sessionNature: event.sessionNature,
+      access: event.access ?? null,
+    });
+  }
+  return EVENT_KIND_LABELS[event.tipo];
+}
 
 function formatDateTime(date: Date): string {
   return new Intl.DateTimeFormat('pt-BR', {
@@ -93,7 +118,24 @@ export default async function AgendaPage({
         </Link>
       ),
     },
-    { key: 'tipo', header: 'Tipo', cell: (event) => EVENT_KIND_LABELS[event.tipo] },
+    {
+      key: 'tipo',
+      header: 'Tipo',
+      cell: (event) => (
+        <div className="flex flex-col gap-1">
+          <span>{sessionOrKindLabel(event)}</span>
+          {event.tipo === 'sessao' && event.sessionType && (
+            <span className="text-muted text-xs">{SESSION_TYPE_LABELS[event.sessionType]}</span>
+          )}
+          {event.tipo === 'sessao' && event.classificationReviewRequired && (
+            <Badge variant="warning" className="w-fit">
+              <AlertTriangle size={12} className="mr-1 inline" />
+              Revisão pendente
+            </Badge>
+          )}
+        </div>
+      ),
+    },
     { key: 'local', header: 'Local', cell: (event) => event.local },
     { key: 'inicio', header: 'Início', cell: (event) => formatDateTime(event.dataInicio) },
     {
@@ -130,9 +172,14 @@ export default async function AgendaPage({
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
         <h1 className="font-display text-2xl font-semibold">Agenda / Eventos</h1>
-        <Button asChild>
-          <Link href={`${BASE_PATH}/novo`}>Novo Evento</Link>
-        </Button>
+        <div className="flex gap-2">
+          <Button asChild variant="outline">
+            <Link href={`${BASE_PATH}/classificacao-migracao`}>Classificar Sessões</Link>
+          </Button>
+          <Button asChild>
+            <Link href={`${BASE_PATH}/novo`}>Novo Evento</Link>
+          </Button>
+        </div>
       </div>
 
       <ConcludedTabNav basePath={BASE_PATH} aba="principal" />

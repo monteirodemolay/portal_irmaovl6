@@ -204,6 +204,8 @@ export * from './modules/agenda/repositories/personal-event.repository';
 export * from './modules/agenda/repositories/personal-task.repository';
 export * from './modules/agenda/repositories/personal-note.repository';
 export * from './modules/agenda/use-cases/create-event.use-case';
+export * from './modules/agenda/use-cases/seed-session-classification.use-case';
+export * from './modules/agenda/lib/classify-legacy-session';
 export * from './modules/agenda/use-cases/update-event.use-case';
 export * from './modules/agenda/use-cases/delete-event.use-case';
 export * from './modules/agenda/use-cases/hard-delete-event.use-case';

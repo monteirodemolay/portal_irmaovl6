@@ -70,6 +70,12 @@ const input: EventFormValues = {
   nivelAcesso: 'irmaos',
   exibirNaLinhaDoTempo: true,
   grau: null,
+  sessionType: 'ordinaria',
+  sessionNature: 'regular',
+  degreeWork: null,
+  access: null,
+  isJointSession: false,
+  participatingLodges: [],
 };
 
 function buildUseCase() {
