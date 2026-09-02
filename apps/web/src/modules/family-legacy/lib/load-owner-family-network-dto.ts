@@ -43,6 +43,30 @@ export interface OwnerFamilyNetworkDTO {
 const DECLARED_KINDS = new Set(['declared_kinship', 'guardian_of', 'step_parent_of']);
 
 /**
+ * Estado vazio — usado quando a sessão ainda não tem `familyLegacy:read`
+ * (papel do tenant sincronizado antes desta permissão existir; corrigido
+ * clicando "Sincronizar" em `/admin/pessoas/permissoes`, mas o Meu Espaço
+ * não pode quebrar a página inteira enquanto isso não acontece).
+ */
+export const EMPTY_OWNER_FAMILY_NETWORK: OwnerFamilyNetworkDTO = {
+  summary: {
+    vinculosRegistrados: 0,
+    geracoesConhecidas: 1,
+    geracoesMaconicas: 1,
+    confirmacoesPendentes: 0,
+  },
+  groups: {
+    ascendentes: [],
+    familia_proxima: [],
+    descendentes: [],
+    familia_por_afinidade: [],
+    outros_vinculos: [],
+  },
+  pendingConfirmations: [],
+  anchorOptions: [],
+};
+
+/**
  * DTO específico para a visão "própria" (docs/architecture — regra de
  * "nunca ler tudo e esconder com CSS"): monta tudo no servidor a partir da
  * cadeia derivada (`ListOwnerFamilyNetworkUseCase`) mais as arestas diretas

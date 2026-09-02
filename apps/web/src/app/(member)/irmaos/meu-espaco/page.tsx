@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { buildPublicMemberProfileDTO, type PublicationSettings } from '@vl6/domain';
+import { buildPublicMemberProfileDTO, hasPermission, type PublicationSettings } from '@vl6/domain';
 import { createServerContainer } from '@vl6/infra';
 import { ArrowLeft, Card, CardContent, Tabs, TabsContent, TabsList, TabsTrigger } from '@vl6/ui';
 import { requireSession } from '@/lib/auth/require-session';
@@ -10,7 +10,10 @@ import { ContatosTab } from '@/modules/central/components/meu-espaco/contatos-ta
 import { EmpresaTab } from '@/modules/central/components/meu-espaco/empresa-tab';
 import { GeralTab } from '@/modules/central/components/meu-espaco/geral-tab';
 import { PessoalTab } from '@/modules/central/components/meu-espaco/pessoal-tab';
-import { loadOwnerFamilyNetworkDTO } from '@/modules/family-legacy/lib/load-owner-family-network-dto';
+import {
+  EMPTY_OWNER_FAMILY_NETWORK,
+  loadOwnerFamilyNetworkDTO,
+} from '@/modules/family-legacy/lib/load-owner-family-network-dto';
 import { PrivacidadeTab } from '@/modules/central/components/meu-espaco/privacidade-tab';
 import { ProfissionalTab } from '@/modules/central/components/meu-espaco/profissional-tab';
 import { RedesTab } from '@/modules/central/components/meu-espaco/redes-tab';
@@ -91,7 +94,14 @@ export default async function MeuEspacoPage({
     );
   }
 
-  const familyNetwork = await loadOwnerFamilyNetworkDTO(container, session.authContext, member.id);
+  // Papéis (`roles`) de tenants já existentes só ganham permissões novas
+  // (como `familyLegacy:read`) depois que um Admin clica "Sincronizar" em
+  // `/admin/pessoas/permissoes` — até lá, a sessão pode não ter a
+  // permissão mesmo sendo `membro`. Checar antes de chamar evita que o
+  // `ForbiddenError` do caso de uso derrube a página inteira do Meu Espaço.
+  const familyNetwork = hasPermission(session.authContext, 'familyLegacy:read')
+    ? await loadOwnerFamilyNetworkDTO(container, session.authContext, member.id)
+    : EMPTY_OWNER_FAMILY_NETWORK;
 
   const [centralProfile, publicationSettings] = await Promise.all([
     container.repositories.memberCentralProfile.findByMemberId(
