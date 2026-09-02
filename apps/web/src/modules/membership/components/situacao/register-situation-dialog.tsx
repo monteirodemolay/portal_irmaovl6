@@ -191,6 +191,21 @@ export function RegisterSituationDialog({
                 </div>
               )}
 
+              {motivo === 'transferencia_outra_loja' && (
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="lojaDestinoId">Loja de destino</Label>
+                  <Input
+                    id="lojaDestinoId"
+                    name="lojaDestinoId"
+                    placeholder="Nome ou número da Loja para onde ele foi transferido"
+                  />
+                  <p className="text-muted text-xs">
+                    Fica registrado no histórico deste Irmão — pra sabermos que ele saiu daqui e pra
+                    onde foi.
+                  </p>
+                </div>
+              )}
+
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="dataInicio">Data de início</Label>
                 <Input
@@ -303,10 +318,12 @@ export function RegisterSituationDialog({
                         <Input id="lojaOrigemId" name="lojaOrigemId" />
                       </div>
                     </div>
-                    <div className="flex flex-col gap-1.5">
-                      <Label htmlFor="lojaDestinoId">Loja de destino (opcional)</Label>
-                      <Input id="lojaDestinoId" name="lojaDestinoId" />
-                    </div>
+                    {motivo !== 'transferencia_outra_loja' && (
+                      <div className="flex flex-col gap-1.5">
+                        <Label htmlFor="lojaDestinoId">Loja de destino (opcional)</Label>
+                        <Input id="lojaDestinoId" name="lojaDestinoId" />
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

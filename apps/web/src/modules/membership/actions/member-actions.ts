@@ -767,8 +767,15 @@ export async function registerMemberSituationAction(
     glegAtivo && formData.get('sourceLabel') ? String(formData.get('sourceLabel')) : null;
   const lojaOrigemId =
     glegAtivo && formData.get('lojaOrigemId') ? String(formData.get('lojaOrigemId')) : null;
-  const lojaDestinoId =
-    glegAtivo && formData.get('lojaDestinoId') ? String(formData.get('lojaDestinoId')) : null;
+  // Sem o gate de `glegAtivo` (diferente de `lojaOrigemId` acima): o campo
+  // "Loja de destino" também aparece fora da seção GLEG, direto quando o
+  // motivo é "transferência para outra Loja" — rastreabilidade de pra onde
+  // o Irmão foi não depende de a transferência ter proveniência formal da
+  // GLEG. O campo só existe no formulário quando é de fato relevante (ver
+  // `RegisterSituationDialog`), então checar a presença dele já basta.
+  const lojaDestinoId = formData.get('lojaDestinoId')
+    ? String(formData.get('lojaDestinoId'))
+    : null;
 
   const container = createServerContainer();
   const result = await container.useCases.registerMemberSituation.execute(

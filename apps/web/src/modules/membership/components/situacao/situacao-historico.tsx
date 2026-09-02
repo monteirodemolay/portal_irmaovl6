@@ -57,6 +57,10 @@ export function SituacaoHistorico({ records }: { records: MemberSituationRecord[
             </p>
           )}
 
+          {record.lojaDestinoId && (
+            <p className="text-muted text-sm">Transferido para: {record.lojaDestinoId}</p>
+          )}
+
           {record.documentoNumero && (
             <p className="text-muted text-sm">
               Documento nº {record.documentoNumero}
