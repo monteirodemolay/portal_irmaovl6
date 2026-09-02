@@ -1,8 +1,20 @@
 import Link from 'next/link';
-import { resolveAreaAtuacao } from '@vl6/domain';
+import {
+  getMemberJourneyCargos,
+  getMemberJourneyCommittees,
+  resolveAreaAtuacao,
+} from '@vl6/domain';
 import { createServerContainer } from '@vl6/infra';
-import { getBoardPositionLabel, type AreaAtuacaoKey } from '@vl6/shared';
-import { ArchiveItemCard, EmptyState, Users } from '@vl6/ui';
+import {
+  getBoardPositionLabel,
+  MEMBER_DEGREES,
+  MEMBER_SITUATION_STATUS_LABELS,
+  MEMBER_SITUATION_STATUSES,
+  type AreaAtuacaoKey,
+  type MemberDegree,
+  type MemberSituationStatus,
+} from '@vl6/shared';
+import { ArchiveItemCard, Button, EmptyState, Input, Select, Users } from '@vl6/ui';
 import { requirePagePermission } from '@/lib/auth/require-permission';
 import { AcervoPageHeader } from '@/components/member/acervo-page-header';
 import { AcervoAreaFacetBar } from '@/modules/archive/components/acervo-area-facet-bar';
@@ -12,9 +24,10 @@ interface PersonHighlight {
   memberId: string;
   nomeCompleto: string;
   grauLabel: string;
-  cargoLabel: string;
-  gestaoNome: string;
-  periodoInicio: Date;
+  situacaoLabel: string;
+  /** Cargo/comissão mais recente já ocupado — `null` quando o Irmão nunca teve nenhum. */
+  papelLabel: string | null;
+  gestaoNome: string | null;
   /**
    * Área de atuação profissional — ponte Acervo → Diretório (Fase E, busca
    * cruzada). Só preenchida quando o Irmão publicou o bloco "profissional"
@@ -24,67 +37,93 @@ interface PersonHighlight {
   area: { key: AreaAtuacaoKey; label: string } | null;
 }
 
+const FETCH_PAGE_LIMIT = 500;
+const MAX_FETCH_PAGES = 10;
+
 export default async function ArchivePeoplePage({
   searchParams,
 }: {
-  searchParams: Promise<{ area?: string }>;
+  searchParams: Promise<{ q?: string; grau?: string; situacao?: string; area?: string }>;
 }) {
   const session = await requirePagePermission('boardTerm:read');
   const { tenantId } = session.authContext;
-  const { area: activeArea } = await searchParams;
+  const {
+    q: termo,
+    grau: grauFiltro,
+    situacao: situacaoFiltro,
+    area: activeArea,
+  } = await searchParams;
 
   const container = createServerContainer();
-  const terms = await container.repositories.boardTerm.listByTenant(tenantId);
 
-  const termsWithAssignments = await Promise.all(
-    terms.map(async (term) => ({
-      term,
-      assignments: await container.repositories.boardPositionAssignment.listByGestao(term.id),
-    })),
-  );
-
-  const mostRecentByMember = new Map<
-    string,
-    { cargo: string; gestaoNome: string; periodoInicio: Date }
-  >();
-  for (const { term, assignments } of termsWithAssignments) {
-    for (const assignment of assignments) {
-      const current = mostRecentByMember.get(assignment.memberId);
-      if (!current || term.periodoInicio > current.periodoInicio) {
-        mostRecentByMember.set(assignment.memberId, {
-          cargo: assignment.cargo,
-          gestaoNome: term.nome,
-          periodoInicio: term.periodoInicio,
-        });
-      }
-    }
+  // Todo Irmão institucional não excluído tem um lugar no Acervo — antes
+  // esta página só listava quem já ocupou cargo de Diretoria, escondendo
+  // Irmãos com comissão, com fotos/eventos vinculados, ou simplesmente sem
+  // nenhum cargo ainda. Mesma correção de princípio já aplicada ao
+  // Diretório (`SearchDirectoryUseCase`, Fase 1 da Comunidade VL6).
+  const members = [];
+  let cursor: string | undefined;
+  for (let page = 0; page < MAX_FETCH_PAGES; page++) {
+    const result = await container.repositories.member.search(
+      {
+        tenantId,
+        nome: termo?.trim() || undefined,
+        grau: grauFiltro || undefined,
+        situacao: situacaoFiltro || undefined,
+      },
+      { limit: FETCH_PAGE_LIMIT, cursor },
+    );
+    members.push(...result.items);
+    if (!result.hasMore || !result.nextCursor) break;
+    cursor = result.nextCursor;
   }
 
+  const journeyDeps = {
+    memberPositionHistoryRepository: container.repositories.memberPositionHistory,
+    boardTermRepository: container.repositories.boardTerm,
+    committeeRepository: container.repositories.committee,
+  };
+
   const membersWithHighlight = await Promise.all(
-    [...mostRecentByMember.entries()].map(async ([memberId, highlight]) => {
-      const [member, settings, profile] = await Promise.all([
-        container.repositories.member.findById(memberId),
-        container.repositories.publicationSettings.findByMemberId(tenantId, memberId),
-        container.repositories.memberCentralProfile.findByMemberId(tenantId, memberId),
+    members.map(async (member) => {
+      const [cargos, comissoes, settings, profile] = await Promise.all([
+        getMemberJourneyCargos(journeyDeps, member.id),
+        getMemberJourneyCommittees(journeyDeps, tenantId, member.id),
+        container.repositories.publicationSettings.findByMemberId(tenantId, member.id),
+        container.repositories.memberCentralProfile.findByMemberId(tenantId, member.id),
       ]);
-      return { member, highlight, settings, profile };
+      return { member, cargos, comissoes, settings, profile };
     }),
   );
 
   const allPeople: PersonHighlight[] = membersWithHighlight
-    .map(({ member, highlight, settings, profile }) => {
-      if (!member) return null;
+    .map(({ member, cargos, comissoes, settings, profile }) => {
+      const cargoMaisRecente = cargos[0];
+      const comissaoMaisRecente = comissoes[0];
+      const useCargo =
+        cargoMaisRecente &&
+        (!comissaoMaisRecente || cargoMaisRecente.dataInicio >= comissaoMaisRecente.dataInicio);
+      const papel = useCargo
+        ? cargoMaisRecente
+          ? {
+              label: getBoardPositionLabel(cargoMaisRecente.cargo),
+              gestaoNome: cargoMaisRecente.gestaoNome,
+            }
+          : null
+        : comissaoMaisRecente
+          ? { label: comissaoMaisRecente.nome, gestaoNome: comissaoMaisRecente.gestaoNome }
+          : null;
+
       return {
         memberId: member.id,
         nomeCompleto: member.nomeCompleto,
         grauLabel: MEMBER_DEGREE_LABELS[member.grau],
-        cargoLabel: getBoardPositionLabel(highlight.cargo),
-        gestaoNome: highlight.gestaoNome,
-        periodoInicio: highlight.periodoInicio,
+        situacaoLabel: MEMBER_SITUATION_STATUS_LABELS[member.situacao],
+        papelLabel: papel?.label ?? null,
+        gestaoNome: papel?.gestaoNome ?? null,
         area: settings?.blocks.profissional ? resolveAreaAtuacao(profile) : null,
       };
     })
-    .filter((person): person is PersonHighlight => person !== null)
     .sort((a, b) => a.nomeCompleto.localeCompare(b.nomeCompleto, 'pt-BR'));
 
   const areaFacets = Array.from(
@@ -106,29 +145,84 @@ export default async function ArchivePeoplePage({
     ? allPeople.filter((person) => person.area?.key === activeArea)
     : allPeople;
 
+  const hasActiveFilter = Boolean(termo || grauFiltro || situacaoFiltro || activeArea);
+
   return (
     <div className="flex flex-col gap-6">
       <AcervoPageHeader
         title="Pessoas"
-        description="Irmãos cuja trajetória institucional já está registrada nas gestões da Loja."
+        description="Todo Irmão da Loja com algum registro institucional — cargos, comissões, eventos ou fotos do Acervo."
         backHref="/acervo"
       />
+
+      <form
+        method="get"
+        className="border-border bg-surface flex flex-wrap items-end gap-3 rounded-xl border p-4"
+      >
+        <div className="min-w-[200px] flex-1">
+          <label htmlFor="q" className="text-muted mb-1 block text-xs font-medium">
+            Buscar por nome
+          </label>
+          <Input id="q" name="q" defaultValue={termo} placeholder="Nome do Irmão" />
+        </div>
+        <div className="min-w-[160px]">
+          <label htmlFor="grau" className="text-muted mb-1 block text-xs font-medium">
+            Grau
+          </label>
+          <Select id="grau" name="grau" defaultValue={grauFiltro ?? ''}>
+            <option value="">Todos</option>
+            {MEMBER_DEGREES.map((grau: MemberDegree) => (
+              <option key={grau} value={grau}>
+                {MEMBER_DEGREE_LABELS[grau]}
+              </option>
+            ))}
+          </Select>
+        </div>
+        <div className="min-w-[160px]">
+          <label htmlFor="situacao" className="text-muted mb-1 block text-xs font-medium">
+            Situação
+          </label>
+          <Select id="situacao" name="situacao" defaultValue={situacaoFiltro ?? ''}>
+            <option value="">Todas</option>
+            {MEMBER_SITUATION_STATUSES.map((situacao: MemberSituationStatus) => (
+              <option key={situacao} value={situacao}>
+                {MEMBER_SITUATION_STATUS_LABELS[situacao]}
+              </option>
+            ))}
+          </Select>
+        </div>
+        {activeArea && <input type="hidden" name="area" value={activeArea} />}
+        <div className="flex gap-2">
+          <Button type="submit" variant="primary">
+            Filtrar
+          </Button>
+          {hasActiveFilter && (
+            <Button type="button" variant="outline" asChild>
+              <Link href="/acervo/pessoas">Limpar</Link>
+            </Button>
+          )}
+        </div>
+      </form>
 
       {areaFacets.length > 0 && (
         <AcervoAreaFacetBar areaFacets={areaFacets} activeArea={activeArea} />
       )}
 
+      <p className="text-muted text-sm">
+        {people.length} {people.length === 1 ? 'Irmão encontrado' : 'Irmãos encontrados'}
+      </p>
+
       {allPeople.length === 0 ? (
         <EmptyState
           icon={<Users size={22} />}
-          title="Nenhuma trajetória registrada ainda"
-          description="Trajetórias institucionais aparecerão aqui conforme as gestões forem cadastradas."
+          title="Nenhum Irmão cadastrado ainda"
+          description="Irmãos aparecerão aqui conforme forem cadastrados na Loja."
         />
       ) : people.length === 0 ? (
         <EmptyState
           icon={<Users size={22} />}
-          title="Nenhum Irmão nesta área"
-          description="Ninguém com trajetória registrada publicou essa área de atuação na Central."
+          title="Nenhum Irmão encontrado"
+          description="Ajuste os filtros ou a busca para ver outros resultados."
         />
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -139,11 +233,14 @@ export default async function ArchivePeoplePage({
               kindLabel={person.grauLabel}
               icon={<Users size={14} />}
               titulo={person.nomeCompleto}
-              descricao={
-                person.area
-                  ? `${person.cargoLabel} · ${person.gestaoNome} · ${person.area.label}`
-                  : `${person.cargoLabel} · ${person.gestaoNome}`
-              }
+              descricao={[
+                person.papelLabel && person.gestaoNome
+                  ? `${person.papelLabel} · ${person.gestaoNome}`
+                  : person.situacaoLabel,
+                person.area?.label,
+              ]
+                .filter(Boolean)
+                .join(' · ')}
               linkComponent={Link}
             />
           ))}
