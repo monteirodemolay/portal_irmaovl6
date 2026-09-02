@@ -1,4 +1,4 @@
-import type { Firestore } from 'firebase-admin/firestore';
+import { Timestamp, type Firestore } from 'firebase-admin/firestore';
 import type {
   CentralBusinessEntry,
   IMemberCentralProfileRepository,
@@ -7,6 +7,22 @@ import type {
 import { createEntityConverter } from '../converters/entity.converter';
 
 const COLLECTION = 'memberCentralProfiles';
+
+/**
+ * `negocios` é um array aninhado dentro de `MemberCentralProfile` — o
+ * `FirestoreDataConverter` só converte `Timestamp`→`Date` nos campos de
+ * topo do documento (`extraDateFields` de `createEntityConverter`), então
+ * `negocio.updatedAt` chega aqui como um `Timestamp` cru do Admin SDK, não
+ * um `Date` (apesar do tipo em `CentralBusinessEntry` dizer `Date`). Sem
+ * converter, esse valor passa direto pra um Client Component
+ * (`EmpresaTab`) e quebra a serialização RSC ("Only plain objects... can
+ * be passed to Client Components").
+ */
+function toUpdatedAtDate(value: unknown): Date {
+  if (value instanceof Timestamp) return value.toDate();
+  if (value instanceof Date) return value;
+  return new Date(0);
+}
 
 /**
  * `CentralBusinessEntry` ganhou vários campos (status/updatedAt na Fase 3;
@@ -23,7 +39,7 @@ function normalizeBusinessEntry(raw: CentralBusinessEntry): CentralBusinessEntry
   return {
     ...raw,
     status: raw.status ?? 'published',
-    updatedAt: raw.updatedAt ?? new Date(0),
+    updatedAt: toUpdatedAtDate(raw.updatedAt),
     logoUrl: raw.logoUrl ?? null,
     produtosServicos: raw.produtosServicos ?? [],
     whatsappComercial: raw.whatsappComercial ?? null,
