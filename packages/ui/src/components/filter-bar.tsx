@@ -43,7 +43,7 @@ export function FilterBar({
           key={item.value}
           href={item.href}
           className={cn(
-            'rounded-full border px-3 py-1.5 text-xs font-medium transition-colors',
+            'focus-visible:ring-accent rounded-full border px-3 py-1.5 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
             activeValue === item.value
               ? 'border-primary bg-primary text-white'
               : 'border-border text-muted hover:border-accent hover:text-foreground',

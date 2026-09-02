@@ -62,7 +62,7 @@ export function ArchiveItemCard({
   );
 
   const cardClassName = cn(
-    'border-border hover:border-accent group rounded-lg border p-4 text-left transition-colors',
+    'border-border hover:border-accent focus-visible:ring-accent group rounded-lg border p-4 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
     className,
   );
 

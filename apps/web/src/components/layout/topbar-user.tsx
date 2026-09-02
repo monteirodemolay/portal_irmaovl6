@@ -49,7 +49,7 @@ export function TopbarUser({
             </p>
           </div>
         </summary>
-        <nav className="border-border bg-surface absolute right-0 top-full z-30 mt-2 flex w-56 flex-col gap-0.5 rounded-lg border p-1.5 text-sm shadow-lg">
+        <nav className="border-border bg-surface absolute right-0 top-full z-30 mt-2 flex w-56 flex-col gap-0.5 rounded-lg border p-1.5 text-sm shadow-md">
           {memberId && (
             <Link
               href={`/irmaos/${memberId}`}

@@ -247,7 +247,7 @@ export function MyAgendaView({
         type="button"
         onClick={() => openNewPersonal()}
         aria-label="Novo compromisso"
-        className="bg-primary hover:bg-primary-dark fixed bottom-6 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full text-white shadow-lg sm:hidden"
+        className="bg-primary hover:bg-primary-dark fixed bottom-6 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full text-white shadow-md sm:hidden"
         style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
       >
         <Plus size={22} />

@@ -78,7 +78,7 @@ export function AppShell({
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  'my-0.5 flex items-center gap-3 rounded-[9px] px-3 py-2.5 text-sm text-white/90 transition-colors',
+                  'focus-visible:ring-accent focus-visible:ring-offset-primary my-0.5 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-white/90 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
                   isActive(item.href)
                     ? 'bg-accent text-primary-dark font-semibold'
                     : 'hover:bg-white/10',
@@ -108,7 +108,7 @@ export function AppShell({
               type="button"
               onClick={() => setMobileOpen(true)}
               aria-label="Abrir menu"
-              className="text-foreground hover:bg-background rounded p-2 lg:hidden"
+              className="text-foreground hover:bg-background focus-visible:ring-accent rounded p-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 lg:hidden"
             >
               <Menu size={20} />
             </button>
@@ -129,14 +129,14 @@ export function AppShell({
             onClick={() => setMobileOpen(false)}
             aria-hidden="true"
           />
-          <div className="from-primary to-primary-dark absolute inset-y-0 left-0 flex w-[270px] flex-col overflow-hidden bg-gradient-to-b shadow-lg">
+          <div className="from-primary to-primary-dark absolute inset-y-0 left-0 flex w-[270px] flex-col overflow-hidden bg-gradient-to-b shadow-md">
             <div className="flex items-center justify-between gap-3 border-b border-white/10 px-5 py-5">
               {brand}
               <button
                 type="button"
                 onClick={() => setMobileOpen(false)}
                 aria-label="Fechar menu"
-                className="shrink-0 rounded p-1 text-white/80 hover:bg-white/10"
+                className="focus-visible:ring-accent shrink-0 rounded p-1 text-white/80 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
               >
                 <X size={20} />
               </button>
