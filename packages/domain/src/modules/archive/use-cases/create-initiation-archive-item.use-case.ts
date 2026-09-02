@@ -1,8 +1,10 @@
 import type { AuthContext } from '../../../shared/auth-context';
 import type { IClock, IIdGenerator } from '../../../shared/ports';
+import type { Address } from '../../../shared/address';
 import type { Event } from '../../agenda/entities/event.entity';
 import type { IEventRepository } from '../../agenda/repositories/event.repository';
 import type { IBoardTermRepository } from '../../governance/repositories/board-term.repository';
+import type { ITenantRepository } from '../../tenancy/repositories/tenant.repository';
 import type { ArchiveItem } from '../entities/archive-item.entity';
 import type { IArchiveItemRepository } from '../repositories/archive-item.repository';
 
@@ -16,8 +18,18 @@ export interface CreateInitiationArchiveItemDeps {
   archiveItemRepository: IArchiveItemRepository;
   eventRepository: IEventRepository;
   boardTermRepository: IBoardTermRepository;
+  tenantRepository: ITenantRepository;
   clock: IClock;
   idGenerator: IIdGenerator;
+}
+
+/** `Sede da Loja Maçônica Verdadeira Luz nº 06 — Rua Exemplo, 123 - Centro, Rio Verde/GO`, só com o que o cadastro da Loja tiver preenchido. */
+function formatAddress(address: Address): string {
+  const linha1 = [address.logradouro, address.numero].filter(Boolean).join(', ');
+  const linha2 = [address.bairro, [address.cidade, address.estado].filter(Boolean).join('/')]
+    .filter(Boolean)
+    .join(' - ');
+  return [linha1, linha2].filter(Boolean).join(' - ');
 }
 
 export interface CreateInitiationArchiveItemResult {
@@ -95,17 +107,25 @@ export class CreateInitiationArchiveItemUseCase {
     let eventCreated = false;
 
     if (!event) {
-      const boardTerm = await this.deps.boardTermRepository.findByDate(
-        ctx.tenantId,
-        input.dataIniciacao,
-      );
+      const [boardTerm, tenant] = await Promise.all([
+        this.deps.boardTermRepository.findByDate(ctx.tenantId, input.dataIniciacao),
+        this.deps.tenantRepository.findById(ctx.tenantId),
+      ]);
+      // Momento mais solene do Irmão — nunca deixamos o local como um
+      // placeholder genérico quando a Loja já tem endereço cadastrado
+      // (`Tenant.endereco`, docs/architecture/03-modelo-dados.md): a
+      // iniciação sempre ocorre na sede, então o dado institucional já
+      // disponível é o norte real deste evento. Só cai pra "A confirmar"
+      // quando a própria Loja ainda não cadastrou endereço nenhum.
+      const local = tenant?.endereco ? formatAddress(tenant.endereco) : 'A confirmar';
+      const nomeLoja = tenant?.nome ?? 'da Loja';
       event = {
         id: this.deps.idGenerator.next(),
         tenantId: ctx.tenantId,
         tipo: 'sessao',
         titulo: `Sessão de Iniciação — ${formatDateBR(input.dataIniciacao)}`,
         descricao: null,
-        local: 'A confirmar',
+        local,
         dataInicio: input.dataIniciacao,
         dataFim: null,
         exigeConfirmacaoPresenca: false,
@@ -114,7 +134,8 @@ export class CreateInitiationArchiveItemUseCase {
         chegadaSugerida: null,
         observacoes:
           'Evento criado automaticamente pelo Acervo VL6 a partir do registro da data de ' +
-          `iniciação de ${input.nomeCompleto} — sem outro evento cadastrado nesta data.`,
+          `iniciação de ${input.nomeCompleto} ${nomeLoja === 'da Loja' ? nomeLoja : 'na ' + nomeLoja} — ` +
+          'sem outro evento cadastrado nesta data.',
         arquivosRelacionados: [],
         boardTermId: boardTerm?.id ?? null,
         nivelAcesso: 'irmaos',

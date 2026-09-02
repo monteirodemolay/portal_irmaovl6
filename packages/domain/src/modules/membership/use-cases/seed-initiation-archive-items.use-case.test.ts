@@ -7,6 +7,7 @@ import {
   InMemoryBoardTermRepository,
   InMemoryEventRepository,
   InMemoryMemberRepository,
+  InMemoryTenantRepository,
   SequentialIdGenerator,
 } from '../../../test/fakes';
 import { CreateInitiationArchiveItemUseCase } from '../../archive/use-cases/create-initiation-archive-item.use-case';
@@ -80,6 +81,7 @@ function buildUseCase(members: Member[]) {
       archiveItemRepository,
       eventRepository,
       boardTermRepository,
+      tenantRepository: new InMemoryTenantRepository(),
       clock: new FixedClock(new Date('2026-08-10T00:00:00Z')),
       idGenerator: new SequentialIdGenerator(),
     }),

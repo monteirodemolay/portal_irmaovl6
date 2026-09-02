@@ -5,10 +5,12 @@ import {
   InMemoryArchiveItemRepository,
   InMemoryBoardTermRepository,
   InMemoryEventRepository,
+  InMemoryTenantRepository,
   SequentialIdGenerator,
 } from '../../../test/fakes';
 import type { Event } from '../../agenda/entities/event.entity';
 import type { BoardTerm } from '../../governance/entities/board-term.entity';
+import type { Tenant } from '../../tenancy/entities/tenant.entity';
 import { CreateInitiationArchiveItemUseCase } from './create-initiation-archive-item.use-case';
 
 const ctx: AuthContext = {
@@ -68,15 +70,48 @@ function buildUseCase() {
   const archiveItemRepository = new InMemoryArchiveItemRepository();
   const eventRepository = new InMemoryEventRepository();
   const boardTermRepository = new InMemoryBoardTermRepository();
+  const tenantRepository = new InMemoryTenantRepository();
   const useCase = new CreateInitiationArchiveItemUseCase({
     archiveItemRepository,
     eventRepository,
     boardTermRepository,
+    tenantRepository,
     clock: new FixedClock(new Date('2026-01-01T00:00:00Z')),
     idGenerator: new SequentialIdGenerator(),
   });
-  return { useCase, archiveItemRepository, eventRepository, boardTermRepository };
+  return { useCase, archiveItemRepository, eventRepository, boardTermRepository, tenantRepository };
 }
+
+const tenantComEndereco: Tenant = {
+  id: 't1',
+  tenantId: 't1',
+  nome: 'Loja Maçônica Verdadeira Luz nº 06',
+  numero: '6',
+  potencia: 'GLEG',
+  dominio: null,
+  subdominio: 'vl6',
+  endereco: {
+    logradouro: 'Rua Exemplo',
+    numero: '123',
+    bairro: 'Centro',
+    cidade: 'Rio Verde',
+    estado: 'GO',
+    pais: 'Brasil',
+    cep: '75901-000',
+  },
+  telefone: null,
+  whatsapp: null,
+  site: null,
+  email: 'contato@vl6.com.br',
+  modulosHabilitados: [],
+  createdAt: new Date('2024-01-01'),
+  updatedAt: new Date('2024-01-01'),
+  createdBy: 'admin-1',
+  updatedBy: 'admin-1',
+  deletedAt: null,
+  status: 'active',
+  ativo: true,
+};
 
 describe('CreateInitiationArchiveItemUseCase', () => {
   it('reaproveita um Evento já existente na mesma data, sem criar um novo', async () => {
@@ -127,7 +162,27 @@ describe('CreateInitiationArchiveItemUseCase', () => {
     expect(events[0]?.tipo).toBe('sessao');
     expect(events[0]?.grau).toBe('aprendiz');
     expect(events[0]?.boardTermId).toBe('term-1');
+    expect(events[0]?.local).toBe('A confirmar');
     expect(result.archiveItem.eventId).toBe(events[0]?.id);
+  });
+
+  it('usa o endereço cadastrado da Loja como local do Evento criado, quando existe', async () => {
+    const { useCase, eventRepository, boardTermRepository, tenantRepository } = buildUseCase();
+    await boardTermRepository.create(term);
+    await tenantRepository.create(tenantComEndereco);
+
+    await useCase.execute(ctx, {
+      memberId: 'member-3',
+      nomeCompleto: 'Pedro Alves',
+      dataIniciacao: new Date('2025-08-10T12:00:00Z'),
+    });
+
+    const events = await eventRepository.listInRange(
+      't1',
+      new Date('2025-08-01'),
+      new Date('2025-08-31'),
+    );
+    expect(events[0]?.local).toBe('Rua Exemplo, 123 - Centro - Rio Verde/GO');
   });
 
   it('é idempotente — a segunda chamada para o mesmo Irmão não cria nada novo', async () => {
