@@ -237,6 +237,33 @@ export async function createMemberAction(
     }
   }
 
+  // Objetivo do Acervo VL6 (docs/architecture/11-acervo-vl6.md §11.5): toda
+  // vez que a data de iniciação de um Irmão é registrada, nasce uma
+  // entrada correspondente no Acervo. Orquestrado aqui na Server Action
+  // (não dentro de `RegisterMemberUseCase`) de propósito: é um efeito
+  // colateral não crítico — se achar/criar o Evento ou o ArchiveItem falhar
+  // por qualquer motivo, o cadastro do Irmão (o caminho crítico) precisa
+  // continuar valendo mesmo assim, mesmo padrão defensivo já usado abaixo
+  // pro upload de foto e pra criação de acesso (`partialFailures`).
+  let initiationArchiveError: string | null = null;
+  if (member.dataIniciacao) {
+    try {
+      await container.useCases.createInitiationArchiveItem.execute(session.authContext, {
+        memberId: member.id,
+        nomeCompleto: member.nomeCompleto,
+        dataIniciacao: member.dataIniciacao,
+      });
+    } catch (error) {
+      logger.error('Falha ao criar item de iniciação no Acervo VL6', {
+        route: 'createMemberAction',
+        memberId: member.id,
+        ...errorToLogContext(error),
+      });
+      Sentry.captureException(error, { tags: { route: 'createMemberAction:acervoIniciacao' } });
+      initiationArchiveError = 'o registro da iniciação no Acervo VL6 não pôde ser criado';
+    }
+  }
+
   const wantsAccess = formData.get('criarAcesso') === 'on';
   let temporaryPassword: string | null = null;
   let accessError: string | null = null;
@@ -269,6 +296,7 @@ export async function createMemberAction(
   const partialFailures = [
     accessError && `o acesso não pôde ser criado: ${accessError}`,
     fotoError,
+    initiationArchiveError,
   ].filter((message): message is string => Boolean(message));
 
   if (partialFailures.length > 0) {
@@ -483,6 +511,32 @@ export async function updateMemberIdentityAction(
   );
   if (!result.ok) {
     return { error: result.error.message };
+  }
+
+  // Mesma automação do Acervo VL6 disparada em `createMemberAction` — a
+  // data de iniciação também pode ser preenchida/corrigida aqui, na edição
+  // administrativa (docs/architecture/11-acervo-vl6.md §11.5). Idempotente
+  // (`CreateInitiationArchiveItemUseCase` checa `origemIniciacaoMemberId`
+  // antes de criar), então chamar de novo numa edição que não mudou
+  // `dataIniciacao` é inofensivo. Mesmo tratamento defensivo — nunca falha
+  // a edição do Irmão por causa deste efeito colateral.
+  if (result.value.dataIniciacao) {
+    try {
+      await container.useCases.createInitiationArchiveItem.execute(session.authContext, {
+        memberId: result.value.id,
+        nomeCompleto: result.value.nomeCompleto,
+        dataIniciacao: result.value.dataIniciacao,
+      });
+    } catch (error) {
+      logger.error('Falha ao criar item de iniciação no Acervo VL6', {
+        route: 'updateMemberIdentityAction',
+        memberId: result.value.id,
+        ...errorToLogContext(error),
+      });
+      Sentry.captureException(error, {
+        tags: { route: 'updateMemberIdentityAction:acervoIniciacao' },
+      });
+    }
   }
 
   revalidatePath('/admin/pessoas/irmaos');

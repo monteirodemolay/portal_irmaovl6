@@ -1,4 +1,5 @@
 import { createServerContainer } from '@vl6/infra';
+import { Button } from '@vl6/ui';
 import { requirePagePermission } from '@/lib/auth/require-permission';
 import {
   loadFileMigrationCandidatesAction,
@@ -29,12 +30,17 @@ export default async function MigracaoPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="font-display text-2xl font-semibold">Migração do Acervo</h1>
-        <p className="text-muted max-w-lg text-sm">
-          Traga registros já cadastrados na Galeria, em Arquivos e na Biblioteca para o modelo novo
-          do Acervo, um de cada vez. O registro original nunca é apagado nem alterado.
-        </p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="font-display text-2xl font-semibold">Migração do Acervo</h1>
+          <p className="text-muted max-w-lg text-sm">
+            Traga registros já cadastrados na Galeria, em Arquivos e na Biblioteca para o modelo
+            novo do Acervo, um de cada vez. O registro original nunca é apagado nem alterado.
+          </p>
+        </div>
+        <Button asChild variant="outline" className="shrink-0">
+          <a href="/admin/acervo/iniciacao-migracao">Backfill de iniciações</a>
+        </Button>
       </div>
       <MigrationManager
         galleryCandidates={galleryCandidates}
