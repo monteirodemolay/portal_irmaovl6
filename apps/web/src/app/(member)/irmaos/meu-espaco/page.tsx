@@ -10,6 +10,7 @@ import { ContatosTab } from '@/modules/central/components/meu-espaco/contatos-ta
 import { EmpresaTab } from '@/modules/central/components/meu-espaco/empresa-tab';
 import { GeralTab } from '@/modules/central/components/meu-espaco/geral-tab';
 import { PessoalTab } from '@/modules/central/components/meu-espaco/pessoal-tab';
+import { loadOwnerFamilyNetworkDTO } from '@/modules/family-legacy/lib/load-owner-family-network-dto';
 import { PrivacidadeTab } from '@/modules/central/components/meu-espaco/privacidade-tab';
 import { ProfissionalTab } from '@/modules/central/components/meu-espaco/profissional-tab';
 import { RedesTab } from '@/modules/central/components/meu-espaco/redes-tab';
@@ -90,6 +91,8 @@ export default async function MeuEspacoPage({
     );
   }
 
+  const familyNetwork = await loadOwnerFamilyNetworkDTO(container, session.authContext, member.id);
+
   const [centralProfile, publicationSettings] = await Promise.all([
     container.repositories.memberCentralProfile.findByMemberId(
       session.authContext.tenantId,
@@ -148,7 +151,7 @@ export default async function MeuEspacoPage({
           <GeralTab member={member} profile={centralProfile} myCommittees={myCommittees} />
         </TabsContent>
         <TabsContent value="pessoal" className="pt-6">
-          <PessoalTab member={member} profile={centralProfile} />
+          <PessoalTab member={member} profile={centralProfile} familyNetwork={familyNetwork} />
         </TabsContent>
         <TabsContent value="profissional" className="pt-6">
           <ProfissionalTab
