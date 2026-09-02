@@ -3,6 +3,7 @@ import type { AuthContext } from '../../../shared/auth-context';
 import {
   InMemoryArchiveMediaRepository,
   InMemoryBoardTermRepository,
+  InMemoryCommitteeRepository,
   InMemoryMediaAssetRepository,
   InMemoryMemberCentralProfileRepository,
   InMemoryMemberPositionHistoryRepository,
@@ -107,6 +108,7 @@ function buildUseCase() {
   const publicationSettingsRepository = new InMemoryPublicationSettingsRepository();
   const memberPositionHistoryRepository = new InMemoryMemberPositionHistoryRepository();
   const boardTermRepository = new InMemoryBoardTermRepository();
+  const committeeRepository = new InMemoryCommitteeRepository();
   const archiveMediaRepository = new InMemoryArchiveMediaRepository();
   const mediaAssetRepository = new InMemoryMediaAssetRepository();
   const useCase = new GetPublicMemberProfileUseCase({
@@ -115,6 +117,7 @@ function buildUseCase() {
     publicationSettingsRepository,
     memberPositionHistoryRepository,
     boardTermRepository,
+    committeeRepository,
     archiveMediaRepository,
     mediaAssetRepository,
   });
@@ -124,6 +127,7 @@ function buildUseCase() {
     publicationSettingsRepository,
     memberPositionHistoryRepository,
     boardTermRepository,
+    committeeRepository,
     archiveMediaRepository,
     mediaAssetRepository,
   };
@@ -199,6 +203,59 @@ describe('GetPublicMemberProfileUseCase', () => {
     expect(result.value?.trajetoria?.cargos[0]).toMatchObject({
       cargo: 'secretario',
       gestaoNome: 'Gestão 2024/2025',
+    });
+  });
+
+  it('traz comissões na trajetória institucional, com o período herdado da gestão', async () => {
+    const {
+      useCase,
+      memberRepository,
+      publicationSettingsRepository,
+      boardTermRepository,
+      committeeRepository,
+    } = buildUseCase();
+    await memberRepository.create(buildMember());
+    await publicationSettingsRepository.create(buildSettings());
+    await boardTermRepository.create({
+      id: 'gestao-1',
+      tenantId: 't1',
+      nome: 'Gestão 2024/2025',
+      periodoInicio: new Date('2024-06-01'),
+      periodoFim: new Date('2025-06-01'),
+      createdAt: new Date('2026-01-01'),
+      updatedAt: new Date('2026-01-01'),
+      createdBy: 'user-1',
+      updatedBy: 'user-1',
+      deletedAt: null,
+      status: 'active',
+      ativo: true,
+    });
+    await committeeRepository.create({
+      id: 'comissao-1',
+      tenantId: 't1',
+      gestaoId: 'gestao-1',
+      nome: 'Comissão de Beneficência',
+      descricao: null,
+      membrosIds: ['member-1'],
+      createdAt: new Date('2026-01-01'),
+      updatedAt: new Date('2026-01-01'),
+      createdBy: 'user-1',
+      updatedBy: 'user-1',
+      deletedAt: null,
+      status: 'active',
+      ativo: true,
+    });
+
+    const result = await useCase.execute(ctx, 'member-1');
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value?.trajetoria?.comissoes).toHaveLength(1);
+    expect(result.value?.trajetoria?.comissoes[0]).toMatchObject({
+      nome: 'Comissão de Beneficência',
+      gestaoNome: 'Gestão 2024/2025',
+      dataInicio: new Date('2024-06-01'),
+      dataFim: new Date('2025-06-01'),
     });
   });
 

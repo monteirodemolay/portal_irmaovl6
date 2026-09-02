@@ -11,7 +11,11 @@ import type { IPublicationSettingsRepository } from '../repositories/publication
 import type { IMemberRepository } from '../../membership/repositories/member.repository';
 import type { IMemberPositionHistoryRepository } from '../../membership/repositories/member-position-history.repository';
 import type { IBoardTermRepository } from '../../governance/repositories/board-term.repository';
-import { getMemberJourneyCargos } from '../../governance/lib/get-member-journey';
+import type { ICommitteeRepository } from '../../governance/repositories/committee.repository';
+import {
+  getMemberJourneyCargos,
+  getMemberJourneyCommittees,
+} from '../../governance/lib/get-member-journey';
 import type { IArchiveMediaRepository } from '../../archive/repositories/archive-media.repository';
 import type { IMediaAssetRepository } from '../../archive/repositories/media-asset.repository';
 
@@ -21,6 +25,7 @@ export interface GetPublicMemberProfileDeps {
   publicationSettingsRepository: IPublicationSettingsRepository;
   memberPositionHistoryRepository: IMemberPositionHistoryRepository;
   boardTermRepository: IBoardTermRepository;
+  committeeRepository: ICommitteeRepository;
   archiveMediaRepository: IArchiveMediaRepository;
   mediaAssetRepository: IMediaAssetRepository;
 }
@@ -70,8 +75,13 @@ export class GetPublicMemberProfileUseCase {
     // Trajetória institucional — mesmo recorte do Acervo VL6 (registro da
     // Loja, não preferência pessoal), por isso não passa pelos blocos de
     // `PublicationSettings`: todo Irmão institucional tem sua trajetória
-    // exibida, publicado ou não.
-    const cargos = await getMemberJourneyCargos(this.deps, targetMemberId);
+    // exibida, publicado ou não. Cargos de Diretoria e comissões são dois
+    // registros distintos (`ICommitteeRepository` não deriva de
+    // `IMemberPositionHistoryRepository`), por isso duas chamadas.
+    const [cargos, comissoes] = await Promise.all([
+      getMemberJourneyCargos(this.deps, targetMemberId),
+      getMemberJourneyCommittees(this.deps, ctx.tenantId, targetMemberId),
+    ]);
 
     // Memória fotográfica — ponte Diretório → Acervo (Fase B). Ao contrário
     // da trajetória institucional, é claramente preferência do titular, por
@@ -114,6 +124,7 @@ export class GetPublicMemberProfileUseCase {
         dataElevacao: member.dataElevacao,
         dataExaltacao: member.dataExaltacao,
         cargos,
+        comissoes,
       },
       memoriaFotografica,
     });

@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 import { createServerContainer } from '@vl6/infra';
-import { getMemberJourneyCargos } from '@vl6/domain';
+import { getMemberJourneyCargos, getMemberJourneyCommittees } from '@vl6/domain';
 import { getBoardPositionLabel } from '@vl6/shared';
 import {
   Avatar,
@@ -57,14 +57,15 @@ export default async function ArchivePersonPage({
     dataExaltacao: member.dataExaltacao,
   };
 
-  const [cargos, publicationSettings, taggedMedia] = await Promise.all([
-    getMemberJourneyCargos(
-      {
-        memberPositionHistoryRepository: container.repositories.memberPositionHistory,
-        boardTermRepository: container.repositories.boardTerm,
-      },
-      memberId,
-    ),
+  const journeyDeps = {
+    memberPositionHistoryRepository: container.repositories.memberPositionHistory,
+    boardTermRepository: container.repositories.boardTerm,
+    committeeRepository: container.repositories.committee,
+  };
+
+  const [cargos, comissoes, publicationSettings, taggedMedia] = await Promise.all([
+    getMemberJourneyCargos(journeyDeps, memberId),
+    getMemberJourneyCommittees(journeyDeps, tenantId, memberId),
     container.repositories.publicationSettings.findByMemberId(tenantId, memberId),
     container.repositories.archiveMedia.findByPessoaIdentificada(tenantId, memberId),
   ]);
@@ -167,27 +168,56 @@ export default async function ArchivePersonPage({
           Trajetória institucional
         </h2>
 
-        {cargos.length === 0 ? (
+        {cargos.length === 0 && comissoes.length === 0 ? (
           <div className="mt-4">
             <EmptyState
               icon={<Users size={22} />}
               title="Nenhum cargo institucional registrado"
-              description="Este Irmão ainda não tem cargos de Diretoria registrados no histórico."
+              description="Este Irmão ainda não tem cargos de Diretoria ou comissões registrados no histórico."
             />
           </div>
         ) : (
-          <ol className="border-border mt-4 flex flex-col gap-3 border-l pl-5">
-            {cargos.map((entry, index) => (
-              <li key={index} className="relative">
-                <span className="bg-accent absolute -left-[23px] top-1.5 h-2 w-2 rounded-full" />
-                <p className="font-display font-semibold">{getBoardPositionLabel(entry.cargo)}</p>
-                <p className="text-muted text-xs">
-                  {entry.gestaoNome} · {formatDate(entry.dataInicio)}
-                  {entry.dataFim ? ` a ${formatDate(entry.dataFim)}` : ' — atual'}
+          <div className="mt-4 flex flex-col gap-5">
+            {cargos.length > 0 && (
+              <div>
+                <p className="text-muted text-xs font-semibold uppercase tracking-wider">Cargos</p>
+                <ol className="border-border mt-3 flex flex-col gap-3 border-l pl-5">
+                  {cargos.map((entry, index) => (
+                    <li key={index} className="relative">
+                      <span className="bg-accent absolute -left-[23px] top-1.5 h-2 w-2 rounded-full" />
+                      <p className="font-display font-semibold">
+                        {getBoardPositionLabel(entry.cargo)}
+                      </p>
+                      <p className="text-muted text-xs">
+                        {entry.gestaoNome} · {formatDate(entry.dataInicio)}
+                        {entry.dataFim ? ` a ${formatDate(entry.dataFim)}` : ' — atual'}
+                      </p>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            )}
+
+            {comissoes.length > 0 && (
+              <div>
+                <p className="text-muted text-xs font-semibold uppercase tracking-wider">
+                  Comissões
                 </p>
-              </li>
-            ))}
-          </ol>
+                <ol className="border-border mt-3 flex flex-col gap-3 border-l pl-5">
+                  {comissoes.map((entry, index) => (
+                    <li key={index} className="relative">
+                      <span className="bg-accent absolute -left-[23px] top-1.5 h-2 w-2 rounded-full" />
+                      <p className="font-display font-semibold">{entry.nome}</p>
+                      <p className="text-muted text-xs">
+                        {entry.gestaoNome} · {formatDate(entry.dataInicio)}
+                        {entry.dataFim ? ` a ${formatDate(entry.dataFim)}` : ' — atual'}
+                      </p>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            )}
+          </div>
         )}
       </section>
 

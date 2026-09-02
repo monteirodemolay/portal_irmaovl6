@@ -149,7 +149,8 @@ export function PublicMemberProfileView({
             (profile.trajetoria.dataIniciacao ||
               profile.trajetoria.dataElevacao ||
               profile.trajetoria.dataExaltacao ||
-              profile.trajetoria.cargos.length > 0) && (
+              profile.trajetoria.cargos.length > 0 ||
+              profile.trajetoria.comissoes.length > 0) && (
               <Section title="Caminho na Loja" icon={Milestone}>
                 <div className="flex flex-col gap-3">
                   {(profile.trajetoria.dataIniciacao ||
@@ -184,6 +185,20 @@ export function PublicMemberProfileView({
                           <p className="text-sm font-semibold">
                             {getBoardPositionLabel(entry.cargo)}
                           </p>
+                          <p className="text-muted text-xs">
+                            {entry.gestaoNome} · {formatDate(entry.dataInicio)}
+                            {entry.dataFim ? ` a ${formatDate(entry.dataFim)}` : ' — atual'}
+                          </p>
+                        </li>
+                      ))}
+                    </ol>
+                  )}
+                  {profile.trajetoria.comissoes.length > 0 && (
+                    <ol className="border-border flex flex-col gap-2.5 border-l pl-4">
+                      {profile.trajetoria.comissoes.map((entry, index) => (
+                        <li key={index} className="relative">
+                          <span className="bg-accent absolute -left-[19px] top-1.5 h-1.5 w-1.5 rounded-full" />
+                          <p className="text-sm font-semibold">{entry.nome}</p>
                           <p className="text-muted text-xs">
                             {entry.gestaoNome} · {formatDate(entry.dataInicio)}
                             {entry.dataFim ? ` a ${formatDate(entry.dataFim)}` : ' — atual'}

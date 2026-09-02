@@ -615,6 +615,7 @@ export function createServerContainer() {
       publicationSettingsRepository: repositories.publicationSettings,
       memberPositionHistoryRepository: repositories.memberPositionHistory,
       boardTermRepository: repositories.boardTerm,
+      committeeRepository: repositories.committee,
       archiveMediaRepository: repositories.archiveMedia,
       mediaAssetRepository: repositories.mediaAsset,
     }),
