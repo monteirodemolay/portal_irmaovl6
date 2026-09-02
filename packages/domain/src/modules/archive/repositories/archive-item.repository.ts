@@ -7,6 +7,14 @@ export interface IArchiveItemRepository {
   findByTenant(tenantId: string, page: PageRequest): Promise<PageResult<ArchiveItem>>;
   /** Todos os itens vinculados a um Evento (não excluídos) — usado pelo Acervo do Evento. */
   findByEventId(eventId: string): Promise<ArchiveItem[]>;
+  /**
+   * Item de iniciação já existente pra este Irmão (marcador
+   * `origemIniciacaoMemberId`), independente de estar excluído ou não —
+   * usado como checagem de idempotência por `CreateInitiationArchiveItemUseCase`,
+   * nunca deve deixar criar um segundo item de iniciação pro mesmo Irmão
+   * mesmo que o primeiro tenha ido pra lixeira.
+   */
+  findByOrigemIniciacaoMemberId(tenantId: string, memberId: string): Promise<ArchiveItem | null>;
   /** Lixeira administrativa (Fase 3) — itens do tenant com `deletedAt` preenchido. */
   findDeletedByTenant(tenantId: string, page: PageRequest): Promise<PageResult<ArchiveItem>>;
   /**

@@ -57,6 +57,22 @@ export interface ArchiveItem extends BaseEntity {
    */
   origemLibraryItemId?: string | null;
   /**
+   * `Member.id` de origem quando este item nasceu automaticamente do
+   * registro da data de iniciação de um Irmão
+   * (`CreateInitiationArchiveItemUseCase`, chamado tanto no cadastro/edição
+   * do Irmão quanto retroativamente por `SeedInitiationArchiveItemsUseCase`)
+   * — não é uma migração de outro módulo do Acervo, mas cumpre o mesmo
+   * papel duplo de `origemGalleryAlbumId`/`origemFileAssetId`/
+   * `origemLibraryItemId`: marcador de idempotência (nunca cria um segundo
+   * item de iniciação para o mesmo Irmão —
+   * `IArchiveItemRepository.findByOrigemIniciacaoMemberId`) e rastro de
+   * proveniência. O `Member` de origem nunca é alterado por esta criação
+   * (Regra de Preservação). Campo aditivo opcional para não exigir
+   * alteração em todo construtor de `ArchiveItem` já existente, mesmo
+   * padrão de `origemGalleryAlbumId`.
+   */
+  origemIniciacaoMemberId?: string | null;
+  /**
    * Data/hora futura para publicação automática — Fase B "Publicação
    * avançada" (`ScheduleArchiveItemPublicationUseCase`,
    * `PublishScheduledArchiveItemsUseCase`). `null` (padrão) para todo item
