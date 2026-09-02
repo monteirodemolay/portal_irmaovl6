@@ -3,11 +3,25 @@
 import { useMemo, useState } from 'react';
 import type { Event, PersonalEvent, PersonalNote } from '@vl6/domain';
 import {
+  SESSION_ACCESS_KINDS,
+  SESSION_ACCESS_LABELS,
+  SESSION_NATURE_LABELS,
+  SESSION_NATURES_BY_TYPE,
+  SESSION_TYPE_LABELS,
+  SESSION_TYPES,
+  SESSION_WORK_DEGREE_LABELS,
+  SESSION_WORK_DEGREES,
+  type SessionAccessKind,
+  type SessionType,
+  type SessionWorkDegree,
+} from '@vl6/shared';
+import {
   AlertTriangle,
   Clock,
   EmptyState,
   MapPin,
   Plus,
+  Select,
   Tabs,
   TabsContent,
   TabsList,
@@ -79,6 +93,8 @@ export function MyAgendaView({
   const agenda = useAgendaOptional();
   const [view, setView] = useState('lista');
   const [sourceFilter, setSourceFilter] = useState<CalendarSource | 'all'>('vl6');
+  const [sessionFilter, setSessionFilter] =
+    useState<SessionClassificationFilter>(EMPTY_SESSION_FILTER);
   const [selectedDay, setSelectedDay] = useState<Date>(() => new Date());
   const [selectedItem, setSelectedItem] = useState<CalendarItem | null>(null);
   const [drawerState, setDrawerState] = useState<{
@@ -95,8 +111,10 @@ export function MyAgendaView({
 
   const filteredItems = useMemo(
     () =>
-      sourceFilter === 'all' ? allItems : allItems.filter((item) => item.source === sourceFilter),
-    [allItems, sourceFilter],
+      allItems
+        .filter((item) => sourceFilter === 'all' || item.source === sourceFilter)
+        .filter((item) => matchesSessionFilter(item, sessionFilter)),
+    [allItems, sourceFilter, sessionFilter],
   );
 
   const now = new Date();
@@ -160,6 +178,10 @@ export function MyAgendaView({
           </button>
         ))}
       </div>
+
+      {sourceFilter !== 'personal' && sourceFilter !== 'google' && (
+        <SessionClassificationFilters value={sessionFilter} onChange={setSessionFilter} />
+      )}
 
       <Tabs value={view} onValueChange={setView}>
         <TabsContent value="hoje">
@@ -249,6 +271,127 @@ export function MyAgendaView({
         personalNotes={personalNotes}
         overlapping={overlapping}
       />
+    </div>
+  );
+}
+
+/** `'all'` = sem filtro naquele campo — nunca aplicado a itens fora de `source: 'vl6'` ou sem classificação (não-Sessão, Sessão legada não migrada). */
+interface SessionClassificationFilter {
+  sessionType: SessionType | 'all';
+  sessionNature: string | 'all';
+  degreeWork: SessionWorkDegree | 'all';
+  access: SessionAccessKind | 'all';
+}
+
+const EMPTY_SESSION_FILTER: SessionClassificationFilter = {
+  sessionType: 'all',
+  sessionNature: 'all',
+  degreeWork: 'all',
+  access: 'all',
+};
+
+function matchesSessionFilter(item: CalendarItem, filter: SessionClassificationFilter): boolean {
+  if (
+    filter.sessionType === 'all' &&
+    filter.sessionNature === 'all' &&
+    filter.degreeWork === 'all' &&
+    filter.access === 'all'
+  ) {
+    return true;
+  }
+  if (!item.session) return item.source !== 'vl6';
+  return (
+    (filter.sessionType === 'all' || item.session.sessionType === filter.sessionType) &&
+    (filter.sessionNature === 'all' || item.session.sessionNature === filter.sessionNature) &&
+    (filter.degreeWork === 'all' || item.session.degreeWork === filter.degreeWork) &&
+    (filter.access === 'all' || item.session.access === filter.access)
+  );
+}
+
+function SessionClassificationFilters({
+  value,
+  onChange,
+}: {
+  value: SessionClassificationFilter;
+  onChange: (value: SessionClassificationFilter) => void;
+}) {
+  const natureOptions =
+    value.sessionType === 'all' ? [] : SESSION_NATURES_BY_TYPE[value.sessionType];
+
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <span className="text-muted text-xs font-semibold">Sessões:</span>
+      <Select
+        value={value.sessionType}
+        onChange={(e) =>
+          onChange({
+            ...value,
+            sessionType: e.target.value as SessionType | 'all',
+            sessionNature: 'all',
+          })
+        }
+        className="h-8 w-auto text-xs"
+      >
+        <option value="all">Todo Tipo</option>
+        {SESSION_TYPES.map((type) => (
+          <option key={type} value={type}>
+            {SESSION_TYPE_LABELS[type]}
+          </option>
+        ))}
+      </Select>
+      <Select
+        value={value.sessionNature}
+        onChange={(e) => onChange({ ...value, sessionNature: e.target.value })}
+        disabled={value.sessionType === 'all'}
+        className="h-8 w-auto text-xs"
+      >
+        <option value="all">Toda Natureza</option>
+        {natureOptions.map((nature) => (
+          <option key={nature} value={nature}>
+            {SESSION_NATURE_LABELS[nature] ?? nature}
+          </option>
+        ))}
+      </Select>
+      <Select
+        value={value.degreeWork}
+        onChange={(e) =>
+          onChange({ ...value, degreeWork: e.target.value as SessionWorkDegree | 'all' })
+        }
+        className="h-8 w-auto text-xs"
+      >
+        <option value="all">Todo Grau</option>
+        {SESSION_WORK_DEGREES.map((degree) => (
+          <option key={degree} value={degree}>
+            {SESSION_WORK_DEGREE_LABELS[degree]}
+          </option>
+        ))}
+      </Select>
+      <Select
+        value={value.access}
+        onChange={(e) =>
+          onChange({ ...value, access: e.target.value as SessionAccessKind | 'all' })
+        }
+        className="h-8 w-auto text-xs"
+      >
+        <option value="all">Todo Acesso</option>
+        {SESSION_ACCESS_KINDS.map((access) => (
+          <option key={access} value={access}>
+            {SESSION_ACCESS_LABELS[access]}
+          </option>
+        ))}
+      </Select>
+      {(value.sessionType !== 'all' ||
+        value.sessionNature !== 'all' ||
+        value.degreeWork !== 'all' ||
+        value.access !== 'all') && (
+        <button
+          type="button"
+          onClick={() => onChange(EMPTY_SESSION_FILTER)}
+          className="text-accent text-xs font-semibold hover:underline"
+        >
+          Limpar
+        </button>
+      )}
     </div>
   );
 }

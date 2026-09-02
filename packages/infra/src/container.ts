@@ -99,6 +99,8 @@ import {
   CreateCommitteeUseCase,
   CreateEventUseCase,
   SeedSessionClassificationUseCase,
+  ListSessionsPendingReviewUseCase,
+  ReclassifySessionUseCase,
   UpdateEventUseCase,
   CreatePersonalEventUseCase,
   UpdatePersonalEventUseCase,
@@ -924,6 +926,13 @@ export function createServerContainer() {
       idGenerator,
     }),
     seedSessionClassification: new SeedSessionClassificationUseCase({
+      eventRepository: repositories.event,
+      clock,
+    }),
+    listSessionsPendingReview: new ListSessionsPendingReviewUseCase({
+      eventRepository: repositories.event,
+    }),
+    reclassifySession: new ReclassifySessionUseCase({
       eventRepository: repositories.event,
       clock,
     }),
