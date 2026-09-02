@@ -11,7 +11,7 @@ import type { MasonicQuote } from '../lib/masonic-quotes';
  */
 export function DailyQuoteCard({ quote }: { quote: MasonicQuote }) {
   return (
-    <div className="bg-surface border-border flex items-start gap-2 rounded-xl border p-3 shadow-lg">
+    <div className="bg-surface border-border flex items-start gap-2 rounded-xl border p-3 shadow-md">
       <Quote size={14} strokeWidth={1.75} className="text-accent mt-0.5 shrink-0" />
       <p className="text-foreground line-clamp-3 min-w-0 text-xs italic sm:text-sm">
         &ldquo;{quote.text}&rdquo;{' '}

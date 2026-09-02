@@ -110,7 +110,7 @@ export function TabsTrigger({
       tabIndex={active ? 0 : -1}
       onClick={() => ctx.setValue(value)}
       className={cn(
-        'shrink-0 whitespace-nowrap border-b-2 px-3 py-3 text-sm font-medium transition-colors',
+        'focus-visible:ring-accent shrink-0 whitespace-nowrap rounded-t border-b-2 px-3 py-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
         active
           ? 'border-primary text-primary'
           : 'text-muted hover:text-foreground border-transparent',

@@ -164,7 +164,7 @@ export default async function AcervoPage({
             <label htmlFor="archive-search" className="sr-only">
               Pesquisar no Acervo VL6
             </label>
-            <div className="flex max-w-2xl items-center gap-3 rounded-[14px] border border-white/15 bg-white px-4 py-1.5 shadow-lg">
+            <div className="flex max-w-2xl items-center gap-3 rounded-lg border border-white/15 bg-white px-4 py-1.5 shadow-md">
               <Search className="text-primary/65 shrink-0" size={21} />
               <input
                 id="archive-search"
