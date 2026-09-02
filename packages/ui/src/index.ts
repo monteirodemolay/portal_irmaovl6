@@ -33,6 +33,7 @@ export * from './components/constellation-graph';
 // ícones realmente usados por algum consumidor.
 export {
   WifiOff,
+  RotateCcw,
   ArrowLeft,
   ArrowUpRight,
   Move,

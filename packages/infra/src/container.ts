@@ -39,6 +39,8 @@ import {
   GetArchiveCollectionBySlugUseCase,
   CreateArchiveRelationUseCase,
   ListArchiveRelationsUseCase,
+  GetConstellationRootsUseCase,
+  ExpandConstellationNodeUseCase,
   ListRelationsForNodeUseCase,
   SoftDeleteArchiveRelationUseCase,
   CreateArchiveExhibitionUseCase,
@@ -1245,6 +1247,25 @@ export function createServerContainer() {
     softDeleteArchiveRelation: new SoftDeleteArchiveRelationUseCase({
       archiveRelationRepository: repositories.archiveRelation,
       clock,
+    }),
+    // Constelação da Memória explorável (pacote de implantação do
+    // Administrador) — camada de leitura que nunca depende só de
+    // `archiveRelation`.
+    getConstellationRoots: new GetConstellationRootsUseCase({
+      archiveItemRepository: repositories.archiveItem,
+      memberRepository: repositories.member,
+      eventRepository: repositories.event,
+      boardTermRepository: repositories.boardTerm,
+      archiveCollectionRepository: repositories.archiveCollection,
+    }),
+    expandConstellationNode: new ExpandConstellationNodeUseCase({
+      archiveItemRepository: repositories.archiveItem,
+      archiveMediaRepository: repositories.archiveMedia,
+      archiveRelationRepository: repositories.archiveRelation,
+      archiveCollectionRepository: repositories.archiveCollection,
+      memberRepository: repositories.member,
+      eventRepository: repositories.event,
+      boardTermRepository: repositories.boardTerm,
     }),
     createArchiveExhibition: new CreateArchiveExhibitionUseCase({
       archiveExhibitionRepository: repositories.archiveExhibition,
