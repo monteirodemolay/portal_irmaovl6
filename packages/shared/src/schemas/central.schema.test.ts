@@ -71,4 +71,20 @@ describe('memberCentralProfileSchema', () => {
     });
     expect(ok.success).toBe(true);
   });
+
+  it('aceita uma apresentação bem mais longa que o antigo limite de 500 caracteres (até 4000)', () => {
+    const textoLongo = 'a'.repeat(3200);
+    const result = memberCentralProfileSchema.safeParse({
+      ...baseInput(),
+      apresentacao: textoLongo,
+    });
+    expect(result.success).toBe(true);
+
+    const textoExcedente = 'a'.repeat(4001);
+    const excedido = memberCentralProfileSchema.safeParse({
+      ...baseInput(),
+      apresentacao: textoExcedente,
+    });
+    expect(excedido.success).toBe(false);
+  });
 });

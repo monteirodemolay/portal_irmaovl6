@@ -39,7 +39,8 @@ export function GeralTab({
             <Textarea
               id="apresentacao"
               name="apresentacao"
-              maxLength={500}
+              rows={8}
+              maxLength={4000}
               defaultValue={profile?.apresentacao ?? ''}
             />
           </FormField>

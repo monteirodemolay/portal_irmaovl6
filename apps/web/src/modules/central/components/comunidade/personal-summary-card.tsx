@@ -41,7 +41,12 @@ export function PersonalSummaryCard({
               >
                 {profilePublished ? 'Perfil publicado' : 'Perfil não publicado'}
               </span>
-              <span className="text-muted text-[11px]">{completion}% completo</span>
+              <span
+                className="text-muted text-[11px]"
+                title="Estimativa de preenchimento do perfil pessoal — não é obrigatório completar."
+              >
+                {completion}% completo*
+              </span>
             </div>
           </div>
         </div>

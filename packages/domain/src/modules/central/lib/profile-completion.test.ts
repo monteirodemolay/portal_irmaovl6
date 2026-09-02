@@ -85,11 +85,9 @@ describe('calculateProfileCompletion', () => {
     expect(calculateProfileCompletion(buildMember(), null)).toBe(0);
   });
 
-  it('devolve 100 quando todas as categorias estão preenchidas', () => {
+  it('devolve 100 quando todas as categorias fundamentais estão preenchidas', () => {
     const member = buildMember({
       fotoUrl: 'https://example.com/foto.jpg',
-      profissao: 'Engenheiro',
-      empresa: 'ACME',
       telefone: '11999999999',
     });
     const profile = buildProfile({
@@ -108,30 +106,42 @@ describe('calculateProfileCompletion', () => {
     expect(calculateProfileCompletion(member, profile)).toBe(100);
   });
 
-  it('soma só o peso das categorias preenchidas (foto 10 + contatos 15)', () => {
-    const member = buildMember({ fotoUrl: 'https://example.com/foto.jpg', whatsapp: '11999999999' });
+  it('Irmão aposentado, sem negócio, com foto + apresentação + contato + uma rede social chega a 95% — perto o bastante de 100% sem precisar de dado profissional', () => {
+    // Caso central pedido pelo Administrador: profissao/empresa/negocios
+    // ficam null (não se aplicam a um aposentado) e mesmo assim o
+    // resultado fica bem próximo do topo. Só falta o complemento opcional
+    // de competências/serviços (peso 5) pra fechar os 100%.
+    const member = buildMember({
+      fotoUrl: 'https://example.com/foto.jpg',
+      telefone: '11999999999',
+      profissao: null,
+      empresa: null,
+    });
+    const profile = buildProfile({
+      apresentacao: 'Aposentado, dedico meu tempo à Loja e à família.',
+      externalLinks: {
+        whatsapp: null,
+        instagram: '@irmao',
+        facebook: null,
+        linkedin: null,
+        lattes: null,
+        site: null,
+      },
+    });
 
-    expect(calculateProfileCompletion(member, null)).toBe(25);
+    expect(calculateProfileCompletion(member, profile)).toBe(95);
   });
 
-  it('não lança erro em documento legado sem competencias/servicos/negocios (campos novos ausentes no Firestore)', () => {
-    // Firestore é schemaless — um MemberCentralProfile gravado antes da
-    // adição de `competencias`/`servicos` não tem essas chaves no documento
-    // (undefined, não []). Simula isso com cast, sem passar pelo builder.
-    const legacyProfile = {
-      ...buildProfile(),
-    } as MemberCentralProfile;
-    delete (legacyProfile as { competencias?: string[] }).competencias;
-    delete (legacyProfile as { servicos?: string[] }).servicos;
-
-    expect(() => calculateProfileCompletion(buildMember(), legacyProfile)).not.toThrow();
-  });
-
-  it('conta "Empresa" preenchida por negócios OU por Member.empresa', () => {
-    const memberComEmpresa = buildMember({ empresa: 'ACME' });
-    expect(calculateProfileCompletion(memberComEmpresa, null)).toBe(10);
-
-    const profileComNegocio = buildProfile({
+  it('dados de trabalho/profissão/negócio não contam mais pro cálculo — só o peso das categorias de perfil pessoal preenchidas', () => {
+    const member = buildMember({
+      fotoUrl: 'https://example.com/foto.jpg',
+      whatsapp: '11999999999',
+      profissao: 'Engenheiro',
+      empresa: 'ACME',
+    });
+    const profile = buildProfile({
+      areaAtuacao: 'engenharia',
+      resumoProfissional: 'Muitos anos de experiência',
       negocios: [
         {
           id: 'n1',
@@ -157,6 +167,22 @@ describe('calculateProfileCompletion', () => {
         },
       ],
     });
-    expect(calculateProfileCompletion(buildMember(), profileComNegocio)).toBe(10);
+
+    // Só foto (20) + contato (25) contam — nenhum campo de trabalho/negócio
+    // participa do cálculo.
+    expect(calculateProfileCompletion(member, profile)).toBe(45);
+  });
+
+  it('não lança erro em documento legado sem competencias/servicos/negocios (campos novos ausentes no Firestore)', () => {
+    // Firestore é schemaless — um MemberCentralProfile gravado antes da
+    // adição de `competencias`/`servicos` não tem essas chaves no documento
+    // (undefined, não []). Simula isso com cast, sem passar pelo builder.
+    const legacyProfile = {
+      ...buildProfile(),
+    } as MemberCentralProfile;
+    delete (legacyProfile as { competencias?: string[] }).competencias;
+    delete (legacyProfile as { servicos?: string[] }).servicos;
+
+    expect(() => calculateProfileCompletion(buildMember(), legacyProfile)).not.toThrow();
   });
 });

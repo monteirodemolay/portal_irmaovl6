@@ -58,7 +58,10 @@ export const centralExternalLinksSchema = z.object({
 
 export const memberCentralProfileSchema = z
   .object({
-    apresentacao: z.string().max(500).nullable(),
+    // 4000: apresentação pessoal do Irmão — texto de alguns parágrafos, não
+    // uma frase curta (limite anterior de 500 era pequeno demais, pedido
+    // explícito do Administrador da Loja).
+    apresentacao: z.string().max(4000).nullable(),
     interesses: z.string().max(500).nullable(),
     cidadeExibicao: z.string().max(150).nullable(),
     areaAtuacao: z.enum(AREA_ATUACAO_KEYS).nullable(),

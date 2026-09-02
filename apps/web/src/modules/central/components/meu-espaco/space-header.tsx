@@ -44,8 +44,13 @@ export function SpaceHeader({
         <div className="border-border-soft flex items-center gap-4 border-t pt-4 sm:border-l sm:border-t-0 sm:pl-6 sm:pt-0">
           <CompletionRing percent={completion} />
           <div className="max-w-[12rem]">
-            <p className="text-sm font-semibold">Seu espaço está {completion}% completo</p>
-            <p className="text-muted text-xs">Preencha apenas o que desejar.</p>
+            <p className="text-sm font-semibold">
+              Seu espaço está {completion}% completo<span className="text-muted">*</span>
+            </p>
+            <p className="text-muted text-xs">
+              Preencha apenas o que desejar. * Estimativa de preenchimento do perfil pessoal — não é
+              obrigatório completar.
+            </p>
           </div>
         </div>
 
