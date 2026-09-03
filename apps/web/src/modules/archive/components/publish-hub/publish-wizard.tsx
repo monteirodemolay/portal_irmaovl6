@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import type { ArchiveItem, ArchiveMediaCounts, BoardTerm, Event } from '@vl6/domain';
+import type { ArchiveEventPublishState, ArchiveItem, BoardTerm, Event } from '@vl6/domain';
 import { ClassifyStep } from './classify-step';
 import { EventStep } from './event-step';
 import { OrganizeStep } from './organize-step';
@@ -15,7 +15,7 @@ export interface PublishWizardProps {
   events: Event[];
   drafts: ArchiveItem[];
   boardTerms: BoardTerm[];
-  mediaCountsByEventId: Record<string, ArchiveMediaCounts>;
+  eventPublishState: Record<string, ArchiveEventPublishState>;
 }
 
 /**
@@ -39,7 +39,7 @@ export function PublishWizard({
   events,
   drafts,
   boardTerms,
-  mediaCountsByEventId,
+  eventPublishState,
 }: PublishWizardProps) {
   const [step, setStep] = useState<PublishWizardStep>('evento');
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
@@ -81,7 +81,7 @@ export function PublishWizard({
           events={events}
           drafts={drafts}
           boardTerms={boardTerms}
-          mediaCountsByEventId={mediaCountsByEventId}
+          eventPublishState={eventPublishState}
           onEventSelected={handleEventSelected}
           onResumeDraft={handleResumeDraft}
         />

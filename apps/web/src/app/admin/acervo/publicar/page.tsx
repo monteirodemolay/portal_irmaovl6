@@ -12,7 +12,7 @@ export default async function PublicarPage() {
   const session = await requirePagePermission('archiveItem:create');
   const container = createServerContainer();
 
-  const [eventsPage, draftsPage, boardTerms, mediaCountsByEventId] = await Promise.all([
+  const [eventsPage, draftsPage, boardTerms, eventPublishState] = await Promise.all([
     // Limite alto o bastante pra nunca cortar Sessões retroativas de
     // Gestões antigas — a paginação real (`hasMore`) não é usada aqui, o
     // wizard precisa do histórico completo pra selecionar qualquer Sessão.
@@ -37,7 +37,7 @@ export default async function PublicarPage() {
         events={eventsPage.items}
         drafts={drafts}
         boardTerms={boardTerms}
-        mediaCountsByEventId={mediaCountsByEventId}
+        eventPublishState={eventPublishState}
       />
     </div>
   );

@@ -98,8 +98,37 @@ describe('GetArchiveMediaCountsByEventUseCase', () => {
 
     const result = await useCase.execute(ctx);
 
-    expect(result['event-1']).toEqual({ foto: 2, video: 1, audio: 0, documento: 0 });
-    expect(result['event-2']).toEqual({ foto: 0, video: 0, audio: 0, documento: 1 });
+    expect(result['event-1']).toEqual({
+      archiveItemId: 'item-1',
+      counts: { foto: 2, video: 1, audio: 0, documento: 0 },
+    });
+    expect(result['event-2']).toEqual({
+      archiveItemId: 'item-2',
+      counts: { foto: 0, video: 0, audio: 0, documento: 1 },
+    });
+  });
+
+  it('escolhe o ArchiveItem com mais mídia quando um Evento tem mais de um item', async () => {
+    const { useCase, archiveItemRepository, archiveMediaRepository } = buildUseCase();
+    await archiveItemRepository.create(
+      buildItem({ id: 'item-1', eventId: 'event-1', createdAt: new Date('2026-01-01') }),
+    );
+    await archiveItemRepository.create(
+      buildItem({ id: 'item-2', eventId: 'event-1', createdAt: new Date('2026-02-01') }),
+    );
+    await archiveMediaRepository.create(
+      buildMedia({ id: 'media-1', archiveItemId: 'item-1', mediaType: 'foto' }),
+    );
+    await archiveMediaRepository.create(
+      buildMedia({ id: 'media-2', archiveItemId: 'item-2', mediaType: 'foto' }),
+    );
+    await archiveMediaRepository.create(
+      buildMedia({ id: 'media-3', archiveItemId: 'item-2', mediaType: 'video' }),
+    );
+
+    const result = await useCase.execute(ctx);
+
+    expect(result['event-1']?.archiveItemId).toBe('item-2');
   });
 
   it('ignora mídia sem ArchiveItem correspondente', async () => {
