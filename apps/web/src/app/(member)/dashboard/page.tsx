@@ -91,7 +91,7 @@ export default async function DashboardPage() {
               {current.tenant.nome}
             </p>
             <h1 className="font-display text-3xl font-semibold leading-[1.1] sm:text-4xl">
-              {greeting}. Seja bem-vindo, {firstName}
+              {greeting}. Bem Vindo Ir∴ {firstName}
             </h1>
             <p className="max-w-xl text-sm text-white/70">
               Acompanhe a agenda, os avisos e o acervo da {current.tenant.nome} — tudo em um só
