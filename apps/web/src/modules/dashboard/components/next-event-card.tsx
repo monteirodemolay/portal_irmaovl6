@@ -2,10 +2,18 @@ import type { Event } from '@vl6/domain';
 import { Badge, Button, CalendarDays, Card, Clock, MapPin } from '@vl6/ui';
 import { buildGoogleCalendarUrl, EVENT_KIND_LABELS } from '@vl6/shared';
 import { AgendaOpenButton } from '@/modules/agenda/components/agenda-open-button';
+import { AttendanceButtons } from '@/modules/agenda/components/attendance-buttons';
 import { formatEventDate } from '../lib/format-event-date';
 import { AddToCalendarMenu } from './add-to-calendar-menu';
 
-export function NextEventCard({ event }: { event: Event }) {
+export function NextEventCard({
+  event,
+  attendanceStatus = null,
+}: {
+  event: Event;
+  /** `null` quando o Evento não exige confirmação — o botão só aparece quando `exigeConfirmacaoPresenca` for `true`. */
+  attendanceStatus?: 'confirmado' | 'recusado' | 'pendente' | null;
+}) {
   const { day, month, weekday, weekdayShort, timeRange } = formatEventDate(
     event.dataInicio,
     event.dataFim,
@@ -56,6 +64,12 @@ export function NextEventCard({ event }: { event: Event }) {
 
       {event.descricao && (
         <p className="relative line-clamp-2 text-sm text-white/60">{event.descricao}</p>
+      )}
+
+      {event.exigeConfirmacaoPresenca && (
+        <div className="relative">
+          <AttendanceButtons eventId={event.id} currentStatus={attendanceStatus} onDark />
+        </div>
       )}
 
       <div className="relative mt-auto flex flex-wrap items-center gap-3 pt-1">

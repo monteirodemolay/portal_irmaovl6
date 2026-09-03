@@ -69,6 +69,17 @@ export default async function DashboardPage() {
   const featuredEvent = events[0] ?? null;
   const agendaEvents = events.slice(1, 4);
 
+  // Confirmação de presença em destaque no Início — antes só dava pra
+  // confirmar entrando na Agenda por conta própria (docs/architecture,
+  // achado da auditoria de navegação/retenção).
+  const featuredEventAttendance =
+    featuredEvent?.exigeConfirmacaoPresenca && member
+      ? await container.repositories.eventAttendance.findByEventAndMember(
+          featuredEvent.id,
+          member.id,
+        )
+      : null;
+
   const showDirectoryLink = hasPermission(authContext, 'memberDirectory:read');
   const displayName = resolveMemberDisplayName(member, session.user.email);
   const firstName = displayName.split(' ')[0];
@@ -113,7 +124,10 @@ export default async function DashboardPage() {
         <DashboardSectionHeading icon={Sparkles} title="Próximos da Loja" />
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           {featuredEvent ? (
-            <NextEventCard event={featuredEvent} />
+            <NextEventCard
+              event={featuredEvent}
+              attendanceStatus={featuredEventAttendance?.statusPresenca ?? null}
+            />
           ) : (
             <Card className="shadow-none">
               <EmptyState
@@ -141,6 +155,7 @@ export default async function DashboardPage() {
         biblioteca={biblioteca}
         albuns={albuns}
         favoritos={favoritos}
+        showConstellation={hasPermission(authContext, 'archiveRelation:read')}
       />
     </div>
   );
