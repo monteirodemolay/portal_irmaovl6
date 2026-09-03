@@ -4,9 +4,11 @@ import {
   Building2,
   CalendarDays,
   Compass,
+  Globe,
   Image as GalleryIcon,
   LayoutDashboard,
   Megaphone,
+  Newspaper,
   Send,
   Settings,
   Users,
@@ -20,7 +22,11 @@ const ICON_STROKE = 1.75;
 
 // Sem itens que só duplicam o site institucional (Nossa Loja, Diretoria
 // pública, Contato) — esse é o papel do www.vl6.com.br, não do Portal
-// (docs/architecture/07 §7.0). O admin foi reorganizado em 5 áreas
+// (docs/architecture/07 §7.0). Notícias e Links Úteis são conteúdo do
+// PRÓPRIO Portal (`Notícia`/`Link` cadastrados pelo admin, não uma cópia do
+// site institucional) que tinha rota funcionando mas nenhuma entrada de
+// menu — corrigido aqui, sem mexer nas páginas em si. O admin foi
+// reorganizado em 5 áreas
 // consolidadas com abas internas (ver `area-tabs.ts`): Notícias e Usuários,
 // que antes ficavam de fora da sidebar pra não virarem mais um item solto,
 // agora estão visíveis como abas dentro de "Conteúdo" e "Pessoas & Loja"
@@ -45,6 +51,10 @@ const PORTAL_ITEMS: Array<{
   // a aba "Diretório" checa `memberDirectory:read` sozinha e degrada com
   // uma mensagem explicativa em vez de esconder o item inteiro do menu.
   { href: '/irmaos', label: 'Irmãos', icon: Users },
+  // Sem `permission`: notícia publicada é conteúdo público (papel Visitante
+  // já tem `news:read`, ver a própria página).
+  { href: '/noticias', label: 'Notícias', icon: Newspaper },
+  { href: '/links-uteis', label: 'Links Úteis', icon: Globe, permission: 'link:read' },
   // Rota pessoal, distinta de `/admin/configuracoes` (administração do
   // tenant) — Fase 4 da Central de Avisos (docs/architecture). Sem
   // `permission`: é autoatendimento de qualquer autenticado, mesmo padrão

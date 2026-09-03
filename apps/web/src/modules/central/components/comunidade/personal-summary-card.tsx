@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import type { Member } from '@vl6/domain';
 import { calculateProfileCompletion, type MemberCentralProfile } from '@vl6/domain';
-import { Card, CardContent, Eye, Settings } from '@vl6/ui';
+import { Card, CardContent, Eye, Heart, Settings } from '@vl6/ui';
 import { MemberAvatar } from '@/components/membership/member-avatar';
 import { MemberDegreeBadge } from '@/components/membership/member-degree-badge';
 
@@ -58,6 +58,13 @@ export function PersonalSummaryCard({
           >
             <Eye size={14} strokeWidth={1.75} />
             Ver meu perfil
+          </Link>
+          <Link
+            href="/irmaos/meu-espaco?tab=pessoal"
+            className="border-border hover:border-primary hover:text-primary flex items-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-medium transition-colors"
+          >
+            <Heart size={14} strokeWidth={1.75} />
+            Família e Legado
           </Link>
           <Link
             href="/irmaos/meu-espaco"
