@@ -11,6 +11,7 @@ import {
 import { PublishToggleButton } from '@/components/admin/publish-toggle-button';
 import { DeleteButton } from '@/components/admin/delete-button';
 import { ConcludedTabNav } from '@/components/admin/concluded-tab-nav';
+import { ImportNewsPanel } from '@/modules/content/components/import-news-panel';
 
 const BASE_PATH = '/admin/conteudo/noticias';
 const PAGE_SIZE = 20;
@@ -121,6 +122,8 @@ export default async function NewsPage({
           <Link href={`${BASE_PATH}/nova`}>Nova Notícia</Link>
         </Button>
       </div>
+
+      <ImportNewsPanel />
 
       <ConcludedTabNav basePath={BASE_PATH} aba="principal" />
 

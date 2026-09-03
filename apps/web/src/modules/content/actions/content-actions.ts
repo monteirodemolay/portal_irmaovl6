@@ -17,6 +17,7 @@ import type { AnnouncementPriority } from '@vl6/domain';
 import { createServerContainer } from '@vl6/infra';
 import { requireSession } from '@/lib/auth/require-session';
 import { notifyAllActiveUsers } from '@/modules/notification/lib/notify-all-active-users';
+import { scrapeNewsMetadata } from '@/lib/content/scrape-news-metadata';
 
 const ANNOUNCEMENT_PRIORITY_TO_NOTIFICATION_PRIORITY: Record<
   AnnouncementPriority,
@@ -38,6 +39,101 @@ function slugify(value: string): string {
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/(^-|-$)/g, '');
+}
+
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+export interface ImportNewsResult {
+  ok: boolean;
+  url: string;
+  titulo: string | null;
+  newsId: string | null;
+  error: string | null;
+}
+
+/**
+ * Importa uma not\u00edcia do site institucional (vl6.com.br) como rascunho,
+ * a partir do link de uma not\u00edcia j\u00e1 publicada l\u00e1 \u2014 busca a p\u00e1gina no
+ * servidor e l\u00ea os metadados Open Graph que o Wix j\u00e1 emite pra
+ * pr\u00e9-visualiza\u00e7\u00e3o em redes sociais (t\u00edtulo, resumo, imagem de capa), sem
+ * precisar de um scraper espec\u00edfico pra estrutura do site. Sempre entra
+ * como rascunho (`CreateNewsUseCase`): o Administrador revisa e completa o
+ * conte\u00fado antes de publicar \u2014 o resumo importado nunca \u00e9 o texto
+ * completo da not\u00edcia original, s\u00f3 o que o Open Graph exp\u00f5e.
+ */
+export async function importNewsFromUrlAction(url: string): Promise<ImportNewsResult> {
+  const session = await requireSession();
+
+  const scraped = await scrapeNewsMetadata(url);
+  if (!scraped.ok) {
+    return { ok: false, url, titulo: null, newsId: null, error: scraped.error };
+  }
+
+  const container = createServerContainer();
+  const baseSlug = slugify(scraped.title) || 'noticia';
+  const sourceNote = `<p><em>Importado de <a href="${escapeHtml(url)}">${escapeHtml(url)}</a>. Revise e complete o conte\u00fado antes de publicar.</em></p>`;
+  const conteudoHtml = scraped.description
+    ? `<p>${escapeHtml(scraped.description)}</p>\n${sourceNote}`
+    : sourceNote;
+
+  let imagemCapaUrl: string | null = null;
+  if (scraped.image) {
+    try {
+      imagemCapaUrl = new URL(scraped.image).toString();
+    } catch {
+      imagemCapaUrl = null;
+    }
+  }
+
+  // At\u00e9 2 tentativas: slug puro e, se j\u00e1 existir (outra not\u00edcia com t\u00edtulo
+  // igual/parecido), com um sufixo curto \u2014 mesmo esp\u00edrito do sufixo
+  // num\u00e9rico que outros cadastros do Portal usam pra evitar colis\u00e3o sem
+  // precisar perguntar nada ao Administrador nesse fluxo em lote.
+  for (const slug of [baseSlug, `${baseSlug}-${Date.now().toString(36).slice(-4)}`]) {
+    let input: NewsFormValues;
+    try {
+      input = newsSchema.parse({
+        titulo: scraped.title,
+        subtitulo: null,
+        slug,
+        imagemCapaUrl,
+        conteudoHtml,
+        categoria: 'Not\u00edcias VL6',
+      });
+    } catch {
+      return {
+        ok: false,
+        url,
+        titulo: scraped.title,
+        newsId: null,
+        error: 'N\u00e3o foi poss\u00edvel montar a not\u00edcia a partir dessa p\u00e1gina.',
+      };
+    }
+
+    const result = await container.useCases.createNews.execute(session.authContext, input);
+    if (result.ok) {
+      revalidatePath('/admin/conteudo/noticias');
+      return { ok: true, url, titulo: result.value.titulo, newsId: result.value.id, error: null };
+    }
+    if (result.error.code !== 'conflict') {
+      return { ok: false, url, titulo: scraped.title, newsId: null, error: result.error.message };
+    }
+  }
+
+  return {
+    ok: false,
+    url,
+    titulo: scraped.title,
+    newsId: null,
+    error: 'J\u00e1 existe uma not\u00edcia com esse t\u00edtulo importada.',
+  };
 }
 
 export async function createNewsAction(
