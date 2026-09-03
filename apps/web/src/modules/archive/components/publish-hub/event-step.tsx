@@ -1,7 +1,13 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import type { ArchiveItem, ArchiveMediaCounts, BoardTerm, Event } from '@vl6/domain';
+import type {
+  ArchiveEventPublishState,
+  ArchiveItem,
+  ArchiveMediaCounts,
+  BoardTerm,
+  Event,
+} from '@vl6/domain';
 import { BRAZIL_TIME_ZONE, EVENT_KIND_LABELS } from '@vl6/shared';
 import { Badge, Button, EmptyState, Input, Select } from '@vl6/ui';
 import { normalizeSearchText } from '../../lib/archive-search-match';
@@ -43,7 +49,7 @@ export interface EventStepProps {
   events: Event[];
   drafts: ArchiveItem[];
   boardTerms: BoardTerm[];
-  mediaCountsByEventId: Record<string, ArchiveMediaCounts>;
+  eventPublishState: Record<string, ArchiveEventPublishState>;
   onEventSelected: (event: Event, existingArchiveItemId: string | null) => void;
   onResumeDraft: (draft: ArchiveItem) => void;
 }
@@ -53,14 +59,18 @@ export interface EventStepProps {
  * Gestão), cadastro retroativo inline e retomada de rascunhos já
  * existentes (docs/architecture/11-acervo-vl6.md §11.5). Grade de cartões
  * (não lista) — cada cartão mostra o que já foi enviado pra aquele Evento
- * (`mediaCountsByEventId`, `GetArchiveMediaCountsByEventUseCase`), pra
- * ficar claro de longe quais Eventos ainda estão vazios.
+ * (`eventPublishState`, `GetArchiveMediaCountsByEventUseCase`), pra ficar
+ * claro de longe quais Eventos ainda estão vazios. Um cartão com conteúdo
+ * já enviado abre direto pra edição do `ArchiveItem` existente (`archiveItemId`
+ * de `eventPublishState`) em vez de sempre criar um item novo — antes disso
+ * o clique num Evento já publicado criava um segundo item duplicado pro
+ * mesmo Evento, obrigando a corrigir depois pela aba Duplicidade.
  */
 export function EventStep({
   events,
   drafts,
   boardTerms,
-  mediaCountsByEventId,
+  eventPublishState,
   onEventSelected,
   onResumeDraft,
 }: EventStepProps) {
@@ -203,13 +213,14 @@ export function EventStep({
         <div className="grid max-h-[520px] grid-cols-1 gap-3 overflow-y-auto pr-1 sm:grid-cols-2">
           {filteredEvents.map((event) => {
             const [day, month] = calendarBadgeParts(event.dataInicio);
-            const counts = mediaCountsByEventId[event.id] ?? EMPTY_COUNTS;
+            const publishState = eventPublishState[event.id];
+            const counts = publishState?.counts ?? EMPTY_COUNTS;
             const hasMedia = counts.foto + counts.video + counts.audio + counts.documento > 0;
             return (
               <button
                 key={event.id}
                 type="button"
-                onClick={() => onEventSelected(event, null)}
+                onClick={() => onEventSelected(event, publishState?.archiveItemId ?? null)}
                 className="border-border hover:border-primary/40 flex flex-col rounded-lg border p-4 text-left transition-colors"
               >
                 <div className="flex items-center gap-2.5">
@@ -218,6 +229,7 @@ export function EventStep({
                     <small className="text-[8px] font-semibold">{month}</small>
                   </span>
                   <Badge variant="accent">{EVENT_KIND_LABELS[event.tipo]}</Badge>
+                  {hasMedia && <Badge variant="success">Já publicado — editar</Badge>}
                   {effectiveBoardTermId.get(event.id) && (
                     <span className="text-muted ml-auto text-[11px]">
                       {boardTermNameById.get(effectiveBoardTermId.get(event.id)!) ?? 'Gestão'}
