@@ -12,6 +12,7 @@ import { AvisosCard } from '@/modules/dashboard/components/avisos-card';
 import { CentralAvisosCard } from '@/modules/dashboard/components/central-avisos-card';
 import { DailyQuoteCard } from '@/modules/dashboard/components/daily-quote-card';
 import { DashboardSectionHeading } from '@/modules/dashboard/components/dashboard-section-heading';
+import { EventsCarousel } from '@/modules/dashboard/components/events-carousel';
 import { NextEventCard } from '@/modules/dashboard/components/next-event-card';
 import { OnThisDayCard } from '@/modules/dashboard/components/on-this-day-card';
 import { timeOfDayGreeting } from '@/modules/dashboard/lib/greeting';
@@ -68,6 +69,13 @@ export default async function DashboardPage() {
 
   const featuredEvent = events[0] ?? null;
   const agendaEvents = events.slice(1, 4);
+  // Vitrine própria pra Eventos que não são Sessão (curso, palestra,
+  // confraternização, cívico etc.) — antes só apareciam misturados na
+  // lista "Agenda", sem nenhum destaque próprio como as Sessões da Loja
+  // já têm em "Próximos da Loja" (achado do Administrador).
+  const nonSessionEvents = events.filter(
+    (event) => event.tipo !== 'sessao' && event.id !== featuredEvent?.id,
+  );
 
   // Confirmação de presença em destaque no Início — antes só dava pra
   // confirmar entrando na Agenda por conta própria (docs/architecture,
@@ -147,6 +155,8 @@ export default async function DashboardPage() {
           </div>
         </div>
       </section>
+
+      <EventsCarousel events={nonSessionEvents} />
 
       <AgendaPanel events={agendaEvents} />
 
