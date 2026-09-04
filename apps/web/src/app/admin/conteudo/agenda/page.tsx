@@ -63,7 +63,15 @@ export default async function AgendaPage({
     });
 
     const columns: DataTableColumn<Event>[] = [
-      { key: 'titulo', header: 'Evento', cell: (event) => event.titulo },
+      {
+        key: 'titulo',
+        header: 'Evento',
+        cell: (event) => (
+          <Link href={`${BASE_PATH}/${event.id}`} className="font-medium hover:underline">
+            {event.titulo}
+          </Link>
+        ),
+      },
       { key: 'inicio', header: 'Início', cell: (event) => formatDateTime(event.dataInicio) },
       {
         key: 'status',
@@ -74,12 +82,26 @@ export default async function AgendaPage({
         key: 'acoes',
         header: '',
         cell: (event) => (
-          <DeleteButton
-            action={hardDeleteEventAction.bind(null, event.id)}
-            confirmMessage={`Excluir "${event.titulo}" definitivamente? Não tem como desfazer.`}
-            label="Excluir permanentemente"
-            variant="destructive"
-          />
+          <div className="flex items-center justify-end gap-2">
+            {/* Um evento passado nunca deixa de poder ser editado (corrige
+                dados, anexa arquivos etc.) — só um excluído (soft delete,
+                `deletedAt` preenchido) não tem mais edição, só restauração
+                pela Lixeira ou exclusão definitiva. Antes desta aba não
+                tinha nenhuma ação de edição: um evento que já passou da
+                data ficava inacessível pra correção, forçando cadastrar um
+                evento novo em duplicidade. */}
+            {!event.deletedAt && (
+              <Button asChild variant="outline" size="sm">
+                <Link href={`${BASE_PATH}/${event.id}/editar`}>Editar</Link>
+              </Button>
+            )}
+            <DeleteButton
+              action={hardDeleteEventAction.bind(null, event.id)}
+              confirmMessage={`Excluir "${event.titulo}" definitivamente? Não tem como desfazer.`}
+              label="Excluir permanentemente"
+              variant="destructive"
+            />
+          </div>
         ),
       },
     ];
