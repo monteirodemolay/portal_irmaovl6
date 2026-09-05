@@ -60,13 +60,26 @@ export function CreateEventInlineForm({ onCreated }: { onCreated: (event: Event)
             <FormField label="Título" htmlFor="titulo">
               <Input id="titulo" name="titulo" required maxLength={200} />
             </FormField>
-            <FormField label="Tipo" htmlFor="tipo">
-              <Select id="tipo" name="tipo" defaultValue="sessao" required>
-                {EVENT_KINDS.map((kind) => (
-                  <option key={kind} value={kind}>
-                    {EVENT_KIND_LABELS[kind]}
-                  </option>
-                ))}
+            <FormField
+              label="Tipo"
+              htmlFor="tipo"
+              description="Pra Sessão, cadastre pela Agenda (com a classificação completa) e depois volte aqui pra selecioná-la."
+            >
+              {/* Sem "Sessão" de propósito — `eventSchema` exige sessionType/
+                  sessionNature/degreeWork/access quando `tipo === 'sessao'`
+                  (docs/architecture, Classificação de Sessões), e este
+                  formulário rápido nunca coletou esses campos. Deixado
+                  disponível, toda submissão com Tipo "Sessão" falhava a
+                  validação — nenhum Evento chegava a ser criado, sem
+                  nenhuma pista clara do motivo pro Administrador. */}
+              <Select id="tipo" name="tipo" defaultValue="evento" required>
+                {EVENT_KINDS.filter((kind) => kind !== 'sessao' && kind !== 'aniversario').map(
+                  (kind) => (
+                    <option key={kind} value={kind}>
+                      {EVENT_KIND_LABELS[kind]}
+                    </option>
+                  ),
+                )}
               </Select>
             </FormField>
             <FormField label="Local" htmlFor="local">
