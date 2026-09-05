@@ -1,5 +1,5 @@
 import { hasPermission } from '@vl6/domain';
-import { CalendarDays, Card, EmptyState, Sparkles } from '@vl6/ui';
+import { CalendarDays, Card, EmptyState } from '@vl6/ui';
 import { createServerContainer } from '@vl6/infra';
 import { getUpcomingEventsForPortal } from '@/lib/agenda/get-upcoming-events';
 import { getCurrentSession } from '@/lib/auth/get-current-session';
@@ -128,9 +128,16 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      <section className="flex flex-col gap-3">
-        <DashboardSectionHeading icon={Sparkles} title="Próximos da Loja" />
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+      {/* Duas colunas do mesmo tamanho, lado a lado — Sessões da Loja
+          (Próxima sessão + Agenda) à esquerda, Eventos da Loja (banner +
+          avisos) à direita. Antes disso "Próximos da Loja" misturava a
+          Sessão em destaque com os avisos numa coluna estreita ao lado, e
+          Eventos (não-Sessão) ficavam numa vitrine separada mais abaixo —
+          pedido do Administrador pra não competirem visualmente e ficarem
+          sempre no mesmo lugar, com o mesmo peso visual. */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <section className="flex flex-col gap-3">
+          <DashboardSectionHeading icon={CalendarDays} title="Sessões da Loja" />
           {featuredEvent ? (
             <NextEventCard
               event={featuredEvent}
@@ -145,20 +152,19 @@ export default async function DashboardPage() {
               />
             </Card>
           )}
-          <div className="flex flex-col gap-4">
-            <CentralAvisosCard notifications={notificationsPage.items} />
-            {onThisDay && <OnThisDayCard entry={onThisDay} />}
-            {hasAnniversaries && (
-              <AnniversariesPanel entries={anniversaries} showDirectoryLink={showDirectoryLink} />
-            )}
-            <AvisosCard announcements={announcements} />
-          </div>
-        </div>
-      </section>
+          <AgendaPanel events={agendaEvents} />
+        </section>
 
-      <EventsCarousel events={nonSessionEvents} />
-
-      <AgendaPanel events={agendaEvents} />
+        <section className="flex flex-col gap-4">
+          <EventsCarousel events={nonSessionEvents} />
+          <CentralAvisosCard notifications={notificationsPage.items} />
+          {onThisDay && <OnThisDayCard entry={onThisDay} />}
+          {hasAnniversaries && (
+            <AnniversariesPanel entries={anniversaries} showDirectoryLink={showDirectoryLink} />
+          )}
+          <AvisosCard announcements={announcements} />
+        </section>
+      </div>
 
       <AcervoPanel
         documentos={documentos}
