@@ -14,7 +14,15 @@ export function AgendaEventList() {
   const visibleEvents = showAll ? events : events.slice(0, INITIAL_VISIBLE_COUNT);
 
   return (
-    <div className="border-border flex flex-col overflow-hidden rounded-xl border bg-white">
+    // `shrink-0` é essencial aqui: como este card usa `overflow-hidden` (só
+    // pra manter os cantos arredondados), o flexbox trata sua altura mínima
+    // automática como 0 (spec: item com overflow não-visível não protege
+    // conteúdo do encolhimento) — sem isso, a coluna da esquerda do drawer
+    // (flex-col com `AgendaCalendar` logo abaixo) espremia esta lista até
+    // sobrar só 1 evento visível, cortado, mesmo com várias Sessões
+    // futuras cadastradas (achado do Administrador: "os outros eventos
+    // ficam escondidos").
+    <div className="border-border flex shrink-0 flex-col overflow-hidden rounded-xl border bg-white">
       <p className="text-muted px-4 pb-2.5 pt-4 text-[10px] font-bold uppercase tracking-wide">
         {onlySessions ? 'Próximas sessões' : 'Próximos eventos'}
       </p>
