@@ -30,6 +30,12 @@ export const eventSchema = z
     chegadaSugerida: z.string().max(200).nullable(),
     observacoes: z.string().max(1000).nullable(),
     arquivosRelacionados: z.array(z.string()).default([]),
+    /**
+     * Imagem de capa 1:1 (estilo Instagram) exibida na vitrine "Eventos da
+     * Loja" do Início — opcional, `null` mantém o fallback em gradiente com
+     * as informações do Evento (nunca perde informação por falta de capa).
+     */
+    capaUrl: z.string().url().nullable().default(null),
     // Fase 1 da Fundação do Acervo VL6 (docs/architecture/11-acervo-vl6.md
     // §11.5) — vínculo forte com Gestão e controle de acesso/linha do
     // tempo. Default seguro para eventos legados: `boardTermId` nulo (será

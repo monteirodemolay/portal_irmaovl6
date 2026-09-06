@@ -110,7 +110,7 @@ export function NotificationCenter({
           href="/avisos"
           className="text-accent hover:text-primary-dark flex items-center justify-center gap-1 py-2 text-sm font-medium"
         >
-          Abrir Central de Avisos <ChevronRight size={15} />
+          Abrir Central de Notificações <ChevronRight size={15} />
         </Link>
       </DialogContent>
     </Dialog>

@@ -27,6 +27,14 @@ export interface Event extends BaseEntity {
   /** IDs compostos do Acervo VL6 (`kind_sourceId`, ver `archive-item-id.ts`) — nunca duplica upload. */
   arquivosRelacionados: string[];
   /**
+   * Imagem de capa 1:1 (estilo Instagram), enviada pelo Administrador ao
+   * publicar o Evento — exibida como plano de fundo na vitrine "Eventos da
+   * Loja" do Início. Opcional (aditivo, mesmo padrão de
+   * `origemGalleryAlbumId`/`instagramUrl`) — `null`/ausente pra Eventos sem
+   * capa, que caem no fallback em gradiente com as informações em texto.
+   */
+  capaUrl?: string | null;
+  /**
    * Gestão vigente na data do evento — Fase 1 da Fundação do Acervo VL6
    * (docs/architecture/11-acervo-vl6.md §11.5). `null` quando ainda não
    * identificada (evento legado, ou data sem Gestão cadastrada);

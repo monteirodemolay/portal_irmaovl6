@@ -76,6 +76,7 @@ const input: EventFormValues = {
   access: null,
   isJointSession: false,
   participatingLodges: [],
+  capaUrl: null,
 };
 
 function buildUseCase() {

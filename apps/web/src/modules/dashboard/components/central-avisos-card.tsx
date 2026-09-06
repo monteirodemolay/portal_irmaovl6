@@ -17,7 +17,10 @@ const TYPE_ICON: Record<Notification['tipo'], React.ComponentType<{ size?: numbe
  * Complementa a Dashboard (não substitui `AvisosCard`) — mostra até 3
  * notificações não lidas mais recentes, avisos oficiais e automáticas
  * juntos, sem misturar a Agenda (docs/architecture). "Ver a Central" leva
- * pra `/avisos`, mesma rota do item de menu e do sino.
+ * pra `/avisos`, mesma rota do item de menu e do sino. Título alinhado ao
+ * que já aparece junto do sino no topo ("Central de Notificações") —
+ * antes divergia ("Central de Avisos"), confundindo os dois nomes pra
+ * quem lê as duas telas.
  */
 export function CentralAvisosCard({ notifications }: { notifications: Notification[] }) {
   const unread = notifications.filter((n) => !n.lida && !n.archivedAt).slice(0, 3);
@@ -28,7 +31,7 @@ export function CentralAvisosCard({ notifications }: { notifications: Notificati
     <Card className="flex flex-col gap-4 p-5 shadow-none">
       <DashboardSectionHeading
         icon={Bell}
-        title="Central de Avisos"
+        title="Central de Notificações"
         href="/avisos"
         hrefLabel="Ver a Central"
       />

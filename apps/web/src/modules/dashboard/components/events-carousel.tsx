@@ -19,9 +19,10 @@ const FADE_MS = 300;
  * Sessões da Loja pra não competir visualmente com elas. Troca de Evento
  * a cada 5 minutos em cross-fade — cadência baixa de propósito, pra não
  * piscar numa tela que a Loja pode deixar aberta num telão/monitor.
- * `Event` ainda não tem imagem de capa própria — o banner sempre mostra
- * só as informações do Evento sobre o gradiente; se um dia ganhar capa,
- * a foto entra como plano de fundo sem tirar nenhuma dessas informações.
+ * Quando o Evento tem `capaUrl` (upload 1:1 no formulário de Evento), ela
+ * entra como plano de fundo com um degradê escuro por cima pra manter o
+ * texto legível; sem capa, mantém o fallback em gradiente sólido — nunca
+ * perde nenhuma das informações do Evento.
  */
 export function EventsCarousel({ events }: { events: Event[] }) {
   const [index, setIndex] = useState(0);
@@ -83,16 +84,24 @@ function EventSquareBanner({
   visible: boolean;
 }) {
   const { weekday, timeRange } = formatEventDate(event.dataInicio, event.dataFim);
+  const capaUrl = event.capaUrl ?? null;
 
   return (
     <AgendaOpenButton
       eventId={event.id}
       className={cn(
-        'from-primary to-primary-dark focus-visible:ring-accent relative block aspect-square w-full overflow-hidden rounded-2xl bg-gradient-to-br text-left text-white shadow-sm outline-none transition-opacity focus-visible:ring-2',
+        'focus-visible:ring-accent relative block aspect-square w-full overflow-hidden rounded-2xl text-left text-white shadow-sm outline-none transition-opacity focus-visible:ring-2',
+        capaUrl ? 'bg-primary-dark' : 'from-primary to-primary-dark bg-gradient-to-br',
         visible ? 'opacity-100' : 'opacity-0',
       )}
       style={{ transitionDuration: `${FADE_MS}ms` }}
     >
+      {capaUrl && (
+        <img src={capaUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />
+      )}
+      {capaUrl && (
+        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-black/10" />
+      )}
       {total > 1 && (
         <div className="absolute inset-x-3 top-3 z-10 flex gap-1.5">
           {Array.from({ length: total }).map((_, i) => (
@@ -106,11 +115,13 @@ function EventSquareBanner({
           ))}
         </div>
       )}
-      <Sparkles
-        size={220}
-        strokeWidth={1}
-        className="text-accent/10 pointer-events-none absolute -bottom-12 -right-12"
-      />
+      {!capaUrl && (
+        <Sparkles
+          size={220}
+          strokeWidth={1}
+          className="text-accent/10 pointer-events-none absolute -bottom-12 -right-12"
+        />
+      )}
       <div className="relative flex h-full flex-col justify-end p-6">
         <Badge variant="accent" className="bg-accent text-primary-dark w-fit">
           {EVENT_KIND_LABELS[event.tipo]}

@@ -22,7 +22,7 @@ import {
   type SessionType,
   type SessionWorkDegree,
 } from '@vl6/shared';
-import { Button, Input, Select, Textarea } from '@vl6/ui';
+import { Button, Image as ImageIcon, Input, Select, Textarea } from '@vl6/ui';
 import { FormField } from '@/components/forms/form-field';
 import type { ResolvedArchiveItem } from '@/modules/archive/lib/resolve-archive-item';
 import { AgendaAttachmentPicker } from './agenda-attachment-picker';
@@ -311,6 +311,13 @@ export function EventForm({
       <FormField label="Descrição (opcional)" htmlFor="descricao">
         <Textarea id="descricao" name="descricao" rows={3} defaultValue={event?.descricao ?? ''} />
       </FormField>
+      <FormField
+        label="Imagem de capa (opcional)"
+        htmlFor="capaImagem"
+        description='Formato quadrado (1:1), estilo Instagram — aparece revezando em "Eventos da Loja" no Início. Sem capa, o Evento continua exibido com as informações em texto sobre um fundo em degradê.'
+      >
+        <EventCoverField capaUrl={event?.capaUrl} />
+      </FormField>
       <FormField label="Local" htmlFor="local">
         <Input id="local" name="local" required defaultValue={event?.local} />
       </FormField>
@@ -403,6 +410,64 @@ export function EventForm({
       {state.error && <p className="text-sm text-red-600">{state.error}</p>}
       <SubmitButton isEditing={Boolean(event)} />
     </form>
+  );
+}
+
+/**
+ * Mesmo padrão do `LogoUploader` de Negócios (`empresa-tab.tsx`) — o
+ * arquivo viaja dentro do próprio `<form>` do Evento (campo `capaImagem`),
+ * sem action/upload separado; `agenda-actions.ts` extrai e sobe pro Blob
+ * só no submit. "Remover imagem atual" só aparece quando já existe uma
+ * capa e nenhum arquivo novo foi selecionado.
+ */
+function EventCoverField({ capaUrl }: { capaUrl: string | null | undefined }) {
+  const [preview, setPreview] = useState<string | null>(null);
+  const [removed, setRemoved] = useState(false);
+  const shown = preview ?? (removed ? null : (capaUrl ?? null));
+
+  return (
+    <div className="flex items-center gap-3">
+      <label
+        htmlFor="capaImagem"
+        className="border-border bg-surface hover:border-primary group relative flex h-24 w-24 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-xl border-2 border-dashed transition-colors"
+        title="Enviar imagem de capa"
+      >
+        {shown ? (
+          <img src={shown} alt="Capa do evento" className="h-full w-full object-cover" />
+        ) : (
+          <ImageIcon size={22} className="text-muted" strokeWidth={1.5} />
+        )}
+        <span className="absolute inset-0 flex items-center justify-center bg-black/0 text-[10px] font-medium text-white opacity-0 transition-opacity group-hover:bg-black/50 group-hover:opacity-100">
+          Trocar
+        </span>
+        <input
+          id="capaImagem"
+          name="capaImagem"
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          className="hidden"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            setPreview(file ? URL.createObjectURL(file) : null);
+            if (file) setRemoved(false);
+          }}
+        />
+      </label>
+      {shown && (
+        <label className="flex w-fit items-center gap-1.5 text-xs text-red-600">
+          <input
+            type="checkbox"
+            name="removerCapa"
+            className="h-3.5 w-3.5"
+            onChange={(e) => {
+              setRemoved(e.target.checked);
+              if (e.target.checked) setPreview(null);
+            }}
+          />
+          Remover imagem atual
+        </label>
+      )}
+    </div>
   );
 }
 

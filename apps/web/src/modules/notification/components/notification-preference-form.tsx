@@ -31,7 +31,7 @@ export function NotificationPreferenceForm({
       <div className="border-border bg-background flex items-center gap-2 rounded-lg border p-3 text-sm">
         <input type="checkbox" checked disabled className="h-4 w-4" />
         <div>
-          <p className="font-medium">Central de Avisos (interno)</p>
+          <p className="font-medium">Central de Notificações (interno)</p>
           <p className="text-muted text-xs">
             Avisos oficiais, segurança e comunicações essenciais — sempre ativo.
           </p>

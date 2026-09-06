@@ -22,6 +22,7 @@ import {
 } from '@/modules/archive/lib/resolve-archive-item';
 import { parseArchiveItemId } from '@/modules/archive/lib/archive-item-id';
 import { notifyAllActiveUsers } from '@/modules/notification/lib/notify-all-active-users';
+import { uploadEventCover, validateEventCoverFile } from '@/lib/agenda/event-cover-upload';
 
 export interface AgendaActionState {
   error: string | null;
@@ -147,7 +148,42 @@ async function notifyEventCancelled(
   });
 }
 
-function parseEventForm(formData: FormData) {
+/**
+ * Extrai a capa do FormData e sobe pro Blob se um arquivo novo foi
+ * selecionado (`capaImagem`) — nunca impede o resto do salvamento em caso
+ * de sucesso, mas retorna erro cedo se a validação falhar. Sem arquivo
+ * novo: mantém a capa atual (`currentCapaUrl`), a menos que "Remover
+ * imagem atual" (`removerCapa`) tenha sido marcado.
+ */
+async function resolveEventCoverUrl(
+  formData: FormData,
+  tenantId: string,
+  currentCapaUrl: string | null,
+): Promise<{ capaUrl: string | null; error: string | null }> {
+  const file = formData.get('capaImagem');
+  if (file instanceof File && file.size > 0) {
+    const validationError = validateEventCoverFile(file);
+    if (validationError) return { capaUrl: currentCapaUrl, error: validationError };
+    try {
+      const capaUrl = await uploadEventCover(file, tenantId);
+      return { capaUrl, error: null };
+    } catch (error) {
+      logger.error('Falha ao enviar imagem de capa do evento para o storage', {
+        route: 'resolveEventCoverUrl',
+        ...errorToLogContext(error),
+      });
+      Sentry.captureException(error, { tags: { route: 'resolveEventCoverUrl' } });
+      return {
+        capaUrl: currentCapaUrl,
+        error: 'Não foi possível enviar a imagem de capa. Tente novamente em instantes.',
+      };
+    }
+  }
+  if (formData.get('removerCapa') === 'on') return { capaUrl: null, error: null };
+  return { capaUrl: currentCapaUrl, error: null };
+}
+
+function parseEventForm(formData: FormData, capaUrl: string | null) {
   const capacidadeMaxima = formData.get('capacidadeMaxima');
   const dataInicioRaw = formData.get('dataInicio');
   const dataFimRaw = formData.get('dataFim');
@@ -195,6 +231,7 @@ function parseEventForm(formData: FormData) {
     access: isSessao ? formData.get('access') || null : null,
     isJointSession,
     participatingLodges,
+    capaUrl,
   });
 }
 
@@ -204,9 +241,16 @@ export async function createEventAction(
 ): Promise<AgendaActionState> {
   const session = await requireSession();
 
+  const { capaUrl, error: coverError } = await resolveEventCoverUrl(
+    formData,
+    session.authContext.tenantId,
+    null,
+  );
+  if (coverError) return { error: coverError };
+
   let input;
   try {
-    input = parseEventForm(formData);
+    input = parseEventForm(formData, capaUrl);
   } catch {
     return { error: 'Dados inválidos. Verifique os campos obrigatórios e as datas.' };
   }
@@ -230,15 +274,23 @@ export async function updateEventAction(
 ): Promise<AgendaActionState> {
   const session = await requireSession();
 
+  const container = createServerContainer();
+  const before = await container.repositories.event.findById(eventId);
+
+  const { capaUrl, error: coverError } = await resolveEventCoverUrl(
+    formData,
+    session.authContext.tenantId,
+    before?.capaUrl ?? null,
+  );
+  if (coverError) return { error: coverError };
+
   let input;
   try {
-    input = parseEventForm(formData);
+    input = parseEventForm(formData, capaUrl);
   } catch {
     return { error: 'Dados inválidos. Verifique os campos obrigatórios e as datas.' };
   }
 
-  const container = createServerContainer();
-  const before = await container.repositories.event.findById(eventId);
   const result = await container.useCases.updateEvent.execute(session.authContext, eventId, input);
   if (!result.ok) return { error: result.error.message };
 

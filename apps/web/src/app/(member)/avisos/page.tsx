@@ -23,7 +23,7 @@ export default async function AvisosPage() {
         <span className="text-accent text-xs font-semibold uppercase tracking-wide">
           Comunicação institucional
         </span>
-        <h1 className="font-display text-2xl font-semibold">Central de Avisos</h1>
+        <h1 className="font-display text-2xl font-semibold">Central de Notificações</h1>
         <p className="text-muted max-w-xl text-sm">
           Avisos oficiais da Gestão e notificações automáticas do Portal, reunidos com clareza em um
           único ambiente.

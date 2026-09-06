@@ -74,7 +74,11 @@ export default async function DashboardPage() {
   // na coluna errada (bug relatado pelo Administrador).
   const upcomingSessions = events.filter((event) => event.tipo === 'sessao');
   const featuredEvent = upcomingSessions[0] ?? null;
-  const agendaEvents = upcomingSessions.slice(1, 4);
+  // Card "Próximas Sessões" mostra só 2 — o resto da Agenda fica atrás do
+  // botão "mais sessões", que abre o drawer lateral com a lista completa
+  // (pedido do Administrador: card menor, sem competir com o destaque
+  // acima nem virar uma segunda lista longa na tela inicial).
+  const agendaEvents = upcomingSessions.slice(1, 3);
   // Vitrine própria pra Eventos que não são Sessão (curso, palestra,
   // confraternização, cívico etc.) — antes só apareciam misturados na
   // lista "Agenda", sem nenhum destaque próprio como as Sessões da Loja
@@ -161,12 +165,16 @@ export default async function DashboardPage() {
 
         <section className="flex flex-col gap-4">
           <EventsCarousel events={nonSessionEvents} />
+          {/* Central de Notificações + Avisos logo abaixo da vitrine de
+              Eventos — antes ficavam intercaladas com "Esta semana na
+              Loja"/Aniversários, o que espalhava a área de "avisos" em dois
+              blocos separados na mesma coluna (achado da auditoria de UX). */}
           <CentralAvisosCard notifications={notificationsPage.items} />
+          <AvisosCard announcements={announcements} />
           {onThisDay && <OnThisDayCard entry={onThisDay} />}
           {hasAnniversaries && (
             <AnniversariesPanel entries={anniversaries} showDirectoryLink={showDirectoryLink} />
           )}
-          <AvisosCard announcements={announcements} />
         </section>
       </div>
 
