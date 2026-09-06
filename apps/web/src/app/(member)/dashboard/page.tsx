@@ -67,15 +67,19 @@ export default async function DashboardPage() {
     findOnThisDayArchiveItem(container, authContext, session.role),
   ]);
 
-  const featuredEvent = events[0] ?? null;
-  const agendaEvents = events.slice(1, 4);
+  // "Sessões da Loja" (cartão em destaque + Agenda) só considera Eventos
+  // tipo 'sessao' — antes pegava o próximo Evento de QUALQUER tipo
+  // (`events[0]`), então um Evento comum (curso, palestra etc.) marcado
+  // pra uma data mais próxima que a da Sessão aparecia vestido de Sessão
+  // na coluna errada (bug relatado pelo Administrador).
+  const upcomingSessions = events.filter((event) => event.tipo === 'sessao');
+  const featuredEvent = upcomingSessions[0] ?? null;
+  const agendaEvents = upcomingSessions.slice(1, 4);
   // Vitrine própria pra Eventos que não são Sessão (curso, palestra,
   // confraternização, cívico etc.) — antes só apareciam misturados na
   // lista "Agenda", sem nenhum destaque próprio como as Sessões da Loja
   // já têm em "Próximos da Loja" (achado do Administrador).
-  const nonSessionEvents = events.filter(
-    (event) => event.tipo !== 'sessao' && event.id !== featuredEvent?.id,
-  );
+  const nonSessionEvents = events.filter((event) => event.tipo !== 'sessao');
 
   // Confirmação de presença em destaque no Início — antes só dava pra
   // confirmar entrando na Agenda por conta própria (docs/architecture,
