@@ -58,7 +58,7 @@ export function AgendaCalendar() {
   while (cells.length % 7 !== 0) cells.push({ day: 0, date: null });
 
   return (
-    <div className="border-border rounded-xl border bg-white p-4">
+    <div className="border-border shrink-0 rounded-xl border bg-white p-4">
       <p className="text-muted mb-3.5 text-[10px] font-bold uppercase tracking-wide">Calendário</p>
 
       <div className="mb-3.5 grid grid-cols-[26px_1fr_26px] items-center">
