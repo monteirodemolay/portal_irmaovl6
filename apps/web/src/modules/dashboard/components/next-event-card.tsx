@@ -79,7 +79,9 @@ export function NextEventCard({
           size="sm"
           className="border-white/30 text-white hover:bg-white/10"
         >
-          <AgendaOpenButton eventId={event.id}>Ver detalhes</AgendaOpenButton>
+          <AgendaOpenButton eventId={event.id} onlySessions>
+            Ver detalhes
+          </AgendaOpenButton>
         </Button>
         <AddToCalendarMenu
           eventId={event.id}

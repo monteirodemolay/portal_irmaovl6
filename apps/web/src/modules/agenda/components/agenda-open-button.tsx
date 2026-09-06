@@ -5,6 +5,8 @@ import { useAgenda } from './agenda-provider';
 
 export interface AgendaOpenButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   eventId?: string;
+  /** Abre o drawer restrito só a Sessões (ver `AgendaOpenOptions`) — usado pelo botão "mais sessões" do Início. */
+  onlySessions?: boolean;
 }
 
 /**
@@ -16,7 +18,7 @@ export interface AgendaOpenButtonProps extends ButtonHTMLAttributes<HTMLButtonEl
  * (Radix `Slot`), que injeta `className`/`ref` no elemento filho único.
  */
 export const AgendaOpenButton = forwardRef<HTMLButtonElement, AgendaOpenButtonProps>(
-  function AgendaOpenButton({ eventId, onClick, ...props }, ref) {
+  function AgendaOpenButton({ eventId, onlySessions, onClick, ...props }, ref) {
     const { openAgenda } = useAgenda();
 
     return (
@@ -25,7 +27,7 @@ export const AgendaOpenButton = forwardRef<HTMLButtonElement, AgendaOpenButtonPr
         type="button"
         onClick={(event) => {
           onClick?.(event);
-          openAgenda(eventId);
+          openAgenda(eventId, { onlySessions });
         }}
         {...props}
       />

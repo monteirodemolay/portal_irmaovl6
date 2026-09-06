@@ -6,6 +6,7 @@ import * as Sentry from '@sentry/nextjs';
 import {
   BRAZIL_TIME_ZONE,
   errorToLogContext,
+  EVENT_KIND_LABELS,
   eventSchema,
   logger,
   parseBrazilDateTimeLocal,
@@ -107,9 +108,13 @@ async function notifyEventCreated(
   tenantId: string,
   event: Event,
 ): Promise<void> {
+  // Título sempre dizia "Nova Sessão" mesmo pra Eventos comuns (curso,
+  // palestra, confraternização etc.) — usa o rótulo do Tipo real, achado
+  // ao investigar por que um "Almoço Sertanejo" (Confraternização) chegou
+  // anunciado como Sessão na Central de Notificações.
   await notifyAllActiveUsers(container, tenantId, {
     tipo: 'event',
-    titulo: `Nova Sessão: ${event.titulo}`,
+    titulo: `Novo(a) ${EVENT_KIND_LABELS[event.tipo]}: ${event.titulo}`,
     mensagem: `${formatEventDateTime(event.dataInicio)} · ${event.local}`,
     link: '/agenda',
   });
@@ -127,7 +132,7 @@ async function notifyEventRescheduled(
 
   await notifyAllActiveUsers(container, tenantId, {
     tipo: 'event',
-    titulo: `Alteração na Sessão: ${after.titulo}`,
+    titulo: `${EVENT_KIND_LABELS[after.tipo]} alterada(o): ${after.titulo}`,
     mensagem: `Nova data/local: ${formatEventDateTime(after.dataInicio)} · ${after.local}`,
     link: '/agenda',
     priority: 'attention',
@@ -141,7 +146,7 @@ async function notifyEventCancelled(
 ): Promise<void> {
   await notifyAllActiveUsers(container, tenantId, {
     tipo: 'event',
-    titulo: `Sessão cancelada: ${event.titulo}`,
+    titulo: `${event.tipo === 'sessao' ? 'Sessão' : EVENT_KIND_LABELS[event.tipo]} cancelada(o): ${event.titulo}`,
     mensagem: `Estava marcada para ${formatEventDateTime(event.dataInicio)} · ${event.local}.`,
     link: '/agenda',
     priority: 'urgent',
