@@ -8,7 +8,7 @@ import { useAgenda } from './agenda-provider';
 const INITIAL_VISIBLE_COUNT = 6;
 
 export function AgendaEventList() {
-  const { events, selectedEventId, openAgenda } = useAgenda();
+  const { filteredEvents: events, selectedEventId, onlySessions, openAgenda } = useAgenda();
   const [showAll, setShowAll] = useState(false);
 
   const visibleEvents = showAll ? events : events.slice(0, INITIAL_VISIBLE_COUNT);
@@ -16,12 +16,14 @@ export function AgendaEventList() {
   return (
     <div className="border-border flex flex-col overflow-hidden rounded-xl border bg-white">
       <p className="text-muted px-4 pb-2.5 pt-4 text-[10px] font-bold uppercase tracking-wide">
-        Próximos eventos
+        {onlySessions ? 'Próximas sessões' : 'Próximos eventos'}
       </p>
 
       {events.length === 0 ? (
         <div className="px-4 pb-4">
-          <EmptyState title="Nenhum evento programado" />
+          <EmptyState
+            title={onlySessions ? 'Nenhuma sessão programada' : 'Nenhum evento programado'}
+          />
         </div>
       ) : (
         <ul className="flex flex-col px-2.5 pb-2.5">

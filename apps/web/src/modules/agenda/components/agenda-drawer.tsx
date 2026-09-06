@@ -16,7 +16,8 @@ import { AgendaEventList } from './agenda-event-list';
 import { useAgenda } from './agenda-provider';
 
 export function AgendaDrawer() {
-  const { isOpen, selectedEventId, events, canManageEvents, closeAgenda } = useAgenda();
+  const { isOpen, selectedEventId, events, canManageEvents, onlySessions, closeAgenda } =
+    useAgenda();
   const selectedEvent = events.find((event) => event.id === selectedEventId) ?? null;
 
   return (
@@ -25,10 +26,12 @@ export function AgendaDrawer() {
         <header className="border-border flex min-h-[88px] items-center justify-between gap-4 border-b bg-white py-4 pl-5 pr-14 sm:pl-7 sm:pr-16">
           <div className="min-w-0">
             <DrawerTitle className="font-display truncate text-xl sm:text-2xl">
-              Agenda da Loja
+              {onlySessions ? 'Sessões da Loja' : 'Agenda da Loja'}
             </DrawerTitle>
             <DrawerDescription className="mt-1 truncate text-xs">
-              Acompanhe os eventos e sessões da Loja
+              {onlySessions
+                ? 'Acompanhe as próximas sessões da Loja'
+                : 'Acompanhe os eventos e sessões da Loja'}
             </DrawerDescription>
           </div>
 

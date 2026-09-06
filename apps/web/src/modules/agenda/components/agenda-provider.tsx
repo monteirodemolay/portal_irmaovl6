@@ -4,12 +4,21 @@ import { createContext, useCallback, useContext, useMemo, useState, type ReactNo
 import type { Event } from '@vl6/domain';
 import { AgendaDrawer } from './agenda-drawer';
 
+export interface AgendaOpenOptions {
+  /** Restringe a lista/calendário do drawer só a Sessões — usado pelo botão "mais sessões" do Início, que não deve misturar Sessões com outros tipos de Evento. */
+  onlySessions?: boolean;
+}
+
 export interface AgendaContextValue {
   isOpen: boolean;
   selectedEventId: string | null;
   events: Event[];
+  /** `events` já restrito pelo filtro ativo (ver `AgendaOpenOptions.onlySessions`) — o que a lista/calendário do drawer devem renderizar. */
+  filteredEvents: Event[];
+  /** `true` quando o drawer foi aberto restrito só a Sessões — controla o cabeçalho e outros textos condicionais. */
+  onlySessions: boolean;
   canManageEvents: boolean;
-  openAgenda: (eventId?: string) => void;
+  openAgenda: (eventId?: string, options?: AgendaOpenOptions) => void;
   closeAgenda: () => void;
 }
 
@@ -33,11 +42,20 @@ export function AgendaProvider({
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedEventId, setSelectedEventId] = useState<string | null>(events[0]?.id ?? null);
+  const [onlySessions, setOnlySessions] = useState(false);
+
+  const filteredEvents = useMemo(
+    () => (onlySessions ? events.filter((event) => event.tipo === 'sessao') : events),
+    [events, onlySessions],
+  );
 
   const openAgenda = useCallback(
-    (eventId?: string) => {
-      // Sem id: sempre volta pra "visão geral" (o próximo evento em foco).
-      setSelectedEventId(eventId ?? events[0]?.id ?? null);
+    (eventId?: string, options?: AgendaOpenOptions) => {
+      const scoped = options?.onlySessions ?? false;
+      setOnlySessions(scoped);
+      const pool = scoped ? events.filter((event) => event.tipo === 'sessao') : events;
+      // Sem id: sempre volta pra "visão geral" (o próximo evento em foco, já dentro do filtro ativo).
+      setSelectedEventId(eventId ?? pool[0]?.id ?? null);
       setIsOpen(true);
     },
     [events],
@@ -46,8 +64,26 @@ export function AgendaProvider({
   const closeAgenda = useCallback(() => setIsOpen(false), []);
 
   const value = useMemo<AgendaContextValue>(
-    () => ({ isOpen, selectedEventId, events, canManageEvents, openAgenda, closeAgenda }),
-    [isOpen, selectedEventId, events, canManageEvents, openAgenda, closeAgenda],
+    () => ({
+      isOpen,
+      selectedEventId,
+      events,
+      filteredEvents,
+      onlySessions,
+      canManageEvents,
+      openAgenda,
+      closeAgenda,
+    }),
+    [
+      isOpen,
+      selectedEventId,
+      events,
+      filteredEvents,
+      onlySessions,
+      canManageEvents,
+      openAgenda,
+      closeAgenda,
+    ],
   );
 
   return (
