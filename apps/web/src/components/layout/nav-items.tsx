@@ -43,7 +43,7 @@ const PORTAL_ITEMS: Array<{
 }> = [
   { href: '/dashboard', label: 'Início', icon: LayoutDashboard },
   { href: '/agenda', label: 'Minha Agenda', icon: CalendarDays },
-  { href: '/avisos', label: 'Central de Avisos', icon: Megaphone },
+  { href: '/avisos', label: 'Central de Notificações', icon: Megaphone },
   // Módulo "Irmãos" (docs/architecture) — Diretório institucional privado e
   // voluntário + "Meu Espaço" (autoatendimento), unificados em duas abas
   // internas sob uma única rota. Sem `permission` aqui de propósito: "Meu

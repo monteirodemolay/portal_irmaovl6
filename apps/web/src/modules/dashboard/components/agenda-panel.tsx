@@ -5,20 +5,27 @@ import { AgendaOpenButton } from '@/modules/agenda/components/agenda-open-button
 import { formatEventDate } from '../lib/format-event-date';
 import { DashboardSectionHeading } from './dashboard-section-heading';
 
+/**
+ * Card menor logo abaixo do destaque "Sessões da Loja" — mostra só as 2
+ * próximas Sessões (o chamador já entrega `events` cortado nesse tamanho);
+ * "mais sessões" abre o drawer lateral da Agenda com todas, em vez de
+ * navegar pra outra tela (mesmo `AgendaOpenButton` usado no restante do
+ * Portal).
+ */
 export function AgendaPanel({ events }: { events: Event[] }) {
   return (
-    <Card className="flex flex-col gap-4 p-5 shadow-none">
+    <Card className="flex flex-col gap-3 p-4 shadow-none">
       <DashboardSectionHeading
         icon={CalendarDays}
-        title="Agenda"
+        title="Próximas Sessões"
         action={
           <AgendaOpenButton className="text-accent shrink-0 text-xs font-medium hover:underline">
-            Ver agenda
+            mais sessões
           </AgendaOpenButton>
         }
       />
       {events.length === 0 ? (
-        <p className="text-muted text-sm">Nenhum outro evento programado.</p>
+        <p className="text-muted text-sm">Nenhuma outra sessão programada.</p>
       ) : (
         <ul className="flex flex-col gap-3">
           {events.map((event) => {
