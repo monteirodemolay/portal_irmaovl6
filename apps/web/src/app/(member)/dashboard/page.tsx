@@ -1,5 +1,5 @@
 import { hasPermission } from '@vl6/domain';
-import { CalendarDays, Card, EmptyState } from '@vl6/ui';
+import { CalendarDays, Card, EmptyState, Sparkles } from '@vl6/ui';
 import { createServerContainer } from '@vl6/infra';
 import { getUpcomingEventsForPortal } from '@/lib/agenda/get-upcoming-events';
 import { getCurrentSession } from '@/lib/auth/get-current-session';
@@ -11,13 +11,17 @@ import { AnniversariesPanel } from '@/modules/dashboard/components/anniversaries
 import { AvisosCard } from '@/modules/dashboard/components/avisos-card';
 import { CentralAvisosCard } from '@/modules/dashboard/components/central-avisos-card';
 import { DailyQuoteCard } from '@/modules/dashboard/components/daily-quote-card';
-import { DashboardSectionHeading } from '@/modules/dashboard/components/dashboard-section-heading';
-import { EventsCarousel } from '@/modules/dashboard/components/events-carousel';
-import { NextEventCard } from '@/modules/dashboard/components/next-event-card';
+import { GovernanceHighlightCard } from '@/modules/dashboard/components/governance-highlight-card';
+import { NewsHighlights } from '@/modules/dashboard/components/news-highlights';
+import { NextLodgeEventCard } from '@/modules/dashboard/components/next-lodge-event-card';
+import { NextSessionCard } from '@/modules/dashboard/components/next-session-card';
 import { OnThisDayCard } from '@/modules/dashboard/components/on-this-day-card';
+import { UpcomingEventsPanel } from '@/modules/dashboard/components/upcoming-events-panel';
 import { timeOfDayGreeting } from '@/modules/dashboard/lib/greeting';
 import { pickQuote } from '@/modules/dashboard/lib/masonic-quotes';
 import { findOnThisDayArchiveItem } from '@/modules/archive/lib/find-on-this-day-archive-item';
+
+const NEWS_HOME_LIMIT = 3;
 
 export default async function DashboardPage() {
   const [session, current] = await Promise.all([getCurrentSession(), getCurrentTenant()]);
@@ -42,6 +46,8 @@ export default async function DashboardPage() {
     favoritos,
     quotes,
     onThisDay,
+    activeBoard,
+    newsPage,
   ] = await Promise.all([
     hasPermission(authContext, 'announcement:read')
       ? container.useCases.listActiveAnnouncements.execute(authContext.tenantId)
@@ -65,33 +71,34 @@ export default async function DashboardPage() {
       ? container.useCases.listActiveInspirationalQuotes.execute(authContext)
       : Promise.resolve([]),
     findOnThisDayArchiveItem(container, authContext, session.role),
+    hasPermission(authContext, 'boardTerm:read')
+      ? container.useCases.getActiveBoard.execute(authContext)
+      : Promise.resolve(null),
+    container.useCases.listPublishedNews.execute(authContext.tenantId, {
+      limit: NEWS_HOME_LIMIT,
+    }),
   ]);
 
-  // "Sessões da Loja" (cartão em destaque + Agenda) só considera Eventos
-  // tipo 'sessao' — antes pegava o próximo Evento de QUALQUER tipo
-  // (`events[0]`), então um Evento comum (curso, palestra etc.) marcado
-  // pra uma data mais próxima que a da Sessão aparecia vestido de Sessão
-  // na coluna errada (bug relatado pelo Administrador).
+  // "Sessão da Loja" e "Evento da Loja" nunca se misturam: a mesma
+  // coleção `events` guarda os dois (campo `tipo`), então a separação
+  // acontece aqui, uma única vez, antes de qualquer card renderizar —
+  // ver `packages/domain/.../event.entity.ts` pro histórico do bug que
+  // motivou esse filtro (`tipo === 'sessao'` vs `events[0]`).
   const upcomingSessions = events.filter((event) => event.tipo === 'sessao');
-  const featuredEvent = upcomingSessions[0] ?? null;
-  // Card "Próximas Sessões" mostra só 2 — o resto da Agenda fica atrás do
-  // botão "mais sessões", que abre o drawer lateral com a lista completa
-  // (pedido do Administrador: card menor, sem competir com o destaque
-  // acima nem virar uma segunda lista longa na tela inicial).
-  const agendaEvents = upcomingSessions.slice(1, 3);
-  // Vitrine própria pra Eventos que não são Sessão (curso, palestra,
-  // confraternização, cívico etc.) — antes só apareciam misturados na
-  // lista "Agenda", sem nenhum destaque próprio como as Sessões da Loja
-  // já têm em "Próximos da Loja" (achado do Administrador).
-  const nonSessionEvents = events.filter((event) => event.tipo !== 'sessao');
+  const featuredSession = upcomingSessions[0] ?? null;
+  const agendaSessions = upcomingSessions.slice(1, 3);
+
+  const upcomingLodgeEvents = events.filter((event) => event.tipo !== 'sessao');
+  const featuredLodgeEvent = upcomingLodgeEvents[0] ?? null;
+  const agendaLodgeEvents = upcomingLodgeEvents.slice(1, 3);
 
   // Confirmação de presença em destaque no Início — antes só dava pra
   // confirmar entrando na Agenda por conta própria (docs/architecture,
   // achado da auditoria de navegação/retenção).
-  const featuredEventAttendance =
-    featuredEvent?.exigeConfirmacaoPresenca && member
+  const featuredSessionAttendance =
+    featuredSession?.exigeConfirmacaoPresenca && member
       ? await container.repositories.eventAttendance.findByEventAndMember(
-          featuredEvent.id,
+          featuredSession.id,
           member.id,
         )
       : null;
@@ -110,20 +117,26 @@ export default async function DashboardPage() {
 
   return (
     <div className="flex flex-col gap-8">
+      {/* 1. Cabeçalho / saudação — hero institucional compacto com a
+          Gestão vigente sobreposta e a frase do dia numa faixa discreta
+          logo abaixo, sem dominar o layout. */}
       <div>
         <section className="from-primary to-primary-dark relative overflow-hidden rounded-[18px] bg-gradient-to-br px-7 pb-11 pt-7 text-white shadow-md lg:px-9">
           <div className="bg-accent/10 absolute -right-16 -top-16 h-64 w-64 rounded-full blur-3xl" />
-          <div className="relative flex flex-col gap-3">
-            <p className="text-accent text-xs font-semibold uppercase tracking-widest">
-              {current.tenant.nome}
-            </p>
-            <h1 className="font-display text-3xl font-semibold leading-[1.1] sm:text-4xl">
-              {greeting}. Bem Vindo Ir∴ {firstName}
-            </h1>
-            <p className="max-w-xl text-sm text-white/70">
-              Acompanhe a agenda, os avisos e o acervo da {current.tenant.nome} — tudo em um só
-              lugar.
-            </p>
+          <div className="relative flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex flex-col gap-3">
+              <p className="text-accent text-xs font-semibold uppercase tracking-widest">
+                {greeting}
+              </p>
+              <h1 className="font-display text-3xl font-semibold leading-[1.1] sm:text-4xl">
+                Ir∴ {firstName}
+              </h1>
+              <p className="max-w-xl text-sm text-white/70">
+                Acompanhe a agenda, os avisos e o acervo da {current.tenant.nome} — tudo em um só
+                lugar.
+              </p>
+            </div>
+            <GovernanceHighlightCard board={activeBoard} />
           </div>
         </section>
         {/* Fica no fluxo normal (não absolute) — só puxado pra cima o
@@ -136,48 +149,59 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      {/* Duas colunas do mesmo tamanho, lado a lado — Sessões da Loja
-          (Próxima sessão + Agenda) à esquerda, Eventos da Loja (banner +
-          avisos) à direita. Antes disso "Próximos da Loja" misturava a
-          Sessão em destaque com os avisos numa coluna estreita ao lado, e
-          Eventos (não-Sessão) ficavam numa vitrine separada mais abaixo —
-          pedido do Administrador pra não competirem visualmente e ficarem
-          sempre no mesmo lugar, com o mesmo peso visual. */}
+      {/* 2-3. Próxima Sessão da Loja + Próximo Evento da Loja, lado a
+          lado em telas largas — cada card só mostra dados do seu próprio
+          tipo, nunca misturados. */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <section className="flex flex-col gap-3">
-          <DashboardSectionHeading icon={CalendarDays} title="Sessões da Loja" />
-          {featuredEvent ? (
-            <NextEventCard
-              event={featuredEvent}
-              attendanceStatus={featuredEventAttendance?.statusPresenca ?? null}
+        {featuredSession ? (
+          <NextSessionCard
+            event={featuredSession}
+            attendanceStatus={featuredSessionAttendance?.statusPresenca ?? null}
+          />
+        ) : (
+          <Card className="shadow-none">
+            <EmptyState
+              icon={<CalendarDays size={22} />}
+              title="Nenhuma sessão agendada"
+              description="Assim que uma nova sessão for cadastrada na Agenda, ela aparece aqui em destaque."
             />
-          ) : (
-            <Card className="shadow-none">
-              <EmptyState
-                icon={<CalendarDays size={22} />}
-                title="Nenhuma sessão agendada"
-                description="Assim que uma nova sessão for cadastrada na Agenda, ela aparece aqui em destaque."
-              />
-            </Card>
-          )}
-          <AgendaPanel events={agendaEvents} />
-        </section>
-
-        <section className="flex flex-col gap-4">
-          <EventsCarousel events={nonSessionEvents} />
-          {/* Central de Notificações + Avisos logo abaixo da vitrine de
-              Eventos — antes ficavam intercaladas com "Esta semana na
-              Loja"/Aniversários, o que espalhava a área de "avisos" em dois
-              blocos separados na mesma coluna (achado da auditoria de UX). */}
-          <CentralAvisosCard notifications={notificationsPage.items} />
-          <AvisosCard announcements={announcements} />
-          {onThisDay && <OnThisDayCard entry={onThisDay} />}
-          {hasAnniversaries && (
-            <AnniversariesPanel entries={anniversaries} showDirectoryLink={showDirectoryLink} />
-          )}
-        </section>
+          </Card>
+        )}
+        {featuredLodgeEvent ? (
+          <NextLodgeEventCard event={featuredLodgeEvent} />
+        ) : (
+          <Card className="shadow-none">
+            <EmptyState
+              icon={<Sparkles size={22} />}
+              title="Nenhum evento programado"
+              description="Cursos, palestras e confraternizações aparecem aqui assim que forem cadastrados na Agenda."
+            />
+          </Card>
+        )}
       </div>
 
+      {/* 4-6. Próximas Sessões, Próximos Eventos e Avisos Importantes na
+          mesma faixa, sempre em listas próprias — nunca a mesma lista
+          filtrada duas vezes. */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <AgendaPanel events={agendaSessions} />
+        <UpcomingEventsPanel events={agendaLodgeEvents} />
+        <div className="flex flex-col gap-4">
+          <AvisosCard announcements={announcements} />
+          <CentralAvisosCard notifications={notificationsPage.items} />
+        </div>
+      </div>
+
+      {onThisDay && <OnThisDayCard entry={onThisDay} />}
+      {hasAnniversaries && (
+        <AnniversariesPanel entries={anniversaries} showDirectoryLink={showDirectoryLink} />
+      )}
+
+      {/* 7. Acontece na Verdadeira Luz — módulo editorial de Notícias. */}
+      <NewsHighlights news={newsPage.items} />
+
+      {/* 8-9. Acervo VL6 + Constelação da Memória (bloco discreto, não
+          mais uma categoria do Acervo). */}
       <AcervoPanel
         documentos={documentos}
         biblioteca={biblioteca}

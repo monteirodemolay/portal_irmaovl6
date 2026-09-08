@@ -117,7 +117,7 @@ export function AppShell({
           <div className="flex items-center gap-3">{topbarRight}</div>
         </header>
 
-        <main className="mx-auto max-w-[1220px] px-5 py-6 lg:px-7 lg:py-8 print:max-w-none print:p-0">
+        <main className="mx-auto max-w-[1440px] px-5 py-6 lg:px-9 lg:py-8 print:max-w-none print:p-0">
           {children}
         </main>
       </div>
