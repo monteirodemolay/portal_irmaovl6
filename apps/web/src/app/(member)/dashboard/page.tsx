@@ -182,11 +182,15 @@ export default async function DashboardPage() {
 
       {/* 4-6. Próximas Sessões, Próximos Eventos e Avisos Importantes na
           mesma faixa, sempre em listas próprias — nunca a mesma lista
-          filtrada duas vezes. */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+          filtrada duas vezes. Só cabem os 3 lado a lado a partir de `xl`
+          (>=1280px, "desktop grande"); no notebook menor (`lg`, 1024-1279px)
+          os cabeçalhos dos cards (título + link de ação) ficam espremidos
+          numa coluna de 1/3 — Avisos desce pra uma segunda linha em vez de
+          cortar o texto. */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-3">
         <AgendaPanel events={agendaSessions} />
         <UpcomingEventsPanel events={agendaLodgeEvents} />
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-4 lg:col-span-2 xl:col-span-1">
           <AvisosCard announcements={announcements} />
           <CentralAvisosCard notifications={notificationsPage.items} />
         </div>
