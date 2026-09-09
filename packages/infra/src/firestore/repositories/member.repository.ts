@@ -7,7 +7,7 @@ import type {
   PageResult,
   UnclaimedMember,
 } from '@vl6/domain';
-import { formatBrazilianPersonName } from '@vl6/shared';
+import { formatBrazilianPersonName, normalizeNameForSearch } from '@vl6/shared';
 import { createEntityConverter } from '../converters/entity.converter';
 
 const COLLECTION = 'members';
@@ -80,6 +80,14 @@ export class FirestoreMemberRepository implements IMemberRepository {
     });
   }
 
+  /**
+   * Teto de documentos varridos quando algum filtro precisa ser aplicado em
+   * memória (`nome`/`cidade`/`cim`/`grau`+`situacao` juntos) — generoso o
+   * bastante pra cobrir o quadro de Irmãos de qualquer Loja real sem virar
+   * uma varredura sem limite.
+   */
+  private static readonly MAX_TEXT_SEARCH_SCAN = 5000;
+
   async search(filters: MemberSearchFilters, page: PageRequest): Promise<PageResult<Member>> {
     let query: Query<Member> = this.collection
       .where('tenantId', '==', filters.tenantId)
@@ -102,16 +110,39 @@ export class FirestoreMemberRepository implements IMemberRepository {
       query = query.where('grau', '==', filters.grau);
     }
 
-    if (page.cursor) {
-      const cursorDoc = await this.collection.doc(page.cursor).get();
-      if (cursorDoc.exists) query = query.startAfter(cursorDoc);
+    // `nome`/`cidade`/`cim`/(`situacao`+`grau` juntos) não têm como virar
+    // filtro do Firestore (busca por substring/acento não é suportada, e
+    // `cim` não tem índice próprio) — precisam ser aplicados em memória.
+    // Antes, esse filtro rodava só sobre os `page.limit` documentos já
+    // paginados pelo Firestore: um Irmão fora da página "crua" atual (por
+    // ordem alfabética) nunca aparecia na busca, mesmo existindo — achado
+    // do Administrador buscando o próprio nome ("Luís") e só encontrando
+    // quem por acaso já estava naquela página. Com qualquer um desses
+    // filtros ativo, varre um lote bem maior, filtra tudo em memória e só
+    // então pagina o resultado já filtrado (cursor numérico — offset —, em
+    // vez do cursor por documento do Firestore usado no caminho rápido).
+    const hasInMemoryFilter = Boolean(
+      filters.nome || filters.cidade || filters.cim || (filters.situacao && filters.grau),
+    );
+
+    if (!hasInMemoryFilter) {
+      if (page.cursor) {
+        const cursorDoc = await this.collection.doc(page.cursor).get();
+        if (cursorDoc.exists) query = query.startAfter(cursorDoc);
+      }
+      const snap = await query.limit(page.limit + 1).get();
+      const docs = snap.docs.slice(0, page.limit);
+      const hasMore = snap.docs.length > page.limit;
+      return {
+        items: docs.map((doc) => normalizeMemberName(doc.data())),
+        nextCursor: hasMore ? (docs.at(-1)?.id ?? null) : null,
+        hasMore,
+      };
     }
 
-    const snap = await query.limit(page.limit + 1).get();
-    const docs = snap.docs.slice(0, page.limit);
-    const hasMore = snap.docs.length > page.limit;
+    const snap = await query.limit(FirestoreMemberRepository.MAX_TEXT_SEARCH_SCAN).get();
+    let items = snap.docs.map((doc) => normalizeMemberName(doc.data()));
 
-    let items = docs.map((doc) => normalizeMemberName(doc.data()));
     if (filters.situacao && filters.grau) {
       items = items.filter((m) => m.grau === filters.grau);
     }
@@ -119,17 +150,26 @@ export class FirestoreMemberRepository implements IMemberRepository {
       items = items.filter((m) => m.cim === filters.cim);
     }
     if (filters.nome) {
-      const needle = filters.nome.toLowerCase();
-      items = items.filter((m) => m.nomeCompleto.toLowerCase().includes(needle));
+      // Sem acento e minúsculo dos dois lados — buscar "Luis" precisa achar
+      // "Luís" (achado do Administrador: a busca não encontrava o próprio
+      // nome por causa do acento).
+      const needle = normalizeNameForSearch(filters.nome);
+      items = items.filter((m) => normalizeNameForSearch(m.nomeCompleto).includes(needle));
     }
     if (filters.cidade) {
-      const needle = filters.cidade.toLowerCase();
-      items = items.filter((m) => m.endereco?.cidade.toLowerCase().includes(needle));
+      const needle = normalizeNameForSearch(filters.cidade);
+      items = items.filter(
+        (m) => m.endereco?.cidade && normalizeNameForSearch(m.endereco.cidade).includes(needle),
+      );
     }
 
+    const offset = page.cursor ? Number(page.cursor) || 0 : 0;
+    const pageItems = items.slice(offset, offset + page.limit);
+    const hasMore = offset + page.limit < items.length;
+
     return {
-      items,
-      nextCursor: hasMore ? (docs.at(-1)?.id ?? null) : null,
+      items: pageItems,
+      nextCursor: hasMore ? String(offset + page.limit) : null,
       hasMore,
     };
   }

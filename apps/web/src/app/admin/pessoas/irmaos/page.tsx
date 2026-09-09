@@ -1,25 +1,10 @@
 import Link from 'next/link';
-import type { BoardPositionKey } from '@vl6/shared';
-import {
-  BOARD_POSITION_KEYS,
-  BOARD_POSITION_LABELS,
-  MEMBER_DEGREES,
-  MEMBER_SITUATION_STATUSES,
-  MEMBER_SITUATION_STATUS_LABELS,
-} from '@vl6/shared';
+import type { BoardPositionKey, MEMBER_SITUATION_STATUSES } from '@vl6/shared';
+import { MEMBER_SITUATION_STATUS_LABELS } from '@vl6/shared';
 import { createServerContainer } from '@vl6/infra';
 import { hasPermission } from '@vl6/domain';
 import type { Member } from '@vl6/domain';
-import {
-  Badge,
-  Button,
-  DataTable,
-  EmptyState,
-  Input,
-  Pagination,
-  Select,
-  type DataTableColumn,
-} from '@vl6/ui';
+import { Badge, Button, DataTable, EmptyState, Pagination, type DataTableColumn } from '@vl6/ui';
 import { requirePagePermission } from '@/lib/auth/require-permission';
 import { MemberAvatar } from '@/components/membership/member-avatar';
 import { MEMBER_DEGREE_LABELS } from '@/lib/membership/member-degree-label';
@@ -27,6 +12,7 @@ import {
   USER_STATUS_LABEL,
   USER_STATUS_VARIANT,
 } from '@/modules/identity-access/user-status-labels';
+import { MembersFilterForm } from './members-filter-form';
 
 const SITUATION_VARIANT: Record<
   (typeof MEMBER_SITUATION_STATUSES)[number],
@@ -210,43 +196,7 @@ export default async function MembersPage({
         </div>
       </div>
 
-      <form className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        <Input name="nome" defaultValue={filters.nome} placeholder="Nome…" />
-        <Input name="cim" defaultValue={filters.cim} placeholder="CIM…" />
-        <Input name="cidade" defaultValue={filters.cidade} placeholder="Cidade…" />
-        <Select name="grau" defaultValue={filters.grau ?? ''}>
-          <option value="">Grau (todos)</option>
-          {MEMBER_DEGREES.map((grau) => (
-            <option key={grau} value={grau}>
-              {grau}
-            </option>
-          ))}
-        </Select>
-        <Select name="situacao" defaultValue={filters.situacao ?? ''}>
-          <option value="">Situação (todas)</option>
-          {MEMBER_SITUATION_STATUSES.map((situacao) => (
-            <option key={situacao} value={situacao}>
-              {MEMBER_SITUATION_STATUS_LABELS[situacao]}
-            </option>
-          ))}
-        </Select>
-        <Select name="cargo" defaultValue={filters.cargo ?? ''}>
-          <option value="">Cargo atual (todos)</option>
-          {BOARD_POSITION_KEYS.map((cargo) => (
-            <option key={cargo} value={cargo}>
-              {BOARD_POSITION_LABELS[cargo]}
-            </option>
-          ))}
-        </Select>
-        <div className="col-span-2 flex items-center gap-2 md:col-span-1">
-          <Button type="submit" size="sm">
-            Filtrar
-          </Button>
-          <Button asChild variant="outline" size="sm">
-            <Link href="/admin/pessoas/irmaos">Limpar</Link>
-          </Button>
-        </div>
-      </form>
+      <MembersFilterForm initial={searchFilters} />
 
       <DataTable
         columns={columns}
