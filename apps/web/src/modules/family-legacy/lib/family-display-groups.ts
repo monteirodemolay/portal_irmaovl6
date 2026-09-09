@@ -1,18 +1,10 @@
-import type { FamilyDisplayGroup } from '@vl6/shared';
-
 /**
- * Classifica um rótulo de parentesco já calculado (`DerivedKinship.label`,
- * `deriveKinships` no domínio) num dos 5 grupos de exibição do "Meu Espaço"
- * (04_TELAS_E_FLUXOS.md §1). Comparação por prefixo porque o domínio
- * acrescenta o sufixo "materno(a)"/"paterno(a)" em avô/bisavô.
+ * `classifyFamilyDisplayGroup` mudou para `@vl6/shared` (é usada também pelo
+ * perfil público da Central, no pacote de domínio, que não pode importar de
+ * `apps/web`) — reexportada aqui só para não quebrar quem já importava
+ * daqui.
  */
-export function classifyFamilyDisplayGroup(label: string): FamilyDisplayGroup {
-  if (/^(Pai ou mãe|Avô ou avó|Bisavô ou bisavó|Trisavô ou trisavó)/.test(label)) return 'ascendentes';
-  if (/^(Filho ou filha|Neto ou neta|Bisneto ou bisneta)/.test(label)) return 'descendentes';
-  if (/^(Irmão ou irmã|Cônjuge)/.test(label)) return 'familia_proxima';
-  if (/^(Sogro ou sogra|Genro ou nora|Cunhado ou cunhada)/.test(label)) return 'familia_por_afinidade';
-  return 'outros_vinculos'; // Tio/tia, sobrinho/sobrinha, primo/prima, parentesco declarado
-}
+export { classifyFamilyDisplayGroup } from '@vl6/shared';
 
 /**
  * Vínculo direto oferecido no painel "Adicionar familiar"
@@ -34,15 +26,26 @@ export const DIRECT_LINK_KINDS = [
 ] as const;
 export type DirectLinkKind = (typeof DIRECT_LINK_KINDS)[number];
 
+/**
+ * Sempre fraseado "Ele(a) é meu/minha ___" — a pessoa que você vai buscar/
+ * cadastrar abaixo é o sujeito, você (ou o familiar-âncora escolhido) é
+ * quem recebe o vínculo. Antes usava "É mãe de"/"É filho(a) de" sem deixar
+ * claro de quem era o "de" — Administrador confirmou o erro real: marcou
+ * "É filho(a) de" pra cadastrar o próprio pai, esperando que significasse
+ * "eu sou filho de", quando o sistema (corretamente, mas ambiguamente)
+ * tratava como "essa pessoa é filha minha". O vínculo salvo (`parent_of`
+ * etc., ver `resolveRelationEndpoints`) não muda — só o texto, agora
+ * impossível de ler ao contrário.
+ */
 export const DIRECT_LINK_LABELS: Record<DirectLinkKind, string> = {
-  mae: 'É mãe de',
-  pai: 'É pai de',
-  filho_filha: 'É filho(a) de',
-  conjuge: 'É cônjuge de',
-  companheiro: 'É companheiro(a) de',
-  irmao_irma: 'É irmão ou irmã de',
-  responsavel: 'É responsável (guardião) de',
-  padrasto_madrasta: 'É padrasto ou madrasta de',
+  mae: 'Ele(a) é minha mãe',
+  pai: 'Ele(a) é meu pai',
+  filho_filha: 'Ele(a) é meu(minha) filho(a)',
+  conjuge: 'Ele(a) é meu(minha) cônjuge',
+  companheiro: 'Ele(a) é meu(minha) companheiro(a)',
+  irmao_irma: 'Ele(a) é meu(minha) irmão(ã)',
+  responsavel: 'Ele(a) é meu(minha) responsável (tutor/guardião)',
+  padrasto_madrasta: 'Ele(a) é meu padrasto ou minha madrasta',
   outro: 'Outro vínculo (declarar)',
 };
 

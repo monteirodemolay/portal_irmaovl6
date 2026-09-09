@@ -279,7 +279,11 @@ function AddFamilyMemberForm({
         </FormField>
       )}
 
-      <FormField label="Qual o vínculo direto?" htmlFor="linkKind">
+      <FormField
+        label="Quem é essa pessoa pra você?"
+        htmlFor="linkKind"
+        description="Escolha primeiro o vínculo, depois busque ou cadastre o nome dela abaixo."
+      >
         <Select
           id="linkKind"
           name="linkKind"

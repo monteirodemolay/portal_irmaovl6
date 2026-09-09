@@ -711,6 +711,8 @@ export function createServerContainer() {
       committeeRepository: repositories.committee,
       archiveMediaRepository: repositories.archiveMedia,
       mediaAssetRepository: repositories.mediaAsset,
+      familyRelationshipRepository: repositories.familyRelationship,
+      familyPersonRepository: repositories.familyPerson,
     }),
     searchDirectory: new SearchDirectoryUseCase({
       memberRepository: repositories.member,

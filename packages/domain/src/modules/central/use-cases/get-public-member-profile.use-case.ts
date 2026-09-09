@@ -18,6 +18,9 @@ import {
 } from '../../governance/lib/get-member-journey';
 import type { IArchiveMediaRepository } from '../../archive/repositories/archive-media.repository';
 import type { IMediaAssetRepository } from '../../archive/repositories/media-asset.repository';
+import type { IFamilyRelationshipRepository } from '../../family-legacy/repositories/family-relationship.repository';
+import type { IFamilyPersonRepository } from '../../family-legacy/repositories/family-person.repository';
+import { buildPublicFamiliaLegado } from '../lib/build-public-familia-legado';
 
 export interface GetPublicMemberProfileDeps {
   memberRepository: IMemberRepository;
@@ -28,6 +31,8 @@ export interface GetPublicMemberProfileDeps {
   committeeRepository: ICommitteeRepository;
   archiveMediaRepository: IArchiveMediaRepository;
   mediaAssetRepository: IMediaAssetRepository;
+  familyRelationshipRepository: IFamilyRelationshipRepository;
+  familyPersonRepository: IFamilyPersonRepository;
 }
 
 /**
@@ -78,9 +83,10 @@ export class GetPublicMemberProfileUseCase {
     // exibida, publicado ou não. Cargos de Diretoria e comissões são dois
     // registros distintos (`ICommitteeRepository` não deriva de
     // `IMemberPositionHistoryRepository`), por isso duas chamadas.
-    const [cargos, comissoes] = await Promise.all([
+    const [cargos, comissoes, familia] = await Promise.all([
       getMemberJourneyCargos(this.deps, targetMemberId),
       getMemberJourneyCommittees(this.deps, ctx.tenantId, targetMemberId),
+      buildPublicFamiliaLegado(this.deps, ctx.tenantId, targetMemberId),
     ]);
 
     // Memória fotográfica — ponte Diretório → Acervo (Fase B). Ao contrário
@@ -127,6 +133,7 @@ export class GetPublicMemberProfileUseCase {
         comissoes,
       },
       memoriaFotografica,
+      familia,
     });
   }
 }

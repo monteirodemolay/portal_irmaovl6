@@ -186,3 +186,22 @@ export const FAMILY_DISPLAY_GROUP_LABELS: Record<FamilyDisplayGroup, string> = {
   familia_por_afinidade: 'Família por afinidade',
   outros_vinculos: 'Outros vínculos',
 };
+
+/**
+ * Classifica um rótulo de parentesco já calculado (`DerivedKinship.label`,
+ * `deriveKinships` no domínio) num dos 5 grupos de exibição acima.
+ * Comparação por prefixo porque o domínio acrescenta o sufixo
+ * "materno(a)"/"paterno(a)" em avô/bisavô. Vive em `@vl6/shared` (não em
+ * `apps/web`) porque é usada tanto pelo "Meu Espaço" (visão própria, web)
+ * quanto pelo perfil público da Central (`GetPublicMemberProfileUseCase`,
+ * pacote de domínio, que não pode importar de `apps/web`).
+ */
+export function classifyFamilyDisplayGroup(label: string): FamilyDisplayGroup {
+  if (/^(Pai ou mãe|Avô ou avó|Bisavô ou bisavó|Trisavô ou trisavó)/.test(label))
+    return 'ascendentes';
+  if (/^(Filho ou filha|Neto ou neta|Bisneto ou bisneta)/.test(label)) return 'descendentes';
+  if (/^(Irmão ou irmã|Cônjuge)/.test(label)) return 'familia_proxima';
+  if (/^(Sogro ou sogra|Genro ou nora|Cunhado ou cunhada)/.test(label))
+    return 'familia_por_afinidade';
+  return 'outros_vinculos'; // Tio/tia, sobrinho/sobrinha, primo/prima, parentesco declarado
+}

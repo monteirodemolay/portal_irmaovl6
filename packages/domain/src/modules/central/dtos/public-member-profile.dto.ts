@@ -3,6 +3,7 @@ import type { Member } from '../../membership/entities/member.entity';
 import type { MemberCentralProfile } from '../entities/member-central-profile.entity';
 import type { PublicationSettings } from '../entities/publication-settings.entity';
 import { resolveAreaAtuacao } from '../lib/resolve-area-atuacao';
+import type { PublicFamiliaLegadoDTO } from '../lib/build-public-familia-legado';
 
 export interface PublicMemberProfileDTO {
   memberId: string;
@@ -74,6 +75,17 @@ export interface PublicMemberProfileDTO {
    * Preenchido pelo use case, mesmo motivo de `trajetoria`.
    */
   memoriaFotografica: { id: string; src: string; caption: string }[] | null;
+  /**
+   * Família e Legado — só os vínculos que o Irmão (ou quem cadastrou o
+   * familiar) marcou como visíveis para `'members'`/`'archive'`
+   * (`FAMILY_VISIBILITY_LEVELS`, `@vl6/shared`); `'private'`/
+   * `'administration'` nunca chegam aqui. `null` cobre tanto "módulo sem
+   * nenhum vínculo visível" quanto "nenhum vínculo cadastrado" — a UI não
+   * precisa distinguir. Preenchido pelo use case, mesmo motivo de
+   * `trajetoria`/`memoriaFotografica` (precisa de repositórios que a função
+   * pura não recebe).
+   */
+  familia: PublicFamiliaLegadoDTO | null;
 }
 
 const CLOSED_BLOCKS: PublicationSettings['blocks'] = {
@@ -187,5 +199,6 @@ export function buildPublicMemberProfileDTO(
     // Preenchido depois, pelo use case — ver comentário no campo da interface.
     trajetoria: null,
     memoriaFotografica: null,
+    familia: null,
   };
 }

@@ -1,6 +1,11 @@
 import Link from 'next/link';
 import type { PublicMemberProfileDTO } from '@vl6/domain';
-import { buildWhatsappLink, getBoardPositionLabel } from '@vl6/shared';
+import {
+  buildWhatsappLink,
+  FAMILY_DISPLAY_GROUPS,
+  FAMILY_DISPLAY_GROUP_LABELS,
+  getBoardPositionLabel,
+} from '@vl6/shared';
 import {
   ArrowUpRight,
   Briefcase,
@@ -22,6 +27,7 @@ import {
   Quote,
   Sparkles,
   UserCircle,
+  Users,
 } from '@vl6/ui';
 import { MemberAvatar } from '@/components/membership/member-avatar';
 import { MemberDegreeBadge } from '@/components/membership/member-degree-badge';
@@ -115,7 +121,8 @@ export function PublicMemberProfileView({
     hasContatos ||
     hasRedes ||
     profile.informacoesMaconicas ||
-    (profile.memoriaFotografica && profile.memoriaFotografica.length > 0),
+    (profile.memoriaFotografica && profile.memoriaFotografica.length > 0) ||
+    profile.familia,
   );
 
   return (
@@ -214,6 +221,41 @@ export function PublicMemberProfileView({
           {profile.memoriaFotografica && profile.memoriaFotografica.length > 0 && (
             <Section title="Memória fotográfica" icon={Camera}>
               <MemberPhotoGrid photos={profile.memoriaFotografica} />
+            </Section>
+          )}
+
+          {profile.familia && (
+            <Section
+              title="Família e Legado"
+              icon={Users}
+              editTab={isOwnProfile ? 'pessoal' : undefined}
+            >
+              <div className="flex flex-col gap-3">
+                {FAMILY_DISPLAY_GROUPS.filter((group) => profile.familia?.[group]?.length).map(
+                  (group) => (
+                    <div key={group} className="flex flex-col gap-1.5">
+                      <p className="text-muted text-xs font-medium">
+                        {FAMILY_DISPLAY_GROUP_LABELS[group]}
+                      </p>
+                      <ul className="flex flex-col gap-1.5">
+                        {profile.familia?.[group]?.map((item) => (
+                          <li key={item.key} className="flex items-center gap-2 text-sm">
+                            <MemberAvatar
+                              fotoUrl={item.fotoUrl}
+                              nome={item.nomeCompleto}
+                              className="h-7 w-7"
+                            />
+                            <span>
+                              {item.nomeCompleto}
+                              <span className="text-muted"> — {item.parentesco}</span>
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ),
+                )}
+              </div>
             </Section>
           )}
 
