@@ -34,15 +34,26 @@ export const DIRECT_LINK_KINDS = [
 ] as const;
 export type DirectLinkKind = (typeof DIRECT_LINK_KINDS)[number];
 
+/**
+ * Sempre fraseado "Ele(a) é meu/minha ___" — a pessoa que você vai buscar/
+ * cadastrar abaixo é o sujeito, você (ou o familiar-âncora escolhido) é
+ * quem recebe o vínculo. Antes usava "É mãe de"/"É filho(a) de" sem deixar
+ * claro de quem era o "de" — Administrador confirmou o erro real: marcou
+ * "É filho(a) de" pra cadastrar o próprio pai, esperando que significasse
+ * "eu sou filho de", quando o sistema (corretamente, mas ambiguamente)
+ * tratava como "essa pessoa é filha minha". O vínculo salvo (`parent_of`
+ * etc., ver `resolveRelationEndpoints`) não muda — só o texto, agora
+ * impossível de ler ao contrário.
+ */
 export const DIRECT_LINK_LABELS: Record<DirectLinkKind, string> = {
-  mae: 'É mãe de',
-  pai: 'É pai de',
-  filho_filha: 'É filho(a) de',
-  conjuge: 'É cônjuge de',
-  companheiro: 'É companheiro(a) de',
-  irmao_irma: 'É irmão ou irmã de',
-  responsavel: 'É responsável (guardião) de',
-  padrasto_madrasta: 'É padrasto ou madrasta de',
+  mae: 'Ele(a) é minha mãe',
+  pai: 'Ele(a) é meu pai',
+  filho_filha: 'Ele(a) é meu(minha) filho(a)',
+  conjuge: 'Ele(a) é meu(minha) cônjuge',
+  companheiro: 'Ele(a) é meu(minha) companheiro(a)',
+  irmao_irma: 'Ele(a) é meu(minha) irmão(ã)',
+  responsavel: 'Ele(a) é meu(minha) responsável (tutor/guardião)',
+  padrasto_madrasta: 'Ele(a) é meu padrasto ou minha madrasta',
   outro: 'Outro vínculo (declarar)',
 };
 
