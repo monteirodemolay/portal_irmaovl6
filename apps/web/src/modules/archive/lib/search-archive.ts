@@ -2,9 +2,20 @@ import 'server-only';
 import type { AuthContext, Role } from '@vl6/domain';
 import { hasPermission } from '@vl6/domain';
 import type { ServerContainer } from '@vl6/infra';
+import { BRAZIL_TIME_ZONE } from '@vl6/shared';
 import { isAccessLevelVisible } from './access-level-visibility';
 import { archiveItemHref, buildArchiveItemId } from './archive-item-id';
 import type { ArchiveSearchResult } from './archive-search-match';
+
+/** "07 de setembro de 2026" — mesmo padrão pt-BR usado no restante do Acervo, fixando o fuso porque roda em Server Component. */
+function formatEventResultDate(dataInicio: Date): string {
+  return new Intl.DateTimeFormat('pt-BR', {
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric',
+    timeZone: BRAZIL_TIME_ZONE,
+  }).format(dataInicio);
+}
 
 export {
   ARCHIVE_SEARCH_KINDS,
@@ -138,7 +149,7 @@ export async function loadArchiveSearchResults(
         id: item.id,
         kind: 'evento' as const,
         title: item.titulo,
-        description: event.local,
+        description: `${formatEventResultDate(event.dataInicio)} · ${event.local}`,
         href: `/acervo/eventos/${event.id}`,
         compositeId: buildArchiveItemId('archive-item', item.id),
         createdAt: item.createdAt,

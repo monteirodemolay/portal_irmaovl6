@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState, useMemo, useState } from 'react';
+import { useActionState, useMemo, useState, useTransition } from 'react';
 import { useFormStatus } from 'react-dom';
 import type { Event } from '@vl6/domain';
 import {
@@ -28,6 +28,7 @@ import type { ResolvedArchiveItem } from '@/modules/archive/lib/resolve-archive-
 import { AgendaAttachmentPicker } from './agenda-attachment-picker';
 import {
   createEventAction,
+  importEventContentFromVl6Action,
   updateEventAction,
   type AgendaActionState,
 } from '../actions/agenda-actions';
@@ -74,6 +75,8 @@ export function EventForm({
   );
   const [tituloTocado, setTituloTocado] = useState(Boolean(event));
   const [titulo, setTitulo] = useState(event?.titulo ?? '');
+  const [descricao, setDescricao] = useState(event?.descricao ?? '');
+  const [capaUrlExterna, setCapaUrlExterna] = useState<string | null>(null);
 
   const naturezasDisponiveis = sessionType ? SESSION_NATURES_BY_TYPE[sessionType] : [];
 
@@ -118,8 +121,21 @@ export function EventForm({
     );
   }
 
+  function handleImportedFromVl6(imported: {
+    titulo: string;
+    descricao: string | null;
+    capaUrl: string | null;
+  }) {
+    setTitulo(imported.titulo);
+    setTituloTocado(true);
+    setDescricao(imported.descricao ?? '');
+    setCapaUrlExterna(imported.capaUrl);
+  }
+
   return (
     <form action={formAction} className="flex max-w-lg flex-col gap-4">
+      <ImportFromVl6Field onImported={handleImportedFromVl6} />
+
       <FormField label="Tipo" htmlFor="tipo">
         <Select
           id="tipo"
@@ -309,14 +325,21 @@ export function EventForm({
         />
       </FormField>
       <FormField label="Descrição (opcional)" htmlFor="descricao">
-        <Textarea id="descricao" name="descricao" rows={3} defaultValue={event?.descricao ?? ''} />
+        <Textarea
+          id="descricao"
+          name="descricao"
+          rows={3}
+          value={descricao}
+          onChange={(e) => setDescricao(e.target.value)}
+        />
       </FormField>
       <FormField
         label="Imagem de capa (opcional)"
         htmlFor="capaImagem"
         description='Formato quadrado (1:1), estilo Instagram — aparece revezando em "Eventos da Loja" no Início. Sem capa, o Evento continua exibido com as informações em texto sobre um fundo em degradê.'
       >
-        <EventCoverField capaUrl={event?.capaUrl} />
+        <input type="hidden" name="capaUrlExterna" value={capaUrlExterna ?? ''} />
+        <EventCoverField capaUrl={event?.capaUrl} importedPreviewUrl={capaUrlExterna} />
       </FormField>
       <FormField label="Local" htmlFor="local">
         <Input id="local" name="local" required defaultValue={event?.local} />
@@ -414,16 +437,87 @@ export function EventForm({
 }
 
 /**
+ * Cola o link de um post já publicado em vl6.com.br e pré-preenche
+ * Título/Descrição/Capa a partir do Open Graph da página (mesma técnica da
+ * importação de Notícias) — o site é Wix (renderizado via JS), então só dá
+ * pra trazer título, resumo curto e imagem de capa, nunca o texto integral
+ * do post; o Administrador revisa/completa a Descrição antes de salvar.
+ */
+function ImportFromVl6Field({
+  onImported,
+}: {
+  onImported: (imported: {
+    titulo: string;
+    descricao: string | null;
+    capaUrl: string | null;
+  }) => void;
+}) {
+  const [url, setUrl] = useState('');
+  const [isPending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
+
+  function handleImport() {
+    const trimmed = url.trim();
+    if (!trimmed) return;
+    setError(null);
+    startTransition(async () => {
+      const result = await importEventContentFromVl6Action(trimmed);
+      if (!result.ok) {
+        setError(result.error);
+        return;
+      }
+      onImported({ titulo: result.titulo, descricao: result.descricao, capaUrl: result.capaUrl });
+      setUrl('');
+    });
+  }
+
+  return (
+    <div className="border-border bg-surface flex flex-col gap-2 rounded-lg border p-3">
+      <p className="text-xs font-medium">Importar do site VL6 (opcional)</p>
+      <p className="text-muted text-xs">
+        Cole o link do post em vl6.com.br pra preencher Título, Descrição e Capa automaticamente —
+        revise antes de salvar.
+      </p>
+      <div className="flex gap-2">
+        <Input
+          value={url}
+          onChange={(e) => setUrl(e.target.value)}
+          placeholder="https://www.vl6.com.br/post/..."
+          disabled={isPending}
+        />
+        <Button
+          type="button"
+          variant="outline"
+          onClick={handleImport}
+          disabled={isPending || !url.trim()}
+          className="shrink-0"
+        >
+          {isPending ? 'Buscando…' : 'Buscar'}
+        </Button>
+      </div>
+      {error && <p className="text-xs text-red-600">{error}</p>}
+    </div>
+  );
+}
+
+/**
  * Mesmo padrão do `LogoUploader` de Negócios (`empresa-tab.tsx`) — o
  * arquivo viaja dentro do próprio `<form>` do Evento (campo `capaImagem`),
  * sem action/upload separado; `agenda-actions.ts` extrai e sobe pro Blob
  * só no submit. "Remover imagem atual" só aparece quando já existe uma
  * capa e nenhum arquivo novo foi selecionado.
  */
-function EventCoverField({ capaUrl }: { capaUrl: string | null | undefined }) {
+function EventCoverField({
+  capaUrl,
+  importedPreviewUrl,
+}: {
+  capaUrl: string | null | undefined;
+  /** Capa trazida pela importação do site VL6 (`capaUrlExterna`) — some se o Administrador escolher um arquivo próprio ou marcar "Remover". */
+  importedPreviewUrl?: string | null;
+}) {
   const [preview, setPreview] = useState<string | null>(null);
   const [removed, setRemoved] = useState(false);
-  const shown = preview ?? (removed ? null : (capaUrl ?? null));
+  const shown = preview ?? (removed ? null : (importedPreviewUrl ?? capaUrl ?? null));
 
   return (
     <div className="flex items-center gap-3">

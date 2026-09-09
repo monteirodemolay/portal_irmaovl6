@@ -24,6 +24,7 @@ import {
 import { parseArchiveItemId } from '@/modules/archive/lib/archive-item-id';
 import { notifyAllActiveUsers } from '@/modules/notification/lib/notify-all-active-users';
 import { uploadEventCover, validateEventCoverFile } from '@/lib/agenda/event-cover-upload';
+import { scrapeNewsMetadata } from '@/lib/content/scrape-news-metadata';
 
 export interface AgendaActionState {
   error: string | null;
@@ -185,6 +186,17 @@ async function resolveEventCoverUrl(
     }
   }
   if (formData.get('removerCapa') === 'on') return { capaUrl: null, error: null };
+  // Capa vinda da importação do site VL6 (`importEventContentFromVl6Action`)
+  // — URL externa (og:image), sem passar pelo upload no Blob, mesmo padrão
+  // já usado pra `imagemCapaUrl` na importação de Notícias.
+  const externalUrl = formData.get('capaUrlExterna');
+  if (typeof externalUrl === 'string' && externalUrl.trim()) {
+    try {
+      return { capaUrl: new URL(externalUrl.trim()).toString(), error: null };
+    } catch {
+      // URL inválida — ignora e mantém a capa atual, sem barrar o resto do salvamento.
+    }
+  }
   return { capaUrl: currentCapaUrl, error: null };
 }
 
@@ -406,6 +418,39 @@ export async function resolveAcervoItemAction(
     return { ok: false, error: 'Item não encontrado no Acervo (ou sem permissão de acesso).' };
   }
   return { ok: true, item };
+}
+
+export type ImportEventContentFromVl6Result =
+  | { ok: true; titulo: string; descricao: string | null; capaUrl: string | null }
+  | { ok: false; error: string };
+
+/**
+ * Pré-preenche Título/Descrição/Capa do formulário de Evento a partir de um
+ * post já publicado em vl6.com.br — reaproveita o mesmo scraper de Open
+ * Graph da importação de Notícias (`scrapeNewsMetadata`): só título, resumo
+ * curto e imagem de capa, nunca o texto integral do post (o site é Wix,
+ * renderizado via JS — o HTML que o servidor recebe não traz o corpo
+ * completo do artigo, só os metadados usados pra pré-visualização em redes
+ * sociais). O Administrador revisa/completa a Descrição antes de salvar.
+ */
+export async function importEventContentFromVl6Action(
+  url: string,
+): Promise<ImportEventContentFromVl6Result> {
+  await requireSession();
+
+  const scraped = await scrapeNewsMetadata(url);
+  if (!scraped.ok) return { ok: false, error: scraped.error };
+
+  let capaUrl: string | null = null;
+  if (scraped.image) {
+    try {
+      capaUrl = new URL(scraped.image).toString();
+    } catch {
+      capaUrl = null;
+    }
+  }
+
+  return { ok: true, titulo: scraped.title, descricao: scraped.description, capaUrl };
 }
 
 /** Status de presença do usuário atual num evento VL6 — usado pelo resumo leve do painel de detalhes da Minha Agenda. */
