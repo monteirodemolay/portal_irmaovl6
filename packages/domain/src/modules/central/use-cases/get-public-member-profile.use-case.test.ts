@@ -4,6 +4,8 @@ import {
   InMemoryArchiveMediaRepository,
   InMemoryBoardTermRepository,
   InMemoryCommitteeRepository,
+  InMemoryFamilyPersonRepository,
+  InMemoryFamilyRelationshipRepository,
   InMemoryMediaAssetRepository,
   InMemoryMemberCentralProfileRepository,
   InMemoryMemberPositionHistoryRepository,
@@ -111,6 +113,8 @@ function buildUseCase() {
   const committeeRepository = new InMemoryCommitteeRepository();
   const archiveMediaRepository = new InMemoryArchiveMediaRepository();
   const mediaAssetRepository = new InMemoryMediaAssetRepository();
+  const familyRelationshipRepository = new InMemoryFamilyRelationshipRepository();
+  const familyPersonRepository = new InMemoryFamilyPersonRepository();
   const useCase = new GetPublicMemberProfileUseCase({
     memberRepository,
     memberCentralProfileRepository,
@@ -120,6 +124,8 @@ function buildUseCase() {
     committeeRepository,
     archiveMediaRepository,
     mediaAssetRepository,
+    familyRelationshipRepository,
+    familyPersonRepository,
   });
   return {
     useCase,
@@ -130,6 +136,8 @@ function buildUseCase() {
     committeeRepository,
     archiveMediaRepository,
     mediaAssetRepository,
+    familyRelationshipRepository,
+    familyPersonRepository,
   };
 }
 

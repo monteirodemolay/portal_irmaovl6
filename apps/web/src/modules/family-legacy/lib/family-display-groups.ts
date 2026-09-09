@@ -1,18 +1,10 @@
-import type { FamilyDisplayGroup } from '@vl6/shared';
-
 /**
- * Classifica um rótulo de parentesco já calculado (`DerivedKinship.label`,
- * `deriveKinships` no domínio) num dos 5 grupos de exibição do "Meu Espaço"
- * (04_TELAS_E_FLUXOS.md §1). Comparação por prefixo porque o domínio
- * acrescenta o sufixo "materno(a)"/"paterno(a)" em avô/bisavô.
+ * `classifyFamilyDisplayGroup` mudou para `@vl6/shared` (é usada também pelo
+ * perfil público da Central, no pacote de domínio, que não pode importar de
+ * `apps/web`) — reexportada aqui só para não quebrar quem já importava
+ * daqui.
  */
-export function classifyFamilyDisplayGroup(label: string): FamilyDisplayGroup {
-  if (/^(Pai ou mãe|Avô ou avó|Bisavô ou bisavó|Trisavô ou trisavó)/.test(label)) return 'ascendentes';
-  if (/^(Filho ou filha|Neto ou neta|Bisneto ou bisneta)/.test(label)) return 'descendentes';
-  if (/^(Irmão ou irmã|Cônjuge)/.test(label)) return 'familia_proxima';
-  if (/^(Sogro ou sogra|Genro ou nora|Cunhado ou cunhada)/.test(label)) return 'familia_por_afinidade';
-  return 'outros_vinculos'; // Tio/tia, sobrinho/sobrinha, primo/prima, parentesco declarado
-}
+export { classifyFamilyDisplayGroup } from '@vl6/shared';
 
 /**
  * Vínculo direto oferecido no painel "Adicionar familiar"
