@@ -343,11 +343,17 @@ export class InMemoryMemberPositionHistoryRepository implements IMemberPositionH
   async listByMemberId(memberId: string) {
     return [...this.byId.values()].filter((h) => h.memberId === memberId);
   }
+  async listByTenant(tenantId: string) {
+    return [...this.byId.values()].filter((h) => h.tenantId === tenantId);
+  }
   async create(entry: MemberPositionHistory) {
     this.byId.set(entry.id, entry);
   }
   async update(entry: MemberPositionHistory) {
     this.byId.set(entry.id, entry);
+  }
+  async delete(id: string) {
+    this.byId.delete(id);
   }
 }
 

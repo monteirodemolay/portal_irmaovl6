@@ -28,11 +28,20 @@ export class FirestoreMemberPositionHistoryRepository implements IMemberPosition
     return snap.docs.map((doc) => doc.data());
   }
 
+  async listByTenant(tenantId: string): Promise<MemberPositionHistory[]> {
+    const snap = await this.collection.where('tenantId', '==', tenantId).get();
+    return snap.docs.map((doc) => doc.data());
+  }
+
   async create(entry: MemberPositionHistory): Promise<void> {
     await this.collection.doc(entry.id).set(entry);
   }
 
   async update(entry: MemberPositionHistory): Promise<void> {
     await this.collection.doc(entry.id).set(entry);
+  }
+
+  async delete(id: string): Promise<void> {
+    await this.collection.doc(id).delete();
   }
 }

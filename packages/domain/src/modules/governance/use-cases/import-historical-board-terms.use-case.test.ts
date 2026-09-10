@@ -198,6 +198,9 @@ describe('ImportHistoricalBoardTermsUseCase', () => {
 
     const all = await deps.memberRepository.search({ tenantId: 't1' }, { limit: 10 });
     expect(all.items.filter((m) => m.nomeCompleto === 'Ribas Marques')).toHaveLength(1);
+
+    const history = await deps.positionHistoryRepository.listByTenant('t1');
+    expect(history).toHaveLength(2);
   });
 
   it('gestão com troca de titular no meio do ano: 2 registros de histórico, 1 titular final', async () => {

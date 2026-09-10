@@ -11,6 +11,7 @@ import type { IMemberRepository } from '../../membership/repositories/member.rep
 import type { IMemberSituationRecordRepository } from '../../membership/repositories/member-situation-record.repository';
 import type { IMemberPositionHistoryRepository } from '../../membership/repositories/member-position-history.repository';
 import type { BoardPositionAssignment } from '../entities/board-position-assignment.entity';
+import type { BoardTerm } from '../entities/board-term.entity';
 import type { IBoardTermRepository } from '../repositories/board-term.repository';
 import type { IBoardPositionAssignmentRepository } from '../repositories/board-position-assignment.repository';
 import type { HistoricalBoardTermInput } from '../lib/historical-board-terms-vl6';
@@ -59,23 +60,64 @@ export class ImportHistoricalBoardTermsUseCase {
   ): Promise<Result<ImportHistoricalBoardTermsRow[]>> {
     requirePermission(ctx, 'boardTerm:manage');
 
-    const existingMembers = await this.loadAllMembers(ctx.tenantId);
+    const now = this.deps.clock.now();
+
+    const [existingMembers, existingTerms, existingHistory] = await Promise.all([
+      this.loadAllMembers(ctx.tenantId),
+      this.deps.boardTermRepository.listByTenant(ctx.tenantId),
+      this.deps.positionHistoryRepository.listByTenant(ctx.tenantId),
+    ]);
     const memberByName = new Map(
       existingMembers.map((member) => [normalizeNameForSearch(member.nomeCompleto), member]),
     );
-    const existingTerms = await this.deps.boardTermRepository.listByTenant(ctx.tenantId);
     const termByName = new Map(
       existingTerms.map((term) => [normalizeNameForSearch(term.nome), term]),
     );
+    // Chave memberId|cargo|gestaoId|dataInicio (ISO) — permite rodar a
+    // importação quantas vezes for preciso sem duplicar o mesmo vínculo.
+    const historyKey = (memberId: string, cargo: string, gestaoId: string, dataInicio: Date) =>
+      `${memberId}|${cargo}|${gestaoId}|${dataInicio.toISOString()}`;
+    const existingHistoryKeys = new Set(
+      existingHistory.map((h) => historyKey(h.memberId, h.cargo, h.gestaoId, h.dataInicio)),
+    );
 
-    const report: ImportHistoricalBoardTermsRow[] = [];
+    // Fase 1: resolve/cria todos os Irmãos únicos da nominata em paralelo —
+    // uma promise por nome (nunca duas pro mesmo nome), então sem risco de
+    // duplicar mesmo com Promise.all.
+    const allSegments = terms.flatMap((term) => term.segments);
+    const uniqueNames = Array.from(new Set(allSegments.map((s) => s.nomeCompleto)));
+    await Promise.all(
+      uniqueNames.map(async (nomeCompleto) => {
+        const normalized = normalizeNameForSearch(nomeCompleto);
+        const member = memberByName.get(normalized);
+        if (!member) {
+          const fotoUrl = photosByNormalizedName[normalized] ?? null;
+          const created = await this.createHistoricalMember(ctx, nomeCompleto, fotoUrl, now);
+          memberByName.set(normalized, created);
+        } else if (!member.fotoUrl && photosByNormalizedName[normalized]) {
+          const updated = {
+            ...member,
+            fotoUrl: photosByNormalizedName[normalized]!,
+            updatedAt: now,
+            updatedBy: ctx.uid,
+          };
+          await this.deps.memberRepository.update(updated);
+          memberByName.set(normalized, updated);
+        }
+      }),
+    );
 
-    for (const termInput of terms) {
-      const now = this.deps.clock.now();
-      let boardTerm = termByName.get(normalizeNameForSearch(termInput.nome));
-      let gestaoStatus: 'criada' | 'já existia' = 'já existia';
-      if (!boardTerm) {
-        boardTerm = {
+    // Fase 2: cria as Gestões que ainda não existem, em paralelo — cada
+    // termo é independente.
+    const gestaoStatusByName = new Map<string, 'criada' | 'já existia'>();
+    await Promise.all(
+      terms.map(async (termInput) => {
+        const key = normalizeNameForSearch(termInput.nome);
+        if (termByName.has(key)) {
+          gestaoStatusByName.set(key, 'já existia');
+          return;
+        }
+        const boardTerm: BoardTerm = {
           id: this.deps.idGenerator.next(),
           tenantId: ctx.tenantId,
           nome: termInput.nome,
@@ -90,9 +132,28 @@ export class ImportHistoricalBoardTermsUseCase {
           ativo: true,
         };
         await this.deps.boardTermRepository.create(boardTerm);
-        termByName.set(normalizeNameForSearch(boardTerm.nome), boardTerm);
-        gestaoStatus = 'criada';
-      }
+        termByName.set(key, boardTerm);
+        gestaoStatusByName.set(key, 'criada');
+      }),
+    );
+
+    // Fase 3: cria todo o histórico de cargos (MemberPositionHistory) em
+    // paralelo — cada entrada é uma escrita independente.
+    const report: ImportHistoricalBoardTermsRow[] = [];
+    const historyWrites: Array<Promise<void>> = [];
+
+    interface CargoGroup {
+      boardTerm: BoardTerm;
+      gestaoStatus: 'criada' | 'já existia';
+      cargo: BoardPositionKey;
+      ordered: HistoricalBoardTermInput['segments'];
+    }
+    const cargoGroups: CargoGroup[] = [];
+
+    for (const termInput of terms) {
+      const termKey = normalizeNameForSearch(termInput.nome);
+      const boardTerm = termByName.get(termKey)!;
+      const gestaoStatus = gestaoStatusByName.get(termKey)!;
 
       const segmentsByCargo = new Map<BoardPositionKey, typeof termInput.segments>();
       for (const segment of termInput.segments) {
@@ -103,30 +164,26 @@ export class ImportHistoricalBoardTermsUseCase {
 
       for (const [cargo, segments] of segmentsByCargo) {
         const ordered = [...segments].sort((a, b) => a.dataInicio.localeCompare(b.dataInicio));
+        cargoGroups.push({ boardTerm, gestaoStatus, cargo, ordered });
 
         for (const segment of ordered) {
           const normalized = normalizeNameForSearch(segment.nomeCompleto);
-          let member = memberByName.get(normalized);
-          let memberStatus: 'criado' | 'já existia' = 'já existia';
-          let fotoAtualizada = false;
+          const member = memberByName.get(normalized)!;
+          const dataInicio = new Date(segment.dataInicio);
+          const key = historyKey(member.id, cargo, boardTerm.id, dataInicio);
 
-          if (!member) {
-            const fotoUrl = photosByNormalizedName[normalized] ?? null;
-            member = await this.createHistoricalMember(ctx, segment.nomeCompleto, fotoUrl, now);
-            memberByName.set(normalized, member);
-            memberStatus = 'criado';
-            fotoAtualizada = fotoUrl !== null;
-          } else if (!member.fotoUrl && photosByNormalizedName[normalized]) {
-            member = {
-              ...member,
-              fotoUrl: photosByNormalizedName[normalized]!,
-              updatedAt: now,
-              updatedBy: ctx.uid,
-            };
-            await this.deps.memberRepository.update(member);
-            memberByName.set(normalized, member);
-            fotoAtualizada = true;
+          if (existingHistoryKeys.has(key)) {
+            report.push({
+              gestaoNome: boardTerm.nome,
+              gestaoStatus,
+              cargo,
+              nomeCompleto: segment.nomeCompleto,
+              memberStatus: 'criado',
+              fotoAtualizada: false,
+            });
+            continue;
           }
+          existingHistoryKeys.add(key);
 
           const history: MemberPositionHistory = {
             id: this.deps.idGenerator.next(),
@@ -134,7 +191,7 @@ export class ImportHistoricalBoardTermsUseCase {
             memberId: member.id,
             cargo,
             gestaoId: boardTerm.id,
-            dataInicio: new Date(segment.dataInicio),
+            dataInicio,
             dataFim: new Date(segment.dataFim),
             observacoes: null,
             createdAt: now,
@@ -145,18 +202,44 @@ export class ImportHistoricalBoardTermsUseCase {
             status: 'active',
             ativo: true,
           };
-          await this.deps.positionHistoryRepository.create(history);
+          historyWrites.push(this.deps.positionHistoryRepository.create(history).then(() => {}));
 
+          // memberStatus/fotoAtualizada preenchidos depois, com base no que
+          // cada Irmão era ANTES da Fase 1 (ver loop logo após o Promise.all
+          // das escritas de histórico).
           report.push({
             gestaoNome: boardTerm.nome,
             gestaoStatus,
             cargo,
             nomeCompleto: segment.nomeCompleto,
-            memberStatus,
-            fotoAtualizada,
+            memberStatus: 'criado',
+            fotoAtualizada: false,
           });
         }
+      }
+    }
+    await Promise.all(historyWrites);
 
+    // memberStatus/fotoAtualizada do relatório: recalcula com base no que
+    // cada Irmão era ANTES da Fase 1 (existingMembers), não no estado atual.
+    const originalNames = new Set(
+      existingMembers.map((m) => normalizeNameForSearch(m.nomeCompleto)),
+    );
+    const originalPhotoless = new Set(
+      existingMembers.filter((m) => !m.fotoUrl).map((m) => normalizeNameForSearch(m.nomeCompleto)),
+    );
+    for (const row of report) {
+      const normalized = normalizeNameForSearch(row.nomeCompleto);
+      row.memberStatus = originalNames.has(normalized) ? 'já existia' : 'criado';
+      row.fotoAtualizada =
+        photosByNormalizedName[normalized] !== undefined &&
+        (!originalNames.has(normalized) || originalPhotoless.has(normalized));
+    }
+
+    // Fase 4: upsert dos BoardPositionAssignment (quem ocupa o cargo hoje
+    // nessa gestão) — um por gestão+cargo, todos independentes entre si.
+    await Promise.all(
+      cargoGroups.map(async ({ boardTerm, cargo, ordered }) => {
         const lastSegment = ordered[ordered.length - 1]!;
         const lastMember = memberByName.get(normalizeNameForSearch(lastSegment.nomeCompleto))!;
         const existingAssignment = await this.deps.assignmentRepository.findByGestaoAndCargo(
@@ -188,8 +271,8 @@ export class ImportHistoricalBoardTermsUseCase {
             updatedBy: ctx.uid,
           });
         }
-      }
-    }
+      }),
+    );
 
     return ok(report);
   }
