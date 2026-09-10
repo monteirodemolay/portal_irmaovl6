@@ -17,9 +17,14 @@ export default async function BoardTermsPage() {
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
         <h1 className="font-display text-2xl font-semibold">Gestões / Diretoria</h1>
-        <Button asChild>
-          <Link href="/admin/pessoas/gestoes/nova">Nova Gestão</Link>
-        </Button>
+        <div className="flex gap-2">
+          <Button asChild variant="outline">
+            <Link href="/admin/pessoas/gestoes/importar-nominata">Importar Nominata Histórica</Link>
+          </Button>
+          <Button asChild>
+            <Link href="/admin/pessoas/gestoes/nova">Nova Gestão</Link>
+          </Button>
+        </div>
       </div>
 
       {terms.length === 0 ? (
