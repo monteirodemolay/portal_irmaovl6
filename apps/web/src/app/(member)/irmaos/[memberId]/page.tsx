@@ -58,7 +58,7 @@ export default async function IrmaoProfilePage({
   }
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="mx-auto flex max-w-[1400px] flex-col gap-8">
       <Link
         href="/irmaos"
         className="border-border bg-surface hover:border-primary hover:text-primary flex w-fit items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm transition-colors"
@@ -68,13 +68,11 @@ export default async function IrmaoProfilePage({
       </Link>
 
       {profile ? (
-        <div className="flex max-w-2xl flex-col gap-6">
-          <PublicMemberProfileView
-            profile={profile}
-            canViewAcervo={canViewAcervo}
-            isOwnProfile={isOwnProfile}
-          />
-        </div>
+        <PublicMemberProfileView
+          profile={profile}
+          canViewAcervo={canViewAcervo}
+          isOwnProfile={isOwnProfile}
+        />
       ) : (
         <Card className="max-w-2xl">
           <CardContent className="text-muted p-6 text-sm">
