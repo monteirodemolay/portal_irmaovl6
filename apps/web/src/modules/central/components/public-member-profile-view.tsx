@@ -27,10 +27,13 @@ import {
 } from '@vl6/ui';
 import { MemberAvatar } from '@/components/membership/member-avatar';
 import { MemberDegreeBadge } from '@/components/membership/member-degree-badge';
+import {
+  Panel as InstitutionalPanel,
+  TimelineEntry,
+  type IconType,
+} from '@/components/membership/institutional-panel';
 import { MemberPhotoGrid } from './member-photo-grid';
 import { ProfileBioText } from './profile-bio-text';
-
-type IconType = React.ComponentType<{ size?: number; strokeWidth?: number; className?: string }>;
 
 function formatDate(date: Date): string {
   return new Intl.DateTimeFormat('pt-BR', { dateStyle: 'long' }).format(new Date(date));
@@ -57,18 +60,16 @@ function getCurrentAssignment(trajetoria: PublicMemberProfileDTO['trajetoria']) 
 }
 
 /**
- * Painel institucional — kicker + título serif, ícone opcional e link de
- * edição ("Editar" abre a aba certa de Meu Espaço quando é o próprio
- * perfil). `compact` reduz peso tipográfico para a coluna lateral.
+ * Adapta o `Panel` institucional compartilhado (`@/components/membership/
+ * institutional-panel`, mesma peça visual usada pela Pessoa do Acervo VL6)
+ * pro vocabulário específico da Central VL6: `editTab` vira o link "Editar"
+ * pra aba certa de Meu Espaço, sem cada seção abaixo precisar montar esse
+ * `Link` na mão.
  */
 function Panel({
-  kicker,
-  title,
-  icon: Icon,
   editTab,
   trailing,
-  compact = false,
-  children,
+  ...props
 }: {
   kicker: string;
   title: string;
@@ -79,34 +80,20 @@ function Panel({
   children: React.ReactNode;
 }) {
   return (
-    <article className="border-border bg-surface flex flex-col gap-4 rounded-2xl border p-5 shadow-sm sm:p-6">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-muted text-[10px] font-bold tracking-[0.14em]">{kicker}</p>
-          <h2
-            className={
-              compact
-                ? 'font-display mt-1 text-base font-semibold'
-                : 'font-display mt-1 text-lg font-semibold'
-            }
+    <InstitutionalPanel
+      {...props}
+      trailing={
+        trailing ??
+        (editTab && (
+          <Link
+            href={`/irmaos/meu-espaco?tab=${editTab}`}
+            className="text-accent shrink-0 text-xs font-semibold hover:underline"
           >
-            {title}
-          </h2>
-        </div>
-        {trailing ??
-          (editTab ? (
-            <Link
-              href={`/irmaos/meu-espaco?tab=${editTab}`}
-              className="text-accent shrink-0 text-xs font-semibold hover:underline"
-            >
-              Editar
-            </Link>
-          ) : Icon ? (
-            <Icon size={16} strokeWidth={1.75} className="text-accent mt-1 shrink-0" />
-          ) : null)}
-      </div>
-      {children}
-    </article>
+            Editar
+          </Link>
+        ))
+      }
+    />
   );
 }
 
@@ -312,88 +299,44 @@ export function PublicMemberProfileView({
             {hasTrajetoria && profile.trajetoria && (
               <Panel kicker="TRAJETÓRIA" title="Caminho na Loja" icon={Milestone}>
                 <div className="flex flex-col gap-4">
-                  {(profile.trajetoria.dataIniciacao ||
-                    profile.trajetoria.dataElevacao ||
-                    profile.trajetoria.dataExaltacao) && (
-                    <ol className="flex flex-col gap-3">
-                      {profile.trajetoria.dataIniciacao && (
-                        <li className="grid grid-cols-[16px_92px_1fr] items-start gap-3">
-                          <span className="bg-accent mt-1 h-3.5 w-3.5 rounded-full" />
-                          <span className="text-muted text-[10px] font-bold uppercase tabular-nums">
-                            {formatDate(profile.trajetoria.dataIniciacao)}
-                          </span>
-                          <span className="text-sm font-semibold">Iniciação</span>
-                        </li>
-                      )}
-                      {profile.trajetoria.dataElevacao && (
-                        <li className="grid grid-cols-[16px_92px_1fr] items-start gap-3">
-                          <span className="bg-accent mt-1 h-3.5 w-3.5 rounded-full" />
-                          <span className="text-muted text-[10px] font-bold uppercase tabular-nums">
-                            {formatDate(profile.trajetoria.dataElevacao)}
-                          </span>
-                          <span className="text-sm font-semibold">Elevação</span>
-                        </li>
-                      )}
-                      {profile.trajetoria.dataExaltacao && (
-                        <li className="grid grid-cols-[16px_92px_1fr] items-start gap-3">
-                          <span className="bg-accent mt-1 h-3.5 w-3.5 rounded-full" />
-                          <span className="text-muted text-[10px] font-bold uppercase tabular-nums">
-                            {formatDate(profile.trajetoria.dataExaltacao)}
-                          </span>
-                          <span className="text-sm font-semibold">Exaltação</span>
-                        </li>
-                      )}
-                    </ol>
+                  {profile.trajetoria.dataIniciacao && (
+                    <TimelineEntry
+                      label="Iniciação"
+                      dateLabel={formatDate(profile.trajetoria.dataIniciacao)}
+                      active
+                    />
+                  )}
+                  {profile.trajetoria.dataElevacao && (
+                    <TimelineEntry
+                      label="Elevação"
+                      dateLabel={formatDate(profile.trajetoria.dataElevacao)}
+                      active
+                    />
+                  )}
+                  {profile.trajetoria.dataExaltacao && (
+                    <TimelineEntry
+                      label="Exaltação"
+                      dateLabel={formatDate(profile.trajetoria.dataExaltacao)}
+                      active
+                    />
                   )}
                   {profile.trajetoria.cargos.map((entry, index) => (
-                    <div
+                    <TimelineEntry
                       key={`cargo-${index}`}
-                      className="grid grid-cols-[16px_92px_1fr] items-start gap-3"
-                    >
-                      <span
-                        className={
-                          entry.dataFim
-                            ? 'border-border mt-1 h-3.5 w-3.5 rounded-full border-2 bg-transparent'
-                            : 'bg-accent mt-1 h-3.5 w-3.5 rounded-full'
-                        }
-                      />
-                      <span className="text-muted text-[10px] font-bold uppercase tabular-nums">
-                        {formatDate(entry.dataInicio)}
-                      </span>
-                      <div>
-                        <p className="text-sm font-semibold">
-                          {getBoardPositionLabel(entry.cargo)}
-                        </p>
-                        <p className="text-muted text-xs">
-                          Cargo · {entry.gestaoNome}
-                          {entry.dataFim ? ` até ${formatDate(entry.dataFim)}` : ' · em curso'}
-                        </p>
-                      </div>
-                    </div>
+                      label={getBoardPositionLabel(entry.cargo)}
+                      dateLabel={formatDate(entry.dataInicio)}
+                      active={!entry.dataFim}
+                      detail={`Cargo · ${entry.gestaoNome}${entry.dataFim ? ` até ${formatDate(entry.dataFim)}` : ' · em curso'}`}
+                    />
                   ))}
                   {profile.trajetoria.comissoes.map((entry, index) => (
-                    <div
+                    <TimelineEntry
                       key={`comissao-${index}`}
-                      className="grid grid-cols-[16px_92px_1fr] items-start gap-3"
-                    >
-                      <span
-                        className={
-                          entry.dataFim
-                            ? 'border-border mt-1 h-3.5 w-3.5 rounded-full border-2 bg-transparent'
-                            : 'bg-accent mt-1 h-3.5 w-3.5 rounded-full'
-                        }
-                      />
-                      <span className="text-muted text-[10px] font-bold uppercase tabular-nums">
-                        {formatDate(entry.dataInicio)}
-                      </span>
-                      <div>
-                        <p className="text-sm font-semibold">{entry.nome}</p>
-                        <p className="text-muted text-xs">
-                          Comissão · {entry.gestaoNome}
-                          {entry.dataFim ? ` até ${formatDate(entry.dataFim)}` : ' · em curso'}
-                        </p>
-                      </div>
-                    </div>
+                      label={entry.nome}
+                      dateLabel={formatDate(entry.dataInicio)}
+                      active={!entry.dataFim}
+                      detail={`Comissão · ${entry.gestaoNome}${entry.dataFim ? ` até ${formatDate(entry.dataFim)}` : ' · em curso'}`}
+                    />
                   ))}
                 </div>
               </Panel>
