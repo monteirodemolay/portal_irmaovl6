@@ -25,11 +25,19 @@ export function GovernanceHighlightCard({ board }: { board: ActiveBoard | null }
           <MemberAvatar
             fotoUrl={veneravel.member.fotoUrl}
             nome={veneravel.member.nomeCompleto}
-            className="h-9 w-9 shrink-0 ring-1 ring-white/20"
+            className="h-10 w-10 shrink-0 ring-1 ring-white/20"
           />
-          <p className="font-display truncate text-lg font-semibold text-white">
-            V∴M∴ {veneravel.member.nomeCompleto}
-          </p>
+          {/* Duas linhas — "Venerável Mestre" pequeno e discreto, nome em
+              destaque embaixo — em vez de "V∴M∴ Nome Completo" numa linha só
+              truncando no meio do sobrenome em cards mais estreitos. */}
+          <div className="min-w-0 leading-tight">
+            <p className="text-accent text-[10px] font-semibold uppercase tracking-wide">
+              Venerável Mestre
+            </p>
+            <p className="font-display truncate text-base font-semibold text-white">
+              {veneravel.member.nomeCompleto}
+            </p>
+          </div>
         </div>
       )}
       <Link
