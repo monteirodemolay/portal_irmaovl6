@@ -285,19 +285,31 @@ export function OrganizeStep({
             {byType('foto').map((media) => (
               <div
                 key={media.id}
-                className="border-border flex flex-col gap-2 rounded-lg border p-3"
+                className="border-border flex flex-col gap-3 rounded-lg border p-3 sm:flex-row"
               >
-                <span className="truncate text-sm font-medium">{media.originalName}</span>
-                <Input
-                  defaultValue={media.caption ?? ''}
-                  placeholder="Legenda…"
-                  onBlur={(event) => updateField(media, { caption: event.target.value || null })}
+                {/* Miniatura ao lado do nome do arquivo — sem ela, "Legenda…"
+                    e "Marcar pessoa…" ficavam soltos numa lista só de nomes
+                    de arquivo (ex.: "WhatsApp Image 2026-08-29 at
+                    19.44.08.jpeg"), impossível de saber qual foto era qual
+                    sem abrir uma a uma. */}
+                <img
+                  src={mediaThumb(media)}
+                  alt={media.altText ?? media.originalName}
+                  className="h-20 w-20 shrink-0 rounded-md object-cover sm:h-16 sm:w-16"
                 />
-                <PeoplePicker
-                  selectedIds={media.pessoasIdentificadas}
-                  options={memberOptions}
-                  onChange={(ids) => updateField(media, { pessoasIdentificadas: ids })}
-                />
+                <div className="flex min-w-0 flex-1 flex-col gap-2">
+                  <span className="truncate text-sm font-medium">{media.originalName}</span>
+                  <Input
+                    defaultValue={media.caption ?? ''}
+                    placeholder="Legenda…"
+                    onBlur={(event) => updateField(media, { caption: event.target.value || null })}
+                  />
+                  <PeoplePicker
+                    selectedIds={media.pessoasIdentificadas}
+                    options={memberOptions}
+                    onChange={(ids) => updateField(media, { pessoasIdentificadas: ids })}
+                  />
+                </div>
               </div>
             ))}
           </div>
