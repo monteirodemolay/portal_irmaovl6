@@ -1,12 +1,19 @@
 import type { Event } from '@vl6/domain';
 import { Badge, Button, CalendarDays, Card, Clock, MapPin } from '@vl6/ui';
-import { buildGoogleCalendarUrl, EVENT_KIND_LABELS } from '@vl6/shared';
+import { buildGoogleCalendarUrl, EVENT_KIND_LABELS, SESSION_WORK_DEGREE_LABELS } from '@vl6/shared';
 import { AgendaOpenButton } from '@/modules/agenda/components/agenda-open-button';
 import { AttendanceButtons } from '@/modules/agenda/components/attendance-buttons';
 import { formatEventDate } from '../lib/format-event-date';
 import { AddToCalendarMenu } from './add-to-calendar-menu';
 
-export function NextEventCard({
+/**
+ * Card em destaque exclusivo da próxima Sessão da Loja — só recebe
+ * `Event` com `tipo === 'sessao'` (o chamador já filtra). Mostra apenas
+ * dados de Sessão (grau, tipo de sessão), nunca conteúdo de Evento
+ * (categoria social, arte de capa etc.) — ver `NextLodgeEventCard` para
+ * o card equivalente do próximo Evento.
+ */
+export function NextSessionCard({
   event,
   attendanceStatus = null,
 }: {
@@ -29,7 +36,7 @@ export function NextEventCard({
       />
 
       <p className="text-accent relative text-xs font-semibold uppercase tracking-widest">
-        Agenda de sessões da Loja
+        Próxima sessão da Loja
       </p>
 
       <div className="relative flex items-start gap-4">
@@ -44,12 +51,19 @@ export function NextEventCard({
         </div>
         <div className="min-w-0 pt-1">
           <Badge variant="accent" className="bg-accent text-primary-dark">
-            Próximo evento
+            Próxima sessão
           </Badge>
           <p className="font-display mt-1.5 truncate text-lg font-semibold">{event.titulo}</p>
-          <Badge variant="outline" className="mt-1.5 border-white/25 text-white/80">
-            {EVENT_KIND_LABELS[event.tipo]}
-          </Badge>
+          <div className="mt-1.5 flex flex-wrap gap-1.5">
+            <Badge variant="outline" className="border-white/25 text-white/80">
+              {EVENT_KIND_LABELS[event.tipo]}
+            </Badge>
+            {event.degreeWork && (
+              <Badge variant="outline" className="border-white/25 text-white/80">
+                {SESSION_WORK_DEGREE_LABELS[event.degreeWork]}
+              </Badge>
+            )}
+          </div>
         </div>
       </div>
 

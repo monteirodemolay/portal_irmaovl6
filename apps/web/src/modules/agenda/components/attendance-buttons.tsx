@@ -12,7 +12,7 @@ export function AttendanceButtons({
 }: {
   eventId: string;
   currentStatus: 'confirmado' | 'recusado' | 'pendente' | null;
-  /** Card com fundo escuro (ex.: `NextEventCard`) — troca a borda/texto do estado não-selecionado pra manter contraste. */
+  /** Card com fundo escuro (ex.: `NextSessionCard`) — troca a borda/texto do estado não-selecionado pra manter contraste. */
   onDark?: boolean;
 }) {
   const [isPending, startTransition] = useTransition();

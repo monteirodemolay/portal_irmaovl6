@@ -1,7 +1,8 @@
 import type { ComponentType } from 'react';
 import Link from 'next/link';
-import { BookOpen, Card, cn, Compass, Download, FileText, Image as GalleryIcon } from '@vl6/ui';
+import { BookOpen, Card, cn, Download, FileText, Image as GalleryIcon } from '@vl6/ui';
 import { DashboardSectionHeading } from './dashboard-section-heading';
+import { MemoryConstellationCard } from './memory-constellation-card';
 
 interface AcervoTile {
   href: string;
@@ -29,9 +30,13 @@ function AcervoTileCard({ tile }: { tile: AcervoTile }) {
         className="pointer-events-none absolute -right-2 -top-2 text-white/25 transition-transform group-hover:scale-105"
       />
       <p className="font-display relative text-sm font-semibold">{tile.label}</p>
-      <p className="relative text-xs text-white/75">
-        {tile.description ?? (tile.count === null ? '—' : `${tile.count} ${tile.unit}`)}
-      </p>
+      {/* Contagem zerada não é destacada — evita "0 documentos"/"0 itens"
+          na Home; sem contagem relevante, o tile mostra só o rótulo. */}
+      {tile.description || (tile.count !== null && tile.count > 0) ? (
+        <p className="relative text-xs text-white/75">
+          {tile.description ?? `${tile.count} ${tile.unit}`}
+        </p>
+      ) : null}
     </Link>
   );
 }
@@ -90,19 +95,6 @@ export function AcervoPanel({
       count: favoritos,
       unit: favoritos === 1 ? 'item' : 'itens',
     },
-    ...(showConstellation
-      ? [
-          {
-            href: '/acervo/constelacao',
-            label: 'Constelação da Memória',
-            icon: Compass,
-            gradient: 'from-violet-700 to-violet-900',
-            count: null,
-            unit: '',
-            description: 'Explore os vínculos da sua trajetória',
-          } satisfies AcervoTile,
-        ]
-      : []),
   ];
 
   return (
@@ -113,11 +105,12 @@ export function AcervoPanel({
         href="/acervo"
         hrefLabel="Ver acervo completo"
       />
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {tiles.map((tile) => (
           <AcervoTileCard key={tile.href} tile={tile} />
         ))}
       </div>
+      {showConstellation && <MemoryConstellationCard />}
     </Card>
   );
 }

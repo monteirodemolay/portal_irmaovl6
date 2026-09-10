@@ -30,16 +30,19 @@ export function AvisosCard({ announcements }: { announcements: Announcement[] })
     <Card className="flex flex-col gap-4 p-5 shadow-none">
       <DashboardSectionHeading
         icon={Megaphone}
-        title="Avisos"
+        title="Avisos Importantes"
         href="/avisos"
         hrefLabel="Ver todos"
       />
       {!featured ? (
         <p className="text-muted text-sm">Nenhum aviso no momento.</p>
       ) : (
+        // Home limitada a ~2 avisos (fixado/prioridade alta primeiro) — a
+        // lista completa fica em "Ver todos", sem duplicar a Central de
+        // Notificações (que é pessoal, não institucional).
         <ul className="flex flex-col gap-3">
           <AvisoItem announcement={featured} destacado />
-          {rest.slice(0, 3).map((announcement) => (
+          {rest.slice(0, 1).map((announcement) => (
             <AvisoItem key={announcement.id} announcement={announcement} />
           ))}
         </ul>

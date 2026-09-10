@@ -11,7 +11,8 @@ import { formatEventDate } from '@/modules/dashboard/lib/format-event-date';
  * apontam pro `id` diretamente (ex.: Constelação da Memória), já que os
  * pontos de entrada normais do Portal abrem a gaveta da Agenda
  * (`AgendaOpenButton`) em vez de navegar pra cá. Restilizada no mesmo
- * padrão visual do cartão "Próximo evento" do Início (`NextEventCard`) —
+ * padrão visual dos cartões "Próxima sessão"/"Próximo evento" do Início
+ * (`NextSessionCard`/`NextLodgeEventCard`) —
  * antes usava `Card`s genéricos "Quando"/"Descrição" bem mais simples que
  * o resto do Portal.
  */

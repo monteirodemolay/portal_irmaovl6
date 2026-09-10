@@ -22,10 +22,14 @@ export function DashboardSectionHeading({
           <Icon size={16} strokeWidth={1.75} />
         </span>
       )}
-      <h2 className="font-display shrink-0 text-sm font-semibold uppercase tracking-wide">
+      {/* `min-w-0 truncate` (em vez de `shrink-0`) — em telas estreitas com
+          título longo (ex.: "Acontece na Verdadeira Luz"), o título cede
+          espaço e ganha reticências antes do link de ação, que precisa
+          ficar sempre inteiro (nunca cortado no meio, ver docs §13). */}
+      <h2 className="font-display min-w-0 shrink truncate text-sm font-semibold uppercase tracking-wide">
         {title}
       </h2>
-      <div className="bg-accent/30 h-px flex-1" />
+      <div className="bg-accent/30 h-px min-w-[12px] flex-1" />
       {action}
       {!action && href && (
         <Link href={href} className="text-accent shrink-0 text-xs font-medium hover:underline">
