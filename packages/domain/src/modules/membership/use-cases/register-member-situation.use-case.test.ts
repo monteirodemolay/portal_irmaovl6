@@ -55,6 +55,8 @@ function buildMember(overrides: Partial<Member> = {}): Member {
     redesSociais: { instagram: null, facebook: null, linkedin: null },
     observacoes: null,
     autorizaDivulgacaoExterna: false,
+    dataFalecimento: null,
+    mensagemHomenagem: null,
     createdAt: new Date('2015-10-21T00:00:00Z'),
     updatedAt: new Date('2015-10-21T00:00:00Z'),
     createdBy: 'admin-1',
@@ -141,6 +143,34 @@ describe('RegisterMemberSituationUseCase', () => {
 
     const stored = await memberRepository.findById('m1');
     expect(stored?.situacao).toBe('desligado');
+  });
+
+  it('espelha dataFalecimento quando a situação registrada é falecido, e limpa se ela mudar depois', async () => {
+    const member = buildMember();
+    const { useCase, memberRepository } = buildUseCase(member);
+
+    const falecimento = await useCase.execute(ctx, 'm1', {
+      situacao: 'falecido',
+      motivo: 'passou_ao_oriente_eterno',
+      dataInicio: new Date('2026-04-10T00:00:00Z'),
+    });
+    expect(falecimento.ok).toBe(true);
+    if (!falecimento.ok) return;
+    expect(falecimento.value.member.dataFalecimento).toEqual(new Date('2026-04-10T00:00:00Z'));
+
+    const stored = await memberRepository.findById('m1');
+    expect(stored?.dataFalecimento).toEqual(new Date('2026-04-10T00:00:00Z'));
+
+    // Correção posterior (registro lançado por engano) — dataFalecimento
+    // precisa sumir junto, senão a página In Memoriam continuaria ativa.
+    const correcao = await useCase.execute(ctx, 'm1', {
+      situacao: 'ativo',
+      motivo: 'regularizacao',
+      dataInicio: new Date('2026-04-15T00:00:00Z'),
+    });
+    expect(correcao.ok).toBe(true);
+    if (!correcao.ok) return;
+    expect(correcao.value.member.dataFalecimento).toBeNull();
   });
 
   it('permite o retorno do Irmão preservando o Quite-Placet no histórico', async () => {

@@ -51,6 +51,8 @@ function buildMember(overrides: Partial<Member> = {}): Member {
     redesSociais: { instagram: null, facebook: null, linkedin: null },
     observacoes: 'Anotação administrativa confidencial',
     autorizaDivulgacaoExterna: false,
+    dataFalecimento: null,
+    mensagemHomenagem: null,
     createdAt: new Date('2026-01-01'),
     updatedAt: new Date('2026-01-01'),
     createdBy: 'user-1',

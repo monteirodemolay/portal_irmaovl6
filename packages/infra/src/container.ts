@@ -8,7 +8,10 @@ import {
   AuthenticateUserUseCase,
   BootstrapPlatformAdminUseCase,
   BootstrapTenantAdminUseCase,
-  ClaimMemberAccountUseCase,
+  SubmitMemberAccessClaimUseCase,
+  ListPendingMemberAccessClaimsUseCase,
+  ApproveMemberAccessClaimUseCase,
+  RejectMemberAccessClaimUseCase,
   ConfirmAttendanceUseCase,
   CreateAnnouncementUseCase,
   UpdateAnnouncementUseCase,
@@ -215,6 +218,7 @@ import {
   UpdateCommitteeUseCase,
   UpdateFileAssetUseCase,
   UpdateMemberUseCase,
+  UpdateMemberMemorialMessageUseCase,
   UpdateMyPhotoUseCase,
   UpdateMyProfileUseCase,
   UpdateNewsUseCase,
@@ -262,6 +266,7 @@ import { FirestoreConstellationViewRevisionRepository } from './firestore/reposi
 import { FirestoreArchiveExhibitionRepository } from './firestore/repositories/archive-exhibition.repository';
 import { FirestoreArchiveCatalogEntryRepository } from './firestore/repositories/archive-catalog-entry.repository';
 import { FirestoreArchiveContributionRepository } from './firestore/repositories/archive-contribution.repository';
+import { FirestoreMemberAccessClaimRepository } from './firestore/repositories/member-access-claim.repository';
 import { FirestoreArchiveItemRepository } from './firestore/repositories/archive-item.repository';
 import { FirestoreMediaAssetRepository } from './firestore/repositories/media-asset.repository';
 import { FirestoreArchiveMediaRepository } from './firestore/repositories/archive-media.repository';
@@ -431,6 +436,11 @@ export function createServerContainer() {
       'archiveContributions',
       auditDeps,
     ),
+    memberAccessClaim: withAudit(
+      new FirestoreMemberAccessClaimRepository(db),
+      'memberAccessClaims',
+      auditDeps,
+    ),
     archiveItem: withAudit(new FirestoreArchiveItemRepository(db), 'archiveItems', auditDeps),
     mediaAsset: withAudit(new FirestoreMediaAssetRepository(db), 'mediaAssets', auditDeps),
     archiveMedia: withAudit(new FirestoreArchiveMediaRepository(db), 'archiveMedia', auditDeps),
@@ -532,10 +542,28 @@ export function createServerContainer() {
       idGenerator,
     }),
     updateMember: new UpdateMemberUseCase({ memberRepository: repositories.member, clock }),
+    updateMemberMemorialMessage: new UpdateMemberMemorialMessageUseCase({
+      memberRepository: repositories.member,
+      clock,
+    }),
     updateMyPhoto: new UpdateMyPhotoUseCase({ memberRepository: repositories.member, clock }),
     updateMyProfile: new UpdateMyProfileUseCase({ memberRepository: repositories.member, clock }),
-    claimMemberAccount: new ClaimMemberAccountUseCase({
+    submitMemberAccessClaim: new SubmitMemberAccessClaimUseCase({
       memberRepository: repositories.member,
+      memberAccessClaimRepository: repositories.memberAccessClaim,
+      clock,
+      idGenerator,
+    }),
+    listPendingMemberAccessClaims: new ListPendingMemberAccessClaimsUseCase({
+      memberAccessClaimRepository: repositories.memberAccessClaim,
+    }),
+    approveMemberAccessClaim: new ApproveMemberAccessClaimUseCase({
+      memberAccessClaimRepository: repositories.memberAccessClaim,
+      memberRepository: repositories.member,
+      clock,
+    }),
+    rejectMemberAccessClaim: new RejectMemberAccessClaimUseCase({
+      memberAccessClaimRepository: repositories.memberAccessClaim,
       clock,
     }),
     registerMemberSituation: new RegisterMemberSituationUseCase({

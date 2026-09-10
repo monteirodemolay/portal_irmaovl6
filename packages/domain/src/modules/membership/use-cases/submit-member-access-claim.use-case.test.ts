@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { FixedClock, InMemoryMemberRepository } from '../../../test/fakes';
+import {
+  FixedClock,
+  SequentialIdGenerator,
+  InMemoryMemberRepository,
+  InMemoryMemberAccessClaimRepository,
+} from '../../../test/fakes';
 import type { Member } from '../entities/member.entity';
-import { ClaimMemberAccountUseCase } from './claim-member-account.use-case';
+import { SubmitMemberAccessClaimUseCase } from './submit-member-access-claim.use-case';
 
 function buildMember(overrides: Partial<Member> = {}): Member {
   return {
@@ -33,6 +38,8 @@ function buildMember(overrides: Partial<Member> = {}): Member {
     redesSociais: { instagram: null, facebook: null, linkedin: null },
     observacoes: null,
     autorizaDivulgacaoExterna: false,
+    dataFalecimento: null,
+    mensagemHomenagem: null,
     createdAt: new Date('2025-01-01'),
     updatedAt: new Date('2025-01-01'),
     createdBy: 'admin-1',
@@ -46,34 +53,39 @@ function buildMember(overrides: Partial<Member> = {}): Member {
 
 function buildUseCase() {
   const memberRepository = new InMemoryMemberRepository();
-  const useCase = new ClaimMemberAccountUseCase({
+  const memberAccessClaimRepository = new InMemoryMemberAccessClaimRepository();
+  const useCase = new SubmitMemberAccessClaimUseCase({
     memberRepository,
+    memberAccessClaimRepository,
     clock: new FixedClock(new Date('2026-06-01T00:00:00Z')),
+    idGenerator: new SequentialIdGenerator(),
   });
-  return { useCase, memberRepository };
+  return { useCase, memberRepository, memberAccessClaimRepository };
 }
 
-describe('ClaimMemberAccountUseCase', () => {
-  it('grava o e-mail quando o CIM confere e o Member ainda não tem acesso', async () => {
+describe('SubmitMemberAccessClaimUseCase', () => {
+  it('cria a solicitação pendente quando o CIM confere, sem tocar no Member', async () => {
     const { useCase, memberRepository } = buildUseCase();
     await memberRepository.create(buildMember());
 
-    const result = await useCase.execute('t1', 'member-1', '12566', 'novo@vl6.test');
+    const result = await useCase.execute('t1', 'member-1', '12566', 'novo@vl6.test', '203.0.113.5');
 
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    expect(result.value.email).toBe('novo@vl6.test');
-    expect(result.value.updatedBy).toBe('self-claim');
+    expect(result.value.revisaoStatus).toBe('pendente');
+    expect(result.value.emailSolicitado).toBe('novo@vl6.test');
+    expect(result.value.ip).toBe('203.0.113.5');
 
     const stored = await memberRepository.findById('member-1');
-    expect(stored?.email).toBe('novo@vl6.test');
+    expect(stored?.email).toBeNull();
+    expect(stored?.userId).toBeNull();
   });
 
   it('recusa com CIM errado sem revelar o motivo específico', async () => {
     const { useCase, memberRepository } = buildUseCase();
     await memberRepository.create(buildMember());
 
-    const result = await useCase.execute('t1', 'member-1', '00000', 'novo@vl6.test');
+    const result = await useCase.execute('t1', 'member-1', '00000', 'novo@vl6.test', null);
 
     expect(result.ok).toBe(false);
     if (result.ok) return;
@@ -84,7 +96,7 @@ describe('ClaimMemberAccountUseCase', () => {
     const { useCase, memberRepository } = buildUseCase();
     await memberRepository.create(buildMember({ userId: 'user-1' }));
 
-    const result = await useCase.execute('t1', 'member-1', '12566', 'novo@vl6.test');
+    const result = await useCase.execute('t1', 'member-1', '12566', 'novo@vl6.test', null);
 
     expect(result.ok).toBe(false);
     if (result.ok) return;
@@ -95,7 +107,7 @@ describe('ClaimMemberAccountUseCase', () => {
     const { useCase, memberRepository } = buildUseCase();
     await memberRepository.create(buildMember({ tenantId: 'other-tenant' }));
 
-    const result = await useCase.execute('t1', 'member-1', '12566', 'novo@vl6.test');
+    const result = await useCase.execute('t1', 'member-1', '12566', 'novo@vl6.test', null);
 
     expect(result.ok).toBe(false);
     if (result.ok) return;
@@ -105,10 +117,23 @@ describe('ClaimMemberAccountUseCase', () => {
   it('recusa Member inexistente', async () => {
     const { useCase } = buildUseCase();
 
-    const result = await useCase.execute('t1', 'ghost', '12566', 'novo@vl6.test');
+    const result = await useCase.execute('t1', 'ghost', '12566', 'novo@vl6.test', null);
 
     expect(result.ok).toBe(false);
     if (result.ok) return;
     expect(result.error.code).toBe('not_found');
+  });
+
+  it('recusa uma segunda solicitação enquanto a primeira está pendente', async () => {
+    const { useCase, memberRepository } = buildUseCase();
+    await memberRepository.create(buildMember());
+
+    const first = await useCase.execute('t1', 'member-1', '12566', 'novo@vl6.test', null);
+    expect(first.ok).toBe(true);
+
+    const second = await useCase.execute('t1', 'member-1', '12566', 'outro@vl6.test', null);
+    expect(second.ok).toBe(false);
+    if (second.ok) return;
+    expect(second.error.code).toBe('validation');
   });
 });

@@ -1,4 +1,4 @@
-import type { AreaAtuacaoKey } from '@vl6/shared';
+import type { AreaAtuacaoKey, MemberSituationStatus } from '@vl6/shared';
 import type { Member } from '../../membership/entities/member.entity';
 import type { MemberCentralProfile } from '../entities/member-central-profile.entity';
 import type { PublicationSettings } from '../entities/publication-settings.entity';
@@ -10,6 +10,24 @@ export interface PublicMemberProfileDTO {
   nomeCompleto: string;
   fotoUrl: string | null;
   grau: Member['grau'];
+  /**
+   * Situação Maçônica atual — registro institucional da Loja, mesmo
+   * espírito de `grau`/`dataIniciacao` abaixo: nunca passa pelos blocos de
+   * `PublicationSettings`. A UI usa isto (não um campo booleano à parte)
+   * pra decidir se renderiza a variante In Memoriam do perfil.
+   */
+  situacao: MemberSituationStatus;
+  /**
+   * Espelho de `Member.dataFalecimento` — só preenchido quando
+   * `situacao === 'falecido'`. Mesmo tratamento institucional de `situacao`.
+   */
+  dataFalecimento: Date | null;
+  /**
+   * Mensagem de homenagem escrita pelo Administrador — só existe (e só
+   * aparece na variante In Memoriam) quando `situacao === 'falecido'`.
+   * Nunca editável pelo próprio Irmão, vivo ou não.
+   */
+  mensagemHomenagem: string | null;
   /**
    * Data de iniciação — registro institucional da Loja, mesmo espírito de
    * `grau` acima: nunca passa pelos blocos de `PublicationSettings`. Base
@@ -127,6 +145,9 @@ export function buildPublicMemberProfileDTO(
     nomeCompleto: member.nomeCompleto,
     fotoUrl: member.fotoUrl,
     grau: member.grau,
+    situacao: member.situacao,
+    dataFalecimento: member.dataFalecimento,
+    mensagemHomenagem: member.mensagemHomenagem,
     dataIniciacao: member.dataIniciacao,
     apresentacao: blocks.apresentacao ? { texto: profile?.apresentacao ?? null } : null,
     informacoesPessoais: blocks.informacoesPessoais

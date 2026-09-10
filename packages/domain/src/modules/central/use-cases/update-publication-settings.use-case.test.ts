@@ -54,6 +54,8 @@ const member: Member = {
   redesSociais: { instagram: null, facebook: null, linkedin: null },
   observacoes: null,
   autorizaDivulgacaoExterna: false,
+  dataFalecimento: null,
+  mensagemHomenagem: null,
   createdAt: new Date('2026-01-01'),
   updatedAt: new Date('2026-01-01'),
   createdBy: 'user-1',

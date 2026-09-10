@@ -28,6 +28,20 @@ export interface Member extends BaseEntity {
   cargoAtualId: string | null;
   /** Espelho do registro vigente de `MemberSituationRecord` — nunca editar direto, sempre via `RegisterMemberSituationUseCase`. */
   situacao: MemberSituationStatus;
+  /**
+   * Espelho de `MemberSituationRecord.dataInicio` do registro vigente
+   * quando `situacao === 'falecido'` — mesmo padrão de `situacao` acima,
+   * mantido por `RegisterMemberSituationUseCase`, nunca editado direto.
+   * `null` em qualquer outra situação.
+   */
+  dataFalecimento: Date | null;
+  /**
+   * Mensagem de homenagem exibida na página In Memoriam do perfil público —
+   * só existe quando `situacao === 'falecido'`, e só o Administrador edita
+   * (`UpdateMemberMemorialMessageUseCase`, `member:update`). Distinta de
+   * `biografia` (escrita pelo próprio Irmão em vida).
+   */
+  mensagemHomenagem: string | null;
   lojaId: string;
   potencia: string;
   profissao: string | null;

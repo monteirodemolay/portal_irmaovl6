@@ -20,6 +20,11 @@ export type AdminAreaKey = 'pessoas' | 'conteudo' | 'acervo' | 'configuracoes';
 export const ADMIN_AREA_TABS: Record<AdminAreaKey, AreaTabDef[]> = {
   pessoas: [
     { href: '/admin/pessoas/irmaos', label: 'Irmãos', permission: 'member:read' },
+    {
+      href: '/admin/pessoas/solicitacoes-acesso',
+      label: 'Solicitações de Acesso',
+      permission: 'member:manage',
+    },
     { href: '/admin/pessoas/gestoes', label: 'Gestões', permission: 'boardTerm:read' },
     { href: '/admin/pessoas/usuarios', label: 'Usuários', permission: 'user:read' },
     { href: '/admin/pessoas/permissoes', label: 'Permissões', permission: 'role:read' },

@@ -4,13 +4,14 @@ import { Badge } from '@vl6/ui';
 
 const SITUACAO_VARIANT: Record<
   MemberSituationStatus,
-  'default' | 'success' | 'warning' | 'destructive'
+  'default' | 'accent' | 'success' | 'warning' | 'destructive'
 > = {
   ativo: 'success',
   licenciado: 'warning',
   suspenso: 'warning',
   desligado: 'default',
-  falecido: 'destructive',
+  // Dourado, não vermelho — "In Memoriam" não é um problema a resolver.
+  falecido: 'accent',
 };
 
 export function SituacaoBadge({ situacao }: { situacao: MemberSituationStatus }) {

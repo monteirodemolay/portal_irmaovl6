@@ -5,13 +5,13 @@ import { useFormStatus } from 'react-dom';
 import type { UnclaimedMember } from '@vl6/domain';
 import { Button, Input, Select } from '@vl6/ui';
 import { FormField } from '@/components/forms/form-field';
-import { claimMemberAccountAction, type ClaimActionState } from '../actions/claim-actions';
+import { submitMemberAccessClaimAction, type ClaimActionState } from '../actions/claim-actions';
 
-const EMPTY_STATE: ClaimActionState = { error: null };
+const EMPTY_STATE: ClaimActionState = { error: null, success: false };
 
 export function ClaimAccountForm({ unclaimedMembers }: { unclaimedMembers: UnclaimedMember[] }) {
   const [state, formAction] = useActionState<ClaimActionState, FormData>(
-    claimMemberAccountAction,
+    submitMemberAccessClaimAction,
     EMPTY_STATE,
   );
   // Todos os campos controlados de propósito: depois de uma tentativa que
@@ -22,8 +22,18 @@ export function ClaimAccountForm({ unclaimedMembers }: { unclaimedMembers: Uncla
   const [memberId, setMemberId] = useState('');
   const [cim, setCim] = useState('');
   const [email, setEmail] = useState('');
-  const [senha, setSenha] = useState('');
-  const [confirmarSenha, setConfirmarSenha] = useState('');
+
+  if (state.success) {
+    return (
+      <div className="flex flex-col gap-3 text-center">
+        <p className="text-sm">
+          Solicitação enviada. Um Administrador da Loja vai revisar seu pedido de acesso em breve —
+          você recebe um e-mail assim que ele for aprovado.
+        </p>
+        <p className="text-muted text-sm">Se demorar, fale com a Secretaria da Loja.</p>
+      </div>
+    );
+  }
 
   if (unclaimedMembers.length === 0) {
     return (
@@ -61,33 +71,17 @@ export function ClaimAccountForm({ unclaimedMembers }: { unclaimedMembers: Uncla
           >
             <Input id="cim" name="cim" value={cim} onChange={(e) => setCim(e.target.value)} />
           </FormField>
-          <FormField label="E-mail" htmlFor="email">
+          <FormField
+            label="E-mail"
+            htmlFor="email"
+            description="Pra onde enviamos o link de acesso, depois que um Administrador aprovar."
+          >
             <Input
               id="email"
               name="email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-            />
-          </FormField>
-          <FormField label="Senha" htmlFor="senha" description="Pelo menos 6 caracteres.">
-            <Input
-              id="senha"
-              name="senha"
-              type="password"
-              minLength={6}
-              value={senha}
-              onChange={(e) => setSenha(e.target.value)}
-            />
-          </FormField>
-          <FormField label="Confirmar senha" htmlFor="confirmarSenha">
-            <Input
-              id="confirmarSenha"
-              name="confirmarSenha"
-              type="password"
-              minLength={6}
-              value={confirmarSenha}
-              onChange={(e) => setConfirmarSenha(e.target.value)}
             />
           </FormField>
         </>
@@ -103,7 +97,7 @@ function SubmitButton() {
   const { pending } = useFormStatus();
   return (
     <Button type="submit" disabled={pending} className="w-full">
-      {pending ? 'Criando acesso…' : 'Criar meu acesso'}
+      {pending ? 'Enviando…' : 'Solicitar acesso'}
     </Button>
   );
 }

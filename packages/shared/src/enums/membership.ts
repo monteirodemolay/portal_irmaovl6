@@ -24,7 +24,10 @@ export const MEMBER_SITUATION_STATUS_LABELS: Record<MemberSituationStatus, strin
   licenciado: 'Licenciado',
   suspenso: 'Suspenso',
   desligado: 'Desligado',
-  falecido: 'Falecido',
+  // Rótulo institucional voltado ao Irmão/comunidade — nunca "Falecido" em
+  // tela (badge do Diretório, perfil In Memoriam). O valor da situação em
+  // si continua `'falecido'` (histórico, motivos, RBAC) — só o texto muda.
+  falecido: 'In Memoriam',
 };
 
 /** Situações que encerram automaticamente o cargo ativo do Irmão — docs/architecture/06 §6.1. */
@@ -142,6 +145,22 @@ export const MEMBER_STATUS_RECORD_KIND_LABELS: Record<MemberStatusRecordKind, st
   quite_placet: 'Quite-Placet',
   placet_ex_officio: 'Placet ex officio',
   outro: 'Outro',
+};
+
+/**
+ * Status de uma solicitação de acesso via "Reivindicar Cadastro" — nasce
+ * sempre `pendente`; só um Administrador (`member:manage`) aprova ou
+ * rejeita. Mesmo formato de `ArchiveContributionStatus` (`@vl6/shared`
+ * enums/archive.ts), propositalmente: é o mesmo padrão de fila de revisão
+ * usado no resto do Portal.
+ */
+export const MEMBER_ACCESS_CLAIM_STATUS_KEYS = ['pendente', 'aprovada', 'rejeitada'] as const;
+export type MemberAccessClaimStatus = (typeof MEMBER_ACCESS_CLAIM_STATUS_KEYS)[number];
+
+export const MEMBER_ACCESS_CLAIM_STATUS_LABELS: Record<MemberAccessClaimStatus, string> = {
+  pendente: 'Aguardando aprovação',
+  aprovada: 'Aprovada',
+  rejeitada: 'Rejeitada',
 };
 
 export const MARITAL_STATUSES = [

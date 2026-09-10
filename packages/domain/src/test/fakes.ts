@@ -20,12 +20,14 @@ import type {
 import type { Member } from '../modules/membership/entities/member.entity';
 import type { MemberPositionHistory } from '../modules/membership/entities/member-position-history.entity';
 import type { MemberSituationRecord } from '../modules/membership/entities/member-situation-record.entity';
+import type { MemberAccessClaim } from '../modules/membership/entities/member-access-claim.entity';
 import type {
   IMemberRepository,
   MemberSearchFilters,
 } from '../modules/membership/repositories/member.repository';
 import type { IMemberPositionHistoryRepository } from '../modules/membership/repositories/member-position-history.repository';
 import type { IMemberSituationRecordRepository } from '../modules/membership/repositories/member-situation-record.repository';
+import type { IMemberAccessClaimRepository } from '../modules/membership/repositories/member-access-claim.repository';
 import type { PageRequest, PageResult } from '../shared/pagination';
 import type { BoardTerm } from '../modules/governance/entities/board-term.entity';
 import type { BoardPositionAssignment } from '../modules/governance/entities/board-position-assignment.entity';
@@ -346,6 +348,32 @@ export class InMemoryMemberPositionHistoryRepository implements IMemberPositionH
   }
   async update(entry: MemberPositionHistory) {
     this.byId.set(entry.id, entry);
+  }
+}
+
+export class InMemoryMemberAccessClaimRepository implements IMemberAccessClaimRepository {
+  private readonly byId = new Map<string, MemberAccessClaim>();
+
+  async findById(id: string) {
+    return this.byId.get(id) ?? null;
+  }
+  async findPendingByMember(tenantId: string, memberId: string) {
+    return (
+      [...this.byId.values()].find(
+        (c) => c.tenantId === tenantId && c.memberId === memberId && c.revisaoStatus === 'pendente',
+      ) ?? null
+    );
+  }
+  async listPendingByTenant(tenantId: string) {
+    return [...this.byId.values()].filter(
+      (c) => c.tenantId === tenantId && c.revisaoStatus === 'pendente',
+    );
+  }
+  async create(claim: MemberAccessClaim) {
+    this.byId.set(claim.id, claim);
+  }
+  async update(claim: MemberAccessClaim) {
+    this.byId.set(claim.id, claim);
   }
 }
 
