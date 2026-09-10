@@ -3,6 +3,7 @@ import {
   AddLibraryItemUseCase,
   AssignBoardPositionUseCase,
   ImportHistoricalBoardTermsUseCase,
+  DedupeMemberPositionHistoryUseCase,
   AssignRoleUseCase,
   SyncSystemRolePermissionsUseCase,
   AuthenticateApiKeyUseCase,
@@ -659,6 +660,9 @@ export function createServerContainer() {
       assignmentRepository: repositories.boardPositionAssignment,
       clock,
       idGenerator,
+    }),
+    dedupeMemberPositionHistory: new DedupeMemberPositionHistoryUseCase({
+      positionHistoryRepository: repositories.memberPositionHistory,
     }),
     getActiveBoard: new GetActiveBoardUseCase({
       boardTermRepository: repositories.boardTerm,

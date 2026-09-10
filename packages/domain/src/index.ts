@@ -94,6 +94,7 @@ export * from './modules/governance/use-cases/list-committees.use-case';
 export * from './modules/governance/use-cases/update-committee.use-case';
 export * from './modules/governance/lib/historical-board-terms-vl6';
 export * from './modules/governance/use-cases/import-historical-board-terms.use-case';
+export * from './modules/governance/use-cases/dedupe-member-position-history.use-case';
 
 // Central dos Irmãos VL6
 export * from './modules/central/entities/member-central-profile.entity';

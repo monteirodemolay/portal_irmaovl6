@@ -2,7 +2,13 @@ import Link from 'next/link';
 import { HISTORICAL_BOARD_TERMS_VL6 } from '@vl6/domain';
 import { ArrowLeft } from '@vl6/ui';
 import { requirePagePermission } from '@/lib/auth/require-permission';
+import { DedupeMemberPositionHistoryButton } from '@/modules/governance/components/dedupe-member-position-history-button';
 import { ImportHistoricalBoardTermsForm } from '@/modules/governance/components/import-historical-board-terms-form';
+
+// Margem extra pro Vercel — em lotes com fotos grandes, o upload pro Blob
+// Storage mais a importação (agora paralelizada por fase no use case) podem
+// passar do teto padrão de execução.
+export const maxDuration = 60;
 
 /**
  * Importação única da nominata histórica (1947–2026) fornecida pela
@@ -53,6 +59,18 @@ export default async function ImportHistoricalBoardTermsPage() {
       </div>
 
       <ImportHistoricalBoardTermsForm />
+
+      <div className="border-border bg-background rounded-xl border border-dashed p-4">
+        <p className="text-sm font-semibold">Manutenção</p>
+        <p className="text-muted mt-1 text-xs">
+          Se a importação foi interrompida no meio (por exemplo, por causa de um tempo de execução
+          esgotado) e algum vínculo de cargo ficou duplicado, use o botão abaixo pra limpar — não
+          duplica nada, só remove as cópias extras mantendo a mais antiga.
+        </p>
+        <div className="mt-3">
+          <DedupeMemberPositionHistoryButton />
+        </div>
+      </div>
     </div>
   );
 }
