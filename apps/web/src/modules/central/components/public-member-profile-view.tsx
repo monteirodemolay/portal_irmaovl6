@@ -16,6 +16,7 @@ import {
   Facebook,
   GraduationCap,
   Globe,
+  Heart,
   Instagram,
   Linkedin,
   Mail,
@@ -201,6 +202,11 @@ export function PublicMemberProfileView({
 
   const current = getCurrentAssignment(profile.trajetoria);
   const dataIniciacao = profile.trajetoria?.dataIniciacao ?? profile.dataIniciacao;
+  // Um Irmão em In Memoriam nunca tem acesso próprio ao Portal (situação
+  // terminal) — `canEdit` ignora `isOwnProfile` de propósito aqui, em vez
+  // de confiar que a sessão nunca vai mandar os dois juntos.
+  const isInMemoriam = profile.situacao === 'falecido';
+  const canEdit = isOwnProfile && !isInMemoriam;
   const summaryRows: { label: string; value: string }[] = [
     profile.profissional?.profissao
       ? { label: 'Profissão', value: profile.profissional.profissao }
@@ -218,7 +224,14 @@ export function PublicMemberProfileView({
     <div className="flex flex-col gap-6">
       {/* Cabeçalho institucional */}
       <Card className="overflow-hidden">
-        <div className="from-primary to-primary-dark relative h-24 bg-gradient-to-br sm:h-28" />
+        <div className="from-primary to-primary-dark relative h-24 bg-gradient-to-br sm:h-28">
+          {isInMemoriam && (
+            <span className="bg-surface/90 text-primary-dark absolute right-4 top-4 flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold shadow-sm">
+              <Heart size={13} strokeWidth={1.75} className="text-accent" />
+              In Memoriam
+            </span>
+          )}
+        </div>
         <CardContent className="flex flex-col gap-4 px-6 pb-6 pt-0 sm:px-8">
           <div className="flex flex-wrap items-end justify-between gap-4">
             <MemberAvatar
@@ -226,7 +239,7 @@ export function PublicMemberProfileView({
               nome={profile.nomeCompleto}
               className="border-surface -mt-12 h-24 w-24 border-4 shadow-md sm:-mt-14 sm:h-28 sm:w-28"
             />
-            {isOwnProfile && (
+            {canEdit && (
               <Link
                 href="/irmaos/meu-espaco"
                 className="border-border bg-surface hover:border-primary hover:text-primary flex items-center gap-1.5 rounded-full border px-4 py-2 text-sm font-medium transition-colors"
@@ -265,6 +278,12 @@ export function PublicMemberProfileView({
                 Gestão {current.gestaoNome}
               </span>
             )}
+            {isInMemoriam && profile.dataFalecimento && (
+              <span className="border-border bg-background text-muted flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium">
+                <Heart size={13} strokeWidth={1.75} />
+                Em memória desde {formatDate(profile.dataFalecimento)}
+              </span>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -278,6 +297,18 @@ export function PublicMemberProfileView({
       <div className="@container">
         <div className="@5xl:grid-cols-12 grid grid-cols-1 gap-6">
           <div className="@5xl:col-span-8 flex flex-col gap-6">
+            {isInMemoriam && profile.mensagemHomenagem && (
+              <article className="from-primary/5 to-accent/10 border-accent/20 flex flex-col gap-3 rounded-2xl border bg-gradient-to-br p-6 sm:p-8">
+                <div className="text-accent flex items-center gap-2">
+                  <Heart size={16} strokeWidth={1.75} />
+                  <p className="text-[10px] font-bold uppercase tracking-[0.14em]">Em memória</p>
+                </div>
+                <p className="font-display whitespace-pre-line text-base italic leading-relaxed sm:text-lg">
+                  {profile.mensagemHomenagem}
+                </p>
+              </article>
+            )}
+
             {hasTrajetoria && profile.trajetoria && (
               <Panel kicker="TRAJETÓRIA" title="Caminho na Loja" icon={Milestone}>
                 <div className="flex flex-col gap-4">
@@ -369,11 +400,7 @@ export function PublicMemberProfileView({
             )}
 
             {profile.apresentacao?.texto && (
-              <Panel
-                kicker="APRESENTAÇÃO"
-                title="Sobre"
-                editTab={isOwnProfile ? 'geral' : undefined}
-              >
+              <Panel kicker="APRESENTAÇÃO" title="Sobre" editTab={canEdit ? 'geral' : undefined}>
                 <ProfileBioText text={profile.apresentacao.texto} />
               </Panel>
             )}
@@ -382,7 +409,7 @@ export function PublicMemberProfileView({
               <Panel
                 kicker="VÍNCULOS"
                 title="Família e Legado"
-                editTab={isOwnProfile ? 'pessoal' : undefined}
+                editTab={canEdit ? 'pessoal' : undefined}
               >
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   {FAMILY_DISPLAY_GROUPS.filter((group) => profile.familia?.[group]?.length).map(
@@ -451,7 +478,7 @@ export function PublicMemberProfileView({
 
             {!hasVoluntaryContent && (
               <div className="border-border bg-surface text-muted rounded-2xl border border-dashed p-6 text-sm">
-                {isOwnProfile ? (
+                {canEdit ? (
                   <>
                     Você ainda não compartilhou informações pessoais ou profissionais no seu perfil.{' '}
                     <Link
@@ -497,7 +524,7 @@ export function PublicMemberProfileView({
               <Panel
                 kicker="CARREIRA"
                 title="Atuação profissional"
-                editTab={isOwnProfile ? 'profissional' : undefined}
+                editTab={canEdit ? 'profissional' : undefined}
                 compact
               >
                 <p className="whitespace-pre-line text-sm leading-relaxed">
@@ -510,7 +537,7 @@ export function PublicMemberProfileView({
               <Panel
                 kicker="COMPETÊNCIAS"
                 title="Competências e serviços"
-                editTab={isOwnProfile ? 'profissional' : undefined}
+                editTab={canEdit ? 'profissional' : undefined}
                 compact
               >
                 <div className="flex flex-wrap gap-1.5">
@@ -531,7 +558,7 @@ export function PublicMemberProfileView({
                 kicker="VIDA MAÇÔNICA"
                 title="Vivência Maçônica"
                 icon={Compass}
-                editTab={isOwnProfile ? 'pessoal' : undefined}
+                editTab={canEdit ? 'pessoal' : undefined}
                 compact
               >
                 <dl className="flex flex-col gap-2.5">
@@ -555,7 +582,7 @@ export function PublicMemberProfileView({
               <Panel
                 kicker="ATUAÇÃO"
                 title="Negócios vinculados"
-                editTab={isOwnProfile ? 'empresa' : undefined}
+                editTab={canEdit ? 'empresa' : undefined}
                 compact
               >
                 <div className="flex flex-col gap-2.5">
@@ -583,7 +610,7 @@ export function PublicMemberProfileView({
               <Panel
                 kicker="CONEXÕES"
                 title="Contato e Redes"
-                editTab={isOwnProfile ? 'contatos' : undefined}
+                editTab={canEdit ? 'contatos' : undefined}
                 compact
               >
                 <div className="flex flex-col gap-2">

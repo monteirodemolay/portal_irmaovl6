@@ -11,6 +11,8 @@ import { AccessCard } from '@/modules/membership/components/access-card';
 import { MemberIdentityCard } from '@/modules/membership/components/admin-only/member-identity-card';
 import { MemberMasonicDataCard } from '@/modules/membership/components/admin-only/member-masonic-data-card';
 import { MemberNotesCard } from '@/modules/membership/components/admin-only/member-notes-card';
+import { MemberMemorialCard } from '@/modules/membership/components/admin-only/member-memorial-card';
+import { updateMemberMemorialMessageAction } from '@/modules/membership/actions/member-memorial-actions';
 import { AddressMaritalCard } from '@/modules/membership/components/profile-fields/address-marital-card';
 import { ProfessionalCard } from '@/modules/membership/components/profile-fields/professional-card';
 import { CompanyCard } from '@/modules/membership/components/profile-fields/company-card';
@@ -54,6 +56,7 @@ export async function MemberEditPanel({ memberId }: { memberId: string }) {
 
   const boundUpdateProfile = updateMemberProfileAction.bind(null, memberId);
   const boundUpdateIdentity = updateMemberIdentityAction.bind(null, memberId);
+  const boundUpdateMemorialMessage = updateMemberMemorialMessageAction.bind(null, memberId);
 
   return (
     <div className="flex flex-col gap-8">
@@ -84,6 +87,9 @@ export async function MemberEditPanel({ memberId }: { memberId: string }) {
       </Card>
 
       <div className="flex max-w-3xl flex-col gap-4">
+        {member.situacao === 'falecido' && (
+          <MemberMemorialCard member={member} action={boundUpdateMemorialMessage} />
+        )}
         <MemberIdentityCard member={member} action={boundUpdateIdentity} />
         <MemberMasonicDataCard member={member} action={boundUpdateIdentity} />
         <AddressMaritalCard member={member} action={boundUpdateProfile} />

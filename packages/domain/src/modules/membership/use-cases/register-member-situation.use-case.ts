@@ -172,6 +172,12 @@ export class RegisterMemberSituationUseCase {
     const updatedMember: Member = {
       ...member,
       situacao: input.situacao,
+      // Mesmo espírito de `situacao` acima — sempre um espelho incondicional
+      // do registro recém-aberto, nunca preservado de uma situação
+      // anterior: uma correção que tira o Irmão de `falecido` precisa
+      // limpar `dataFalecimento` junto, senão a página In Memoriam
+      // continuaria achando que ele ainda está em memória.
+      dataFalecimento: input.situacao === 'falecido' ? input.dataInicio : null,
       cargoAtualId: isTerminal ? null : member.cargoAtualId,
       updatedAt: now,
       updatedBy: ctx.uid,

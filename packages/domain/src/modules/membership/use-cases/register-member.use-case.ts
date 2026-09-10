@@ -39,6 +39,8 @@ export class RegisterMemberUseCase {
       tenantId: ctx.tenantId,
       userId: null,
       cargoAtualId: null,
+      dataFalecimento: null,
+      mensagemHomenagem: null,
       ...input,
       redesSociais: {
         instagram: input.redesSociais.instagram ?? null,

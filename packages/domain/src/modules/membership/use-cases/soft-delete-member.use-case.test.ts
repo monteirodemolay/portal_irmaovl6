@@ -48,6 +48,8 @@ const baseMember: Member = {
   redesSociais: { instagram: null, facebook: null, linkedin: null },
   observacoes: null,
   autorizaDivulgacaoExterna: false,
+  dataFalecimento: null,
+  mensagemHomenagem: null,
   createdAt: new Date('2025-01-01'),
   updatedAt: new Date('2025-01-01'),
   createdBy: 'admin-1',
