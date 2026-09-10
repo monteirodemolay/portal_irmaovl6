@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState, useState } from 'react';
+import { useActionState, useState, type FormEvent } from 'react';
 import { useFormStatus } from 'react-dom';
 import { getBoardPositionLabel } from '@vl6/shared';
 import { Button, Camera } from '@vl6/ui';
@@ -15,29 +15,63 @@ const EMPTY_STATE: ImportHistoricalBoardTermsActionState = {
   unmatchedFiles: [],
 };
 
+// O Next.js aceita até 20 MB por envio de Server Action
+// (`serverActions.bodySizeLimit`, next.config.ts) — acima disso, o envio é
+// rejeitado ANTES do código da aplicação rodar: sem log, sem mensagem
+// amigável, só a tela de erro genérica. Travamos bem abaixo disso (15 MB)
+// pra sobrar margem pro resto do formulário e nunca deixar o Irmão trombar
+// nesse limite sem explicação.
+const MAX_BATCH_BYTES = 15 * 1024 * 1024;
+
+function formatMegabytes(bytes: number): string {
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
 export function ImportHistoricalBoardTermsForm() {
   const [state, formAction] = useActionState<ImportHistoricalBoardTermsActionState, FormData>(
     importHistoricalBoardTermsAction,
     EMPTY_STATE,
   );
-  const [fileCount, setFileCount] = useState(0);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [sizeError, setSizeError] = useState<string | null>(null);
+
+  const totalBytes = selectedFiles.reduce((sum, file) => sum + file.size, 0);
+  const overLimit = totalBytes > MAX_BATCH_BYTES;
+
+  function handleFilesChange(files: FileList | null) {
+    const list = files ? Array.from(files) : [];
+    setSelectedFiles(list);
+    const total = list.reduce((sum, file) => sum + file.size, 0);
+    setSizeError(
+      total > MAX_BATCH_BYTES
+        ? `Esse lote tem ${formatMegabytes(total)} — o limite por envio é ${formatMegabytes(MAX_BATCH_BYTES)}. Selecione menos fotos e importe em mais de uma vez.`
+        : null,
+    );
+  }
+
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    if (overLimit) {
+      event.preventDefault();
+    }
+  }
 
   return (
     <div className="flex flex-col gap-6">
-      <form action={formAction} className="flex flex-col gap-4">
+      <form action={formAction} onSubmit={handleSubmit} className="flex flex-col gap-4">
         <label
           htmlFor="fotos"
           className="border-border hover:border-accent bg-background flex cursor-pointer flex-col items-center gap-2 rounded-2xl border border-dashed p-8 text-center transition-colors"
         >
           <Camera size={28} strokeWidth={1.5} className="text-muted" />
           <span className="text-sm font-medium">
-            {fileCount > 0
-              ? `${fileCount} ${fileCount === 1 ? 'foto selecionada' : 'fotos selecionadas'}`
+            {selectedFiles.length > 0
+              ? `${selectedFiles.length} ${selectedFiles.length === 1 ? 'foto selecionada' : 'fotos selecionadas'} — ${formatMegabytes(totalBytes)}`
               : 'Clique para selecionar as fotos dos ex-Veneráveis'}
           </span>
           <span className="text-muted text-xs">
-            Pode selecionar várias de uma vez, ou importar aos poucos — não precisa mandar tudo de
-            uma vez. JPG, PNG ou WEBP, até 5 MB cada.
+            Selecione poucas fotos por vez (até {formatMegabytes(MAX_BATCH_BYTES)} no total) e
+            importe em mais de uma vez — não precisa mandar tudo de uma vez. JPG, PNG ou WEBP, até 5
+            MB cada.
           </span>
           <input
             id="fotos"
@@ -46,12 +80,13 @@ export function ImportHistoricalBoardTermsForm() {
             accept="image/jpeg,image/png,image/webp"
             multiple
             className="sr-only"
-            onChange={(event) => setFileCount(event.target.files?.length ?? 0)}
+            onChange={(event) => handleFilesChange(event.target.files)}
           />
         </label>
 
+        {sizeError && <p className="text-sm text-red-600">{sizeError}</p>}
         {state.error && <p className="text-sm text-red-600">{state.error}</p>}
-        <SubmitButton />
+        <SubmitButton disabled={overLimit} />
       </form>
 
       {state.unmatchedFiles.length > 0 && (
@@ -102,10 +137,10 @@ export function ImportHistoricalBoardTermsForm() {
   );
 }
 
-function SubmitButton() {
+function SubmitButton({ disabled }: { disabled: boolean }) {
   const { pending } = useFormStatus();
   return (
-    <Button type="submit" disabled={pending} className="w-fit">
+    <Button type="submit" disabled={disabled || pending} className="w-fit">
       {pending ? 'Importando…' : 'Importar nominata'}
     </Button>
   );
