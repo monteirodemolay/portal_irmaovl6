@@ -35,7 +35,12 @@ export async function MemberEditPanel({ memberId }: { memberId: string }) {
 
   const container = createServerContainer();
   const member = await container.repositories.member.findById(memberId);
-  if (!member || member.deletedAt) notFound();
+  // `deletedAt` (arquivado — situação inativa, mesclado como duplicado
+  // etc.) NÃO bloqueia o Administrador editar: ele continua precisando
+  // corrigir dados (foto, principalmente) de Irmãos antigos/falecidos ou
+  // desfazer uma mesclagem equivocada. Só um `id` inexistente é 404 de
+  // verdade.
+  if (!member) notFound();
 
   const [
     roles,
