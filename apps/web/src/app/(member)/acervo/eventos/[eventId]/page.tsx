@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { hasPermission } from '@vl6/domain';
 import { createServerContainer } from '@vl6/infra';
@@ -99,7 +100,14 @@ export default async function EventAlbumPage({ params }: { params: Promise<{ eve
           <MapPin size={15} />
           {event.local}
         </span>
-        {album?.boardTermNome && <span>{album.boardTermNome}</span>}
+        {album?.boardTermId && album?.boardTermNome && (
+          <Link
+            href={`/acervo/gestoes/${album.boardTermId}`}
+            className="hover:text-accent underline"
+          >
+            {album.boardTermNome}
+          </Link>
+        )}
       </div>
 
       {album?.instagramUrl && (
