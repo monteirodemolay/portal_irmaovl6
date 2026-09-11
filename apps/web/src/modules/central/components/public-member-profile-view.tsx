@@ -199,6 +199,15 @@ export function PublicMemberProfileView({
     profile.familia,
   );
 
+  // Só entra na grade de 2 colunas quando há pelo menos 2 grupos
+  // preenchidos — com 1 só, `sm:grid-cols-2` deixava a célula vazia ao
+  // lado como espaço morto dentro do próprio card (visualmente quebrado,
+  // metade do card em branco sem nada), em vez de o card ocupar a largura
+  // toda disponível.
+  const populatedFamilyGroups = FAMILY_DISPLAY_GROUPS.filter(
+    (group) => profile.familia?.[group]?.length,
+  );
+
   const current = getCurrentAssignment(profile.trajetoria);
   const dataIniciacao = profile.trajetoria?.dataIniciacao ?? profile.dataIniciacao;
   // Um Irmão em In Memoriam nunca tem acesso próprio ao Portal (situação
@@ -377,36 +386,38 @@ export function PublicMemberProfileView({
               title="Família e Legado"
               editTab={canEdit ? 'pessoal' : undefined}
             >
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                {FAMILY_DISPLAY_GROUPS.filter((group) => profile.familia?.[group]?.length).map(
-                  (group) => (
-                    <div
-                      key={group}
-                      className="border-border bg-background flex flex-col gap-2.5 rounded-xl border p-4"
-                    >
-                      <p className="text-muted text-[10px] font-bold uppercase tracking-wide">
-                        {FAMILY_DISPLAY_GROUP_LABELS[group]}
-                      </p>
-                      <ul className="flex flex-col gap-2.5">
-                        {profile.familia?.[group]?.map((item) => (
-                          <li key={item.key} className="flex items-center gap-2.5 text-sm">
-                            <MemberAvatar
-                              fotoUrl={item.fotoUrl}
-                              nome={item.nomeCompleto}
-                              className="h-8 w-8 shrink-0"
-                            />
-                            <span className="min-w-0">
-                              <span className="block truncate font-medium">
-                                {item.nomeCompleto}
-                              </span>
-                              <span className="text-muted block text-xs">{item.parentesco}</span>
-                            </span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  ),
-                )}
+              <div
+                className={
+                  populatedFamilyGroups.length > 1
+                    ? 'grid grid-cols-1 gap-3 sm:grid-cols-2'
+                    : 'grid grid-cols-1 gap-3'
+                }
+              >
+                {populatedFamilyGroups.map((group) => (
+                  <div
+                    key={group}
+                    className="border-border bg-background flex flex-col gap-2.5 rounded-xl border p-4"
+                  >
+                    <p className="text-muted text-[10px] font-bold uppercase tracking-wide">
+                      {FAMILY_DISPLAY_GROUP_LABELS[group]}
+                    </p>
+                    <ul className="flex flex-col gap-2.5">
+                      {profile.familia?.[group]?.map((item) => (
+                        <li key={item.key} className="flex items-center gap-2.5 text-sm">
+                          <MemberAvatar
+                            fotoUrl={item.fotoUrl}
+                            nome={item.nomeCompleto}
+                            className="h-8 w-8 shrink-0"
+                          />
+                          <span className="min-w-0">
+                            <span className="block truncate font-medium">{item.nomeCompleto}</span>
+                            <span className="text-muted block text-xs">{item.parentesco}</span>
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
               </div>
               {canViewAcervo && (
                 <Link
