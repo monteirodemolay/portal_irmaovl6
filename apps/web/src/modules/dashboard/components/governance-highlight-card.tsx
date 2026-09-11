@@ -25,7 +25,7 @@ export function GovernanceHighlightCard({ board }: { board: ActiveBoard | null }
           <MemberAvatar
             fotoUrl={veneravel.member.fotoUrl}
             nome={veneravel.member.nomeCompleto}
-            className="h-10 w-10 shrink-0 ring-1 ring-white/20"
+            className="h-16 w-16 shrink-0 rounded-xl ring-1 ring-white/20"
           />
           {/* Duas linhas — "Venerável Mestre" pequeno e discreto, nome em
               destaque embaixo — em vez de "V∴M∴ Nome Completo" numa linha só
