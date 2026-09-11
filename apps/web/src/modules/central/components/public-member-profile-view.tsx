@@ -8,6 +8,8 @@ import {
 } from '@vl6/shared';
 import {
   ArrowUpRight,
+  Briefcase,
+  Building2,
   Camera,
   Card,
   CardContent,
@@ -24,6 +26,8 @@ import {
   MessageCircle,
   Milestone,
   Phone,
+  Sparkles,
+  Tag,
 } from '@vl6/ui';
 import { MemberAvatar } from '@/components/membership/member-avatar';
 import { MemberDegreeBadge } from '@/components/membership/member-degree-badge';
@@ -127,10 +131,12 @@ function SummaryRow({ label, value }: { label: string; value: string }) {
  * preview "como os outros veem" (`/perfil`) quanto pelo perfil de terceiro
  * (`/central/[memberId]`).
  *
- * Layout institucional em grid de 12 colunas (coluna principal 8/12 com a
- * trajetória, biografia, família e memória; coluna lateral 4/12 com o
- * resumo, carreira e contatos) — não um formulário reaproveitado como
- * cards.
+ * Layout institucional em grid de 12 colunas — coluna principal 8/12 com
+ * biografia, família e memória fotográfica; coluna lateral 4/12 com resumo,
+ * trajetória, vida maçônica e contatos. Atuação profissional, negócios,
+ * competências e interesses viram etiquetas compactas dentro do próprio
+ * cabeçalho (não cartões cheios na lateral) — não um formulário
+ * reaproveitado como cards.
  */
 export function PublicMemberProfileView({
   profile,
@@ -181,6 +187,7 @@ export function PublicMemberProfileView({
     (profile.competencias && profile.competencias.length > 0) ||
     (profile.servicos && profile.servicos.length > 0),
   );
+  const interesses = profile.informacoesPessoais?.interesses ?? null;
   const hasVidaMaconica = Boolean(
     profile.informacoesMaconicas &&
     (profile.informacoesMaconicas.lojasVisitadas ||
@@ -293,6 +300,63 @@ export function PublicMemberProfileView({
               </span>
             )}
           </div>
+
+          {/*
+            Vínculos rápidos — atuação profissional, negócios, competências
+            e interesses viram etiquetas aqui dentro do próprio cabeçalho em
+            vez de 4 cartões cheios empilhados na coluna lateral (pedido
+            explícito: "criando apenas os vínculos ali", pra ficar mais bem
+            distribuído). Cada linha só aparece se tiver algo pra mostrar.
+          */}
+          {(hasResumoProfissional || hasNegocios || hasCompetenciasServicos || interesses) && (
+            <div className="border-border flex flex-col gap-2 border-t pt-4">
+              {(hasResumoProfissional || hasNegocios) && (
+                <div className="flex flex-wrap gap-2">
+                  {hasResumoProfissional && profile.profissional?.resumoProfissional && (
+                    <span className="border-border bg-background text-foreground flex max-w-full items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium">
+                      <Briefcase size={13} strokeWidth={1.75} className="text-accent shrink-0" />
+                      <span className="truncate">{profile.profissional.resumoProfissional}</span>
+                    </span>
+                  )}
+                  {profile.empresaAtual && (
+                    <span className="border-border bg-background text-foreground flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium">
+                      <Building2 size={13} strokeWidth={1.75} className="text-accent shrink-0" />
+                      {profile.empresaAtual}
+                    </span>
+                  )}
+                  {profile.negocios?.map((negocio) => (
+                    <Link
+                      key={negocio.id}
+                      href={`/irmaos/negocios/${negocio.id}`}
+                      className="border-border bg-background hover:border-primary hover:text-primary flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors"
+                    >
+                      <Building2 size={13} strokeWidth={1.75} className="text-accent shrink-0" />
+                      {negocio.nomeEmpresa}
+                    </Link>
+                  ))}
+                </div>
+              )}
+              {hasCompetenciasServicos && (
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <Tag size={13} strokeWidth={1.75} className="text-muted shrink-0" />
+                  {[...(profile.competencias ?? []), ...(profile.servicos ?? [])].map((tag) => (
+                    <span
+                      key={tag}
+                      className="bg-background text-foreground rounded-md px-2.5 py-1 text-xs font-medium"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              )}
+              {interesses && (
+                <div className="text-muted flex items-center gap-1.5 text-xs">
+                  <Sparkles size={13} strokeWidth={1.75} className="shrink-0" />
+                  {interesses}
+                </div>
+              )}
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -326,52 +390,6 @@ export function PublicMemberProfileView({
                 {profile.mensagemHomenagem}
               </p>
             </article>
-          )}
-
-          {hasTrajetoria && profile.trajetoria && (
-            <Panel kicker="TRAJETÓRIA" title="Caminho na Loja" icon={Milestone}>
-              <div className="flex flex-col gap-4">
-                {profile.trajetoria.dataIniciacao && (
-                  <TimelineEntry
-                    label="Iniciação"
-                    dateLabel={formatDate(profile.trajetoria.dataIniciacao)}
-                    active
-                  />
-                )}
-                {profile.trajetoria.dataElevacao && (
-                  <TimelineEntry
-                    label="Elevação"
-                    dateLabel={formatDate(profile.trajetoria.dataElevacao)}
-                    active
-                  />
-                )}
-                {profile.trajetoria.dataExaltacao && (
-                  <TimelineEntry
-                    label="Exaltação"
-                    dateLabel={formatDate(profile.trajetoria.dataExaltacao)}
-                    active
-                  />
-                )}
-                {profile.trajetoria.cargos.map((entry, index) => (
-                  <TimelineEntry
-                    key={`cargo-${index}`}
-                    label={getBoardPositionLabel(entry.cargo)}
-                    dateLabel={formatDate(entry.dataInicio)}
-                    active={!entry.dataFim}
-                    detail={`Cargo · ${entry.gestaoNome}${entry.dataFim ? ` até ${formatDate(entry.dataFim)}` : ' · em curso'}`}
-                  />
-                ))}
-                {profile.trajetoria.comissoes.map((entry, index) => (
-                  <TimelineEntry
-                    key={`comissao-${index}`}
-                    label={entry.nome}
-                    dateLabel={formatDate(entry.dataInicio)}
-                    active={!entry.dataFim}
-                    detail={`Comissão · ${entry.gestaoNome}${entry.dataFim ? ` até ${formatDate(entry.dataFim)}` : ' · em curso'}`}
-                  />
-                ))}
-              </div>
-            </Panel>
           )}
 
           {profile.apresentacao?.texto && (
@@ -495,40 +513,47 @@ export function PublicMemberProfileView({
             </dl>
           </Panel>
 
-          {profile.informacoesPessoais?.interesses && (
-            <Panel kicker="PESSOAL" title="Interesses" compact>
-              <p className="text-sm leading-relaxed">{profile.informacoesPessoais.interesses}</p>
-            </Panel>
-          )}
-
-          {hasResumoProfissional && profile.profissional?.resumoProfissional && (
-            <Panel
-              kicker="CARREIRA"
-              title="Atuação profissional"
-              editTab={canEdit ? 'profissional' : undefined}
-              compact
-            >
-              <p className="whitespace-pre-line text-sm leading-relaxed">
-                {profile.profissional.resumoProfissional}
-              </p>
-            </Panel>
-          )}
-
-          {hasCompetenciasServicos && (
-            <Panel
-              kicker="COMPETÊNCIAS"
-              title="Competências e serviços"
-              editTab={canEdit ? 'profissional' : undefined}
-              compact
-            >
-              <div className="flex flex-wrap gap-1.5">
-                {[...(profile.competencias ?? []), ...(profile.servicos ?? [])].map((tag) => (
-                  <span
-                    key={tag}
-                    className="bg-background text-foreground rounded-md px-2.5 py-1 text-xs font-medium"
-                  >
-                    {tag}
-                  </span>
+          {hasTrajetoria && profile.trajetoria && (
+            <Panel kicker="TRAJETÓRIA" title="Caminho na Loja" icon={Milestone} compact>
+              <div className="flex flex-col gap-4">
+                {profile.trajetoria.dataIniciacao && (
+                  <TimelineEntry
+                    label="Iniciação"
+                    dateLabel={formatDate(profile.trajetoria.dataIniciacao)}
+                    active
+                  />
+                )}
+                {profile.trajetoria.dataElevacao && (
+                  <TimelineEntry
+                    label="Elevação"
+                    dateLabel={formatDate(profile.trajetoria.dataElevacao)}
+                    active
+                  />
+                )}
+                {profile.trajetoria.dataExaltacao && (
+                  <TimelineEntry
+                    label="Exaltação"
+                    dateLabel={formatDate(profile.trajetoria.dataExaltacao)}
+                    active
+                  />
+                )}
+                {profile.trajetoria.cargos.map((entry, index) => (
+                  <TimelineEntry
+                    key={`cargo-${index}`}
+                    label={getBoardPositionLabel(entry.cargo)}
+                    dateLabel={formatDate(entry.dataInicio)}
+                    active={!entry.dataFim}
+                    detail={`Cargo · ${entry.gestaoNome}${entry.dataFim ? ` até ${formatDate(entry.dataFim)}` : ' · em curso'}`}
+                  />
+                ))}
+                {profile.trajetoria.comissoes.map((entry, index) => (
+                  <TimelineEntry
+                    key={`comissao-${index}`}
+                    label={entry.nome}
+                    dateLabel={formatDate(entry.dataInicio)}
+                    active={!entry.dataFim}
+                    detail={`Comissão · ${entry.gestaoNome}${entry.dataFim ? ` até ${formatDate(entry.dataFim)}` : ' · em curso'}`}
+                  />
                 ))}
               </div>
             </Panel>
@@ -556,34 +581,6 @@ export function PublicMemberProfileView({
                   />
                 )}
               </dl>
-            </Panel>
-          )}
-
-          {hasNegocios && (
-            <Panel
-              kicker="ATUAÇÃO"
-              title="Negócios vinculados"
-              editTab={canEdit ? 'empresa' : undefined}
-              compact
-            >
-              <div className="flex flex-col gap-2.5">
-                {profile.empresaAtual && (
-                  <div className="border-border bg-background rounded-xl border p-3.5">
-                    <p className="text-sm font-semibold">{profile.empresaAtual}</p>
-                    <p className="text-muted mt-0.5 text-xs">Empresa atual</p>
-                  </div>
-                )}
-                {profile.negocios?.map((negocio) => (
-                  <Link
-                    key={negocio.id}
-                    href={`/irmaos/negocios/${negocio.id}`}
-                    className="border-border hover:border-primary bg-background flex flex-col gap-0.5 rounded-xl border p-3.5 text-sm transition-colors"
-                  >
-                    <p className="font-semibold">{negocio.nomeEmpresa}</p>
-                    {negocio.segmento && <p className="text-muted text-xs">{negocio.segmento}</p>}
-                  </Link>
-                ))}
-              </div>
             </Panel>
           )}
 
