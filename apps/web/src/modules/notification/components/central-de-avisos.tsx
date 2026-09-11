@@ -16,17 +16,21 @@ import {
   Megaphone,
   ShieldCheck,
   Star,
+  Trash2,
   cn,
 } from '@vl6/ui';
 import { normalizeSearchText } from '@/modules/archive/lib/archive-search-match';
 import {
   acknowledgeNotificationAction,
+  deleteAllReadNotificationsAction,
+  deleteReadNotificationAction,
   markAllNotificationsAsReadAction,
   markNotificationAsReadAction,
   markNotificationAsUnreadAction,
   toggleNotificationArchivedAction,
   toggleNotificationImportantAction,
 } from '../actions/notification-actions';
+import { sortNotificationsUnreadFirst } from '../lib/sort-notifications';
 
 type Tab = 'all' | 'unread' | 'read' | 'important' | 'archived' | 'ack';
 
@@ -86,7 +90,7 @@ export function CentralDeAvisos({ notifications }: { notifications: Notification
 
   const filtered = useMemo(() => {
     const query = normalizeSearchText(search);
-    return notifications
+    const matches = notifications
       .filter((n) => {
         if (tab === 'all') return !n.archivedAt;
         if (tab === 'unread') return !n.lida && !n.archivedAt;
@@ -103,6 +107,7 @@ export function CentralDeAvisos({ notifications }: { notifications: Notification
         );
         return haystack.includes(query);
       });
+    return sortNotificationsUnreadFirst(matches);
   }, [notifications, tab, search]);
 
   useEffect(() => {
@@ -117,6 +122,18 @@ export function CentralDeAvisos({ notifications }: { notifications: Notification
     if (!lida) startTransition(() => markNotificationAsReadAction(id));
   }
 
+  function handleDeleteRead(id: string) {
+    if (selectedId === id) setSelectedId(null);
+    startTransition(() => deleteReadNotificationAction(id));
+  }
+
+  function handleDeleteAllRead() {
+    setSelectedId(null);
+    startTransition(async () => {
+      await deleteAllReadNotificationsAction();
+    });
+  }
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -126,17 +143,30 @@ export function CentralDeAvisos({ notifications }: { notifications: Notification
           onChange={(event) => setSearch(event.target.value)}
           className="max-w-xs"
         />
-        {counts.unread > 0 && (
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            disabled={isPending}
-            onClick={() => startTransition(() => markAllNotificationsAsReadAction())}
-          >
-            <CheckCircle2 size={16} /> Marcar todas como lidas
-          </Button>
-        )}
+        <div className="flex flex-wrap items-center gap-2">
+          {counts.unread > 0 && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={isPending}
+              onClick={() => startTransition(() => markAllNotificationsAsReadAction())}
+            >
+              <CheckCircle2 size={16} /> Marcar todas como lidas
+            </Button>
+          )}
+          {counts.read > 0 && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={isPending}
+              onClick={handleDeleteAllRead}
+            >
+              <Trash2 size={16} /> Excluir lidas
+            </Button>
+          )}
+        </div>
       </div>
 
       <div className="border-border flex gap-1 overflow-x-auto border-b" role="tablist">
@@ -226,6 +256,7 @@ export function CentralDeAvisos({ notifications }: { notifications: Notification
               key={selected.id}
               notification={selected}
               startTransition={startTransition}
+              onDelete={() => handleDeleteRead(selected.id)}
             />
           )}
         </div>
@@ -237,9 +268,11 @@ export function CentralDeAvisos({ notifications }: { notifications: Notification
 function NoticeDetail({
   notification,
   startTransition,
+  onDelete,
 }: {
   notification: Notification;
   startTransition: (fn: () => void | Promise<void>) => void;
+  onDelete: () => void;
 }) {
   const Icon = TYPE_ICON[notification.tipo];
   const needsAck = notification.requiresAcknowledgement && !notification.acknowledgedAt;
@@ -272,6 +305,16 @@ function NoticeDetail({
           >
             <Archive size={16} />
           </button>
+          {notification.lida && (
+            <button
+              type="button"
+              title="Excluir"
+              onClick={onDelete}
+              className="text-muted flex h-8 w-8 items-center justify-center rounded-full hover:bg-red-50 hover:text-red-600"
+            >
+              <Trash2 size={16} />
+            </button>
+          )}
         </div>
       </div>
 

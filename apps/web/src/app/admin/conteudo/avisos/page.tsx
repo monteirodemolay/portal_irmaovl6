@@ -128,9 +128,14 @@ export default async function AnnouncementsPage({
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
         <h1 className="font-display text-2xl font-semibold">Avisos</h1>
-        <Button asChild>
-          <Link href={`${BASE_PATH}/novo`}>Novo Aviso</Link>
-        </Button>
+        <div className="flex gap-2">
+          <Button asChild variant="outline">
+            <Link href="/admin/conteudo/notificacoes/nova">Notificação pessoal</Link>
+          </Button>
+          <Button asChild>
+            <Link href={`${BASE_PATH}/novo`}>Novo Aviso</Link>
+          </Button>
+        </div>
       </div>
 
       <ConcludedTabNav basePath={BASE_PATH} aba="principal" />

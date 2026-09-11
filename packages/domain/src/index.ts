@@ -278,6 +278,10 @@ export * from './modules/notification/use-cases/toggle-notification-important.us
 export * from './modules/notification/use-cases/toggle-notification-archived.use-case';
 export * from './modules/notification/use-cases/acknowledge-notification.use-case';
 export * from './modules/notification/use-cases/archive-expired-notifications.use-case';
+export * from './modules/notification/use-cases/purge-expired-notifications.use-case';
+export * from './modules/notification/use-cases/delete-read-notification.use-case';
+export * from './modules/notification/use-cases/delete-all-read-notifications.use-case';
+export * from './modules/notification/use-cases/send-targeted-notification.use-case';
 export * from './modules/notification/use-cases/update-notification-preference.use-case';
 export * from './modules/notification/use-cases/create-link.use-case';
 export * from './modules/notification/use-cases/list-links.use-case';

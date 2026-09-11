@@ -1249,11 +1249,31 @@ export class InMemoryNotificationRepository implements INotificationRepository {
         n.expiresAt.getTime() <= at.getTime(),
     );
   }
+  async listReadByRecipient(tenantId: string, destinatarioId: string) {
+    return [...this.byId.values()].filter(
+      (n) =>
+        n.tenantId === tenantId &&
+        n.destinatarioId === destinatarioId &&
+        n.lida &&
+        n.deletedAt === null,
+    );
+  }
+  async listArchivedBefore(tenantId: string, before: Date) {
+    return [...this.byId.values()].filter(
+      (n) =>
+        n.tenantId === tenantId &&
+        n.archivedAt !== null &&
+        n.archivedAt.getTime() <= before.getTime(),
+    );
+  }
   async create(notification: Notification) {
     this.byId.set(notification.id, notification);
   }
   async update(notification: Notification) {
     this.byId.set(notification.id, notification);
+  }
+  async delete(id: string) {
+    this.byId.delete(id);
   }
 }
 

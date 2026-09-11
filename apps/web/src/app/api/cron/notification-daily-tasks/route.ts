@@ -32,6 +32,9 @@ function isoDate(date: Date): string {
  *    presença" do escopo, sem precisar de um segundo tipo de notificação.
  * 2. Arquivamento de notificações com `expiresAt` vencido
  *    (`ArchiveExpiredNotificationsUseCase`).
+ * 3. Expurgo de verdade (exclusão física) das que já estão arquivadas há
+ *    mais da folga de retenção (`PurgeExpiredNotificationsUseCase`) — a
+ *    coleção não cresce pra sempre.
  *
  * Resumo semanal (explicitamente opcional no escopo) e notificação
  * separada de aniversário (o evento de aniversário já aparece na Linha do
@@ -50,6 +53,7 @@ export const GET = withApiLogging(ROUTE, async (request: NextRequest) => {
   const tenantsSnap = await db.collection('tenants').get();
   let sessionRemindersSent = 0;
   let notificationsArchived = 0;
+  let notificationsPurged = 0;
 
   for (const tenantDoc of tenantsSnap.docs) {
     const tenantId = tenantDoc.id;
@@ -75,12 +79,14 @@ export const GET = withApiLogging(ROUTE, async (request: NextRequest) => {
     }
 
     notificationsArchived += await container.useCases.archiveExpiredNotifications.execute(tenantId);
+    notificationsPurged += await container.useCases.purgeExpiredNotifications.execute(tenantId);
   }
 
   logger.info('Job diário da Central de Avisos concluído', {
     route: ROUTE,
     sessionRemindersSent,
     notificationsArchived,
+    notificationsPurged,
   });
-  return NextResponse.json({ sessionRemindersSent, notificationsArchived });
+  return NextResponse.json({ sessionRemindersSent, notificationsArchived, notificationsPurged });
 });

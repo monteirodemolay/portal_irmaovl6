@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useTransition } from 'react';
 import type { Notification } from '@vl6/domain';
-import { NOTIFICATION_TYPE_LABELS } from '@vl6/shared';
+import { BRAZIL_TIME_ZONE, NOTIFICATION_TYPE_LABELS } from '@vl6/shared';
 import {
   Badge,
   Bell,
@@ -22,8 +22,17 @@ import {
   markAllNotificationsAsReadAction,
   markNotificationAsReadAction,
 } from '../actions/notification-actions';
+import { sortNotificationsUnreadFirst } from '../lib/sort-notifications';
 
 const MAX_PREVIEW = 5;
+
+function formatRelative(date: Date): string {
+  return new Intl.DateTimeFormat('pt-BR', {
+    dateStyle: 'short',
+    timeStyle: 'short',
+    timeZone: BRAZIL_TIME_ZONE,
+  }).format(date);
+}
 
 /**
  * Sino do topbar — prévia rápida, nunca substitui a Central de Avisos
@@ -39,7 +48,9 @@ export function NotificationCenter({
   unreadCount: number;
 }) {
   const [isPending, startTransition] = useTransition();
-  const preview = notifications.filter((n) => !n.lida && !n.archivedAt).slice(0, MAX_PREVIEW);
+  const preview = sortNotificationsUnreadFirst(notifications)
+    .filter((n) => !n.lida && !n.archivedAt)
+    .slice(0, MAX_PREVIEW);
 
   return (
     <Dialog>
@@ -94,10 +105,17 @@ export function NotificationCenter({
                   className={cn(
                     'border-border hover:bg-surface flex w-full flex-col gap-0.5 rounded border p-3 text-left text-sm',
                     'bg-background',
+                    notification.priority === 'urgent' && 'border-l-4 border-l-red-500',
+                    notification.priority === 'attention' && 'border-l-4 border-l-amber-500',
                   )}
                 >
-                  <span className="text-accent text-[10px] font-semibold uppercase tracking-wide">
-                    {NOTIFICATION_TYPE_LABELS[notification.tipo]}
+                  <span className="flex items-center justify-between gap-2">
+                    <span className="text-accent text-[10px] font-semibold uppercase tracking-wide">
+                      {NOTIFICATION_TYPE_LABELS[notification.tipo]}
+                    </span>
+                    <time className="text-muted shrink-0 text-[10px]">
+                      {formatRelative(notification.createdAt)}
+                    </time>
                   </span>
                   <span className="font-medium">{notification.titulo}</span>
                   <span className="text-muted line-clamp-1 text-xs">{notification.mensagem}</span>

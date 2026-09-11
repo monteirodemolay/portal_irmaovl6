@@ -81,3 +81,27 @@ export async function markAllNotificationsAsReadAction(): Promise<void> {
 
   revalidatePath('/', 'layout');
 }
+
+/** Exclui do próprio painel — só notificações já lidas (ver `DeleteReadNotificationUseCase`). */
+export async function deleteReadNotificationAction(notificationId: string): Promise<void> {
+  const session = await requireSession();
+  const container = createServerContainer();
+  const result = await container.useCases.deleteReadNotification.execute(
+    session.authContext,
+    notificationId,
+  );
+  if (!result.ok) throw new Error(result.error.message);
+
+  revalidatePath('/', 'layout');
+}
+
+/** "Excluir lidas" em massa — mesmo espírito, o painel inteiro de uma vez. */
+export async function deleteAllReadNotificationsAction(): Promise<number> {
+  const session = await requireSession();
+  const container = createServerContainer();
+  const result = await container.useCases.deleteAllReadNotifications.execute(session.authContext);
+  if (!result.ok) throw new Error(result.error.message);
+
+  revalidatePath('/', 'layout');
+  return result.value;
+}

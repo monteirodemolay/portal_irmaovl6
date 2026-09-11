@@ -180,6 +180,10 @@ import {
   ToggleNotificationArchivedUseCase,
   AcknowledgeNotificationUseCase,
   ArchiveExpiredNotificationsUseCase,
+  PurgeExpiredNotificationsUseCase,
+  DeleteReadNotificationUseCase,
+  DeleteAllReadNotificationsUseCase,
+  SendTargetedNotificationUseCase,
   DeleteMyAccountUseCase,
   ModerateNewsCommentUseCase,
   NotifyRecipientUseCase,
@@ -1205,6 +1209,24 @@ export function createServerContainer() {
     archiveExpiredNotifications: new ArchiveExpiredNotificationsUseCase({
       notificationRepository: repositories.notification,
       clock,
+    }),
+    purgeExpiredNotifications: new PurgeExpiredNotificationsUseCase({
+      notificationRepository: repositories.notification,
+      clock,
+    }),
+    deleteReadNotification: new DeleteReadNotificationUseCase({
+      notificationRepository: repositories.notification,
+    }),
+    deleteAllReadNotifications: new DeleteAllReadNotificationsUseCase({
+      notificationRepository: repositories.notification,
+    }),
+    sendTargetedNotification: new SendTargetedNotificationUseCase({
+      memberRepository: repositories.member,
+      notificationRepository: repositories.notification,
+      notificationPreferenceRepository: repositories.notificationPreference,
+      notificationGateway,
+      clock,
+      idGenerator,
     }),
     updateNotificationPreference: new UpdateNotificationPreferenceUseCase({
       preferenceRepository: repositories.notificationPreference,
