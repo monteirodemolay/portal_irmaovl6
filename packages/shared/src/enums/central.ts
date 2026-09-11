@@ -47,6 +47,11 @@ export const AREA_ATUACAO_LABELS: Record<AreaAtuacaoKey, string> = {
  * Estado de publicação de cada negócio/atividade da Central (Comunidade
  * VL6 § Negócios & Serviços) — mapa de implantação exige revisão
  * administrativa antes de qualquer atividade aparecer publicamente.
+ * `nao_divulgado`: `CentralBusinessEntry.divulgar !== true` — o Irmão só
+ * quer registrar onde trabalha (contato + pareamento por CNPJ), nunca
+ * entra em revisão nem aparece no Diretório. Estado estável, diferente de
+ * `draft` (que significa "incompleto, ainda não enviado pra revisão" —
+ * uma entrada não-divulgada nunca teve a intenção de ser enviada).
  * `draft`: nunca enviado (ou devolvido pela Administração pra revisão).
  * `pending_review`: o Irmão salvou/alterou o conteúdo, aguardando a
  * Administração aprovar. `published`: visível no Diretório de Negócios.
@@ -54,6 +59,7 @@ export const AREA_ATUACAO_LABELS: Record<AreaAtuacaoKey, string> = {
  * próprio Irmão editando — isso volta pra `draft`, ver `UpdateCentralProfileUseCase`).
  */
 export const BUSINESS_PUBLICATION_STATUS_KEYS = [
+  'nao_divulgado',
   'draft',
   'pending_review',
   'published',
@@ -62,6 +68,7 @@ export const BUSINESS_PUBLICATION_STATUS_KEYS = [
 export type BusinessPublicationStatus = (typeof BUSINESS_PUBLICATION_STATUS_KEYS)[number];
 
 export const BUSINESS_PUBLICATION_STATUS_LABELS: Record<BusinessPublicationStatus, string> = {
+  nao_divulgado: 'Somente contato',
   draft: 'Rascunho',
   pending_review: 'Em revisão',
   published: 'Publicado',

@@ -3,6 +3,7 @@ import type { Member } from '../../membership/entities/member.entity';
 import type { MemberCentralProfile } from '../entities/member-central-profile.entity';
 import type { PublicationSettings } from '../entities/publication-settings.entity';
 import { resolveAreaAtuacao } from '../lib/resolve-area-atuacao';
+import { resolveEspecializacao } from '../lib/resolve-especializacao';
 import type { PublicFamiliaLegadoDTO } from '../lib/build-public-familia-legado';
 
 export interface PublicMemberProfileDTO {
@@ -42,11 +43,11 @@ export interface PublicMemberProfileDTO {
     profissao: string | null;
     areaAtuacao: string | null;
     areaAtuacaoKey: AreaAtuacaoKey | null;
+    especializacao: string | null;
     formacao: string | null;
     resumoProfissional: string | null;
   } | null;
   negocios: MemberCentralProfile['negocios'] | null;
-  empresaAtual: string | null;
   competencias: string[] | null;
   servicos: string[] | null;
   afiliacoes: MemberCentralProfile['afiliacoes'] | null;
@@ -163,17 +164,17 @@ export function buildPublicMemberProfileDTO(
           profissao: member.profissao,
           areaAtuacao: resolveAreaAtuacao(profile)?.label ?? null,
           areaAtuacaoKey: resolveAreaAtuacao(profile)?.key ?? null,
+          especializacao: resolveEspecializacao(profile)?.label ?? null,
           formacao: profile?.formacao ?? null,
           resumoProfissional: profile?.resumoProfissional ?? null,
         }
       : null,
     // Só negócios já aprovados pela Administração — rascunho/em revisão/
-    // suspenso nunca aparecem a terceiros, mesmo com o bloco "empresa" ligado
-    // (ver `ReviewBusinessSubmissionUseCase`).
+    // suspenso/não-divulgado nunca aparecem a terceiros, mesmo com o bloco
+    // "empresa" ligado (ver `ReviewBusinessSubmissionUseCase`).
     negocios: blocks.empresa
       ? (profile?.negocios.filter((n) => n.status === 'published') ?? [])
       : null,
-    empresaAtual: blocks.empresa ? member.empresa : null,
     competencias: blocks.competencias ? (profile?.competencias ?? []) : null,
     servicos: blocks.servicos ? (profile?.servicos ?? []) : null,
     afiliacoes: blocks.afiliacoes ? (profile?.afiliacoes ?? []) : null,

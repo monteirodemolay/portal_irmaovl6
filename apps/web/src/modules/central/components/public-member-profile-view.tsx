@@ -183,9 +183,7 @@ export function PublicMemberProfileView({
       profile.profissional.resumoProfissional),
   );
   const hasResumoProfissional = Boolean(profile.profissional?.resumoProfissional);
-  const hasNegocios = Boolean(
-    profile.empresaAtual || (profile.negocios && profile.negocios.length > 0),
-  );
+  const hasNegocios = Boolean(profile.negocios && profile.negocios.length > 0);
   const hasCompetenciasServicos = Boolean(
     (profile.competencias && profile.competencias.length > 0) ||
     (profile.servicos && profile.servicos.length > 0),
@@ -239,7 +237,12 @@ export function PublicMemberProfileView({
       ? { label: 'Profissão', value: profile.profissional.profissao }
       : null,
     profile.profissional?.areaAtuacao
-      ? { label: 'Área', value: profile.profissional.areaAtuacao }
+      ? {
+          label: 'Área',
+          value: profile.profissional.especializacao
+            ? `${profile.profissional.areaAtuacao} · ${profile.profissional.especializacao}`
+            : profile.profissional.areaAtuacao,
+        }
       : null,
     profile.profissional?.formacao
       ? { label: 'Formação', value: profile.profissional.formacao }
@@ -328,12 +331,6 @@ export function PublicMemberProfileView({
                     <span className="border-border bg-background text-foreground flex max-w-full items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium">
                       <Briefcase size={13} strokeWidth={1.75} className="text-accent shrink-0" />
                       <span className="truncate">{profile.profissional.resumoProfissional}</span>
-                    </span>
-                  )}
-                  {profile.empresaAtual && (
-                    <span className="border-border bg-background text-foreground flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium">
-                      <Building2 size={13} strokeWidth={1.75} className="text-accent shrink-0" />
-                      {profile.empresaAtual}
                     </span>
                   )}
                   {orderedNegocios.map((negocio) => (

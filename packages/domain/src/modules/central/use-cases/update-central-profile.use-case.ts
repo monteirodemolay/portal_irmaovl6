@@ -14,12 +14,16 @@ import type { IMemberRepository } from '../../membership/repositories/member.rep
  * `status`/`updatedAt` de cada negócio nunca vêm do formulário (schema de
  * input só valida conteúdo) — computados aqui comparando contra o que já
  * existia, casado por `id` (estável, gerado no cliente ao adicionar uma
- * entrada e mantido entre edições — ver `EmpresaTab`). Entrada nova ou com
- * conteúdo alterado sempre volta pra fila de revisão (`pending_review`),
- * mesmo que já estivesse publicada antes — a Administração aprova o
- * conteúdo, não a intenção de publicar. Entrada idêntica mantém o status e
- * a data que já tinha (não "reseta a fila" por causa de outro bloco do
- * formulário ter sido salvo junto).
+ * entrada e mantido entre edições — ver `EmpresaTab`). `divulgar` decide o
+ * fluxo inteiro antes de qualquer diff: `!divulgar` nunca entra na fila
+ * (`status: 'nao_divulgado'`, sempre), `divulgar` numa entrada que nunca foi
+ * divulgada é sempre "conteúdo novo" (`pending_review`, mesmo sem mudar
+ * texto — a Administração nunca viu). Só entre duas divulgações o diff
+ * campo-a-campo decide: conteúdo alterado sempre volta pra fila
+ * (`pending_review`), mesmo que já estivesse publicada antes — a
+ * Administração aprova o conteúdo, não a intenção de publicar. Entrada
+ * idêntica mantém o status e a data que já tinha (não "reseta a fila" por
+ * causa de outro bloco do formulário ter sido salvo junto).
  */
 function sameStringArray(a: string[], b: string[]): boolean {
   return a.length === b.length && a.every((value, i) => value === b[i]);
@@ -31,10 +35,30 @@ export function reconcileNegociosStatus(
   now: Date,
 ): CentralBusinessEntry[] {
   const currentById = new Map(currentNegocios.map((n) => [n.id, n]));
-  return input.map((entry) => {
+
+  // Um único negócio cadastrado vira Principal automaticamente — não faz
+  // sentido pedir pra marcar quando não há outro pra escolher. Com 2+
+  // negócios, preserva o que o Irmão marcou (inclui "nenhum marcado ainda").
+  const withAutoPrincipal =
+    input.length === 1 && input[0] ? [{ ...input[0], principal: true }] : input;
+
+  return withAutoPrincipal.map((entry) => {
     const previous = currentById.get(entry.id);
+
+    // `divulgar` decide o fluxo inteiro antes de qualquer diff de conteúdo:
+    // uma entrada "só contato" nunca entra na fila da Administração, mudar
+    // seu conteúdo nunca aciona revisão.
+    if (!entry.divulgar) {
+      return { ...entry, status: 'nao_divulgado' as const, updatedAt: now };
+    }
+
+    // Entrada que nunca esteve divulgada antes (nova, ou vinha de
+    // `nao_divulgado`) é sempre "conteúdo novo" pra Administração, mesmo
+    // que o texto seja idêntico a uma tentativa anterior — ela nunca viu.
+    const previousWasDivulgado = previous !== undefined && previous.status !== 'nao_divulgado';
+
     const unchanged =
-      previous &&
+      previousWasDivulgado &&
       previous.nomeEmpresa === entry.nomeEmpresa &&
       previous.segmento === entry.segmento &&
       previous.cargo === entry.cargo &&

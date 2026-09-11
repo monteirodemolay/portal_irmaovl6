@@ -4,6 +4,7 @@ import {
   AREA_ATUACAO_KEYS,
   FORMA_ATENDIMENTO_KEYS,
 } from '../enums/central';
+import { ESPECIALIZACAO_BY_AREA } from '../enums/especializacao';
 
 const tagSchema = z.string().min(1).max(60);
 
@@ -61,6 +62,15 @@ export const centralBusinessEntrySchema = z.object({
    * migração de cadastros já existentes).
    */
   principal: z.boolean().optional(),
+  /**
+   * Controla se esta entrada participa do Diretório de Negócios & Serviços
+   * e da moderação da Administração. Ausente/`false` (default): entrada
+   * "só contato" — existe pra registro pessoal e pareamento por CNPJ
+   * (`FindColleaguesByCnpjUseCase`), nunca entra em
+   * `reconcileNegociosStatus`, fica sempre `status: 'nao_divulgado'`.
+   * `true`: fluxo de moderação de sempre (`pending_review` → `published`).
+   */
+  divulgar: z.boolean().optional(),
 });
 export type CentralBusinessEntryValues = z.infer<typeof centralBusinessEntrySchema>;
 
@@ -104,6 +114,10 @@ export const memberCentralProfileSchema = z
     cidadeExibicao: z.string().max(150).nullable(),
     areaAtuacao: z.enum(AREA_ATUACAO_KEYS).nullable(),
     areaAtuacaoOutra: z.string().max(150).nullable(),
+    /** Chave da taxonomia fechada `ESPECIALIZACAO_BY_AREA[areaAtuacao]` — dependente da área selecionada. */
+    especializacao: z.string().max(60).nullable(),
+    /** Texto livre, só usado quando `especializacao === 'outra'`. Mesmo padrão de `areaAtuacaoOutra`. */
+    especializacaoOutra: z.string().max(150).nullable(),
     formacao: z.string().max(200).nullable(),
     resumoProfissional: z.string().max(1000).nullable(),
     /** Limite de propósito — evita a Central virar um catálogo empresarial sem fim. */
@@ -120,6 +134,20 @@ export const memberCentralProfileSchema = z
   .refine((v) => v.areaAtuacao !== 'outra' || Boolean(v.areaAtuacaoOutra?.trim()), {
     message: 'Informe a área quando selecionar "Outra".',
     path: ['areaAtuacaoOutra'],
+  })
+  .refine(
+    (v) =>
+      !v.especializacao ||
+      !v.areaAtuacao ||
+      (ESPECIALIZACAO_BY_AREA[v.areaAtuacao] ?? []).includes(v.especializacao),
+    {
+      message: 'Especialização não pertence à área de atuação selecionada.',
+      path: ['especializacao'],
+    },
+  )
+  .refine((v) => v.especializacao !== 'outra' || Boolean(v.especializacaoOutra?.trim()), {
+    message: 'Informe a especialização quando selecionar "Outra".',
+    path: ['especializacaoOutra'],
   });
 export type MemberCentralProfileValues = z.infer<typeof memberCentralProfileSchema>;
 

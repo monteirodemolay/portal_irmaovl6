@@ -34,6 +34,15 @@ export interface CentralBusinessEntry {
    */
   principal?: boolean;
   /**
+   * Controla se esta entrada participa do Diretório de Negócios &amp; Serviços
+   * e da moderação da Administração. Ausente/`false` (default): entrada
+   * "só contato" — existe pra registro pessoal e pareamento por CNPJ
+   * (`FindColleaguesByCnpjUseCase`), nunca entra em
+   * `reconcileNegociosStatus`, fica sempre `status: 'nao_divulgado'`.
+   * `true`: fluxo de moderação de sempre (`pending_review` → `published`).
+   */
+  divulgar?: boolean;
+  /**
    * Nunca vem do formulário do Irmão — sempre computado por
    * `UpdateCentralProfileUseCase` (novo/alterado vira `pending_review`) ou
    * por `ReviewBusinessSubmissionUseCase` (decisão da Administração).
@@ -98,6 +107,10 @@ export interface MemberCentralProfile extends BaseEntity {
   areaAtuacao: AreaAtuacaoKey | null;
   /** Texto livre, só usado quando `areaAtuacao === 'outra'`. */
   areaAtuacaoOutra: string | null;
+  /** Chave da taxonomia fechada `ESPECIALIZACAO_BY_AREA[areaAtuacao]` (`@vl6/shared`) — dependente da área selecionada. `null` = não informado. */
+  especializacao: string | null;
+  /** Texto livre, só usado quando `especializacao === 'outra'`. Mesmo padrão de `areaAtuacaoOutra`. */
+  especializacaoOutra: string | null;
   formacao: string | null;
   resumoProfissional: string | null;
 

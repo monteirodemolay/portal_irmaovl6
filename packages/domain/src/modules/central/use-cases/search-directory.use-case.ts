@@ -163,7 +163,6 @@ export class SearchDirectoryUseCase {
           dto.optional.profissional?.profissao,
           dto.optional.profissional?.areaAtuacao,
           dto.optional.profissional?.resumoProfissional,
-          dto.optional.empresaAtual,
           ...(dto.optional.negocios?.map((n) => n.nomeEmpresa) ?? []),
           ...(dto.optional.competencias ?? []),
           ...(dto.optional.servicos ?? []),
@@ -214,10 +213,9 @@ export class SearchDirectoryUseCase {
     if (input.empresa?.trim()) {
       const needleEmpresa = input.empresa.trim().toLowerCase();
       items = items.filter((dto) => {
-        const empresas = [
-          dto.optional.empresaAtual,
-          ...(dto.optional.negocios?.map((n) => n.nomeEmpresa) ?? []),
-        ].filter((v): v is string => Boolean(v));
+        const empresas = (dto.optional.negocios?.map((n) => n.nomeEmpresa) ?? []).filter(
+          (v): v is string => Boolean(v),
+        );
         return empresas.some((e) => e.toLowerCase().includes(needleEmpresa));
       });
     }

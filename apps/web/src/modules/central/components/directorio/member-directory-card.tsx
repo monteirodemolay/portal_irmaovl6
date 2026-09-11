@@ -12,7 +12,7 @@ export function MemberDirectoryCard({
 }) {
   const tags = [...(profile.competencias ?? []), ...(profile.servicos ?? [])].slice(0, 2);
   const profissaoOuArea = profile.profissional?.profissao ?? profile.profissional?.areaAtuacao;
-  const empresa = profile.empresaAtual ?? profile.negocios?.[0]?.nomeEmpresa;
+  const empresa = profile.negocios?.[0]?.nomeEmpresa;
 
   return (
     <button type="button" onClick={onClick} className="group w-full text-left">

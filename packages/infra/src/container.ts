@@ -216,6 +216,8 @@ import {
   SoftDeleteFileAssetUseCase,
   SoftDeleteMemberUseCase,
   ReviewBusinessSubmissionUseCase,
+  MigrateMemberEmpresaToNegociosUseCase,
+  FindColleaguesByCnpjUseCase,
   SuspendCentralProfileUseCase,
   ToggleLibraryFavoriteUseCase,
   UpdateCentralProfileUseCase,
@@ -809,6 +811,16 @@ export function createServerContainer() {
     reviewBusinessSubmission: new ReviewBusinessSubmissionUseCase({
       memberCentralProfileRepository: repositories.memberCentralProfile,
       clock,
+    }),
+    migrateMemberEmpresaToNegocios: new MigrateMemberEmpresaToNegociosUseCase({
+      memberRepository: repositories.member,
+      memberCentralProfileRepository: repositories.memberCentralProfile,
+      clock,
+      idGenerator,
+    }),
+    findColleaguesByCnpj: new FindColleaguesByCnpjUseCase({
+      memberRepository: repositories.member,
+      memberCentralProfileRepository: repositories.memberCentralProfile,
     }),
 
     createNews: new CreateNewsUseCase({ newsRepository: repositories.news, clock, idGenerator }),

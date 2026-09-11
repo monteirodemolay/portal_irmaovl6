@@ -15,6 +15,7 @@ import {
   validateWebsiteUrl,
   errorToLogContext,
   logger,
+  ESPECIALIZACAO_BY_AREA,
   type AreaAtuacaoKey,
   type CentralAffiliationEntryValues,
   type CentralBusinessEntryValues,
@@ -262,6 +263,19 @@ export async function updateCentralProfileAction(
       : null;
   }
 
+  // Dependente de `areaAtuacao` — trocar a área no client já reseta o
+  // valor selecionado (ver `ProfissionalTab`), então uma especialização que
+  // não pertence mais à área submetida é sempre dado velho de uma
+  // submissão anterior; melhor limpar aqui do que deixar o `.refine()` do
+  // schema rejeitar a submissão inteira por causa de um campo que o client
+  // já devia ter limpado.
+  let especializacao: string | null = current?.especializacao ?? null;
+  if (formData.has('especializacao')) {
+    const raw = String(formData.get('especializacao') || '');
+    const validas = areaAtuacao ? (ESPECIALIZACAO_BY_AREA[areaAtuacao] ?? []) : [];
+    especializacao = validas.includes(raw) ? raw : null;
+  }
+
   const whatsapp = parseExternalLink(
     formData,
     'linkWhatsapp',
@@ -318,6 +332,12 @@ export async function updateCentralProfileAction(
         formData,
         'areaAtuacaoOutra',
         current?.areaAtuacaoOutra ?? null,
+      ),
+      especializacao,
+      especializacaoOutra: textOrCurrent(
+        formData,
+        'especializacaoOutra',
+        current?.especializacaoOutra ?? null,
       ),
       formacao: textOrCurrent(formData, 'formacao', current?.formacao ?? null),
       resumoProfissional: textOrCurrent(
@@ -510,47 +530,63 @@ export async function reactivateCentralProfileAction(memberId: string): Promise<
   revalidatePath('/irmaos', 'layout');
 }
 
-export interface ColleagueAtEmployer {
+export interface ColleagueByCnpjResult {
   memberId: string;
   nomeCompleto: string;
   fotoUrl: string | null;
+  cargo: string | null;
 }
 
 /**
- * "Outros Irmãos na mesma empresa" — pedido explícito: quem só usa
- * "Empresa atual" pra contato (ex.: um Irmão que trabalha num órgão
- * público e não tem nada a divulgar) ainda deve conseguir achar colegas
- * de trabalho no Portal. Reaproveita o filtro `empresa` que
- * `SearchDirectoryUseCase` já tinha (casa contra `empresaAtual` e contra
- * `negocios[].nomeEmpresa` publicados) em vez de um novo caminho de
- * busca — mesma regra de correspondência (substring, sem acento/caixa)
- * já usada no restante do Diretório. Nunca inclui o próprio Irmão.
+ * "Outros Irmãos nesta empresa" — automático a partir do CNPJ já digitado
+ * num negócio, sem busca manual por nome (nome de empresa varia demais;
+ * CNPJ é exato). Não exige `divulgar`/`published` — achar colega de
+ * trabalho é institucional/prático, não uma decisão editorial.
  */
-export async function findColleaguesByEmployerAction(
-  empresa: string,
-): Promise<ColleagueAtEmployer[]> {
+export async function findColleaguesByCnpjAction(cnpj: string): Promise<ColleagueByCnpjResult[]> {
   const session = await requireSession();
-  const termo = empresa.trim();
-  if (termo.length < 3) return [];
-
   const container = createServerContainer();
   const ownMember = await container.repositories.member.findByUserId(
     session.authContext.tenantId,
     session.user.id,
   );
-  const result = await container.useCases.searchDirectory.execute(session.authContext, {
-    empresa: termo,
-  });
-  if (!result.ok) return [];
+  if (!ownMember) return [];
 
-  return result.value.items
-    .filter((item) => item.memberId !== ownMember?.id)
-    .slice(0, 12)
-    .map((item) => ({
-      memberId: item.memberId,
-      nomeCompleto: item.nomeCompleto,
-      fotoUrl: item.fotoUrl,
-    }));
+  const result = await container.useCases.findColleaguesByCnpj.execute(
+    session.authContext,
+    cnpj,
+    ownMember.id,
+  );
+  return result.ok ? result.value : [];
+}
+
+export interface MigrateMemberEmpresaToNegociosRowResult {
+  memberId: string;
+  nomeCompleto: string;
+  empresaMigrada: string | null;
+  acao: 'criado' | 'ja_existia_negocio_com_mesmo_nome' | 'sem_empresa_preenchida';
+}
+
+/**
+ * Migração única do antigo "Empresa atual" pra "Empresas e negócios" —
+ * disparada manualmente pelo Administrador em `/admin/pessoas/central`
+ * depois do merge desta feature. Idempotente: pode rodar mais de uma vez
+ * sem duplicar (ver `MigrateMemberEmpresaToNegociosUseCase`).
+ */
+export async function migrateMemberEmpresaToNegociosAction(): Promise<
+  MigrateMemberEmpresaToNegociosRowResult[]
+> {
+  const session = await requireSession();
+  const container = createServerContainer();
+  const result = await container.useCases.migrateMemberEmpresaToNegocios.execute(
+    session.authContext,
+  );
+  if (!result.ok) {
+    throw new Error(result.error.message);
+  }
+
+  revalidatePath('/irmaos', 'layout');
+  return result.value;
 }
 
 export async function reviewBusinessSubmissionAction(

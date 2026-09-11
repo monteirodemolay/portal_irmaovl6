@@ -8,6 +8,8 @@ function baseInput() {
     cidadeExibicao: null,
     areaAtuacao: null,
     areaAtuacaoOutra: null,
+    especializacao: null,
+    especializacaoOutra: null,
     formacao: null,
     resumoProfissional: null,
     negocios: [],

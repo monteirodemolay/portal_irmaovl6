@@ -4,7 +4,6 @@ import { createServerContainer } from '@vl6/infra';
 import { ArrowLeft, Card, CardContent, Tabs, TabsContent, TabsList, TabsTrigger } from '@vl6/ui';
 import { requireSession } from '@/lib/auth/require-session';
 import { listUsedProfessions } from '@/modules/membership/lib/list-used-professions';
-import { listUsedCompanies } from '@/modules/membership/lib/list-used-companies';
 import { listUsedBusinessNames } from '@/modules/central/lib/list-used-business-names';
 import { AfiliacoesTab } from '@/modules/central/components/meu-espaco/afiliacoes-tab';
 import { ContatosTab } from '@/modules/central/components/meu-espaco/contatos-tab';
@@ -77,14 +76,12 @@ export default async function MeuEspacoPage({
   // VL6) e pelo menu do usuário, pra abrir a seção certa deste editor.
   const initialTab = (VALID_TABS as readonly string[]).includes(tab ?? '') ? tab! : 'geral';
 
-  const [member, myCommittees, customProfessions, customCompanies, businessNames] =
-    await Promise.all([
-      container.repositories.member.findByUserId(session.authContext.tenantId, session.user.id),
-      container.useCases.listMyCommittees.execute(session.authContext),
-      listUsedProfessions(container, session.authContext),
-      listUsedCompanies(container, session.authContext),
-      listUsedBusinessNames(container, session.authContext),
-    ]);
+  const [member, myCommittees, customProfessions, businessNames] = await Promise.all([
+    container.repositories.member.findByUserId(session.authContext.tenantId, session.user.id),
+    container.useCases.listMyCommittees.execute(session.authContext),
+    listUsedProfessions(container, session.authContext),
+    listUsedBusinessNames(container, session.authContext),
+  ]);
 
   if (!member) {
     return (
@@ -175,12 +172,7 @@ export default async function MeuEspacoPage({
           />
         </TabsContent>
         <TabsContent value="empresa" className="pt-6">
-          <EmpresaTab
-            member={member}
-            profile={centralProfile}
-            knownCompanies={customCompanies}
-            knownBusinessNames={businessNames}
-          />
+          <EmpresaTab profile={centralProfile} knownBusinessNames={businessNames} />
         </TabsContent>
         <TabsContent value="afiliacoes" className="pt-6">
           <AfiliacoesTab profile={centralProfile} />

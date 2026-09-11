@@ -74,6 +74,8 @@ function buildProfile(overrides: Partial<MemberCentralProfile> = {}): MemberCent
     cidadeExibicao: 'Rio Verde - GO',
     areaAtuacao: 'direito',
     areaAtuacaoOutra: null,
+    especializacao: null,
+    especializacaoOutra: null,
     formacao: null,
     resumoProfissional: null,
     negocios: [],

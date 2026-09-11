@@ -2,7 +2,13 @@
 
 import { useActionState, useState } from 'react';
 import { useFormStatus } from 'react-dom';
-import { AREA_ATUACAO_KEYS, AREA_ATUACAO_LABELS, type AreaAtuacaoKey } from '@vl6/shared';
+import {
+  AREA_ATUACAO_KEYS,
+  AREA_ATUACAO_LABELS,
+  ESPECIALIZACAO_BY_AREA,
+  ESPECIALIZACAO_LABELS,
+  type AreaAtuacaoKey,
+} from '@vl6/shared';
 import type { Member, MemberCentralProfile } from '@vl6/domain';
 import { Button, Input, Select, Sparkles, Textarea } from '@vl6/ui';
 import { FormField } from '@/components/forms/form-field';
@@ -31,6 +37,15 @@ export function ProfissionalTab({
   );
 
   const [areaAtuacao, setAreaAtuacao] = useState<AreaAtuacaoKey | ''>(profile?.areaAtuacao ?? '');
+  const [especializacao, setEspecializacao] = useState(profile?.especializacao ?? '');
+  const especializacoes = areaAtuacao ? (ESPECIALIZACAO_BY_AREA[areaAtuacao] ?? []) : [];
+
+  // Especialização é dependente da área — trocar a área invalida a escolha
+  // anterior (pode não existir na nova lista), então reseta junto.
+  function handleAreaChange(next: AreaAtuacaoKey) {
+    setAreaAtuacao(next);
+    setEspecializacao('');
+  }
 
   return (
     <div className="flex flex-col gap-4">
@@ -52,7 +67,7 @@ export function ProfissionalTab({
                 id="areaAtuacao"
                 name="areaAtuacao"
                 value={areaAtuacao}
-                onChange={(event) => setAreaAtuacao(event.target.value as AreaAtuacaoKey)}
+                onChange={(event) => handleAreaChange(event.target.value as AreaAtuacaoKey)}
               >
                 <option value="">Selecione</option>
                 {AREA_ATUACAO_KEYS.map((key) => (
@@ -68,6 +83,32 @@ export function ProfissionalTab({
                   id="areaAtuacaoOutra"
                   name="areaAtuacaoOutra"
                   defaultValue={profile?.areaAtuacaoOutra ?? ''}
+                />
+              </FormField>
+            )}
+            {areaAtuacao && areaAtuacao !== 'outra' && especializacoes.length > 0 && (
+              <FormField label="Especialização" htmlFor="especializacao">
+                <Select
+                  id="especializacao"
+                  name="especializacao"
+                  value={especializacao}
+                  onChange={(event) => setEspecializacao(event.target.value)}
+                >
+                  <option value="">Selecione</option>
+                  {especializacoes.map((key) => (
+                    <option key={key} value={key}>
+                      {ESPECIALIZACAO_LABELS[key] ?? key}
+                    </option>
+                  ))}
+                </Select>
+              </FormField>
+            )}
+            {especializacao === 'outra' && (
+              <FormField label="Qual especialização?" htmlFor="especializacaoOutra">
+                <Input
+                  id="especializacaoOutra"
+                  name="especializacaoOutra"
+                  defaultValue={profile?.especializacaoOutra ?? ''}
                 />
               </FormField>
             )}
