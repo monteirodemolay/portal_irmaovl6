@@ -103,6 +103,14 @@ export default async function MeuEspacoPage({
     ? await loadOwnerFamilyNetworkDTO(container, session.authContext, member.id)
     : EMPTY_OWNER_FAMILY_NETWORK;
 
+  // "Descoberta de parentesco cruzado" — quando o titular e outro Irmão têm
+  // o mesmo FamilyPerson na árvore (ex.: o mesmo avô), avisa os dois. Mesmo
+  // gate de `familyLegacy:read` do bloco acima.
+  const sharedFamilyPersonsResult = hasPermission(session.authContext, 'familyLegacy:read')
+    ? await container.useCases.findSharedFamilyPersons.execute(session.authContext, member.id)
+    : null;
+  const sharedFamilyPersons = sharedFamilyPersonsResult?.ok ? sharedFamilyPersonsResult.value : [];
+
   const [centralProfile, publicationSettings] = await Promise.all([
     container.repositories.memberCentralProfile.findByMemberId(
       session.authContext.tenantId,
@@ -162,7 +170,12 @@ export default async function MeuEspacoPage({
           <GeralTab member={member} profile={centralProfile} myCommittees={myCommittees} />
         </TabsContent>
         <TabsContent value="pessoal" className="pt-6">
-          <PessoalTab member={member} profile={centralProfile} familyNetwork={familyNetwork} />
+          <PessoalTab
+            member={member}
+            profile={centralProfile}
+            familyNetwork={familyNetwork}
+            sharedFamilyPersons={sharedFamilyPersons}
+          />
         </TabsContent>
         <TabsContent value="profissional" className="pt-6">
           <ProfissionalTab

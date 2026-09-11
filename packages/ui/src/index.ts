@@ -124,6 +124,7 @@ export {
   Bookmark,
   Maximize2,
   Minimize2,
+  Link2,
   ICON_SIZE_DEFAULT,
   ICON_SIZE_LARGE,
   ICON_STROKE_WIDTH,

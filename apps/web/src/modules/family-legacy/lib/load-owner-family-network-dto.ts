@@ -118,7 +118,7 @@ export async function loadOwnerFamilyNetworkDTO(
     const displayName =
       kinship.person.kind === 'member'
         ? (memberById.get(kinship.person.id)?.nomeCompleto ?? 'Irmão não encontrado')
-        : (familyPersonById.get(kinship.person.id)?.nomeCompleto ?? 'Pessoa não encontrada');
+        : (familyPersonById.get(kinship.person.id)?.nomeCompleto ?? 'Familiar sem dados cadastrados');
     const familyPerson = kinship.person.kind === 'familyPerson' ? familyPersonById.get(kinship.person.id) : null;
     const member = kinship.person.kind === 'member' ? memberById.get(kinship.person.id) : null;
 
@@ -157,7 +157,7 @@ export async function loadOwnerFamilyNetworkDTO(
     const key = `${other.kind}:${other.id}`;
     const familyPerson = other.kind === 'familyPerson' ? familyPersonById.get(other.id) : null;
     const member = other.kind === 'member' ? memberById.get(other.id) : null;
-    const displayName = member?.nomeCompleto ?? familyPerson?.nomeCompleto ?? 'Pessoa não encontrada';
+    const displayName = member?.nomeCompleto ?? familyPerson?.nomeCompleto ?? 'Familiar sem dados cadastrados';
     const label =
       relation.relationKind === 'declared_kinship'
         ? (relation.declaredLabel ?? 'Parentesco declarado')

@@ -12,7 +12,7 @@ import {
   PERSON_FRATERNAL_LINK_STATUSES,
   PERSON_FRATERNAL_LINK_STATUS_LABELS,
 } from '@vl6/shared';
-import type { FamilyPersonCandidate } from '@vl6/domain';
+import type { FamilyPersonCandidate, SharedFamilyPersonMatch } from '@vl6/domain';
 import {
   Avatar,
   AvatarFallback,
@@ -26,6 +26,7 @@ import {
   DialogTitle,
   DialogTrigger,
   Input,
+  Link2,
   Plus,
   Search,
   Select,
@@ -56,7 +57,13 @@ function initials(name: string): string {
   return ((parts[0]?.[0] ?? '') + (parts.at(-1)?.[0] ?? '')).toUpperCase();
 }
 
-export function FamilyLegacyCard({ network }: { network: OwnerFamilyNetworkDTO }) {
+export function FamilyLegacyCard({
+  network,
+  sharedFamilyPersons = [],
+}: {
+  network: OwnerFamilyNetworkDTO;
+  sharedFamilyPersons?: SharedFamilyPersonMatch[];
+}) {
   const [dialogOpen, setDialogOpen] = useState(false);
 
   return (
@@ -71,6 +78,30 @@ export function FamilyLegacyCard({ network }: { network: OwnerFamilyNetworkDTO }
         <SummaryTile label="Gerações maçônicas" value={network.summary.geracoesMaconicas} />
         <SummaryTile label="Confirmações pendentes" value={network.summary.confirmacoesPendentes} />
       </div>
+
+      {sharedFamilyPersons.length > 0 && (
+        <div className="border-accent/30 bg-accent/5 flex flex-col gap-2 rounded-md border p-3">
+          <p className="flex items-center gap-1.5 text-sm font-medium">
+            <Link2 size={14} className="text-accent" /> Parentescos em comum
+          </p>
+          {sharedFamilyPersons.map((match) => (
+            <p key={`${match.familyPersonId}|${match.sharedWithMemberId}`} className="text-sm">
+              Você e{' '}
+              <a
+                href={`/irmaos/${match.sharedWithMemberId}`}
+                className="font-medium hover:underline"
+              >
+                {match.sharedWithNome}
+              </a>{' '}
+              têm <strong>{match.familyPersonNome}</strong> em comum
+              {match.parentescoDoOutroIrmao
+                ? ` (seu(sua) ${match.parentescoDoTitular.toLowerCase()}, ${match.parentescoDoOutroIrmao.toLowerCase()} dele(a))`
+                : ` (seu(sua) ${match.parentescoDoTitular.toLowerCase()})`}
+              .
+            </p>
+          ))}
+        </div>
+      )}
 
       {network.pendingConfirmations.length > 0 && (
         <div className="border-border-soft flex flex-col gap-2 rounded-md border p-3">

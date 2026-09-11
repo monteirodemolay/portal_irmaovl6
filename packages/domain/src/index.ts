@@ -428,4 +428,5 @@ export * from './modules/family-legacy/use-cases/decline-family-relationship.use
 export * from './modules/family-legacy/use-cases/soft-delete-family-relationship.use-case';
 export * from './modules/family-legacy/use-cases/derive-family-kinships.use-case';
 export * from './modules/family-legacy/use-cases/list-owner-family-network.use-case';
+export * from './modules/family-legacy/use-cases/find-shared-family-persons.use-case';
 export * from './modules/family-legacy/use-cases/create-person-fraternal-record.use-case';

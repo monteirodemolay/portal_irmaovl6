@@ -132,7 +132,7 @@ export async function buildPublicFamiliaLegado(
     const member = entry.ref.kind === 'member' ? memberById.get(entry.ref.id) : null;
     if (entry.ref.kind === 'member' && !member) continue;
 
-    const displayName = member?.nomeCompleto ?? familyPerson?.nomeCompleto ?? 'Pessoa não encontrada';
+    const displayName = member?.nomeCompleto ?? familyPerson?.nomeCompleto ?? 'Familiar sem dados cadastrados';
     const group = classifyFamilyDisplayGroup(entry.label);
     const item: PublicFamiliaLegadoItemDTO = {
       key: `${entry.ref.kind}:${entry.ref.id}`,

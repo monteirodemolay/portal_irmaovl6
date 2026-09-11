@@ -107,6 +107,7 @@ import {
   SoftDeleteFamilyRelationshipUseCase,
   DeriveFamilyKinshipsUseCase,
   ListOwnerFamilyNetworkUseCase,
+  FindSharedFamilyPersonsUseCase,
   CreatePersonFraternalRecordUseCase,
   FindBoardTermForDateUseCase,
   CreateBoardTermUseCase,
@@ -1672,6 +1673,11 @@ export function createServerContainer() {
     listOwnerFamilyNetwork: new ListOwnerFamilyNetworkUseCase({
       familyRelationshipRepository: repositories.familyRelationship,
       familyPersonRepository: repositories.familyPerson,
+    }),
+    findSharedFamilyPersons: new FindSharedFamilyPersonsUseCase({
+      familyRelationshipRepository: repositories.familyRelationship,
+      familyPersonRepository: repositories.familyPerson,
+      memberRepository: repositories.member,
     }),
     createPersonFraternalRecord: new CreatePersonFraternalRecordUseCase({
       personFraternalRecordRepository: repositories.personFraternalRecord,

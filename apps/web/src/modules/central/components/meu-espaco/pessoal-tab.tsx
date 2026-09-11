@@ -1,4 +1,4 @@
-import type { Member, MemberCentralProfile } from '@vl6/domain';
+import type { Member, MemberCentralProfile, SharedFamilyPersonMatch } from '@vl6/domain';
 import { MapPin } from '@vl6/ui';
 import { AddressMaritalCard } from '@/modules/membership/components/profile-fields/address-marital-card';
 import { updateMyProfileAction } from '@/modules/membership/actions/self-profile-actions';
@@ -8,10 +8,12 @@ import type { OwnerFamilyNetworkDTO } from '@/modules/family-legacy/lib/load-own
 export function PessoalTab({
   member,
   familyNetwork,
+  sharedFamilyPersons,
 }: {
   member: Member;
   profile: MemberCentralProfile | null;
   familyNetwork: OwnerFamilyNetworkDTO;
+  sharedFamilyPersons: SharedFamilyPersonMatch[];
 }) {
   return (
     <div className="flex flex-col gap-4">
@@ -23,7 +25,7 @@ export function PessoalTab({
         a administração da Loja.
       </p>
 
-      <FamilyLegacyCard network={familyNetwork} />
+      <FamilyLegacyCard network={familyNetwork} sharedFamilyPersons={sharedFamilyPersons} />
 
       <p className="text-muted flex items-center gap-1.5 text-xs">
         <MapPin size={12} /> Os vínculos familiares ficam privados por padrão. Somente informações
