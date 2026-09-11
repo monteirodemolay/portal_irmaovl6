@@ -237,6 +237,103 @@ describe('UpdateCentralProfileUseCase — status de negócios', () => {
     });
   });
 
+  it('marcar um negócio como Principal não volta pra pending_review', async () => {
+    const { useCase, memberRepository, memberCentralProfileRepository } = buildUseCase();
+    await memberRepository.create(buildMember());
+    const published: MemberCentralProfile['negocios'][number] = {
+      id: 'negocio-1',
+      nomeEmpresa: 'Empresa Publicada',
+      segmento: null,
+      cargo: null,
+      descricao: null,
+      cidade: null,
+      telefoneComercial: null,
+      siteUrl: null,
+      cnpj: null,
+      logoUrl: null,
+      produtosServicos: [],
+      whatsappComercial: null,
+      emailComercial: null,
+      instagramComercial: null,
+      formasAtendimento: [],
+      horarioFuncionamento: null,
+      ofereceDescontoIrmaos: false,
+      descontoDescricao: null,
+      status: 'published',
+      updatedAt: new Date('2026-01-15'),
+      principal: false,
+    };
+    await memberCentralProfileRepository.create({
+      id: 'profile-1',
+      tenantId: 't1',
+      memberId: 'member-1',
+      apresentacao: null,
+      interesses: null,
+      cidadeExibicao: null,
+      areaAtuacao: null,
+      areaAtuacaoOutra: null,
+      formacao: null,
+      resumoProfissional: null,
+      negocios: [published],
+      competencias: [],
+      servicos: [],
+      lojasVisitadas: null,
+      interessesMaconicos: null,
+      externalLinks: {
+        whatsapp: null,
+        instagram: null,
+        facebook: null,
+        linkedin: null,
+        lattes: null,
+        site: null,
+      },
+      createdAt: new Date('2026-01-01'),
+      updatedAt: new Date('2026-01-01'),
+      createdBy: 'user-1',
+      updatedBy: 'user-1',
+      deletedAt: null,
+      status: 'active',
+      ativo: true,
+    });
+
+    // Só marcou Principal — mesmo conteúdo, nenhum outro campo mudou.
+    const result = await useCase.execute(
+      ctx,
+      buildInput({
+        negocios: [
+          {
+            id: 'negocio-1',
+            nomeEmpresa: 'Empresa Publicada',
+            segmento: null,
+            cargo: null,
+            descricao: null,
+            cidade: null,
+            telefoneComercial: null,
+            siteUrl: null,
+            cnpj: null,
+            logoUrl: null,
+            produtosServicos: [],
+            whatsappComercial: null,
+            emailComercial: null,
+            instagramComercial: null,
+            formasAtendimento: [],
+            horarioFuncionamento: null,
+            ofereceDescontoIrmaos: false,
+            descontoDescricao: null,
+            principal: true,
+          },
+        ],
+      }),
+    );
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value.negocios[0]).toMatchObject({
+      status: 'published',
+      updatedAt: new Date('2026-01-15'),
+    });
+  });
+
   it('editar o conteúdo de um negócio publicado volta pra pending_review', async () => {
     const { useCase, memberRepository, memberCentralProfileRepository } = buildUseCase();
     await memberRepository.create(buildMember());

@@ -27,6 +27,7 @@ import {
   Milestone,
   Phone,
   Sparkles,
+  Star,
   Tag,
 } from '@vl6/ui';
 import { MemberAvatar } from '@/components/membership/member-avatar';
@@ -187,6 +188,13 @@ export function PublicMemberProfileView({
     (profile.competencias && profile.competencias.length > 0) ||
     (profile.servicos && profile.servicos.length > 0),
   );
+  // Negócio Principal (marcado pelo próprio Irmão em Meu Espaço) vem
+  // primeiro e ganha um estilo em destaque — todos os demais continuam
+  // aparecendo, só numa ordem diferente.
+  const orderedNegocios = [...(profile.negocios ?? [])].sort(
+    (a, b) => Number(b.principal ?? false) - Number(a.principal ?? false),
+  );
+
   const interesses = profile.informacoesPessoais?.interesses ?? null;
   const hasVidaMaconica = Boolean(
     profile.informacoesMaconicas &&
@@ -324,13 +332,21 @@ export function PublicMemberProfileView({
                       {profile.empresaAtual}
                     </span>
                   )}
-                  {profile.negocios?.map((negocio) => (
+                  {orderedNegocios.map((negocio) => (
                     <Link
                       key={negocio.id}
                       href={`/irmaos/negocios/${negocio.id}`}
-                      className="border-border bg-background hover:border-primary hover:text-primary flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors"
+                      className={
+                        negocio.principal
+                          ? 'bg-accent/15 text-primary-dark flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors hover:brightness-95'
+                          : 'border-border bg-background hover:border-primary hover:text-primary flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors'
+                      }
                     >
-                      <Building2 size={13} strokeWidth={1.75} className="text-accent shrink-0" />
+                      {negocio.principal ? (
+                        <Star size={13} strokeWidth={1.75} className="shrink-0" />
+                      ) : (
+                        <Building2 size={13} strokeWidth={1.75} className="text-accent shrink-0" />
+                      )}
                       {negocio.nomeEmpresa}
                     </Link>
                   ))}
