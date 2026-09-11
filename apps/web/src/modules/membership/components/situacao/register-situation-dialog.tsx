@@ -55,6 +55,20 @@ function formatDate(iso: string): string {
   return `${dia}/${mes}/${ano}`;
 }
 
+function todayIso(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+// Motivo/descrição/data pré-preenchidos com um valor genérico válido em
+// vez de vazios — "outro" é aceito em toda situação (inclusive `licenca` e
+// `retorno`, únicos outros modos com `situacaoFixa`), então o Administrador
+// pode confirmar uma situação sem documentação formal ainda à mão (ex.:
+// revisão em massa de cadastros históricos importados) só clicando
+// Continuar → Confirmar, sem digitar nada — os campos continuam totalmente
+// editáveis pra quem tiver os dados reais.
+const DEFAULT_MOTIVO_OUTRO_DESCRICAO =
+  'Situação confirmada pelo Administrador — sem documentação formal registrada ainda.';
+
 function SubmitButton({ label }: { label: string }) {
   const { pending } = useFormStatus();
   return (
@@ -96,9 +110,9 @@ export function RegisterSituationDialog({
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState<'form' | 'confirmar'>('form');
   const [situacao, setSituacao] = useState<MemberSituationStatus>(config.situacaoFixa ?? 'ativo');
-  const [motivo, setMotivo] = useState('');
-  const [motivoOutroDescricao, setMotivoOutroDescricao] = useState('');
-  const [dataInicio, setDataInicio] = useState('');
+  const [motivo, setMotivo] = useState('outro');
+  const [motivoOutroDescricao, setMotivoOutroDescricao] = useState(DEFAULT_MOTIVO_OUTRO_DESCRICAO);
+  const [dataInicio, setDataInicio] = useState(todayIso);
   const [glegOrigem, setGlegOrigem] = useState(false);
 
   const motivosDisponiveis = config.motivos ?? MEMBER_SITUATION_REASONS[situacao];
@@ -108,9 +122,9 @@ export function RegisterSituationDialog({
     if (!nextOpen) {
       setStep('form');
       setSituacao(config.situacaoFixa ?? 'ativo');
-      setMotivo('');
-      setMotivoOutroDescricao('');
-      setDataInicio('');
+      setMotivo('outro');
+      setMotivoOutroDescricao(DEFAULT_MOTIVO_OUTRO_DESCRICAO);
+      setDataInicio(todayIso());
       setGlegOrigem(false);
     }
   }
