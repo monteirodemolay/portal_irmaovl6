@@ -23,6 +23,7 @@ export function GovernanceHighlightCard({ board }: { board: ActiveBoard | null }
             fotoUrl={veneravel.member.fotoUrl}
             nome={veneravel.member.nomeCompleto}
             className="h-24 w-24 shrink-0 rounded-xl ring-1 ring-white/20"
+            imgClassName="object-top"
           />
         )}
         {/* Coluna da direita: rótulo da Gestão em cima, "Venerável Mestre" +
