@@ -44,6 +44,17 @@ export class AttachMediaToArchiveItemUseCase {
       return err(new NotFoundError('MediaAsset', input.mediaAssetId));
     }
 
+    // Pré-marca como pessoas identificadas todo Irmão de origem do item
+    // (iniciação/elevação/exaltação) — pedido explícito: numa sessão com
+    // vários iniciados juntos, o Admin não deveria precisar marcar de novo,
+    // uma a uma, gente que o próprio Acervo já sabia estar naquela sessão.
+    // Continua editável: é só um ponto de partida, não uma trava.
+    const pessoasDeOrigem = [
+      ...(item.origemIniciacaoMemberIds ?? []),
+      ...(item.origemElevacaoMemberIds ?? []),
+      ...(item.origemExaltacaoMemberIds ?? []),
+    ];
+
     const now = this.deps.clock.now();
     const archiveMedia: ArchiveMedia = {
       id: this.deps.idGenerator.next(),
@@ -65,7 +76,7 @@ export class AttachMediaToArchiveItemUseCase {
       publicacaoStatus: 'rascunho',
       autor: null,
       tags: [],
-      pessoasIdentificadas: [],
+      pessoasIdentificadas: pessoasDeOrigem,
       createdAt: now,
       updatedAt: now,
       createdBy: ctx.uid,

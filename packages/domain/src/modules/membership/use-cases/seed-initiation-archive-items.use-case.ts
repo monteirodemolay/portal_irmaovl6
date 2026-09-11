@@ -23,12 +23,12 @@ export interface SeedInitiationArchiveItemsReport {
 
 /**
  * Backfill retroativo (executado manualmente por um Admin, mesmo padrão de
- * `SeedMemberSituationHistoryUseCase`) — cria o `ArchiveItem` de iniciação
- * pra cada Irmão do tenant que já tem `dataIniciacao` preenchida e ainda
- * não tem o item correspondente. Idempotente: pode ser executado quantas
+ * `SeedMemberSituationHistoryUseCase`) — cria (ou acrescenta o Irmão a) o
+ * `ArchiveItem` de iniciação pra cada Irmão do tenant que já tem
+ * `dataIniciacao` preenchida. Idempotente: pode ser executado quantas
  * vezes forem necessárias, só cobre quem ficou de fora da vez anterior
- * (`CreateInitiationArchiveItemUseCase` já checa `origemIniciacaoMemberId`
- * antes de criar qualquer coisa).
+ * (`CreateInitiationArchiveItemUseCase` já garante que o mesmo Irmão nunca
+ * entra duas vezes na lista de uma sessão).
  *
  * Nunca falha a execução inteira por causa de um Irmão problemático — cada
  * Irmão é processado isoladamente e uma falha individual (ex.: Gestão
@@ -66,7 +66,7 @@ export class SeedInitiationArchiveItemsUseCase {
           dataIniciacao: member.dataIniciacao,
         });
 
-        if (!result.created) {
+        if (!result.created && !result.memberAdded) {
           report.pulados++;
           continue;
         }

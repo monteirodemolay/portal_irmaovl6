@@ -35,8 +35,15 @@ function formatAddress(address: Address): string {
 
 export interface CreateInitiationArchiveItemResult {
   archiveItem: ArchiveItem;
-  /** `true` só quando este `execute` de fato criou o item — `false` quando já existia (idempotência). */
+  /** `true` só quando este `execute` criou um `ArchiveItem` novo (nenhuma sessão de iniciação ainda registrada nesta data). */
   created: boolean;
+  /**
+   * `true` quando o Irmão foi acrescentado a um `ArchiveItem` de sessão já
+   * existente (outro Irmão iniciado na mesma data já tinha disparado a
+   * criação) — `false` tanto quando o item é novo (`created: true`) quanto
+   * quando o Irmão já constava na lista (idempotência pura, nada mudou).
+   */
+  memberAdded: boolean;
   /** `true` quando também foi preciso criar um `Event` novo (nenhum evento na data). */
   eventCreated: boolean;
 }
@@ -55,26 +62,38 @@ function formatDateBR(date: Date): string {
 
 /**
  * Cria (de forma idempotente) o `ArchiveItem` de "memória institucional" da
- * iniciação de um Irmão — objetivo central da automação descrita em
- * docs/architecture/11-acervo-vl6.md: toda vez que a `Member.dataIniciacao`
- * de um Irmão é registrada, nasce uma entrada correspondente no Acervo VL6.
+ * sessão de iniciação de um Irmão — objetivo central da automação descrita
+ * em docs/architecture/11-acervo-vl6.md: toda vez que a `Member
+ * .dataIniciacao` de um Irmão é registrada, nasce (ou ganha mais um
+ * participante) a entrada correspondente no Acervo VL6.
  *
- * Fluxo:
- * 1. Idempotência primeiro — se já existe um `ArchiveItem` com
- *    `origemIniciacaoMemberId` apontando pra este Irmão
- *    (`IArchiveItemRepository.findByOrigemIniciacaoMemberId`), não faz mais
- *    nada e devolve o item já existente (`created: false`).
- * 2. Procura um `Event` já cadastrado na Agenda na mesma data (mesmo
+ * Um único `ArchiveItem` cobre TODOS os Irmãos iniciados juntos na mesma
+ * sessão — uma turma de 3 iniciados no mesmo dia é 1 item no Acervo, com os
+ * 3 em `origemIniciacaoMemberIds`, nunca 3 itens repetidos. Fluxo:
+ * 1. Procura um `Event` já cadastrado na Agenda na mesma data (mesmo
  *    tenant, ignorando hora — `IEventRepository.listInRange` do início ao
  *    fim do dia). Se achar mais de um, usa o primeiro (ordem de
  *    `dataInicio`, já crescente no repositório).
- * 3. Se não achar nenhum, cria um `Event` mínimo do tipo Sessão (grau
+ * 2. Se não achar nenhum, cria um `Event` mínimo do tipo Sessão (grau
  *    Aprendiz — toda iniciação maçônica ocorre em grau de Aprendiz) só com
  *    os campos necessários pra ser válido, com a Gestão vigente resolvida
  *    do mesmo jeito que `CreateEventUseCase` (`IBoardTermRepository
  *    .findByDate`). Este Evento nunca é apagado por este caso de uso.
- * 4. Cria o `ArchiveItem` vinculado ao evento (achado ou criado), sempre
- *    `publicacaoStatus: 'rascunho'` — nunca publica sozinho.
+ * 3. Entre os `ArchiveItem`s já vinculados a este Evento
+ *    (`IArchiveItemRepository.findByEventId`), procura o que já tem
+ *    `origemIniciacaoMemberIds` preenchido (a sessão de iniciação, se já
+ *    existir — outros itens do mesmo Evento sem esse campo, cadastrados à
+ *    mão pelo Admin, são ignorados). Achando:
+ *    - Irmão já está na lista → nada muda (`created: false`,
+ *      `memberAdded: false`), pura idempotência.
+ *    - Irmão ainda não está → acrescenta o `memberId` à lista existente
+ *      (`created: false`, `memberAdded: true`) — nunca cria um segundo
+ *      item pra mesma sessão.
+ * 4. Não achando nenhum item de iniciação pra este Evento, cria um
+ *    `ArchiveItem` novo com `origemIniciacaoMemberIds: [memberId]`, sempre
+ *    `publicacaoStatus: 'rascunho'` — nunca publica sozinho. Título e
+ *    descrição são da SESSÃO (nunca do nome da pessoa), justamente pra não
+ *    precisarem mudar quando mais Irmãos entrarem na mesma lista depois.
  *
  * Este caso de uso deliberadamente NÃO chama `requirePermission` — é um
  * efeito colateral interno, sempre disparado depois que quem chamou já
@@ -91,14 +110,6 @@ export class CreateInitiationArchiveItemUseCase {
     ctx: AuthContext,
     input: CreateInitiationArchiveItemInput,
   ): Promise<CreateInitiationArchiveItemResult> {
-    const existing = await this.deps.archiveItemRepository.findByOrigemIniciacaoMemberId(
-      ctx.tenantId,
-      input.memberId,
-    );
-    if (existing) {
-      return { archiveItem: existing, created: false, eventCreated: false };
-    }
-
     const from = startOfDay(input.dataIniciacao);
     const to = endOfDay(input.dataIniciacao);
     const eventsOnDate = await this.deps.eventRepository.listInRange(ctx.tenantId, from, to);
@@ -160,21 +171,42 @@ export class CreateInitiationArchiveItemUseCase {
       eventCreated = true;
     }
 
+    // Sessão já registrada (outro Irmão iniciado no mesmo dia já disparou
+    // a criação) — acrescenta este Irmão à mesma lista em vez de criar um
+    // segundo item pra mesma sessão. Itens do mesmo Evento sem
+    // `origemIniciacaoMemberIds` (cadastrados à mão pelo Admin) são
+    // ignorados de propósito.
+    const itemsOnEvent = await this.deps.archiveItemRepository.findByEventId(event.id);
+    const existing = itemsOnEvent.find((item) => item.origemIniciacaoMemberIds?.length);
+    if (existing) {
+      if (existing.origemIniciacaoMemberIds!.includes(input.memberId)) {
+        return { archiveItem: existing, created: false, memberAdded: false, eventCreated };
+      }
+      const updated: ArchiveItem = {
+        ...existing,
+        origemIniciacaoMemberIds: [...existing.origemIniciacaoMemberIds!, input.memberId],
+        updatedAt: now,
+        updatedBy: ctx.uid,
+      };
+      await this.deps.archiveItemRepository.update(updated);
+      return { archiveItem: updated, created: false, memberAdded: true, eventCreated };
+    }
+
     const archiveItem: ArchiveItem = {
       id: this.deps.idGenerator.next(),
       tenantId: ctx.tenantId,
       eventId: event.id,
       boardTermId: event.boardTermId,
-      titulo: `Iniciação de ${input.nomeCompleto}`,
+      titulo: `Iniciação — ${formatDateBR(input.dataIniciacao)}`,
       tipo: 'outro',
       descricao:
-        `Registro automático da iniciação de ${input.nomeCompleto} no Acervo VL6, criado a ` +
-        'partir da data de iniciação informada no cadastro do Irmão. Ao anexar fotos ou ' +
-        'documentos desta sessão, marque este Irmão como pessoa identificada na mídia.',
+        'Registro automático da sessão de iniciação no Acervo VL6, criado a partir da data de ' +
+        'iniciação informada no cadastro de cada Irmão. Ao anexar fotos ou documentos desta ' +
+        'sessão, marque as pessoas identificadas na mídia.',
       nivelAcesso: event.nivelAcesso,
       publicacaoStatus: 'rascunho',
       capaMediaId: null,
-      origemIniciacaoMemberId: input.memberId,
+      origemIniciacaoMemberIds: [input.memberId],
       createdAt: now,
       updatedAt: now,
       createdBy: ctx.uid,
@@ -185,6 +217,6 @@ export class CreateInitiationArchiveItemUseCase {
     };
     await this.deps.archiveItemRepository.create(archiveItem);
 
-    return { archiveItem, created: true, eventCreated };
+    return { archiveItem, created: true, memberAdded: false, eventCreated };
   }
 }

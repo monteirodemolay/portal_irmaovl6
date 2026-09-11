@@ -11,6 +11,7 @@ import {
   SequentialIdGenerator,
 } from '../../../test/fakes';
 import { CreateInitiationArchiveItemUseCase } from '../../archive/use-cases/create-initiation-archive-item.use-case';
+import type { Event } from '../../agenda/entities/event.entity';
 import type { Member } from '../entities/member.entity';
 import { SeedInitiationArchiveItemsUseCase } from './seed-initiation-archive-items.use-case';
 
@@ -114,25 +115,56 @@ describe('SeedInitiationArchiveItemsUseCase', () => {
       dataIniciacao: null,
     });
 
-    const { useCase, archiveItemRepository } = buildUseCase([
+    const { useCase, archiveItemRepository, eventRepository } = buildUseCase([
       jaTemItem,
       semItem1,
       semItem2,
       semDataIniciacao,
     ]);
-    // Simula um Irmão que já foi processado antes (idempotência do backfill).
+    // Simula um Irmão que já foi processado antes (idempotência do backfill)
+    // — precisa de um Event de verdade na mesma data pra
+    // `CreateInitiationArchiveItemUseCase` reconhecer a sessão já existente
+    // em vez de criar uma nova.
+    const eventoExistente: Event = {
+      id: 'event-existente',
+      tenantId: 't1',
+      tipo: 'sessao',
+      titulo: 'Sessão de Iniciação',
+      descricao: null,
+      local: 'Sede da Loja',
+      dataInicio: jaTemItem.dataIniciacao!,
+      dataFim: null,
+      exigeConfirmacaoPresenca: false,
+      capacidadeMaxima: null,
+      traje: null,
+      chegadaSugerida: null,
+      observacoes: null,
+      arquivosRelacionados: [],
+      boardTermId: null,
+      nivelAcesso: 'irmaos',
+      exibirNaLinhaDoTempo: true,
+      grau: 'aprendiz',
+      createdAt: new Date('2010-03-10'),
+      updatedAt: new Date('2010-03-10'),
+      createdBy: 'admin-1',
+      updatedBy: 'admin-1',
+      deletedAt: null,
+      status: 'active',
+      ativo: true,
+    };
+    await eventRepository.create(eventoExistente);
     await archiveItemRepository.create({
       id: 'item-existente',
       tenantId: 't1',
       eventId: 'event-existente',
       boardTermId: null,
-      titulo: 'Iniciação de João Já Migrado',
+      titulo: 'Iniciação — 10/03/2010',
       tipo: 'outro',
       descricao: null,
       nivelAcesso: 'irmaos',
       publicacaoStatus: 'rascunho',
       capaMediaId: null,
-      origemIniciacaoMemberId: 'm1',
+      origemIniciacaoMemberIds: ['m1'],
       createdAt: new Date('2026-01-01'),
       updatedAt: new Date('2026-01-01'),
       createdBy: 'admin-1',
