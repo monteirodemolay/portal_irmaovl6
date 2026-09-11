@@ -9,6 +9,7 @@ import {
   CheckCircle2,
   Compass,
   EyeOff,
+  Handshake,
   MapPin,
   Quote,
   Sparkles,
@@ -105,6 +106,12 @@ export function PrivacidadeTab({ settings }: { settings: PublicationSettings | n
               label: 'Empresa e negócios',
               icon: Building2,
               defaultChecked: settings?.blocks.empresa ?? false,
+            },
+            {
+              key: 'afiliacoes',
+              label: 'Outras afiliações',
+              icon: Handshake,
+              defaultChecked: settings?.blocks.afiliacoes ?? false,
             },
             {
               key: 'informacoesMaconicas',

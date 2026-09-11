@@ -79,6 +79,7 @@ function buildProfile(overrides: Partial<MemberCentralProfile> = {}): MemberCent
     negocios: [],
     competencias: ['Direito Civil'],
     servicos: ['Consultoria jurídica'],
+    afiliacoes: [],
     lojasVisitadas: null,
     interessesMaconicos: null,
     externalLinks: {
@@ -114,6 +115,7 @@ function buildSettings(overrides: Partial<PublicationSettings> = {}): Publicatio
       informacoesMaconicas: false,
       competencias: true,
       servicos: true,
+      afiliacoes: true,
       endereco: false,
       memoriaFotografica: false,
     },

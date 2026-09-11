@@ -16,6 +16,7 @@ import {
   errorToLogContext,
   logger,
   type AreaAtuacaoKey,
+  type CentralAffiliationEntryValues,
   type CentralBusinessEntryValues,
   type MemberCentralProfileValues,
   type PublicationSettingsInputValues,
@@ -23,7 +24,11 @@ import {
 import type { PublicMemberProfileDTO } from '@vl6/domain';
 import { createServerContainer } from '@vl6/infra';
 import { requireSession } from '@/lib/auth/require-session';
-import { uploadBusinessLogo, validateLogoFile } from '@/lib/central/business-logo-upload';
+import {
+  uploadAffiliationLogo,
+  uploadBusinessLogo,
+  validateLogoFile,
+} from '@/lib/central/business-logo-upload';
 import { lookupCnpj, type CnpjLookupFailureReason } from '@/lib/central/cnpj-lookup';
 
 /**
@@ -162,6 +167,47 @@ async function withUploadedLogos(
   return { negocios: resolved, error: null };
 }
 
+/**
+ * Mesma lógica de `withUploadedLogos`, aplicada às afiliações institucionais
+ * — logo sempre opcional aqui (diferente de negócios, onde faz parte do
+ * "cartão de divulgação"). Inputs de arquivo nomeados `logo-afiliacao-<id>`
+ * (prefixo diferente de `logo-<id>` dos negócios, pra nunca colidir no mesmo
+ * FormData).
+ */
+async function withUploadedAffiliationLogos(
+  formData: FormData,
+  afiliacoes: CentralAffiliationEntryValues[],
+  tenantId: string,
+  memberId: string,
+): Promise<{ afiliacoes: CentralAffiliationEntryValues[]; error: string | null }> {
+  const resolved: CentralAffiliationEntryValues[] = [];
+  for (const entry of afiliacoes) {
+    const file = formData.get(`logo-afiliacao-${entry.id}`);
+    if (!(file instanceof File) || file.size === 0) {
+      resolved.push(entry);
+      continue;
+    }
+    const validationError = validateLogoFile(file);
+    if (validationError) return { afiliacoes, error: validationError };
+    try {
+      const logoUrl = await uploadAffiliationLogo(file, tenantId, memberId, entry.id);
+      resolved.push({ ...entry, logoUrl });
+    } catch (error) {
+      logger.error('Falha ao enviar logo de afiliação para o storage', {
+        route: 'updateCentralProfileAction',
+        memberId,
+        affiliationId: entry.id,
+        ...errorToLogContext(error),
+      });
+      Sentry.captureException(error, {
+        tags: { route: 'updateCentralProfileAction:affiliationLogo' },
+      });
+      return { afiliacoes, error: 'Não foi possível enviar a logo. Tente novamente em instantes.' };
+    }
+  }
+  return { afiliacoes: resolved, error: null };
+}
+
 export async function updateCentralProfileAction(
   _prevState: CentralActionState,
   formData: FormData,
@@ -190,6 +236,23 @@ export async function updateCentralProfileAction(
   if (logoError) return { error: logoError };
   const competencias = jsonArrayOrCurrent(formData, 'competencias', current?.competencias ?? []);
   const servicos = jsonArrayOrCurrent(formData, 'servicos', current?.servicos ?? []);
+
+  const afiliacoesSubmitted = jsonArrayOrCurrent(formData, 'afiliacoes', current?.afiliacoes ?? []);
+  const { afiliacoes: afiliacoesComLogo, error: affiliationLogoError } =
+    await withUploadedAffiliationLogos(
+      formData,
+      afiliacoesSubmitted,
+      session.authContext.tenantId,
+      member.id,
+    );
+  if (affiliationLogoError) return { error: affiliationLogoError };
+  // Instagram aceita @usuario/URL, mesmo padrão de `redes.instagram`; entrada
+  // que não normaliza fica como o Irmão digitou (sem link clicável), nunca
+  // bloqueia o salvamento das demais afiliações.
+  const afiliacoes = afiliacoesComLogo.map((entry) => ({
+    ...entry,
+    instagram: entry.instagram ? (normalizeInstagram(entry.instagram) ?? entry.instagram) : null,
+  }));
 
   let areaAtuacao: AreaAtuacaoKey | null = current?.areaAtuacao ?? null;
   if (formData.has('areaAtuacao')) {
@@ -265,6 +328,7 @@ export async function updateCentralProfileAction(
       negocios,
       competencias,
       servicos,
+      afiliacoes,
       lojasVisitadas: textOrCurrent(formData, 'lojasVisitadas', current?.lojasVisitadas ?? null),
       interessesMaconicos: textOrCurrent(
         formData,
@@ -349,6 +413,7 @@ export async function updatePublicationSettingsAction(
           current?.blocks.competencias ?? false,
         ),
         servicos: bool('blocks.servicos', blocksIncluded, current?.blocks.servicos ?? false),
+        afiliacoes: bool('blocks.afiliacoes', blocksIncluded, current?.blocks.afiliacoes ?? false),
         endereco: bool('blocks.endereco', blocksIncluded, current?.blocks.endereco ?? false),
         memoriaFotografica: bool(
           'blocks.memoriaFotografica',

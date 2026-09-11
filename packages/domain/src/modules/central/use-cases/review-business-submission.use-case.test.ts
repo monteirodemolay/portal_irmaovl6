@@ -49,6 +49,7 @@ function buildProfile(overrides: Partial<MemberCentralProfile> = {}): MemberCent
     ],
     competencias: [],
     servicos: [],
+    afiliacoes: [],
     lojasVisitadas: null,
     interessesMaconicos: null,
     externalLinks: {

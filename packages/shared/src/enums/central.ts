@@ -82,3 +82,19 @@ export const FORMA_ATENDIMENTO_LABELS: Record<FormaAtendimentoKey, string> = {
   online: 'Atende online/remoto',
   entrega: 'Entrega/envio',
 };
+
+/**
+ * Abrangência declarada de uma afiliação institucional (Associação,
+ * Instituição ou organização sem fins lucrativos) — cobre o pedido de
+ * suportar "Instituições Internacionais" sem virar campo de texto livre
+ * ambíguo. `pais` (em `CentralAffiliationEntry`) é mais relevante quando
+ * `internacional`, mas fica sempre disponível.
+ */
+export const AFFILIATION_ABRANGENCIA_KEYS = ['local', 'nacional', 'internacional'] as const;
+export type AffiliationAbrangenciaKey = (typeof AFFILIATION_ABRANGENCIA_KEYS)[number];
+
+export const AFFILIATION_ABRANGENCIA_LABELS: Record<AffiliationAbrangenciaKey, string> = {
+  local: 'Local',
+  nacional: 'Nacional',
+  internacional: 'Internacional',
+};

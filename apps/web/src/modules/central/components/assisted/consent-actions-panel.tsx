@@ -21,6 +21,7 @@ const BLOCK_LABELS: Record<CentralBlockKey, string> = {
   informacoesMaconicas: 'Informações maçônicas complementares',
   competencias: 'Competências',
   servicos: 'Serviços',
+  afiliacoes: 'Outras afiliações',
   endereco: 'Endereço',
   memoriaFotografica: 'Memória fotográfica',
 };

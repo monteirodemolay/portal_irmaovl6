@@ -1,4 +1,9 @@
-import type { AreaAtuacaoKey, BusinessPublicationStatus, FormaAtendimentoKey } from '@vl6/shared';
+import type {
+  AffiliationAbrangenciaKey,
+  AreaAtuacaoKey,
+  BusinessPublicationStatus,
+  FormaAtendimentoKey,
+} from '@vl6/shared';
 import type { BaseEntity } from '../../../shared/base-entity';
 
 export interface CentralBusinessEntry {
@@ -36,6 +41,28 @@ export interface CentralBusinessEntry {
   status: BusinessPublicationStatus;
   /** Data da última alteração de conteúdo OU decisão de revisão, o que for mais recente. */
   updatedAt: Date;
+}
+
+/**
+ * Vínculo com Associação, Instituição ou organização sem fins lucrativos —
+ * nacional ou internacional. Sem moderação da Administração (não é canal
+ * comercial, mesmo espírito de `competencias`/`servicos`/`externalLinks`: o
+ * Irmão é responsável pelo que declara), por isso sem `status`/`updatedAt`
+ * por entrada — nada a reconciliar.
+ */
+export interface CentralAffiliationEntry {
+  id: string;
+  nomeInstituicao: string;
+  /** Papel do Irmão na instituição — texto curto livre (ex.: "Membro", "Diretor"). */
+  papel: string | null;
+  abrangencia: AffiliationAbrangenciaKey | null;
+  /** Mais relevante quando `abrangencia === 'internacional'`, mas sempre disponível. */
+  pais: string | null;
+  descricao: string | null;
+  siteUrl: string | null;
+  instagram: string | null;
+  /** Opcional — sobe pro Blob igual `CentralBusinessEntry.logoUrl`, nunca obrigatório. */
+  logoUrl: string | null;
 }
 
 export interface CentralExternalLinks {
@@ -79,6 +106,9 @@ export interface MemberCentralProfile extends BaseEntity {
   /** Tags curtas — máx. 10 cada (`memberCentralProfileSchema`). */
   competencias: string[];
   servicos: string[];
+
+  /** Vínculos com Associações/Instituições/organizações sem fins lucrativos — sem moderação. */
+  afiliacoes: CentralAffiliationEntry[];
 
   lojasVisitadas: string | null;
   interessesMaconicos: string | null;

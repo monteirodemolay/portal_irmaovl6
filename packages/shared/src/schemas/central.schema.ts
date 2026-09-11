@@ -1,5 +1,9 @@
 import { z } from 'zod';
-import { AREA_ATUACAO_KEYS, FORMA_ATENDIMENTO_KEYS } from '../enums/central';
+import {
+  AFFILIATION_ABRANGENCIA_KEYS,
+  AREA_ATUACAO_KEYS,
+  FORMA_ATENDIMENTO_KEYS,
+} from '../enums/central';
 
 const tagSchema = z.string().min(1).max(60);
 
@@ -60,6 +64,27 @@ export const centralBusinessEntrySchema = z.object({
 });
 export type CentralBusinessEntryValues = z.infer<typeof centralBusinessEntrySchema>;
 
+/**
+ * Vínculo com Associação/Instituição/organização sem fins lucrativos — sem
+ * moderação da Administração (não é canal comercial, mesmo espírito de
+ * `competencias`/`servicos`/`externalLinks`: o Irmão é responsável pelo que
+ * declara). Sem `status`/`updatedAt` por isso — nada a reconciliar.
+ */
+export const centralAffiliationEntrySchema = z.object({
+  id: z.string().min(1),
+  nomeInstituicao: z.string().min(1).max(150),
+  papel: z.string().max(100).nullable(),
+  abrangencia: z.enum(AFFILIATION_ABRANGENCIA_KEYS).nullable(),
+  /** Mais relevante quando `abrangencia === 'internacional'`, mas sempre disponível. */
+  pais: z.string().max(100).nullable(),
+  descricao: z.string().max(500).nullable(),
+  siteUrl: z.string().url().nullable(),
+  instagram: z.string().max(200).nullable(),
+  /** Opcional — sobe pro Blob igual `CentralBusinessEntry.logoUrl`, nunca obrigatório. */
+  logoUrl: z.string().url().nullable(),
+});
+export type CentralAffiliationEntryValues = z.infer<typeof centralAffiliationEntrySchema>;
+
 export const centralExternalLinksSchema = z.object({
   whatsapp: z.string().max(30).nullable(),
   instagram: z.string().max(200).nullable(),
@@ -86,6 +111,8 @@ export const memberCentralProfileSchema = z
     /** Tags curtas — evita virar um currículo em forma de lista infinita. */
     competencias: z.array(tagSchema).max(10),
     servicos: z.array(tagSchema).max(10),
+    /** Vínculos institucionais externos — sem moderação, teto técnico só pra proteger o tamanho do documento. */
+    afiliacoes: z.array(centralAffiliationEntrySchema).max(20),
     lojasVisitadas: z.string().max(500).nullable(),
     interessesMaconicos: z.string().max(500).nullable(),
     externalLinks: centralExternalLinksSchema,
@@ -104,6 +131,7 @@ const CENTRAL_BLOCK_KEYS = [
   'informacoesMaconicas',
   'competencias',
   'servicos',
+  'afiliacoes',
   'endereco',
   'memoriaFotografica',
 ] as const;

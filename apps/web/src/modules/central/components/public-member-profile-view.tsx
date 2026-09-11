@@ -18,6 +18,7 @@ import {
   Facebook,
   GraduationCap,
   Globe,
+  Handshake,
   Heart,
   Instagram,
   Linkedin,
@@ -45,7 +46,8 @@ function formatDate(date: Date): string {
 }
 
 /** Tabs de Meu Espaço que cada bloco do perfil edita — ver comentário em `Panel`. */
-type EditTab = 'geral' | 'pessoal' | 'profissional' | 'empresa' | 'contatos' | 'redes';
+type EditTab =
+  'geral' | 'pessoal' | 'profissional' | 'empresa' | 'afiliacoes' | 'contatos' | 'redes';
 
 /**
  * Cargo ou comissão em curso — vira o selo de "gestão atual" no cabeçalho.
@@ -201,6 +203,7 @@ export function PublicMemberProfileView({
     (profile.informacoesMaconicas.lojasVisitadas ||
       profile.informacoesMaconicas.interessesMaconicos),
   );
+  const hasAfiliacoes = Boolean(profile.afiliacoes && profile.afiliacoes.length > 0);
   const hasVoluntaryContent = Boolean(
     profile.apresentacao?.texto ||
     profile.informacoesPessoais ||
@@ -210,6 +213,7 @@ export function PublicMemberProfileView({
     hasNegocios ||
     hasConexoes ||
     hasVidaMaconica ||
+    hasAfiliacoes ||
     (profile.memoriaFotografica && profile.memoriaFotografica.length > 0) ||
     profile.familia,
   );
@@ -597,6 +601,42 @@ export function PublicMemberProfileView({
                   />
                 )}
               </dl>
+            </Panel>
+          )}
+
+          {hasAfiliacoes && profile.afiliacoes && (
+            <Panel
+              kicker="AFILIAÇÕES"
+              title="Outras afiliações"
+              icon={Handshake}
+              editTab={canEdit ? 'afiliacoes' : undefined}
+              compact
+            >
+              <div className="flex flex-col gap-3">
+                {profile.afiliacoes.map((afiliacao) => (
+                  <div key={afiliacao.id} className="flex flex-col gap-1">
+                    <p className="text-sm font-medium">
+                      {afiliacao.nomeInstituicao}
+                      {afiliacao.abrangencia === 'internacional' && (
+                        <span className="text-muted ml-1.5 text-xs">
+                          · Internacional{afiliacao.pais ? ` — ${afiliacao.pais}` : ''}
+                        </span>
+                      )}
+                    </p>
+                    {afiliacao.papel && <p className="text-muted text-xs">{afiliacao.papel}</p>}
+                    {(afiliacao.instagram || afiliacao.siteUrl) && (
+                      <div className="flex flex-wrap gap-2 pt-0.5">
+                        {afiliacao.instagram && (
+                          <LinkPill href={afiliacao.instagram} label="Instagram" icon={Instagram} />
+                        )}
+                        {afiliacao.siteUrl && (
+                          <LinkPill href={afiliacao.siteUrl} label="Site" icon={Globe} />
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
             </Panel>
           )}
 

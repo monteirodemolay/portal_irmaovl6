@@ -83,6 +83,7 @@ function buildInput(
     negocios: [],
     competencias: [],
     servicos: [],
+    afiliacoes: [],
     lojasVisitadas: null,
     interessesMaconicos: null,
     externalLinks: {

@@ -9,19 +9,7 @@ import {
   FORMA_ATENDIMENTO_KEYS,
   FORMA_ATENDIMENTO_LABELS,
 } from '@vl6/shared';
-import {
-  Badge,
-  Building2,
-  Button,
-  Gift,
-  Image as ImageIcon,
-  Input,
-  Search,
-  Star,
-  Switch,
-  Textarea,
-  X,
-} from '@vl6/ui';
+import { Badge, Building2, Button, Gift, Input, Search, Star, Switch, Textarea, X } from '@vl6/ui';
 import { FormField } from '@/components/forms/form-field';
 import { FormSectionCard } from '@/components/forms/section-card';
 import {
@@ -32,6 +20,7 @@ import {
 import { updateMyProfileAction } from '@/modules/membership/actions/self-profile-actions';
 import { CompanyCard } from '@/modules/membership/components/profile-fields/company-card';
 import { ColleaguesAtEmployer } from './colleagues-at-employer';
+import { LogoUploader } from './logo-uploader';
 
 const MAX_NEGOCIOS = 5;
 
@@ -134,51 +123,6 @@ function ProdutosServicosEditor({
         {value.length}/{max} — Enter ou vírgula para adicionar.
       </p>
     </div>
-  );
-}
-
-function LogoUploader({
-  negocioId,
-  logoUrl,
-  nomeEmpresa,
-}: {
-  negocioId: string;
-  logoUrl: string | null;
-  nomeEmpresa: string;
-}) {
-  const [preview, setPreview] = useState<string | null>(null);
-  const shown = preview ?? logoUrl;
-
-  return (
-    <label
-      htmlFor={`logo-${negocioId}`}
-      className="border-border bg-surface hover:border-primary group relative flex h-20 w-20 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-xl border-2 border-dashed transition-colors"
-      title="Enviar logo"
-    >
-      {shown ? (
-        <img
-          src={shown}
-          alt={`Logo de ${nomeEmpresa || 'empresa'}`}
-          className="h-full w-full object-contain p-1.5"
-        />
-      ) : (
-        <ImageIcon size={22} className="text-muted" strokeWidth={1.5} />
-      )}
-      <span className="absolute inset-0 flex items-center justify-center bg-black/0 text-[10px] font-medium text-white opacity-0 transition-opacity group-hover:bg-black/50 group-hover:opacity-100">
-        Trocar
-      </span>
-      <input
-        id={`logo-${negocioId}`}
-        name={`logo-${negocioId}`}
-        type="file"
-        accept="image/jpeg,image/png,image/webp,image/svg+xml,image/gif"
-        className="hidden"
-        onChange={(event) => {
-          const file = event.target.files?.[0];
-          setPreview(file ? URL.createObjectURL(file) : null);
-        }}
-      />
-    </label>
   );
 }
 
@@ -323,9 +267,9 @@ export function EmpresaTab({
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-start gap-3">
                     <LogoUploader
-                      negocioId={negocio.id}
-                      logoUrl={negocio.logoUrl}
-                      nomeEmpresa={negocio.nomeEmpresa}
+                      inputName={`logo-${negocio.id}`}
+                      imageUrl={negocio.logoUrl}
+                      entityLabel={negocio.nomeEmpresa}
                     />
                     <div className="flex flex-col gap-2 pt-1">
                       <div className="flex items-center gap-2">

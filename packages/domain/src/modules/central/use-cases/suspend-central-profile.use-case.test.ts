@@ -33,6 +33,7 @@ function buildSettings(): PublicationSettings {
       informacoesMaconicas: false,
       competencias: false,
       servicos: false,
+      afiliacoes: false,
       endereco: false,
       memoriaFotografica: false,
     },

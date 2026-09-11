@@ -80,6 +80,7 @@ function buildSettings(overrides: Partial<PublicationSettings> = {}): Publicatio
       informacoesMaconicas: false,
       competencias: false,
       servicos: false,
+      afiliacoes: false,
       endereco: false,
       memoriaFotografica: false,
     },

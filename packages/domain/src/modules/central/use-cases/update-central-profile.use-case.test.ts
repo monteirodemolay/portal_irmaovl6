@@ -75,6 +75,7 @@ function buildInput(
     negocios: [],
     competencias: [],
     servicos: [],
+    afiliacoes: [],
     lojasVisitadas: null,
     interessesMaconicos: null,
     externalLinks: {
@@ -180,6 +181,7 @@ describe('UpdateCentralProfileUseCase — status de negócios', () => {
       negocios: [published],
       competencias: [],
       servicos: [],
+      afiliacoes: [],
       lojasVisitadas: null,
       interessesMaconicos: null,
       externalLinks: {
@@ -277,6 +279,7 @@ describe('UpdateCentralProfileUseCase — status de negócios', () => {
       negocios: [published],
       competencias: [],
       servicos: [],
+      afiliacoes: [],
       lojasVisitadas: null,
       interessesMaconicos: null,
       externalLinks: {
@@ -374,6 +377,7 @@ describe('UpdateCentralProfileUseCase — status de negócios', () => {
       ],
       competencias: [],
       servicos: [],
+      afiliacoes: [],
       lojasVisitadas: null,
       interessesMaconicos: null,
       externalLinks: {
@@ -425,5 +429,58 @@ describe('UpdateCentralProfileUseCase — status de negócios', () => {
     if (!result.ok) return;
     expect(result.value.negocios[0]).toMatchObject({ status: 'pending_review' });
     expect(result.value.negocios[0]?.updatedAt).toEqual(new Date('2026-02-01T00:00:00Z'));
+  });
+});
+
+describe('UpdateCentralProfileUseCase — afiliações institucionais', () => {
+  it('persiste afiliações sem transformação — sem moderação, nada a reconciliar', async () => {
+    const { useCase, memberRepository } = buildUseCase();
+    await memberRepository.create(buildMember());
+
+    const result = await useCase.execute(
+      ctx,
+      buildInput({
+        afiliacoes: [
+          {
+            id: 'afiliacao-1',
+            nomeInstituicao: 'Rotary Club',
+            papel: 'Membro',
+            abrangencia: 'internacional',
+            pais: 'Estados Unidos',
+            descricao: null,
+            siteUrl: 'https://rotary.org',
+            instagram: 'https://instagram.com/rotary',
+            logoUrl: null,
+          },
+        ],
+      }),
+    );
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value.afiliacoes).toEqual([
+      {
+        id: 'afiliacao-1',
+        nomeInstituicao: 'Rotary Club',
+        papel: 'Membro',
+        abrangencia: 'internacional',
+        pais: 'Estados Unidos',
+        descricao: null,
+        siteUrl: 'https://rotary.org',
+        instagram: 'https://instagram.com/rotary',
+        logoUrl: null,
+      },
+    ]);
+  });
+
+  it('perfil inexistente (primeira vez) cria com afiliacoes default vazio', async () => {
+    const { useCase, memberRepository } = buildUseCase();
+    await memberRepository.create(buildMember());
+
+    const result = await useCase.execute(ctx, buildInput());
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value.afiliacoes).toEqual([]);
   });
 });

@@ -74,6 +74,7 @@ function buildSettings(overrides: Partial<PublicationSettings> = {}): Publicatio
       informacoesMaconicas: false,
       competencias: false,
       servicos: false,
+      afiliacoes: false,
       endereco: false,
       memoriaFotografica: false,
     },
@@ -115,6 +116,7 @@ function buildProfile(overrides: Partial<MemberCentralProfile> = {}): MemberCent
     negocios: [],
     competencias: [],
     servicos: [],
+    afiliacoes: [],
     lojasVisitadas: null,
     interessesMaconicos: null,
     externalLinks: {

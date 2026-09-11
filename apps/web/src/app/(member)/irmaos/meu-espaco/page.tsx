@@ -6,6 +6,7 @@ import { requireSession } from '@/lib/auth/require-session';
 import { listUsedProfessions } from '@/modules/membership/lib/list-used-professions';
 import { listUsedCompanies } from '@/modules/membership/lib/list-used-companies';
 import { listUsedBusinessNames } from '@/modules/central/lib/list-used-business-names';
+import { AfiliacoesTab } from '@/modules/central/components/meu-espaco/afiliacoes-tab';
 import { ContatosTab } from '@/modules/central/components/meu-espaco/contatos-tab';
 import { EmpresaTab } from '@/modules/central/components/meu-espaco/empresa-tab';
 import { GeralTab } from '@/modules/central/components/meu-espaco/geral-tab';
@@ -32,6 +33,7 @@ const EMPTY_PUBLICATION_SETTINGS: Omit<
     informacoesMaconicas: false,
     competencias: false,
     servicos: false,
+    afiliacoes: false,
     endereco: false,
     memoriaFotografica: false,
   },
@@ -57,6 +59,7 @@ const VALID_TABS = [
   'pessoal',
   'profissional',
   'empresa',
+  'afiliacoes',
   'contatos',
   'redes',
   'privacidade',
@@ -152,6 +155,7 @@ export default async function MeuEspacoPage({
           <TabsTrigger value="pessoal">Pessoal</TabsTrigger>
           <TabsTrigger value="profissional">Profissional</TabsTrigger>
           <TabsTrigger value="empresa">Empresa</TabsTrigger>
+          <TabsTrigger value="afiliacoes">Afiliações</TabsTrigger>
           <TabsTrigger value="contatos">Contatos</TabsTrigger>
           <TabsTrigger value="redes">Redes</TabsTrigger>
           <TabsTrigger value="privacidade">Privacidade</TabsTrigger>
@@ -177,6 +181,9 @@ export default async function MeuEspacoPage({
             knownCompanies={customCompanies}
             knownBusinessNames={businessNames}
           />
+        </TabsContent>
+        <TabsContent value="afiliacoes" className="pt-6">
+          <AfiliacoesTab profile={centralProfile} />
         </TabsContent>
         <TabsContent value="contatos" className="pt-6">
           <ContatosTab member={member} settings={publicationSettings} />

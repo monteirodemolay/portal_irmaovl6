@@ -49,6 +49,7 @@ export interface PublicMemberProfileDTO {
   empresaAtual: string | null;
   competencias: string[] | null;
   servicos: string[] | null;
+  afiliacoes: MemberCentralProfile['afiliacoes'] | null;
   contatos: { telefone: string | null; whatsapp: string | null; email: string | null } | null;
   redes: {
     whatsapp: string | null;
@@ -114,6 +115,7 @@ const CLOSED_BLOCKS: PublicationSettings['blocks'] = {
   informacoesMaconicas: false,
   competencias: false,
   servicos: false,
+  afiliacoes: false,
   endereco: false,
   memoriaFotografica: false,
 };
@@ -174,6 +176,7 @@ export function buildPublicMemberProfileDTO(
     empresaAtual: blocks.empresa ? member.empresa : null,
     competencias: blocks.competencias ? (profile?.competencias ?? []) : null,
     servicos: blocks.servicos ? (profile?.servicos ?? []) : null,
+    afiliacoes: blocks.afiliacoes ? (profile?.afiliacoes ?? []) : null,
     contatos:
       settings &&
       (settings.contacts.telefone || settings.contacts.whatsapp || settings.contacts.email)
