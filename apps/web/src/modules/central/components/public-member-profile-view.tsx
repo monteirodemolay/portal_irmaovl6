@@ -437,19 +437,42 @@ export function PublicMemberProfileView({
                       {FAMILY_DISPLAY_GROUP_LABELS[group]}
                     </p>
                     <ul className="flex flex-col gap-2.5">
-                      {profile.familia?.[group]?.map((item) => (
-                        <li key={item.key} className="flex items-center gap-2.5 text-sm">
-                          <MemberAvatar
-                            fotoUrl={item.fotoUrl}
-                            nome={item.nomeCompleto}
-                            className="h-8 w-8 shrink-0"
-                          />
-                          <span className="min-w-0">
-                            <span className="block truncate font-medium">{item.nomeCompleto}</span>
-                            <span className="text-muted block text-xs">{item.parentesco}</span>
-                          </span>
-                        </li>
-                      ))}
+                      {profile.familia?.[group]?.map((item) =>
+                        item.kind === 'member' ? (
+                          <li key={item.key}>
+                            <Link
+                              href={`/irmaos/${item.id}`}
+                              className="hover:bg-surface -m-1 flex items-center gap-2.5 rounded-lg p-1 text-sm transition-colors"
+                            >
+                              <MemberAvatar
+                                fotoUrl={item.fotoUrl}
+                                nome={item.nomeCompleto}
+                                className="h-8 w-8 shrink-0"
+                              />
+                              <span className="min-w-0">
+                                <span className="block truncate font-medium hover:underline">
+                                  {item.nomeCompleto}
+                                </span>
+                                <span className="text-muted block text-xs">{item.parentesco}</span>
+                              </span>
+                            </Link>
+                          </li>
+                        ) : (
+                          <li key={item.key} className="flex items-center gap-2.5 text-sm">
+                            <MemberAvatar
+                              fotoUrl={item.fotoUrl}
+                              nome={item.nomeCompleto}
+                              className="h-8 w-8 shrink-0"
+                            />
+                            <span className="min-w-0">
+                              <span className="block truncate font-medium">
+                                {item.nomeCompleto}
+                              </span>
+                              <span className="text-muted block text-xs">{item.parentesco}</span>
+                            </span>
+                          </li>
+                        ),
+                      )}
                     </ul>
                   </div>
                 ))}
@@ -561,6 +584,7 @@ export function PublicMemberProfileView({
                     dateLabel={formatDate(entry.dataInicio)}
                     active={!entry.dataFim}
                     detail={`Cargo · ${entry.gestaoNome}${entry.dataFim ? ` até ${formatDate(entry.dataFim)}` : ' · em curso'}`}
+                    href={`/acervo/gestoes/${entry.gestaoId}`}
                   />
                 ))}
                 {profile.trajetoria.comissoes.map((entry, index) => (
@@ -570,6 +594,7 @@ export function PublicMemberProfileView({
                     dateLabel={formatDate(entry.dataInicio)}
                     active={!entry.dataFim}
                     detail={`Comissão · ${entry.gestaoNome}${entry.dataFim ? ` até ${formatDate(entry.dataFim)}` : ' · em curso'}`}
+                    href={`/acervo/gestoes/${entry.gestaoId}`}
                   />
                 ))}
               </div>

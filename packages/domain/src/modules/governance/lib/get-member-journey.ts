@@ -5,6 +5,7 @@ import type { BoardTerm } from '../entities/board-term.entity';
 
 export interface MemberJourneyCargo {
   cargo: string;
+  gestaoId: string;
   gestaoNome: string;
   dataInicio: Date;
   dataFim: Date | null;
@@ -12,6 +13,7 @@ export interface MemberJourneyCargo {
 
 export interface MemberJourneyCommittee {
   nome: string;
+  gestaoId: string;
   gestaoNome: string;
   dataInicio: Date;
   dataFim: Date | null;
@@ -58,6 +60,7 @@ export async function getMemberJourneyCargos(
     .sort((a, b) => new Date(b.dataInicio).getTime() - new Date(a.dataInicio).getTime())
     .map((entry) => ({
       cargo: entry.cargo,
+      gestaoId: entry.gestaoId,
       gestaoNome: termById.get(entry.gestaoId)?.nome ?? 'Gestão',
       dataInicio: entry.dataInicio,
       dataFim: entry.dataFim,
@@ -88,6 +91,7 @@ export async function getMemberJourneyCommittees(
       const term = termById.get(committee.gestaoId);
       return {
         nome: committee.nome,
+        gestaoId: committee.gestaoId,
         gestaoNome: term?.nome ?? 'Gestão',
         dataInicio: term?.periodoInicio ?? committee.createdAt,
         dataFim: term?.periodoFim ?? null,

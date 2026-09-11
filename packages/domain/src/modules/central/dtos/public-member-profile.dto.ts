@@ -84,8 +84,20 @@ export interface PublicMemberProfileDTO {
     dataIniciacao: Date | null;
     dataElevacao: Date | null;
     dataExaltacao: Date | null;
-    cargos: { cargo: string; gestaoNome: string; dataInicio: Date; dataFim: Date | null }[];
-    comissoes: { nome: string; gestaoNome: string; dataInicio: Date; dataFim: Date | null }[];
+    cargos: {
+      cargo: string;
+      gestaoId: string;
+      gestaoNome: string;
+      dataInicio: Date;
+      dataFim: Date | null;
+    }[];
+    comissoes: {
+      nome: string;
+      gestaoId: string;
+      gestaoNome: string;
+      dataInicio: Date;
+      dataFim: Date | null;
+    }[];
   } | null;
   /**
    * Fotografias do Acervo VL6 em que este Irmão está identificado — ponte

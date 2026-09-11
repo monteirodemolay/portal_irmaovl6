@@ -1,3 +1,5 @@
+import Link from 'next/link';
+
 export type IconType = React.ComponentType<{
   size?: number;
   strokeWidth?: number;
@@ -59,20 +61,24 @@ export function Panel({
  * exaltação, cargo, comissão) — ponto sólido dourado quando em curso
  * (`active`), contorno vazado quando encerrado. Mesma peça visual em
  * "Caminho na Loja" (Perfil do Irmão) e "Trajetória institucional"
- * (Pessoa do Acervo VL6).
+ * (Pessoa do Acervo VL6). `href` opcional — cargo/comissão sempre pertence a
+ * uma Gestão (`/acervo/gestoes/[gestaoId]`); iniciação/elevação/exaltação não
+ * têm destino próprio, por isso ficam sem link.
  */
 export function TimelineEntry({
   label,
   detail,
   dateLabel,
   active = false,
+  href,
 }: {
   label: string;
   detail?: string;
   dateLabel: string;
   active?: boolean;
+  href?: string;
 }) {
-  return (
+  const content = (
     <div className="grid grid-cols-[16px_92px_1fr] items-start gap-3">
       <span
         className={
@@ -83,9 +89,18 @@ export function TimelineEntry({
       />
       <span className="text-muted text-[10px] font-bold uppercase tabular-nums">{dateLabel}</span>
       <div>
-        <p className="text-sm font-semibold">{label}</p>
+        <p className={href ? 'text-sm font-semibold hover:underline' : 'text-sm font-semibold'}>
+          {label}
+        </p>
         {detail && <p className="text-muted text-xs">{detail}</p>}
       </div>
     </div>
+  );
+
+  if (!href) return content;
+  return (
+    <Link href={href} className="hover:bg-background -m-1 block rounded-lg p-1 transition-colors">
+      {content}
+    </Link>
   );
 }

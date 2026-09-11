@@ -208,21 +208,37 @@ function PersonRow({
 }) {
   const [state, removeAction] = useActionState(removeFamilyRelationshipAction, EMPTY_STATE);
 
+  const identity = (
+    <>
+      <Avatar>
+        <AvatarFallback>{initials(person.nomeCompleto)}</AvatarFallback>
+      </Avatar>
+      <div className="flex flex-col">
+        <p
+          className={
+            person.kind === 'member' ? 'text-sm font-medium hover:underline' : 'text-sm font-medium'
+          }
+        >
+          {person.nomeCompleto}
+        </p>
+        <p className="text-muted text-xs">
+          {person.parentesco}
+          {person.ladoLinhagem !== 'unknown' &&
+            ` · lado ${person.ladoLinhagem === 'maternal' ? 'materno' : 'paterno'}`}
+        </p>
+      </div>
+    </>
+  );
+
   return (
     <div className="border-border-soft flex items-center justify-between gap-3 rounded-md border p-3">
-      <div className="flex items-center gap-3">
-        <Avatar>
-          <AvatarFallback>{initials(person.nomeCompleto)}</AvatarFallback>
-        </Avatar>
-        <div className="flex flex-col">
-          <p className="text-sm font-medium">{person.nomeCompleto}</p>
-          <p className="text-muted text-xs">
-            {person.parentesco}
-            {person.ladoLinhagem !== 'unknown' &&
-              ` · lado ${person.ladoLinhagem === 'maternal' ? 'materno' : 'paterno'}`}
-          </p>
-        </div>
-      </div>
+      {person.kind === 'member' ? (
+        <a href={`/irmaos/${person.id}`} className="flex min-w-0 items-center gap-3">
+          {identity}
+        </a>
+      ) : (
+        <div className="flex items-center gap-3">{identity}</div>
+      )}
       <div className="flex items-center gap-2">
         {person.lifeStatus === 'deceased' && <Badge variant="outline">In Memoriam</Badge>}
         {person.confirmationStatus === 'pending' && (
