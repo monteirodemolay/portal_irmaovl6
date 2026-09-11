@@ -23,16 +23,32 @@ export function levenshteinDistance(a: string, b: string): number {
 }
 
 /**
+ * `true` quando duas strings JÁ normalizadas (`normalizeNameForSearch`) são
+ * parecidas o bastante pra serem um erro de digitação da mesma pessoa em
+ * vez de duas pessoas distintas — ex.: "ivan damasceno" × "ivam damasceno"
+ * (uma letra) ou "mauricio borges de souza" × "mauricio borges de sousa"
+ * (uma letra no sobrenome). Limiar deliberadamente conservador (distância
+ * ≤ 2 e ≤ 20% do tamanho do nome) pra não acusar falso positivo em nomes
+ * curtos genuinamente distintos. Espera as duas entradas já normalizadas —
+ * quem compara nomes crus deve normalizar antes de chamar.
+ */
+export function areNormalizedNamesSimilar(a: string, b: string): boolean {
+  if (a === b) return false; // exatamente iguais não é "parecido", é o mesmo
+  const distance = levenshteinDistance(a, b);
+  if (distance === 0) return false;
+  const maxLength = Math.max(a.length, b.length);
+  return distance <= 2 && distance / maxLength <= 0.2;
+}
+
+/**
  * Acha, entre `candidateNames`, o nome mais parecido com `name` — típico de
  * um erro de digitação (ex.: "Ivan Damasceno" × "Ivam Damasceno", uma letra
  * diferente) em vez de duas pessoas distintas. Nunca retorna o próprio
  * `name` (comparação exata é responsabilidade de quem chama, via
- * `normalizeNameForSearch`) nem nomes claramente diferentes — o limiar é
- * deliberadamente conservador (distância ≤ 2 e ≤ 20% do tamanho do nome)
- * pra não acusar falso positivo em sobrenomes curtos genuinamente distintos.
- * Usado pra nunca criar um cadastro novo de Irmão sem o Administrador
- * confirmar que não é o mesmo Irmão já cadastrado com o nome grafado
- * ligeiramente diferente (`ImportHistoricalBoardTermsUseCase`).
+ * `normalizeNameForSearch`) nem nomes claramente diferentes — mesmo limiar
+ * de `areNormalizedNamesSimilar`. Usado pra nunca criar um cadastro novo de
+ * Irmão sem o Administrador confirmar que não é o mesmo Irmão já cadastrado
+ * com o nome grafado ligeiramente diferente (`ImportHistoricalBoardTermsUseCase`).
  */
 export function findSimilarName(name: string, candidateNames: string[]): string | null {
   const target = normalizeNameForSearch(name);
@@ -40,13 +56,9 @@ export function findSimilarName(name: string, candidateNames: string[]): string 
 
   for (const candidateName of candidateNames) {
     const candidate = normalizeNameForSearch(candidateName);
-    if (candidate === target) continue;
+    if (!areNormalizedNamesSimilar(target, candidate)) continue;
 
     const distance = levenshteinDistance(target, candidate);
-    if (distance === 0) continue;
-    const maxLength = Math.max(target.length, candidate.length);
-    if (distance > 2 || distance / maxLength > 0.2) continue;
-
     if (!best || distance < best.distance) {
       best = { candidate: candidateName, distance };
     }

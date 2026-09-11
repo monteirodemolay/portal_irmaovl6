@@ -1,4 +1,4 @@
-import { normalizeNameForSearch } from '@vl6/shared';
+import { areNormalizedNamesSimilar, normalizeNameForSearch } from '@vl6/shared';
 import type { AuthContext } from '../../../shared/auth-context';
 import { requirePermission } from '../../../shared/auth-context';
 import { ok, type Result } from '../../../shared/result';
@@ -24,13 +24,15 @@ export interface DuplicateMemberGroup {
 }
 
 /**
- * Acha Irmãos com o mesmo nome (normalizado — sem acento/maiúscula,
- * mesma chave usada pela importação da nominata histórica) cadastrados mais
- * de uma vez — nunca junta automaticamente, só lista pra o Administrador
- * decidir qual manter em `MergeDuplicateMembersUseCase`. Não filtra
- * `deletedAt`: um cadastro já mesclado/excluído continua aparecendo até o
- * Administrador confirmar que não sobrou mais nada duplicado, evitando
- * "sumiço" silencioso de um registro que ele esperava ver.
+ * Acha Irmãos cadastrados mais de uma vez — mesmo nome (normalizado, sem
+ * acento/maiúscula) OU nome PARECIDO (`areNormalizedNamesSimilar` —
+ * distância de edição pequena, ex.: "Souza"×"Sousa", "Ivan"×"Ivam"), pra
+ * pegar tanto o caso óbvio quanto o erro de digitação sutil. Nunca junta
+ * automaticamente, só lista pra o Administrador decidir qual manter em
+ * `MergeDuplicateMembersUseCase`. Não filtra `deletedAt`: um cadastro já
+ * mesclado/excluído continua aparecendo até o Administrador confirmar que
+ * não sobrou mais nada duplicado, evitando "sumiço" silencioso de um
+ * registro que ele esperava ver.
  */
 export class ListDuplicateMembersUseCase {
   constructor(private readonly deps: ListDuplicateMembersDeps) {}
@@ -63,7 +65,36 @@ export class ListDuplicateMembersUseCase {
       cursor = page.nextCursor;
     }
 
-    const groups: DuplicateMemberGroup[] = Array.from(groupKeys.entries())
+    // Une chaves de nome exatamente iguais (já agrupadas acima) com chaves
+    // PARECIDAS entre si (union-find sobre os nomes normalizados distintos
+    // — poucas dezenas/centenas por Loja, então O(n²) não pesa).
+    const keys = Array.from(groupKeys.keys());
+    const parent = new Map(keys.map((key) => [key, key]));
+    function find(key: string): string {
+      let root = key;
+      while (parent.get(root) !== root) root = parent.get(root)!;
+      return root;
+    }
+    function union(a: string, b: string): void {
+      const rootA = find(a);
+      const rootB = find(b);
+      if (rootA !== rootB) parent.set(rootA, rootB);
+    }
+    for (let i = 0; i < keys.length; i++) {
+      for (let j = i + 1; j < keys.length; j++) {
+        if (areNormalizedNamesSimilar(keys[i]!, keys[j]!)) union(keys[i]!, keys[j]!);
+      }
+    }
+
+    const merged = new Map<string, DuplicateMemberSummary[]>();
+    for (const key of keys) {
+      const root = find(key);
+      const list = merged.get(root) ?? [];
+      list.push(...groupKeys.get(key)!);
+      merged.set(root, list);
+    }
+
+    const groups: DuplicateMemberGroup[] = Array.from(merged.entries())
       .filter(([, membros]) => membros.length > 1)
       .map(([nomeNormalizado, membros]) => ({
         nomeNormalizado,

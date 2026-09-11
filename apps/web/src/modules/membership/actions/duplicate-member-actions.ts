@@ -2,7 +2,11 @@
 
 import { revalidatePath } from 'next/cache';
 import { createServerContainer } from '@vl6/infra';
-import type { DuplicateMemberGroup, MergeDuplicateMembersReport } from '@vl6/domain';
+import type {
+  DuplicateMemberGroup,
+  DuplicateMemberSummary,
+  MergeDuplicateMembersReport,
+} from '@vl6/domain';
 import { requireSession } from '@/lib/auth/require-session';
 
 export async function loadDuplicateMembersAction(): Promise<DuplicateMemberGroup[]> {
@@ -10,6 +14,35 @@ export async function loadDuplicateMembersAction(): Promise<DuplicateMemberGroup
   const container = createServerContainer();
   const result = await container.useCases.listDuplicateMembers.execute(session.authContext);
   return result.ok ? result.value : [];
+}
+
+/**
+ * Busca manual pra achar duplicados que a detecção automática
+ * (`loadDuplicateMembersAction` — nome idêntico ou parecido) não pegou —
+ * ex.: apelido, nome do meio omitido, grafia bem diferente. O
+ * Administrador escolhe manualmente quem juntar num grupo de mesclagem.
+ */
+export async function searchMembersForMergeAction(
+  query: string,
+): Promise<DuplicateMemberSummary[]> {
+  const trimmed = query.trim();
+  if (trimmed.length < 3) return [];
+
+  const session = await requireSession();
+  const container = createServerContainer();
+  const page = await container.useCases.searchMembers.execute(
+    session.authContext,
+    { nome: trimmed },
+    { limit: 20 },
+  );
+  return page.items.map((member) => ({
+    id: member.id,
+    nomeCompleto: member.nomeCompleto,
+    fotoUrl: member.fotoUrl,
+    situacao: member.situacao,
+    temAcesso: member.userId !== null,
+    createdAt: member.createdAt,
+  }));
 }
 
 export type MergeDuplicateMembersActionResult =
