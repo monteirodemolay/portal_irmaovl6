@@ -16,15 +16,18 @@ export function MemberAvatar({
   fotoUrl,
   nome,
   className,
+  imgClassName,
 }: {
   fotoUrl: string | null;
   nome: string;
   className?: string;
+  /** Ex.: `object-top` — avatares grandes e não-circulares (retrato em vez de rosto já enquadrado) cortam a testa quando o recorte fica centralizado. */
+  imgClassName?: string;
 }) {
   const initials = getInitials(nome);
   return (
     <Avatar className={cn('h-10 w-10', className)}>
-      {fotoUrl && <AvatarImage src={fotoUrl} alt={nome} />}
+      {fotoUrl && <AvatarImage src={fotoUrl} alt={nome} className={imgClassName} />}
       <AvatarFallback>{initials || <Compass size={16} strokeWidth={1.75} />}</AvatarFallback>
     </Avatar>
   );
