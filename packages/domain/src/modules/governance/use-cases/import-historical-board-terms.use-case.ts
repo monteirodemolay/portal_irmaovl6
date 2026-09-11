@@ -1,5 +1,5 @@
 import type { BoardPositionKey } from '@vl6/shared';
-import { normalizeNameForSearch } from '@vl6/shared';
+import { findSimilarName, normalizeNameForSearch } from '@vl6/shared';
 import type { AuthContext } from '../../../shared/auth-context';
 import { requirePermission } from '../../../shared/auth-context';
 import type { IClock, IIdGenerator } from '../../../shared/ports';
@@ -31,8 +31,13 @@ export interface ImportHistoricalBoardTermsRow {
   gestaoStatus: 'criada' | 'já existia';
   cargo: BoardPositionKey;
   nomeCompleto: string;
-  memberStatus: 'criado' | 'já existia';
+  /** `'revisar'` — nome parecido demais com um Irmão já cadastrado pra criar
+   * sozinho: nada foi criado nem vinculado pra este segmento, ver
+   * `sugestaoNomeParecido`. */
+  memberStatus: 'criado' | 'já existia' | 'revisar';
   fotoAtualizada: boolean;
+  /** Só preenchido quando `memberStatus === 'revisar'` — nome do Irmão já cadastrado que pode ser a mesma pessoa. */
+  sugestaoNomeParecido?: string | null;
 }
 
 /**
@@ -48,6 +53,17 @@ export interface ImportHistoricalBoardTermsRow {
  * Irmão criado aqui nasce `situacao: 'ativo'` mesmo quando historicamente
  * muito antigo — decisão do Administrador (não presumir falecimento sem
  * confirmação, evita marcar por engano alguém que ainda está vivo).
+ *
+ * Nunca cria um cadastro novo sem antes conferir se não é o MESMO Irmão já
+ * cadastrado com o nome grafado ligeiramente diferente (`findSimilarName`
+ * — distância de edição pequena, ex.: "Ivan" × "Ivam", um erro de
+ * digitação típico da nominata em papel). Quando acha um nome parecido
+ * (mas não idêntico) a um Irmão já existente, NÃO cria nada pra esse
+ * segmento — devolve `memberStatus: 'revisar'` no relatório com o nome
+ * sugerido, pro Administrador decidir manualmente (corrigir a grafia no
+ * dataset e reimportar, ou confirmar que são pessoas diferentes e cadastrar
+ * à parte). Cadastro duplicado desfaz vínculo — sempre errar pro lado de
+ * pedir confirmação, nunca pro lado de criar sozinho.
  */
 export class ImportHistoricalBoardTermsUseCase {
   constructor(private readonly deps: ImportHistoricalBoardTermsDeps) {}
@@ -83,7 +99,12 @@ export class ImportHistoricalBoardTermsUseCase {
 
     // Fase 1: resolve/cria todos os Irmãos únicos da nominata em paralelo —
     // uma promise por nome (nunca duas pro mesmo nome), então sem risco de
-    // duplicar mesmo com Promise.all.
+    // duplicar mesmo com Promise.all. Nomes existentes (pré-Fase 1) usados
+    // como base pra checagem de nome parecido, nunca contra cadastros
+    // criados durante esta própria execução.
+    const existingNames = existingMembers.map((m) => m.nomeCompleto);
+    const needsReviewByName = new Map<string, string>(); // nome-normalizado → sugestão (nome existente parecido)
+
     const allSegments = terms.flatMap((term) => term.segments);
     const uniqueNames = Array.from(new Set(allSegments.map((s) => s.nomeCompleto)));
     await Promise.all(
@@ -91,6 +112,11 @@ export class ImportHistoricalBoardTermsUseCase {
         const normalized = normalizeNameForSearch(nomeCompleto);
         const member = memberByName.get(normalized);
         if (!member) {
+          const suggestion = findSimilarName(nomeCompleto, existingNames);
+          if (suggestion) {
+            needsReviewByName.set(normalized, suggestion);
+            return;
+          }
           const fotoUrl = photosByNormalizedName[normalized] ?? null;
           const created = await this.createHistoricalMember(ctx, nomeCompleto, fotoUrl, now);
           memberByName.set(normalized, created);
@@ -168,6 +194,20 @@ export class ImportHistoricalBoardTermsUseCase {
 
         for (const segment of ordered) {
           const normalized = normalizeNameForSearch(segment.nomeCompleto);
+          const suggestion = needsReviewByName.get(normalized);
+          if (suggestion) {
+            report.push({
+              gestaoNome: boardTerm.nome,
+              gestaoStatus,
+              cargo,
+              nomeCompleto: segment.nomeCompleto,
+              memberStatus: 'revisar',
+              fotoAtualizada: false,
+              sugestaoNomeParecido: suggestion,
+            });
+            continue;
+          }
+
           const member = memberByName.get(normalized)!;
           const dataInicio = new Date(segment.dataInicio);
           const key = historyKey(member.id, cargo, boardTerm.id, dataInicio);
@@ -229,6 +269,7 @@ export class ImportHistoricalBoardTermsUseCase {
       existingMembers.filter((m) => !m.fotoUrl).map((m) => normalizeNameForSearch(m.nomeCompleto)),
     );
     for (const row of report) {
+      if (row.memberStatus === 'revisar') continue;
       const normalized = normalizeNameForSearch(row.nomeCompleto);
       row.memberStatus = originalNames.has(normalized) ? 'já existia' : 'criado';
       row.fotoAtualizada =
@@ -240,7 +281,12 @@ export class ImportHistoricalBoardTermsUseCase {
     // nessa gestão) — um por gestão+cargo, todos independentes entre si.
     await Promise.all(
       cargoGroups.map(async ({ boardTerm, cargo, ordered }) => {
-        const lastSegment = ordered[ordered.length - 1]!;
+        const resolvedOrdered = ordered.filter(
+          (segment) => !needsReviewByName.has(normalizeNameForSearch(segment.nomeCompleto)),
+        );
+        if (resolvedOrdered.length === 0) return; // tudo pendente de revisão — nada pra atribuir ainda
+
+        const lastSegment = resolvedOrdered[resolvedOrdered.length - 1]!;
         const lastMember = memberByName.get(normalizeNameForSearch(lastSegment.nomeCompleto))!;
         const existingAssignment = await this.deps.assignmentRepository.findByGestaoAndCargo(
           boardTerm.id,

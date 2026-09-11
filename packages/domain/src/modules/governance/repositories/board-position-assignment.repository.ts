@@ -3,6 +3,7 @@ import type { BoardPositionAssignment } from '../entities/board-position-assignm
 export interface IBoardPositionAssignmentRepository {
   findById(id: string): Promise<BoardPositionAssignment | null>;
   listByGestao(gestaoId: string): Promise<BoardPositionAssignment[]>;
+  listByMemberId(memberId: string): Promise<BoardPositionAssignment[]>;
   /** Ocorrência única (todos os cargos exceto Diácono/Experto) — ver SINGLE_OCCURRENCE_BOARD_POSITIONS. */
   findByGestaoAndCargo(gestaoId: string, cargo: string): Promise<BoardPositionAssignment | null>;
   create(assignment: BoardPositionAssignment): Promise<void>;

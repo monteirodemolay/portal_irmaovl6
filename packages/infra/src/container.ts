@@ -4,6 +4,8 @@ import {
   AssignBoardPositionUseCase,
   ImportHistoricalBoardTermsUseCase,
   DedupeMemberPositionHistoryUseCase,
+  ListDuplicateMembersUseCase,
+  MergeDuplicateMembersUseCase,
   AssignRoleUseCase,
   SyncSystemRolePermissionsUseCase,
   AuthenticateApiKeyUseCase,
@@ -663,6 +665,16 @@ export function createServerContainer() {
     }),
     dedupeMemberPositionHistory: new DedupeMemberPositionHistoryUseCase({
       positionHistoryRepository: repositories.memberPositionHistory,
+    }),
+    listDuplicateMembers: new ListDuplicateMembersUseCase({
+      memberRepository: repositories.member,
+    }),
+    mergeDuplicateMembers: new MergeDuplicateMembersUseCase({
+      memberRepository: repositories.member,
+      situationRecordRepository: repositories.memberSituationRecord,
+      positionHistoryRepository: repositories.memberPositionHistory,
+      assignmentRepository: repositories.boardPositionAssignment,
+      clock,
     }),
     getActiveBoard: new GetActiveBoardUseCase({
       boardTermRepository: repositories.boardTerm,
