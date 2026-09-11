@@ -639,6 +639,16 @@ export async function activateMemberAccessAction(
   if (member.userId) {
     return { ...EMPTY_STATE, memberId, error: 'Este Irmão já possui acesso ao Portal.' };
   }
+  // Reforço de servidor — a tela já esconde o formulário nesse caso, mas
+  // nunca confia só na UI: um Irmão em In Memoriam nunca mais acessa o
+  // Portal, então nunca ganha acesso novo por aqui.
+  if (member.situacao === 'falecido') {
+    return {
+      ...EMPTY_STATE,
+      memberId,
+      error: 'Este Irmão está em In Memoriam — não é possível conceder acesso ao Portal.',
+    };
+  }
 
   const roleId = String(formData.get('roleId') ?? '');
   const accessResult = await createPortalAccessForMember(container, session, member, roleId);

@@ -43,7 +43,10 @@ export function CommunityMemberCard({ profile }: { profile: DirectoryMemberDTO }
               <p className="line-clamp-2 font-medium leading-snug">{profile.nomeCompleto}</p>
               <div className="flex flex-wrap items-center gap-1.5">
                 <MemberDegreeBadge grau={profile.grau} compact />
-                <LodgeTenureBadge dataIniciacao={profile.dataIniciacao} />
+                <LodgeTenureBadge
+                  dataIniciacao={profile.dataIniciacao}
+                  dataFalecimento={profile.dataFalecimento}
+                />
                 {profile.situacao !== 'ativo' && <SituacaoBadge situacao={profile.situacao} />}
               </div>
               <p className="text-muted text-xs">

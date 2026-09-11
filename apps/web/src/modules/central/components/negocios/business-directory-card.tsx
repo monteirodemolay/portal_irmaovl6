@@ -101,7 +101,11 @@ export function BusinessDirectoryCard({ entry }: { entry: BusinessDirectoryEntry
               {entry.responsavel.nomeCompleto}
             </span>
           </span>
-          <LodgeTenureBadge dataIniciacao={entry.responsavel.dataIniciacao} className="shrink-0" />
+          <LodgeTenureBadge
+            dataIniciacao={entry.responsavel.dataIniciacao}
+            dataFalecimento={entry.responsavel.dataFalecimento}
+            className="shrink-0"
+          />
         </Link>
       </CardContent>
     </Card>

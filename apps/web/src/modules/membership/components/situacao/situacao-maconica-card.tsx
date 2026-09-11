@@ -34,8 +34,11 @@ export function SituacaoMaconicaCard({
     ? `${reasonLabel(vigente.motivo)}, desde ${formatDate(vigente.dataInicio)}`
     : 'sem registro no histórico';
 
+  const isInMemoriam = member.situacao === 'falecido';
   const podeAlterarPara = TERMINAL_MEMBER_SITUATION_STATUSES.includes(member.situacao)
-    ? 'retorno'
+    ? isInMemoriam
+      ? 'desfazer'
+      : 'retorno'
     : 'alterar';
 
   return (
@@ -75,9 +78,9 @@ export function SituacaoMaconicaCard({
           ) : (
             <RegisterSituationDialog
               memberId={member.id}
-              mode="retorno"
-              triggerLabel="Registrar retorno"
-              triggerVariant="primary"
+              mode={podeAlterarPara}
+              triggerLabel={isInMemoriam ? 'Desfazer registro' : 'Registrar retorno'}
+              triggerVariant={isInMemoriam ? 'outline' : 'primary'}
               situacaoAtualLabel={situacaoAtualLabel}
             />
           )}

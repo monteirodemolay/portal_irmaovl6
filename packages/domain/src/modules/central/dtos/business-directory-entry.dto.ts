@@ -23,5 +23,7 @@ export interface BusinessDirectoryEntryDTO {
     nomeCompleto: string;
     fotoUrl: string | null;
     dataIniciacao: Date | null;
+    /** Espelho de `Member.dataFalecimento` — ver `LodgeTenureBadge`. */
+    dataFalecimento: Date | null;
   };
 }

@@ -20,6 +20,7 @@ function buildDto(overrides: Partial<DirectoryMemberDTO> = {}): DirectoryMemberD
     grau: 'mestre',
     situacao: 'ativo',
     dataIniciacao: null,
+    dataFalecimento: null,
     cargoAtual: null,
     comissoes: [],
     profileState: 'institutional_only',

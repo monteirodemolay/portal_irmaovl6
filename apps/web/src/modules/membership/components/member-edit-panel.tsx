@@ -87,7 +87,13 @@ export async function MemberEditPanel({ memberId }: { memberId: string }) {
           <CardTitle>Acesso ao Portal</CardTitle>
         </CardHeader>
         <CardContent>
-          <AccessCard memberId={member.id} roles={roles} accessUser={accessUser} isSelf={isSelf} />
+          <AccessCard
+            memberId={member.id}
+            roles={roles}
+            accessUser={accessUser}
+            isSelf={isSelf}
+            isInMemoriam={member.situacao === 'falecido'}
+          />
         </CardContent>
       </Card>
 

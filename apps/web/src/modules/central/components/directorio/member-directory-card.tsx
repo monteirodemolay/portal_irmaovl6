@@ -29,7 +29,10 @@ export function MemberDirectoryCard({
                 <p className="line-clamp-2 font-medium leading-snug">{profile.nomeCompleto}</p>
                 <div className="flex flex-wrap items-center gap-1.5">
                   <MemberDegreeBadge grau={profile.grau} compact />
-                  <LodgeTenureBadge dataIniciacao={profile.dataIniciacao} />
+                  <LodgeTenureBadge
+                    dataIniciacao={profile.dataIniciacao}
+                    dataFalecimento={profile.dataFalecimento}
+                  />
                 </div>
               </div>
             </div>

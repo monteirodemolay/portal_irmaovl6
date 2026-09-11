@@ -90,6 +90,7 @@ export class SearchBusinessDirectoryUseCase {
             nomeCompleto: dto.nomeCompleto,
             fotoUrl: dto.fotoUrl,
             dataIniciacao: dto.dataIniciacao,
+            dataFalecimento: dto.dataFalecimento,
           },
         })),
       );

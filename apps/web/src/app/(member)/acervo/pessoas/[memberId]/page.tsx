@@ -54,6 +54,7 @@ export default async function ArchivePersonPage({
     dataIniciacao: member.dataIniciacao,
     dataElevacao: member.dataElevacao,
     dataExaltacao: member.dataExaltacao,
+    dataFalecimento: member.dataFalecimento,
   };
 
   const journeyDeps = {
@@ -141,6 +142,7 @@ export default async function ArchivePersonPage({
             )}
             <LodgeTenureBadge
               dataIniciacao={identity.dataIniciacao}
+              dataFalecimento={identity.dataFalecimento}
               participacoes={photos.length}
               participacoesLabel="fotografias"
             />
