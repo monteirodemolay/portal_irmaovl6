@@ -1,6 +1,8 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import * as Sentry from '@sentry/nextjs';
 import { createServerContainer } from '@vl6/infra';
+import { errorToLogContext, logger } from '@vl6/shared';
 import {
   Button,
   Card,
@@ -87,10 +89,25 @@ export async function AssistedMemberEditor({ memberId }: { memberId: string }) {
       session.authContext.tenantId,
       memberId,
     ),
-    container.repositories.publicationConsent.listByMemberId(
-      session.authContext.tenantId,
-      memberId,
-    ),
+    // Histórico de consentimento é informativo (auditoria de "autoriza
+    // divulgação externa") — nunca pode derrubar a página inteira de edição
+    // do Irmão. Defensivo de propósito: essa consulta depende de um índice
+    // composto (tenantId + memberId + acceptedAt) que já está declarado em
+    // firestore.indexes.json mas pode não estar implantado/pronto no
+    // Firestore em produção — sem este `.catch`, uma falha aqui (índice
+    // ausente/building) quebrava a tela inteira mesmo pra edições que não
+    // mexem em consentimento nenhum.
+    container.repositories.publicationConsent
+      .listByMemberId(session.authContext.tenantId, memberId)
+      .catch((error: unknown) => {
+        logger.error('Falha ao carregar histórico de consentimento de publicação', {
+          route: 'AssistedMemberEditor',
+          memberId,
+          ...errorToLogContext(error),
+        });
+        Sentry.captureException(error, { tags: { route: 'AssistedMemberEditor:consentHistory' } });
+        return [];
+      }),
     // `getPublicMemberProfile` exige `memberDirectory:read` — nem todo papel
     // com `member:update` necessariamente tem essa outra permissão; falha
     // aqui só esconde o botão de preview, nunca derruba a página inteira.
