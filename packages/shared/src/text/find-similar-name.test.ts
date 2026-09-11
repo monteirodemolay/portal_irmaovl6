@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { findSimilarName, levenshteinDistance } from './find-similar-name';
+import {
+  areNormalizedNamesSimilar,
+  findSimilarName,
+  levenshteinDistance,
+} from './find-similar-name';
 
 describe('levenshteinDistance', () => {
   it('conta a diferença de um caractere', () => {
@@ -8,6 +12,22 @@ describe('levenshteinDistance', () => {
 
   it('é zero pra strings iguais', () => {
     expect(levenshteinDistance('igual', 'igual')).toBe(0);
+  });
+});
+
+describe('areNormalizedNamesSimilar', () => {
+  it('true pra "souza" x "sousa" (mesmo sobrenome, uma letra trocada)', () => {
+    expect(areNormalizedNamesSimilar('mauricio borges de souza', 'mauricio borges de sousa')).toBe(
+      true,
+    );
+  });
+
+  it('false pra nomes idênticos (não é "parecido", é o mesmo)', () => {
+    expect(areNormalizedNamesSimilar('ivan damasceno', 'ivan damasceno')).toBe(false);
+  });
+
+  it('false pra nomes genuinamente diferentes', () => {
+    expect(areNormalizedNamesSimilar('ribas marques', 'joao batista alves')).toBe(false);
   });
 });
 

@@ -107,4 +107,23 @@ describe('ListDuplicateMembersUseCase', () => {
     const useCase = new ListDuplicateMembersUseCase({ memberRepository });
     await expect(useCase.execute(readOnlyCtx)).rejects.toThrow();
   });
+
+  it('agrupa também nomes PARECIDOS (não só idênticos) — ex.: Souza x Sousa', async () => {
+    const memberRepository = new InMemoryMemberRepository();
+    await memberRepository.create(
+      buildMember({ id: 'm1', nomeCompleto: 'Mauricio Borges de Souza' }),
+    );
+    await memberRepository.create(
+      buildMember({ id: 'm2', nomeCompleto: 'Maurício Borges de Sousa' }),
+    );
+    await memberRepository.create(buildMember({ id: 'm3', nomeCompleto: 'Janquiel José Marodin' }));
+
+    const useCase = new ListDuplicateMembersUseCase({ memberRepository });
+    const result = await useCase.execute(ctx);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value).toHaveLength(1);
+    expect(result.value[0]!.membros.map((m) => m.id).sort()).toEqual(['m1', 'm2']);
+  });
 });
