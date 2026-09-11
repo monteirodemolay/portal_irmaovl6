@@ -17,35 +17,42 @@ export function GovernanceHighlightCard({ board }: { board: ActiveBoard | null }
 
   return (
     <div className="min-w-0 rounded-2xl border border-white/15 bg-white/10 p-4">
-      <p className="text-accent text-[11px] font-semibold uppercase tracking-widest">
-        {board.term.nome}
-      </p>
-      {veneravel && (
-        <div className="mt-1.5 flex items-center gap-2.5">
+      <div className="flex items-stretch gap-3">
+        {veneravel && (
           <MemberAvatar
             fotoUrl={veneravel.member.fotoUrl}
             nome={veneravel.member.nomeCompleto}
-            className="h-10 w-10 shrink-0 ring-1 ring-white/20"
+            className="h-24 w-24 shrink-0 rounded-xl ring-1 ring-white/20"
           />
-          {/* Duas linhas — "Venerável Mestre" pequeno e discreto, nome em
-              destaque embaixo — em vez de "V∴M∴ Nome Completo" numa linha só
-              truncando no meio do sobrenome em cards mais estreitos. */}
+        )}
+        {/* Coluna da direita: rótulo da Gestão em cima, "Venerável Mestre" +
+            nome no meio, botão embaixo — tudo distribuído na altura do
+            card, ao lado da foto (em vez de foto pequena + texto numa
+            única linha estreita). */}
+        <div className="flex min-w-0 flex-1 flex-col justify-between">
           <div className="min-w-0 leading-tight">
-            <p className="text-accent text-[10px] font-semibold uppercase tracking-wide">
-              Venerável Mestre
+            <p className="text-accent text-[11px] font-semibold uppercase tracking-widest">
+              {board.term.nome}
             </p>
-            <p className="font-display truncate text-base font-semibold text-white">
-              {veneravel.member.nomeCompleto}
-            </p>
+            {veneravel && (
+              <>
+                <p className="text-accent mt-1.5 text-[10px] font-semibold uppercase tracking-wide">
+                  Venerável Mestre
+                </p>
+                <p className="font-display truncate text-base font-semibold text-white">
+                  {veneravel.member.nomeCompleto}
+                </p>
+              </>
+            )}
           </div>
+          <Link
+            href={`/acervo/gestoes/${board.term.id}`}
+            className="bg-accent text-primary-dark mt-3 inline-block w-fit rounded-full px-4 py-2 text-xs font-bold"
+          >
+            Ver Gestão →
+          </Link>
         </div>
-      )}
-      <Link
-        href={`/acervo/gestoes/${board.term.id}`}
-        className="bg-accent text-primary-dark mt-3 inline-block rounded-full px-4 py-2 text-xs font-bold"
-      >
-        Ver Gestão →
-      </Link>
+      </div>
     </div>
   );
 }
