@@ -34,7 +34,11 @@ export function CompanyCard({
   });
 
   return (
-    <FormSectionCard icon={Building2} title="Empresa atual">
+    <FormSectionCard
+      icon={Building2}
+      title="Empresa atual"
+      description="Só pra contato e pra outros Irmãos acharem colegas de trabalho — nunca aparece no Diretório de Negócios & Serviços. Pra divulgar um negócio de verdade, use 'Empresas e negócios' abaixo."
+    >
       <form action={formAction} className="flex flex-col gap-4">
         <FormField label="Empresa" htmlFor="empresa">
           <Input

@@ -30,6 +30,7 @@ import {
 } from '../../actions/central-actions';
 import { updateMyProfileAction } from '@/modules/membership/actions/self-profile-actions';
 import { CompanyCard } from '@/modules/membership/components/profile-fields/company-card';
+import { ColleaguesAtEmployer } from './colleagues-at-employer';
 
 const MAX_NEGOCIOS = 5;
 
@@ -285,6 +286,8 @@ export function EmpresaTab({
   return (
     <div className="flex flex-col gap-4">
       <CompanyCard member={member} action={updateMyProfileAction} knownCompanies={knownCompanies} />
+
+      <ColleaguesAtEmployer empresaAtual={member.empresa} />
 
       <FormSectionCard
         icon={Building2}
