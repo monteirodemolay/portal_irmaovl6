@@ -26,6 +26,7 @@ export * from './components/video-player';
 export * from './components/pdf-viewer';
 export * from './components/archive-lightbox';
 export * from './components/media-viewer-modal';
+export * from './components/photo-preview-modal';
 export * from './components/lodge-tenure-badge';
 export * from './components/constellation-graph';
 // Reexporte nomeado (não `export *`) — vários ícones do Lucide colidem com

@@ -35,7 +35,12 @@ export function SelfPhotoUpload({
         className="group relative block cursor-pointer"
         title="Alterar foto"
       >
-        <MemberAvatar fotoUrl={preview ?? fotoUrl} nome={nome} className={className} />
+        <MemberAvatar
+          fotoUrl={preview ?? fotoUrl}
+          nome={nome}
+          className={className}
+          disablePreview
+        />
         <span className="absolute inset-0 flex items-center justify-center rounded-full bg-black/0 text-white transition-colors group-hover:bg-black/40">
           <Camera size={18} strokeWidth={1.75} className="opacity-0 group-hover:opacity-100" />
         </span>
