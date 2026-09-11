@@ -29,7 +29,7 @@ export function MemberProfileDrawer() {
               Carregando…
             </div>
           ) : profile ? (
-            <PublicMemberProfileView profile={profile} />
+            <PublicMemberProfileView profile={profile} layout="compact" />
           ) : notFound ? (
             <EmptyState
               icon={<Users size={22} strokeWidth={1.75} />}
