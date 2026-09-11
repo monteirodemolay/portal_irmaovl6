@@ -445,6 +445,49 @@ export async function reactivateCentralProfileAction(memberId: string): Promise<
   revalidatePath('/irmaos', 'layout');
 }
 
+export interface ColleagueAtEmployer {
+  memberId: string;
+  nomeCompleto: string;
+  fotoUrl: string | null;
+}
+
+/**
+ * "Outros Irmãos na mesma empresa" — pedido explícito: quem só usa
+ * "Empresa atual" pra contato (ex.: um Irmão que trabalha num órgão
+ * público e não tem nada a divulgar) ainda deve conseguir achar colegas
+ * de trabalho no Portal. Reaproveita o filtro `empresa` que
+ * `SearchDirectoryUseCase` já tinha (casa contra `empresaAtual` e contra
+ * `negocios[].nomeEmpresa` publicados) em vez de um novo caminho de
+ * busca — mesma regra de correspondência (substring, sem acento/caixa)
+ * já usada no restante do Diretório. Nunca inclui o próprio Irmão.
+ */
+export async function findColleaguesByEmployerAction(
+  empresa: string,
+): Promise<ColleagueAtEmployer[]> {
+  const session = await requireSession();
+  const termo = empresa.trim();
+  if (termo.length < 3) return [];
+
+  const container = createServerContainer();
+  const ownMember = await container.repositories.member.findByUserId(
+    session.authContext.tenantId,
+    session.user.id,
+  );
+  const result = await container.useCases.searchDirectory.execute(session.authContext, {
+    empresa: termo,
+  });
+  if (!result.ok) return [];
+
+  return result.value.items
+    .filter((item) => item.memberId !== ownMember?.id)
+    .slice(0, 12)
+    .map((item) => ({
+      memberId: item.memberId,
+      nomeCompleto: item.nomeCompleto,
+      fotoUrl: item.fotoUrl,
+    }));
+}
+
 export async function reviewBusinessSubmissionAction(
   memberId: string,
   businessId: string,
