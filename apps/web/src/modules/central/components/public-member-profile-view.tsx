@@ -278,12 +278,18 @@ export function PublicMemberProfileView({
       {/*
         Grid 8/4 baseada no espaço do próprio container (@container), não no
         viewport: este componente também é usado dentro do Drawer do
-        Diretório e do Dialog de pré-visualização (ambos bem mais estreitos
-        que a tela) — uma quebra por viewport quebraria o layout ali.
+        Diretório (max-w-xl, ~576px) e do Dialog de pré-visualização (idem)
+        — uma quebra por viewport quebraria o layout ali. O limiar é @3xl
+        (768px de container), não @5xl (1024px): descontando a sidebar fixa
+        (260px) e o padding da página, a largura de container efetiva numa
+        tela de laptop comum (1366/1280px) fica bem perto — às vezes abaixo
+        — de 1024px, fazendo a grade nunca virar 2 colunas na prática. Fica
+        folgado o bastante acima da largura do Drawer/Dialog pra não virar
+        grade ali.
       */}
       <div className="@container">
-        <div className="@5xl:grid-cols-12 grid grid-cols-1 gap-6">
-          <div className="@5xl:col-span-8 flex flex-col gap-6">
+        <div className="@3xl:grid-cols-12 grid grid-cols-1 gap-6">
+          <div className="@3xl:col-span-8 flex flex-col gap-6">
             {isInMemoriam && profile.mensagemHomenagem && (
               <article className="from-primary/5 to-accent/10 border-accent/20 flex flex-col gap-3 rounded-2xl border bg-gradient-to-br p-6 sm:p-8">
                 <div className="text-accent flex items-center gap-2">
@@ -439,7 +445,7 @@ export function PublicMemberProfileView({
             )}
           </div>
 
-          <aside className="@5xl:col-span-4 flex flex-col gap-6">
+          <aside className="@3xl:col-span-4 flex flex-col gap-6">
             <Panel kicker="RESUMO" title="Perfil em resumo" compact>
               <dl className="flex flex-col gap-2.5">
                 {profile.informacoesPessoais?.cidadeExibicao && (
