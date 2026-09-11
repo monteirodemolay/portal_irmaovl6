@@ -29,11 +29,14 @@ export function AccessCard({
   roles,
   accessUser,
   isSelf,
+  isInMemoriam = false,
 }: {
   memberId: string;
   roles: Role[];
   accessUser: User | null;
   isSelf: boolean;
+  /** `Member.situacao === 'falecido'` — um Irmão em In Memoriam nunca mais acessa o Portal, então nunca ganha acesso NOVO daqui em diante (acesso já existente antes do falecimento não é desfeito por aqui). */
+  isInMemoriam?: boolean;
 }) {
   const activateAction = activateMemberAccessAction.bind(null, memberId);
   const [activateState, activateFormAction] = useActionState<MemberActionState, FormData>(
@@ -83,6 +86,14 @@ export function AccessCard({
           )}
         </div>
       </div>
+    );
+  }
+
+  if (isInMemoriam) {
+    return (
+      <p className="text-muted text-sm">
+        Este Irmão está em In Memoriam — não é possível conceder acesso ao Portal.
+      </p>
     );
   }
 

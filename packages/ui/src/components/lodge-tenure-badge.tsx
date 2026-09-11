@@ -5,20 +5,26 @@ import { Milestone } from '../icons';
 export interface LodgeTenureBadgeProps {
   /** `Member.dataIniciacao` — quando `null`/ainda não completou 1 ano, o selo não renderiza nada. */
   dataIniciacao: Date | string | null;
+  /**
+   * `Member.dataFalecimento` — quando preenchida, a contagem para no dia do
+   * falecimento em vez de continuar até hoje (um Irmão em In Memoriam não
+   * "acumula" mais tempo de Loja depois de partir).
+   */
+  dataFalecimento?: Date | string | null;
   /** Contador opcional (ex.: fotografias no Acervo) — só peça isso em telas de perfil único, nunca em grades com muitos cards (evita N+1). */
   participacoes?: number;
   participacoesLabel?: string;
   className?: string;
 }
 
-function anosNaLoja(dataIniciacao: Date | string): number {
+function anosNaLoja(dataIniciacao: Date | string, ate: Date | string | null | undefined): number {
   const inicio = new Date(dataIniciacao);
-  const hoje = new Date();
-  let anos = hoje.getFullYear() - inicio.getFullYear();
-  const aindaNaoFezAniversarioEsteAno =
-    hoje.getMonth() < inicio.getMonth() ||
-    (hoje.getMonth() === inicio.getMonth() && hoje.getDate() < inicio.getDate());
-  if (aindaNaoFezAniversarioEsteAno) anos -= 1;
+  const referencia = ate ? new Date(ate) : new Date();
+  let anos = referencia.getFullYear() - inicio.getFullYear();
+  const aindaNaoFezAniversario =
+    referencia.getMonth() < inicio.getMonth() ||
+    (referencia.getMonth() === inicio.getMonth() && referencia.getDate() < inicio.getDate());
+  if (aindaNaoFezAniversario) anos -= 1;
   return anos;
 }
 
@@ -33,12 +39,13 @@ function anosNaLoja(dataIniciacao: Date | string): number {
  */
 export function LodgeTenureBadge({
   dataIniciacao,
+  dataFalecimento,
   participacoes,
   participacoesLabel = 'registros no Acervo',
   className,
 }: LodgeTenureBadgeProps) {
   if (!dataIniciacao) return null;
-  const anos = anosNaLoja(dataIniciacao);
+  const anos = anosNaLoja(dataIniciacao, dataFalecimento);
   if (anos < 1) return null;
 
   return (

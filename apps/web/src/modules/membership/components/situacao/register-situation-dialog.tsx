@@ -32,7 +32,7 @@ import {
   type SituationActionState,
 } from '../../actions/member-actions';
 
-export type RegisterSituationMode = 'alterar' | 'licenca' | 'retorno';
+export type RegisterSituationMode = 'alterar' | 'licenca' | 'retorno' | 'desfazer';
 
 const MODE_CONFIG: Record<
   RegisterSituationMode,
@@ -41,6 +41,15 @@ const MODE_CONFIG: Record<
   alterar: { titulo: 'Alterar situação', situacaoFixa: null, motivos: null },
   licenca: { titulo: 'Registrar licença', situacaoFixa: 'licenciado', motivos: null },
   retorno: { titulo: 'Registrar retorno', situacaoFixa: 'ativo', motivos: MEMBER_RETURN_REASONS },
+  // Mesmo mecanismo de "retorno" (volta pra `ativo`, mesmos motivos) — só
+  // muda o texto. "Registrar retorno" pra um Irmão em In Memoriam soa como
+  // se ele fosse voltar do além; aqui é sempre a correção de um registro
+  // (ex.: falecimento lançado por engano), nunca uma "volta".
+  desfazer: {
+    titulo: 'Desfazer registro de In Memoriam',
+    situacaoFixa: 'ativo',
+    motivos: MEMBER_RETURN_REASONS,
+  },
 };
 
 function reasonLabel(motivo: string): string {

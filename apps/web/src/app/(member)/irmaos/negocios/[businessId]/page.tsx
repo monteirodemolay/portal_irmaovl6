@@ -242,6 +242,7 @@ export default async function BusinessDetailPage({
             </span>
             <LodgeTenureBadge
               dataIniciacao={entry.responsavel.dataIniciacao}
+              dataFalecimento={entry.responsavel.dataFalecimento}
               className="shrink-0"
             />
             <ArrowUpRight size={16} className="text-muted shrink-0" />

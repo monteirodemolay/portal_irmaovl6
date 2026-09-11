@@ -40,6 +40,14 @@ export interface DirectoryMemberDTO {
   grau: MemberDegree;
   situacao: MemberSituationStatus;
   dataIniciacao: Date | null;
+  /**
+   * Espelho de `Member.dataFalecimento` — só preenchido quando
+   * `situacao === 'falecido'`. Institucional, nunca gated por bloco
+   * voluntário (mesmo padrão de `PublicMemberProfileDTO.dataFalecimento`).
+   * Usado por `LodgeTenureBadge` pra parar de contar "tempo de Loja" na
+   * data do falecimento em vez de continuar contando até hoje.
+   */
+  dataFalecimento: Date | null;
   /** Cargo ocupado na gestão vigente — `null` fora de gestão ativa ou sem cargo. Sempre buscável (institucional). */
   cargoAtual: string | null;
   /** Comissões da gestão vigente das quais o Irmão faz parte. Sempre buscável (institucional). */
@@ -100,6 +108,7 @@ export function buildDirectoryMemberDTO(
     grau: member.grau,
     situacao: member.situacao,
     dataIniciacao: member.dataIniciacao,
+    dataFalecimento: member.dataFalecimento,
     cargoAtual: extras.cargoAtual,
     comissoes: extras.comissoes,
     profileState,

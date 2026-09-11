@@ -197,6 +197,7 @@ export async function AssistedMemberEditor({ memberId }: { memberId: string }) {
                 roles={roles}
                 accessUser={accessUser}
                 isSelf={isSelf}
+                isInMemoriam={member.situacao === 'falecido'}
               />
             </CardContent>
           </Card>
