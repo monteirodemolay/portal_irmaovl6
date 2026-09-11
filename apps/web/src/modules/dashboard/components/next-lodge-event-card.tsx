@@ -81,14 +81,6 @@ export function NextLodgeEventCard({ event }: { event: Event }) {
         >
           <AgendaOpenButton eventId={event.id}>Ver evento</AgendaOpenButton>
         </Button>
-        <Button
-          asChild
-          variant="outline"
-          size="sm"
-          className="border-white/30 text-white hover:bg-white/10"
-        >
-          <AgendaOpenButton eventId={event.id}>Mais informações</AgendaOpenButton>
-        </Button>
       </div>
     </Card>
   );
