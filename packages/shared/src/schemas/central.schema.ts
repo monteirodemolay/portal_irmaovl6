@@ -44,6 +44,19 @@ export const centralBusinessEntrySchema = z.object({
   horarioFuncionamento: z.string().max(200).nullable(),
   ofereceDescontoIrmaos: z.boolean(),
   descontoDescricao: z.string().max(200).nullable(),
+  /**
+   * Marca esta empresa/negócio como o "Principal" entre os cadastrados —
+   * pura preferência de exibição do próprio Irmão (qual aparece em
+   * destaque no cabeçalho do perfil), nunca participa da revisão da
+   * Administração (`reconcileNegociosStatus` ignora este campo de
+   * propósito, pra marcar/desmarcar Principal nunca voltar uma empresa já
+   * publicada pra fila de revisão). No máximo uma entrada é Principal por
+   * vez — reforçado na tela (marcar uma desmarca as outras). Opcional —
+   * ausente/`undefined` equivale a `false`, mesmo padrão de campos
+   * aditivos já usados no restante do Acervo/Central (nunca exige
+   * migração de cadastros já existentes).
+   */
+  principal: z.boolean().optional(),
 });
 export type CentralBusinessEntryValues = z.infer<typeof centralBusinessEntrySchema>;
 

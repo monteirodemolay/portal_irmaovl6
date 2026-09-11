@@ -17,6 +17,7 @@ import {
   Image as ImageIcon,
   Input,
   Search,
+  Star,
   Switch,
   Textarea,
   X,
@@ -56,6 +57,7 @@ function emptyNegocio(): NegocioDraft {
     horarioFuncionamento: null,
     ofereceDescontoIrmaos: false,
     descontoDescricao: null,
+    principal: false,
   };
 }
 
@@ -283,6 +285,17 @@ export function EmpresaTab({
     );
   }
 
+  /**
+   * Marca `index` como Principal e desmarca todas as outras — nunca mais
+   * de uma por vez, igual a um grupo de rádio. Não participa da revisão
+   * da Administração (`reconcileNegociosStatus` ignora este campo de
+   * propósito), então marcar/desmarcar nunca reseta o status de uma
+   * empresa já publicada.
+   */
+  function setPrincipal(index: number) {
+    setNegocios((current) => current.map((n, i) => ({ ...n, principal: i === index })));
+  }
+
   return (
     <div className="flex flex-col gap-4">
       <CompanyCard member={member} action={updateMyProfileAction} knownCompanies={knownCompanies} />
@@ -292,7 +305,7 @@ export function EmpresaTab({
       <FormSectionCard
         icon={Building2}
         title="Empresas e negócios"
-        description="Até 5 empresas ou negócios que você queira divulgar aos Irmãos, num formato de cartão de divulgação — logo, o que a empresa oferece e como falar com ela. Toda alteração passa por revisão da Administração antes de aparecer no Diretório de Negócios & Serviços."
+        description="Até 5 empresas ou negócios que você queira divulgar aos Irmãos, num formato de cartão de divulgação — logo, o que a empresa oferece e como falar com ela. Toda alteração passa por revisão da Administração antes de aparecer no Diretório de Negócios & Serviços. Todas aparecem no seu perfil; marque uma como Principal pra ela aparecer em destaque."
       >
         <form action={contentAction} className="flex flex-col gap-4">
           <datalist id="negocios-cadastrados">
@@ -324,6 +337,17 @@ export function EmpresaTab({
                       <p className="text-muted text-xs">
                         Logo aceita JPG, PNG, WEBP, SVG ou GIF (até 5 MB).
                       </p>
+                      <label className="flex w-fit items-center gap-1.5 text-xs font-medium">
+                        <input
+                          type="radio"
+                          name="negocio-principal"
+                          className="accent-primary"
+                          checked={Boolean(negocio.principal)}
+                          onChange={() => setPrincipal(index)}
+                        />
+                        <Star size={13} strokeWidth={1.75} className="text-accent" />
+                        Principal
+                      </label>
                     </div>
                   </div>
                   <button

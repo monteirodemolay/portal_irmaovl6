@@ -21,6 +21,14 @@ export interface CentralBusinessEntry {
   ofereceDescontoIrmaos: boolean;
   descontoDescricao: string | null;
   /**
+   * Marca esta empresa/negócio como o "Principal" entre os cadastrados —
+   * preferência de exibição do próprio Irmão (aparece em destaque no
+   * cabeçalho do perfil), nunca participa da revisão da Administração.
+   * Opcional/aditivo — ausente/`undefined` equivale a `false`; no máximo
+   * uma entrada é Principal por vez (reforçado na tela de edição).
+   */
+  principal?: boolean;
+  /**
    * Nunca vem do formulário do Irmão — sempre computado por
    * `UpdateCentralProfileUseCase` (novo/alterado vira `pending_review`) ou
    * por `ReviewBusinessSubmissionUseCase` (decisão da Administração).
