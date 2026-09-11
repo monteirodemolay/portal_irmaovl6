@@ -83,11 +83,33 @@ export class FirestoreNotificationRepository implements INotificationRepository 
     return snap.docs.map((doc) => doc.data());
   }
 
+  async listReadByRecipient(tenantId: string, destinatarioId: string): Promise<Notification[]> {
+    const snap = await this.collection
+      .where('tenantId', '==', tenantId)
+      .where('destinatarioId', '==', destinatarioId)
+      .where('lida', '==', true)
+      .where('deletedAt', '==', null)
+      .get();
+    return snap.docs.map((doc) => doc.data());
+  }
+
+  async listArchivedBefore(tenantId: string, before: Date): Promise<Notification[]> {
+    const snap = await this.collection
+      .where('tenantId', '==', tenantId)
+      .where('archivedAt', '<=', before)
+      .get();
+    return snap.docs.filter((doc) => doc.data().archivedAt !== null).map((doc) => doc.data());
+  }
+
   async create(notification: Notification): Promise<void> {
     await this.collection.doc(notification.id).set(notification);
   }
 
   async update(notification: Notification): Promise<void> {
     await this.collection.doc(notification.id).set(notification);
+  }
+
+  async delete(id: string): Promise<void> {
+    await this.collection.doc(id).delete();
   }
 }

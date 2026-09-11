@@ -26,6 +26,9 @@ export interface NotifyRecipientInput {
   dedupeKey?: string | null;
 }
 
+/** Retenção padrão de uma notificação quando o disparo não define a própria — evita o banco crescer sem limite com avisos que ninguém mais vai olhar. */
+export const DEFAULT_NOTIFICATION_EXPIRATION_DAYS = 30;
+
 export interface NotifyRecipientDeps {
   notificationRepository: INotificationRepository;
   notificationPreferenceRepository: INotificationPreferenceRepository;
@@ -55,6 +58,9 @@ export class NotifyRecipientUseCase {
     }
 
     const now = this.deps.clock.now();
+    const defaultExpiresAt = new Date(
+      now.getTime() + DEFAULT_NOTIFICATION_EXPIRATION_DAYS * 24 * 60 * 60 * 1000,
+    );
     const notification: Notification = {
       id: this.deps.idGenerator.next(),
       tenantId: input.tenantId,
@@ -71,7 +77,10 @@ export class NotifyRecipientUseCase {
       archivedAt: null,
       requiresAcknowledgement: input.requiresAcknowledgement ?? false,
       acknowledgedAt: null,
-      expiresAt: input.expiresAt ?? null,
+      // `null` (explícito ou não) vira o teto padrão de 30 dias — quem
+      // precisa de mais prazo (ex.: Comunicado com `dataExpiracao` próprio)
+      // já passa a própria data aqui, sempre respeitada.
+      expiresAt: input.expiresAt ?? defaultExpiresAt,
       actionLabel: input.actionLabel ?? null,
       dedupeKey: input.dedupeKey ?? null,
       createdAt: now,

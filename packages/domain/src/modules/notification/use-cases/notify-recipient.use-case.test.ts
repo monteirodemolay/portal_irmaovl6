@@ -135,4 +135,54 @@ describe('NotifyRecipientUseCase', () => {
     expect(second.id).toBe(first.id);
     expect(gateway.sent).toHaveLength(1);
   });
+
+  it('aplica um teto padrão de 30 dias de retenção quando ninguém define expiresAt', async () => {
+    const notificationRepository = new FakeNotificationRepository();
+    const useCase = new NotifyRecipientUseCase({
+      notificationRepository: notificationRepository as unknown as INotificationRepository,
+      notificationPreferenceRepository: new FakePreferenceRepository(
+        null,
+      ) as unknown as INotificationPreferenceRepository,
+      notificationGateway: new FakeNotificationGateway(),
+      clock,
+      idGenerator,
+    });
+
+    await useCase.execute({
+      tenantId: 't1',
+      destinatarioId: 'u1',
+      tipo: 'event',
+      titulo: 'Novo evento',
+      mensagem: 'Sessão marcada.',
+      link: '/agenda',
+    });
+
+    expect(notificationRepository.created?.expiresAt).toEqual(new Date('2026-01-31T00:00:00Z'));
+  });
+
+  it('respeita um expiresAt explícito mais longo em vez do teto padrão', async () => {
+    const notificationRepository = new FakeNotificationRepository();
+    const useCase = new NotifyRecipientUseCase({
+      notificationRepository: notificationRepository as unknown as INotificationRepository,
+      notificationPreferenceRepository: new FakePreferenceRepository(
+        null,
+      ) as unknown as INotificationPreferenceRepository,
+      notificationGateway: new FakeNotificationGateway(),
+      clock,
+      idGenerator,
+    });
+
+    const longExpiry = new Date('2026-06-01T00:00:00Z');
+    await useCase.execute({
+      tenantId: 't1',
+      destinatarioId: 'u1',
+      tipo: 'announcement',
+      titulo: 'Comunicado de longo prazo',
+      mensagem: 'Fica disponível até junho.',
+      link: '/avisos',
+      expiresAt: longExpiry,
+    });
+
+    expect(notificationRepository.created?.expiresAt).toEqual(longExpiry);
+  });
 });
