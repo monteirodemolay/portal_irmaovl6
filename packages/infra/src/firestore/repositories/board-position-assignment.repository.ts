@@ -23,6 +23,11 @@ export class FirestoreBoardPositionAssignmentRepository implements IBoardPositio
     return snap.docs.map((doc) => doc.data());
   }
 
+  async listByMemberId(memberId: string): Promise<BoardPositionAssignment[]> {
+    const snap = await this.collection.where('memberId', '==', memberId).get();
+    return snap.docs.map((doc) => doc.data());
+  }
+
   async findByGestaoAndCargo(
     gestaoId: string,
     cargo: string,

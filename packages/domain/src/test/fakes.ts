@@ -448,6 +448,9 @@ export class InMemoryBoardPositionAssignmentRepository implements IBoardPosition
   async listByGestao(gestaoId: string) {
     return [...this.byId.values()].filter((a) => a.gestaoId === gestaoId);
   }
+  async listByMemberId(memberId: string) {
+    return [...this.byId.values()].filter((a) => a.memberId === memberId);
+  }
   async findByGestaoAndCargo(gestaoId: string, cargo: string) {
     return (
       [...this.byId.values()].find((a) => a.gestaoId === gestaoId && a.cargo === cargo) ?? null

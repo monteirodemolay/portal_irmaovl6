@@ -107,6 +107,13 @@ export function ImportHistoricalBoardTermsForm() {
           <p className="text-sm font-semibold">
             Importação concluída — {state.report.length} vínculos processados.
           </p>
+          {state.report.some((row) => row.memberStatus === 'revisar') && (
+            <p className="text-sm text-amber-700">
+              {state.report.filter((row) => row.memberStatus === 'revisar').length} vínculo(s) NÃO
+              foram criados por parecerem o mesmo Irmão já cadastrado com o nome grafado diferente —
+              veja a coluna "Cadastro" e confirme antes de reimportar. Nada foi duplicado.
+            </p>
+          )}
           <div className="border-border overflow-hidden rounded-xl border">
             <table className="w-full text-left text-sm">
               <thead className="bg-background text-muted text-xs uppercase">
@@ -120,11 +127,22 @@ export function ImportHistoricalBoardTermsForm() {
               </thead>
               <tbody>
                 {state.report.map((row, index) => (
-                  <tr key={index} className="border-border border-t">
+                  <tr
+                    key={index}
+                    className={`border-border border-t ${row.memberStatus === 'revisar' ? 'bg-amber-50' : ''}`}
+                  >
                     <td className="p-3">{row.gestaoNome}</td>
                     <td className="p-3">{getBoardPositionLabel(row.cargo)}</td>
                     <td className="p-3 font-medium">{row.nomeCompleto}</td>
-                    <td className="p-3">{row.memberStatus}</td>
+                    <td className="p-3">
+                      {row.memberStatus === 'revisar' ? (
+                        <span className="font-medium text-amber-700">
+                          Revisar — pode ser {row.sugestaoNomeParecido}
+                        </span>
+                      ) : (
+                        row.memberStatus
+                      )}
+                    </td>
                     <td className="p-3">{row.fotoAtualizada ? 'Atualizada agora' : '—'}</td>
                   </tr>
                 ))}

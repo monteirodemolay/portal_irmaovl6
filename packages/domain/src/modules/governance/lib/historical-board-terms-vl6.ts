@@ -202,8 +202,8 @@ export const HISTORICAL_BOARD_TERMS_VL6: HistoricalBoardTermInput[] = [
     periodoFim: '1992-05-31',
     segments: [
       { cargo: 'veneravel_mestre', nomeCompleto: 'Anézio Ferreira de Assunção', dataInicio: '1991-06-01', dataFim: '1991-10-31' },
-      { cargo: 'veneravel_mestre', nomeCompleto: 'Ivam Damasceno', dataInicio: '1991-11-01', dataFim: '1992-05-31' },
-      { cargo: 'primeiro_vigilante', nomeCompleto: 'Ivam Damasceno', dataInicio: '1991-06-01', dataFim: '1991-10-31' },
+      { cargo: 'veneravel_mestre', nomeCompleto: 'Ivan Damasceno', dataInicio: '1991-11-01', dataFim: '1992-05-31' },
+      { cargo: 'primeiro_vigilante', nomeCompleto: 'Ivan Damasceno', dataInicio: '1991-06-01', dataFim: '1991-10-31' },
       { cargo: 'primeiro_vigilante', nomeCompleto: 'João Batista Alves', dataInicio: '1991-11-01', dataFim: '1992-05-31' },
       { cargo: 'segundo_vigilante', nomeCompleto: 'Sebastião de Oliveira Carmo', dataInicio: '1991-06-01', dataFim: '1991-10-31' },
       { cargo: 'segundo_vigilante', nomeCompleto: 'Beraldo Aniceto Ferreira', dataInicio: '1991-11-01', dataFim: '1992-05-31' },
@@ -234,7 +234,7 @@ export const HISTORICAL_BOARD_TERMS_VL6: HistoricalBoardTermInput[] = [
     periodoInicio: '1994-06-01',
     periodoFim: '1995-05-31',
     segments: [
-      { cargo: 'veneravel_mestre', nomeCompleto: 'Ivam Damasceno', dataInicio: '1994-06-01', dataFim: '1995-05-31' },
+      { cargo: 'veneravel_mestre', nomeCompleto: 'Ivan Damasceno', dataInicio: '1994-06-01', dataFim: '1995-05-31' },
       { cargo: 'primeiro_vigilante', nomeCompleto: 'Aparecido Molero Romero', dataInicio: '1994-06-01', dataFim: '1995-05-31' },
       { cargo: 'segundo_vigilante', nomeCompleto: 'Walter Borges dos Santos', dataInicio: '1994-06-01', dataFim: '1995-05-31' },
     ],

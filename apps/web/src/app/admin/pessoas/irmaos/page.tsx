@@ -190,6 +190,9 @@ export default async function MembersPage({
           <Button asChild variant="outline">
             <a href={`/admin/pessoas/irmaos/importar`}>Importar planilha</a>
           </Button>
+          <Button asChild variant="outline">
+            <a href={`/admin/pessoas/irmaos/duplicados`}>Duplicados</a>
+          </Button>
           <Button asChild>
             <a href={`/admin/pessoas/irmaos/novo`}>Novo Irmão</a>
           </Button>

@@ -246,4 +246,51 @@ describe('ImportHistoricalBoardTermsUseCase', () => {
     const deps = buildDeps();
     await expect(deps.useCase.execute(readOnlyCtx, [simpleTerm], {})).rejects.toThrow();
   });
+
+  it('não cria cadastro pra nome parecido com Irmão já existente — sinaliza pra revisão', async () => {
+    const deps = buildDeps();
+    await deps.memberRepository.create(
+      buildMember({ id: 'ivan-1', nomeCompleto: 'Ivan Damasceno' }),
+    );
+
+    const term: HistoricalBoardTermInput = {
+      nome: 'Gestão 1994/1995',
+      periodoInicio: '1994-06-01',
+      periodoFim: '1995-05-31',
+      segments: [
+        // erro de digitação típico da nominata em papel: "Ivam" em vez de "Ivan"
+        {
+          cargo: 'veneravel_mestre',
+          nomeCompleto: 'Ivam Damasceno',
+          dataInicio: '1994-06-01',
+          dataFim: '1995-05-31',
+        },
+      ],
+    };
+
+    const result = await deps.useCase.execute(ctx, [term], {});
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value).toHaveLength(1);
+    expect(result.value[0]).toMatchObject({
+      memberStatus: 'revisar',
+      sugestaoNomeParecido: 'Ivan Damasceno',
+    });
+
+    // não cria um segundo "Ivam Damasceno"
+    const all = await deps.memberRepository.search({ tenantId: 't1' }, { limit: 10 });
+    expect(all.items).toHaveLength(1);
+    expect(all.items[0]?.nomeCompleto).toBe('Ivan Damasceno');
+
+    // não cria histórico nem titular pra esse cargo — fica pendente até o Administrador revisar
+    const history = await deps.positionHistoryRepository.listByTenant('t1');
+    expect(history).toHaveLength(0);
+    const terms = await deps.boardTermRepository.listByTenant('t1');
+    const assignment = await deps.assignmentRepository.findByGestaoAndCargo(
+      terms[0]!.id,
+      'veneravel_mestre',
+    );
+    expect(assignment).toBeNull();
+  });
 });
