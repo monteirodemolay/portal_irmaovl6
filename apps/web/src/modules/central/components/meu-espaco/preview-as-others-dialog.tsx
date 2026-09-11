@@ -25,7 +25,7 @@ export function PreviewAsOthersDialog({ previewDto }: { previewDto: PublicMember
         <DialogHeader>
           <DialogTitle>Assim seu perfil aparece para os demais Irmãos</DialogTitle>
         </DialogHeader>
-        <PublicMemberProfileView profile={previewDto} />
+        <PublicMemberProfileView profile={previewDto} layout="compact" />
       </DialogContent>
     </Dialog>
   );

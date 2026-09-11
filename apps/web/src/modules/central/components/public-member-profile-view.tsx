@@ -136,12 +136,24 @@ export function PublicMemberProfileView({
   profile,
   canViewAcervo = false,
   isOwnProfile = false,
+  layout = 'full',
 }: {
   profile: PublicMemberProfileDTO;
   /** Gate do link "Ver Memória VL6 completa" — ponte Diretório → Acervo (Fase B/C). */
   canViewAcervo?: boolean;
   /** Sessão atual == dono deste perfil → mostra "Editar meu perfil" e "Editar" por bloco. */
   isOwnProfile?: boolean;
+  /**
+   * `'full'` (padrão) — página cheia (`/irmaos/[memberId]`), onde a grade
+   * 8/4 deve abrir sempre que der (`md:`, breakpoint de VIEWPORT — não de
+   * container: uma largura de container "seguramente larga o bastante"
+   * não existe, qualquer número fixo acaba curto pra alguém com a janela
+   * do navegador não maximizada, como já aconteceu aqui). `'compact'` —
+   * Drawer do Diretório e Dialog de pré-visualização, sempre bem mais
+   * estreitos que a página cheia (`max-w-xl`, 576px) qualquer que seja o
+   * viewport: força 1 coluna sempre, sem depender de nenhum breakpoint.
+   */
+  layout?: 'full' | 'compact';
 }) {
   const hasContatos = profile.contatos && Object.values(profile.contatos).some(Boolean);
   const hasRedes = profile.redes && Object.values(profile.redes).some(Boolean);
@@ -276,364 +288,372 @@ export function PublicMemberProfileView({
       </Card>
 
       {/*
-        Grid 8/4 baseada no espaço do próprio container (@container), não no
-        viewport: este componente também é usado dentro do Drawer do
-        Diretório (max-w-xl, ~576px) e do Dialog de pré-visualização (idem)
-        — uma quebra por viewport quebraria o layout ali. O limiar é @3xl
-        (768px de container), não @5xl (1024px): descontando a sidebar fixa
-        (260px) e o padding da página, a largura de container efetiva numa
-        tela de laptop comum (1366/1280px) fica bem perto — às vezes abaixo
-        — de 1024px, fazendo a grade nunca virar 2 colunas na prática. Fica
-        folgado o bastante acima da largura do Drawer/Dialog pra não virar
-        grade ali.
+        Grid 8/4 por breakpoint de VIEWPORT (`md:`), não de container —
+        tentativa anterior usava `@container`/`@Nxl` pra não quebrar dentro
+        do Drawer/Dialog (`layout="compact"`, sempre ~576px), mas qualquer
+        largura de container fixa escolhida como "segura" ainda dependia do
+        viewport real do usuário descontado sidebar+padding, e uma janela
+        de navegador não maximizada (relatado: ~1073px de largura total)
+        ficava abaixo de qualquer limiar razoável, nunca virando 2 colunas.
+        Agora a página cheia (`layout="full"`) usa `md:` (768px de
+        viewport) direto — sidebar já vira menu (`lg:flex`, 1024px) bem
+        antes disso, então mesmo com sidebar visível ainda sobra espaço de
+        sobra pra 2 colunas — e o Drawer/Dialog (`layout="compact"`) força
+        1 coluna sempre, sem depender de largura nenhuma.
       */}
-      <div className="@container">
-        <div className="@3xl:grid-cols-12 grid grid-cols-1 gap-6">
-          <div className="@3xl:col-span-8 flex flex-col gap-6">
-            {isInMemoriam && profile.mensagemHomenagem && (
-              <article className="from-primary/5 to-accent/10 border-accent/20 flex flex-col gap-3 rounded-2xl border bg-gradient-to-br p-6 sm:p-8">
-                <div className="text-accent flex items-center gap-2">
-                  <Heart size={16} strokeWidth={1.75} />
-                  <p className="text-[10px] font-bold uppercase tracking-[0.14em]">Em memória</p>
-                </div>
-                <p className="font-display whitespace-pre-line text-base italic leading-relaxed sm:text-lg">
-                  {profile.mensagemHomenagem}
-                </p>
-              </article>
-            )}
+      <div className={layout === 'full' ? 'grid grid-cols-1 gap-6 md:grid-cols-12' : 'grid gap-6'}>
+        <div
+          className={
+            layout === 'full' ? 'flex flex-col gap-6 md:col-span-8' : 'flex flex-col gap-6'
+          }
+        >
+          {isInMemoriam && profile.mensagemHomenagem && (
+            <article className="from-primary/5 to-accent/10 border-accent/20 flex flex-col gap-3 rounded-2xl border bg-gradient-to-br p-6 sm:p-8">
+              <div className="text-accent flex items-center gap-2">
+                <Heart size={16} strokeWidth={1.75} />
+                <p className="text-[10px] font-bold uppercase tracking-[0.14em]">Em memória</p>
+              </div>
+              <p className="font-display whitespace-pre-line text-base italic leading-relaxed sm:text-lg">
+                {profile.mensagemHomenagem}
+              </p>
+            </article>
+          )}
 
-            {hasTrajetoria && profile.trajetoria && (
-              <Panel kicker="TRAJETÓRIA" title="Caminho na Loja" icon={Milestone}>
-                <div className="flex flex-col gap-4">
-                  {profile.trajetoria.dataIniciacao && (
-                    <TimelineEntry
-                      label="Iniciação"
-                      dateLabel={formatDate(profile.trajetoria.dataIniciacao)}
-                      active
-                    />
-                  )}
-                  {profile.trajetoria.dataElevacao && (
-                    <TimelineEntry
-                      label="Elevação"
-                      dateLabel={formatDate(profile.trajetoria.dataElevacao)}
-                      active
-                    />
-                  )}
-                  {profile.trajetoria.dataExaltacao && (
-                    <TimelineEntry
-                      label="Exaltação"
-                      dateLabel={formatDate(profile.trajetoria.dataExaltacao)}
-                      active
-                    />
-                  )}
-                  {profile.trajetoria.cargos.map((entry, index) => (
-                    <TimelineEntry
-                      key={`cargo-${index}`}
-                      label={getBoardPositionLabel(entry.cargo)}
-                      dateLabel={formatDate(entry.dataInicio)}
-                      active={!entry.dataFim}
-                      detail={`Cargo · ${entry.gestaoNome}${entry.dataFim ? ` até ${formatDate(entry.dataFim)}` : ' · em curso'}`}
-                    />
-                  ))}
-                  {profile.trajetoria.comissoes.map((entry, index) => (
-                    <TimelineEntry
-                      key={`comissao-${index}`}
-                      label={entry.nome}
-                      dateLabel={formatDate(entry.dataInicio)}
-                      active={!entry.dataFim}
-                      detail={`Comissão · ${entry.gestaoNome}${entry.dataFim ? ` até ${formatDate(entry.dataFim)}` : ' · em curso'}`}
-                    />
-                  ))}
-                </div>
-              </Panel>
-            )}
-
-            {profile.apresentacao?.texto && (
-              <Panel kicker="APRESENTAÇÃO" title="Sobre" editTab={canEdit ? 'geral' : undefined}>
-                <ProfileBioText text={profile.apresentacao.texto} />
-              </Panel>
-            )}
-
-            {profile.familia && (
-              <Panel
-                kicker="VÍNCULOS"
-                title="Família e Legado"
-                editTab={canEdit ? 'pessoal' : undefined}
-              >
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  {FAMILY_DISPLAY_GROUPS.filter((group) => profile.familia?.[group]?.length).map(
-                    (group) => (
-                      <div
-                        key={group}
-                        className="border-border bg-background flex flex-col gap-2.5 rounded-xl border p-4"
-                      >
-                        <p className="text-muted text-[10px] font-bold uppercase tracking-wide">
-                          {FAMILY_DISPLAY_GROUP_LABELS[group]}
-                        </p>
-                        <ul className="flex flex-col gap-2.5">
-                          {profile.familia?.[group]?.map((item) => (
-                            <li key={item.key} className="flex items-center gap-2.5 text-sm">
-                              <MemberAvatar
-                                fotoUrl={item.fotoUrl}
-                                nome={item.nomeCompleto}
-                                className="h-8 w-8 shrink-0"
-                              />
-                              <span className="min-w-0">
-                                <span className="block truncate font-medium">
-                                  {item.nomeCompleto}
-                                </span>
-                                <span className="text-muted block text-xs">{item.parentesco}</span>
-                              </span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    ),
-                  )}
-                </div>
-                {canViewAcervo && (
-                  <Link
-                    href={`/acervo/pessoas/${profile.memberId}`}
-                    className="text-accent flex w-fit items-center gap-1 text-xs font-semibold hover:underline"
-                  >
-                    Explorar Constelação da Memória
-                    <ArrowUpRight size={13} strokeWidth={2} />
-                  </Link>
+          {hasTrajetoria && profile.trajetoria && (
+            <Panel kicker="TRAJETÓRIA" title="Caminho na Loja" icon={Milestone}>
+              <div className="flex flex-col gap-4">
+                {profile.trajetoria.dataIniciacao && (
+                  <TimelineEntry
+                    label="Iniciação"
+                    dateLabel={formatDate(profile.trajetoria.dataIniciacao)}
+                    active
+                  />
                 )}
-              </Panel>
-            )}
+                {profile.trajetoria.dataElevacao && (
+                  <TimelineEntry
+                    label="Elevação"
+                    dateLabel={formatDate(profile.trajetoria.dataElevacao)}
+                    active
+                  />
+                )}
+                {profile.trajetoria.dataExaltacao && (
+                  <TimelineEntry
+                    label="Exaltação"
+                    dateLabel={formatDate(profile.trajetoria.dataExaltacao)}
+                    active
+                  />
+                )}
+                {profile.trajetoria.cargos.map((entry, index) => (
+                  <TimelineEntry
+                    key={`cargo-${index}`}
+                    label={getBoardPositionLabel(entry.cargo)}
+                    dateLabel={formatDate(entry.dataInicio)}
+                    active={!entry.dataFim}
+                    detail={`Cargo · ${entry.gestaoNome}${entry.dataFim ? ` até ${formatDate(entry.dataFim)}` : ' · em curso'}`}
+                  />
+                ))}
+                {profile.trajetoria.comissoes.map((entry, index) => (
+                  <TimelineEntry
+                    key={`comissao-${index}`}
+                    label={entry.nome}
+                    dateLabel={formatDate(entry.dataInicio)}
+                    active={!entry.dataFim}
+                    detail={`Comissão · ${entry.gestaoNome}${entry.dataFim ? ` até ${formatDate(entry.dataFim)}` : ' · em curso'}`}
+                  />
+                ))}
+              </div>
+            </Panel>
+          )}
 
-            {profile.memoriaFotografica && profile.memoriaFotografica.length > 0 && (
-              <Panel
-                kicker="MEMÓRIA"
-                title="Memória Fotográfica"
-                trailing={
-                  canViewAcervo ? (
-                    <Link
-                      href={`/acervo/pessoas/${profile.memberId}`}
-                      className="text-accent flex shrink-0 items-center gap-1 text-xs font-semibold hover:underline"
-                    >
-                      Ver Memória VL6 completa
-                      <ArrowUpRight size={13} strokeWidth={2} />
-                    </Link>
-                  ) : (
-                    <Camera size={16} strokeWidth={1.75} className="text-accent mt-1 shrink-0" />
-                  )
-                }
-              >
-                <MemberPhotoGrid photos={profile.memoriaFotografica} />
-              </Panel>
-            )}
+          {profile.apresentacao?.texto && (
+            <Panel kicker="APRESENTAÇÃO" title="Sobre" editTab={canEdit ? 'geral' : undefined}>
+              <ProfileBioText text={profile.apresentacao.texto} />
+            </Panel>
+          )}
 
-            {!hasVoluntaryContent && (
-              <div className="border-border bg-surface text-muted rounded-2xl border border-dashed p-6 text-sm">
-                {canEdit ? (
-                  <>
-                    Você ainda não compartilhou informações pessoais ou profissionais no seu perfil.{' '}
-                    <Link
-                      href="/irmaos/meu-espaco"
-                      className="text-accent font-semibold hover:underline"
+          {profile.familia && (
+            <Panel
+              kicker="VÍNCULOS"
+              title="Família e Legado"
+              editTab={canEdit ? 'pessoal' : undefined}
+            >
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                {FAMILY_DISPLAY_GROUPS.filter((group) => profile.familia?.[group]?.length).map(
+                  (group) => (
+                    <div
+                      key={group}
+                      className="border-border bg-background flex flex-col gap-2.5 rounded-xl border p-4"
                     >
-                      Complete seu espaço na Comunidade VL6
-                    </Link>
-                    .
-                  </>
-                ) : (
-                  'Este Irmão ainda não compartilhou informações pessoais ou profissionais no Diretório.'
+                      <p className="text-muted text-[10px] font-bold uppercase tracking-wide">
+                        {FAMILY_DISPLAY_GROUP_LABELS[group]}
+                      </p>
+                      <ul className="flex flex-col gap-2.5">
+                        {profile.familia?.[group]?.map((item) => (
+                          <li key={item.key} className="flex items-center gap-2.5 text-sm">
+                            <MemberAvatar
+                              fotoUrl={item.fotoUrl}
+                              nome={item.nomeCompleto}
+                              className="h-8 w-8 shrink-0"
+                            />
+                            <span className="min-w-0">
+                              <span className="block truncate font-medium">
+                                {item.nomeCompleto}
+                              </span>
+                              <span className="text-muted block text-xs">{item.parentesco}</span>
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ),
                 )}
               </div>
-            )}
-          </div>
+              {canViewAcervo && (
+                <Link
+                  href={`/acervo/pessoas/${profile.memberId}`}
+                  className="text-accent flex w-fit items-center gap-1 text-xs font-semibold hover:underline"
+                >
+                  Explorar Constelação da Memória
+                  <ArrowUpRight size={13} strokeWidth={2} />
+                </Link>
+              )}
+            </Panel>
+          )}
 
-          <aside className="@3xl:col-span-4 flex flex-col gap-6">
-            <Panel kicker="RESUMO" title="Perfil em resumo" compact>
-              <dl className="flex flex-col gap-2.5">
-                {profile.informacoesPessoais?.cidadeExibicao && (
-                  <SummaryRow label="Cidade" value={profile.informacoesPessoais.cidadeExibicao} />
-                )}
-                <div className="border-border flex items-center justify-between gap-3 border-b border-dashed pb-2.5 last:border-0 last:pb-0">
-                  <dt className="text-muted text-xs">Grau</dt>
-                  <dd className="text-right text-xs font-semibold">
-                    <MemberDegreeBadge grau={profile.grau} size="xs" compact />
-                  </dd>
-                </div>
-                {summaryRows.map((row) => (
-                  <SummaryRow key={row.label} label={row.label} value={row.value} />
+          {profile.memoriaFotografica && profile.memoriaFotografica.length > 0 && (
+            <Panel
+              kicker="MEMÓRIA"
+              title="Memória Fotográfica"
+              trailing={
+                canViewAcervo ? (
+                  <Link
+                    href={`/acervo/pessoas/${profile.memberId}`}
+                    className="text-accent flex shrink-0 items-center gap-1 text-xs font-semibold hover:underline"
+                  >
+                    Ver Memória VL6 completa
+                    <ArrowUpRight size={13} strokeWidth={2} />
+                  </Link>
+                ) : (
+                  <Camera size={16} strokeWidth={1.75} className="text-accent mt-1 shrink-0" />
+                )
+              }
+            >
+              <MemberPhotoGrid photos={profile.memoriaFotografica} />
+            </Panel>
+          )}
+
+          {!hasVoluntaryContent && (
+            <div className="border-border bg-surface text-muted rounded-2xl border border-dashed p-6 text-sm">
+              {canEdit ? (
+                <>
+                  Você ainda não compartilhou informações pessoais ou profissionais no seu perfil.{' '}
+                  <Link
+                    href="/irmaos/meu-espaco"
+                    className="text-accent font-semibold hover:underline"
+                  >
+                    Complete seu espaço na Comunidade VL6
+                  </Link>
+                  .
+                </>
+              ) : (
+                'Este Irmão ainda não compartilhou informações pessoais ou profissionais no Diretório.'
+              )}
+            </div>
+          )}
+        </div>
+
+        <aside
+          className={
+            layout === 'full' ? 'flex flex-col gap-6 md:col-span-4' : 'flex flex-col gap-6'
+          }
+        >
+          <Panel kicker="RESUMO" title="Perfil em resumo" compact>
+            <dl className="flex flex-col gap-2.5">
+              {profile.informacoesPessoais?.cidadeExibicao && (
+                <SummaryRow label="Cidade" value={profile.informacoesPessoais.cidadeExibicao} />
+              )}
+              <div className="border-border flex items-center justify-between gap-3 border-b border-dashed pb-2.5 last:border-0 last:pb-0">
+                <dt className="text-muted text-xs">Grau</dt>
+                <dd className="text-right text-xs font-semibold">
+                  <MemberDegreeBadge grau={profile.grau} size="xs" compact />
+                </dd>
+              </div>
+              {summaryRows.map((row) => (
+                <SummaryRow key={row.label} label={row.label} value={row.value} />
+              ))}
+            </dl>
+          </Panel>
+
+          {profile.informacoesPessoais?.interesses && (
+            <Panel kicker="PESSOAL" title="Interesses" compact>
+              <p className="text-sm leading-relaxed">{profile.informacoesPessoais.interesses}</p>
+            </Panel>
+          )}
+
+          {hasResumoProfissional && profile.profissional?.resumoProfissional && (
+            <Panel
+              kicker="CARREIRA"
+              title="Atuação profissional"
+              editTab={canEdit ? 'profissional' : undefined}
+              compact
+            >
+              <p className="whitespace-pre-line text-sm leading-relaxed">
+                {profile.profissional.resumoProfissional}
+              </p>
+            </Panel>
+          )}
+
+          {hasCompetenciasServicos && (
+            <Panel
+              kicker="COMPETÊNCIAS"
+              title="Competências e serviços"
+              editTab={canEdit ? 'profissional' : undefined}
+              compact
+            >
+              <div className="flex flex-wrap gap-1.5">
+                {[...(profile.competencias ?? []), ...(profile.servicos ?? [])].map((tag) => (
+                  <span
+                    key={tag}
+                    className="bg-background text-foreground rounded-md px-2.5 py-1 text-xs font-medium"
+                  >
+                    {tag}
+                  </span>
                 ))}
+              </div>
+            </Panel>
+          )}
+
+          {hasVidaMaconica && profile.informacoesMaconicas && (
+            <Panel
+              kicker="VIDA MAÇÔNICA"
+              title="Vivência Maçônica"
+              icon={Compass}
+              editTab={canEdit ? 'pessoal' : undefined}
+              compact
+            >
+              <dl className="flex flex-col gap-2.5">
+                {profile.informacoesMaconicas.lojasVisitadas && (
+                  <SummaryRow
+                    label="Lojas visitadas"
+                    value={profile.informacoesMaconicas.lojasVisitadas}
+                  />
+                )}
+                {profile.informacoesMaconicas.interessesMaconicos && (
+                  <SummaryRow
+                    label="Interesses"
+                    value={profile.informacoesMaconicas.interessesMaconicos}
+                  />
+                )}
               </dl>
             </Panel>
+          )}
 
-            {profile.informacoesPessoais?.interesses && (
-              <Panel kicker="PESSOAL" title="Interesses" compact>
-                <p className="text-sm leading-relaxed">{profile.informacoesPessoais.interesses}</p>
-              </Panel>
-            )}
+          {hasNegocios && (
+            <Panel
+              kicker="ATUAÇÃO"
+              title="Negócios vinculados"
+              editTab={canEdit ? 'empresa' : undefined}
+              compact
+            >
+              <div className="flex flex-col gap-2.5">
+                {profile.empresaAtual && (
+                  <div className="border-border bg-background rounded-xl border p-3.5">
+                    <p className="text-sm font-semibold">{profile.empresaAtual}</p>
+                    <p className="text-muted mt-0.5 text-xs">Empresa atual</p>
+                  </div>
+                )}
+                {profile.negocios?.map((negocio) => (
+                  <Link
+                    key={negocio.id}
+                    href={`/irmaos/negocios/${negocio.id}`}
+                    className="border-border hover:border-primary bg-background flex flex-col gap-0.5 rounded-xl border p-3.5 text-sm transition-colors"
+                  >
+                    <p className="font-semibold">{negocio.nomeEmpresa}</p>
+                    {negocio.segmento && <p className="text-muted text-xs">{negocio.segmento}</p>}
+                  </Link>
+                ))}
+              </div>
+            </Panel>
+          )}
 
-            {hasResumoProfissional && profile.profissional?.resumoProfissional && (
-              <Panel
-                kicker="CARREIRA"
-                title="Atuação profissional"
-                editTab={canEdit ? 'profissional' : undefined}
-                compact
-              >
-                <p className="whitespace-pre-line text-sm leading-relaxed">
-                  {profile.profissional.resumoProfissional}
-                </p>
-              </Panel>
-            )}
-
-            {hasCompetenciasServicos && (
-              <Panel
-                kicker="COMPETÊNCIAS"
-                title="Competências e serviços"
-                editTab={canEdit ? 'profissional' : undefined}
-                compact
-              >
-                <div className="flex flex-wrap gap-1.5">
-                  {[...(profile.competencias ?? []), ...(profile.servicos ?? [])].map((tag) => (
-                    <span
-                      key={tag}
-                      className="bg-background text-foreground rounded-md px-2.5 py-1 text-xs font-medium"
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              </Panel>
-            )}
-
-            {hasVidaMaconica && profile.informacoesMaconicas && (
-              <Panel
-                kicker="VIDA MAÇÔNICA"
-                title="Vivência Maçônica"
-                icon={Compass}
-                editTab={canEdit ? 'pessoal' : undefined}
-                compact
-              >
-                <dl className="flex flex-col gap-2.5">
-                  {profile.informacoesMaconicas.lojasVisitadas && (
-                    <SummaryRow
-                      label="Lojas visitadas"
-                      value={profile.informacoesMaconicas.lojasVisitadas}
-                    />
-                  )}
-                  {profile.informacoesMaconicas.interessesMaconicos && (
-                    <SummaryRow
-                      label="Interesses"
-                      value={profile.informacoesMaconicas.interessesMaconicos}
-                    />
-                  )}
-                </dl>
-              </Panel>
-            )}
-
-            {hasNegocios && (
-              <Panel
-                kicker="ATUAÇÃO"
-                title="Negócios vinculados"
-                editTab={canEdit ? 'empresa' : undefined}
-                compact
-              >
-                <div className="flex flex-col gap-2.5">
-                  {profile.empresaAtual && (
-                    <div className="border-border bg-background rounded-xl border p-3.5">
-                      <p className="text-sm font-semibold">{profile.empresaAtual}</p>
-                      <p className="text-muted mt-0.5 text-xs">Empresa atual</p>
-                    </div>
-                  )}
-                  {profile.negocios?.map((negocio) => (
-                    <Link
-                      key={negocio.id}
-                      href={`/irmaos/negocios/${negocio.id}`}
-                      className="border-border hover:border-primary bg-background flex flex-col gap-0.5 rounded-xl border p-3.5 text-sm transition-colors"
-                    >
-                      <p className="font-semibold">{negocio.nomeEmpresa}</p>
-                      {negocio.segmento && <p className="text-muted text-xs">{negocio.segmento}</p>}
-                    </Link>
-                  ))}
-                </div>
-              </Panel>
-            )}
-
-            {(hasConexoes || profile.endereco) && (
-              <Panel
-                kicker="CONEXÕES"
-                title="Contato e Redes"
-                editTab={canEdit ? 'contatos' : undefined}
-                compact
-              >
-                <div className="flex flex-col gap-2">
-                  {profile.endereco &&
-                    (profile.endereco.logradouro ||
-                      profile.endereco.bairro ||
-                      profile.endereco.cidade) && (
-                      <p className="text-muted flex items-start gap-2 text-xs leading-relaxed">
-                        <MapPin size={14} strokeWidth={1.75} className="mt-0.5 shrink-0" />
-                        {[
-                          [profile.endereco.logradouro, profile.endereco.numero]
-                            .filter(Boolean)
-                            .join(', '),
-                          profile.endereco.bairro,
-                          [profile.endereco.cidade, profile.endereco.estado]
-                            .filter(Boolean)
-                            .join(' - '),
-                        ]
+          {(hasConexoes || profile.endereco) && (
+            <Panel
+              kicker="CONEXÕES"
+              title="Contato e Redes"
+              editTab={canEdit ? 'contatos' : undefined}
+              compact
+            >
+              <div className="flex flex-col gap-2">
+                {profile.endereco &&
+                  (profile.endereco.logradouro ||
+                    profile.endereco.bairro ||
+                    profile.endereco.cidade) && (
+                    <p className="text-muted flex items-start gap-2 text-xs leading-relaxed">
+                      <MapPin size={14} strokeWidth={1.75} className="mt-0.5 shrink-0" />
+                      {[
+                        [profile.endereco.logradouro, profile.endereco.numero]
                           .filter(Boolean)
-                          .join(' — ')}
-                      </p>
-                    )}
-                  {profile.contatos?.whatsapp && (
-                    <LinkPill
-                      href={buildWhatsappLink(profile.contatos.whatsapp)}
-                      label={profile.contatos.whatsapp}
-                      icon={MessageCircle}
-                    />
+                          .join(', '),
+                        profile.endereco.bairro,
+                        [profile.endereco.cidade, profile.endereco.estado]
+                          .filter(Boolean)
+                          .join(' - '),
+                      ]
+                        .filter(Boolean)
+                        .join(' — ')}
+                    </p>
                   )}
-                  {profile.contatos?.telefone && (
-                    <LinkPill
-                      href={`tel:${profile.contatos.telefone}`}
-                      label={profile.contatos.telefone}
-                      icon={Phone}
-                    />
-                  )}
-                  {profile.contatos?.email && (
-                    <LinkPill
-                      href={`mailto:${profile.contatos.email}`}
-                      label={profile.contatos.email}
-                      icon={Mail}
-                    />
-                  )}
-                  {profile.redes?.whatsapp && (
-                    <LinkPill
-                      href={buildWhatsappLink(profile.redes.whatsapp)}
-                      label="WhatsApp"
-                      icon={MessageCircle}
-                    />
-                  )}
-                  {profile.redes?.instagram && (
-                    <LinkPill href={profile.redes.instagram} label="Instagram" icon={Instagram} />
-                  )}
-                  {profile.redes?.facebook && (
-                    <LinkPill href={profile.redes.facebook} label="Facebook" icon={Facebook} />
-                  )}
-                  {profile.redes?.linkedin && (
-                    <LinkPill href={profile.redes.linkedin} label="LinkedIn" icon={Linkedin} />
-                  )}
-                  {profile.redes?.lattes && (
-                    <LinkPill
-                      href={profile.redes.lattes}
-                      label="Currículo Lattes"
-                      icon={GraduationCap}
-                    />
-                  )}
-                  {profile.redes?.site && (
-                    <LinkPill href={profile.redes.site} label="Site" icon={Globe} />
-                  )}
-                </div>
-              </Panel>
-            )}
-          </aside>
-        </div>
+                {profile.contatos?.whatsapp && (
+                  <LinkPill
+                    href={buildWhatsappLink(profile.contatos.whatsapp)}
+                    label={profile.contatos.whatsapp}
+                    icon={MessageCircle}
+                  />
+                )}
+                {profile.contatos?.telefone && (
+                  <LinkPill
+                    href={`tel:${profile.contatos.telefone}`}
+                    label={profile.contatos.telefone}
+                    icon={Phone}
+                  />
+                )}
+                {profile.contatos?.email && (
+                  <LinkPill
+                    href={`mailto:${profile.contatos.email}`}
+                    label={profile.contatos.email}
+                    icon={Mail}
+                  />
+                )}
+                {profile.redes?.whatsapp && (
+                  <LinkPill
+                    href={buildWhatsappLink(profile.redes.whatsapp)}
+                    label="WhatsApp"
+                    icon={MessageCircle}
+                  />
+                )}
+                {profile.redes?.instagram && (
+                  <LinkPill href={profile.redes.instagram} label="Instagram" icon={Instagram} />
+                )}
+                {profile.redes?.facebook && (
+                  <LinkPill href={profile.redes.facebook} label="Facebook" icon={Facebook} />
+                )}
+                {profile.redes?.linkedin && (
+                  <LinkPill href={profile.redes.linkedin} label="LinkedIn" icon={Linkedin} />
+                )}
+                {profile.redes?.lattes && (
+                  <LinkPill
+                    href={profile.redes.lattes}
+                    label="Currículo Lattes"
+                    icon={GraduationCap}
+                  />
+                )}
+                {profile.redes?.site && (
+                  <LinkPill href={profile.redes.site} label="Site" icon={Globe} />
+                )}
+              </div>
+            </Panel>
+          )}
+        </aside>
       </div>
     </div>
   );
