@@ -34,8 +34,10 @@ function formatAddress(address: Address): string {
 
 export interface CreateElevationArchiveItemResult {
   archiveItem: ArchiveItem;
-  /** `true` só quando este `execute` de fato criou o item — `false` quando já existia (idempotência). */
+  /** `true` só quando este `execute` criou um `ArchiveItem` novo (nenhuma sessão de elevação ainda registrada nesta data). */
   created: boolean;
+  /** `true` quando o Irmão foi acrescentado a um `ArchiveItem` de sessão já existente — ver `CreateInitiationArchiveItemResult.memberAdded`. */
+  memberAdded: boolean;
   /** `true` quando também foi preciso criar um `Event` novo (nenhum evento na data). */
   eventCreated: boolean;
 }
@@ -62,10 +64,11 @@ function formatDateBR(date: Date): string {
  * elevados na mesma sessão compartilham o mesmo `Event`, permitindo ver
  * quem se elevou junto.
  *
- * Fluxo idêntico ao da iniciação, só muda o marcador de proveniência
- * (`origemElevacaoMemberId`), o grau do Evento criado (`companheiro`) e os
- * textos. Ver `CreateInitiationArchiveItemUseCase` para o detalhamento dos
- * 4 passos.
+ * Um único `ArchiveItem` cobre TODOS os Irmãos elevados juntos na mesma
+ * sessão. Fluxo idêntico ao da iniciação, só muda o marcador de
+ * proveniência (`origemElevacaoMemberIds`), o grau do Evento criado
+ * (`companheiro`) e os textos. Ver `CreateInitiationArchiveItemUseCase`
+ * para o detalhamento dos passos.
  */
 export class CreateElevationArchiveItemUseCase {
   constructor(private readonly deps: CreateElevationArchiveItemDeps) {}
@@ -74,14 +77,6 @@ export class CreateElevationArchiveItemUseCase {
     ctx: AuthContext,
     input: CreateElevationArchiveItemInput,
   ): Promise<CreateElevationArchiveItemResult> {
-    const existing = await this.deps.archiveItemRepository.findByOrigemElevacaoMemberId(
-      ctx.tenantId,
-      input.memberId,
-    );
-    if (existing) {
-      return { archiveItem: existing, created: false, eventCreated: false };
-    }
-
     const from = startOfDay(input.dataElevacao);
     const to = endOfDay(input.dataElevacao);
     const eventsOnDate = await this.deps.eventRepository.listInRange(ctx.tenantId, from, to);
@@ -137,21 +132,37 @@ export class CreateElevationArchiveItemUseCase {
       eventCreated = true;
     }
 
+    const itemsOnEvent = await this.deps.archiveItemRepository.findByEventId(event.id);
+    const existing = itemsOnEvent.find((item) => item.origemElevacaoMemberIds?.length);
+    if (existing) {
+      if (existing.origemElevacaoMemberIds!.includes(input.memberId)) {
+        return { archiveItem: existing, created: false, memberAdded: false, eventCreated };
+      }
+      const updated: ArchiveItem = {
+        ...existing,
+        origemElevacaoMemberIds: [...existing.origemElevacaoMemberIds!, input.memberId],
+        updatedAt: now,
+        updatedBy: ctx.uid,
+      };
+      await this.deps.archiveItemRepository.update(updated);
+      return { archiveItem: updated, created: false, memberAdded: true, eventCreated };
+    }
+
     const archiveItem: ArchiveItem = {
       id: this.deps.idGenerator.next(),
       tenantId: ctx.tenantId,
       eventId: event.id,
       boardTermId: event.boardTermId,
-      titulo: `Elevação de ${input.nomeCompleto}`,
+      titulo: `Elevação — ${formatDateBR(input.dataElevacao)}`,
       tipo: 'outro',
       descricao:
-        `Registro automático da elevação de ${input.nomeCompleto} no Acervo VL6, criado a ` +
-        'partir da data de elevação informada no cadastro do Irmão. Ao anexar fotos ou ' +
-        'documentos desta sessão, marque este Irmão como pessoa identificada na mídia.',
+        'Registro automático da sessão de elevação no Acervo VL6, criado a partir da data de ' +
+        'elevação informada no cadastro de cada Irmão. Ao anexar fotos ou documentos desta ' +
+        'sessão, marque as pessoas identificadas na mídia.',
       nivelAcesso: event.nivelAcesso,
       publicacaoStatus: 'rascunho',
       capaMediaId: null,
-      origemElevacaoMemberId: input.memberId,
+      origemElevacaoMemberIds: [input.memberId],
       createdAt: now,
       updatedAt: now,
       createdBy: ctx.uid,
@@ -162,6 +173,6 @@ export class CreateElevationArchiveItemUseCase {
     };
     await this.deps.archiveItemRepository.create(archiveItem);
 
-    return { archiveItem, created: true, eventCreated };
+    return { archiveItem, created: true, memberAdded: false, eventCreated };
   }
 }

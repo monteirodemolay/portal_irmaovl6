@@ -140,6 +140,22 @@ describe('AttachMediaToArchiveItemUseCase', () => {
     expect(result.error).toBeInstanceOf(NotFoundError);
   });
 
+  it('pré-marca como pessoas identificadas os Irmãos de origem do item (iniciação/elevação/exaltação)', async () => {
+    const { useCase, archiveItemRepository, mediaAssetRepository } = buildUseCase();
+    await archiveItemRepository.create({
+      ...item,
+      origemIniciacaoMemberIds: ['m1', 'm2'],
+      origemElevacaoMemberIds: ['m3'],
+    });
+    await mediaAssetRepository.create(mediaAsset);
+
+    const result = await useCase.execute(ctx, input);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value.pessoasIdentificadas).toEqual(['m1', 'm2', 'm3']);
+  });
+
   it('lança ForbiddenError quando falta a permissão archiveMedia:create', async () => {
     const { useCase, archiveItemRepository, mediaAssetRepository } = buildUseCase();
     await archiveItemRepository.create(item);

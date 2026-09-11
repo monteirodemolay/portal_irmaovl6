@@ -34,8 +34,10 @@ function formatAddress(address: Address): string {
 
 export interface CreateExaltationArchiveItemResult {
   archiveItem: ArchiveItem;
-  /** `true` só quando este `execute` de fato criou o item — `false` quando já existia (idempotência). */
+  /** `true` só quando este `execute` criou um `ArchiveItem` novo (nenhuma sessão de exaltação ainda registrada nesta data). */
   created: boolean;
+  /** `true` quando o Irmão foi acrescentado a um `ArchiveItem` de sessão já existente — ver `CreateInitiationArchiveItemResult.memberAdded`. */
+  memberAdded: boolean;
   /** `true` quando também foi preciso criar um `Event` novo (nenhum evento na data). */
   eventCreated: boolean;
 }
@@ -62,8 +64,9 @@ function formatDateBR(date: Date): string {
  * VL6, agrupada por Evento — Irmãos exaltados na mesma sessão compartilham
  * o mesmo `Event`, permitindo ver quem se exaltou junto.
  *
- * Fluxo idêntico ao da iniciação/elevação, só muda o marcador de
- * proveniência (`origemExaltacaoMemberId`), o grau do Evento criado
+ * Um único `ArchiveItem` cobre TODOS os Irmãos exaltados juntos na mesma
+ * sessão. Fluxo idêntico ao da iniciação/elevação, só muda o marcador de
+ * proveniência (`origemExaltacaoMemberIds`), o grau do Evento criado
  * (`mestre`) e os textos.
  */
 export class CreateExaltationArchiveItemUseCase {
@@ -73,14 +76,6 @@ export class CreateExaltationArchiveItemUseCase {
     ctx: AuthContext,
     input: CreateExaltationArchiveItemInput,
   ): Promise<CreateExaltationArchiveItemResult> {
-    const existing = await this.deps.archiveItemRepository.findByOrigemExaltacaoMemberId(
-      ctx.tenantId,
-      input.memberId,
-    );
-    if (existing) {
-      return { archiveItem: existing, created: false, eventCreated: false };
-    }
-
     const from = startOfDay(input.dataExaltacao);
     const to = endOfDay(input.dataExaltacao);
     const eventsOnDate = await this.deps.eventRepository.listInRange(ctx.tenantId, from, to);
@@ -136,21 +131,37 @@ export class CreateExaltationArchiveItemUseCase {
       eventCreated = true;
     }
 
+    const itemsOnEvent = await this.deps.archiveItemRepository.findByEventId(event.id);
+    const existing = itemsOnEvent.find((item) => item.origemExaltacaoMemberIds?.length);
+    if (existing) {
+      if (existing.origemExaltacaoMemberIds!.includes(input.memberId)) {
+        return { archiveItem: existing, created: false, memberAdded: false, eventCreated };
+      }
+      const updated: ArchiveItem = {
+        ...existing,
+        origemExaltacaoMemberIds: [...existing.origemExaltacaoMemberIds!, input.memberId],
+        updatedAt: now,
+        updatedBy: ctx.uid,
+      };
+      await this.deps.archiveItemRepository.update(updated);
+      return { archiveItem: updated, created: false, memberAdded: true, eventCreated };
+    }
+
     const archiveItem: ArchiveItem = {
       id: this.deps.idGenerator.next(),
       tenantId: ctx.tenantId,
       eventId: event.id,
       boardTermId: event.boardTermId,
-      titulo: `Exaltação de ${input.nomeCompleto}`,
+      titulo: `Exaltação — ${formatDateBR(input.dataExaltacao)}`,
       tipo: 'outro',
       descricao:
-        `Registro automático da exaltação de ${input.nomeCompleto} no Acervo VL6, criado a ` +
-        'partir da data de exaltação informada no cadastro do Irmão. Ao anexar fotos ou ' +
-        'documentos desta sessão, marque este Irmão como pessoa identificada na mídia.',
+        'Registro automático da sessão de exaltação no Acervo VL6, criado a partir da data de ' +
+        'exaltação informada no cadastro de cada Irmão. Ao anexar fotos ou documentos desta ' +
+        'sessão, marque as pessoas identificadas na mídia.',
       nivelAcesso: event.nivelAcesso,
       publicacaoStatus: 'rascunho',
       capaMediaId: null,
-      origemExaltacaoMemberId: input.memberId,
+      origemExaltacaoMemberIds: [input.memberId],
       createdAt: now,
       updatedAt: now,
       createdBy: ctx.uid,
@@ -161,6 +172,6 @@ export class CreateExaltationArchiveItemUseCase {
     };
     await this.deps.archiveItemRepository.create(archiveItem);
 
-    return { archiveItem, created: true, eventCreated };
+    return { archiveItem, created: true, memberAdded: false, eventCreated };
   }
 }

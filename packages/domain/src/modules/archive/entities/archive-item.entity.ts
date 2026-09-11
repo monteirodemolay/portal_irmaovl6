@@ -57,37 +57,38 @@ export interface ArchiveItem extends BaseEntity {
    */
   origemLibraryItemId?: string | null;
   /**
-   * `Member.id` de origem quando este item nasceu automaticamente do
-   * registro da data de iniciação de um Irmão
-   * (`CreateInitiationArchiveItemUseCase`, chamado tanto no cadastro/edição
-   * do Irmão quanto retroativamente por `SeedInitiationArchiveItemsUseCase`)
-   * — não é uma migração de outro módulo do Acervo, mas cumpre o mesmo
-   * papel duplo de `origemGalleryAlbumId`/`origemFileAssetId`/
-   * `origemLibraryItemId`: marcador de idempotência (nunca cria um segundo
-   * item de iniciação para o mesmo Irmão —
-   * `IArchiveItemRepository.findByOrigemIniciacaoMemberId`) e rastro de
-   * proveniência. O `Member` de origem nunca é alterado por esta criação
-   * (Regra de Preservação). Campo aditivo opcional para não exigir
-   * alteração em todo construtor de `ArchiveItem` já existente, mesmo
-   * padrão de `origemGalleryAlbumId`.
+   * `Member.id` de todo Irmão cuja iniciação corresponde a esta sessão —
+   * um único `ArchiveItem` cobre TODOS os Irmãos iniciados juntos na mesma
+   * data (`CreateInitiationArchiveItemUseCase`, chamado tanto no cadastro/
+   * edição do Irmão quanto retroativamente por
+   * `SeedInitiationArchiveItemsUseCase`), nunca um item por pessoa — uma
+   * turma de 3 iniciados na mesma sessão é 1 item, não 3. Não é uma
+   * migração de outro módulo do Acervo, mas cumpre o mesmo papel duplo de
+   * `origemGalleryAlbumId`/`origemFileAssetId`/`origemLibraryItemId`:
+   * marcador de idempotência (o Irmão nunca é adicionado duas vezes à
+   * mesma lista, e a checagem é sempre pelo `Event` da data, via
+   * `IArchiveItemRepository.findByEventId`) e rastro de proveniência. O
+   * `Member` de origem nunca é alterado por esta criação (Regra de
+   * Preservação). Campo aditivo opcional para não exigir alteração em todo
+   * construtor de `ArchiveItem` já existente, mesmo padrão de
+   * `origemGalleryAlbumId`. Itens criados antes desta mudança (um por
+   * pessoa) continuam existindo como estão — não são mesclados
+   * retroativamente.
    */
-  origemIniciacaoMemberId?: string | null;
+  origemIniciacaoMemberIds?: string[];
   /**
-   * `Member.id` de origem quando este item nasceu automaticamente do
-   * registro da data de elevação (2º grau, Companheiro) de um Irmão
-   * (`CreateElevationArchiveItemUseCase`) — mesmo papel de
-   * `origemIniciacaoMemberId`, campo próprio porque um mesmo Irmão pode ter
-   * um item de iniciação E um de elevação (marcos distintos), nunca o
-   * mesmo `ArchiveItem`.
+   * `Member.id` de todo Irmão cuja elevação (2º grau, Companheiro)
+   * corresponde a esta sessão — mesmo papel de `origemIniciacaoMemberIds`,
+   * campo próprio porque um mesmo Irmão pode ter um item de iniciação E um
+   * de elevação (marcos distintos), nunca o mesmo `ArchiveItem`.
    */
-  origemElevacaoMemberId?: string | null;
+  origemElevacaoMemberIds?: string[];
   /**
-   * `Member.id` de origem quando este item nasceu automaticamente do
-   * registro da data de exaltação (3º grau, Mestre) de um Irmão
-   * (`CreateExaltationArchiveItemUseCase`) — mesmo papel de
-   * `origemIniciacaoMemberId`/`origemElevacaoMemberId`.
+   * `Member.id` de todo Irmão cuja exaltação (3º grau, Mestre) corresponde
+   * a esta sessão — mesmo papel de
+   * `origemIniciacaoMemberIds`/`origemElevacaoMemberIds`.
    */
-  origemExaltacaoMemberId?: string | null;
+  origemExaltacaoMemberIds?: string[];
   /**
    * Data/hora futura para publicação automática — Fase B "Publicação
    * avançada" (`ScheduleArchiveItemPublicationUseCase`,

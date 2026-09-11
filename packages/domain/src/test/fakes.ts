@@ -885,27 +885,6 @@ export class InMemoryArchiveItemRepository implements IArchiveItemRepository {
   async findByEventId(eventId: string) {
     return [...this.byId.values()].filter((i) => i.eventId === eventId && i.deletedAt === null);
   }
-  async findByOrigemIniciacaoMemberId(tenantId: string, memberId: string) {
-    return (
-      [...this.byId.values()].find(
-        (i) => i.tenantId === tenantId && i.origemIniciacaoMemberId === memberId,
-      ) ?? null
-    );
-  }
-  async findByOrigemElevacaoMemberId(tenantId: string, memberId: string) {
-    return (
-      [...this.byId.values()].find(
-        (i) => i.tenantId === tenantId && i.origemElevacaoMemberId === memberId,
-      ) ?? null
-    );
-  }
-  async findByOrigemExaltacaoMemberId(tenantId: string, memberId: string) {
-    return (
-      [...this.byId.values()].find(
-        (i) => i.tenantId === tenantId && i.origemExaltacaoMemberId === memberId,
-      ) ?? null
-    );
-  }
   async findDeletedByTenant(tenantId: string, page: PageRequest): Promise<PageResult<ArchiveItem>> {
     const items = [...this.byId.values()].filter(
       (i) => i.tenantId === tenantId && i.deletedAt !== null,

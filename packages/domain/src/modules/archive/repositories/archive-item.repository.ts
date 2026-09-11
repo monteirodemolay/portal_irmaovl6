@@ -5,20 +5,16 @@ export interface IArchiveItemRepository {
   findById(id: string): Promise<ArchiveItem | null>;
   /** Todos os itens do tenant (não excluídos), paginados — uso administrativo. */
   findByTenant(tenantId: string, page: PageRequest): Promise<PageResult<ArchiveItem>>;
-  /** Todos os itens vinculados a um Evento (não excluídos) — usado pelo Acervo do Evento. */
-  findByEventId(eventId: string): Promise<ArchiveItem[]>;
   /**
-   * Item de iniciação já existente pra este Irmão (marcador
-   * `origemIniciacaoMemberId`), independente de estar excluído ou não —
-   * usado como checagem de idempotência por `CreateInitiationArchiveItemUseCase`,
-   * nunca deve deixar criar um segundo item de iniciação pro mesmo Irmão
-   * mesmo que o primeiro tenha ido pra lixeira.
+   * Todos os itens vinculados a um Evento (não excluídos) — usado pelo
+   * Acervo do Evento e, com o mesmo `eventId` da data de iniciação/
+   * elevação/exaltação, como checagem de idempotência por
+   * `CreateInitiationArchiveItemUseCase`/`CreateElevationArchiveItemUseCase`/
+   * `CreateExaltationArchiveItemUseCase` (acham, entre os itens do Evento,
+   * o que já tem `origemIniciacaoMemberIds`/etc. preenchido, pra
+   * acrescentar o Irmão à mesma sessão em vez de criar um item novo).
    */
-  findByOrigemIniciacaoMemberId(tenantId: string, memberId: string): Promise<ArchiveItem | null>;
-  /** Mesmo papel de `findByOrigemIniciacaoMemberId`, para o item de elevação (2º grau) — `CreateElevationArchiveItemUseCase`. */
-  findByOrigemElevacaoMemberId(tenantId: string, memberId: string): Promise<ArchiveItem | null>;
-  /** Mesmo papel de `findByOrigemIniciacaoMemberId`, para o item de exaltação (3º grau) — `CreateExaltationArchiveItemUseCase`. */
-  findByOrigemExaltacaoMemberId(tenantId: string, memberId: string): Promise<ArchiveItem | null>;
+  findByEventId(eventId: string): Promise<ArchiveItem[]>;
   /** Lixeira administrativa (Fase 3) — itens do tenant com `deletedAt` preenchido. */
   findDeletedByTenant(tenantId: string, page: PageRequest): Promise<PageResult<ArchiveItem>>;
   /**

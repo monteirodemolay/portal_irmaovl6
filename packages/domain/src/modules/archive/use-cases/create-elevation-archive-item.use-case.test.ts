@@ -125,12 +125,13 @@ describe('CreateElevationArchiveItemUseCase', () => {
     });
 
     expect(result.created).toBe(true);
+    expect(result.memberAdded).toBe(false);
     expect(result.eventCreated).toBe(false);
     expect(result.archiveItem.eventId).toBe('event-existente');
     expect(result.archiveItem.boardTermId).toBe('term-1');
-    expect(result.archiveItem.titulo).toBe('Elevação de João da Silva');
+    expect(result.archiveItem.titulo).toBe('Elevação — 15/06/2025');
     expect(result.archiveItem.publicacaoStatus).toBe('rascunho');
-    expect(result.archiveItem.origemElevacaoMemberId).toBe('member-1');
+    expect(result.archiveItem.origemElevacaoMemberIds).toEqual(['member-1']);
   });
 
   it('cria um Evento mínimo de grau Companheiro quando não há nenhum na data', async () => {
@@ -192,6 +193,7 @@ describe('CreateElevationArchiveItemUseCase', () => {
 
     expect(first.created).toBe(true);
     expect(second.created).toBe(false);
+    expect(second.memberAdded).toBe(false);
     expect(second.archiveItem.id).toBe(first.archiveItem.id);
 
     const items = await archiveItemRepository.findByTenant('t1', { limit: 100 });
@@ -206,13 +208,13 @@ describe('CreateElevationArchiveItemUseCase', () => {
       tenantId: 't1',
       eventId: 'event-existente',
       boardTermId: 'term-1',
-      titulo: 'Iniciação de João da Silva',
+      titulo: 'Iniciação — 15/06/2025',
       tipo: 'outro',
       descricao: null,
       nivelAcesso: 'irmaos',
       publicacaoStatus: 'rascunho',
       capaMediaId: null,
-      origemIniciacaoMemberId: 'member-1',
+      origemIniciacaoMemberIds: ['member-1'],
       createdAt: new Date('2025-01-01'),
       updatedAt: new Date('2025-01-01'),
       createdBy: 'admin-1',
@@ -232,5 +234,27 @@ describe('CreateElevationArchiveItemUseCase', () => {
     expect(result.archiveItem.id).not.toBe('item-iniciacao');
     const items = await archiveItemRepository.findByTenant('t1', { limit: 100 });
     expect(items.items).toHaveLength(2);
+  });
+
+  it('Irmãos elevados juntos na mesma data compartilham um único ArchiveItem', async () => {
+    const { useCase, archiveItemRepository } = buildUseCase();
+
+    const first = await useCase.execute(ctx, {
+      memberId: 'member-1',
+      nomeCompleto: 'João da Silva',
+      dataElevacao: new Date('2025-06-15T12:00:00Z'),
+    });
+    const second = await useCase.execute(ctx, {
+      memberId: 'member-2',
+      nomeCompleto: 'Maria Souza',
+      dataElevacao: new Date('2025-06-15T09:00:00Z'),
+    });
+
+    expect(second.memberAdded).toBe(true);
+    expect(second.archiveItem.id).toBe(first.archiveItem.id);
+    expect(second.archiveItem.origemElevacaoMemberIds).toEqual(['member-1', 'member-2']);
+
+    const items = await archiveItemRepository.findByTenant('t1', { limit: 100 });
+    expect(items.items).toHaveLength(1);
   });
 });
