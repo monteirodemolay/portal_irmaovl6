@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@vl6/ui';
 import { SituacaoBadge } from './situacao-badge';
 import { RegisterSituationDialog } from './register-situation-dialog';
 import { SituacaoHistorico } from './situacao-historico';
+import { CorrectDeathDateDialog } from './correct-death-date-dialog';
 
 function reasonLabel(motivo: string): string {
   return (
@@ -84,6 +85,7 @@ export function SituacaoMaconicaCard({
               situacaoAtualLabel={situacaoAtualLabel}
             />
           )}
+          {isInMemoriam && vigente && <CorrectDeathDateDialog record={vigente} />}
         </div>
 
         <div className="flex flex-col gap-3">

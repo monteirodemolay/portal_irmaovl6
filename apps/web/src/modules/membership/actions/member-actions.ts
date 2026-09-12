@@ -890,6 +890,50 @@ export async function editMemberSituationRecordAction(
   return { error: null, success: true };
 }
 
+/**
+ * Atalho de "Corrigir data de falecimento" — mesmo `EditMemberSituationRecordUseCase`
+ * de `editMemberSituationRecordAction`, só que sem pedir Motivo/Documento/
+ * Anexos/Justificativa: pede só a data certa. A migração automática da
+ * Situação Maçônica (`SeedMemberSituationHistoryUseCase`) grava uma data
+ * estimada (data de iniciação ou de cadastro) quando a real não constava no
+ * cadastro antigo — corrigir isso pelo diálogo completo exigia entender
+ * qual campo mexer entre vários que não tinham nada a ver com o problema.
+ * A justificativa é sempre a mesma frase fixa (a regra de integridade §8
+ * continua satisfeita — todo registro corrigido carrega uma justificativa
+ * — só não precisa mais ser digitada à mão pra esse caso específico).
+ */
+export async function correctDeathDateAction(
+  recordId: string,
+  _prevState: SituationActionState,
+  formData: FormData,
+): Promise<SituationActionState> {
+  const session = await requireSession();
+
+  const dataFalecimento = parseSituationDate(formData, 'dataFalecimento');
+  if (!dataFalecimento) {
+    return { error: 'Informe a data de falecimento correta.', success: false };
+  }
+
+  const container = createServerContainer();
+  const memberId = String(formData.get('memberId') ?? '');
+
+  const result = await container.useCases.editMemberSituationRecord.execute(
+    session.authContext,
+    recordId,
+    {
+      dataInicio: dataFalecimento,
+      justificativa: 'Correção da data de falecimento.',
+    },
+  );
+  if (!result.ok) {
+    return { error: result.error.message, success: false };
+  }
+
+  revalidatePath('/admin/pessoas/irmaos');
+  if (memberId) revalidatePath(`/admin/pessoas/irmaos/${memberId}`);
+  return { error: null, success: true };
+}
+
 export interface SeedSituationHistoryState {
   error: string | null;
   report: SeedMemberSituationHistoryReportRow[] | null;
