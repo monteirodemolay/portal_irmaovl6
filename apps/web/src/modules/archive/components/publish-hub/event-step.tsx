@@ -88,6 +88,7 @@ export function EventStep({
   // Administrador via "Nenhum evento encontrado" mesmo já tendo cadastrado
   // os Eventos.
   const [boardTermFilter, setBoardTermFilter] = useState('');
+  const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [pendingDraftId, setPendingDraftId] = useState<string | null>(null);
@@ -185,8 +186,12 @@ export function EventStep({
         );
         return haystack.includes(normalizedQuery);
       })
-      .sort((a, b) => a.dataInicio.getTime() - b.dataInicio.getTime());
-  }, [events, query, boardTermFilter, effectiveBoardTermId]);
+      .sort((a, b) =>
+        sortOrder === 'desc'
+          ? b.dataInicio.getTime() - a.dataInicio.getTime()
+          : a.dataInicio.getTime() - b.dataInicio.getTime(),
+      );
+  }, [events, query, boardTermFilter, effectiveBoardTermId, sortOrder]);
 
   return (
     <div className="border-border bg-surface rounded-xl border p-6 shadow-sm">
@@ -268,6 +273,14 @@ export function EventStep({
               {term.nome}
             </option>
           ))}
+        </Select>
+        <Select
+          value={sortOrder}
+          onChange={(event) => setSortOrder(event.target.value as 'desc' | 'asc')}
+          className="max-w-48"
+        >
+          <option value="desc">Mais recentes primeiro</option>
+          <option value="asc">Mais antigos primeiro</option>
         </Select>
         <Button
           type="button"

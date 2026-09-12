@@ -135,10 +135,13 @@ export async function createEventForPublishAction(
 
   const container = createServerContainer();
 
+  const tipo = formData.get('tipo');
+  const isSessao = tipo === 'sessao';
+
   let input;
   try {
     input = eventSchema.parse({
-      tipo: formData.get('tipo'),
+      tipo,
       titulo: formData.get('titulo'),
       descricao: null,
       local: formData.get('local'),
@@ -150,6 +153,15 @@ export async function createEventForPublishAction(
       chegadaSugerida: null,
       observacoes: null,
       arquivosRelacionados: [],
+      // Classificação da Sessão só existe no formulário quando `tipo ===
+      // 'sessao'` (mesma regra de `parseEventForm` da Agenda completa) —
+      // sem isso, o cadastro retroativo do passo 1 não conseguia criar uma
+      // Sessão de verdade e empurrava o Administrador a criar "Evento"
+      // avulso por Irmão.
+      sessionType: isSessao ? formData.get('sessionType') || null : null,
+      sessionNature: isSessao ? formData.get('sessionNature') || null : null,
+      degreeWork: isSessao ? formData.get('degreeWork') || null : null,
+      access: isSessao ? formData.get('access') || null : null,
     });
   } catch {
     return { error: 'Dados inválidos. Verifique título, local e data.', event: null };
