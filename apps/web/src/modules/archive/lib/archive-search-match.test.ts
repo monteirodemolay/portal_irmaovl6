@@ -15,6 +15,7 @@ function makeResult(overrides: Partial<ArchiveSearchResult> = {}): ArchiveSearch
     compositeId: 'file_1',
     createdAt: new Date(),
     catalogText: null,
+    imageUrl: null,
     ...overrides,
   };
 }

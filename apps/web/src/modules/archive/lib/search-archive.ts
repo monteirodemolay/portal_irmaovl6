@@ -86,6 +86,7 @@ export async function loadArchiveSearchResults(
       compositeId: buildArchiveItemId('file', file.id),
       createdAt: file.createdAt,
       catalogText: catalogTextByOrigemId.get(buildArchiveItemId('file', file.id)) ?? null,
+      imageUrl: null,
     }));
 
   const libraryResults: ArchiveSearchResult[] = libraryItems.flatMap((item) => {
@@ -101,6 +102,7 @@ export async function loadArchiveSearchResults(
         compositeId: buildArchiveItemId('library', item.id),
         createdAt: item.createdAt,
         catalogText: catalogTextByOrigemId.get(buildArchiveItemId('library', item.id)) ?? null,
+        imageUrl: null,
       },
     ];
   });
@@ -114,6 +116,7 @@ export async function loadArchiveSearchResults(
     compositeId: buildArchiveItemId('gallery-album', album.id),
     createdAt: album.createdAt,
     catalogText: catalogTextByOrigemId.get(buildArchiveItemId('gallery-album', album.id)) ?? null,
+    imageUrl: album.capaUrl,
   }));
 
   // Só ArchiveItem publicado E visível pro nível de acesso da sessão entra
@@ -136,14 +139,14 @@ export async function loadArchiveSearchResults(
   const eventResults: ArchiveSearchResult[] = publishedArchiveItems.flatMap((item, index) => {
     const event = archiveItemEvents[index];
     if (!event || event.tenantId !== authContext.tenantId || event.deletedAt) return [];
-    const captions = (archiveItemMedias[index] ?? [])
-      .filter(
-        (media) =>
-          media.publicacaoStatus === 'publicado' && isAccessLevelVisible(media.accessLevel, visibility),
-      )
-      .map((media) => media.caption)
-      .filter(Boolean)
-      .join(' ');
+    const visibleMedia = (archiveItemMedias[index] ?? []).filter(
+      (media) =>
+        media.publicacaoStatus === 'publicado' && isAccessLevelVisible(media.accessLevel, visibility),
+    );
+    const captions = visibleMedia.map((media) => media.caption).filter(Boolean).join(' ');
+    const coverPhoto =
+      visibleMedia.find((media) => media.mediaType === 'foto' && media.isCover) ??
+      visibleMedia.find((media) => media.mediaType === 'foto');
     return [
       {
         id: item.id,
@@ -154,6 +157,7 @@ export async function loadArchiveSearchResults(
         compositeId: buildArchiveItemId('archive-item', item.id),
         createdAt: item.createdAt,
         catalogText: [item.descricao, captions].filter(Boolean).join(' ') || null,
+        imageUrl: coverPhoto ? `/api/archive-media/${coverPhoto.id}` : null,
       },
     ];
   });

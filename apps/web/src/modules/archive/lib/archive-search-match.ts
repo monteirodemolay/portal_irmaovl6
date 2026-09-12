@@ -25,6 +25,14 @@ export interface ArchiveSearchResult {
   compositeId: string;
   createdAt: Date;
   /**
+   * Miniatura pra destacar o resultado no grid de descoberta (`/acervo`) —
+   * capa do álbum (`GalleryAlbum.capaUrl`) ou primeira foto publicada de um
+   * `ArchiveItem`/Evento, via proxy autenticado `/api/archive-media/[id]`.
+   * `null` para Documento/Biblioteca (sem imagem própria) e para qualquer
+   * item sem foto anexada — o card cai de volta no ícone do tipo.
+   */
+  imageUrl: string | null;
+  /**
    * Texto complementar que entra no casamento de busca mas nunca é
    * exibido — ficha de catalogação publicada (Estágio 6) para itens
    * legados, ou legendas (`ArchiveMedia.caption`) das mídias publicadas

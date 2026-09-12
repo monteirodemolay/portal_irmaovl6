@@ -122,6 +122,7 @@ export default async function ArchiveSearchPage({
             <ArchiveItemCard
               key={`${result.kind}-${result.id}`}
               href={result.href}
+              thumbnailUrl={result.imageUrl}
               kindLabel={ARCHIVE_SEARCH_KIND_LABELS[result.kind]}
               icon={KIND_ICONS[result.kind]}
               titulo={result.title}

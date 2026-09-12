@@ -34,6 +34,18 @@ function formatCount(value: number | null, singular: string, plural: string): st
   return `${value} ${value === 1 ? singular : plural}`;
 }
 
+/** Fisher-Yates — nunca muta o array recebido, cada carregamento da página embaralha de novo. */
+function shuffle<T>(items: T[]): T[] {
+  const result = [...items];
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    const temp = result[i]!;
+    result[i] = result[j]!;
+    result[j] = temp;
+  }
+  return result;
+}
+
 export default async function AcervoPage({
   searchParams,
 }: {
@@ -50,6 +62,7 @@ export default async function AcervoPage({
   const canReadFiles = hasPermission(authContext, 'file:read');
   const canReadLibrary = hasPermission(authContext, 'libraryItem:read');
   const canReadGallery = hasPermission(authContext, 'gallery:read');
+  const canReadConstellation = hasPermission(authContext, 'archiveRelation:read');
   const container = createServerContainer();
 
   const [
@@ -60,6 +73,7 @@ export default async function AcervoPage({
     legacyAlbumCount,
     archiveDocuments,
     archiveEventCards,
+    constellationRoots,
   ] = await Promise.all([
     loadArchiveSearchResults(authContext, container, role),
     canReadLibrary ? container.useCases.listMyFavorites.execute(authContext) : Promise.resolve([]),
@@ -78,6 +92,9 @@ export default async function AcervoPage({
     canReadGallery
       ? loadPublishedArchiveEventCards(container, authContext, role)
       : Promise.resolve([]),
+    canReadConstellation
+      ? container.useCases.getConstellationRoots.execute(authContext)
+      : Promise.resolve(null),
   ]);
 
   // Conta os dois modelos que hoje coexistem por trás de "Documentos"/"Fotos
@@ -99,7 +116,12 @@ export default async function AcervoPage({
   const filteredResults = allResults
     .filter((result) => !validKind || result.kind === validKind)
     .filter((result) => matchesArchiveSearch(result, query));
-  const visibleResults = (query || validKind ? filteredResults : allResults).slice(0, 12);
+  // "Conteúdos para descobrir" (sem busca/filtro ativo) embaralha a cada
+  // carregamento — sem isso, a concatenação de `loadArchiveSearchResults`
+  // (Documentos, depois Biblioteca, só depois Fotos/Eventos) sempre
+  // mostrava os mesmos Documentos sem miniatura primeiro, escondendo os
+  // resultados com foto que tornam o grid mais atrativo.
+  const visibleResults = (query || validKind ? filteredResults : shuffle(allResults)).slice(0, 12);
   const fullSearchParams = new URLSearchParams();
   if (query) fullSearchParams.set('q', query);
   if (validKind) fullSearchParams.set('tipo', validKind);
@@ -323,6 +345,16 @@ export default async function AcervoPage({
                   href={result.href}
                   className="border-border hover:border-accent group rounded-[13px] border p-4 transition-colors"
                 >
+                  {result.imageUrl && (
+                    <div className="bg-background border-border mb-3 aspect-video w-full overflow-hidden rounded-md border">
+                      <img
+                        src={result.imageUrl}
+                        alt=""
+                        loading="lazy"
+                        className="h-full w-full object-cover transition-transform group-hover:scale-105"
+                      />
+                    </div>
+                  )}
                   <div className="text-accent flex items-center gap-2 text-[10px] font-semibold uppercase tracking-wider">
                     {result.kind === 'documento' && <FileText size={14} />}
                     {result.kind === 'biblioteca' && <BookOpen size={14} />}
@@ -355,6 +387,15 @@ export default async function AcervoPage({
             coleções que lhe dão significado — sempre com uma lista textual completa ao lado do
             desenho.
           </p>
+          {constellationRoots && constellationRoots.groups.length > 0 && (
+            <div className="mt-5 flex flex-wrap gap-x-4 gap-y-1.5 border-t border-white/10 pt-4 text-[11px] text-white/70">
+              {constellationRoots.groups.map((group) => (
+                <span key={group.key}>
+                  <strong className="text-white">{group.childCount}</strong> {group.label}
+                </span>
+              ))}
+            </div>
+          )}
           <div className="mt-7 space-y-3 text-xs text-white/75">
             <Link
               href="/acervo/constelacao"
