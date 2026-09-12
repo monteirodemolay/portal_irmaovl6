@@ -22,7 +22,7 @@ export function CommunityMemberCard({ profile }: { profile: DirectoryMemberDTO }
   ].slice(0, 3);
   const profissaoOuArea =
     profile.optional.profissional?.profissao ?? profile.optional.profissional?.areaAtuacao;
-  const empresa = profile.optional.empresaAtual ?? profile.optional.negocios?.[0]?.nomeEmpresa;
+  const empresa = profile.optional.negocios?.[0]?.nomeEmpresa;
   const cidade = profile.optional.cidadeExibicao;
   const cargoOuComissao = profile.cargoAtual ?? profile.comissoes[0]?.nome ?? null;
 

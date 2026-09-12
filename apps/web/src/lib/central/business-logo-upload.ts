@@ -43,3 +43,21 @@ export async function uploadBusinessLogo(
   });
   return upload.url;
 }
+
+/** Mesma validação/limite de `uploadBusinessLogo`, pasta própria — logo de afiliação institucional, sempre opcional. */
+export async function uploadAffiliationLogo(
+  file: File,
+  tenantId: string,
+  memberId: string,
+  affiliationId: string,
+): Promise<string> {
+  const buffer = Buffer.from(await file.arrayBuffer());
+  const ext = ALLOWED_LOGO_TYPES[file.type] ?? 'jpg';
+  const storage = new VercelBlobStorageAdapter();
+  const upload = await storage.upload({
+    path: `tenants/${tenantId}/members/${memberId}/afiliacoes/${affiliationId}/logo-${randomUUID()}.${ext}`,
+    buffer,
+    contentType: file.type,
+  });
+  return upload.url;
+}

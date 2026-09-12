@@ -73,6 +73,7 @@ const NO_BLOCKS = {
   informacoesMaconicas: false,
   competencias: false,
   servicos: false,
+  afiliacoes: false,
   endereco: false,
   memoriaFotografica: false,
 };

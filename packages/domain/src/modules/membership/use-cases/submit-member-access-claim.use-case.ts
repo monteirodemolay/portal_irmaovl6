@@ -39,6 +39,13 @@ export class SubmitMemberAccessClaimUseCase {
     if (member.userId) {
       return err(new ValidationError('Este cadastro já tem um acesso vinculado.'));
     }
+    // Defesa em profundidade — `findUnclaimedByTenant` já esconde um Irmão
+    // em In Memoriam da lista pública, mas isso não impede um POST direto
+    // pro ID. Nenhum acesso ao Portal é concedido a Irmão falecido (mesma
+    // regra de `ApproveMemberAccessClaimUseCase`).
+    if (member.situacao === 'falecido') {
+      return err(new ValidationError('Este cadastro não pode solicitar acesso ao Portal.'));
+    }
     // Mensagem genérica de propósito — não revela se o problema foi o
     // nome/CIM errado, dificultando tentativa por tentativa.
     if (!member.cim || member.cim !== cimConfirmacao.trim()) {

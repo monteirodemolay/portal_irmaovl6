@@ -152,10 +152,21 @@ export class SeedMemberSituationHistoryUseCase {
       };
       await this.deps.situationRecordRepository.create(record);
 
-      if (mapping.situacao !== member.situacao) {
+      // `Member.dataFalecimento` é espelho do registro vigente de
+      // 'falecido' (mesma regra de `RegisterMemberSituationUseCase`) — sem
+      // isso, um Irmão cujo `situacao` legado já era 'falecido' (nenhuma
+      // mudança de string, então o `if` abaixo nunca disparava antes desta
+      // correção) ficava com `dataFalecimento: null` para sempre, e
+      // `LodgeTenureBadge` contava "tempo de Loja" até hoje em vez de
+      // parar na data de falecimento.
+      const precisaAtualizarMember =
+        mapping.situacao !== member.situacao ||
+        (mapping.situacao === 'falecido' && !member.dataFalecimento);
+      if (precisaAtualizarMember) {
         await this.deps.memberRepository.update({
           ...member,
           situacao: mapping.situacao,
+          dataFalecimento: mapping.situacao === 'falecido' ? dataInicio : member.dataFalecimento,
           updatedAt: now,
           updatedBy: ctx.uid,
         });

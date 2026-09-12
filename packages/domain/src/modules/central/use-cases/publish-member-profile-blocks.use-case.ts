@@ -39,6 +39,7 @@ const EMPTY_BLOCKS: Record<CentralBlockKey, boolean> = {
   informacoesMaconicas: false,
   competencias: false,
   servicos: false,
+  afiliacoes: false,
   endereco: false,
   memoriaFotografica: false,
 };

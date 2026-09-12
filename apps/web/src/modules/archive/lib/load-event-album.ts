@@ -45,6 +45,7 @@ export interface EventAlbumData {
     dataInicio: Date;
     dataFim: Date | null;
   };
+  boardTermId: string | null;
   boardTermNome: string | null;
   coverMedia: EventAlbumMediaItem | null;
   media: EventAlbumMediaItem[];
@@ -164,6 +165,7 @@ export async function loadEventAlbum(
       dataInicio: event.dataInicio,
       dataFim: event.dataFim,
     },
+    boardTermId,
     boardTermNome: boardTerm?.nome ?? null,
     coverMedia,
     media,

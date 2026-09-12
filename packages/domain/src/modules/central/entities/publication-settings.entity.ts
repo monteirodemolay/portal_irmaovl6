@@ -8,6 +8,7 @@ export type CentralBlockKey =
   | 'informacoesMaconicas'
   | 'competencias'
   | 'servicos'
+  | 'afiliacoes'
   | 'endereco'
   | 'memoriaFotografica';
 

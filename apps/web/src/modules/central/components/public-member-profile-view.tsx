@@ -18,6 +18,7 @@ import {
   Facebook,
   GraduationCap,
   Globe,
+  Handshake,
   Heart,
   Instagram,
   Linkedin,
@@ -45,7 +46,8 @@ function formatDate(date: Date): string {
 }
 
 /** Tabs de Meu Espaço que cada bloco do perfil edita — ver comentário em `Panel`. */
-type EditTab = 'geral' | 'pessoal' | 'profissional' | 'empresa' | 'contatos' | 'redes';
+type EditTab =
+  'geral' | 'pessoal' | 'profissional' | 'empresa' | 'afiliacoes' | 'contatos' | 'redes';
 
 /**
  * Cargo ou comissão em curso — vira o selo de "gestão atual" no cabeçalho.
@@ -181,9 +183,7 @@ export function PublicMemberProfileView({
       profile.profissional.resumoProfissional),
   );
   const hasResumoProfissional = Boolean(profile.profissional?.resumoProfissional);
-  const hasNegocios = Boolean(
-    profile.empresaAtual || (profile.negocios && profile.negocios.length > 0),
-  );
+  const hasNegocios = Boolean(profile.negocios && profile.negocios.length > 0);
   const hasCompetenciasServicos = Boolean(
     (profile.competencias && profile.competencias.length > 0) ||
     (profile.servicos && profile.servicos.length > 0),
@@ -201,6 +201,7 @@ export function PublicMemberProfileView({
     (profile.informacoesMaconicas.lojasVisitadas ||
       profile.informacoesMaconicas.interessesMaconicos),
   );
+  const hasAfiliacoes = Boolean(profile.afiliacoes && profile.afiliacoes.length > 0);
   const hasVoluntaryContent = Boolean(
     profile.apresentacao?.texto ||
     profile.informacoesPessoais ||
@@ -210,6 +211,7 @@ export function PublicMemberProfileView({
     hasNegocios ||
     hasConexoes ||
     hasVidaMaconica ||
+    hasAfiliacoes ||
     (profile.memoriaFotografica && profile.memoriaFotografica.length > 0) ||
     profile.familia,
   );
@@ -235,7 +237,12 @@ export function PublicMemberProfileView({
       ? { label: 'Profissão', value: profile.profissional.profissao }
       : null,
     profile.profissional?.areaAtuacao
-      ? { label: 'Área', value: profile.profissional.areaAtuacao }
+      ? {
+          label: 'Área',
+          value: profile.profissional.especializacao
+            ? `${profile.profissional.areaAtuacao} · ${profile.profissional.especializacao}`
+            : profile.profissional.areaAtuacao,
+        }
       : null,
     profile.profissional?.formacao
       ? { label: 'Formação', value: profile.profissional.formacao }
@@ -324,12 +331,6 @@ export function PublicMemberProfileView({
                     <span className="border-border bg-background text-foreground flex max-w-full items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium">
                       <Briefcase size={13} strokeWidth={1.75} className="text-accent shrink-0" />
                       <span className="truncate">{profile.profissional.resumoProfissional}</span>
-                    </span>
-                  )}
-                  {profile.empresaAtual && (
-                    <span className="border-border bg-background text-foreground flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium">
-                      <Building2 size={13} strokeWidth={1.75} className="text-accent shrink-0" />
-                      {profile.empresaAtual}
                     </span>
                   )}
                   {orderedNegocios.map((negocio) => (
@@ -436,19 +437,42 @@ export function PublicMemberProfileView({
                       {FAMILY_DISPLAY_GROUP_LABELS[group]}
                     </p>
                     <ul className="flex flex-col gap-2.5">
-                      {profile.familia?.[group]?.map((item) => (
-                        <li key={item.key} className="flex items-center gap-2.5 text-sm">
-                          <MemberAvatar
-                            fotoUrl={item.fotoUrl}
-                            nome={item.nomeCompleto}
-                            className="h-8 w-8 shrink-0"
-                          />
-                          <span className="min-w-0">
-                            <span className="block truncate font-medium">{item.nomeCompleto}</span>
-                            <span className="text-muted block text-xs">{item.parentesco}</span>
-                          </span>
-                        </li>
-                      ))}
+                      {profile.familia?.[group]?.map((item) =>
+                        item.kind === 'member' ? (
+                          <li key={item.key}>
+                            <Link
+                              href={`/irmaos/${item.id}`}
+                              className="hover:bg-surface -m-1 flex items-center gap-2.5 rounded-lg p-1 text-sm transition-colors"
+                            >
+                              <MemberAvatar
+                                fotoUrl={item.fotoUrl}
+                                nome={item.nomeCompleto}
+                                className="h-8 w-8 shrink-0"
+                              />
+                              <span className="min-w-0">
+                                <span className="block truncate font-medium hover:underline">
+                                  {item.nomeCompleto}
+                                </span>
+                                <span className="text-muted block text-xs">{item.parentesco}</span>
+                              </span>
+                            </Link>
+                          </li>
+                        ) : (
+                          <li key={item.key} className="flex items-center gap-2.5 text-sm">
+                            <MemberAvatar
+                              fotoUrl={item.fotoUrl}
+                              nome={item.nomeCompleto}
+                              className="h-8 w-8 shrink-0"
+                            />
+                            <span className="min-w-0">
+                              <span className="block truncate font-medium">
+                                {item.nomeCompleto}
+                              </span>
+                              <span className="text-muted block text-xs">{item.parentesco}</span>
+                            </span>
+                          </li>
+                        ),
+                      )}
                     </ul>
                   </div>
                 ))}
@@ -560,6 +584,7 @@ export function PublicMemberProfileView({
                     dateLabel={formatDate(entry.dataInicio)}
                     active={!entry.dataFim}
                     detail={`Cargo · ${entry.gestaoNome}${entry.dataFim ? ` até ${formatDate(entry.dataFim)}` : ' · em curso'}`}
+                    href={`/acervo/gestoes/${entry.gestaoId}`}
                   />
                 ))}
                 {profile.trajetoria.comissoes.map((entry, index) => (
@@ -569,6 +594,7 @@ export function PublicMemberProfileView({
                     dateLabel={formatDate(entry.dataInicio)}
                     active={!entry.dataFim}
                     detail={`Comissão · ${entry.gestaoNome}${entry.dataFim ? ` até ${formatDate(entry.dataFim)}` : ' · em curso'}`}
+                    href={`/acervo/gestoes/${entry.gestaoId}`}
                   />
                 ))}
               </div>
@@ -597,6 +623,42 @@ export function PublicMemberProfileView({
                   />
                 )}
               </dl>
+            </Panel>
+          )}
+
+          {hasAfiliacoes && profile.afiliacoes && (
+            <Panel
+              kicker="AFILIAÇÕES"
+              title="Outras afiliações"
+              icon={Handshake}
+              editTab={canEdit ? 'afiliacoes' : undefined}
+              compact
+            >
+              <div className="flex flex-col gap-3">
+                {profile.afiliacoes.map((afiliacao) => (
+                  <div key={afiliacao.id} className="flex flex-col gap-1">
+                    <p className="text-sm font-medium">
+                      {afiliacao.nomeInstituicao}
+                      {afiliacao.abrangencia === 'internacional' && (
+                        <span className="text-muted ml-1.5 text-xs">
+                          · Internacional{afiliacao.pais ? ` — ${afiliacao.pais}` : ''}
+                        </span>
+                      )}
+                    </p>
+                    {afiliacao.papel && <p className="text-muted text-xs">{afiliacao.papel}</p>}
+                    {(afiliacao.instagram || afiliacao.siteUrl) && (
+                      <div className="flex flex-wrap gap-2 pt-0.5">
+                        {afiliacao.instagram && (
+                          <LinkPill href={afiliacao.instagram} label="Instagram" icon={Instagram} />
+                        )}
+                        {afiliacao.siteUrl && (
+                          <LinkPill href={afiliacao.siteUrl} label="Site" icon={Globe} />
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
             </Panel>
           )}
 

@@ -4,8 +4,8 @@ import { createServerContainer } from '@vl6/infra';
 import { ArrowLeft, Card, CardContent, Tabs, TabsContent, TabsList, TabsTrigger } from '@vl6/ui';
 import { requireSession } from '@/lib/auth/require-session';
 import { listUsedProfessions } from '@/modules/membership/lib/list-used-professions';
-import { listUsedCompanies } from '@/modules/membership/lib/list-used-companies';
 import { listUsedBusinessNames } from '@/modules/central/lib/list-used-business-names';
+import { AfiliacoesTab } from '@/modules/central/components/meu-espaco/afiliacoes-tab';
 import { ContatosTab } from '@/modules/central/components/meu-espaco/contatos-tab';
 import { EmpresaTab } from '@/modules/central/components/meu-espaco/empresa-tab';
 import { GeralTab } from '@/modules/central/components/meu-espaco/geral-tab';
@@ -32,6 +32,7 @@ const EMPTY_PUBLICATION_SETTINGS: Omit<
     informacoesMaconicas: false,
     competencias: false,
     servicos: false,
+    afiliacoes: false,
     endereco: false,
     memoriaFotografica: false,
   },
@@ -57,6 +58,7 @@ const VALID_TABS = [
   'pessoal',
   'profissional',
   'empresa',
+  'afiliacoes',
   'contatos',
   'redes',
   'privacidade',
@@ -74,14 +76,12 @@ export default async function MeuEspacoPage({
   // VL6) e pelo menu do usuário, pra abrir a seção certa deste editor.
   const initialTab = (VALID_TABS as readonly string[]).includes(tab ?? '') ? tab! : 'geral';
 
-  const [member, myCommittees, customProfessions, customCompanies, businessNames] =
-    await Promise.all([
-      container.repositories.member.findByUserId(session.authContext.tenantId, session.user.id),
-      container.useCases.listMyCommittees.execute(session.authContext),
-      listUsedProfessions(container, session.authContext),
-      listUsedCompanies(container, session.authContext),
-      listUsedBusinessNames(container, session.authContext),
-    ]);
+  const [member, myCommittees, customProfessions, businessNames] = await Promise.all([
+    container.repositories.member.findByUserId(session.authContext.tenantId, session.user.id),
+    container.useCases.listMyCommittees.execute(session.authContext),
+    listUsedProfessions(container, session.authContext),
+    listUsedBusinessNames(container, session.authContext),
+  ]);
 
   if (!member) {
     return (
@@ -102,6 +102,14 @@ export default async function MeuEspacoPage({
   const familyNetwork = hasPermission(session.authContext, 'familyLegacy:read')
     ? await loadOwnerFamilyNetworkDTO(container, session.authContext, member.id)
     : EMPTY_OWNER_FAMILY_NETWORK;
+
+  // "Descoberta de parentesco cruzado" — quando o titular e outro Irmão têm
+  // o mesmo FamilyPerson na árvore (ex.: o mesmo avô), avisa os dois. Mesmo
+  // gate de `familyLegacy:read` do bloco acima.
+  const sharedFamilyPersonsResult = hasPermission(session.authContext, 'familyLegacy:read')
+    ? await container.useCases.findSharedFamilyPersons.execute(session.authContext, member.id)
+    : null;
+  const sharedFamilyPersons = sharedFamilyPersonsResult?.ok ? sharedFamilyPersonsResult.value : [];
 
   const [centralProfile, publicationSettings] = await Promise.all([
     container.repositories.memberCentralProfile.findByMemberId(
@@ -152,6 +160,7 @@ export default async function MeuEspacoPage({
           <TabsTrigger value="pessoal">Pessoal</TabsTrigger>
           <TabsTrigger value="profissional">Profissional</TabsTrigger>
           <TabsTrigger value="empresa">Empresa</TabsTrigger>
+          <TabsTrigger value="afiliacoes">Afiliações</TabsTrigger>
           <TabsTrigger value="contatos">Contatos</TabsTrigger>
           <TabsTrigger value="redes">Redes</TabsTrigger>
           <TabsTrigger value="privacidade">Privacidade</TabsTrigger>
@@ -161,7 +170,12 @@ export default async function MeuEspacoPage({
           <GeralTab member={member} profile={centralProfile} myCommittees={myCommittees} />
         </TabsContent>
         <TabsContent value="pessoal" className="pt-6">
-          <PessoalTab member={member} profile={centralProfile} familyNetwork={familyNetwork} />
+          <PessoalTab
+            member={member}
+            profile={centralProfile}
+            familyNetwork={familyNetwork}
+            sharedFamilyPersons={sharedFamilyPersons}
+          />
         </TabsContent>
         <TabsContent value="profissional" className="pt-6">
           <ProfissionalTab
@@ -171,12 +185,10 @@ export default async function MeuEspacoPage({
           />
         </TabsContent>
         <TabsContent value="empresa" className="pt-6">
-          <EmpresaTab
-            member={member}
-            profile={centralProfile}
-            knownCompanies={customCompanies}
-            knownBusinessNames={businessNames}
-          />
+          <EmpresaTab profile={centralProfile} knownBusinessNames={businessNames} />
+        </TabsContent>
+        <TabsContent value="afiliacoes" className="pt-6">
+          <AfiliacoesTab profile={centralProfile} />
         </TabsContent>
         <TabsContent value="contatos" className="pt-6">
           <ContatosTab member={member} settings={publicationSettings} />

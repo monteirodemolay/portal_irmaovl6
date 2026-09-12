@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import type { AuthContext } from '../../../shared/auth-context';
 import { ForbiddenError } from '../../../shared/result';
-import { FixedClock, InMemoryMemberSituationRecordRepository } from '../../../test/fakes';
+import {
+  FixedClock,
+  InMemoryMemberRepository,
+  InMemoryMemberSituationRecordRepository,
+} from '../../../test/fakes';
+import type { Member } from '../entities/member.entity';
 import type { MemberSituationRecord } from '../entities/member-situation-record.entity';
 import { EditMemberSituationRecordUseCase } from './edit-member-situation-record.use-case';
 
@@ -56,14 +61,60 @@ function buildRecord(overrides: Partial<MemberSituationRecord> = {}): MemberSitu
   };
 }
 
-function buildUseCase(records: MemberSituationRecord[]) {
+function buildMember(overrides: Partial<Member> = {}): Member {
+  return {
+    id: 'm1',
+    tenantId: 't1',
+    userId: null,
+    nomeCompleto: 'Fulano de Tal',
+    fotoUrl: null,
+    email: 'fulano@vl6.org.br',
+    telefone: null,
+    whatsapp: null,
+    endereco: null,
+    dataNascimento: null,
+    dataIniciacao: new Date('2004-03-15T00:00:00Z'),
+    dataElevacao: null,
+    dataExaltacao: null,
+    cim: '123',
+    grau: 'mestre',
+    cargoAtualId: null,
+    situacao: 'falecido',
+    lojaId: 't1',
+    potencia: 'GLEG',
+    profissao: null,
+    empresa: null,
+    estadoCivil: null,
+    conjugeNome: null,
+    conjugeDataNascimento: null,
+    biografia: null,
+    redesSociais: { instagram: null, facebook: null, linkedin: null },
+    observacoes: null,
+    autorizaDivulgacaoExterna: false,
+    dataFalecimento: new Date('2023-03-15T00:00:00Z'),
+    mensagemHomenagem: null,
+    createdAt: new Date('2004-03-15T00:00:00Z'),
+    updatedAt: new Date('2004-03-15T00:00:00Z'),
+    createdBy: 'admin-1',
+    updatedBy: 'admin-1',
+    deletedAt: null,
+    status: 'active',
+    ativo: true,
+    ...overrides,
+  };
+}
+
+function buildUseCase(records: MemberSituationRecord[], members: Member[] = []) {
   const situationRecordRepository = new InMemoryMemberSituationRecordRepository();
   for (const record of records) situationRecordRepository.create(record);
+  const memberRepository = new InMemoryMemberRepository();
+  for (const member of members) memberRepository.create(member);
   const useCase = new EditMemberSituationRecordUseCase({
     situationRecordRepository,
+    memberRepository,
     clock: new FixedClock(new Date('2026-08-10T00:00:00Z')),
   });
-  return { useCase, situationRecordRepository };
+  return { useCase, situationRecordRepository, memberRepository };
 }
 
 describe('EditMemberSituationRecordUseCase', () => {
@@ -156,5 +207,45 @@ describe('EditMemberSituationRecordUseCase', () => {
         justificativa: 'teste',
       }),
     ).rejects.toThrow(ForbiddenError);
+  });
+
+  it('espelha a dataInicio corrigida do registro vigente de falecido em Member.dataFalecimento', async () => {
+    const falecido = buildRecord({
+      id: 'rec-1',
+      situacao: 'falecido',
+      motivo: 'passou_ao_oriente_eterno',
+      dataInicio: new Date('2015-10-21T00:00:00Z'),
+      dataInicioEstimada: true,
+      vigente: true,
+    });
+    const { useCase, memberRepository } = buildUseCase(
+      [falecido],
+      [buildMember({ dataFalecimento: new Date('2015-10-21T00:00:00Z') })],
+    );
+
+    const dataCorrigida = new Date('2015-04-20T00:00:00Z');
+    const result = await useCase.execute(ctx, 'rec-1', {
+      dataInicio: dataCorrigida,
+      justificativa: 'Data correta conforme certidão de óbito.',
+    });
+
+    expect(result.ok).toBe(true);
+    const member = await memberRepository.findById('m1');
+    expect(member?.dataFalecimento).toEqual(dataCorrigida);
+  });
+
+  it('não mexe em Member.dataFalecimento ao corrigir um registro que não é o vigente de falecido', async () => {
+    const { useCase, memberRepository } = buildUseCase(
+      [buildRecord()],
+      [buildMember({ situacao: 'desligado', dataFalecimento: null })],
+    );
+
+    await useCase.execute(ctx, 'rec-1', {
+      dataInicio: new Date('2023-03-20T00:00:00Z'),
+      justificativa: 'teste',
+    });
+
+    const member = await memberRepository.findById('m1');
+    expect(member?.dataFalecimento).toBeNull();
   });
 });

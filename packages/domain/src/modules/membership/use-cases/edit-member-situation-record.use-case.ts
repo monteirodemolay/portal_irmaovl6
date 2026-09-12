@@ -15,9 +15,11 @@ import type {
   MemberSituationRecord,
 } from '../entities/member-situation-record.entity';
 import type { IMemberSituationRecordRepository } from '../repositories/member-situation-record.repository';
+import type { IMemberRepository } from '../repositories/member.repository';
 
 export interface EditMemberSituationRecordDeps {
   situationRecordRepository: IMemberSituationRecordRepository;
+  memberRepository: IMemberRepository;
   clock: IClock;
 }
 
@@ -142,6 +144,24 @@ export class EditMemberSituationRecordUseCase {
       updatedBy: ctx.uid,
     };
     await this.deps.situationRecordRepository.update(updated);
+
+    // `Member.dataFalecimento` é sempre espelho do registro vigente de
+    // 'falecido' (mesma regra de `RegisterMemberSituationUseCase`) — sem
+    // isso, corrigir a data aqui (ex.: um registro criado pela migração
+    // automática com data estimada errada) nunca se refletia no Irmão, e
+    // `LodgeTenureBadge` continuava contando "tempo de Loja" até hoje em
+    // vez de parar na data de falecimento corrigida.
+    if (updated.vigente && situacaoAlvo === 'falecido' && input.dataInicio) {
+      const member = await this.deps.memberRepository.findById(updated.memberId);
+      if (member && member.tenantId === ctx.tenantId) {
+        await this.deps.memberRepository.update({
+          ...member,
+          dataFalecimento: updated.dataInicio,
+          updatedAt: now,
+          updatedBy: ctx.uid,
+        });
+      }
+    }
 
     return ok(updated);
   }

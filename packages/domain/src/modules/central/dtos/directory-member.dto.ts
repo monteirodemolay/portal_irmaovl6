@@ -3,6 +3,7 @@ import type { Member } from '../../membership/entities/member.entity';
 import type { MemberCentralProfile } from '../entities/member-central-profile.entity';
 import type { PublicationSettings } from '../entities/publication-settings.entity';
 import { resolveAreaAtuacao } from '../lib/resolve-area-atuacao';
+import { resolveEspecializacao } from '../lib/resolve-especializacao';
 
 /**
  * Estado do perfil voluntário do Irmão no Diretório — nunca controla se o
@@ -66,13 +67,13 @@ export interface DirectoryMemberDTO {
       profissao: string | null;
       areaAtuacao: string | null;
       areaAtuacaoKey: AreaAtuacaoKey | null;
+      especializacao: string | null;
       formacao: string | null;
       resumoProfissional: string | null;
     } | null;
     competencias: string[] | null;
     servicos: string[] | null;
     negocios: Array<{ businessId: string; nomeEmpresa: string; segmento: string | null }> | null;
-    empresaAtual: string | null;
     cidadeExibicao: string | null;
   };
 }
@@ -119,6 +120,7 @@ export function buildDirectoryMemberDTO(
             profissao: member.profissao,
             areaAtuacao: resolvedArea?.label ?? null,
             areaAtuacaoKey: resolvedArea?.key ?? null,
+            especializacao: resolveEspecializacao(profile)?.label ?? null,
             formacao: profile?.formacao ?? null,
             resumoProfissional: profile?.resumoProfissional ?? null,
           }
@@ -131,7 +133,6 @@ export function buildDirectoryMemberDTO(
             .filter((n) => n.status === 'published')
             .map((n) => ({ businessId: n.id, nomeEmpresa: n.nomeEmpresa, segmento: n.segmento }))
         : null,
-      empresaAtual: blocks?.empresa ? member.empresa : null,
       cidadeExibicao: blocks?.informacoesPessoais ? (profile?.cidadeExibicao ?? null) : null,
     },
   };

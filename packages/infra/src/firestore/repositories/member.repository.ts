@@ -78,10 +78,19 @@ export class FirestoreMemberRepository implements IMemberRepository {
       .where('deletedAt', '==', null)
       .orderBy('nomeCompleto')
       .get();
-    return snap.docs.map((doc) => {
-      const member = doc.data();
-      return { id: member.id, nomeCompleto: formatBrazilianPersonName(member.nomeCompleto) };
-    });
+    return (
+      snap.docs
+        .map((doc) => doc.data())
+        // Um Irmão em In Memoriam nunca teve/vai ter acesso ao Portal
+        // (mesma regra de `member-memorial-card.tsx`/`ApproveMemberAccessClaimUseCase`)
+        // — sem esse filtro, ele aparecia normalmente pra "reivindicar" na
+        // tela pública, mesmo já falecido.
+        .filter((member) => member.situacao !== 'falecido')
+        .map((member) => ({
+          id: member.id,
+          nomeCompleto: formatBrazilianPersonName(member.nomeCompleto),
+        }))
+    );
   }
 
   /**

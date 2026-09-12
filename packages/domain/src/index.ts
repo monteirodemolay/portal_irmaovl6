@@ -125,6 +125,9 @@ export * from './modules/central/use-cases/reactivate-central-profile.use-case';
 export * from './modules/central/use-cases/list-central-profiles-admin-view.use-case';
 export * from './modules/central/use-cases/list-business-submissions.use-case';
 export * from './modules/central/use-cases/review-business-submission.use-case';
+export * from './modules/central/use-cases/migrate-member-empresa-to-negocios.use-case';
+export * from './modules/central/use-cases/find-colleagues-by-cnpj.use-case';
+export * from './modules/central/lib/resolve-especializacao';
 export * from './modules/central/use-cases/update-member-central-profile-assisted.use-case';
 export * from './modules/central/use-cases/record-member-profile-consent.use-case';
 export * from './modules/central/use-cases/revoke-member-profile-consent.use-case';
@@ -381,6 +384,7 @@ export * from './modules/archive/use-cases/set-archive-item-cover.use-case';
 export * from './modules/archive/use-cases/set-archive-item-instagram-link.use-case';
 export * from './modules/archive/use-cases/soft-delete-archive-item.use-case';
 export * from './modules/archive/use-cases/restore-archive-item.use-case';
+export * from './modules/archive/use-cases/merge-archive-items.use-case';
 export * from './modules/archive/use-cases/update-archive-media-batch.use-case';
 // Fase 3 — Organização (docs/architecture/11-acervo-vl6.md §11.6)
 export * from './modules/archive/use-cases/reorder-archive-media.use-case';
@@ -425,4 +429,5 @@ export * from './modules/family-legacy/use-cases/decline-family-relationship.use
 export * from './modules/family-legacy/use-cases/soft-delete-family-relationship.use-case';
 export * from './modules/family-legacy/use-cases/derive-family-kinships.use-case';
 export * from './modules/family-legacy/use-cases/list-owner-family-network.use-case';
+export * from './modules/family-legacy/use-cases/find-shared-family-persons.use-case';
 export * from './modules/family-legacy/use-cases/create-person-fraternal-record.use-case';

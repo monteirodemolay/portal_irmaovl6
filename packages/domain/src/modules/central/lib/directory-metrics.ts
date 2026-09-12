@@ -33,7 +33,6 @@ export function computeDirectoryMetrics(dtos: DirectoryMemberDTO[]): DirectoryMe
 
   for (const dto of dtos) {
     if (dto.optional.profissional?.areaAtuacaoKey) areas.add(dto.optional.profissional.areaAtuacaoKey);
-    if (dto.optional.empresaAtual) empresas.add(normalize(dto.optional.empresaAtual));
     for (const negocio of dto.optional.negocios ?? []) empresas.add(normalize(negocio.nomeEmpresa));
     for (const item of dto.optional.competencias ?? []) competencias.add(normalize(item));
     for (const item of dto.optional.servicos ?? []) competencias.add(normalize(item));
@@ -120,7 +119,6 @@ export function computeDirectoryFilterOptions(dtos: DirectoryMemberDTO[]): Direc
   }
   function* empresas() {
     for (const dto of dtos) {
-      if (dto.optional.empresaAtual) yield dto.optional.empresaAtual;
       for (const negocio of dto.optional.negocios ?? []) yield negocio.nomeEmpresa;
     }
   }

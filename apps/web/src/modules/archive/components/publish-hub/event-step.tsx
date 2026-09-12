@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useTransition } from 'react';
 import type {
   ArchiveEventPublishState,
   ArchiveItem,
@@ -9,8 +9,12 @@ import type {
   Event,
 } from '@vl6/domain';
 import { BRAZIL_TIME_ZONE, EVENT_KIND_LABELS } from '@vl6/shared';
-import { Badge, Button, EmptyState, Input, Select } from '@vl6/ui';
+import { Badge, Button, EmptyState, Input, Link2, Select, Trash2 } from '@vl6/ui';
 import { normalizeSearchText } from '../../lib/archive-search-match';
+import {
+  deleteDraftArchiveItemAction,
+  mergeArchiveItemsAction,
+} from '../../actions/publish-hub-actions';
 import { CreateEventInlineForm } from './create-event-inline-form';
 import { StepTitle } from './wizard-chrome';
 
@@ -84,13 +88,67 @@ export function EventStep({
   // Administrador via "Nenhum evento encontrado" mesmo já tendo cadastrado
   // os Eventos.
   const [boardTermFilter, setBoardTermFilter] = useState('');
+  const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [isPending, startTransition] = useTransition();
+  const [pendingDraftId, setPendingDraftId] = useState<string | null>(null);
 
   const boardTermNameById = useMemo(() => {
     const map = new Map<string, string>();
     for (const term of boardTerms) map.set(term.id, term.nome);
     return map;
   }, [boardTerms]);
+
+  const eventById = useMemo(() => {
+    const map = new Map<string, Event>();
+    for (const event of events) map.set(event.id, event);
+    return map;
+  }, [events]);
+
+  // Rascunhos de Iniciação/Elevação/Exaltação criados um por Irmão, antes da
+  // unificação por sessão (`CreateInitiationArchiveItemUseCase`), continuam
+  // como itens separados mesmo sendo a mesma sessão — mesmo `tipo` e mesmo
+  // dia de Evento é o critério já usado pelo fluxo automático de hoje pra
+  // decidir "é a mesma sessão", então reaproveitá-lo aqui pra detectar
+  // grupos candidatos a unificação é seguro (nunca funde tipos diferentes).
+  const draftGroupKeyByDraftId = useMemo(() => {
+    const groups = new Map<string, ArchiveItem[]>();
+    for (const draft of drafts) {
+      const event = eventById.get(draft.eventId);
+      const dayKey = formatEventDate(event?.dataInicio ?? draft.createdAt);
+      const key = `${draft.tipo}|${dayKey}`;
+      groups.set(key, [...(groups.get(key) ?? []), draft]);
+    }
+    const byId = new Map<string, { key: string; group: ArchiveItem[] }>();
+    for (const [key, group] of groups) {
+      if (group.length < 2) continue;
+      for (const draft of group) byId.set(draft.id, { key, group });
+    }
+    return byId;
+  }, [drafts, eventById]);
+
+  function handleDeleteDraft(draftId: string) {
+    setPendingDraftId(draftId);
+    startTransition(async () => {
+      await deleteDraftArchiveItemAction(draftId);
+      setPendingDraftId(null);
+    });
+  }
+
+  function handleMergeDraftGroup(group: ArchiveItem[]) {
+    const sorted = [...group].sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+    const canonical = sorted[0];
+    const duplicates = sorted.slice(1);
+    if (!canonical) return;
+    setPendingDraftId(canonical.id);
+    startTransition(async () => {
+      await mergeArchiveItemsAction(
+        canonical.id,
+        duplicates.map((duplicate) => duplicate.id),
+      );
+      setPendingDraftId(null);
+    });
+  }
 
   // `event.boardTermId` só existe quando a Gestão já estava cadastrada no
   // momento da criação do Evento — nunca é recalculado depois. Um Evento
@@ -128,8 +186,12 @@ export function EventStep({
         );
         return haystack.includes(normalizedQuery);
       })
-      .sort((a, b) => a.dataInicio.getTime() - b.dataInicio.getTime());
-  }, [events, query, boardTermFilter, effectiveBoardTermId]);
+      .sort((a, b) =>
+        sortOrder === 'desc'
+          ? b.dataInicio.getTime() - a.dataInicio.getTime()
+          : a.dataInicio.getTime() - b.dataInicio.getTime(),
+      );
+  }, [events, query, boardTermFilter, effectiveBoardTermId, sortOrder]);
 
   return (
     <div className="border-border bg-surface rounded-xl border p-6 shadow-sm">
@@ -143,23 +205,52 @@ export function EventStep({
         <div className="mb-5 flex flex-col gap-2">
           <p className="text-sm font-medium">Continuar rascunho</p>
           <ul className="flex flex-col gap-2">
-            {drafts.slice(0, 8).map((draft) => (
-              <li key={draft.id}>
-                <button
-                  type="button"
-                  onClick={() => onResumeDraft(draft)}
-                  className="border-border hover:bg-bg flex w-full items-center justify-between rounded-lg border px-3 py-2 text-left text-sm"
+            {drafts.slice(0, 8).map((draft) => {
+              const groupInfo = draftGroupKeyByDraftId.get(draft.id);
+              const isDraftPending = isPending && pendingDraftId === draft.id;
+              return (
+                <li
+                  key={draft.id}
+                  className="border-border flex items-center gap-2 rounded-lg border px-3 py-2"
                 >
-                  <span className="flex flex-col">
+                  <button
+                    type="button"
+                    onClick={() => onResumeDraft(draft)}
+                    className="hover:text-accent flex flex-1 flex-col text-left text-sm"
+                  >
                     <span className="font-medium">{draft.titulo}</span>
                     <span className="text-muted text-xs">
                       Criado em {formatEventDate(draft.createdAt)}
+                      {groupInfo && ` · ${groupInfo.group.length} rascunhos da mesma sessão`}
                     </span>
-                  </span>
+                  </button>
                   <Badge variant="warning">Rascunho</Badge>
-                </button>
-              </li>
-            ))}
+                  {groupInfo && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={isPending}
+                      onClick={() => handleMergeDraftGroup(groupInfo.group)}
+                      title="Unificar estes rascunhos numa só sessão"
+                    >
+                      <Link2 size={14} />
+                      Unificar ({groupInfo.group.length})
+                    </Button>
+                  )}
+                  <button
+                    type="button"
+                    disabled={isPending}
+                    onClick={() => handleDeleteDraft(draft.id)}
+                    className="text-muted p-1 hover:text-red-600"
+                    title="Excluir rascunho"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                  {isDraftPending && <span className="text-muted text-xs">Aplicando…</span>}
+                </li>
+              );
+            })}
           </ul>
         </div>
       )}
@@ -182,6 +273,14 @@ export function EventStep({
               {term.nome}
             </option>
           ))}
+        </Select>
+        <Select
+          value={sortOrder}
+          onChange={(event) => setSortOrder(event.target.value as 'desc' | 'asc')}
+          className="max-w-48"
+        >
+          <option value="desc">Mais recentes primeiro</option>
+          <option value="asc">Mais antigos primeiro</option>
         </Select>
         <Button
           type="button"

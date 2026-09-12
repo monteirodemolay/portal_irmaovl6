@@ -80,6 +80,7 @@ import {
   SetArchiveItemCoverUseCase,
   SetArchiveItemInstagramLinkUseCase,
   SoftDeleteArchiveItemUseCase,
+  MergeArchiveItemsUseCase,
   RestoreArchiveItemUseCase,
   UpdateArchiveMediaBatchUseCase,
   ReorderArchiveMediaUseCase,
@@ -107,6 +108,7 @@ import {
   SoftDeleteFamilyRelationshipUseCase,
   DeriveFamilyKinshipsUseCase,
   ListOwnerFamilyNetworkUseCase,
+  FindSharedFamilyPersonsUseCase,
   CreatePersonFraternalRecordUseCase,
   FindBoardTermForDateUseCase,
   CreateBoardTermUseCase,
@@ -216,6 +218,8 @@ import {
   SoftDeleteFileAssetUseCase,
   SoftDeleteMemberUseCase,
   ReviewBusinessSubmissionUseCase,
+  MigrateMemberEmpresaToNegociosUseCase,
+  FindColleaguesByCnpjUseCase,
   SuspendCentralProfileUseCase,
   ToggleLibraryFavoriteUseCase,
   UpdateCentralProfileUseCase,
@@ -583,6 +587,7 @@ export function createServerContainer() {
     }),
     editMemberSituationRecord: new EditMemberSituationRecordUseCase({
       situationRecordRepository: repositories.memberSituationRecord,
+      memberRepository: repositories.member,
       clock,
     }),
     seedMemberSituationHistory: new SeedMemberSituationHistoryUseCase({
@@ -809,6 +814,16 @@ export function createServerContainer() {
     reviewBusinessSubmission: new ReviewBusinessSubmissionUseCase({
       memberCentralProfileRepository: repositories.memberCentralProfile,
       clock,
+    }),
+    migrateMemberEmpresaToNegocios: new MigrateMemberEmpresaToNegociosUseCase({
+      memberRepository: repositories.member,
+      memberCentralProfileRepository: repositories.memberCentralProfile,
+      clock,
+      idGenerator,
+    }),
+    findColleaguesByCnpj: new FindColleaguesByCnpjUseCase({
+      memberRepository: repositories.member,
+      memberCentralProfileRepository: repositories.memberCentralProfile,
     }),
 
     createNews: new CreateNewsUseCase({ newsRepository: repositories.news, clock, idGenerator }),
@@ -1517,6 +1532,11 @@ export function createServerContainer() {
       archiveItemRepository: repositories.archiveItem,
       clock,
     }),
+    mergeArchiveItems: new MergeArchiveItemsUseCase({
+      archiveItemRepository: repositories.archiveItem,
+      archiveMediaRepository: repositories.archiveMedia,
+      clock,
+    }),
     restoreArchiveItem: new RestoreArchiveItemUseCase({
       archiveItemRepository: repositories.archiveItem,
     }),
@@ -1660,6 +1680,11 @@ export function createServerContainer() {
     listOwnerFamilyNetwork: new ListOwnerFamilyNetworkUseCase({
       familyRelationshipRepository: repositories.familyRelationship,
       familyPersonRepository: repositories.familyPerson,
+    }),
+    findSharedFamilyPersons: new FindSharedFamilyPersonsUseCase({
+      familyRelationshipRepository: repositories.familyRelationship,
+      familyPersonRepository: repositories.familyPerson,
+      memberRepository: repositories.member,
     }),
     createPersonFraternalRecord: new CreatePersonFraternalRecordUseCase({
       personFraternalRecordRepository: repositories.personFraternalRecord,

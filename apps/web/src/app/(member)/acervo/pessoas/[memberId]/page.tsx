@@ -161,6 +161,7 @@ export default async function ArchivePersonPage({
                 dateLabel={formatDate(entry.dataInicio)}
                 active={!entry.dataFim}
                 detail={`Cargo · ${entry.gestaoNome}${entry.dataFim ? ` até ${formatDate(entry.dataFim)}` : ' · em curso'}`}
+                href={`/acervo/gestoes/${entry.gestaoId}`}
               />
             ))}
             {comissoes.map((entry, index) => (
@@ -170,6 +171,7 @@ export default async function ArchivePersonPage({
                 dateLabel={formatDate(entry.dataInicio)}
                 active={!entry.dataFim}
                 detail={`Comissão · ${entry.gestaoNome}${entry.dataFim ? ` até ${formatDate(entry.dataFim)}` : ' · em curso'}`}
+                href={`/acervo/gestoes/${entry.gestaoId}`}
               />
             ))}
           </div>

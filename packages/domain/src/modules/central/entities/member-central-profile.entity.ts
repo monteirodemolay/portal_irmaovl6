@@ -1,4 +1,9 @@
-import type { AreaAtuacaoKey, BusinessPublicationStatus, FormaAtendimentoKey } from '@vl6/shared';
+import type {
+  AffiliationAbrangenciaKey,
+  AreaAtuacaoKey,
+  BusinessPublicationStatus,
+  FormaAtendimentoKey,
+} from '@vl6/shared';
 import type { BaseEntity } from '../../../shared/base-entity';
 
 export interface CentralBusinessEntry {
@@ -29,6 +34,15 @@ export interface CentralBusinessEntry {
    */
   principal?: boolean;
   /**
+   * Controla se esta entrada participa do Diretório de Negócios &amp; Serviços
+   * e da moderação da Administração. Ausente/`false` (default): entrada
+   * "só contato" — existe pra registro pessoal e pareamento por CNPJ
+   * (`FindColleaguesByCnpjUseCase`), nunca entra em
+   * `reconcileNegociosStatus`, fica sempre `status: 'nao_divulgado'`.
+   * `true`: fluxo de moderação de sempre (`pending_review` → `published`).
+   */
+  divulgar?: boolean;
+  /**
    * Nunca vem do formulário do Irmão — sempre computado por
    * `UpdateCentralProfileUseCase` (novo/alterado vira `pending_review`) ou
    * por `ReviewBusinessSubmissionUseCase` (decisão da Administração).
@@ -36,6 +50,28 @@ export interface CentralBusinessEntry {
   status: BusinessPublicationStatus;
   /** Data da última alteração de conteúdo OU decisão de revisão, o que for mais recente. */
   updatedAt: Date;
+}
+
+/**
+ * Vínculo com Associação, Instituição ou organização sem fins lucrativos —
+ * nacional ou internacional. Sem moderação da Administração (não é canal
+ * comercial, mesmo espírito de `competencias`/`servicos`/`externalLinks`: o
+ * Irmão é responsável pelo que declara), por isso sem `status`/`updatedAt`
+ * por entrada — nada a reconciliar.
+ */
+export interface CentralAffiliationEntry {
+  id: string;
+  nomeInstituicao: string;
+  /** Papel do Irmão na instituição — texto curto livre (ex.: "Membro", "Diretor"). */
+  papel: string | null;
+  abrangencia: AffiliationAbrangenciaKey | null;
+  /** Mais relevante quando `abrangencia === 'internacional'`, mas sempre disponível. */
+  pais: string | null;
+  descricao: string | null;
+  siteUrl: string | null;
+  instagram: string | null;
+  /** Opcional — sobe pro Blob igual `CentralBusinessEntry.logoUrl`, nunca obrigatório. */
+  logoUrl: string | null;
 }
 
 export interface CentralExternalLinks {
@@ -71,6 +107,10 @@ export interface MemberCentralProfile extends BaseEntity {
   areaAtuacao: AreaAtuacaoKey | null;
   /** Texto livre, só usado quando `areaAtuacao === 'outra'`. */
   areaAtuacaoOutra: string | null;
+  /** Chave da taxonomia fechada `ESPECIALIZACAO_BY_AREA[areaAtuacao]` (`@vl6/shared`) — dependente da área selecionada. `null` = não informado. */
+  especializacao: string | null;
+  /** Texto livre, só usado quando `especializacao === 'outra'`. Mesmo padrão de `areaAtuacaoOutra`. */
+  especializacaoOutra: string | null;
   formacao: string | null;
   resumoProfissional: string | null;
 
@@ -79,6 +119,9 @@ export interface MemberCentralProfile extends BaseEntity {
   /** Tags curtas — máx. 10 cada (`memberCentralProfileSchema`). */
   competencias: string[];
   servicos: string[];
+
+  /** Vínculos com Associações/Instituições/organizações sem fins lucrativos — sem moderação. */
+  afiliacoes: CentralAffiliationEntry[];
 
   lojasVisitadas: string | null;
   interessesMaconicos: string | null;

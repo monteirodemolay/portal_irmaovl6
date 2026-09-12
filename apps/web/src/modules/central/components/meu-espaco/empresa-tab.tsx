@@ -2,26 +2,14 @@
 
 import { useActionState, useState, type KeyboardEvent } from 'react';
 import { useFormStatus } from 'react-dom';
-import type { Member, MemberCentralProfile } from '@vl6/domain';
+import type { MemberCentralProfile } from '@vl6/domain';
 import type { CentralBusinessEntryValues, FormaAtendimentoKey } from '@vl6/shared';
 import {
   BUSINESS_PUBLICATION_STATUS_LABELS,
   FORMA_ATENDIMENTO_KEYS,
   FORMA_ATENDIMENTO_LABELS,
 } from '@vl6/shared';
-import {
-  Badge,
-  Building2,
-  Button,
-  Gift,
-  Image as ImageIcon,
-  Input,
-  Search,
-  Star,
-  Switch,
-  Textarea,
-  X,
-} from '@vl6/ui';
+import { Badge, Building2, Button, Gift, Input, Search, Star, Switch, Textarea, X } from '@vl6/ui';
 import { FormField } from '@/components/forms/form-field';
 import { FormSectionCard } from '@/components/forms/section-card';
 import {
@@ -29,9 +17,8 @@ import {
   updateCentralProfileAction,
   type CentralActionState,
 } from '../../actions/central-actions';
-import { updateMyProfileAction } from '@/modules/membership/actions/self-profile-actions';
-import { CompanyCard } from '@/modules/membership/components/profile-fields/company-card';
-import { ColleaguesAtEmployer } from './colleagues-at-employer';
+import { ColleaguesByCnpj } from './colleagues-by-cnpj';
+import { LogoUploader } from './logo-uploader';
 
 const MAX_NEGOCIOS = 5;
 
@@ -58,12 +45,19 @@ function emptyNegocio(): NegocioDraft {
     ofereceDescontoIrmaos: false,
     descontoDescricao: null,
     principal: false,
+    divulgar: false,
   };
 }
 
 function StatusBadge({ status }: { status: MemberCentralProfile['negocios'][number]['status'] }) {
   const variant =
-    status === 'published' ? 'success' : status === 'suspended' ? 'destructive' : 'outline';
+    status === 'published'
+      ? 'success'
+      : status === 'suspended'
+        ? 'destructive'
+        : status === 'nao_divulgado'
+          ? 'outline'
+          : 'outline';
   return <Badge variant={variant}>{BUSINESS_PUBLICATION_STATUS_LABELS[status]}</Badge>;
 }
 
@@ -137,51 +131,6 @@ function ProdutosServicosEditor({
   );
 }
 
-function LogoUploader({
-  negocioId,
-  logoUrl,
-  nomeEmpresa,
-}: {
-  negocioId: string;
-  logoUrl: string | null;
-  nomeEmpresa: string;
-}) {
-  const [preview, setPreview] = useState<string | null>(null);
-  const shown = preview ?? logoUrl;
-
-  return (
-    <label
-      htmlFor={`logo-${negocioId}`}
-      className="border-border bg-surface hover:border-primary group relative flex h-20 w-20 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-xl border-2 border-dashed transition-colors"
-      title="Enviar logo"
-    >
-      {shown ? (
-        <img
-          src={shown}
-          alt={`Logo de ${nomeEmpresa || 'empresa'}`}
-          className="h-full w-full object-contain p-1.5"
-        />
-      ) : (
-        <ImageIcon size={22} className="text-muted" strokeWidth={1.5} />
-      )}
-      <span className="absolute inset-0 flex items-center justify-center bg-black/0 text-[10px] font-medium text-white opacity-0 transition-opacity group-hover:bg-black/50 group-hover:opacity-100">
-        Trocar
-      </span>
-      <input
-        id={`logo-${negocioId}`}
-        name={`logo-${negocioId}`}
-        type="file"
-        accept="image/jpeg,image/png,image/webp,image/svg+xml,image/gif"
-        className="hidden"
-        onChange={(event) => {
-          const file = event.target.files?.[0];
-          setPreview(file ? URL.createObjectURL(file) : null);
-        }}
-      />
-    </label>
-  );
-}
-
 /**
  * Atalho opcional — nunca obrigatório. Digitar o CNPJ e clicar em "Buscar"
  * pré-preenche nome e cidade a partir da BrasilAPI (`lookupBusinessCnpjAction`),
@@ -221,7 +170,7 @@ function CnpjLookupField({
     <FormField
       label="CNPJ (opcional)"
       htmlFor={`negocio-cnpj-${index}`}
-      description="Preencha e busque pra puxar o nome automaticamente, ou ignore e digite o nome direto abaixo."
+      description="Preencha e busque pra puxar o nome automaticamente, ou ignore e digite o nome direto abaixo. Com o CNPJ preenchido, colegas de trabalho com a mesma empresa aparecem aqui embaixo sozinhos."
       error={error ?? undefined}
     >
       <div className="flex gap-2">
@@ -229,7 +178,10 @@ function CnpjLookupField({
           id={`negocio-cnpj-${index}`}
           placeholder="00.000.000/0001-00"
           value={draft}
-          onChange={(e) => setDraft(e.target.value)}
+          onChange={(e) => {
+            setDraft(e.target.value);
+            onUpdateNegocio(index, { cnpj: e.target.value.replace(/\D/g, '') || null });
+          }}
         />
         <Button
           type="button"
@@ -247,15 +199,10 @@ function CnpjLookupField({
 }
 
 export function EmpresaTab({
-  member,
   profile,
-  knownCompanies = [],
   knownBusinessNames = [],
 }: {
-  member: Member;
   profile: MemberCentralProfile | null;
-  /** Empresas empregadoras já usadas no tenant — autocomplete de "Empresa atual". */
-  knownCompanies?: string[];
   /** Nomes de negócio já usados no tenant — autocomplete de "Nome da empresa" de cada card. */
   knownBusinessNames?: string[];
 }) {
@@ -265,6 +212,7 @@ export function EmpresaTab({
   );
   const [negocios, setNegocios] = useState<NegocioDraft[]>(profile?.negocios ?? []);
   const statusById = new Map(profile?.negocios.map((n) => [n.id, n.status]) ?? []);
+  const unicoNegocio = negocios.length === 1;
 
   function updateNegocio(index: number, patch: Partial<NegocioDraft>) {
     setNegocios((current) => current.map((n, i) => (i === index ? { ...n, ...patch } : n)));
@@ -290,7 +238,9 @@ export function EmpresaTab({
    * de uma por vez, igual a um grupo de rádio. Não participa da revisão
    * da Administração (`reconcileNegociosStatus` ignora este campo de
    * propósito), então marcar/desmarcar nunca reseta o status de uma
-   * empresa já publicada.
+   * empresa já publicada. Com um único negócio, isso é automático (o
+   * backend força de qualquer forma) — o rádio já aparece marcado e
+   * desabilitado, sem precisar clicar.
    */
   function setPrincipal(index: number) {
     setNegocios((current) => current.map((n, i) => ({ ...n, principal: i === index })));
@@ -298,14 +248,10 @@ export function EmpresaTab({
 
   return (
     <div className="flex flex-col gap-4">
-      <CompanyCard member={member} action={updateMyProfileAction} knownCompanies={knownCompanies} />
-
-      <ColleaguesAtEmployer empresaAtual={member.empresa} />
-
       <FormSectionCard
         icon={Building2}
         title="Empresas e negócios"
-        description="Até 5 empresas ou negócios que você queira divulgar aos Irmãos, num formato de cartão de divulgação — logo, o que a empresa oferece e como falar com ela. Toda alteração passa por revisão da Administração antes de aparecer no Diretório de Negócios & Serviços. Todas aparecem no seu perfil; marque uma como Principal pra ela aparecer em destaque."
+        description="Onde você trabalha e/ou negócios que queira divulgar aos Irmãos. Ligue 'Divulgar no Diretório' só nos que forem comércio/serviço de verdade — os demais ficam só como contato pessoal, sem passar por revisão da Administração. Com um único negócio, ele já é o Principal automaticamente."
       >
         <form action={contentAction} className="flex flex-col gap-4">
           <datalist id="negocios-cadastrados">
@@ -315,6 +261,7 @@ export function EmpresaTab({
           </datalist>
           {negocios.map((negocio, index) => {
             const status = statusById.get(negocio.id);
+            const principal = unicoNegocio || Boolean(negocio.principal);
             return (
               <div
                 key={negocio.id}
@@ -323,9 +270,9 @@ export function EmpresaTab({
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-start gap-3">
                     <LogoUploader
-                      negocioId={negocio.id}
-                      logoUrl={negocio.logoUrl}
-                      nomeEmpresa={negocio.nomeEmpresa}
+                      inputName={`logo-${negocio.id}`}
+                      imageUrl={negocio.logoUrl}
+                      entityLabel={negocio.nomeEmpresa}
                     />
                     <div className="flex flex-col gap-2 pt-1">
                       <div className="flex items-center gap-2">
@@ -342,7 +289,8 @@ export function EmpresaTab({
                           type="radio"
                           name="negocio-principal"
                           className="accent-primary"
-                          checked={Boolean(negocio.principal)}
+                          checked={principal}
+                          disabled={unicoNegocio}
                           onChange={() => setPrincipal(index)}
                         />
                         <Star size={13} strokeWidth={1.75} className="text-accent" />
@@ -360,11 +308,28 @@ export function EmpresaTab({
                   </button>
                 </div>
 
+                <label className="border-border bg-surface flex items-start gap-3 rounded-lg border p-3 text-sm font-medium">
+                  <Switch
+                    checked={Boolean(negocio.divulgar)}
+                    onChange={(e) => updateNegocio(index, { divulgar: e.target.checked })}
+                  />
+                  <span className="flex flex-col gap-0.5">
+                    Divulgar no Diretório de Negócios
+                    <span className="text-muted text-xs font-normal">
+                      Desligado: fica só como contato pessoal e ajuda outros Irmãos com a mesma
+                      empresa (por CNPJ) a te encontrar — não aparece no Diretório nem passa por
+                      revisão da Administração.
+                    </span>
+                  </span>
+                </label>
+
                 <CnpjLookupField
                   index={index}
                   cnpj={negocio.cnpj}
                   onUpdateNegocio={updateNegocio}
                 />
+
+                <ColleaguesByCnpj cnpj={negocio.cnpj} />
 
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <FormField label="Nome da empresa" htmlFor={`negocio-nome-${index}`}>

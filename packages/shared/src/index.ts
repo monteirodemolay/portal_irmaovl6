@@ -10,6 +10,7 @@ export * from './enums/gallery';
 export * from './enums/tenant-modules';
 export * from './enums/locale';
 export * from './enums/central';
+export * from './enums/especializacao';
 export * from './enums/archive';
 export * from './enums/access-level';
 export * from './enums/media-asset';

@@ -15,7 +15,9 @@ import {
   validateWebsiteUrl,
   errorToLogContext,
   logger,
+  ESPECIALIZACAO_BY_AREA,
   type AreaAtuacaoKey,
+  type CentralAffiliationEntryValues,
   type CentralBusinessEntryValues,
   type MemberCentralProfileValues,
   type PublicationSettingsInputValues,
@@ -23,7 +25,11 @@ import {
 import type { PublicMemberProfileDTO } from '@vl6/domain';
 import { createServerContainer } from '@vl6/infra';
 import { requireSession } from '@/lib/auth/require-session';
-import { uploadBusinessLogo, validateLogoFile } from '@/lib/central/business-logo-upload';
+import {
+  uploadAffiliationLogo,
+  uploadBusinessLogo,
+  validateLogoFile,
+} from '@/lib/central/business-logo-upload';
 import { lookupCnpj, type CnpjLookupFailureReason } from '@/lib/central/cnpj-lookup';
 
 /**
@@ -162,6 +168,47 @@ async function withUploadedLogos(
   return { negocios: resolved, error: null };
 }
 
+/**
+ * Mesma lógica de `withUploadedLogos`, aplicada às afiliações institucionais
+ * — logo sempre opcional aqui (diferente de negócios, onde faz parte do
+ * "cartão de divulgação"). Inputs de arquivo nomeados `logo-afiliacao-<id>`
+ * (prefixo diferente de `logo-<id>` dos negócios, pra nunca colidir no mesmo
+ * FormData).
+ */
+async function withUploadedAffiliationLogos(
+  formData: FormData,
+  afiliacoes: CentralAffiliationEntryValues[],
+  tenantId: string,
+  memberId: string,
+): Promise<{ afiliacoes: CentralAffiliationEntryValues[]; error: string | null }> {
+  const resolved: CentralAffiliationEntryValues[] = [];
+  for (const entry of afiliacoes) {
+    const file = formData.get(`logo-afiliacao-${entry.id}`);
+    if (!(file instanceof File) || file.size === 0) {
+      resolved.push(entry);
+      continue;
+    }
+    const validationError = validateLogoFile(file);
+    if (validationError) return { afiliacoes, error: validationError };
+    try {
+      const logoUrl = await uploadAffiliationLogo(file, tenantId, memberId, entry.id);
+      resolved.push({ ...entry, logoUrl });
+    } catch (error) {
+      logger.error('Falha ao enviar logo de afiliação para o storage', {
+        route: 'updateCentralProfileAction',
+        memberId,
+        affiliationId: entry.id,
+        ...errorToLogContext(error),
+      });
+      Sentry.captureException(error, {
+        tags: { route: 'updateCentralProfileAction:affiliationLogo' },
+      });
+      return { afiliacoes, error: 'Não foi possível enviar a logo. Tente novamente em instantes.' };
+    }
+  }
+  return { afiliacoes: resolved, error: null };
+}
+
 export async function updateCentralProfileAction(
   _prevState: CentralActionState,
   formData: FormData,
@@ -191,12 +238,42 @@ export async function updateCentralProfileAction(
   const competencias = jsonArrayOrCurrent(formData, 'competencias', current?.competencias ?? []);
   const servicos = jsonArrayOrCurrent(formData, 'servicos', current?.servicos ?? []);
 
+  const afiliacoesSubmitted = jsonArrayOrCurrent(formData, 'afiliacoes', current?.afiliacoes ?? []);
+  const { afiliacoes: afiliacoesComLogo, error: affiliationLogoError } =
+    await withUploadedAffiliationLogos(
+      formData,
+      afiliacoesSubmitted,
+      session.authContext.tenantId,
+      member.id,
+    );
+  if (affiliationLogoError) return { error: affiliationLogoError };
+  // Instagram aceita @usuario/URL, mesmo padrão de `redes.instagram`; entrada
+  // que não normaliza fica como o Irmão digitou (sem link clicável), nunca
+  // bloqueia o salvamento das demais afiliações.
+  const afiliacoes = afiliacoesComLogo.map((entry) => ({
+    ...entry,
+    instagram: entry.instagram ? (normalizeInstagram(entry.instagram) ?? entry.instagram) : null,
+  }));
+
   let areaAtuacao: AreaAtuacaoKey | null = current?.areaAtuacao ?? null;
   if (formData.has('areaAtuacao')) {
     const raw = String(formData.get('areaAtuacao') || '');
     areaAtuacao = (AREA_ATUACAO_KEYS as readonly string[]).includes(raw)
       ? (raw as AreaAtuacaoKey)
       : null;
+  }
+
+  // Dependente de `areaAtuacao` — trocar a área no client já reseta o
+  // valor selecionado (ver `ProfissionalTab`), então uma especialização que
+  // não pertence mais à área submetida é sempre dado velho de uma
+  // submissão anterior; melhor limpar aqui do que deixar o `.refine()` do
+  // schema rejeitar a submissão inteira por causa de um campo que o client
+  // já devia ter limpado.
+  let especializacao: string | null = current?.especializacao ?? null;
+  if (formData.has('especializacao')) {
+    const raw = String(formData.get('especializacao') || '');
+    const validas = areaAtuacao ? (ESPECIALIZACAO_BY_AREA[areaAtuacao] ?? []) : [];
+    especializacao = validas.includes(raw) ? raw : null;
   }
 
   const whatsapp = parseExternalLink(
@@ -256,6 +333,12 @@ export async function updateCentralProfileAction(
         'areaAtuacaoOutra',
         current?.areaAtuacaoOutra ?? null,
       ),
+      especializacao,
+      especializacaoOutra: textOrCurrent(
+        formData,
+        'especializacaoOutra',
+        current?.especializacaoOutra ?? null,
+      ),
       formacao: textOrCurrent(formData, 'formacao', current?.formacao ?? null),
       resumoProfissional: textOrCurrent(
         formData,
@@ -265,6 +348,7 @@ export async function updateCentralProfileAction(
       negocios,
       competencias,
       servicos,
+      afiliacoes,
       lojasVisitadas: textOrCurrent(formData, 'lojasVisitadas', current?.lojasVisitadas ?? null),
       interessesMaconicos: textOrCurrent(
         formData,
@@ -349,6 +433,7 @@ export async function updatePublicationSettingsAction(
           current?.blocks.competencias ?? false,
         ),
         servicos: bool('blocks.servicos', blocksIncluded, current?.blocks.servicos ?? false),
+        afiliacoes: bool('blocks.afiliacoes', blocksIncluded, current?.blocks.afiliacoes ?? false),
         endereco: bool('blocks.endereco', blocksIncluded, current?.blocks.endereco ?? false),
         memoriaFotografica: bool(
           'blocks.memoriaFotografica',
@@ -445,47 +530,63 @@ export async function reactivateCentralProfileAction(memberId: string): Promise<
   revalidatePath('/irmaos', 'layout');
 }
 
-export interface ColleagueAtEmployer {
+export interface ColleagueByCnpjResult {
   memberId: string;
   nomeCompleto: string;
   fotoUrl: string | null;
+  cargo: string | null;
 }
 
 /**
- * "Outros Irmãos na mesma empresa" — pedido explícito: quem só usa
- * "Empresa atual" pra contato (ex.: um Irmão que trabalha num órgão
- * público e não tem nada a divulgar) ainda deve conseguir achar colegas
- * de trabalho no Portal. Reaproveita o filtro `empresa` que
- * `SearchDirectoryUseCase` já tinha (casa contra `empresaAtual` e contra
- * `negocios[].nomeEmpresa` publicados) em vez de um novo caminho de
- * busca — mesma regra de correspondência (substring, sem acento/caixa)
- * já usada no restante do Diretório. Nunca inclui o próprio Irmão.
+ * "Outros Irmãos nesta empresa" — automático a partir do CNPJ já digitado
+ * num negócio, sem busca manual por nome (nome de empresa varia demais;
+ * CNPJ é exato). Não exige `divulgar`/`published` — achar colega de
+ * trabalho é institucional/prático, não uma decisão editorial.
  */
-export async function findColleaguesByEmployerAction(
-  empresa: string,
-): Promise<ColleagueAtEmployer[]> {
+export async function findColleaguesByCnpjAction(cnpj: string): Promise<ColleagueByCnpjResult[]> {
   const session = await requireSession();
-  const termo = empresa.trim();
-  if (termo.length < 3) return [];
-
   const container = createServerContainer();
   const ownMember = await container.repositories.member.findByUserId(
     session.authContext.tenantId,
     session.user.id,
   );
-  const result = await container.useCases.searchDirectory.execute(session.authContext, {
-    empresa: termo,
-  });
-  if (!result.ok) return [];
+  if (!ownMember) return [];
 
-  return result.value.items
-    .filter((item) => item.memberId !== ownMember?.id)
-    .slice(0, 12)
-    .map((item) => ({
-      memberId: item.memberId,
-      nomeCompleto: item.nomeCompleto,
-      fotoUrl: item.fotoUrl,
-    }));
+  const result = await container.useCases.findColleaguesByCnpj.execute(
+    session.authContext,
+    cnpj,
+    ownMember.id,
+  );
+  return result.ok ? result.value : [];
+}
+
+export interface MigrateMemberEmpresaToNegociosRowResult {
+  memberId: string;
+  nomeCompleto: string;
+  empresaMigrada: string | null;
+  acao: 'criado' | 'ja_existia_negocio_com_mesmo_nome' | 'sem_empresa_preenchida';
+}
+
+/**
+ * Migração única do antigo "Empresa atual" pra "Empresas e negócios" —
+ * disparada manualmente pelo Administrador em `/admin/pessoas/central`
+ * depois do merge desta feature. Idempotente: pode rodar mais de uma vez
+ * sem duplicar (ver `MigrateMemberEmpresaToNegociosUseCase`).
+ */
+export async function migrateMemberEmpresaToNegociosAction(): Promise<
+  MigrateMemberEmpresaToNegociosRowResult[]
+> {
+  const session = await requireSession();
+  const container = createServerContainer();
+  const result = await container.useCases.migrateMemberEmpresaToNegocios.execute(
+    session.authContext,
+  );
+  if (!result.ok) {
+    throw new Error(result.error.message);
+  }
+
+  revalidatePath('/irmaos', 'layout');
+  return result.value;
 }
 
 export async function reviewBusinessSubmissionAction(

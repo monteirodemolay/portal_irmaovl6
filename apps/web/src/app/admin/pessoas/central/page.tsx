@@ -2,6 +2,7 @@ import { createServerContainer } from '@vl6/infra';
 import { Badge, EmptyState } from '@vl6/ui';
 import { requirePagePermission } from '@/lib/auth/require-permission';
 import {
+  MigrateEmpresaButton,
   ReactivateCentralProfileButton,
   SuspendCentralProfileButton,
 } from '@/modules/central/components/central-moderation-actions';
@@ -27,6 +28,18 @@ export default async function CentralModerationPage() {
           uma publicação, mas nunca decide o que fica visível por um Irmão. Só quem já abriu a aba
           &ldquo;Central VL6&rdquo; do próprio perfil aparece aqui.
         </p>
+      </div>
+
+      <div className="border-border bg-surface rounded-lg border p-4">
+        <p className="text-sm font-medium">Migração &ldquo;Empresa atual&rdquo;</p>
+        <p className="text-muted mt-1 max-w-2xl text-sm">
+          O campo separado &ldquo;Empresa atual&rdquo; deixou de existir — quem já tinha preenchido
+          precisa migrar pra &ldquo;Empresas e negócios&rdquo; (como registro privado, sem
+          divulgar). Idempotente: pode clicar quantas vezes precisar, não duplica.
+        </p>
+        <div className="mt-3">
+          <MigrateEmpresaButton />
+        </div>
       </div>
 
       {rows.length === 0 ? (
