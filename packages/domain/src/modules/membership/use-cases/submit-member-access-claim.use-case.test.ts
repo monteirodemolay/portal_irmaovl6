@@ -92,6 +92,19 @@ describe('SubmitMemberAccessClaimUseCase', () => {
     expect(result.error.code).toBe('validation');
   });
 
+  it('recusa Irmão em In Memoriam, mesmo com CIM correto', async () => {
+    const { useCase, memberRepository } = buildUseCase();
+    await memberRepository.create(
+      buildMember({ situacao: 'falecido', dataFalecimento: new Date('2020-01-01') }),
+    );
+
+    const result = await useCase.execute('t1', 'member-1', '12566', 'novo@vl6.test', null);
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error.code).toBe('validation');
+  });
+
   it('recusa quando o Member já tem acesso vinculado', async () => {
     const { useCase, memberRepository } = buildUseCase();
     await memberRepository.create(buildMember({ userId: 'user-1' }));

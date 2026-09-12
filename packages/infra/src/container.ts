@@ -587,6 +587,7 @@ export function createServerContainer() {
     }),
     editMemberSituationRecord: new EditMemberSituationRecordUseCase({
       situationRecordRepository: repositories.memberSituationRecord,
+      memberRepository: repositories.member,
       clock,
     }),
     seedMemberSituationHistory: new SeedMemberSituationHistoryUseCase({

@@ -159,6 +159,22 @@ describe('SeedMemberSituationHistoryUseCase', () => {
     expect(historico).toHaveLength(1);
   });
 
+  it('espelha dataFalecimento mesmo quando o legado já era "falecido" (mesma string, sem mudança de situacao)', async () => {
+    const { useCase, memberRepository } = buildUseCase([
+      buildMember({
+        situacao: 'falecido' as Member['situacao'],
+        dataIniciacao: new Date('2004-03-15T00:00:00Z'),
+        dataFalecimento: null,
+      }),
+    ]);
+
+    const report = await useCase.execute(ctx);
+
+    expect(report[0]?.precisaRevisao).toBe(true);
+    const member = await memberRepository.findById('m1');
+    expect(member?.dataFalecimento).toEqual(new Date('2004-03-15T00:00:00Z'));
+  });
+
   it('lança ForbiddenError quando falta a permissão member:manage', async () => {
     const { useCase } = buildUseCase([buildMember()]);
 
