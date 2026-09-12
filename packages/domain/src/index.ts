@@ -384,6 +384,7 @@ export * from './modules/archive/use-cases/set-archive-item-cover.use-case';
 export * from './modules/archive/use-cases/set-archive-item-instagram-link.use-case';
 export * from './modules/archive/use-cases/soft-delete-archive-item.use-case';
 export * from './modules/archive/use-cases/restore-archive-item.use-case';
+export * from './modules/archive/use-cases/merge-archive-items.use-case';
 export * from './modules/archive/use-cases/update-archive-media-batch.use-case';
 // Fase 3 — Organização (docs/architecture/11-acervo-vl6.md §11.6)
 export * from './modules/archive/use-cases/reorder-archive-media.use-case';

@@ -80,6 +80,7 @@ import {
   SetArchiveItemCoverUseCase,
   SetArchiveItemInstagramLinkUseCase,
   SoftDeleteArchiveItemUseCase,
+  MergeArchiveItemsUseCase,
   RestoreArchiveItemUseCase,
   UpdateArchiveMediaBatchUseCase,
   ReorderArchiveMediaUseCase,
@@ -1528,6 +1529,11 @@ export function createServerContainer() {
     }),
     softDeleteArchiveItem: new SoftDeleteArchiveItemUseCase({
       archiveItemRepository: repositories.archiveItem,
+      clock,
+    }),
+    mergeArchiveItems: new MergeArchiveItemsUseCase({
+      archiveItemRepository: repositories.archiveItem,
+      archiveMediaRepository: repositories.archiveMedia,
       clock,
     }),
     restoreArchiveItem: new RestoreArchiveItemUseCase({

@@ -656,6 +656,67 @@ export async function updateArchiveMediaBatchAction(
   return { ok: true, error: null };
 }
 
+/**
+ * Move um rascunho inteiro (`ArchiveItem` + todas as suas `ArchiveMedia`)
+ * para a Lixeira — usado no passo 1 para descartar um rascunho criado por
+ * engano ou substituído por outro (ex.: sessão de Iniciação duplicada por
+ * Irmão antes da unificação por sessão). Reaproveita `SoftDeleteArchiveItemUseCase`,
+ * a mesma lixeira usada pelo restante do Acervo — nunca exclusão física.
+ */
+export async function deleteDraftArchiveItemAction(
+  archiveItemId: string,
+): Promise<SimpleActionState> {
+  const session = await requireSession();
+  const container = createServerContainer();
+
+  const item = await container.repositories.archiveItem.findById(archiveItemId);
+  if (!item || item.tenantId !== session.authContext.tenantId) {
+    return { ok: false, error: 'Rascunho não encontrado.' };
+  }
+  if (item.publicacaoStatus !== 'rascunho') {
+    return { ok: false, error: 'Só é possível excluir itens ainda em rascunho por aqui.' };
+  }
+
+  const result = await container.useCases.softDeleteArchiveItem.execute(
+    session.authContext,
+    archiveItemId,
+  );
+  if (!result.ok) return { ok: false, error: result.error.message };
+
+  revalidatePath(PUBLISH_HUB_PATH);
+  return { ok: true, error: null };
+}
+
+export interface MergeArchiveItemsState {
+  ok: boolean;
+  error: string | null;
+  itensMesclados: number;
+}
+
+/**
+ * Unifica rascunhos duplicados da mesma sessão (ex.: um `ArchiveItem` de
+ * Iniciação por Irmão, criados antes da unificação por sessão em
+ * `CreateInitiationArchiveItemUseCase`) num só item canônico — o passo 1
+ * detecta esses grupos agrupando por `tipo` + dia do Evento e oferece
+ * "Unificar" quando há mais de um rascunho no mesmo grupo.
+ */
+export async function mergeArchiveItemsAction(
+  canonicalArchiveItemId: string,
+  duplicateArchiveItemIds: string[],
+): Promise<MergeArchiveItemsState> {
+  const session = await requireSession();
+  const container = createServerContainer();
+  const result = await container.useCases.mergeArchiveItems.execute(
+    session.authContext,
+    canonicalArchiveItemId,
+    duplicateArchiveItemIds,
+  );
+  if (!result.ok) return { ok: false, error: result.error.message, itensMesclados: 0 };
+
+  revalidatePath(PUBLISH_HUB_PATH);
+  return { ok: true, error: null, itensMesclados: result.value.itensMesclados };
+}
+
 // ---------------------------------------------------------------------
 // Passo 3 — Organizar / Publicar (Fase 3,
 // docs/architecture/11-acervo-vl6.md §11.6)
