@@ -122,6 +122,14 @@ export default async function AcervoPage({
   // mostrava os mesmos Documentos sem miniatura primeiro, escondendo os
   // resultados com foto que tornam o grid mais atrativo.
   const visibleResults = (query || validKind ? filteredResults : shuffle(allResults)).slice(0, 12);
+  // Pool de fotos reais já carregadas nesta mesma busca (capas de álbum e
+  // fotos de Evento) — decora os cards sem foto própria (a maioria: Iniciação/
+  // Elevação/Exaltação raramente têm mídia anexada) pra manter a miniatura
+  // presente em todo cartão do grid, igual à capa do álbum de Evento
+  // (`/acervo/eventos/[eventId]`), sem nenhuma consulta extra ao banco.
+  const decorativeImages = Array.from(
+    new Set(allResults.map((result) => result.imageUrl).filter((url): url is string => !!url)),
+  );
   const fullSearchParams = new URLSearchParams();
   if (query) fullSearchParams.set('q', query);
   if (validKind) fullSearchParams.set('tipo', validKind);
@@ -339,37 +347,58 @@ export default async function AcervoPage({
             </div>
           ) : (
             <div className="mt-5 grid gap-3 sm:grid-cols-2">
-              {visibleResults.map((result) => (
-                <Link
-                  key={`${result.kind}-${result.id}`}
-                  href={result.href}
-                  className="border-border hover:border-accent group rounded-[13px] border p-4 transition-colors"
-                >
-                  {result.imageUrl && (
-                    <div className="bg-background border-border mb-3 aspect-video w-full overflow-hidden rounded-md border">
-                      <img
-                        src={result.imageUrl}
-                        alt=""
-                        loading="lazy"
-                        className="h-full w-full object-cover transition-transform group-hover:scale-105"
-                      />
+              {visibleResults.map((result, index) => {
+                const KindIcon =
+                  result.kind === 'documento'
+                    ? FileText
+                    : result.kind === 'biblioteca'
+                      ? BookOpen
+                      : result.kind === 'fotografia'
+                        ? GalleryIcon
+                        : CalendarDays;
+                // Foto própria em primeiro lugar; sem ela, uma das fotos reais
+                // já carregadas nesta busca decora o card (rotativo pelo
+                // índice) — todo cartão do grid mantém o mesmo tamanho, com
+                // ou sem mídia própria, mesmo tratamento visual da capa do
+                // álbum de Evento.
+                const displayImage =
+                  result.imageUrl ??
+                  (decorativeImages.length > 0
+                    ? decorativeImages[index % decorativeImages.length]
+                    : null);
+                return (
+                  <Link
+                    key={`${result.kind}-${result.id}`}
+                    href={result.href}
+                    className="border-border hover:border-accent group flex h-full flex-col rounded-[13px] border p-4 transition-colors"
+                  >
+                    <div className="bg-primary/5 border-border mb-3 aspect-video w-full shrink-0 overflow-hidden rounded-md border">
+                      {displayImage ? (
+                        <img
+                          src={displayImage}
+                          alt=""
+                          loading="lazy"
+                          className="h-full w-full object-cover transition-transform group-hover:scale-105"
+                        />
+                      ) : (
+                        <div className="from-primary/10 to-accent/10 text-primary/40 flex h-full w-full items-center justify-center bg-gradient-to-br">
+                          <KindIcon size={26} strokeWidth={1.4} />
+                        </div>
+                      )}
                     </div>
-                  )}
-                  <div className="text-accent flex items-center gap-2 text-[10px] font-semibold uppercase tracking-wider">
-                    {result.kind === 'documento' && <FileText size={14} />}
-                    {result.kind === 'biblioteca' && <BookOpen size={14} />}
-                    {result.kind === 'fotografia' && <GalleryIcon size={14} />}
-                    {result.kind === 'evento' && <CalendarDays size={14} />}
-                    {ARCHIVE_SEARCH_KIND_LABELS[result.kind]}
-                  </div>
-                  <h3 className="font-display group-hover:text-accent mt-2 line-clamp-2 font-semibold transition-colors">
-                    {result.title}
-                  </h3>
-                  <p className="text-muted mt-1 line-clamp-2 text-xs leading-5">
-                    {result.description}
-                  </p>
-                </Link>
-              ))}
+                    <div className="text-accent flex items-center gap-2 text-[10px] font-semibold uppercase tracking-wider">
+                      <KindIcon size={14} />
+                      {ARCHIVE_SEARCH_KIND_LABELS[result.kind]}
+                    </div>
+                    <h3 className="font-display group-hover:text-accent mt-2 line-clamp-2 font-semibold transition-colors">
+                      {result.title}
+                    </h3>
+                    <p className="text-muted mt-1 line-clamp-2 text-xs leading-5">
+                      {result.description}
+                    </p>
+                  </Link>
+                );
+              })}
             </div>
           )}
         </div>
