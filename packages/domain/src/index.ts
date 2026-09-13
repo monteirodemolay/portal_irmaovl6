@@ -268,9 +268,13 @@ export * from './modules/integrations/use-cases/update-google-calendar-preferenc
 export * from './modules/notification/entities/notification.entity';
 export * from './modules/notification/entities/notification-preference.entity';
 export * from './modules/notification/entities/link.entity';
+export * from './modules/notification/entities/link-favorite.entity';
+export * from './modules/notification/entities/link-suggestion.entity';
 export * from './modules/notification/repositories/notification.repository';
 export * from './modules/notification/repositories/notification-preference.repository';
 export * from './modules/notification/repositories/link.repository';
+export * from './modules/notification/repositories/link-favorite.repository';
+export * from './modules/notification/repositories/link-suggestion.repository';
 export * from './modules/notification/services/notification-gateway';
 export * from './modules/notification/use-cases/notify-recipient.use-case';
 export * from './modules/notification/use-cases/list-my-notifications.use-case';
@@ -287,7 +291,16 @@ export * from './modules/notification/use-cases/delete-all-read-notifications.us
 export * from './modules/notification/use-cases/send-targeted-notification.use-case';
 export * from './modules/notification/use-cases/update-notification-preference.use-case';
 export * from './modules/notification/use-cases/create-link.use-case';
+export * from './modules/notification/use-cases/update-link.use-case';
+export * from './modules/notification/use-cases/set-link-active.use-case';
+export * from './modules/notification/use-cases/move-link.use-case';
 export * from './modules/notification/use-cases/list-links.use-case';
+export * from './modules/notification/use-cases/toggle-link-favorite.use-case';
+export * from './modules/notification/use-cases/list-my-link-favorites.use-case';
+export * from './modules/notification/use-cases/submit-link-suggestion.use-case';
+export * from './modules/notification/use-cases/list-pending-link-suggestions.use-case';
+export * from './modules/notification/use-cases/approve-link-suggestion.use-case';
+export * from './modules/notification/use-cases/reject-link-suggestion.use-case';
 
 // Communication (Central de Comunicação)
 export * from './modules/communication/entities/art-template.entity';

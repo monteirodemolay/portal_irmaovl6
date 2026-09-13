@@ -1,3 +1,4 @@
+import type { LinkAccessTypeKey, LinkCategoryKey } from '@vl6/shared';
 import type { AuthContext } from '../../../shared/auth-context';
 import { requirePermission } from '../../../shared/auth-context';
 import type { IClock, IIdGenerator } from '../../../shared/ports';
@@ -8,8 +9,11 @@ import type { ILinkRepository } from '../repositories/link.repository';
 export interface CreateLinkInput {
   titulo: string;
   url: string;
+  descricao: string | null;
   icone: string | null;
-  categoria: string;
+  categoria: LinkCategoryKey;
+  tipoAcesso: LinkAccessTypeKey;
+  destaque: boolean;
   ordem: number;
 }
 

@@ -66,9 +66,13 @@ import type { ILibraryItemRepository } from '../modules/library/repositories/lib
 import type { ILibraryCategoryRepository } from '../modules/library/repositories/library-category.repository';
 import type { ILibraryFavoriteRepository } from '../modules/library/repositories/library-favorite.repository';
 import type { Link } from '../modules/notification/entities/link.entity';
+import type { LinkFavorite } from '../modules/notification/entities/link-favorite.entity';
+import type { LinkSuggestion } from '../modules/notification/entities/link-suggestion.entity';
 import type { Notification } from '../modules/notification/entities/notification.entity';
 import type { NotificationPreference } from '../modules/notification/entities/notification-preference.entity';
 import type { ILinkRepository } from '../modules/notification/repositories/link.repository';
+import type { ILinkFavoriteRepository } from '../modules/notification/repositories/link-favorite.repository';
+import type { ILinkSuggestionRepository } from '../modules/notification/repositories/link-suggestion.repository';
 import type { INotificationRepository } from '../modules/notification/repositories/notification.repository';
 import type { INotificationPreferenceRepository } from '../modules/notification/repositories/notification-preference.repository';
 import type { Event } from '../modules/agenda/entities/event.entity';
@@ -1183,6 +1187,42 @@ export class InMemoryLinkRepository implements ILinkRepository {
   }
   async update(link: Link) {
     this.byId.set(link.id, link);
+  }
+}
+
+export class InMemoryLinkFavoriteRepository implements ILinkFavoriteRepository {
+  private readonly byId = new Map<string, LinkFavorite>();
+
+  async findByUserAndLink(userId: string, linkId: string) {
+    return [...this.byId.values()].find((f) => f.userId === userId && f.linkId === linkId) ?? null;
+  }
+  async listByUser(tenantId: string, userId: string) {
+    return [...this.byId.values()].filter((f) => f.tenantId === tenantId && f.userId === userId);
+  }
+  async create(favorite: LinkFavorite) {
+    this.byId.set(favorite.id, favorite);
+  }
+  async delete(id: string) {
+    this.byId.delete(id);
+  }
+}
+
+export class InMemoryLinkSuggestionRepository implements ILinkSuggestionRepository {
+  private readonly byId = new Map<string, LinkSuggestion>();
+
+  async findById(id: string) {
+    return this.byId.get(id) ?? null;
+  }
+  async listPendingByTenant(tenantId: string) {
+    return [...this.byId.values()]
+      .filter((s) => s.tenantId === tenantId && s.revisaoStatus === 'pendente')
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  }
+  async create(suggestion: LinkSuggestion) {
+    this.byId.set(suggestion.id, suggestion);
+  }
+  async update(suggestion: LinkSuggestion) {
+    this.byId.set(suggestion.id, suggestion);
   }
 }
 
