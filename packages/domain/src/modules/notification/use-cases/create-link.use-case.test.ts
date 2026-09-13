@@ -15,8 +15,11 @@ function buildInput(overrides: Partial<CreateLinkInput> = {}): CreateLinkInput {
   return {
     titulo: 'Portal GLEG',
     url: 'https://gleg.org.br',
+    descricao: null,
     icone: null,
     categoria: 'institucional',
+    tipoAcesso: 'externo',
+    destaque: false,
     ordem: 0,
     ...overrides,
   };

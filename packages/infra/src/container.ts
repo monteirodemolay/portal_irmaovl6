@@ -138,6 +138,15 @@ import {
   DeleteGalleryAlbumUseCase,
   CreateLibraryCategoryUseCase,
   CreateLinkUseCase,
+  UpdateLinkUseCase,
+  SetLinkActiveUseCase,
+  MoveLinkUseCase,
+  ToggleLinkFavoriteUseCase,
+  ListMyLinkFavoritesUseCase,
+  SubmitLinkSuggestionUseCase,
+  ListPendingLinkSuggestionsUseCase,
+  ApproveLinkSuggestionUseCase,
+  RejectLinkSuggestionUseCase,
   CreateNewsCommentUseCase,
   CreateNewsUseCase,
   CreateTenantUseCase,
@@ -305,6 +314,8 @@ import { FirestoreLibraryCategoryRepository } from './firestore/repositories/lib
 import { FirestoreLibraryFavoriteRepository } from './firestore/repositories/library-favorite.repository';
 import { FirestoreLibraryItemRepository } from './firestore/repositories/library-item.repository';
 import { FirestoreLinkRepository } from './firestore/repositories/link.repository';
+import { FirestoreLinkFavoriteRepository } from './firestore/repositories/link-favorite.repository';
+import { FirestoreLinkSuggestionRepository } from './firestore/repositories/link-suggestion.repository';
 import { FirestoreMemberCentralProfileRepository } from './firestore/repositories/member-central-profile.repository';
 import { FirestoreMemberPositionHistoryRepository } from './firestore/repositories/member-position-history.repository';
 import { FirestoreMemberSituationRecordRepository } from './firestore/repositories/member-situation-record.repository';
@@ -402,6 +413,8 @@ export function createServerContainer() {
     artTemplate: withAudit(new FirestoreArtTemplateRepository(db), 'artTemplates', auditDeps),
     publication: withAudit(new FirestorePublicationRepository(db), 'publications', auditDeps),
     link: new FirestoreLinkRepository(db),
+    linkFavorite: new FirestoreLinkFavoriteRepository(db),
+    linkSuggestion: new FirestoreLinkSuggestionRepository(db),
     galleryAlbum: new FirestoreGalleryAlbumRepository(db),
     galleryMedia: new FirestoreGalleryMediaRepository(db),
     newsComment: new FirestoreNewsCommentRepository(db),
@@ -1249,8 +1262,35 @@ export function createServerContainer() {
       idGenerator,
     }),
     createLink: new CreateLinkUseCase({ linkRepository: repositories.link, clock, idGenerator }),
+    updateLink: new UpdateLinkUseCase({ linkRepository: repositories.link, clock }),
+    setLinkActive: new SetLinkActiveUseCase({ linkRepository: repositories.link, clock }),
+    moveLink: new MoveLinkUseCase({ linkRepository: repositories.link, clock }),
     listActiveLinks: new ListActiveLinksUseCase({ linkRepository: repositories.link }),
     listAllLinks: new ListAllLinksUseCase({ linkRepository: repositories.link }),
+    toggleLinkFavorite: new ToggleLinkFavoriteUseCase({
+      favoriteRepository: repositories.linkFavorite,
+      clock,
+      idGenerator,
+    }),
+    listMyLinkFavorites: new ListMyLinkFavoritesUseCase({
+      favoriteRepository: repositories.linkFavorite,
+    }),
+    submitLinkSuggestion: new SubmitLinkSuggestionUseCase({
+      suggestionRepository: repositories.linkSuggestion,
+      clock,
+      idGenerator,
+    }),
+    listPendingLinkSuggestions: new ListPendingLinkSuggestionsUseCase({
+      suggestionRepository: repositories.linkSuggestion,
+    }),
+    approveLinkSuggestion: new ApproveLinkSuggestionUseCase({
+      suggestionRepository: repositories.linkSuggestion,
+      clock,
+    }),
+    rejectLinkSuggestion: new RejectLinkSuggestionUseCase({
+      suggestionRepository: repositories.linkSuggestion,
+      clock,
+    }),
 
     createArtTemplate: new CreateArtTemplateUseCase({
       artTemplateRepository: repositories.artTemplate,

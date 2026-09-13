@@ -15,6 +15,7 @@ export * from './enums/archive';
 export * from './enums/access-level';
 export * from './enums/media-asset';
 export * from './enums/family-legacy';
+export * from './enums/links';
 export * from './schemas/tenant.schema';
 export * from './schemas/user.schema';
 export * from './schemas/member.schema';

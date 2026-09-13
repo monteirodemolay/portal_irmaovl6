@@ -56,6 +56,7 @@ export {
   ChevronRight,
   ChevronLeft,
   ChevronDown,
+  ChevronUp,
   History,
   UserCog,
   ClipboardList,
