@@ -6,6 +6,7 @@ import type {
   ConstellationView,
   ExpandNodeInput,
   ExplorerEdge,
+  ExplorerExpansion,
   ExplorerNode,
   ExplorerNodeKind,
 } from '@vl6/domain';
@@ -35,7 +36,6 @@ import {
   X,
   cn,
 } from '@vl6/ui';
-import { expandConstellationNodeAction } from '../actions/constellation-explorer-actions';
 import {
   deleteConstellationViewAction,
   getConstellationViewAction,
@@ -151,7 +151,16 @@ export function InteractiveConstellationExplorer({ roots }: InteractiveConstella
           id: node.id,
           cursor: append ? current?.nextCursor : null,
         };
-        const result = await expandConstellationNodeAction(input);
+        // `fetch` comum, não Server Action — ver comentário da rota
+        // `/api/acervo/constelacao/expandir` (evita o refresh implícito de
+        // toda a árvore de Server Components da página a cada nó aberto).
+        const response = await fetch('/api/acervo/constelacao/expandir', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(input),
+        });
+        if (!response.ok) throw new Error('expand_failed');
+        const result = (await response.json()) as ExplorerExpansion;
         rememberNodes(result.nodes);
         setBranches((value) => ({
           ...value,
