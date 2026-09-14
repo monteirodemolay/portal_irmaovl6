@@ -134,6 +134,9 @@ import {
   ListEventsInRangeUseCase,
   CreateFileAssetUseCase,
   CreateFileCategoryUseCase,
+  RegisterMemberTitleUseCase,
+  ListMemberTitlesUseCase,
+  RemoveMemberTitleUseCase,
   CreateGalleryAlbumUseCase,
   DeleteGalleryAlbumUseCase,
   CreateLibraryCategoryUseCase,
@@ -307,6 +310,7 @@ import { FirestorePersonalTaskRepository } from './firestore/repositories/person
 import { FirestorePersonalNoteRepository } from './firestore/repositories/personal-note.repository';
 import { FirestoreFileAssetRepository } from './firestore/repositories/file-asset.repository';
 import { FirestoreFileCategoryRepository } from './firestore/repositories/file-category.repository';
+import { FirestoreMemberTitleRepository } from './firestore/repositories/member-title.repository';
 import { FirestoreGalleryAlbumRepository } from './firestore/repositories/gallery-album.repository';
 import { FirestoreGalleryMediaRepository } from './firestore/repositories/gallery-media.repository';
 import { FirestoreGoogleCalendarConnectionRepository } from './firestore/repositories/google-calendar-connection.repository';
@@ -398,6 +402,7 @@ export function createServerContainer() {
     ),
     auditLog: auditLogRepository,
     fileCategory: new FirestoreFileCategoryRepository(db),
+    memberTitle: new FirestoreMemberTitleRepository(db),
     fileAsset: new FirestoreFileAssetRepository(db),
     libraryCategory: new FirestoreLibraryCategoryRepository(db),
     libraryItem: new FirestoreLibraryItemRepository(db),
@@ -970,6 +975,18 @@ export function createServerContainer() {
     }),
     listFileCategories: new ListFileCategoriesUseCase({
       fileCategoryRepository: repositories.fileCategory,
+    }),
+    registerMemberTitle: new RegisterMemberTitleUseCase({
+      memberTitleRepository: repositories.memberTitle,
+      clock,
+      idGenerator,
+    }),
+    listMemberTitles: new ListMemberTitlesUseCase({
+      memberTitleRepository: repositories.memberTitle,
+    }),
+    removeMemberTitle: new RemoveMemberTitleUseCase({
+      memberTitleRepository: repositories.memberTitle,
+      clock,
     }),
     createFileAsset: new CreateFileAssetUseCase({
       fileAssetRepository: repositories.fileAsset,

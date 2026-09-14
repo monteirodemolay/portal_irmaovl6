@@ -1,5 +1,6 @@
 export * from './enums/entity-status';
 export * from './enums/rbac';
+export * from './enums/honors';
 export * from './enums/membership';
 export * from './enums/governance';
 export * from './enums/document-management';
