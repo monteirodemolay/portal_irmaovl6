@@ -1,767 +1,88 @@
-import Link from 'next/link';
-import type { PublicMemberProfileDTO } from '@vl6/domain';
-import {
-  buildWhatsappLink,
-  FAMILY_DISPLAY_GROUPS,
-  FAMILY_DISPLAY_GROUP_LABELS,
-  getBoardPositionLabel,
-} from '@vl6/shared';
-import {
-  ArrowUpRight,
-  Briefcase,
-  Building2,
-  Camera,
-  Card,
-  CardContent,
-  CalendarDays,
-  Compass,
-  Facebook,
-  GraduationCap,
-  Globe,
-  Handshake,
-  Heart,
-  Instagram,
-  Linkedin,
-  Mail,
-  MapPin,
-  MessageCircle,
-  Milestone,
-  Phone,
-  Sparkles,
-  Star,
-  Tag,
-} from '@vl6/ui';
-import { MemberAvatar } from '@/components/membership/member-avatar';
-import { MemberDegreeBadge } from '@/components/membership/member-degree-badge';
-import { CeremonyMatesPanel } from '@/components/membership/ceremony-mates-panel';
-import {
-  Panel as InstitutionalPanel,
-  TimelineEntry,
-  type IconType,
-} from '@/components/membership/institutional-panel';
-import { MemberPhotoGrid } from './member-photo-grid';
-import { ProfileBioText } from './profile-bio-text';
-
-function formatDate(date: Date): string {
-  return new Intl.DateTimeFormat('pt-BR', { dateStyle: 'long' }).format(new Date(date));
-}
-
-/** Tabs de Meu Espaço que cada bloco do perfil edita — ver comentário em `Panel`. */
-type EditTab =
-  'geral' | 'pessoal' | 'profissional' | 'empresa' | 'afiliacoes' | 'contatos' | 'redes';
+import type { ReactNode } from 'react';
+import type { MemberTitle, PublicMemberProfileDTO } from '@vl6/domain';
+import type { PersonPhoto } from '@/modules/archive/components/person-photo-grid';
+import { ProfileHeaderCard } from './profile-header-card';
+import { ProfileOverviewTab } from './profile-overview-tab';
+import { ProfileTrajectoryTab } from './profile-trajectory-tab';
+import { ProfileFamilyTab } from './profile-family-tab';
+import { ProfileAcervoTab } from './profile-acervo-tab';
+import { ProfileTabs } from './profile-tabs';
 
 /**
- * Cargo ou comissão em curso — vira o selo de "gestão atual" no cabeçalho.
- * Prioriza cargo sobre comissão quando os dois estão em aberto.
- */
-function getCurrentAssignment(trajetoria: PublicMemberProfileDTO['trajetoria']) {
-  if (!trajetoria) return null;
-  const activeCargo = trajetoria.cargos.find((entry) => !entry.dataFim);
-  if (activeCargo) {
-    return { label: getBoardPositionLabel(activeCargo.cargo), gestaoNome: activeCargo.gestaoNome };
-  }
-  const activeComissao = trajetoria.comissoes.find((entry) => !entry.dataFim);
-  if (activeComissao) {
-    return { label: activeComissao.nome, gestaoNome: activeComissao.gestaoNome };
-  }
-  return null;
-}
-
-/**
- * Adapta o `Panel` institucional compartilhado (`@/components/membership/
- * institutional-panel`, mesma peça visual usada pela Pessoa do Acervo VL6)
- * pro vocabulário específico da Central VL6: `editTab` vira o link "Editar"
- * pra aba certa de Meu Espaço, sem cada seção abaixo precisar montar esse
- * `Link` na mão.
- */
-function Panel({
-  editTab,
-  trailing,
-  ...props
-}: {
-  kicker: string;
-  title: string;
-  icon?: IconType;
-  editTab?: EditTab;
-  trailing?: React.ReactNode;
-  compact?: boolean;
-  children: React.ReactNode;
-}) {
-  return (
-    <InstitutionalPanel
-      {...props}
-      trailing={
-        trailing ??
-        (editTab && (
-          <Link
-            href={`/irmaos/meu-espaco?tab=${editTab}`}
-            className="text-accent shrink-0 text-xs font-semibold hover:underline"
-          >
-            Editar
-          </Link>
-        ))
-      }
-    />
-  );
-}
-
-function LinkPill({ href, label, icon: Icon }: { href: string; label: string; icon: IconType }) {
-  return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="border-border bg-background hover:border-primary hover:text-primary flex items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors"
-    >
-      <Icon size={15} strokeWidth={1.75} />
-      <span className="truncate">{label}</span>
-    </a>
-  );
-}
-
-function SummaryRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="border-border flex items-center justify-between gap-3 border-b border-dashed pb-2.5 last:border-0 last:pb-0">
-      <dt className="text-muted text-xs">{label}</dt>
-      <dd className="text-right text-xs font-semibold">{value}</dd>
-    </div>
-  );
-}
-
-/**
- * Renderização somente leitura de um `PublicMemberProfileDTO` — já filtrado
- * server-side (docs/architecture, Central VL6). Nunca renderiza uma seção
- * vazia: se a chave é `null`, a seção inteira some. Reusada tanto pelo
- * preview "como os outros veem" (`/perfil`) quanto pelo perfil de terceiro
- * (`/central/[memberId]`).
- *
- * Layout institucional em grid de 12 colunas — coluna principal 8/12 com
- * biografia, família e memória fotográfica; coluna lateral 4/12 com resumo,
- * trajetória, vida maçônica e contatos. Atuação profissional, negócios,
- * competências e interesses viram etiquetas compactas dentro do próprio
- * cabeçalho (não cartões cheios na lateral) — não um formulário
- * reaproveitado como cards.
+ * Perfil único do Irmão (Fase 2 — unificação Acervo/Diretório, ver relatório
+ * "Saneamento do Acervo VL6" publicado nesta sessão): cabeçalho institucional
+ * sempre visível + 4 abas (Visão Geral / Trajetória e Honrarias / Família e
+ * Legado / Acervo). Antes desta fase, `/acervo/pessoas/[memberId]` e o
+ * drawer lateral do Diretório duplicavam esse conteúdo em telas
+ * separadas — agora tudo mora aqui, e as duas rotas passam a apontar (ou
+ * redirecionar) pra esta mesma página. Nunca renderiza uma seção vazia:
+ * se uma aba não tem nada pra mostrar, ela mesma decide o que exibir no
+ * lugar (ver cada `Profile*Tab`).
  */
 export function PublicMemberProfileView({
   profile,
   canViewAcervo = false,
   isOwnProfile = false,
+  memberTitles = [],
+  acervoPhotos = [],
+  acervoRelationsSlot = null,
+  initialTab = 'geral',
   layout = 'full',
 }: {
   profile: PublicMemberProfileDTO;
-  /** Gate do link "Ver Memória VL6 completa" — ponte Diretório → Acervo (Fase B/C). */
+  /** Gate da aba "Acervo" — ponte Diretório → Acervo (Fase B/C). */
   canViewAcervo?: boolean;
   /** Sessão atual == dono deste perfil → mostra "Editar meu perfil" e "Editar" por bloco. */
   isOwnProfile?: boolean;
+  /** Títulos e Condições Maçônicas cadastrados (Fase 1 de Honrarias) — exibidos na aba Trajetória. */
+  memberTitles?: MemberTitle[];
+  /** Fotos institucionais do Acervo VL6 em que este Irmão está marcado — ver `ProfileAcervoTab`. */
+  acervoPhotos?: PersonPhoto[];
+  /** `RelationsSection` (Server Component, precisa de `container`/`authContext`) já renderizado pela página. */
+  acervoRelationsSlot?: ReactNode;
+  /** Aba que abre primeiro — usado pelo redirect de `/acervo/pessoas/[id]` (`?aba=acervo`). */
+  initialTab?: string;
   /**
-   * `'full'` (padrão) — página cheia (`/irmaos/[memberId]`), onde a grade
-   * 8/4 deve abrir sempre que der (`md:`, breakpoint de VIEWPORT — não de
-   * container: uma largura de container "seguramente larga o bastante"
-   * não existe, qualquer número fixo acaba curto pra alguém com a janela
-   * do navegador não maximizada, como já aconteceu aqui). `'compact'` —
-   * Drawer do Diretório e Dialog de pré-visualização, sempre bem mais
-   * estreitos que a página cheia (`max-w-xl`, 576px) qualquer que seja o
-   * viewport: força 1 coluna sempre, sem depender de nenhum breakpoint.
+   * `'full'` (padrão) — página cheia (`/irmaos/[memberId]`). `'compact'` —
+   * "Ver como os outros veem" (Dialog, sempre mais estreito que a página
+   * cheia) — força grid de 1 coluna dentro de cada aba, sem depender de
+   * nenhum breakpoint de viewport.
    */
   layout?: 'full' | 'compact';
 }) {
-  const hasContatos = profile.contatos && Object.values(profile.contatos).some(Boolean);
-  const hasRedes = profile.redes && Object.values(profile.redes).some(Boolean);
-  const hasConexoes = hasContatos || hasRedes;
-  const hasTrajetoria = Boolean(
-    profile.trajetoria &&
-    (profile.trajetoria.dataIniciacao ||
-      profile.trajetoria.dataElevacao ||
-      profile.trajetoria.dataExaltacao ||
-      profile.trajetoria.cargos.length > 0 ||
-      profile.trajetoria.comissoes.length > 0),
-  );
-  const hasProfissional = Boolean(
-    profile.profissional &&
-    (profile.profissional.profissao ||
-      profile.profissional.areaAtuacao ||
-      profile.profissional.formacao ||
-      profile.profissional.resumoProfissional),
-  );
-  const hasResumoProfissional = Boolean(profile.profissional?.resumoProfissional);
-  const hasNegocios = Boolean(profile.negocios && profile.negocios.length > 0);
-  const hasCompetenciasServicos = Boolean(
-    (profile.competencias && profile.competencias.length > 0) ||
-    (profile.servicos && profile.servicos.length > 0),
-  );
-  // Negócio Principal (marcado pelo próprio Irmão em Meu Espaço) vem
-  // primeiro e ganha um estilo em destaque — todos os demais continuam
-  // aparecendo, só numa ordem diferente.
-  const orderedNegocios = [...(profile.negocios ?? [])].sort(
-    (a, b) => Number(b.principal ?? false) - Number(a.principal ?? false),
-  );
-
-  const interesses = profile.informacoesPessoais?.interesses ?? null;
-  const hasVidaMaconica = Boolean(
-    profile.informacoesMaconicas &&
-    (profile.informacoesMaconicas.lojasVisitadas ||
-      profile.informacoesMaconicas.interessesMaconicos),
-  );
-  const hasAfiliacoes = Boolean(profile.afiliacoes && profile.afiliacoes.length > 0);
-  const hasVoluntaryContent = Boolean(
-    profile.apresentacao?.texto ||
-    profile.informacoesPessoais ||
-    profile.endereco ||
-    hasProfissional ||
-    hasCompetenciasServicos ||
-    hasNegocios ||
-    hasConexoes ||
-    hasVidaMaconica ||
-    hasAfiliacoes ||
-    (profile.memoriaFotografica && profile.memoriaFotografica.length > 0) ||
-    profile.familia,
-  );
-
-  // Só entra na grade de 2 colunas quando há pelo menos 2 grupos
-  // preenchidos — com 1 só, `sm:grid-cols-2` deixava a célula vazia ao
-  // lado como espaço morto dentro do próprio card (visualmente quebrado,
-  // metade do card em branco sem nada), em vez de o card ocupar a largura
-  // toda disponível.
-  const populatedFamilyGroups = FAMILY_DISPLAY_GROUPS.filter(
-    (group) => profile.familia?.[group]?.length,
-  );
-
-  const current = getCurrentAssignment(profile.trajetoria);
-  const dataIniciacao = profile.trajetoria?.dataIniciacao ?? profile.dataIniciacao;
-  // Um Irmão em In Memoriam nunca tem acesso próprio ao Portal (situação
-  // terminal) — `canEdit` ignora `isOwnProfile` de propósito aqui, em vez
-  // de confiar que a sessão nunca vai mandar os dois juntos.
-  const isInMemoriam = profile.situacao === 'falecido';
-  const canEdit = isOwnProfile && !isInMemoriam;
-  const summaryRows: { label: string; value: string }[] = [
-    profile.profissional?.profissao
-      ? { label: 'Profissão', value: profile.profissional.profissao }
-      : null,
-    profile.profissional?.areaAtuacao
-      ? {
-          label: 'Área',
-          value: profile.profissional.especializacao
-            ? `${profile.profissional.areaAtuacao} · ${profile.profissional.especializacao}`
-            : profile.profissional.areaAtuacao,
-        }
-      : null,
-    profile.profissional?.formacao
-      ? { label: 'Formação', value: profile.profissional.formacao }
-      : null,
-    current ? { label: 'Cargo/comissão atual', value: current.label } : null,
-  ].filter((row): row is { label: string; value: string } => row !== null);
-
   return (
     <div className="flex flex-col gap-6">
-      {/* Cabeçalho institucional */}
-      <Card className="overflow-hidden">
-        <div className="from-primary to-primary-dark relative h-24 bg-gradient-to-br sm:h-28">
-          {isInMemoriam && (
-            <span className="bg-surface/90 text-primary-dark absolute right-4 top-4 flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold shadow-sm">
-              <Heart size={13} strokeWidth={1.75} className="text-accent" />
-              In Memoriam
-            </span>
-          )}
-        </div>
-        <CardContent className="flex flex-col gap-4 px-6 pb-6 pt-0 sm:px-8">
-          <div className="flex flex-wrap items-end justify-between gap-4">
-            <MemberAvatar
-              fotoUrl={profile.fotoUrl}
-              nome={profile.nomeCompleto}
-              className="border-surface -mt-12 h-24 w-24 border-4 shadow-md sm:-mt-14 sm:h-28 sm:w-28"
-              imgClassName="object-top"
-            />
-            {canEdit && (
-              <Link
-                href="/irmaos/meu-espaco"
-                className="border-border bg-surface hover:border-primary hover:text-primary flex items-center gap-1.5 rounded-full border px-4 py-2 text-sm font-medium transition-colors"
-              >
-                Editar meu perfil
-              </Link>
-            )}
-          </div>
-          <div className="flex flex-col gap-2">
-            <p className="font-display text-2xl font-semibold sm:text-[28px]">
-              {profile.nomeCompleto}
-            </p>
-            <MemberDegreeBadge grau={profile.grau} />
-          </div>
-          <div className="flex flex-wrap gap-2 pt-1">
-            {profile.informacoesPessoais?.cidadeExibicao && (
-              <span className="border-border bg-background text-muted flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium">
-                <MapPin size={13} strokeWidth={1.75} />
-                {profile.informacoesPessoais.cidadeExibicao}
-              </span>
-            )}
-            {dataIniciacao && (
-              <span className="border-border bg-background text-muted flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium">
-                <CalendarDays size={13} strokeWidth={1.75} />
-                Iniciado em {formatDate(dataIniciacao)}
-              </span>
-            )}
-            {current && (
-              <span className="border-border bg-background text-muted flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium">
-                <Compass size={13} strokeWidth={1.75} />
-                {current.label}
-              </span>
-            )}
-            {current && (
-              <span className="bg-accent/15 text-primary-dark flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold">
-                Gestão {current.gestaoNome}
-              </span>
-            )}
-            {isInMemoriam && profile.dataFalecimento && (
-              <span className="border-border bg-background text-muted flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium">
-                <Heart size={13} strokeWidth={1.75} />
-                Em memória desde {formatDate(profile.dataFalecimento)}
-              </span>
-            )}
-          </div>
+      <ProfileHeaderCard profile={profile} isOwnProfile={isOwnProfile} />
 
-          {/*
-            Vínculos rápidos — atuação profissional, negócios, competências
-            e interesses viram etiquetas aqui dentro do próprio cabeçalho em
-            vez de 4 cartões cheios empilhados na coluna lateral (pedido
-            explícito: "criando apenas os vínculos ali", pra ficar mais bem
-            distribuído). Cada linha só aparece se tiver algo pra mostrar.
-          */}
-          {(hasResumoProfissional || hasNegocios || hasCompetenciasServicos || interesses) && (
-            <div className="border-border flex flex-col gap-2 border-t pt-4">
-              {(hasResumoProfissional || hasNegocios) && (
-                <div className="flex flex-wrap gap-2">
-                  {hasResumoProfissional && profile.profissional?.resumoProfissional && (
-                    <span className="border-border bg-background text-foreground flex max-w-full items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium">
-                      <Briefcase size={13} strokeWidth={1.75} className="text-accent shrink-0" />
-                      <span className="truncate">{profile.profissional.resumoProfissional}</span>
-                    </span>
-                  )}
-                  {orderedNegocios.map((negocio) => (
-                    <Link
-                      key={negocio.id}
-                      href={`/irmaos/negocios/${negocio.id}`}
-                      className={
-                        negocio.principal
-                          ? 'bg-accent/15 text-primary-dark flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors hover:brightness-95'
-                          : 'border-border bg-background hover:border-primary hover:text-primary flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors'
-                      }
-                    >
-                      {negocio.principal ? (
-                        <Star size={13} strokeWidth={1.75} className="shrink-0" />
-                      ) : (
-                        <Building2 size={13} strokeWidth={1.75} className="text-accent shrink-0" />
-                      )}
-                      {negocio.nomeEmpresa}
-                    </Link>
-                  ))}
-                </div>
-              )}
-              {hasCompetenciasServicos && (
-                <div className="flex flex-wrap items-center gap-1.5">
-                  <Tag size={13} strokeWidth={1.75} className="text-muted shrink-0" />
-                  {[...(profile.competencias ?? []), ...(profile.servicos ?? [])].map((tag) => (
-                    <span
-                      key={tag}
-                      className="bg-background text-foreground rounded-md px-2.5 py-1 text-xs font-medium"
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              )}
-              {interesses && (
-                <div className="text-muted flex items-center gap-1.5 text-xs">
-                  <Sparkles size={13} strokeWidth={1.75} className="shrink-0" />
-                  {interesses}
-                </div>
-              )}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/*
-        Grid 8/4 por breakpoint de VIEWPORT (`md:`), não de container —
-        tentativa anterior usava `@container`/`@Nxl` pra não quebrar dentro
-        do Drawer/Dialog (`layout="compact"`, sempre ~576px), mas qualquer
-        largura de container fixa escolhida como "segura" ainda dependia do
-        viewport real do usuário descontado sidebar+padding, e uma janela
-        de navegador não maximizada (relatado: ~1073px de largura total)
-        ficava abaixo de qualquer limiar razoável, nunca virando 2 colunas.
-        Agora a página cheia (`layout="full"`) usa `md:` (768px de
-        viewport) direto — sidebar já vira menu (`lg:flex`, 1024px) bem
-        antes disso, então mesmo com sidebar visível ainda sobra espaço de
-        sobra pra 2 colunas — e o Drawer/Dialog (`layout="compact"`) força
-        1 coluna sempre, sem depender de largura nenhuma.
-      */}
-      <div className={layout === 'full' ? 'grid grid-cols-1 gap-6 md:grid-cols-12' : 'grid gap-6'}>
-        <div
-          className={
-            layout === 'full' ? 'flex flex-col gap-6 md:col-span-8' : 'flex flex-col gap-6'
-          }
-        >
-          {isInMemoriam && profile.mensagemHomenagem && (
-            <article className="from-primary/5 to-accent/10 border-accent/20 flex flex-col gap-3 rounded-2xl border bg-gradient-to-br p-6 sm:p-8">
-              <div className="text-accent flex items-center gap-2">
-                <Heart size={16} strokeWidth={1.75} />
-                <p className="text-[10px] font-bold uppercase tracking-[0.14em]">Em memória</p>
-              </div>
-              <p className="font-display whitespace-pre-line text-base italic leading-relaxed sm:text-lg">
-                {profile.mensagemHomenagem}
-              </p>
-            </article>
-          )}
-
-          {profile.apresentacao?.texto && (
-            <Panel kicker="APRESENTAÇÃO" title="Sobre" editTab={canEdit ? 'geral' : undefined}>
-              <ProfileBioText text={profile.apresentacao.texto} />
-            </Panel>
-          )}
-
-          {profile.familia && (
-            <Panel
-              kicker="VÍNCULOS"
-              title="Família e Legado"
-              editTab={canEdit ? 'pessoal' : undefined}
-            >
-              <div
-                className={
-                  populatedFamilyGroups.length > 1
-                    ? 'grid grid-cols-1 gap-3 sm:grid-cols-2'
-                    : 'grid grid-cols-1 gap-3'
-                }
-              >
-                {populatedFamilyGroups.map((group) => (
-                  <div
-                    key={group}
-                    className="border-border bg-background flex flex-col gap-2.5 rounded-xl border p-4"
-                  >
-                    <p className="text-muted text-[10px] font-bold uppercase tracking-wide">
-                      {FAMILY_DISPLAY_GROUP_LABELS[group]}
-                    </p>
-                    <ul className="flex flex-col gap-2.5">
-                      {profile.familia?.[group]?.map((item) =>
-                        item.kind === 'member' ? (
-                          <li key={item.key}>
-                            <Link
-                              href={`/irmaos/${item.id}`}
-                              className="hover:bg-surface -m-1 flex items-center gap-2.5 rounded-lg p-1 text-sm transition-colors"
-                            >
-                              <MemberAvatar
-                                fotoUrl={item.fotoUrl}
-                                nome={item.nomeCompleto}
-                                className="h-8 w-8 shrink-0"
-                              />
-                              <span className="min-w-0">
-                                <span className="block truncate font-medium hover:underline">
-                                  {item.nomeCompleto}
-                                </span>
-                                <span className="text-muted block text-xs">{item.parentesco}</span>
-                              </span>
-                            </Link>
-                          </li>
-                        ) : (
-                          <li key={item.key} className="flex items-center gap-2.5 text-sm">
-                            <MemberAvatar
-                              fotoUrl={item.fotoUrl}
-                              nome={item.nomeCompleto}
-                              className="h-8 w-8 shrink-0"
-                            />
-                            <span className="min-w-0">
-                              <span className="block truncate font-medium">
-                                {item.nomeCompleto}
-                              </span>
-                              <span className="text-muted block text-xs">{item.parentesco}</span>
-                            </span>
-                          </li>
-                        ),
-                      )}
-                    </ul>
-                  </div>
-                ))}
-              </div>
-              {canViewAcervo && (
-                <Link
-                  href={`/acervo/pessoas/${profile.memberId}`}
-                  className="text-accent flex w-fit items-center gap-1 text-xs font-semibold hover:underline"
-                >
-                  Explorar Constelação da Memória
-                  <ArrowUpRight size={13} strokeWidth={2} />
-                </Link>
-              )}
-            </Panel>
-          )}
-
-          <CeremonyMatesPanel groups={profile.irmaosGemeos} />
-
-          {profile.memoriaFotografica && profile.memoriaFotografica.length > 0 && (
-            <Panel
-              kicker="MEMÓRIA"
-              title="Memória Fotográfica"
-              trailing={
-                canViewAcervo ? (
-                  <Link
-                    href={`/acervo/pessoas/${profile.memberId}`}
-                    className="text-accent flex shrink-0 items-center gap-1 text-xs font-semibold hover:underline"
-                  >
-                    Ver Memória VL6 completa
-                    <ArrowUpRight size={13} strokeWidth={2} />
-                  </Link>
-                ) : (
-                  <Camera size={16} strokeWidth={1.75} className="text-accent mt-1 shrink-0" />
-                )
+      <ProfileTabs
+        initialTab={initialTab}
+        tabs={[
+          { key: 'geral', label: 'Visão Geral' },
+          { key: 'trajetoria', label: 'Trajetória e Honrarias' },
+          { key: 'familia', label: 'Família e Legado' },
+          ...(canViewAcervo ? [{ key: 'acervo', label: 'Acervo' }] : []),
+        ]}
+      >
+        {{
+          geral: (
+            <ProfileOverviewTab profile={profile} isOwnProfile={isOwnProfile} layout={layout} />
+          ),
+          trajetoria: <ProfileTrajectoryTab profile={profile} memberTitles={memberTitles} />,
+          familia: <ProfileFamilyTab profile={profile} canViewAcervo={canViewAcervo} />,
+          ...(canViewAcervo
+            ? {
+                acervo: (
+                  <ProfileAcervoTab
+                    profile={profile}
+                    canViewAcervo={canViewAcervo}
+                    acervoPhotos={acervoPhotos}
+                    relationsSlot={acervoRelationsSlot}
+                  />
+                ),
               }
-            >
-              <MemberPhotoGrid photos={profile.memoriaFotografica} />
-            </Panel>
-          )}
-
-          {!hasVoluntaryContent && (
-            <div className="border-border bg-surface text-muted rounded-2xl border border-dashed p-6 text-sm">
-              {canEdit ? (
-                <>
-                  Você ainda não compartilhou informações pessoais ou profissionais no seu perfil.{' '}
-                  <Link
-                    href="/irmaos/meu-espaco"
-                    className="text-accent font-semibold hover:underline"
-                  >
-                    Complete seu espaço na Comunidade VL6
-                  </Link>
-                  .
-                </>
-              ) : (
-                'Este Irmão ainda não compartilhou informações pessoais ou profissionais no Diretório.'
-              )}
-            </div>
-          )}
-        </div>
-
-        <aside
-          className={
-            layout === 'full' ? 'flex flex-col gap-6 md:col-span-4' : 'flex flex-col gap-6'
-          }
-        >
-          <Panel kicker="RESUMO" title="Perfil em resumo" compact>
-            <dl className="flex flex-col gap-2.5">
-              {profile.informacoesPessoais?.cidadeExibicao && (
-                <SummaryRow label="Cidade" value={profile.informacoesPessoais.cidadeExibicao} />
-              )}
-              <div className="border-border flex items-center justify-between gap-3 border-b border-dashed pb-2.5 last:border-0 last:pb-0">
-                <dt className="text-muted text-xs">Grau</dt>
-                <dd className="text-right text-xs font-semibold">
-                  <MemberDegreeBadge grau={profile.grau} size="xs" compact />
-                </dd>
-              </div>
-              {summaryRows.map((row) => (
-                <SummaryRow key={row.label} label={row.label} value={row.value} />
-              ))}
-            </dl>
-          </Panel>
-
-          {hasTrajetoria && profile.trajetoria && (
-            <Panel kicker="TRAJETÓRIA" title="Caminho na Loja" icon={Milestone} compact>
-              <div className="flex flex-col gap-4">
-                {profile.trajetoria.dataIniciacao && (
-                  <TimelineEntry
-                    label="Iniciação"
-                    dateLabel={formatDate(profile.trajetoria.dataIniciacao)}
-                    active
-                    href={
-                      profile.trajetoria.ceremonyEventIds.iniciacao
-                        ? `/acervo/eventos/${profile.trajetoria.ceremonyEventIds.iniciacao}`
-                        : undefined
-                    }
-                  />
-                )}
-                {profile.trajetoria.dataElevacao && (
-                  <TimelineEntry
-                    label="Elevação"
-                    dateLabel={formatDate(profile.trajetoria.dataElevacao)}
-                    active
-                    href={
-                      profile.trajetoria.ceremonyEventIds.elevacao
-                        ? `/acervo/eventos/${profile.trajetoria.ceremonyEventIds.elevacao}`
-                        : undefined
-                    }
-                  />
-                )}
-                {profile.trajetoria.dataExaltacao && (
-                  <TimelineEntry
-                    label="Exaltação"
-                    dateLabel={formatDate(profile.trajetoria.dataExaltacao)}
-                    active
-                    href={
-                      profile.trajetoria.ceremonyEventIds.exaltacao
-                        ? `/acervo/eventos/${profile.trajetoria.ceremonyEventIds.exaltacao}`
-                        : undefined
-                    }
-                  />
-                )}
-                {profile.trajetoria.cargos.map((entry, index) => (
-                  <TimelineEntry
-                    key={`cargo-${index}`}
-                    label={getBoardPositionLabel(entry.cargo)}
-                    dateLabel={formatDate(entry.dataInicio)}
-                    active={!entry.dataFim}
-                    current={!entry.dataFim}
-                    detail={`Cargo · ${entry.gestaoNome}${entry.dataFim ? ` até ${formatDate(entry.dataFim)}` : ' · em curso'}`}
-                    href={`/acervo/gestoes/${entry.gestaoId}`}
-                  />
-                ))}
-                {profile.trajetoria.comissoes.map((entry, index) => (
-                  <TimelineEntry
-                    key={`comissao-${index}`}
-                    label={entry.nome}
-                    dateLabel={formatDate(entry.dataInicio)}
-                    active={!entry.dataFim}
-                    current={!entry.dataFim}
-                    detail={`Comissão · ${entry.gestaoNome}${entry.dataFim ? ` até ${formatDate(entry.dataFim)}` : ' · em curso'}`}
-                    href={`/acervo/gestoes/${entry.gestaoId}`}
-                  />
-                ))}
-              </div>
-            </Panel>
-          )}
-
-          {hasVidaMaconica && profile.informacoesMaconicas && (
-            <Panel
-              kicker="VIDA MAÇÔNICA"
-              title="Vivência Maçônica"
-              icon={Compass}
-              editTab={canEdit ? 'pessoal' : undefined}
-              compact
-            >
-              <dl className="flex flex-col gap-2.5">
-                {profile.informacoesMaconicas.lojasVisitadas && (
-                  <SummaryRow
-                    label="Lojas visitadas"
-                    value={profile.informacoesMaconicas.lojasVisitadas}
-                  />
-                )}
-                {profile.informacoesMaconicas.interessesMaconicos && (
-                  <SummaryRow
-                    label="Interesses"
-                    value={profile.informacoesMaconicas.interessesMaconicos}
-                  />
-                )}
-              </dl>
-            </Panel>
-          )}
-
-          {hasAfiliacoes && profile.afiliacoes && (
-            <Panel
-              kicker="AFILIAÇÕES"
-              title="Outras afiliações"
-              icon={Handshake}
-              editTab={canEdit ? 'afiliacoes' : undefined}
-              compact
-            >
-              <div className="flex flex-col gap-3">
-                {profile.afiliacoes.map((afiliacao) => (
-                  <div key={afiliacao.id} className="flex flex-col gap-1">
-                    <p className="text-sm font-medium">
-                      {afiliacao.nomeInstituicao}
-                      {afiliacao.abrangencia === 'internacional' && (
-                        <span className="text-muted ml-1.5 text-xs">
-                          · Internacional{afiliacao.pais ? ` — ${afiliacao.pais}` : ''}
-                        </span>
-                      )}
-                    </p>
-                    {afiliacao.papel && <p className="text-muted text-xs">{afiliacao.papel}</p>}
-                    {(afiliacao.instagram || afiliacao.siteUrl) && (
-                      <div className="flex flex-wrap gap-2 pt-0.5">
-                        {afiliacao.instagram && (
-                          <LinkPill href={afiliacao.instagram} label="Instagram" icon={Instagram} />
-                        )}
-                        {afiliacao.siteUrl && (
-                          <LinkPill href={afiliacao.siteUrl} label="Site" icon={Globe} />
-                        )}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </Panel>
-          )}
-
-          {(hasConexoes || profile.endereco) && (
-            <Panel
-              kicker="CONEXÕES"
-              title="Contato e Redes"
-              editTab={canEdit ? 'contatos' : undefined}
-              compact
-            >
-              <div className="flex flex-col gap-2">
-                {profile.endereco &&
-                  (profile.endereco.logradouro ||
-                    profile.endereco.bairro ||
-                    profile.endereco.cidade) && (
-                    <p className="text-muted flex items-start gap-2 text-xs leading-relaxed">
-                      <MapPin size={14} strokeWidth={1.75} className="mt-0.5 shrink-0" />
-                      {[
-                        [profile.endereco.logradouro, profile.endereco.numero]
-                          .filter(Boolean)
-                          .join(', '),
-                        profile.endereco.bairro,
-                        [profile.endereco.cidade, profile.endereco.estado]
-                          .filter(Boolean)
-                          .join(' - '),
-                      ]
-                        .filter(Boolean)
-                        .join(' — ')}
-                    </p>
-                  )}
-                {profile.contatos?.whatsapp && (
-                  <LinkPill
-                    href={buildWhatsappLink(profile.contatos.whatsapp)}
-                    label={profile.contatos.whatsapp}
-                    icon={MessageCircle}
-                  />
-                )}
-                {profile.contatos?.telefone && (
-                  <LinkPill
-                    href={`tel:${profile.contatos.telefone}`}
-                    label={profile.contatos.telefone}
-                    icon={Phone}
-                  />
-                )}
-                {profile.contatos?.email && (
-                  <LinkPill
-                    href={`mailto:${profile.contatos.email}`}
-                    label={profile.contatos.email}
-                    icon={Mail}
-                  />
-                )}
-                {profile.redes?.whatsapp && (
-                  <LinkPill
-                    href={buildWhatsappLink(profile.redes.whatsapp)}
-                    label="WhatsApp"
-                    icon={MessageCircle}
-                  />
-                )}
-                {profile.redes?.instagram && (
-                  <LinkPill href={profile.redes.instagram} label="Instagram" icon={Instagram} />
-                )}
-                {profile.redes?.facebook && (
-                  <LinkPill href={profile.redes.facebook} label="Facebook" icon={Facebook} />
-                )}
-                {profile.redes?.linkedin && (
-                  <LinkPill href={profile.redes.linkedin} label="LinkedIn" icon={Linkedin} />
-                )}
-                {profile.redes?.lattes && (
-                  <LinkPill
-                    href={profile.redes.lattes}
-                    label="Currículo Lattes"
-                    icon={GraduationCap}
-                  />
-                )}
-                {profile.redes?.site && (
-                  <LinkPill href={profile.redes.site} label="Site" icon={Globe} />
-                )}
-              </div>
-            </Panel>
-          )}
-        </aside>
-      </div>
+            : {}),
+        }}
+      </ProfileTabs>
     </div>
   );
 }

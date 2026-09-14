@@ -1,0 +1,102 @@
+import Link from 'next/link';
+import type { PublicMemberProfileDTO } from '@vl6/domain';
+import { getBoardPositionLabel } from '@vl6/shared';
+import {
+  Panel as InstitutionalPanel,
+  type IconType,
+} from '@/components/membership/institutional-panel';
+
+/** Tabs de Meu Espaço que cada bloco do perfil edita. */
+export type EditTab =
+  'geral' | 'pessoal' | 'profissional' | 'empresa' | 'afiliacoes' | 'contatos' | 'redes';
+
+export function formatDate(date: Date): string {
+  return new Intl.DateTimeFormat('pt-BR', { dateStyle: 'long' }).format(new Date(date));
+}
+
+/**
+ * Cargo ou comissão em curso — vira o selo de "gestão atual" no cabeçalho.
+ * Prioriza cargo sobre comissão quando os dois estão em aberto.
+ */
+export function getCurrentAssignment(trajetoria: PublicMemberProfileDTO['trajetoria']) {
+  if (!trajetoria) return null;
+  const activeCargo = trajetoria.cargos.find((entry) => !entry.dataFim);
+  if (activeCargo) {
+    return { label: getBoardPositionLabel(activeCargo.cargo), gestaoNome: activeCargo.gestaoNome };
+  }
+  const activeComissao = trajetoria.comissoes.find((entry) => !entry.dataFim);
+  if (activeComissao) {
+    return { label: activeComissao.nome, gestaoNome: activeComissao.gestaoNome };
+  }
+  return null;
+}
+
+/**
+ * Adapta o `Panel` institucional compartilhado (`@/components/membership/
+ * institutional-panel`, mesma peça visual usada pela Pessoa do Acervo VL6)
+ * pro vocabulário específico da Central VL6: `editTab` vira o link "Editar"
+ * pra aba certa de Meu Espaço, sem cada seção precisar montar esse `Link`
+ * na mão. Compartilhado entre as 4 abas do Perfil único (ver
+ * `ProfileTabs`) — antes vivia só dentro de `public-member-profile-view.tsx`.
+ */
+export function Panel({
+  editTab,
+  trailing,
+  ...props
+}: {
+  kicker: string;
+  title: string;
+  icon?: IconType;
+  editTab?: EditTab;
+  trailing?: React.ReactNode;
+  compact?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <InstitutionalPanel
+      {...props}
+      trailing={
+        trailing ??
+        (editTab && (
+          <Link
+            href={`/irmaos/meu-espaco?tab=${editTab}`}
+            className="text-accent shrink-0 text-xs font-semibold hover:underline"
+          >
+            Editar
+          </Link>
+        ))
+      }
+    />
+  );
+}
+
+export function LinkPill({
+  href,
+  label,
+  icon: Icon,
+}: {
+  href: string;
+  label: string;
+  icon: IconType;
+}) {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="border-border bg-background hover:border-primary hover:text-primary flex items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors"
+    >
+      <Icon size={15} strokeWidth={1.75} />
+      <span className="truncate">{label}</span>
+    </a>
+  );
+}
+
+export function SummaryRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="border-border flex items-center justify-between gap-3 border-b border-dashed pb-2.5 last:border-0 last:pb-0">
+      <dt className="text-muted text-xs">{label}</dt>
+      <dd className="text-right text-xs font-semibold">{value}</dd>
+    </div>
+  );
+}
