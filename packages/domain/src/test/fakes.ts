@@ -1,4 +1,6 @@
 import type { IClock, IIdGenerator } from '../shared/ports';
+import type { MemberTitle } from '../modules/honors/entities/member-title.entity';
+import type { IMemberTitleRepository } from '../modules/honors/repositories/member-title.repository';
 import type { Tenant } from '../modules/tenancy/entities/tenant.entity';
 import type { TenantBranding } from '../modules/tenancy/entities/tenant-branding.entity';
 import type { TenantSettings } from '../modules/tenancy/entities/tenant-settings.entity';
@@ -1872,5 +1874,27 @@ export class InMemoryConstellationViewRevisionRepository implements IConstellati
   }
   async listByView(tenantId: string, viewId: string) {
     return this.items.filter((r) => r.tenantId === tenantId && r.viewId === viewId);
+  }
+}
+
+export class InMemoryMemberTitleRepository implements IMemberTitleRepository {
+  private readonly byId = new Map<string, MemberTitle>();
+
+  async findById(id: string) {
+    return this.byId.get(id) ?? null;
+  }
+  async listByMemberId(tenantId: string, memberId: string) {
+    return [...this.byId.values()].filter(
+      (t) => t.tenantId === tenantId && t.memberId === memberId && t.deletedAt === null,
+    );
+  }
+  async create(title: MemberTitle) {
+    this.byId.set(title.id, title);
+  }
+  async softDelete(id: string, deletedAt: Date, updatedBy: string) {
+    const title = this.byId.get(id);
+    if (title) {
+      this.byId.set(id, { ...title, deletedAt, updatedAt: deletedAt, updatedBy, ativo: false });
+    }
   }
 }

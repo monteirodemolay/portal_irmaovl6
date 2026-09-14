@@ -448,3 +448,9 @@ export * from './modules/family-legacy/use-cases/derive-family-kinships.use-case
 export * from './modules/family-legacy/use-cases/list-owner-family-network.use-case';
 export * from './modules/family-legacy/use-cases/find-shared-family-persons.use-case';
 export * from './modules/family-legacy/use-cases/create-person-fraternal-record.use-case';
+
+export * from './modules/honors/entities/member-title.entity';
+export * from './modules/honors/repositories/member-title.repository';
+export * from './modules/honors/use-cases/register-member-title.use-case';
+export * from './modules/honors/use-cases/list-member-titles.use-case';
+export * from './modules/honors/use-cases/remove-member-title.use-case';

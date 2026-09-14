@@ -18,6 +18,7 @@ import { ProfessionalCard } from '@/modules/membership/components/profile-fields
 import { CompanyCard } from '@/modules/membership/components/profile-fields/company-card';
 import { ContactsCard } from '@/modules/membership/components/profile-fields/contacts-card';
 import { SituacaoMaconicaCard } from '@/modules/membership/components/situacao/situacao-maconica-card';
+import { MemberTitlesCard } from '@/modules/honors/components/member-titles-card';
 import { listUsedProfessions } from '@/modules/membership/lib/list-used-professions';
 import { listUsedCompanies } from '@/modules/membership/lib/list-used-companies';
 import { MemberAvatar } from '@/components/membership/member-avatar';
@@ -49,6 +50,7 @@ export async function MemberEditPanel({ memberId }: { memberId: string }) {
     customCompanies,
     situacaoVigente,
     situacaoHistorico,
+    memberTitles,
   ] = await Promise.all([
     container.useCases.listRoles.execute(session.authContext),
     member.userId ? container.repositories.user.findById(member.userId) : Promise.resolve(null),
@@ -56,6 +58,7 @@ export async function MemberEditPanel({ memberId }: { memberId: string }) {
     listUsedCompanies(container, session.authContext),
     container.repositories.memberSituationRecord.findVigenteByMemberId(memberId),
     container.repositories.memberSituationRecord.listByMemberId(memberId),
+    container.useCases.listMemberTitles.execute(session.authContext, memberId),
   ]);
   const isSelf = accessUser?.id === session.authContext.uid;
 
@@ -103,6 +106,7 @@ export async function MemberEditPanel({ memberId }: { memberId: string }) {
         )}
         <MemberIdentityCard member={member} action={boundUpdateIdentity} />
         <MemberMasonicDataCard member={member} action={boundUpdateIdentity} />
+        <MemberTitlesCard memberId={member.id} titles={memberTitles} />
         <AddressMaritalCard member={member} action={boundUpdateProfile} />
         <ProfessionalCard
           member={member}

@@ -114,6 +114,14 @@ export const RESOURCE_KEYS = [
   // — não existe checagem por cargo institucional (`BoardPosition`) no
   // RBAC, que é só por papel de acesso.
   'communication',
+  // Honrarias — Títulos e Condições (`MemberTitle`), Honrarias e
+  // Condecorações (`Honor`, inclusive Membros Honorários externos à VL6) e
+  // Graus Filosóficos/Corpos Maçônicos (`PhilosophicalJourney`), levantamento
+  // institucional do Administrador. Recurso único cobrindo as três
+  // entidades — sempre cadastradas/lidas juntas na aba "Trajetória e
+  // Honrarias" do Perfil, sem regra de negócio própria que justifique
+  // separar em três recursos.
+  'honor',
 ] as const;
 export type ResourceKey = (typeof RESOURCE_KEYS)[number];
 
@@ -180,6 +188,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<RoleKey, PermissionKey[]> = {
     'notification:manage',
     'communication:manage',
     'familyLegacy:manage',
+    'honor:manage',
   ],
   membro: [
     'tenant:read',
@@ -204,5 +213,6 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<RoleKey, PermissionKey[]> = {
     'archiveMedia:read',
     'quote:read',
     'familyLegacy:read',
+    'honor:read',
   ],
 };
