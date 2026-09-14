@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 import { createServerContainer } from '@vl6/infra';
-import { getMemberJourneyCargos, getMemberJourneyCommittees } from '@vl6/domain';
+import { getCeremonyMates, getMemberJourneyCargos, getMemberJourneyCommittees } from '@vl6/domain';
 import { getBoardPositionLabel } from '@vl6/shared';
 import {
   Camera,
@@ -17,6 +17,7 @@ import { AcervoPageHeader } from '@/components/member/acervo-page-header';
 import { MemberAvatar } from '@/components/membership/member-avatar';
 import { MemberDegreeBadge } from '@/components/membership/member-degree-badge';
 import { Panel, TimelineEntry } from '@/components/membership/institutional-panel';
+import { CeremonyMatesPanel } from '@/components/membership/ceremony-mates-panel';
 import { PersonPhotoGrid } from '@/modules/archive/components/person-photo-grid';
 import { RelationsSection } from '@/modules/archive/components/relations-section';
 import { isAccessLevelVisible } from '@/modules/archive/lib/access-level-visibility';
@@ -63,11 +64,19 @@ export default async function ArchivePersonPage({
     committeeRepository: container.repositories.committee,
   };
 
-  const [cargos, comissoes, publicationSettings, taggedMedia] = await Promise.all([
+  const [cargos, comissoes, publicationSettings, taggedMedia, irmaosGemeos] = await Promise.all([
     getMemberJourneyCargos(journeyDeps, memberId),
     getMemberJourneyCommittees(journeyDeps, tenantId, memberId),
     container.repositories.publicationSettings.findByMemberId(tenantId, memberId),
     container.repositories.archiveMedia.findByPessoaIdentificada(tenantId, memberId),
+    getCeremonyMates(
+      {
+        archiveItemRepository: container.repositories.archiveItem,
+        eventRepository: container.repositories.event,
+        memberRepository: container.repositories.member,
+      },
+      member,
+    ),
   ]);
 
   // Só mídia publicada e visível ao nível de acesso da sessão atual —
@@ -184,6 +193,8 @@ export default async function ArchivePersonPage({
           />
         )}
       </Panel>
+
+      <CeremonyMatesPanel groups={irmaosGemeos} />
 
       {photos.length > 0 && (
         <Panel kicker="MEMÓRIA" title="Fotografias" icon={Camera}>

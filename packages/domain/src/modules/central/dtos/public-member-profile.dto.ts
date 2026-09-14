@@ -5,6 +5,7 @@ import type { PublicationSettings } from '../entities/publication-settings.entit
 import { resolveAreaAtuacao } from '../lib/resolve-area-atuacao';
 import { resolveEspecializacao } from '../lib/resolve-especializacao';
 import type { PublicFamiliaLegadoDTO } from '../lib/build-public-familia-legado';
+import type { CeremonyMatesGroup } from '../../archive/lib/get-ceremony-mates';
 
 export interface PublicMemberProfileDTO {
   memberId: string;
@@ -107,6 +108,15 @@ export interface PublicMemberProfileDTO {
    * Preenchido pelo use case, mesmo motivo de `trajetoria`.
    */
   memoriaFotografica: { id: string; src: string; caption: string }[] | null;
+  /**
+   * "Irmãos Gêmeos" — colegas que passaram pela mesma sessão de iniciação/
+   * elevação/exaltação (mesmo `ArchiveItem`, `origem*MemberIds` — ver
+   * `getCeremonyMates`). Registro da Loja, mesmo motivo de `trajetoria`:
+   * nunca passa pelos blocos de `PublicationSettings`, todo Irmão
+   * institucional tem essa lista exibida quando existir. `[]` quando não há
+   * ninguém mais na mesma sessão (nunca omitido); preenchido pelo use case.
+   */
+  irmaosGemeos: CeremonyMatesGroup[];
   /**
    * Família e Legado — só os vínculos que o Irmão (ou quem cadastrou o
    * familiar) marcou como visíveis para `'members'`/`'archive'`
@@ -237,5 +247,6 @@ export function buildPublicMemberProfileDTO(
     trajetoria: null,
     memoriaFotografica: null,
     familia: null,
+    irmaosGemeos: [],
   };
 }
