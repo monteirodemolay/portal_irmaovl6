@@ -18,8 +18,8 @@ import { MemberDegreeBadge } from '@/components/membership/member-degree-badge';
 import { formatDate, getCurrentAssignment } from './profile-shared';
 
 /**
- * Cabeçalho institucional do Perfil único — sempre visível acima das 4
- * abas (`ProfileTabs`), extraído de `PublicMemberProfileView` na
+ * Cabeçalho institucional do Perfil único — sempre visível acima das
+ * seções empilhadas do perfil, extraído de `PublicMemberProfileView` na
  * unificação Acervo/Diretório (Fase 2). Avatar, nome, grau, badges de
  * situação/trajetória e os vínculos rápidos (profissão, negócios,
  * competências, interesses) que antes viviam soltos no topo da página.
