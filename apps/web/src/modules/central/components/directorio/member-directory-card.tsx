@@ -1,21 +1,16 @@
+import Link from 'next/link';
 import type { PublicMemberProfileDTO } from '@vl6/domain';
 import { Briefcase, Building2, Card, CardContent, ChevronRight, LodgeTenureBadge } from '@vl6/ui';
 import { MemberAvatar } from '@/components/membership/member-avatar';
 import { MemberDegreeBadge } from '@/components/membership/member-degree-badge';
 
-export function MemberDirectoryCard({
-  profile,
-  onClick,
-}: {
-  profile: PublicMemberProfileDTO;
-  onClick: () => void;
-}) {
+export function MemberDirectoryCard({ profile }: { profile: PublicMemberProfileDTO }) {
   const tags = [...(profile.competencias ?? []), ...(profile.servicos ?? [])].slice(0, 2);
   const profissaoOuArea = profile.profissional?.profissao ?? profile.profissional?.areaAtuacao;
   const empresa = profile.negocios?.[0]?.nomeEmpresa;
 
   return (
-    <button type="button" onClick={onClick} className="group w-full text-left">
+    <Link href={`/irmaos/${profile.memberId}`} className="group w-full text-left">
       <Card className="hover:border-primary h-full transition-colors hover:shadow-md">
         <CardContent className="flex h-full flex-col gap-3 p-5">
           <div className="flex items-start justify-between gap-2">
@@ -66,6 +61,6 @@ export function MemberDirectoryCard({
           )}
         </CardContent>
       </Card>
-    </button>
+    </Link>
   );
 }

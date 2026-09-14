@@ -6,14 +6,19 @@ import { requireSession } from '@/lib/auth/require-session';
 import { PublicMemberProfileView } from '@/modules/central/components/public-member-profile-view';
 import { SeeAlsoSection } from '@/modules/central/components/directorio/see-also-section';
 import { RelationsSection } from '@/modules/archive/components/relations-section';
+import { isAccessLevelVisible } from '@/modules/archive/lib/access-level-visibility';
+import type { PersonPhoto } from '@/modules/archive/components/person-photo-grid';
 
 export default async function IrmaoProfilePage({
   params,
+  searchParams,
 }: {
   params: Promise<{ memberId: string }>;
+  searchParams: Promise<{ aba?: string }>;
 }) {
   const session = await requireSession();
   const { memberId } = await params;
+  const { aba } = await searchParams;
 
   if (!hasPermission(session.authContext, 'memberDirectory:read')) {
     return (
@@ -57,6 +62,49 @@ export default async function IrmaoProfilePage({
     }
   }
 
+  // Títulos e Condições Maçônicas (Fase 1 de Honrarias) — institucional,
+  // sempre exibido na aba Trajetória, mesmo motivo de `trajetoria` (não
+  // passa pelos blocos de `PublicationSettings`).
+  const memberTitles = profile
+    ? await container.useCases.listMemberTitles.execute(session.authContext, memberId)
+    : [];
+
+  // Aba "Acervo" — herda `/acervo/pessoas/[memberId]`: fotos institucionais
+  // marcadas (nunca gated pelo consentimento voluntário do Irmão, só pelo
+  // nível de acesso da sessão) + Constelação da Memória. Só carregada
+  // quando a sessão tem `member:read` (mesmo gate de `canViewAcervo`).
+  let acervoPhotos: PersonPhoto[] = [];
+  if (profile && canViewAcervo) {
+    const taggedMedia = await container.repositories.archiveMedia.findByPessoaIdentificada(
+      session.authContext.tenantId,
+      memberId,
+    );
+    const visibility = { authenticated: true, role: session.role };
+    const publishedTaggedMedia = taggedMedia.filter(
+      (media) =>
+        media.mediaType === 'foto' &&
+        media.publicacaoStatus === 'publicado' &&
+        isAccessLevelVisible(media.accessLevel, visibility),
+    );
+    const taggedAssets = await Promise.all(
+      publishedTaggedMedia.map((media) =>
+        container.repositories.mediaAsset.findById(media.mediaAssetId),
+      ),
+    );
+    acervoPhotos = publishedTaggedMedia
+      .map((media, index) => {
+        const asset = taggedAssets[index];
+        if (!asset || asset.deletedAt) return null;
+        return {
+          id: media.id,
+          eventId: media.eventId,
+          src: `/api/archive-media/${media.id}`,
+          caption: media.caption ?? asset.originalName,
+        };
+      })
+      .filter((entry): entry is PersonPhoto => entry !== null);
+  }
+
   return (
     <div className="mx-auto flex max-w-[1400px] flex-col gap-8">
       <Link
@@ -72,6 +120,21 @@ export default async function IrmaoProfilePage({
           profile={profile}
           canViewAcervo={canViewAcervo}
           isOwnProfile={isOwnProfile}
+          memberTitles={memberTitles}
+          acervoPhotos={acervoPhotos}
+          initialTab={aba === 'acervo' ? 'acervo' : 'geral'}
+          acervoRelationsSlot={
+            canViewAcervo && (
+              <RelationsSection
+                nodeTipo="member"
+                nodeId={memberId}
+                centerLabel={profile.nomeCompleto}
+                centerKindLabel="Irmão"
+                authContext={session.authContext}
+                container={container}
+              />
+            )
+          }
         />
       ) : (
         <Card className="max-w-2xl">
@@ -85,17 +148,6 @@ export default async function IrmaoProfilePage({
         <SeeAlsoSection
           areaLabel={profile.profissional?.areaAtuacao ?? ''}
           members={seeAlsoMembers}
-        />
-      )}
-
-      {profile && (
-        <RelationsSection
-          nodeTipo="member"
-          nodeId={memberId}
-          centerLabel={profile.nomeCompleto}
-          centerKindLabel="Irmão"
-          authContext={session.authContext}
-          container={container}
         />
       )}
     </div>

@@ -22,7 +22,6 @@ import {
   type MemberCentralProfileValues,
   type PublicationSettingsInputValues,
 } from '@vl6/shared';
-import type { PublicMemberProfileDTO } from '@vl6/domain';
 import { createServerContainer } from '@vl6/infra';
 import { requireSession } from '@/lib/auth/require-session';
 import {
@@ -39,18 +38,6 @@ import { lookupCnpj, type CnpjLookupFailureReason } from '@/lib/central/cnpj-loo
  * pré-carregar o Diretório inteiro. Mesma checagem de permissão e DTO já
  * filtrado que `/irmaos/[memberId]` usa.
  */
-export async function getMemberProfileForDrawerAction(
-  memberId: string,
-): Promise<PublicMemberProfileDTO | null> {
-  const session = await requireSession();
-  const container = createServerContainer();
-  const result = await container.useCases.getPublicMemberProfile.execute(
-    session.authContext,
-    memberId,
-  );
-  return result.ok ? result.value : null;
-}
-
 export interface CentralActionState {
   error: string | null;
 }
