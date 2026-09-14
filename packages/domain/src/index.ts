@@ -426,6 +426,7 @@ export * from './modules/archive/use-cases/list-most-viewed-archive-items.use-ca
 export * from './modules/archive/use-cases/get-storage-usage-by-board-term.use-case';
 export * from './modules/archive/use-cases/get-archive-media-counts-by-event.use-case';
 export * from './modules/archive/lib/get-ceremony-mates';
+export * from './modules/archive/lib/get-gestao-ceremonies';
 
 // Família e Legado VL6 — parentesco privado (Etapas 1-4 do pacote de
 // implantação: fundação, domínio, persistência e fluxo pessoal mínimo).

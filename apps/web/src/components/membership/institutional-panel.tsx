@@ -61,36 +61,64 @@ export function Panel({
  * exaltação, cargo, comissão) — ponto sólido dourado quando em curso
  * (`active`), contorno vazado quando encerrado. Mesma peça visual em
  * "Caminho na Loja" (Perfil do Irmão) e "Trajetória institucional"
- * (Pessoa do Acervo VL6). `href` opcional — cargo/comissão sempre pertence a
- * uma Gestão (`/acervo/gestoes/[gestaoId]`); iniciação/elevação/exaltação não
- * têm destino próprio, por isso ficam sem link.
+ * (Pessoa do Acervo VL6). `href` opcional — cargo/comissão levam pra Gestão
+ * (`/acervo/gestoes/[gestaoId]`), iniciação/elevação/exaltação pro Evento da
+ * sessão (`/acervo/eventos/[eventId]`) quando encontrado; sem `href`, a
+ * entrada fica só como texto.
+ *
+ * `current` é distinto de `active`: marca o que o Irmão É agora mesmo (só
+ * cargo/comissão em curso, nunca uma cerimônia — Iniciação/Elevação/
+ * Exaltação são fatos únicos, não um estado atual) com um sinal amarelo
+ * piscando (`animate-ping`) e um selo "Atual", pedido explícito do
+ * Administrador pra diferenciar de bater o olho e não saber se aquele é o
+ * cargo de hoje ou só um marco histórico já encerrado.
  */
 export function TimelineEntry({
   label,
   detail,
   dateLabel,
   active = false,
+  current = false,
   href,
 }: {
   label: string;
   detail?: string;
   dateLabel: string;
   active?: boolean;
+  current?: boolean;
   href?: string;
 }) {
   const content = (
     <div className="grid grid-cols-[16px_92px_1fr] items-start gap-3">
-      <span
-        className={
-          active
-            ? 'bg-accent mt-1 h-3.5 w-3.5 rounded-full'
-            : 'border-border mt-1 h-3.5 w-3.5 rounded-full border-2 bg-transparent'
-        }
-      />
+      <span className="relative mt-1 flex h-3.5 w-3.5 shrink-0 items-center justify-center">
+        {current && (
+          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-yellow-400 opacity-75" />
+        )}
+        <span
+          className={
+            current
+              ? 'relative h-3.5 w-3.5 rounded-full bg-yellow-400'
+              : active
+                ? 'bg-accent h-3.5 w-3.5 rounded-full'
+                : 'border-border h-3.5 w-3.5 rounded-full border-2 bg-transparent'
+          }
+        />
+      </span>
       <span className="text-muted text-[10px] font-bold uppercase tabular-nums">{dateLabel}</span>
       <div>
-        <p className={href ? 'text-sm font-semibold hover:underline' : 'text-sm font-semibold'}>
+        <p
+          className={
+            href
+              ? 'flex items-center gap-2 text-sm font-semibold hover:underline'
+              : 'flex items-center gap-2 text-sm font-semibold'
+          }
+        >
           {label}
+          {current && (
+            <span className="rounded-full bg-yellow-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-yellow-700">
+              Atual
+            </span>
+          )}
         </p>
         {detail && <p className="text-muted text-xs">{detail}</p>}
       </div>

@@ -5,7 +5,10 @@ import type { PublicationSettings } from '../entities/publication-settings.entit
 import { resolveAreaAtuacao } from '../lib/resolve-area-atuacao';
 import { resolveEspecializacao } from '../lib/resolve-especializacao';
 import type { PublicFamiliaLegadoDTO } from '../lib/build-public-familia-legado';
-import type { CeremonyMatesGroup } from '../../archive/lib/get-ceremony-mates';
+import type {
+  CeremonyMatesGroup,
+  MemberCeremonyEventIds,
+} from '../../archive/lib/get-ceremony-mates';
 
 export interface PublicMemberProfileDTO {
   memberId: string;
@@ -85,6 +88,14 @@ export interface PublicMemberProfileDTO {
     dataIniciacao: Date | null;
     dataElevacao: Date | null;
     dataExaltacao: Date | null;
+    /**
+     * `eventId` do Evento onde cada cerimônia aconteceu, quando encontrado
+     * (`getMemberCeremonyEventIds`) — torna Iniciação/Elevação/Exaltação
+     * clicáveis na UI, levando pro Acervo do Evento daquele dia. Chave
+     * ausente/`undefined` = nenhum Evento/ArchiveItem vinculado ainda (a UI
+     * mostra a entrada sem link).
+     */
+    ceremonyEventIds: MemberCeremonyEventIds;
     cargos: {
       cargo: string;
       gestaoId: string;

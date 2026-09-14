@@ -565,6 +565,11 @@ export function PublicMemberProfileView({
                     label="Iniciação"
                     dateLabel={formatDate(profile.trajetoria.dataIniciacao)}
                     active
+                    href={
+                      profile.trajetoria.ceremonyEventIds.iniciacao
+                        ? `/acervo/eventos/${profile.trajetoria.ceremonyEventIds.iniciacao}`
+                        : undefined
+                    }
                   />
                 )}
                 {profile.trajetoria.dataElevacao && (
@@ -572,6 +577,11 @@ export function PublicMemberProfileView({
                     label="Elevação"
                     dateLabel={formatDate(profile.trajetoria.dataElevacao)}
                     active
+                    href={
+                      profile.trajetoria.ceremonyEventIds.elevacao
+                        ? `/acervo/eventos/${profile.trajetoria.ceremonyEventIds.elevacao}`
+                        : undefined
+                    }
                   />
                 )}
                 {profile.trajetoria.dataExaltacao && (
@@ -579,6 +589,11 @@ export function PublicMemberProfileView({
                     label="Exaltação"
                     dateLabel={formatDate(profile.trajetoria.dataExaltacao)}
                     active
+                    href={
+                      profile.trajetoria.ceremonyEventIds.exaltacao
+                        ? `/acervo/eventos/${profile.trajetoria.ceremonyEventIds.exaltacao}`
+                        : undefined
+                    }
                   />
                 )}
                 {profile.trajetoria.cargos.map((entry, index) => (
@@ -587,6 +602,7 @@ export function PublicMemberProfileView({
                     label={getBoardPositionLabel(entry.cargo)}
                     dateLabel={formatDate(entry.dataInicio)}
                     active={!entry.dataFim}
+                    current={!entry.dataFim}
                     detail={`Cargo · ${entry.gestaoNome}${entry.dataFim ? ` até ${formatDate(entry.dataFim)}` : ' · em curso'}`}
                     href={`/acervo/gestoes/${entry.gestaoId}`}
                   />
@@ -597,6 +613,7 @@ export function PublicMemberProfileView({
                     label={entry.nome}
                     dateLabel={formatDate(entry.dataInicio)}
                     active={!entry.dataFim}
+                    current={!entry.dataFim}
                     detail={`Comissão · ${entry.gestaoNome}${entry.dataFim ? ` até ${formatDate(entry.dataFim)}` : ' · em curso'}`}
                     href={`/acervo/gestoes/${entry.gestaoId}`}
                   />

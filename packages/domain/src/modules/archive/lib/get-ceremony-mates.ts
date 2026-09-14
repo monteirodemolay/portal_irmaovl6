@@ -43,6 +43,29 @@ const CEREMONIES: {
 ];
 
 /**
+ * Acha, para uma data maçônica do Irmão, o `ArchiveItem` da sessão
+ * correspondente (Evento do dia + item com o Irmão no `origem*MemberIds`
+ * certo) — núcleo compartilhado por `getCeremonyMates` (que só se importa
+ * com os colegas) e `getMemberCeremonyEventIds` (que só se importa com o
+ * `eventId`, mesmo quando o Irmão foi o único participante da sessão).
+ */
+async function findCeremonyArchiveItem(
+  deps: Pick<GetCeremonyMatesDeps, 'archiveItemRepository' | 'eventRepository'>,
+  tenantId: string,
+  memberId: string,
+  data: Date,
+  origemField: (typeof CEREMONIES)[number]['origemField'],
+): Promise<{ eventId: string; item: ArchiveItem } | null> {
+  const events = await deps.eventRepository.listInRange(tenantId, startOfDay(data), endOfDay(data));
+  for (const event of events) {
+    const items = await deps.archiveItemRepository.findByEventId(event.id);
+    const match = items.find((item) => item[origemField]?.includes(memberId));
+    if (match) return { eventId: event.id, item: match };
+  }
+  return null;
+}
+
+/**
  * "Irmãos Gêmeos" — quem foi iniciado/elevado/exaltado na MESMA sessão que
  * este Irmão. Reaproveita o mesmo par "Evento do dia + ArchiveItem da
  * sessão" já usado na criação (`CreateInitiationArchiveItemUseCase` e
@@ -70,19 +93,15 @@ export async function getCeremonyMates(
     const data = member[dateField];
     if (!data) continue;
 
-    const events = await deps.eventRepository.listInRange(
+    const found = await findCeremonyArchiveItem(
+      deps,
       member.tenantId,
-      startOfDay(data),
-      endOfDay(data),
+      member.id,
+      data,
+      origemField,
     );
-
-    let match: ArchiveItem | undefined;
-    for (const event of events) {
-      const items = await deps.archiveItemRepository.findByEventId(event.id);
-      match = items.find((item) => item[origemField]?.includes(member.id));
-      if (match) break;
-    }
-    if (!match) continue;
+    if (!found) continue;
+    const { item: match } = found;
 
     const colegaIds = match[origemField]!.filter((id) => id !== member.id);
     if (colegaIds.length === 0) continue;
@@ -100,4 +119,33 @@ export async function getCeremonyMates(
   }
 
   return groups;
+}
+
+export type MemberCeremonyEventIds = Partial<Record<CeremonyMateKind, string>>;
+
+/**
+ * Acha o `eventId` do Evento onde cada data maçônica do Irmão (Iniciação/
+ * Elevação/Exaltação) aconteceu — usado pra tornar essas entradas da
+ * "Trajetória institucional"/"Caminho na Loja" clicáveis, levando direto
+ * pro Acervo do Evento daquele dia. Ao contrário de `getCeremonyMates`,
+ * devolve o vínculo mesmo quando o Irmão foi o único participante da
+ * sessão (não depende de haver colega) — chaves ausentes do mapa de
+ * retorno significam "nenhum Evento/ArchiveItem encontrado pra essa data"
+ * (nunca gera erro, a Trajetória simplesmente mostra a entrada sem link).
+ */
+export async function getMemberCeremonyEventIds(
+  deps: Pick<GetCeremonyMatesDeps, 'archiveItemRepository' | 'eventRepository'>,
+  member: Member,
+): Promise<MemberCeremonyEventIds> {
+  const result: MemberCeremonyEventIds = {};
+
+  for (const { tipo, dateField, origemField } of CEREMONIES) {
+    const data = member[dateField];
+    if (!data) continue;
+
+    const found = await findCeremonyArchiveItem(deps, member.tenantId, member.id, data, origemField);
+    if (found) result[tipo] = found.eventId;
+  }
+
+  return result;
 }

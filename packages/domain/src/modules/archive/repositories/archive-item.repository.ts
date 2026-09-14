@@ -15,6 +15,14 @@ export interface IArchiveItemRepository {
    * acrescentar o Irmão à mesma sessão em vez de criar um item novo).
    */
   findByEventId(eventId: string): Promise<ArchiveItem[]>;
+  /**
+   * Todos os itens do tenant (não excluídos) vinculados a uma Gestão
+   * (`boardTermId`, preenchido na criação a partir da Gestão vigente na
+   * data do Evento) — usado pela página da Gestão pra listar as sessões de
+   * Iniciação/Elevação/Exaltação (`origemIniciacaoMemberIds`/etc.) que
+   * aconteceram durante aquele período.
+   */
+  findByBoardTermId(boardTermId: string): Promise<ArchiveItem[]>;
   /** Lixeira administrativa (Fase 3) — itens do tenant com `deletedAt` preenchido. */
   findDeletedByTenant(tenantId: string, page: PageRequest): Promise<PageResult<ArchiveItem>>;
   /**

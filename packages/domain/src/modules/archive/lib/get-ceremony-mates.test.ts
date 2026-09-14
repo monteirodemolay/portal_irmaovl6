@@ -7,7 +7,7 @@ import {
 import type { ArchiveItem } from '../entities/archive-item.entity';
 import type { Event } from '../../agenda/entities/event.entity';
 import type { Member } from '../../membership/entities/member.entity';
-import { getCeremonyMates } from './get-ceremony-mates';
+import { getCeremonyMates, getMemberCeremonyEventIds } from './get-ceremony-mates';
 
 function buildEvent(overrides: Partial<Event> = {}): Event {
   return {
@@ -206,5 +206,59 @@ describe('getCeremonyMates', () => {
     const result = await getCeremonyMates(deps, member);
 
     expect(result).toEqual([]);
+  });
+});
+
+describe('getMemberCeremonyEventIds', () => {
+  it('acha o Evento mesmo quando o Irmão foi o único participante da sessão', async () => {
+    const deps = buildDeps();
+    await deps.eventRepository.create(buildEvent({ id: 'event-1' }));
+    await deps.archiveItemRepository.create(
+      buildItem({ eventId: 'event-1', origemIniciacaoMemberIds: ['member-1'] }),
+    );
+
+    const member = buildMember({ dataIniciacao: new Date('2020-03-10T20:00:00Z') });
+    const result = await getMemberCeremonyEventIds(deps, member);
+
+    expect(result).toEqual({ iniciacao: 'event-1' });
+  });
+
+  it('devolve mapa vazio quando nenhuma data maçônica está preenchida', async () => {
+    const deps = buildDeps();
+    const member = buildMember();
+    const result = await getMemberCeremonyEventIds(deps, member);
+    expect(result).toEqual({});
+  });
+
+  it('omite a chave quando a data está preenchida mas não há Evento/ArchiveItem correspondente', async () => {
+    const deps = buildDeps();
+    const member = buildMember({ dataIniciacao: new Date('2020-03-10T20:00:00Z') });
+    const result = await getMemberCeremonyEventIds(deps, member);
+    expect(result).toEqual({});
+  });
+
+  it('resolve as três cerimônias em sessões diferentes', async () => {
+    const deps = buildDeps();
+    await deps.eventRepository.create(buildEvent({ id: 'event-1', dataInicio: new Date('2020-03-10T20:00:00Z') }));
+    await deps.eventRepository.create(buildEvent({ id: 'event-2', dataInicio: new Date('2021-06-01T20:00:00Z') }));
+    await deps.eventRepository.create(buildEvent({ id: 'event-3', dataInicio: new Date('2023-07-01T20:00:00Z') }));
+    await deps.archiveItemRepository.create(
+      buildItem({ id: 'item-1', eventId: 'event-1', origemIniciacaoMemberIds: ['member-1'] }),
+    );
+    await deps.archiveItemRepository.create(
+      buildItem({ id: 'item-2', eventId: 'event-2', origemElevacaoMemberIds: ['member-1'] }),
+    );
+    await deps.archiveItemRepository.create(
+      buildItem({ id: 'item-3', eventId: 'event-3', origemExaltacaoMemberIds: ['member-1'] }),
+    );
+
+    const member = buildMember({
+      dataIniciacao: new Date('2020-03-10T20:00:00Z'),
+      dataElevacao: new Date('2021-06-01T20:00:00Z'),
+      dataExaltacao: new Date('2023-07-01T20:00:00Z'),
+    });
+    const result = await getMemberCeremonyEventIds(deps, member);
+
+    expect(result).toEqual({ iniciacao: 'event-1', elevacao: 'event-2', exaltacao: 'event-3' });
   });
 });
