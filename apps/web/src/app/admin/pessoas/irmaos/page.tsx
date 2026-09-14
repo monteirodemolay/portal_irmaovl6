@@ -195,6 +195,9 @@ export default async function MembersPage({
           <Button asChild variant="outline">
             <a href={`/admin/pessoas/irmaos/duplicados`}>Duplicados</a>
           </Button>
+          <Button asChild variant="outline">
+            <a href={`/admin/pessoas/irmaos/reconciliar-ativos`}>Reconciliar Ativos</a>
+          </Button>
           <Button asChild>
             <a href={`/admin/pessoas/irmaos/novo`}>Novo Irmão</a>
           </Button>

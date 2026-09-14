@@ -2,15 +2,8 @@
 
 import type { Honor } from '@vl6/domain';
 import { HONOR_TYPE_LABELS } from '@vl6/shared';
-import {
-  Award,
-  Badge,
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@vl6/ui';
+import { Badge, Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@vl6/ui';
+import { HONOR_TYPE_BADGE_ICON } from '@/modules/honors/honor-badge-icons';
 import { formatDate } from './profile-shared';
 
 /**
@@ -27,9 +20,11 @@ export function HonorDetailDialog({ honor }: { honor: Honor }) {
       </DialogTrigger>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <div className="bg-primary/10 text-primary mb-2 flex h-14 w-14 items-center justify-center rounded-full">
-            <Award size={28} strokeWidth={1.5} />
-          </div>
+          <img
+            src={HONOR_TYPE_BADGE_ICON[honor.tipo]}
+            alt=""
+            className="mb-2 h-16 w-16 object-contain"
+          />
           <DialogTitle>{honor.nomeOficial}</DialogTitle>
           <Badge variant="outline" className="w-fit">
             {HONOR_TYPE_LABELS[honor.tipo]}

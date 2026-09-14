@@ -219,6 +219,8 @@ import {
   RecordLibraryViewUseCase,
   RegisterMemberUseCase,
   RegisterMemberSituationUseCase,
+  PreviewActiveMembersReconciliationUseCase,
+  ApplyActiveMembersReconciliationUseCase,
   EditMemberSituationRecordUseCase,
   SeedMemberSituationHistoryUseCase,
   SeedInitiationArchiveItemsUseCase,
@@ -504,6 +506,22 @@ export function createServerContainer() {
   const dnsResolver = new NodeDnsResolver();
   const apiKeyGenerator = new NodeApiKeyGenerator();
 
+  // Compartilhadas entre uma entrada própria de `useCases` e
+  // `ApplyActiveMembersReconciliationUseCase` (que orquestra as duas) —
+  // instanciadas uma vez fora do literal porque um objeto não pode se
+  // referenciar em construção.
+  const setUserStatusUseCase = new SetUserStatusUseCase({
+    userRepository: repositories.user,
+    clock,
+  });
+  const registerMemberSituationUseCase = new RegisterMemberSituationUseCase({
+    memberRepository: repositories.member,
+    situationRecordRepository: repositories.memberSituationRecord,
+    positionHistoryRepository: repositories.memberPositionHistory,
+    clock,
+    idGenerator,
+  });
+
   const useCases = {
     createTenant: new CreateTenantUseCase({
       tenantRepository: repositories.tenant,
@@ -545,7 +563,7 @@ export function createServerContainer() {
       roleRepository: repositories.role,
       clock,
     }),
-    setUserStatus: new SetUserStatusUseCase({ userRepository: repositories.user, clock }),
+    setUserStatus: setUserStatusUseCase,
     bootstrapTenantAdmin: new BootstrapTenantAdminUseCase({
       userRepository: repositories.user,
       roleRepository: repositories.role,
@@ -609,12 +627,17 @@ export function createServerContainer() {
       memberAccessClaimRepository: repositories.memberAccessClaim,
       clock,
     }),
-    registerMemberSituation: new RegisterMemberSituationUseCase({
+    registerMemberSituation: registerMemberSituationUseCase,
+    previewActiveMembersReconciliation: new PreviewActiveMembersReconciliationUseCase({
       memberRepository: repositories.member,
-      situationRecordRepository: repositories.memberSituationRecord,
-      positionHistoryRepository: repositories.memberPositionHistory,
+      userRepository: repositories.user,
+    }),
+    applyActiveMembersReconciliation: new ApplyActiveMembersReconciliationUseCase({
+      memberRepository: repositories.member,
+      userRepository: repositories.user,
+      registerMemberSituation: registerMemberSituationUseCase,
+      setUserStatus: setUserStatusUseCase,
       clock,
-      idGenerator,
     }),
     editMemberSituationRecord: new EditMemberSituationRecordUseCase({
       situationRecordRepository: repositories.memberSituationRecord,
