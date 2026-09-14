@@ -268,6 +268,7 @@ export function PublicMemberProfileView({
               fotoUrl={profile.fotoUrl}
               nome={profile.nomeCompleto}
               className="border-surface -mt-12 h-24 w-24 border-4 shadow-md sm:-mt-14 sm:h-28 sm:w-28"
+              imgClassName="object-top"
             />
             {canEdit && (
               <Link

@@ -116,6 +116,7 @@ export default async function ArchivePersonPage({
             fotoUrl={identity.fotoUrl}
             nome={identity.nomeCompleto}
             className="border-surface -mt-12 h-24 w-24 border-4 shadow-md sm:-mt-14 sm:h-28 sm:w-28"
+            imgClassName="object-top"
           />
           <div className="flex flex-col gap-2">
             <p className="font-display text-2xl font-semibold sm:text-[28px]">
