@@ -69,6 +69,16 @@ export default async function IrmaoProfilePage({
     ? await container.useCases.listMemberTitles.execute(session.authContext, memberId)
     : [];
 
+  // Honrarias e Condecorações + Graus Filosóficos (Fase 3 de Honrarias) —
+  // mesmo motivo de `memberTitles`, institucional e sempre exibido (a aba
+  // filtra os graus filosóficos pelo `visivel` de cada um, não aqui).
+  const honors = profile
+    ? await container.useCases.listHonors.execute(session.authContext, memberId)
+    : [];
+  const philosophicalJourneys = profile
+    ? await container.useCases.listPhilosophicalJourneys.execute(session.authContext, memberId)
+    : [];
+
   // Aba "Acervo" — herda `/acervo/pessoas/[memberId]`: fotos institucionais
   // marcadas (nunca gated pelo consentimento voluntário do Irmão, só pelo
   // nível de acesso da sessão) + Constelação da Memória. Só carregada
@@ -121,6 +131,8 @@ export default async function IrmaoProfilePage({
           canViewAcervo={canViewAcervo}
           isOwnProfile={isOwnProfile}
           memberTitles={memberTitles}
+          honors={honors}
+          philosophicalJourneys={philosophicalJourneys}
           acervoPhotos={acervoPhotos}
           initialTab={aba === 'acervo' ? 'acervo' : 'geral'}
           acervoRelationsSlot={

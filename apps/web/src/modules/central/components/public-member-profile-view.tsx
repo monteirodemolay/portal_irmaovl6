@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import type { MemberTitle, PublicMemberProfileDTO } from '@vl6/domain';
+import type { Honor, MemberTitle, PhilosophicalJourney, PublicMemberProfileDTO } from '@vl6/domain';
 import type { PersonPhoto } from '@/modules/archive/components/person-photo-grid';
 import { ProfileHeaderCard } from './profile-header-card';
 import { ProfileOverviewTab } from './profile-overview-tab';
@@ -24,6 +24,8 @@ export function PublicMemberProfileView({
   canViewAcervo = false,
   isOwnProfile = false,
   memberTitles = [],
+  honors = [],
+  philosophicalJourneys = [],
   acervoPhotos = [],
   acervoRelationsSlot = null,
   initialTab = 'geral',
@@ -36,6 +38,10 @@ export function PublicMemberProfileView({
   isOwnProfile?: boolean;
   /** Títulos e Condições Maçônicas cadastrados (Fase 1 de Honrarias) — exibidos na aba Trajetória. */
   memberTitles?: MemberTitle[];
+  /** Honrarias e Condecorações cadastradas (Fase 3 de Honrarias) — exibidas na aba Trajetória. */
+  honors?: Honor[];
+  /** Graus Filosóficos/Corpos Maçônicos (Fase 3) — só os `visivel` chegam à aba Trajetória. */
+  philosophicalJourneys?: PhilosophicalJourney[];
   /** Fotos institucionais do Acervo VL6 em que este Irmão está marcado — ver `ProfileAcervoTab`. */
   acervoPhotos?: PersonPhoto[];
   /** `RelationsSection` (Server Component, precisa de `container`/`authContext`) já renderizado pela página. */
@@ -67,7 +73,14 @@ export function PublicMemberProfileView({
           geral: (
             <ProfileOverviewTab profile={profile} isOwnProfile={isOwnProfile} layout={layout} />
           ),
-          trajetoria: <ProfileTrajectoryTab profile={profile} memberTitles={memberTitles} />,
+          trajetoria: (
+            <ProfileTrajectoryTab
+              profile={profile}
+              memberTitles={memberTitles}
+              honors={honors}
+              philosophicalJourneys={philosophicalJourneys}
+            />
+          ),
           familia: <ProfileFamilyTab profile={profile} canViewAcervo={canViewAcervo} />,
           ...(canViewAcervo
             ? {

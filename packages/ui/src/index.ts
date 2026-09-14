@@ -122,6 +122,7 @@ export {
   Star,
   Send,
   Milestone,
+  Award,
   Save,
   Bookmark,
   Maximize2,
