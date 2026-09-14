@@ -1,6 +1,11 @@
 import { notFound } from 'next/navigation';
 import { createServerContainer } from '@vl6/infra';
-import { getCeremonyMates, getMemberJourneyCargos, getMemberJourneyCommittees } from '@vl6/domain';
+import {
+  getCeremonyMates,
+  getMemberCeremonyEventIds,
+  getMemberJourneyCargos,
+  getMemberJourneyCommittees,
+} from '@vl6/domain';
 import { getBoardPositionLabel } from '@vl6/shared';
 import {
   Camera,
@@ -64,20 +69,21 @@ export default async function ArchivePersonPage({
     committeeRepository: container.repositories.committee,
   };
 
-  const [cargos, comissoes, publicationSettings, taggedMedia, irmaosGemeos] = await Promise.all([
-    getMemberJourneyCargos(journeyDeps, memberId),
-    getMemberJourneyCommittees(journeyDeps, tenantId, memberId),
-    container.repositories.publicationSettings.findByMemberId(tenantId, memberId),
-    container.repositories.archiveMedia.findByPessoaIdentificada(tenantId, memberId),
-    getCeremonyMates(
-      {
-        archiveItemRepository: container.repositories.archiveItem,
-        eventRepository: container.repositories.event,
-        memberRepository: container.repositories.member,
-      },
-      member,
-    ),
-  ]);
+  const ceremonyDeps = {
+    archiveItemRepository: container.repositories.archiveItem,
+    eventRepository: container.repositories.event,
+    memberRepository: container.repositories.member,
+  };
+
+  const [cargos, comissoes, publicationSettings, taggedMedia, irmaosGemeos, ceremonyEventIds] =
+    await Promise.all([
+      getMemberJourneyCargos(journeyDeps, memberId),
+      getMemberJourneyCommittees(journeyDeps, tenantId, memberId),
+      container.repositories.publicationSettings.findByMemberId(tenantId, memberId),
+      container.repositories.archiveMedia.findByPessoaIdentificada(tenantId, memberId),
+      getCeremonyMates(ceremonyDeps, member),
+      getMemberCeremonyEventIds(ceremonyDeps, member),
+    ]);
 
   // Só mídia publicada e visível ao nível de acesso da sessão atual —
   // trajetória pública nunca vaza rascunho/reservado (item 1 do escopo da
@@ -112,7 +118,10 @@ export default async function ArchivePersonPage({
 
   const hasPublishedCentralProfile =
     publicationSettings?.profilePublished === true && publicationSettings.suspendedAt === null;
-  const hasTrajetoria = cargos.length > 0 || comissoes.length > 0;
+  const hasTrajetoria =
+    cargos.length > 0 ||
+    comissoes.length > 0 ||
+    Boolean(identity.dataIniciacao || identity.dataElevacao || identity.dataExaltacao);
 
   return (
     <div className="flex flex-col gap-6">
@@ -164,12 +173,49 @@ export default async function ArchivePersonPage({
       <Panel kicker="TRAJETÓRIA" title="Trajetória institucional" icon={Milestone}>
         {hasTrajetoria ? (
           <div className="flex flex-col gap-4">
+            {identity.dataIniciacao && (
+              <TimelineEntry
+                label="Iniciação"
+                dateLabel={formatDate(identity.dataIniciacao)}
+                active
+                href={
+                  ceremonyEventIds.iniciacao
+                    ? `/acervo/eventos/${ceremonyEventIds.iniciacao}`
+                    : undefined
+                }
+              />
+            )}
+            {identity.dataElevacao && (
+              <TimelineEntry
+                label="Elevação"
+                dateLabel={formatDate(identity.dataElevacao)}
+                active
+                href={
+                  ceremonyEventIds.elevacao
+                    ? `/acervo/eventos/${ceremonyEventIds.elevacao}`
+                    : undefined
+                }
+              />
+            )}
+            {identity.dataExaltacao && (
+              <TimelineEntry
+                label="Exaltação"
+                dateLabel={formatDate(identity.dataExaltacao)}
+                active
+                href={
+                  ceremonyEventIds.exaltacao
+                    ? `/acervo/eventos/${ceremonyEventIds.exaltacao}`
+                    : undefined
+                }
+              />
+            )}
             {cargos.map((entry, index) => (
               <TimelineEntry
                 key={`cargo-${index}`}
                 label={getBoardPositionLabel(entry.cargo)}
                 dateLabel={formatDate(entry.dataInicio)}
                 active={!entry.dataFim}
+                current={!entry.dataFim}
                 detail={`Cargo · ${entry.gestaoNome}${entry.dataFim ? ` até ${formatDate(entry.dataFim)}` : ' · em curso'}`}
                 href={`/acervo/gestoes/${entry.gestaoId}`}
               />
@@ -180,6 +226,7 @@ export default async function ArchivePersonPage({
                 label={entry.nome}
                 dateLabel={formatDate(entry.dataInicio)}
                 active={!entry.dataFim}
+                current={!entry.dataFim}
                 detail={`Comissão · ${entry.gestaoNome}${entry.dataFim ? ` até ${formatDate(entry.dataFim)}` : ' · em curso'}`}
                 href={`/acervo/gestoes/${entry.gestaoId}`}
               />

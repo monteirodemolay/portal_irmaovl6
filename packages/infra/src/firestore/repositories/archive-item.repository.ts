@@ -34,6 +34,14 @@ export class FirestoreArchiveItemRepository implements IArchiveItemRepository {
     return snap.docs.map((doc) => doc.data());
   }
 
+  async findByBoardTermId(boardTermId: string): Promise<ArchiveItem[]> {
+    const snap = await this.collection
+      .where('boardTermId', '==', boardTermId)
+      .where('deletedAt', '==', null)
+      .get();
+    return snap.docs.map((doc) => doc.data());
+  }
+
   async findDeletedByTenant(tenantId: string, page: PageRequest): Promise<PageResult<ArchiveItem>> {
     const query = this.collection.where('tenantId', '==', tenantId).where('deletedAt', '!=', null);
     return this.paginate(query, page);

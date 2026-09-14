@@ -108,6 +108,33 @@ export class ListUpcomingAnniversariesUseCase {
         });
       }
 
+      // Fallback do próprio aniversário do Irmão sem ano conhecido — só
+      // quando `dataNascimento` não existe; nunca sobrescreve a data
+      // completa quando ela já foi informada. Mesmo padrão do fallback da
+      // cônjuge logo abaixo.
+      if (!member.dataNascimento && member.aniversarioDia && member.aniversarioMes) {
+        const data = new Date(
+          UNKNOWN_YEAR_PLACEHOLDER,
+          member.aniversarioMes - 1,
+          member.aniversarioDia,
+        );
+        const { diasAte, anosCompletos } = computeNextOccurrence(hoje, data);
+        if (diasAte <= withinDays) {
+          entries.push({
+            memberId: member.id,
+            nomeCompleto: member.nomeCompleto,
+            fotoUrl: member.fotoUrl,
+            grau: member.grau,
+            kind: 'nascimento',
+            data,
+            anosCompletos,
+            diasAte,
+            conjugeNome: null,
+            filhoNome: null,
+          });
+        }
+      }
+
       // Fallback do aniversário da cônjuge sem ano conhecido — só quando
       // `conjugeDataNascimento` (data completa, preenchida pelo próprio
       // Irmão) não existe; nunca sobrescreve a data completa quando ela já

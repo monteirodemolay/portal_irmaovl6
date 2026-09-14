@@ -71,6 +71,7 @@ export * from './modules/membership/use-cases/seed-exaltation-archive-items.use-
 export * from './modules/membership/use-cases/search-members.use-case';
 export * from './modules/membership/use-cases/list-upcoming-anniversaries.use-case';
 export * from './modules/membership/use-cases/import-birthday-data.use-case';
+export * from './modules/membership/use-cases/import-consolidated-report.use-case';
 export * from './modules/membership/use-cases/soft-delete-member.use-case';
 export * from './modules/membership/use-cases/submit-member-access-claim.use-case';
 export * from './modules/membership/use-cases/list-pending-member-access-claims.use-case';
@@ -425,6 +426,7 @@ export * from './modules/archive/use-cases/list-most-viewed-archive-items.use-ca
 export * from './modules/archive/use-cases/get-storage-usage-by-board-term.use-case';
 export * from './modules/archive/use-cases/get-archive-media-counts-by-event.use-case';
 export * from './modules/archive/lib/get-ceremony-mates';
+export * from './modules/archive/lib/get-gestao-ceremonies';
 
 // Família e Legado VL6 — parentesco privado (Etapas 1-4 do pacote de
 // implantação: fundação, domínio, persistência e fluxo pessoal mínimo).

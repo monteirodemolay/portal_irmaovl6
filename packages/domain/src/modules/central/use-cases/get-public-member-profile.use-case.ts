@@ -20,7 +20,7 @@ import type { IArchiveMediaRepository } from '../../archive/repositories/archive
 import type { IMediaAssetRepository } from '../../archive/repositories/media-asset.repository';
 import type { IArchiveItemRepository } from '../../archive/repositories/archive-item.repository';
 import type { IEventRepository } from '../../agenda/repositories/event.repository';
-import { getCeremonyMates } from '../../archive/lib/get-ceremony-mates';
+import { getCeremonyMates, getMemberCeremonyEventIds } from '../../archive/lib/get-ceremony-mates';
 import type { IFamilyRelationshipRepository } from '../../family-legacy/repositories/family-relationship.repository';
 import type { IFamilyPersonRepository } from '../../family-legacy/repositories/family-person.repository';
 import { buildPublicFamiliaLegado } from '../lib/build-public-familia-legado';
@@ -88,11 +88,12 @@ export class GetPublicMemberProfileUseCase {
     // exibida, publicado ou não. Cargos de Diretoria e comissões são dois
     // registros distintos (`ICommitteeRepository` não deriva de
     // `IMemberPositionHistoryRepository`), por isso duas chamadas.
-    const [cargos, comissoes, familia, irmaosGemeos] = await Promise.all([
+    const [cargos, comissoes, familia, irmaosGemeos, ceremonyEventIds] = await Promise.all([
       getMemberJourneyCargos(this.deps, targetMemberId),
       getMemberJourneyCommittees(this.deps, ctx.tenantId, targetMemberId),
       buildPublicFamiliaLegado(this.deps, ctx.tenantId, targetMemberId),
       getCeremonyMates(this.deps, member),
+      getMemberCeremonyEventIds(this.deps, member),
     ]);
 
     // Memória fotográfica — ponte Diretório → Acervo (Fase B). Ao contrário
@@ -135,6 +136,7 @@ export class GetPublicMemberProfileUseCase {
         dataIniciacao: member.dataIniciacao,
         dataElevacao: member.dataElevacao,
         dataExaltacao: member.dataExaltacao,
+        ceremonyEventIds,
         cargos,
         comissoes,
       },

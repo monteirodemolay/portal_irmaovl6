@@ -7,6 +7,7 @@ import type { Member } from '@vl6/domain';
 import { Baby, Button, Heart, Input, Select, X } from '@vl6/ui';
 import { FormField } from '@/components/forms/form-field';
 import { FormSectionCard } from '@/components/forms/section-card';
+import { MonthSelect } from '@/components/forms/month-select';
 import { useCepLookup } from '@/lib/address/use-cep-lookup';
 import {
   MARITAL_STATUS_LABELS,
@@ -16,55 +17,12 @@ import type { ProfileFieldAction, ProfileFieldActionState } from './action-state
 
 const MAX_FILHOS = 12;
 
-const MONTH_LABELS = [
-  'Janeiro',
-  'Fevereiro',
-  'Março',
-  'Abril',
-  'Maio',
-  'Junho',
-  'Julho',
-  'Agosto',
-  'Setembro',
-  'Outubro',
-  'Novembro',
-  'Dezembro',
-];
-
 function toDateInputValue(date: Date | null | undefined): string {
   return date ? new Date(date).toISOString().slice(0, 10) : '';
 }
 
 function emptyFilho(): MemberChildValues {
   return { id: crypto.randomUUID(), nome: '', aniversarioDia: 1, aniversarioMes: 1 };
-}
-
-function MonthSelect({
-  id,
-  name,
-  value,
-  onChange,
-}: {
-  id: string;
-  name?: string;
-  value: number;
-  onChange: (mes: number) => void;
-}) {
-  return (
-    <select
-      id={id}
-      name={name}
-      className="border-border bg-surface h-10 w-full rounded-lg border px-3 text-sm"
-      value={value}
-      onChange={(event) => onChange(Number(event.target.value))}
-    >
-      {MONTH_LABELS.map((label, index) => (
-        <option key={label} value={index + 1}>
-          {label}
-        </option>
-      ))}
-    </select>
-  );
 }
 
 /**
@@ -97,6 +55,7 @@ export function AddressMaritalCard({
   const [conjugeAniversarioMes, setConjugeAniversarioMes] = useState(
     member.conjugeAniversarioMes ?? 1,
   );
+  const [dataCasamento, setDataCasamento] = useState(toDateInputValue(member.dataCasamento));
   const [filhos, setFilhos] = useState<MemberChildValues[]>(member.filhos ?? []);
   const { lookup, loading: cepLoading, error: cepError } = useCepLookup();
 
@@ -181,6 +140,15 @@ export function AddressMaritalCard({
                   </FormField>
                 </>
               )}
+              <FormField label="Data de casamento" htmlFor="dataCasamento">
+                <Input
+                  id="dataCasamento"
+                  name="dataCasamento"
+                  type="date"
+                  value={dataCasamento}
+                  onChange={(event) => setDataCasamento(event.target.value)}
+                />
+              </FormField>
             </>
           )}
         </div>

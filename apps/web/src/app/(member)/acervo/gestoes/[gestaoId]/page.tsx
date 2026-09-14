@@ -1,16 +1,25 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { createServerContainer } from '@vl6/infra';
+import { getGestaoCeremonies } from '@vl6/domain';
 import {
   getBoardPositionHierarchyRank,
   getBoardPositionOrdinalLabel,
   type BoardPositionKey,
 } from '@vl6/shared';
-import { Avatar, AvatarFallback, EmptyState, Users } from '@vl6/ui';
+import { Avatar, AvatarFallback, EmptyState, Milestone, Users } from '@vl6/ui';
 import { requirePagePermission } from '@/lib/auth/require-permission';
 import { AcervoPageHeader } from '@/components/member/acervo-page-header';
+import { MemberAvatar } from '@/components/membership/member-avatar';
+import { Panel } from '@/components/membership/institutional-panel';
 import { RelationsSection } from '@/modules/archive/components/relations-section';
 import { MEMBER_DEGREE_LABELS } from '@/lib/membership/member-degree-label';
+
+const CEREMONY_LABEL: Record<'iniciacao' | 'elevacao' | 'exaltacao', string> = {
+  iniciacao: 'Iniciados nesta Gestão',
+  elevacao: 'Elevados nesta Gestão',
+  exaltacao: 'Exaltados nesta Gestão',
+};
 
 /** Cargos com card grande (foto) na abertura — o resto vira card de texto agrupado. */
 const HERO_KEYS: BoardPositionKey[] = ['veneravel_mestre'];
@@ -27,6 +36,10 @@ const ADMINISTRACAO_KEYS: BoardPositionKey[] = [
 function formatPeriod(inicio: Date, fim: Date): string {
   const formatter = new Intl.DateTimeFormat('pt-BR', { year: 'numeric', month: 'long' });
   return `${formatter.format(new Date(inicio))} a ${formatter.format(new Date(fim))}`;
+}
+
+function formatDate(date: Date): string {
+  return new Intl.DateTimeFormat('pt-BR', { dateStyle: 'long' }).format(new Date(date));
 }
 
 function initials(nome: string): string {
@@ -108,9 +121,17 @@ export default async function ArchiveBoardTermDetailPage({
   const term = await container.repositories.boardTerm.findById(gestaoId);
   if (!term || term.tenantId !== session.authContext.tenantId) notFound();
 
-  const [assignments, committees] = await Promise.all([
+  const [assignments, committees, ceremonyGroups] = await Promise.all([
     container.repositories.boardPositionAssignment.listByGestao(term.id),
     container.repositories.committee.listByGestao(term.id),
+    getGestaoCeremonies(
+      {
+        archiveItemRepository: container.repositories.archiveItem,
+        eventRepository: container.repositories.event,
+        memberRepository: container.repositories.member,
+      },
+      term.id,
+    ),
   ]);
   const members = await Promise.all(
     assignments.map((assignment) => container.repositories.member.findById(assignment.memberId)),
@@ -314,6 +335,48 @@ export default async function ArchiveBoardTermDetailPage({
             ))}
           </div>
         </section>
+      )}
+
+      {ceremonyGroups.length > 0 && (
+        <Panel kicker="TRAJETÓRIA" title="Iniciação, Elevação e Exaltação" icon={Milestone}>
+          <div className="flex flex-col gap-5">
+            {ceremonyGroups.map((group, index) => (
+              <div
+                key={`${group.tipo}-${group.eventId}-${index}`}
+                className="flex flex-col gap-2.5"
+              >
+                <p className="text-muted text-xs">
+                  {CEREMONY_LABEL[group.tipo]} —{' '}
+                  <Link
+                    href={`/acervo/eventos/${group.eventId}`}
+                    className="hover:text-accent underline"
+                  >
+                    {group.eventTitulo}
+                  </Link>{' '}
+                  ({formatDate(group.data)}):
+                </p>
+                <ul className="flex flex-wrap gap-2">
+                  {group.membros.map((membro) => (
+                    <li key={membro.memberId}>
+                      <Link
+                        href={`/acervo/pessoas/${membro.memberId}`}
+                        className="border-border bg-background hover:border-primary hover:text-primary flex items-center gap-2 rounded-full border py-1 pl-1 pr-3 text-sm transition-colors"
+                      >
+                        <MemberAvatar
+                          fotoUrl={membro.fotoUrl}
+                          nome={membro.nomeCompleto}
+                          className="h-6 w-6 shrink-0"
+                          disablePreview
+                        />
+                        <span className="font-medium">{membro.nomeCompleto}</span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        </Panel>
       )}
 
       <RelationsSection

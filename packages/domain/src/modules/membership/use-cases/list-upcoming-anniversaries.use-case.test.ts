@@ -164,6 +164,33 @@ describe('ListUpcomingAnniversariesUseCase', () => {
     });
   });
 
+  it('inclui o próprio aniversário do Irmão sem ano conhecido (fallback dia/mês)', async () => {
+    const { useCase, memberRepository } = buildUseCase();
+    await memberRepository.create(
+      buildMember({ dataNascimento: null, aniversarioDia: 13, aniversarioMes: 3 }),
+    );
+
+    const result = await useCase.execute(ctx);
+
+    expect(result).toHaveLength(1);
+    expect(result[0]).toMatchObject({ kind: 'nascimento', diasAte: 1 });
+  });
+
+  it('nunca usa o fallback de dia/mês do próprio Irmão quando já tem data completa', async () => {
+    const { useCase, memberRepository } = buildUseCase();
+    await memberRepository.create(
+      buildMember({
+        dataNascimento: new Date('1985-06-01'),
+        aniversarioDia: 13,
+        aniversarioMes: 3,
+      }),
+    );
+
+    const result = await useCase.execute(ctx);
+
+    expect(result).toHaveLength(0);
+  });
+
   it('inclui aniversário da cônjuge sem ano conhecido (fallback dia/mês)', async () => {
     const { useCase, memberRepository } = buildUseCase();
     await memberRepository.create(

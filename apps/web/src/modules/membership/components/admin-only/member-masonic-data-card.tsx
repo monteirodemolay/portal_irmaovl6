@@ -7,6 +7,7 @@ import type { Member } from '@vl6/domain';
 import { Button, Compass, Input, Select } from '@vl6/ui';
 import { FormField } from '@/components/forms/form-field';
 import { FormSectionCard } from '@/components/forms/section-card';
+import { MonthSelect } from '@/components/forms/month-select';
 import { MEMBER_DEGREE_LABELS } from '@/lib/membership/member-degree-label';
 import type { ProfileFieldAction, ProfileFieldActionState } from '../profile-fields/action-state';
 
@@ -26,6 +27,9 @@ export function MemberMasonicDataCard({
     error: null,
   });
   const [grau, setGrau] = useState(member.grau);
+  const [dataNascimento, setDataNascimento] = useState(toDateInputValue(member.dataNascimento));
+  const [aniversarioDia, setAniversarioDia] = useState(member.aniversarioDia ?? 1);
+  const [aniversarioMes, setAniversarioMes] = useState(member.aniversarioMes ?? 1);
 
   return (
     <FormSectionCard
@@ -58,9 +62,37 @@ export function MemberMasonicDataCard({
               id="dataNascimento"
               name="dataNascimento"
               type="date"
-              defaultValue={toDateInputValue(member.dataNascimento)}
+              value={dataNascimento}
+              onChange={(event) => setDataNascimento(event.target.value)}
             />
           </FormField>
+          {!dataNascimento && (
+            <>
+              <FormField
+                label="Dia do aniversário"
+                htmlFor="aniversarioDia"
+                description="Quando não se sabe o ano, dá pra guardar só o dia/mês."
+              >
+                <Input
+                  id="aniversarioDia"
+                  name="aniversarioDia"
+                  type="number"
+                  min={1}
+                  max={31}
+                  value={aniversarioDia}
+                  onChange={(event) => setAniversarioDia(Number(event.target.value))}
+                />
+              </FormField>
+              <FormField label="Mês do aniversário" htmlFor="aniversarioMes">
+                <MonthSelect
+                  id="aniversarioMes"
+                  name="aniversarioMes"
+                  value={aniversarioMes}
+                  onChange={setAniversarioMes}
+                />
+              </FormField>
+            </>
+          )}
           <FormField label="Data de iniciação" htmlFor="dataIniciacao">
             <Input
               id="dataIniciacao"

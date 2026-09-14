@@ -14,6 +14,7 @@ import {
 } from '@/modules/identity-access/user-status-labels';
 import { MembersFilterForm } from './members-filter-form';
 import { ImportBirthdayDataPanel } from '@/modules/membership/components/import-birthday-data-panel';
+import { ImportConsolidatedReportPanel } from '@/modules/membership/components/import-consolidated-report-panel';
 
 const SITUATION_VARIANT: Record<
   (typeof MEMBER_SITUATION_STATUSES)[number],
@@ -200,6 +201,7 @@ export default async function MembersPage({
         </div>
       </div>
 
+      <ImportConsolidatedReportPanel />
       <ImportBirthdayDataPanel />
 
       <MembersFilterForm initial={searchFilters} />
