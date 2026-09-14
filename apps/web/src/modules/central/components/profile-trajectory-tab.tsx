@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import type { Honor, MemberTitle, PhilosophicalJourney, PublicMemberProfileDTO } from '@vl6/domain';
 import { getBoardPositionLabel, HONOR_TYPE_LABELS, MEMBER_TITLE_LABELS } from '@vl6/shared';
 import { Award, EmptyState, Milestone, Sparkles, Users } from '@vl6/ui';
@@ -131,7 +132,19 @@ export function ProfileTrajectoryTab({
       )}
 
       {honors.length > 0 && (
-        <Panel kicker="HONRARIAS" title="Honrarias e Condecorações" icon={Award}>
+        <Panel
+          kicker="HONRARIAS"
+          title="Honrarias e Condecorações"
+          icon={Award}
+          trailing={
+            <Link
+              href="/irmaos/galeria-de-honra"
+              className="text-accent shrink-0 text-xs font-semibold hover:underline"
+            >
+              Ver Galeria de Honra
+            </Link>
+          }
+        >
           <ul className="flex flex-col gap-3">
             {honors.map((honor) => (
               <li

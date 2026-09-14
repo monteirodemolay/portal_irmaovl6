@@ -139,6 +139,7 @@ import {
   RemoveMemberTitleUseCase,
   RegisterHonorUseCase,
   ListHonorsUseCase,
+  ListHonorGalleryUseCase,
   RemoveHonorUseCase,
   RegisterPhilosophicalJourneyUseCase,
   ListPhilosophicalJourneysUseCase,
@@ -1004,6 +1005,9 @@ export function createServerContainer() {
       idGenerator,
     }),
     listHonors: new ListHonorsUseCase({
+      honorRepository: repositories.honor,
+    }),
+    listHonorGallery: new ListHonorGalleryUseCase({
       honorRepository: repositories.honor,
     }),
     removeHonor: new RemoveHonorUseCase({

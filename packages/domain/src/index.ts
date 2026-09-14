@@ -458,6 +458,7 @@ export * from './modules/honors/entities/honor.entity';
 export * from './modules/honors/repositories/honor.repository';
 export * from './modules/honors/use-cases/register-honor.use-case';
 export * from './modules/honors/use-cases/list-honors.use-case';
+export * from './modules/honors/use-cases/list-honor-gallery.use-case';
 export * from './modules/honors/use-cases/remove-honor.use-case';
 export * from './modules/honors/entities/philosophical-journey.entity';
 export * from './modules/honors/repositories/philosophical-journey.repository';
