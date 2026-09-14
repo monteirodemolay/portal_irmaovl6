@@ -137,6 +137,79 @@ export async function importNewsFromUrlAction(url: string): Promise<ImportNewsRe
   };
 }
 
+const IMPORTED_FROM_URL_REGEX = /Importado de <a href="([^"]+)">/;
+
+export interface BackfillNewsPublishedDateResult {
+  newsId: string;
+  titulo: string;
+  ok: boolean;
+  dataAnterior: Date | null;
+  dataNova: Date | null;
+  error: string | null;
+}
+
+/**
+ * Corrige retroativamente a `dataPublicacao` de not\u00edcias importadas do site
+ * VL6 antes deste campo existir \u2014 na \u00e9poca, `CreateNewsUseCase` sempre
+ * gravava `null` e `PublishNewsUseCase` carimbava "agora" ao publicar, ent\u00e3o
+ * toda not\u00edcia importada mostrava a data em que entrou no Portal, n\u00e3o a
+ * data real de veicula\u00e7\u00e3o no site original.
+ *
+ * Identifica as not\u00edcias importadas pelo link que `importNewsFromUrlAction`
+ * sempre grava no rodap\u00e9 do conte\u00fado ("Importado de <a href=...>"), busca
+ * cada p\u00e1gina de novo e, quando a p\u00e1gina emite `article:published_time`,
+ * atualiza a data. Not\u00edcias criadas manualmente (sem esse link) n\u00e3o s\u00e3o
+ * tocadas; not\u00edcias importadas cuja p\u00e1gina de origem n\u00e3o emite a tag tamb\u00e9m
+ * ficam como est\u00e3o (nada para corrigir automaticamente).
+ */
+export async function backfillNewsPublishedDatesAction(): Promise<
+  BackfillNewsPublishedDateResult[]
+> {
+  const session = await requireSession();
+  const container = createServerContainer();
+
+  const page = await container.useCases.listAllNews.execute(session.authContext, { limit: 500 });
+  const results: BackfillNewsPublishedDateResult[] = [];
+
+  for (const news of page.items) {
+    const match = news.conteudoHtml.match(IMPORTED_FROM_URL_REGEX);
+    if (!match) continue;
+    const url = match[1]!.replace(/&amp;/g, '&');
+
+    const scraped = await scrapeNewsMetadata(url);
+    if (!scraped.ok || !scraped.publishedAt) continue;
+    if (news.dataPublicacao && news.dataPublicacao.getTime() === scraped.publishedAt.getTime()) {
+      continue;
+    }
+
+    const input = newsSchema.parse({
+      titulo: news.titulo,
+      subtitulo: news.subtitulo,
+      slug: news.slug,
+      imagemCapaUrl: news.imagemCapaUrl,
+      conteudoHtml: news.conteudoHtml,
+      categoria: news.categoria,
+      dataPublicacao: scraped.publishedAt,
+    });
+    const result = await container.useCases.updateNews.execute(session.authContext, news.id, input);
+    results.push({
+      newsId: news.id,
+      titulo: news.titulo,
+      ok: result.ok,
+      dataAnterior: news.dataPublicacao,
+      dataNova: scraped.publishedAt,
+      error: result.ok ? null : result.error.message,
+    });
+  }
+
+  if (results.some((r) => r.ok)) {
+    revalidatePath('/admin/conteudo/noticias');
+    revalidatePath('/noticias');
+  }
+
+  return results;
+}
+
 export async function createNewsAction(
   _prevState: ContentActionState,
   formData: FormData,

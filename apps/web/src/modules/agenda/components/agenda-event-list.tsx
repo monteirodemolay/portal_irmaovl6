@@ -8,7 +8,8 @@ import { useAgenda } from './agenda-provider';
 const INITIAL_VISIBLE_COUNT = 6;
 
 export function AgendaEventList() {
-  const { filteredEvents: events, selectedEventId, onlySessions, openAgenda } = useAgenda();
+  const { filteredEvents: events, selectedEventId, scope, openAgenda } = useAgenda();
+  const onlySessions = scope === 'sessions';
   const [showAll, setShowAll] = useState(false);
 
   const visibleEvents = showAll ? events : events.slice(0, INITIAL_VISIBLE_COUNT);

@@ -16,23 +16,28 @@ import { AgendaEventList } from './agenda-event-list';
 import { useAgenda } from './agenda-provider';
 
 export function AgendaDrawer() {
-  const { isOpen, selectedEventId, events, canManageEvents, onlySessions, closeAgenda } =
-    useAgenda();
+  const { isOpen, selectedEventId, events, canManageEvents, scope, closeAgenda } = useAgenda();
   const selectedEvent = events.find((event) => event.id === selectedEventId) ?? null;
+  const title =
+    scope === 'sessions'
+      ? 'Sessões da Loja'
+      : scope === 'events'
+        ? 'Eventos da Loja'
+        : 'Agenda da Loja';
+  const description =
+    scope === 'sessions'
+      ? 'Acompanhe as próximas sessões da Loja'
+      : scope === 'events'
+        ? 'Acompanhe os próximos eventos da Loja'
+        : 'Acompanhe os eventos e sessões da Loja';
 
   return (
     <Drawer open={isOpen} onOpenChange={(open) => !open && closeAgenda()}>
       <DrawerContent className="w-full max-w-none rounded-l-none sm:w-[92vw] sm:rounded-l-3xl lg:w-[78vw] lg:max-w-[1160px]">
         <header className="border-border flex min-h-[88px] items-center justify-between gap-4 border-b bg-white py-4 pl-5 pr-14 sm:pl-7 sm:pr-16">
           <div className="min-w-0">
-            <DrawerTitle className="font-display truncate text-xl sm:text-2xl">
-              {onlySessions ? 'Sessões da Loja' : 'Agenda da Loja'}
-            </DrawerTitle>
-            <DrawerDescription className="mt-1 truncate text-xs">
-              {onlySessions
-                ? 'Acompanhe as próximas sessões da Loja'
-                : 'Acompanhe os eventos e sessões da Loja'}
-            </DrawerDescription>
+            <DrawerTitle className="font-display truncate text-xl sm:text-2xl">{title}</DrawerTitle>
+            <DrawerDescription className="mt-1 truncate text-xs">{description}</DrawerDescription>
           </div>
 
           {canManageEvents && (

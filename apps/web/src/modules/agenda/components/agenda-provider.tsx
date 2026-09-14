@@ -4,19 +4,22 @@ import { createContext, useCallback, useContext, useMemo, useState, type ReactNo
 import type { Event } from '@vl6/domain';
 import { AgendaDrawer } from './agenda-drawer';
 
+/** Sessão ('sessions') ou os demais tipos de Evento ('events') — nunca os dois misturados quando um filtro está ativo. */
+export type AgendaScope = 'sessions' | 'events';
+
 export interface AgendaOpenOptions {
-  /** Restringe a lista/calendário do drawer só a Sessões — usado pelo botão "mais sessões" do Início, que não deve misturar Sessões com outros tipos de Evento. */
-  onlySessions?: boolean;
+  /** Restringe a lista/calendário do drawer a um dos dois grupos — usado pelos botões "mais sessões"/"Ver todos" do Início, que nunca devem misturar Sessão com outros tipos de Evento. Omitido/`undefined` = sem filtro (Agenda completa). */
+  scope?: AgendaScope;
 }
 
 export interface AgendaContextValue {
   isOpen: boolean;
   selectedEventId: string | null;
   events: Event[];
-  /** `events` já restrito pelo filtro ativo (ver `AgendaOpenOptions.onlySessions`) — o que a lista/calendário do drawer devem renderizar. */
+  /** `events` já restrito pelo filtro ativo (ver `AgendaOpenOptions.scope`) — o que a lista/calendário do drawer devem renderizar. */
   filteredEvents: Event[];
-  /** `true` quando o drawer foi aberto restrito só a Sessões — controla o cabeçalho e outros textos condicionais. */
-  onlySessions: boolean;
+  /** Filtro ativo do drawer — controla o cabeçalho e outros textos condicionais. `undefined` = Agenda completa, sem filtro. */
+  scope: AgendaScope | undefined;
   canManageEvents: boolean;
   openAgenda: (eventId?: string, options?: AgendaOpenOptions) => void;
   closeAgenda: () => void;
@@ -42,23 +45,30 @@ export function AgendaProvider({
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedEventId, setSelectedEventId] = useState<string | null>(events[0]?.id ?? null);
-  const [onlySessions, setOnlySessions] = useState(false);
+  const [scope, setScope] = useState<AgendaScope | undefined>(undefined);
 
-  const filteredEvents = useMemo(
-    () => (onlySessions ? events.filter((event) => event.tipo === 'sessao') : events),
-    [events, onlySessions],
-  );
+  const applyScope = useCallback((activeScope: AgendaScope | undefined, pool: Event[]) => {
+    if (activeScope === 'sessions') return pool.filter((event) => event.tipo === 'sessao');
+    if (activeScope === 'events') return pool.filter((event) => event.tipo !== 'sessao');
+    return pool;
+  }, []);
+
+  const filteredEvents = useMemo(() => applyScope(scope, events), [applyScope, events, scope]);
 
   const openAgenda = useCallback(
     (eventId?: string, options?: AgendaOpenOptions) => {
-      const scoped = options?.onlySessions ?? false;
-      setOnlySessions(scoped);
-      const pool = scoped ? events.filter((event) => event.tipo === 'sessao') : events;
+      // `options` omitido (navegação dentro do próprio drawer — escolher
+      // outro item da lista/calendário) preserva o filtro já ativo; só uma
+      // chamada externa (botão "mais sessões"/"Ver todos", sempre manda
+      // `options`, mesmo `{}`) decide trocar de filtro.
+      const nextScope = options ? options.scope : scope;
+      setScope(nextScope);
+      const pool = applyScope(nextScope, events);
       // Sem id: sempre volta pra "visão geral" (o próximo evento em foco, já dentro do filtro ativo).
       setSelectedEventId(eventId ?? pool[0]?.id ?? null);
       setIsOpen(true);
     },
-    [events],
+    [applyScope, events, scope],
   );
 
   const closeAgenda = useCallback(() => setIsOpen(false), []);
@@ -69,7 +79,7 @@ export function AgendaProvider({
       selectedEventId,
       events,
       filteredEvents,
-      onlySessions,
+      scope,
       canManageEvents,
       openAgenda,
       closeAgenda,
@@ -79,7 +89,7 @@ export function AgendaProvider({
       selectedEventId,
       events,
       filteredEvents,
-      onlySessions,
+      scope,
       canManageEvents,
       openAgenda,
       closeAgenda,
