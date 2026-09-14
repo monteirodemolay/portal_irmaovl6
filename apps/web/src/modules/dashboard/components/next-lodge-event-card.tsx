@@ -79,7 +79,9 @@ export function NextLodgeEventCard({ event }: { event: Event }) {
           size="sm"
           className="bg-accent text-primary-dark border-accent hover:bg-accent/90"
         >
-          <AgendaOpenButton eventId={event.id}>Ver evento</AgendaOpenButton>
+          <AgendaOpenButton eventId={event.id} scope="events">
+            Ver evento
+          </AgendaOpenButton>
         </Button>
       </div>
     </Card>

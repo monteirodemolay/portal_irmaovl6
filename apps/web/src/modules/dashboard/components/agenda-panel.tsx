@@ -20,7 +20,7 @@ export function AgendaPanel({ events }: { events: Event[] }) {
         title="Próximas Sessões"
         action={
           <AgendaOpenButton
-            onlySessions
+            scope="sessions"
             className="text-accent shrink-0 text-xs font-medium hover:underline"
           >
             mais sessões
@@ -42,7 +42,7 @@ export function AgendaPanel({ events }: { events: Event[] }) {
                 <div className="min-w-0">
                   <AgendaOpenButton
                     eventId={event.id}
-                    onlySessions
+                    scope="sessions"
                     className="block truncate text-left text-sm font-medium hover:underline"
                   >
                     {event.titulo}

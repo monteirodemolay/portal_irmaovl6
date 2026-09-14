@@ -18,7 +18,10 @@ export function UpcomingEventsPanel({ events }: { events: Event[] }) {
         icon={Sparkles}
         title="Próximos Eventos"
         action={
-          <AgendaOpenButton className="text-accent shrink-0 text-xs font-medium hover:underline">
+          <AgendaOpenButton
+            scope="events"
+            className="text-accent shrink-0 text-xs font-medium hover:underline"
+          >
             Ver todos
           </AgendaOpenButton>
         }
@@ -38,6 +41,7 @@ export function UpcomingEventsPanel({ events }: { events: Event[] }) {
                 <div className="min-w-0">
                   <AgendaOpenButton
                     eventId={event.id}
+                    scope="events"
                     className="block truncate text-left text-sm font-medium hover:underline"
                   >
                     {event.titulo}

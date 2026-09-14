@@ -93,7 +93,7 @@ export function NextSessionCard({
           size="sm"
           className="border-white/30 text-white hover:bg-white/10"
         >
-          <AgendaOpenButton eventId={event.id} onlySessions>
+          <AgendaOpenButton eventId={event.id} scope="sessions">
             Ver detalhes
           </AgendaOpenButton>
         </Button>
