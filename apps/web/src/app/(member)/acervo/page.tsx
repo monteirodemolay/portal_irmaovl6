@@ -122,14 +122,6 @@ export default async function AcervoPage({
   // mostrava os mesmos Documentos sem miniatura primeiro, escondendo os
   // resultados com foto que tornam o grid mais atrativo.
   const visibleResults = (query || validKind ? filteredResults : shuffle(allResults)).slice(0, 12);
-  // Pool de fotos reais já carregadas nesta mesma busca (capas de álbum e
-  // fotos de Evento) — decora os cards sem foto própria (a maioria: Iniciação/
-  // Elevação/Exaltação raramente têm mídia anexada) pra manter a miniatura
-  // presente em todo cartão do grid, igual à capa do álbum de Evento
-  // (`/acervo/eventos/[eventId]`), sem nenhuma consulta extra ao banco.
-  const decorativeImages = Array.from(
-    new Set(allResults.map((result) => result.imageUrl).filter((url): url is string => !!url)),
-  );
   const fullSearchParams = new URLSearchParams();
   if (query) fullSearchParams.set('q', query);
   if (validKind) fullSearchParams.set('tipo', validKind);
@@ -347,7 +339,7 @@ export default async function AcervoPage({
             </div>
           ) : (
             <div className="mt-5 grid gap-3 sm:grid-cols-2">
-              {visibleResults.map((result, index) => {
+              {visibleResults.map((result) => {
                 const KindIcon =
                   result.kind === 'documento'
                     ? FileText
@@ -356,33 +348,33 @@ export default async function AcervoPage({
                       : result.kind === 'fotografia'
                         ? GalleryIcon
                         : CalendarDays;
-                // Foto própria em primeiro lugar; sem ela, uma das fotos reais
-                // já carregadas nesta busca decora o card (rotativo pelo
-                // índice) — todo cartão do grid mantém o mesmo tamanho, com
-                // ou sem mídia própria, mesmo tratamento visual da capa do
-                // álbum de Evento.
-                const displayImage =
-                  result.imageUrl ??
-                  (decorativeImages.length > 0
-                    ? decorativeImages[index % decorativeImages.length]
-                    : null);
                 return (
                   <Link
                     key={`${result.kind}-${result.id}`}
                     href={result.href}
                     className="border-border hover:border-accent group flex h-full flex-col rounded-[13px] border p-4 transition-colors"
                   >
-                    <div className="bg-primary/5 border-border mb-3 aspect-video w-full shrink-0 overflow-hidden rounded-md border">
-                      {displayImage ? (
+                    <div className="border-border mb-3 aspect-video w-full shrink-0 overflow-hidden rounded-md border">
+                      {result.imageUrl ? (
                         <img
-                          src={displayImage}
+                          src={result.imageUrl}
                           alt=""
                           loading="lazy"
                           className="h-full w-full object-cover transition-transform group-hover:scale-105"
                         />
                       ) : (
-                        <div className="from-primary/10 to-accent/10 text-primary/40 flex h-full w-full items-center justify-center bg-gradient-to-br">
-                          <KindIcon size={26} strokeWidth={1.4} />
+                        // Sem foto própria (comum em Iniciação/Elevação/
+                        // Exaltação, raramente têm mídia anexada) — nunca
+                        // empresta foto de outro resultado (mostrava fotos de
+                        // eventos distintos, achado do Administrador). O
+                        // título fica incorporado na própria "imagem", sobre
+                        // fundo azul escuro institucional (--color-primary),
+                        // mesmo tom do cabeçalho desta página.
+                        <div className="from-primary to-primary-dark relative flex h-full w-full flex-col justify-between overflow-hidden bg-gradient-to-br p-3.5 text-white">
+                          <KindIcon size={17} strokeWidth={1.6} className="text-accent shrink-0" />
+                          <p className="font-display line-clamp-3 text-sm font-semibold leading-tight">
+                            {result.title}
+                          </p>
                         </div>
                       )}
                     </div>
