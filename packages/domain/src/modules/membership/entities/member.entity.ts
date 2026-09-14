@@ -8,6 +8,20 @@ export interface SocialLinks {
   linkedin: string | null;
 }
 
+/**
+ * Filho(a) do Irmão, pra fins de lembrete de aniversário — sem data completa
+ * (a fonte institucional, quando existe, só traz dia/mês, nunca o ano) e sem
+ * criar um cadastro de pessoa à parte: isso é só uma lista de lembretes no
+ * `Member` dos pais, não um vínculo de parentesco completo (ver módulo
+ * Família e Legado pra isso).
+ */
+export interface MemberChild {
+  id: string;
+  nome: string;
+  aniversarioDia: number;
+  aniversarioMes: number;
+}
+
 /** Cadastro de Irmão — docs/architecture/03-modelo-dados.md. */
 export interface Member extends BaseEntity {
   userId: string | null;
@@ -50,6 +64,18 @@ export interface Member extends BaseEntity {
   /** Só faz sentido quando `estadoCivil` implica cônjuge — ver `MARITAL_STATUSES_WITH_SPOUSE`. */
   conjugeNome: string | null;
   conjugeDataNascimento: Date | null;
+  /**
+   * Fallback de dia/mês do aniversário do cônjuge, usado só quando
+   * `conjugeDataNascimento` é `null` (fonte institucional que não traz o
+   * ano) — `ListUpcomingAnniversariesUseCase` prioriza a data completa
+   * quando existe (o Irmão preencheu o ano em Meu Espaço) e só cai aqui pra
+   * não perder o lembrete quando só o dia/mês são conhecidos. Nunca usado
+   * pra calcular idade.
+   */
+  conjugeAniversarioDia: number | null;
+  conjugeAniversarioMes: number | null;
+  /** Lembretes de aniversário dos filhos — ver `MemberChild`. */
+  filhos: MemberChild[];
   biografia: string | null;
   redesSociais: SocialLinks;
   observacoes: string | null;

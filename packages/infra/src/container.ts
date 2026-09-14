@@ -222,6 +222,7 @@ import {
   SearchDirectoryUseCase,
   SearchMembersUseCase,
   ListUpcomingAnniversariesUseCase,
+  ImportBirthdayDataUseCase,
   SetTenantActiveUseCase,
   SetUserStatusUseCase,
   SoftDeleteFileAssetUseCase,
@@ -660,6 +661,11 @@ export function createServerContainer() {
     listUpcomingAnniversaries: new ListUpcomingAnniversariesUseCase({
       memberRepository: repositories.member,
       clock,
+    }),
+    importBirthdayData: new ImportBirthdayDataUseCase({
+      memberRepository: repositories.member,
+      clock,
+      idGenerator,
     }),
     softDeleteMember: new SoftDeleteMemberUseCase({ memberRepository: repositories.member, clock }),
 

@@ -7,6 +7,7 @@ export const ANNIVERSARY_KIND_LABELS: Record<AnniversaryKind, string> = {
   exaltacao: 'Exaltação',
   nascimento: 'Aniversário',
   conjuge: 'Aniversário da cônjuge',
+  filho: 'Aniversário do(a) filho(a)',
 };
 
 function formatShortDate(data: Date): string {
@@ -36,6 +37,10 @@ export function anniversaryHeadline(entry: UpcomingAnniversaryEntry): string {
   }
   if (entry.kind === 'conjuge') {
     const quem = entry.conjugeNome ? `de ${entry.conjugeNome}` : 'da cônjuge';
+    return `Aniversário ${quem} ${dia}`;
+  }
+  if (entry.kind === 'filho') {
+    const quem = entry.filhoNome ? `de ${entry.filhoNome}` : 'do(a) filho(a)';
     return `Aniversário ${quem} ${dia}`;
   }
   const anos = entry.anosCompletos === 1 ? '1 ano' : `${entry.anosCompletos} anos`;

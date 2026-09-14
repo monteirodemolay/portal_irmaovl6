@@ -6,7 +6,8 @@ import { computeNextOccurrence } from './anniversary-date';
 import type { Member } from '../entities/member.entity';
 import type { IMemberRepository } from '../repositories/member.repository';
 
-export type AnniversaryKind = 'iniciacao' | 'elevacao' | 'exaltacao' | 'nascimento' | 'conjuge';
+export type AnniversaryKind =
+  'iniciacao' | 'elevacao' | 'exaltacao' | 'nascimento' | 'conjuge' | 'filho';
 
 export interface UpcomingAnniversaryEntry {
   memberId: string;
@@ -15,11 +16,29 @@ export interface UpcomingAnniversaryEntry {
   grau: MemberDegree;
   kind: AnniversaryKind;
   data: Date;
+  /**
+   * Nunca exibido pra `nascimento`/`conjuge`/`filho` (convenção da UI, ver
+   * `anniversaryHeadline`) — pra `conjuge`/`filho` sem ano conhecido
+   * (`conjugeAniversarioDia/Mes`, `MemberChild`), este número não representa
+   * uma idade real, só sobra do cálculo de `computeNextOccurrence` sobre um
+   * ano fictício.
+   */
   anosCompletos: number;
   diasAte: number;
   /** Só preenchido para `kind === 'conjuge'` — nome de quem faz aniversário. */
   conjugeNome: string | null;
+  /** Só preenchido para `kind === 'filho'` — nome de quem faz aniversário. */
+  filhoNome: string | null;
 }
+
+/**
+ * Ano fictício usado só pra montar um `Date` de dia/mês sem ano conhecido
+ * (cônjuge sem `conjugeDataNascimento`, filhos) — precisa ser bissexto pra
+ * 29/fev não estourar pra 1º/março (`safeDateForYear` corrige contra o ano
+ * REAL de destino, não este). Nunca aparece pro usuário: `anosCompletos`
+ * derivado dele nunca é exibido pra esses dois `kind`s.
+ */
+const UNKNOWN_YEAR_PLACEHOLDER = 2000;
 
 export interface ListUpcomingAnniversariesDeps {
   memberRepository: IMemberRepository;
@@ -85,11 +104,66 @@ export class ListUpcomingAnniversariesUseCase {
           anosCompletos,
           diasAte,
           conjugeNome: kind === 'conjuge' ? member.conjugeNome : null,
+          filhoNome: null,
+        });
+      }
+
+      // Fallback do aniversário da cônjuge sem ano conhecido — só quando
+      // `conjugeDataNascimento` (data completa, preenchida pelo próprio
+      // Irmão) não existe; nunca sobrescreve a data completa quando ela já
+      // foi informada.
+      if (
+        !member.conjugeDataNascimento &&
+        member.conjugeAniversarioDia &&
+        member.conjugeAniversarioMes
+      ) {
+        const data = new Date(
+          UNKNOWN_YEAR_PLACEHOLDER,
+          member.conjugeAniversarioMes - 1,
+          member.conjugeAniversarioDia,
+        );
+        const { diasAte, anosCompletos } = computeNextOccurrence(hoje, data);
+        if (diasAte <= withinDays) {
+          entries.push({
+            memberId: member.id,
+            nomeCompleto: member.nomeCompleto,
+            fotoUrl: member.fotoUrl,
+            grau: member.grau,
+            kind: 'conjuge',
+            data,
+            anosCompletos,
+            diasAte,
+            conjugeNome: member.conjugeNome,
+            filhoNome: null,
+          });
+        }
+      }
+
+      for (const filho of member.filhos) {
+        const data = new Date(
+          UNKNOWN_YEAR_PLACEHOLDER,
+          filho.aniversarioMes - 1,
+          filho.aniversarioDia,
+        );
+        const { diasAte, anosCompletos } = computeNextOccurrence(hoje, data);
+        if (diasAte > withinDays) continue;
+
+        entries.push({
+          memberId: member.id,
+          nomeCompleto: member.nomeCompleto,
+          fotoUrl: member.fotoUrl,
+          grau: member.grau,
+          kind: 'filho',
+          data,
+          anosCompletos,
+          diasAte,
+          conjugeNome: null,
+          filhoNome: filho.nome,
         });
       }
     }
 
-    const LOW_PRIORITY_KINDS: AnniversaryKind[] = ['nascimento', 'conjuge'];
+    const LOW_PRIORITY_KINDS: AnniversaryKind[] = ['nascimento', 'conjuge', 'filho'];
     return entries.sort((a, b) => {
       if (a.diasAte !== b.diasAte) return a.diasAte - b.diasAte;
       const aLow = LOW_PRIORITY_KINDS.includes(a.kind);

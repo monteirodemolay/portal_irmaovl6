@@ -13,6 +13,7 @@ import {
   USER_STATUS_VARIANT,
 } from '@/modules/identity-access/user-status-labels';
 import { MembersFilterForm } from './members-filter-form';
+import { ImportBirthdayDataPanel } from '@/modules/membership/components/import-birthday-data-panel';
 
 const SITUATION_VARIANT: Record<
   (typeof MEMBER_SITUATION_STATUSES)[number],
@@ -198,6 +199,8 @@ export default async function MembersPage({
           </Button>
         </div>
       </div>
+
+      <ImportBirthdayDataPanel />
 
       <MembersFilterForm initial={searchFilters} />
 

@@ -358,6 +358,9 @@ export class ImportHistoricalBoardTermsUseCase {
       estadoCivil: null,
       conjugeNome: null,
       conjugeDataNascimento: null,
+      conjugeAniversarioDia: null,
+      conjugeAniversarioMes: null,
+      filhos: [],
       biografia: null,
       redesSociais: { instagram: null, facebook: null, linkedin: null },
       observacoes:
