@@ -81,11 +81,12 @@ export class FirestoreMemberRepository implements IMemberRepository {
     return (
       snap.docs
         .map((doc) => doc.data())
-        // Um Irmão em In Memoriam nunca teve/vai ter acesso ao Portal
-        // (mesma regra de `member-memorial-card.tsx`/`ApproveMemberAccessClaimUseCase`)
-        // — sem esse filtro, ele aparecia normalmente pra "reivindicar" na
-        // tela pública, mesmo já falecido.
-        .filter((member) => member.situacao !== 'falecido')
+        // Só Irmão com situação "Ativo" pode reivindicar acesso — achado do
+        // Administrador: um Irmão desligado continuava aparecendo na lista
+        // pública pra "reivindicar" (licenciado/suspenso/desligado/In
+        // Memoriam não têm acesso ao Portal, mesma regra de
+        // `ApproveMemberAccessClaimUseCase`).
+        .filter((member) => member.situacao === 'ativo')
         .map((member) => ({
           id: member.id,
           nomeCompleto: formatBrazilianPersonName(member.nomeCompleto),
