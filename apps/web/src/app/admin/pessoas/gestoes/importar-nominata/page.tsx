@@ -1,8 +1,11 @@
 import Link from 'next/link';
+import { createServerContainer } from '@vl6/infra';
 import { HISTORICAL_BOARD_TERMS_VL6 } from '@vl6/domain';
+import { BOARD_POSITION_LABELS } from '@vl6/shared';
 import { ArrowLeft } from '@vl6/ui';
 import { requirePagePermission } from '@/lib/auth/require-permission';
 import { DedupeMemberPositionHistoryButton } from '@/modules/governance/components/dedupe-member-position-history-button';
+import { BackfillMestreInstaladoTitlesButton } from '@/modules/governance/components/backfill-mestre-instalado-titles-button';
 import { ImportHistoricalBoardTermsForm } from '@/modules/governance/components/import-historical-board-terms-form';
 
 // Margem extra pro Vercel — em lotes com fotos grandes, o upload pro Blob
@@ -18,7 +21,11 @@ export const maxDuration = 60;
  * nem Irmão já existente, só complementa fotos que ainda faltavam.
  */
 export default async function ImportHistoricalBoardTermsPage() {
-  await requirePagePermission('boardTerm:manage');
+  const session = await requirePagePermission('boardTerm:manage');
+
+  const container = createServerContainer();
+  const auditResult = await container.useCases.auditBoardTermCoverage.execute(session.authContext);
+  const audit = auditResult.ok ? auditResult.value : null;
 
   const totalGestoes = HISTORICAL_BOARD_TERMS_VL6.length;
   const primeiraGestao = HISTORICAL_BOARD_TERMS_VL6[0]!;
@@ -71,6 +78,80 @@ export default async function ImportHistoricalBoardTermsPage() {
           <DedupeMemberPositionHistoryButton />
         </div>
       </div>
+
+      <div className="border-border bg-background rounded-xl border border-dashed p-4">
+        <p className="text-sm font-semibold">Mestre Instalado automático</p>
+        <p className="text-muted mt-1 text-xs">
+          Todo Irmão que exerce o cargo de Venerável Mestre vira Mestre Instalado automaticamente no
+          dia seguinte ao fim da gestão no cargo — dali em diante, sem precisar de lançamento
+          manual. O botão abaixo concede o título, retroativamente, a quem já deixou o cargo antes
+          dessa regra existir.
+        </p>
+        <div className="mt-3">
+          <BackfillMestreInstaladoTitlesButton />
+        </div>
+      </div>
+
+      {audit && (
+        <div className="border-border bg-background rounded-xl border p-4">
+          <p className="text-sm font-semibold">Auditoria de cobertura das Gestões</p>
+          <p className="text-muted mt-1 text-xs">
+            {audit.totalGestoes} Gestões cadastradas no total.
+          </p>
+
+          <div className="mt-4">
+            <p className="text-xs font-semibold uppercase tracking-wide">
+              Gestões sem Venerável/Vigilantes completos
+            </p>
+            {audit.gestoesSemCargo.length === 0 ? (
+              <p className="text-muted mt-1 text-xs">
+                Nenhuma — todas as Gestões têm Venerável Mestre, 1º e 2º Vigilante registrados.
+              </p>
+            ) : (
+              <ul className="mt-2 flex flex-col gap-1.5">
+                {audit.gestoesSemCargo.map((gap) => (
+                  <li key={gap.gestaoId} className="text-xs">
+                    <span className="font-medium">{gap.gestaoNome}</span>
+                    <span className="text-muted">
+                      {' '}
+                      — falta{gap.cargosFaltando.length > 1 ? 'm' : ''}:{' '}
+                      {gap.cargosFaltando.map((cargo) => BOARD_POSITION_LABELS[cargo]).join(', ')}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          <div className="mt-4">
+            <p className="text-xs font-semibold uppercase tracking-wide">
+              Cargos duplicados dentro da mesma Gestão
+            </p>
+            <p className="text-muted mt-1 text-xs">
+              Mesmo Irmão ocupando o mesmo cargo mais de uma vez na mesma Gestão — ocupar o mesmo
+              cargo em Gestões diferentes ao longo dos anos é normal e não aparece aqui.
+            </p>
+            {audit.cargosDuplicados.length === 0 ? (
+              <p className="text-muted mt-1 text-xs">Nenhum encontrado.</p>
+            ) : (
+              <ul className="mt-2 flex flex-col gap-1.5">
+                {audit.cargosDuplicados.map((dup) => (
+                  <li key={`${dup.gestaoId}-${dup.cargo}-${dup.memberId}`} className="text-xs">
+                    <span className="font-medium">{dup.nomeCompleto}</span>
+                    <span className="text-muted">
+                      {' '}
+                      —{' '}
+                      {BOARD_POSITION_LABELS[dup.cargo as keyof typeof BOARD_POSITION_LABELS] ??
+                        dup.cargo}{' '}
+                      na {dup.gestaoNome} ({dup.ocorrencias}x)
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -4,6 +4,8 @@ import {
   AssignBoardPositionUseCase,
   ImportHistoricalBoardTermsUseCase,
   DedupeMemberPositionHistoryUseCase,
+  BackfillMestreInstaladoTitlesUseCase,
+  AuditBoardTermCoverageUseCase,
   ListDuplicateMembersUseCase,
   MergeDuplicateMembersUseCase,
   AssignRoleUseCase,
@@ -518,6 +520,7 @@ export function createServerContainer() {
     memberRepository: repositories.member,
     situationRecordRepository: repositories.memberSituationRecord,
     positionHistoryRepository: repositories.memberPositionHistory,
+    memberTitleRepository: repositories.memberTitle,
     clock,
     idGenerator,
   });
@@ -724,6 +727,7 @@ export function createServerContainer() {
       assignmentRepository: repositories.boardPositionAssignment,
       memberRepository: repositories.member,
       positionHistoryRepository: repositories.memberPositionHistory,
+      memberTitleRepository: repositories.memberTitle,
       clock,
       idGenerator,
     }),
@@ -731,6 +735,7 @@ export function createServerContainer() {
       memberRepository: repositories.member,
       situationRecordRepository: repositories.memberSituationRecord,
       positionHistoryRepository: repositories.memberPositionHistory,
+      memberTitleRepository: repositories.memberTitle,
       boardTermRepository: repositories.boardTerm,
       assignmentRepository: repositories.boardPositionAssignment,
       clock,
@@ -738,6 +743,18 @@ export function createServerContainer() {
     }),
     dedupeMemberPositionHistory: new DedupeMemberPositionHistoryUseCase({
       positionHistoryRepository: repositories.memberPositionHistory,
+    }),
+    backfillMestreInstaladoTitles: new BackfillMestreInstaladoTitlesUseCase({
+      positionHistoryRepository: repositories.memberPositionHistory,
+      memberRepository: repositories.member,
+      memberTitleRepository: repositories.memberTitle,
+      clock,
+      idGenerator,
+    }),
+    auditBoardTermCoverage: new AuditBoardTermCoverageUseCase({
+      boardTermRepository: repositories.boardTerm,
+      positionHistoryRepository: repositories.memberPositionHistory,
+      memberRepository: repositories.member,
     }),
     listDuplicateMembers: new ListDuplicateMembersUseCase({
       memberRepository: repositories.member,

@@ -6,6 +6,7 @@ import {
   InMemoryMemberRepository,
   InMemoryMemberSituationRecordRepository,
   InMemoryMemberPositionHistoryRepository,
+  InMemoryMemberTitleRepository,
   InMemoryBoardTermRepository,
   InMemoryBoardPositionAssignmentRepository,
 } from '../../../test/fakes';
@@ -77,12 +78,14 @@ function buildDeps() {
   const memberRepository = new InMemoryMemberRepository();
   const situationRecordRepository = new InMemoryMemberSituationRecordRepository();
   const positionHistoryRepository = new InMemoryMemberPositionHistoryRepository();
+  const memberTitleRepository = new InMemoryMemberTitleRepository();
   const boardTermRepository = new InMemoryBoardTermRepository();
   const assignmentRepository = new InMemoryBoardPositionAssignmentRepository();
   const useCase = new ImportHistoricalBoardTermsUseCase({
     memberRepository,
     situationRecordRepository,
     positionHistoryRepository,
+    memberTitleRepository,
     boardTermRepository,
     assignmentRepository,
     clock: new FixedClock(new Date('2026-09-10T00:00:00Z')),
@@ -93,6 +96,7 @@ function buildDeps() {
     memberRepository,
     situationRecordRepository,
     positionHistoryRepository,
+    memberTitleRepository,
     boardTermRepository,
     assignmentRepository,
   };
@@ -162,6 +166,21 @@ describe('ImportHistoricalBoardTermsUseCase', () => {
     const ribasMember = ribas.items.find((m) => m.nomeCompleto === 'Ribas Marques');
     expect(assignment?.memberId).toBe(ribasMember?.id);
     expect(ribasMember?.situacao).toBe('ativo');
+
+    const titles = await deps.memberTitleRepository.listByMemberId('t1', ribasMember!.id);
+    expect(titles).toHaveLength(1);
+    expect(titles[0]?.titulo).toBe('mestre_instalado');
+    expect(titles[0]?.dataConcessao).toEqual(new Date('1979-06-01'));
+  });
+
+  it('não concede Mestre Instalado a quem só foi Vigilante', async () => {
+    const deps = buildDeps();
+    await deps.useCase.execute(ctx, [simpleTerm], {});
+
+    const all = await deps.memberRepository.search({ tenantId: 't1' }, { limit: 10 });
+    const valerio = all.items.find((m) => m.nomeCompleto === 'Valério Teles Pires');
+    const titles = await deps.memberTitleRepository.listByMemberId('t1', valerio!.id);
+    expect(titles).toHaveLength(0);
   });
 
   it('casa por nome com Membro já cadastrado, sem duplicar', async () => {
@@ -204,6 +223,10 @@ describe('ImportHistoricalBoardTermsUseCase', () => {
 
     const history = await deps.positionHistoryRepository.listByTenant('t1');
     expect(history).toHaveLength(2);
+
+    const ribasMember = all.items.find((m) => m.nomeCompleto === 'Ribas Marques');
+    const titles = await deps.memberTitleRepository.listByMemberId('t1', ribasMember!.id);
+    expect(titles).toHaveLength(1);
   });
 
   it('gestão com troca de titular no meio do ano: 2 registros de histórico, 1 titular final', async () => {
@@ -226,6 +249,17 @@ describe('ImportHistoricalBoardTermsUseCase', () => {
     const historyForIvam = await deps.positionHistoryRepository.listByMemberId(ivam!.id);
     expect(historyForIvam).toHaveLength(1);
     expect(historyForIvam[0]?.dataFim).toEqual(new Date('1992-05-31'));
+
+    // Os dois — quem saiu no meio e quem assumiu depois — viram Mestre
+    // Instalado, cada um a partir do dia seguinte ao SEU trecho como VM.
+    const anezio = all.items.find((m) => m.nomeCompleto === 'Anézio Ferreira de Assunção');
+    const anezioTitles = await deps.memberTitleRepository.listByMemberId('t1', anezio!.id);
+    expect(anezioTitles).toHaveLength(1);
+    expect(anezioTitles[0]?.dataConcessao).toEqual(new Date('1991-11-01'));
+
+    const ivamTitles = await deps.memberTitleRepository.listByMemberId('t1', ivam!.id);
+    expect(ivamTitles).toHaveLength(1);
+    expect(ivamTitles[0]?.dataConcessao).toEqual(new Date('1992-06-01'));
   });
 
   it('aplica foto vinda do mapa de fotos quando o Membro é criado', async () => {
