@@ -793,6 +793,8 @@ export function createServerContainer() {
       committeeRepository: repositories.committee,
       archiveMediaRepository: repositories.archiveMedia,
       mediaAssetRepository: repositories.mediaAsset,
+      archiveItemRepository: repositories.archiveItem,
+      eventRepository: repositories.event,
       familyRelationshipRepository: repositories.familyRelationship,
       familyPersonRepository: repositories.familyPerson,
     }),

@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import type { AuthContext } from '../../../shared/auth-context';
 import {
+  InMemoryArchiveItemRepository,
   InMemoryArchiveMediaRepository,
   InMemoryBoardTermRepository,
   InMemoryCommitteeRepository,
+  InMemoryEventRepository,
   InMemoryFamilyPersonRepository,
   InMemoryFamilyRelationshipRepository,
   InMemoryMediaAssetRepository,
@@ -119,6 +121,8 @@ function buildUseCase() {
   const committeeRepository = new InMemoryCommitteeRepository();
   const archiveMediaRepository = new InMemoryArchiveMediaRepository();
   const mediaAssetRepository = new InMemoryMediaAssetRepository();
+  const archiveItemRepository = new InMemoryArchiveItemRepository();
+  const eventRepository = new InMemoryEventRepository();
   const familyRelationshipRepository = new InMemoryFamilyRelationshipRepository();
   const familyPersonRepository = new InMemoryFamilyPersonRepository();
   const useCase = new GetPublicMemberProfileUseCase({
@@ -130,6 +134,8 @@ function buildUseCase() {
     committeeRepository,
     archiveMediaRepository,
     mediaAssetRepository,
+    archiveItemRepository,
+    eventRepository,
     familyRelationshipRepository,
     familyPersonRepository,
   });
@@ -142,6 +148,8 @@ function buildUseCase() {
     committeeRepository,
     archiveMediaRepository,
     mediaAssetRepository,
+    archiveItemRepository,
+    eventRepository,
     familyRelationshipRepository,
     familyPersonRepository,
   };

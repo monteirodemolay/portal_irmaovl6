@@ -33,6 +33,7 @@ import {
 } from '@vl6/ui';
 import { MemberAvatar } from '@/components/membership/member-avatar';
 import { MemberDegreeBadge } from '@/components/membership/member-degree-badge';
+import { CeremonyMatesPanel } from '@/components/membership/ceremony-mates-panel';
 import {
   Panel as InstitutionalPanel,
   TimelineEntry,
@@ -489,6 +490,8 @@ export function PublicMemberProfileView({
               )}
             </Panel>
           )}
+
+          <CeremonyMatesPanel groups={profile.irmaosGemeos} />
 
           {profile.memoriaFotografica && profile.memoriaFotografica.length > 0 && (
             <Panel
