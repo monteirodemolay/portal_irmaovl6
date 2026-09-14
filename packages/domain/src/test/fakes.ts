@@ -1,6 +1,10 @@
 import type { IClock, IIdGenerator } from '../shared/ports';
 import type { MemberTitle } from '../modules/honors/entities/member-title.entity';
 import type { IMemberTitleRepository } from '../modules/honors/repositories/member-title.repository';
+import type { Honor } from '../modules/honors/entities/honor.entity';
+import type { IHonorRepository } from '../modules/honors/repositories/honor.repository';
+import type { PhilosophicalJourney } from '../modules/honors/entities/philosophical-journey.entity';
+import type { IPhilosophicalJourneyRepository } from '../modules/honors/repositories/philosophical-journey.repository';
 import type { Tenant } from '../modules/tenancy/entities/tenant.entity';
 import type { TenantBranding } from '../modules/tenancy/entities/tenant-branding.entity';
 import type { TenantSettings } from '../modules/tenancy/entities/tenant-settings.entity';
@@ -1895,6 +1899,53 @@ export class InMemoryMemberTitleRepository implements IMemberTitleRepository {
     const title = this.byId.get(id);
     if (title) {
       this.byId.set(id, { ...title, deletedAt, updatedAt: deletedAt, updatedBy, ativo: false });
+    }
+  }
+}
+
+export class InMemoryHonorRepository implements IHonorRepository {
+  private readonly byId = new Map<string, Honor>();
+
+  async findById(id: string) {
+    return this.byId.get(id) ?? null;
+  }
+  async listByMemberId(tenantId: string, memberId: string) {
+    return [...this.byId.values()].filter(
+      (h) => h.tenantId === tenantId && h.memberId === memberId && h.deletedAt === null,
+    );
+  }
+  async listByTenant(tenantId: string) {
+    return [...this.byId.values()].filter((h) => h.tenantId === tenantId && h.deletedAt === null);
+  }
+  async create(honor: Honor) {
+    this.byId.set(honor.id, honor);
+  }
+  async softDelete(id: string, deletedAt: Date, updatedBy: string) {
+    const honor = this.byId.get(id);
+    if (honor) {
+      this.byId.set(id, { ...honor, deletedAt, updatedAt: deletedAt, updatedBy, ativo: false });
+    }
+  }
+}
+
+export class InMemoryPhilosophicalJourneyRepository implements IPhilosophicalJourneyRepository {
+  private readonly byId = new Map<string, PhilosophicalJourney>();
+
+  async findById(id: string) {
+    return this.byId.get(id) ?? null;
+  }
+  async listByMemberId(tenantId: string, memberId: string) {
+    return [...this.byId.values()].filter(
+      (j) => j.tenantId === tenantId && j.memberId === memberId && j.deletedAt === null,
+    );
+  }
+  async create(journey: PhilosophicalJourney) {
+    this.byId.set(journey.id, journey);
+  }
+  async softDelete(id: string, deletedAt: Date, updatedBy: string) {
+    const journey = this.byId.get(id);
+    if (journey) {
+      this.byId.set(id, { ...journey, deletedAt, updatedAt: deletedAt, updatedBy, ativo: false });
     }
   }
 }

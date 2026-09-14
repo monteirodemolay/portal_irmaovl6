@@ -19,6 +19,8 @@ import { CompanyCard } from '@/modules/membership/components/profile-fields/comp
 import { ContactsCard } from '@/modules/membership/components/profile-fields/contacts-card';
 import { SituacaoMaconicaCard } from '@/modules/membership/components/situacao/situacao-maconica-card';
 import { MemberTitlesCard } from '@/modules/honors/components/member-titles-card';
+import { HonorsCard } from '@/modules/honors/components/honors-card';
+import { PhilosophicalJourneyCard } from '@/modules/honors/components/philosophical-journey-card';
 import { listUsedProfessions } from '@/modules/membership/lib/list-used-professions';
 import { listUsedCompanies } from '@/modules/membership/lib/list-used-companies';
 import { MemberAvatar } from '@/components/membership/member-avatar';
@@ -51,6 +53,8 @@ export async function MemberEditPanel({ memberId }: { memberId: string }) {
     situacaoVigente,
     situacaoHistorico,
     memberTitles,
+    honors,
+    philosophicalJourneys,
   ] = await Promise.all([
     container.useCases.listRoles.execute(session.authContext),
     member.userId ? container.repositories.user.findById(member.userId) : Promise.resolve(null),
@@ -59,6 +63,8 @@ export async function MemberEditPanel({ memberId }: { memberId: string }) {
     container.repositories.memberSituationRecord.findVigenteByMemberId(memberId),
     container.repositories.memberSituationRecord.listByMemberId(memberId),
     container.useCases.listMemberTitles.execute(session.authContext, memberId),
+    container.useCases.listHonors.execute(session.authContext, memberId),
+    container.useCases.listPhilosophicalJourneys.execute(session.authContext, memberId),
   ]);
   const isSelf = accessUser?.id === session.authContext.uid;
 
@@ -107,6 +113,8 @@ export async function MemberEditPanel({ memberId }: { memberId: string }) {
         <MemberIdentityCard member={member} action={boundUpdateIdentity} />
         <MemberMasonicDataCard member={member} action={boundUpdateIdentity} />
         <MemberTitlesCard memberId={member.id} titles={memberTitles} />
+        <HonorsCard memberId={member.id} honors={honors} />
+        <PhilosophicalJourneyCard memberId={member.id} journeys={philosophicalJourneys} />
         <AddressMaritalCard member={member} action={boundUpdateProfile} />
         <ProfessionalCard
           member={member}

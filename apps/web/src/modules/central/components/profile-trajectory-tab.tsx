@@ -1,26 +1,33 @@
-import type { MemberTitle, PublicMemberProfileDTO } from '@vl6/domain';
-import { getBoardPositionLabel, MEMBER_TITLE_LABELS } from '@vl6/shared';
-import { EmptyState, Milestone, Users } from '@vl6/ui';
+import type { Honor, MemberTitle, PhilosophicalJourney, PublicMemberProfileDTO } from '@vl6/domain';
+import { getBoardPositionLabel, HONOR_TYPE_LABELS, MEMBER_TITLE_LABELS } from '@vl6/shared';
+import { Award, EmptyState, Milestone, Sparkles, Users } from '@vl6/ui';
 import { TimelineEntry } from '@/components/membership/institutional-panel';
 import { CeremonyMatesPanel } from '@/components/membership/ceremony-mates-panel';
 import { formatDate, Panel } from './profile-shared';
+import { HonorDetailDialog } from './honor-detail-dialog';
 
 /**
  * Aba "Trajetória e Honrarias" do Perfil único (Fase 2/3, mock-up
  * homônimo) — linha do tempo institucional (Iniciação/Elevação/Exaltação +
  * cargos/comissões, já existia como "Caminho na Loja" na coluna lateral)
- * junto dos Títulos e Condições cadastrados (Fase 1 do domínio de
- * Honrarias) e de "Irmãos Gêmeos"/Colegas de Cerimônia. Honrarias e
- * Condecorações e Graus Filosóficos entram numa fase seguinte, quando o
- * domínio dessas duas entidades existir.
+ * junto dos Títulos e Condições, Honrarias e Condecorações e Graus
+ * Filosóficos/Corpos Maçônicos cadastrados (Fase 1/3 do domínio de
+ * Honrarias) e de "Irmãos Gêmeos"/Colegas de Cerimônia. Graus filosóficos
+ * só entram na lista se `visivel` — dado sensível/sigiloso que exige
+ * autorização explícita do Irmão pra divulgação pública.
  */
 export function ProfileTrajectoryTab({
   profile,
   memberTitles,
+  honors,
+  philosophicalJourneys,
 }: {
   profile: PublicMemberProfileDTO;
   memberTitles: MemberTitle[];
+  honors: Honor[];
+  philosophicalJourneys: PhilosophicalJourney[];
 }) {
+  const visibleJourneys = philosophicalJourneys.filter((journey) => journey.visivel);
   const hasTrajetoria = Boolean(
     profile.trajetoria &&
     (profile.trajetoria.dataIniciacao ||
@@ -116,6 +123,53 @@ export function ProfileTrajectoryTab({
                 </span>
                 {title.dataConcessao && (
                   <span className="text-muted text-xs">{formatDate(title.dataConcessao)}</span>
+                )}
+              </li>
+            ))}
+          </ul>
+        </Panel>
+      )}
+
+      {honors.length > 0 && (
+        <Panel kicker="HONRARIAS" title="Honrarias e Condecorações" icon={Award}>
+          <ul className="flex flex-col gap-3">
+            {honors.map((honor) => (
+              <li
+                key={honor.id}
+                className="border-border bg-background flex items-center justify-between gap-3 rounded-lg border px-3 py-2.5"
+              >
+                <div className="flex flex-col">
+                  <span className="text-sm font-medium">{honor.nomeOficial}</span>
+                  <span className="text-muted text-xs">
+                    {HONOR_TYPE_LABELS[honor.tipo]} · {honor.instituicaoConcedente}
+                    {honor.data ? ` · ${formatDate(honor.data)}` : ''}
+                  </span>
+                </div>
+                <HonorDetailDialog honor={honor} />
+              </li>
+            ))}
+          </ul>
+        </Panel>
+      )}
+
+      {visibleJourneys.length > 0 && (
+        <Panel
+          kicker="GRAUS FILOSÓFICOS"
+          title="Graus Filosóficos e Corpos Maçônicos"
+          icon={Sparkles}
+        >
+          <ul className="flex flex-wrap gap-2">
+            {visibleJourneys.map((journey) => (
+              <li
+                key={journey.id}
+                className="border-border bg-background flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm"
+              >
+                <span className="font-medium">
+                  {journey.rito}
+                  {journey.grau ? ` · ${journey.grau}` : ''}
+                </span>
+                {journey.data && (
+                  <span className="text-muted text-xs">{formatDate(journey.data)}</span>
                 )}
               </li>
             ))}

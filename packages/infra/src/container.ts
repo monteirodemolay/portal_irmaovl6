@@ -137,6 +137,12 @@ import {
   RegisterMemberTitleUseCase,
   ListMemberTitlesUseCase,
   RemoveMemberTitleUseCase,
+  RegisterHonorUseCase,
+  ListHonorsUseCase,
+  RemoveHonorUseCase,
+  RegisterPhilosophicalJourneyUseCase,
+  ListPhilosophicalJourneysUseCase,
+  RemovePhilosophicalJourneyUseCase,
   CreateGalleryAlbumUseCase,
   DeleteGalleryAlbumUseCase,
   CreateLibraryCategoryUseCase,
@@ -311,6 +317,8 @@ import { FirestorePersonalNoteRepository } from './firestore/repositories/person
 import { FirestoreFileAssetRepository } from './firestore/repositories/file-asset.repository';
 import { FirestoreFileCategoryRepository } from './firestore/repositories/file-category.repository';
 import { FirestoreMemberTitleRepository } from './firestore/repositories/member-title.repository';
+import { FirestoreHonorRepository } from './firestore/repositories/honor.repository';
+import { FirestorePhilosophicalJourneyRepository } from './firestore/repositories/philosophical-journey.repository';
 import { FirestoreGalleryAlbumRepository } from './firestore/repositories/gallery-album.repository';
 import { FirestoreGalleryMediaRepository } from './firestore/repositories/gallery-media.repository';
 import { FirestoreGoogleCalendarConnectionRepository } from './firestore/repositories/google-calendar-connection.repository';
@@ -403,6 +411,8 @@ export function createServerContainer() {
     auditLog: auditLogRepository,
     fileCategory: new FirestoreFileCategoryRepository(db),
     memberTitle: new FirestoreMemberTitleRepository(db),
+    honor: new FirestoreHonorRepository(db),
+    philosophicalJourney: new FirestorePhilosophicalJourneyRepository(db),
     fileAsset: new FirestoreFileAssetRepository(db),
     libraryCategory: new FirestoreLibraryCategoryRepository(db),
     libraryItem: new FirestoreLibraryItemRepository(db),
@@ -986,6 +996,30 @@ export function createServerContainer() {
     }),
     removeMemberTitle: new RemoveMemberTitleUseCase({
       memberTitleRepository: repositories.memberTitle,
+      clock,
+    }),
+    registerHonor: new RegisterHonorUseCase({
+      honorRepository: repositories.honor,
+      clock,
+      idGenerator,
+    }),
+    listHonors: new ListHonorsUseCase({
+      honorRepository: repositories.honor,
+    }),
+    removeHonor: new RemoveHonorUseCase({
+      honorRepository: repositories.honor,
+      clock,
+    }),
+    registerPhilosophicalJourney: new RegisterPhilosophicalJourneyUseCase({
+      philosophicalJourneyRepository: repositories.philosophicalJourney,
+      clock,
+      idGenerator,
+    }),
+    listPhilosophicalJourneys: new ListPhilosophicalJourneysUseCase({
+      philosophicalJourneyRepository: repositories.philosophicalJourney,
+    }),
+    removePhilosophicalJourney: new RemovePhilosophicalJourneyUseCase({
+      philosophicalJourneyRepository: repositories.philosophicalJourney,
       clock,
     }),
     createFileAsset: new CreateFileAssetUseCase({

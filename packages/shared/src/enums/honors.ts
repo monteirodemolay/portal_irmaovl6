@@ -23,3 +23,28 @@ export const MEMBER_TITLE_LABELS: Record<MemberTitleKey, string> = {
   fundador: 'Fundador',
   outro: 'Outro',
 };
+
+/**
+ * Tipo de Honraria/Condecoração (levantamento institucional §3) —
+ * `membro_honorario` cobre também o levantamento §5 ("Membros Honorários da
+ * VL6"), já que estrutura e campos são os mesmos (instituição concedente,
+ * data, ato, motivo, diploma/foto), só o rótulo muda.
+ */
+export const HONOR_TYPE_KEYS = [
+  'medalha',
+  'comenda',
+  'diploma',
+  'certificado',
+  'homenagem',
+  'membro_honorario',
+] as const;
+export type HonorTypeKey = (typeof HONOR_TYPE_KEYS)[number];
+
+export const HONOR_TYPE_LABELS: Record<HonorTypeKey, string> = {
+  medalha: 'Medalha',
+  comenda: 'Comenda',
+  diploma: 'Diploma',
+  certificado: 'Certificado',
+  homenagem: 'Homenagem',
+  membro_honorario: 'Membro Honorário',
+};
