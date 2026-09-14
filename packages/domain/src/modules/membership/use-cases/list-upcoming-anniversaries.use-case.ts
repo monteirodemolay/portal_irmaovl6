@@ -139,7 +139,7 @@ export class ListUpcomingAnniversariesUseCase {
         }
       }
 
-      for (const filho of member.filhos) {
+      for (const filho of member.filhos ?? []) {
         const data = new Date(
           UNKNOWN_YEAR_PLACEHOLDER,
           filho.aniversarioMes - 1,

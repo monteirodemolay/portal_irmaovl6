@@ -25,9 +25,11 @@ const DATE_FIELDS = [
  * de importações antigas gravados inteiramente em maiúscula, sem exigir
  * migração de dados. Não altera o valor persistido, só o que é retornado.
  * Também preenche `autorizaDivulgacaoExterna` (Central de Comunicação,
- * docs/architecture) com o default seguro `false`, e `dataFalecimento`/
- * `mensagemHomenagem` (In Memoriam) com `null`, em cadastros gravados antes
- * desses campos existirem — nunca exigir migração de dados pra isso.
+ * docs/architecture) com o default seguro `false`, `dataFalecimento`/
+ * `mensagemHomenagem` (In Memoriam) com `null`, e `conjugeAniversarioDia`/
+ * `conjugeAniversarioMes`/`filhos` (importação de aniversários) com
+ * `null`/`[]`, em cadastros gravados antes desses campos existirem — nunca
+ * exigir migração de dados pra isso.
  */
 function normalizeMemberName(entity: Member): Member {
   return {
@@ -36,6 +38,9 @@ function normalizeMemberName(entity: Member): Member {
     autorizaDivulgacaoExterna: entity.autorizaDivulgacaoExterna ?? false,
     dataFalecimento: entity.dataFalecimento ?? null,
     mensagemHomenagem: entity.mensagemHomenagem ?? null,
+    conjugeAniversarioDia: entity.conjugeAniversarioDia ?? null,
+    conjugeAniversarioMes: entity.conjugeAniversarioMes ?? null,
+    filhos: entity.filhos ?? [],
   };
 }
 
