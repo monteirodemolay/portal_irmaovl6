@@ -39,6 +39,9 @@ function buildMember(overrides: Partial<Member> = {}): Member {
     estadoCivil: null,
     conjugeNome: null,
     conjugeDataNascimento: null,
+    conjugeAniversarioDia: null,
+    conjugeAniversarioMes: null,
+    filhos: [],
     biografia: null,
     redesSociais: { instagram: null, facebook: null, linkedin: null },
     observacoes: null,
@@ -145,6 +148,9 @@ describe('ListUpcomingAnniversariesUseCase', () => {
       buildMember({
         conjugeNome: 'Christianne Silva Leão',
         conjugeDataNascimento: new Date('1985-03-13'),
+        conjugeAniversarioDia: null,
+        conjugeAniversarioMes: null,
+        filhos: [],
       }),
     );
 
@@ -156,6 +162,56 @@ describe('ListUpcomingAnniversariesUseCase', () => {
       conjugeNome: 'Christianne Silva Leão',
       diasAte: 1,
     });
+  });
+
+  it('inclui aniversário da cônjuge sem ano conhecido (fallback dia/mês)', async () => {
+    const { useCase, memberRepository } = buildUseCase();
+    await memberRepository.create(
+      buildMember({
+        conjugeNome: 'Christianne Silva Leão',
+        conjugeDataNascimento: null,
+        conjugeAniversarioDia: 13,
+        conjugeAniversarioMes: 3,
+      }),
+    );
+
+    const result = await useCase.execute(ctx);
+
+    expect(result).toHaveLength(1);
+    expect(result[0]).toMatchObject({
+      kind: 'conjuge',
+      conjugeNome: 'Christianne Silva Leão',
+      diasAte: 1,
+    });
+  });
+
+  it('nunca usa o fallback de dia/mês quando a cônjuge já tem data completa', async () => {
+    const { useCase, memberRepository } = buildUseCase();
+    await memberRepository.create(
+      buildMember({
+        conjugeDataNascimento: new Date('1985-06-01'),
+        conjugeAniversarioDia: 13,
+        conjugeAniversarioMes: 3,
+      }),
+    );
+
+    const result = await useCase.execute(ctx);
+
+    expect(result).toHaveLength(0);
+  });
+
+  it('inclui aniversário de filho cadastrado', async () => {
+    const { useCase, memberRepository } = buildUseCase();
+    await memberRepository.create(
+      buildMember({
+        filhos: [{ id: 'filho-1', nome: 'Pedro', aniversarioDia: 13, aniversarioMes: 3 }],
+      }),
+    );
+
+    const result = await useCase.execute(ctx);
+
+    expect(result).toHaveLength(1);
+    expect(result[0]).toMatchObject({ kind: 'filho', filhoNome: 'Pedro', diasAte: 1 });
   });
 
   it('rejeita quem não tem permissão member:read', async () => {

@@ -70,6 +70,7 @@ export * from './modules/membership/use-cases/seed-elevation-archive-items.use-c
 export * from './modules/membership/use-cases/seed-exaltation-archive-items.use-case';
 export * from './modules/membership/use-cases/search-members.use-case';
 export * from './modules/membership/use-cases/list-upcoming-anniversaries.use-case';
+export * from './modules/membership/use-cases/import-birthday-data.use-case';
 export * from './modules/membership/use-cases/soft-delete-member.use-case';
 export * from './modules/membership/use-cases/submit-member-access-claim.use-case';
 export * from './modules/membership/use-cases/list-pending-member-access-claims.use-case';
