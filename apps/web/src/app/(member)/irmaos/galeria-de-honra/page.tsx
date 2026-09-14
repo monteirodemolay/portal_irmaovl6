@@ -4,6 +4,7 @@ import { HONOR_TYPE_LABELS, type HonorTypeKey } from '@vl6/shared';
 import { createServerContainer } from '@vl6/infra';
 import { ArchiveItemCard, ArrowLeft, Award, EmptyState, FilterBar, Lock } from '@vl6/ui';
 import { requireSession } from '@/lib/auth/require-session';
+import { HONOR_TYPE_BADGE_ICON } from '@/modules/honors/honor-badge-icons';
 
 function buildHref(tipo?: string): string {
   return tipo
@@ -103,12 +104,19 @@ export default async function HonorGalleryPage({
               ? (memberNameById.get(honor.memberId) ?? 'Irmão')
               : honor.homenageadoNome;
             const descricao = `${homenageado} · ${honor.instituicaoConcedente} · ${formatDate(honor.data)}`;
+            const badgeIcon = (
+              <img
+                src={HONOR_TYPE_BADGE_ICON[honor.tipo]}
+                alt=""
+                className="h-6 w-6 shrink-0 object-contain"
+              />
+            );
             return honor.memberId ? (
               <ArchiveItemCard
                 key={honor.id}
                 href={`/irmaos/${honor.memberId}#trajetoria`}
                 kindLabel={HONOR_TYPE_LABELS[honor.tipo]}
-                icon={<Award size={14} />}
+                icon={badgeIcon}
                 titulo={honor.nomeOficial}
                 descricao={descricao}
                 linkComponent={Link}
@@ -116,7 +124,7 @@ export default async function HonorGalleryPage({
             ) : (
               <div key={honor.id} className="border-border rounded-lg border p-4 text-left">
                 <div className="text-accent flex items-center gap-2 text-[10px] font-semibold uppercase tracking-wider">
-                  <Award size={14} />
+                  {badgeIcon}
                   {HONOR_TYPE_LABELS[honor.tipo]}
                 </div>
                 <h3 className="font-display mt-2 line-clamp-2 font-semibold">

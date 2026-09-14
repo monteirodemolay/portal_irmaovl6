@@ -15,8 +15,8 @@ export function ProfileBioText({ text }: { text: string }) {
       <p
         className={
           expanded
-            ? 'whitespace-pre-line text-sm leading-relaxed'
-            : 'line-clamp-6 whitespace-pre-line text-sm leading-relaxed'
+            ? 'max-w-[68ch] whitespace-pre-line text-sm leading-relaxed'
+            : 'line-clamp-6 max-w-[68ch] whitespace-pre-line text-sm leading-relaxed'
         }
       >
         {text}
