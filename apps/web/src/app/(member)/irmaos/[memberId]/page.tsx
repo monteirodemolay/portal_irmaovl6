@@ -11,14 +11,11 @@ import type { PersonPhoto } from '@/modules/archive/components/person-photo-grid
 
 export default async function IrmaoProfilePage({
   params,
-  searchParams,
 }: {
   params: Promise<{ memberId: string }>;
-  searchParams: Promise<{ aba?: string }>;
 }) {
   const session = await requireSession();
   const { memberId } = await params;
-  const { aba } = await searchParams;
 
   if (!hasPermission(session.authContext, 'memberDirectory:read')) {
     return (
@@ -63,14 +60,14 @@ export default async function IrmaoProfilePage({
   }
 
   // Títulos e Condições Maçônicas (Fase 1 de Honrarias) — institucional,
-  // sempre exibido na aba Trajetória, mesmo motivo de `trajetoria` (não
+  // sempre exibido na seção Trajetória, mesmo motivo de `trajetoria` (não
   // passa pelos blocos de `PublicationSettings`).
   const memberTitles = profile
     ? await container.useCases.listMemberTitles.execute(session.authContext, memberId)
     : [];
 
   // Honrarias e Condecorações + Graus Filosóficos (Fase 3 de Honrarias) —
-  // mesmo motivo de `memberTitles`, institucional e sempre exibido (a aba
+  // mesmo motivo de `memberTitles`, institucional e sempre exibido (a seção
   // filtra os graus filosóficos pelo `visivel` de cada um, não aqui).
   const honors = profile
     ? await container.useCases.listHonors.execute(session.authContext, memberId)
@@ -79,7 +76,7 @@ export default async function IrmaoProfilePage({
     ? await container.useCases.listPhilosophicalJourneys.execute(session.authContext, memberId)
     : [];
 
-  // Aba "Acervo" — herda `/acervo/pessoas/[memberId]`: fotos institucionais
+  // Seção "Acervo" — herda `/acervo/pessoas/[memberId]`: fotos institucionais
   // marcadas (nunca gated pelo consentimento voluntário do Irmão, só pelo
   // nível de acesso da sessão) + Constelação da Memória. Só carregada
   // quando a sessão tem `member:read` (mesmo gate de `canViewAcervo`).
@@ -134,7 +131,6 @@ export default async function IrmaoProfilePage({
           honors={honors}
           philosophicalJourneys={philosophicalJourneys}
           acervoPhotos={acervoPhotos}
-          initialTab={aba === 'acervo' ? 'acervo' : 'geral'}
           acervoRelationsSlot={
             canViewAcervo && (
               <RelationsSection

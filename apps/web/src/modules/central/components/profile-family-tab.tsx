@@ -93,7 +93,7 @@ export function ProfileFamilyTab({
       </div>
       {canViewAcervo && (
         <Link
-          href={`/irmaos/${profile.memberId}?aba=acervo`}
+          href={`/irmaos/${profile.memberId}#acervo`}
           className="text-accent mt-4 flex w-fit items-center gap-1 text-xs font-semibold hover:underline"
         >
           Explorar Constelação da Memória

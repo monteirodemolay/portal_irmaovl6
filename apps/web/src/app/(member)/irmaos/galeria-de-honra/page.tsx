@@ -106,7 +106,7 @@ export default async function HonorGalleryPage({
             return honor.memberId ? (
               <ArchiveItemCard
                 key={honor.id}
-                href={`/irmaos/${honor.memberId}?aba=trajetoria`}
+                href={`/irmaos/${honor.memberId}#trajetoria`}
                 kindLabel={HONOR_TYPE_LABELS[honor.tipo]}
                 icon={<Award size={14} />}
                 titulo={honor.nomeOficial}
