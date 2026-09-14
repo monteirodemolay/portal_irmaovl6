@@ -41,9 +41,6 @@ export class RegisterMemberUseCase {
       cargoAtualId: null,
       dataFalecimento: null,
       mensagemHomenagem: null,
-      conjugeAniversarioDia: null,
-      conjugeAniversarioMes: null,
-      filhos: [],
       ...input,
       redesSociais: {
         instagram: input.redesSociais.instagram ?? null,

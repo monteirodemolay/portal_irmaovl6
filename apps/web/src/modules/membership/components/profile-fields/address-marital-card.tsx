@@ -2,9 +2,9 @@
 
 import { useActionState, useState } from 'react';
 import { useFormStatus } from 'react-dom';
-import { MARITAL_STATUSES, type MaritalStatus } from '@vl6/shared';
+import { MARITAL_STATUSES, type MaritalStatus, type MemberChildValues } from '@vl6/shared';
 import type { Member } from '@vl6/domain';
-import { Button, Heart, Input, Select } from '@vl6/ui';
+import { Baby, Button, Heart, Input, Select, X } from '@vl6/ui';
 import { FormField } from '@/components/forms/form-field';
 import { FormSectionCard } from '@/components/forms/section-card';
 import { useCepLookup } from '@/lib/address/use-cep-lookup';
@@ -14,8 +14,57 @@ import {
 } from '@/lib/membership/marital-status-label';
 import type { ProfileFieldAction, ProfileFieldActionState } from './action-state';
 
+const MAX_FILHOS = 12;
+
+const MONTH_LABELS = [
+  'Janeiro',
+  'Fevereiro',
+  'Março',
+  'Abril',
+  'Maio',
+  'Junho',
+  'Julho',
+  'Agosto',
+  'Setembro',
+  'Outubro',
+  'Novembro',
+  'Dezembro',
+];
+
 function toDateInputValue(date: Date | null | undefined): string {
   return date ? new Date(date).toISOString().slice(0, 10) : '';
+}
+
+function emptyFilho(): MemberChildValues {
+  return { id: crypto.randomUUID(), nome: '', aniversarioDia: 1, aniversarioMes: 1 };
+}
+
+function MonthSelect({
+  id,
+  name,
+  value,
+  onChange,
+}: {
+  id: string;
+  name?: string;
+  value: number;
+  onChange: (mes: number) => void;
+}) {
+  return (
+    <select
+      id={id}
+      name={name}
+      className="border-border bg-surface h-10 w-full rounded-lg border px-3 text-sm"
+      value={value}
+      onChange={(event) => onChange(Number(event.target.value))}
+    >
+      {MONTH_LABELS.map((label, index) => (
+        <option key={label} value={index + 1}>
+          {label}
+        </option>
+      ))}
+    </select>
+  );
 }
 
 /**
@@ -39,7 +88,21 @@ export function AddressMaritalCard({
   const [bairro, setBairro] = useState(member.endereco?.bairro ?? '');
   const [cidade, setCidade] = useState(member.endereco?.cidade ?? '');
   const [estado, setEstado] = useState(member.endereco?.estado ?? '');
+  const [conjugeDataNascimento, setConjugeDataNascimento] = useState(
+    toDateInputValue(member.conjugeDataNascimento),
+  );
+  const [conjugeAniversarioDia, setConjugeAniversarioDia] = useState(
+    member.conjugeAniversarioDia ?? 1,
+  );
+  const [conjugeAniversarioMes, setConjugeAniversarioMes] = useState(
+    member.conjugeAniversarioMes ?? 1,
+  );
+  const [filhos, setFilhos] = useState<MemberChildValues[]>(member.filhos ?? []);
   const { lookup, loading: cepLoading, error: cepError } = useCepLookup();
+
+  function updateFilho(index: number, patch: Partial<MemberChildValues>) {
+    setFilhos((current) => current.map((f, i) => (i === index ? { ...f, ...patch } : f)));
+  }
 
   async function handleCepBlur() {
     const found = await lookup(cep);
@@ -87,12 +150,107 @@ export function AddressMaritalCard({
                   id="conjugeDataNascimento"
                   name="conjugeDataNascimento"
                   type="date"
-                  defaultValue={toDateInputValue(member.conjugeDataNascimento)}
+                  value={conjugeDataNascimento}
+                  onChange={(event) => setConjugeDataNascimento(event.target.value)}
                 />
               </FormField>
+              {!conjugeDataNascimento && (
+                <>
+                  <FormField
+                    label="Dia do aniversário da cônjuge"
+                    htmlFor="conjugeAniversarioDia"
+                    description="Quando não se sabe o ano, dá pra guardar só o dia/mês."
+                  >
+                    <Input
+                      id="conjugeAniversarioDia"
+                      name="conjugeAniversarioDia"
+                      type="number"
+                      min={1}
+                      max={31}
+                      value={conjugeAniversarioDia}
+                      onChange={(event) => setConjugeAniversarioDia(Number(event.target.value))}
+                    />
+                  </FormField>
+                  <FormField label="Mês do aniversário da cônjuge" htmlFor="conjugeAniversarioMes">
+                    <MonthSelect
+                      id="conjugeAniversarioMes"
+                      name="conjugeAniversarioMes"
+                      value={conjugeAniversarioMes}
+                      onChange={setConjugeAniversarioMes}
+                    />
+                  </FormField>
+                </>
+              )}
             </>
           )}
         </div>
+
+        {maritalStatusHasSpouse(estadoCivil || null) && (
+          <div className="border-border-soft flex flex-col gap-3 border-t pt-4">
+            <div className="flex items-center gap-2">
+              <Baby size={16} strokeWidth={1.75} className="text-muted" />
+              <p className="text-sm font-medium">Filhos</p>
+            </div>
+            <p className="text-muted -mt-1 text-xs">
+              Só dia/mês do aniversário — sem o ano, mesmo motivo da cônjuge acima.
+            </p>
+            {filhos.map((filho, index) => (
+              <div key={filho.id} className="flex items-end gap-3">
+                <div className="flex-1">
+                  <FormField label="Nome" htmlFor={`filho-nome-${index}`}>
+                    <Input
+                      id={`filho-nome-${index}`}
+                      value={filho.nome}
+                      onChange={(event) => updateFilho(index, { nome: event.target.value })}
+                    />
+                  </FormField>
+                </div>
+                <FormField label="Dia" htmlFor={`filho-dia-${index}`}>
+                  <Input
+                    id={`filho-dia-${index}`}
+                    type="number"
+                    min={1}
+                    max={31}
+                    className="w-20"
+                    value={filho.aniversarioDia}
+                    onChange={(event) =>
+                      updateFilho(index, { aniversarioDia: Number(event.target.value) })
+                    }
+                  />
+                </FormField>
+                <FormField label="Mês" htmlFor={`filho-mes-${index}`}>
+                  <div className="w-36">
+                    <MonthSelect
+                      id={`filho-mes-${index}`}
+                      value={filho.aniversarioMes}
+                      onChange={(mes) => updateFilho(index, { aniversarioMes: mes })}
+                    />
+                  </div>
+                </FormField>
+                <button
+                  type="button"
+                  aria-label={`Remover ${filho.nome || 'filho(a)'}`}
+                  onClick={() => setFilhos((current) => current.filter((_, i) => i !== index))}
+                  className="text-muted hover:text-foreground hover:bg-background mb-1.5 rounded-full p-2 transition-colors"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+            ))}
+            {filhos.length < MAX_FILHOS && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="w-fit"
+                onClick={() => setFilhos((current) => [...current, emptyFilho()])}
+              >
+                Adicionar filho(a)
+              </Button>
+            )}
+            <input type="hidden" name="filhos" value={JSON.stringify(filhos)} />
+          </div>
+        )}
 
         <div className="border-border-soft grid grid-cols-1 gap-4 border-t pt-4 sm:grid-cols-2 lg:grid-cols-3">
           <FormField

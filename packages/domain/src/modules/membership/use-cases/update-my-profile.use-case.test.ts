@@ -64,6 +64,9 @@ const input: MemberSelfEditValues = {
   estadoCivil: null,
   conjugeNome: null,
   conjugeDataNascimento: null,
+  conjugeAniversarioDia: null,
+  conjugeAniversarioMes: null,
+  filhos: [],
 };
 
 function buildUseCase() {

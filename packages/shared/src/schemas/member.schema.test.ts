@@ -18,6 +18,9 @@ const BASE: Omit<MemberFormValues, 'grau' | 'dataIniciacao' | 'dataElevacao' | '
   estadoCivil: null,
   conjugeNome: null,
   conjugeDataNascimento: null,
+  conjugeAniversarioDia: null,
+  conjugeAniversarioMes: null,
+  filhos: [],
   biografia: null,
   redesSociais: {},
   observacoes: null,
@@ -155,7 +158,12 @@ describe('memberSchema — estado civil', () => {
 });
 
 describe('normalizeConjugeFields', () => {
-  const conjuge = { conjugeNome: 'Maria', conjugeDataNascimento: new Date('1990-01-01') };
+  const conjuge = {
+    conjugeNome: 'Maria',
+    conjugeDataNascimento: new Date('1990-01-01'),
+    conjugeAniversarioDia: 5,
+    conjugeAniversarioMes: 6,
+  };
 
   it.each(['casado', 'uniao_estavel', 'separado_judicialmente'] as const)(
     'preserva dados da cônjuge quando estado civil é %s',
@@ -163,6 +171,8 @@ describe('normalizeConjugeFields', () => {
       const result = normalizeConjugeFields({ estadoCivil, ...conjuge });
       expect(result.conjugeNome).toBe('Maria');
       expect(result.conjugeDataNascimento).toEqual(new Date('1990-01-01'));
+      expect(result.conjugeAniversarioDia).toBe(5);
+      expect(result.conjugeAniversarioMes).toBe(6);
     },
   );
 
@@ -172,6 +182,8 @@ describe('normalizeConjugeFields', () => {
       const result = normalizeConjugeFields({ estadoCivil, ...conjuge });
       expect(result.conjugeNome).toBeNull();
       expect(result.conjugeDataNascimento).toBeNull();
+      expect(result.conjugeAniversarioDia).toBeNull();
+      expect(result.conjugeAniversarioMes).toBeNull();
     },
   );
 
@@ -179,5 +191,7 @@ describe('normalizeConjugeFields', () => {
     const result = normalizeConjugeFields({ estadoCivil: null, ...conjuge });
     expect(result.conjugeNome).toBeNull();
     expect(result.conjugeDataNascimento).toBeNull();
+    expect(result.conjugeAniversarioDia).toBeNull();
+    expect(result.conjugeAniversarioMes).toBeNull();
   });
 });
