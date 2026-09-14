@@ -52,6 +52,7 @@ const inputAtualizado: NewsFormValues = {
   imagemCapaUrl: null,
   conteudoHtml: '<p>Conteúdo atualizado</p>',
   categoria: 'eventos',
+  dataPublicacao: null,
 };
 
 function buildUseCase() {
