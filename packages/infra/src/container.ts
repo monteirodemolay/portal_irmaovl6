@@ -223,6 +223,7 @@ import {
   SearchMembersUseCase,
   ListUpcomingAnniversariesUseCase,
   ImportBirthdayDataUseCase,
+  ImportConsolidatedReportUseCase,
   SetTenantActiveUseCase,
   SetUserStatusUseCase,
   SoftDeleteFileAssetUseCase,
@@ -663,6 +664,11 @@ export function createServerContainer() {
       clock,
     }),
     importBirthdayData: new ImportBirthdayDataUseCase({
+      memberRepository: repositories.member,
+      clock,
+      idGenerator,
+    }),
+    importConsolidatedReport: new ImportConsolidatedReportUseCase({
       memberRepository: repositories.member,
       clock,
       idGenerator,

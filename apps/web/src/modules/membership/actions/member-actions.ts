@@ -464,6 +464,9 @@ export async function updateMemberProfileAction(
           'conjugeAniversarioMes',
           current.conjugeAniversarioMes,
         ),
+        dataCasamento: formData.has('dataCasamento')
+          ? formData.get('dataCasamento') || null
+          : current.dataCasamento,
         filhos: jsonArrayOrCurrentAdmin(formData, 'filhos', current.filhos),
         biografia: current.biografia,
         redesSociais: current.redesSociais,
@@ -542,6 +545,16 @@ export async function updateMemberIdentityAction(
         dataNascimento: formData.has('dataNascimento')
           ? formData.get('dataNascimento') || null
           : current.dataNascimento,
+        aniversarioDia: numberOrCurrentAdmin(
+          formData,
+          'aniversarioDia',
+          current.aniversarioDia ?? null,
+        ),
+        aniversarioMes: numberOrCurrentAdmin(
+          formData,
+          'aniversarioMes',
+          current.aniversarioMes ?? null,
+        ),
         dataIniciacao: formData.has('dataIniciacao')
           ? formData.get('dataIniciacao') || null
           : current.dataIniciacao,

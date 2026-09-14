@@ -105,6 +105,9 @@ export async function updateMyProfileAction(
           'conjugeAniversarioMes',
           member.conjugeAniversarioMes,
         ),
+        dataCasamento: formData.has('dataCasamento')
+          ? formData.get('dataCasamento') || null
+          : (member.dataCasamento ?? null),
         filhos: jsonArrayOrCurrent(formData, 'filhos', member.filhos),
       }),
     );

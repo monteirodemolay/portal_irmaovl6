@@ -33,6 +33,16 @@ export interface Member extends BaseEntity {
   whatsapp: string | null;
   endereco: Address | null;
   dataNascimento: Date | null;
+  /**
+   * Fallback de dia/mês do próprio aniversário do Irmão, usado só quando
+   * `dataNascimento` é `null` (fonte institucional que não traz o ano) —
+   * mesmo papel de `conjugeAniversarioDia`/`conjugeAniversarioMes` abaixo,
+   * só que pro próprio Irmão. Campo aditivo opcional — cadastros já
+   * existentes não precisam ser migrados pra ganhar `undefined`/`null`
+   * aqui. Nunca usado pra calcular idade.
+   */
+  aniversarioDia?: number | null;
+  aniversarioMes?: number | null;
   dataIniciacao: Date | null;
   dataElevacao: Date | null;
   dataExaltacao: Date | null;
@@ -64,6 +74,13 @@ export interface Member extends BaseEntity {
   /** Só faz sentido quando `estadoCivil` implica cônjuge — ver `MARITAL_STATUSES_WITH_SPOUSE`. */
   conjugeNome: string | null;
   conjugeDataNascimento: Date | null;
+  /**
+   * Data completa do casamento, quando conhecida — só uso interno da
+   * Secretaria (mesmo tratamento de `conjugeNome`/`conjugeDataNascimento`),
+   * nunca aparece no Diretório. Campo aditivo opcional, mesmo motivo de
+   * `aniversarioDia` acima.
+   */
+  dataCasamento?: Date | null;
   /**
    * Fallback de dia/mês do aniversário do cônjuge, usado só quando
    * `conjugeDataNascimento` é `null` (fonte institucional que não traz o

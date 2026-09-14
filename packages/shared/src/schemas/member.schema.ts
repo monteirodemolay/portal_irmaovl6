@@ -25,6 +25,9 @@ const memberBaseSchema = z.object({
   whatsapp: z.string().nullable(),
   endereco: addressSchema.nullable(),
   dataNascimento: z.coerce.date().nullable(),
+  /** Fallback quando não se sabe o ano do próprio aniversário do Irmão — só usado (`ListUpcomingAnniversariesUseCase`) quando `dataNascimento` é null. Opcional — cadastros existentes não precisam ganhar esse campo. */
+  aniversarioDia: z.number().int().min(1).max(31).nullable().optional(),
+  aniversarioMes: z.number().int().min(1).max(12).nullable().optional(),
   dataIniciacao: z.coerce.date().nullable(),
   dataElevacao: z.coerce.date().nullable(),
   dataExaltacao: z.coerce.date().nullable(),
@@ -44,6 +47,8 @@ const memberBaseSchema = z.object({
   /** Fallback quando não se sabe o ano de nascimento da cônjuge — só usado (`ListUpcomingAnniversariesUseCase`) quando `conjugeDataNascimento` é null. */
   conjugeAniversarioDia: z.number().int().min(1).max(31).nullable(),
   conjugeAniversarioMes: z.number().int().min(1).max(12).nullable(),
+  /** Data completa do casamento, quando conhecida — uso interno da Secretaria, nunca aparece no Diretório. Opcional, mesmo motivo de `aniversarioDia`. */
+  dataCasamento: z.coerce.date().nullable().optional(),
   /** Filhos do Irmão — só dia/mês de aniversário, nunca o ano (mesmo motivo do fallback da cônjuge). */
   filhos: z.array(memberChildSchema),
   biografia: z.string().max(4000).nullable(),
@@ -101,6 +106,7 @@ export function normalizeConjugeFields<
     conjugeDataNascimento: Date | null;
     conjugeAniversarioDia: number | null;
     conjugeAniversarioMes: number | null;
+    dataCasamento?: Date | null;
   },
 >(input: T): T {
   if (input.estadoCivil && MARITAL_STATUSES_WITH_SPOUSE.includes(input.estadoCivil)) {
@@ -112,6 +118,7 @@ export function normalizeConjugeFields<
     conjugeDataNascimento: null,
     conjugeAniversarioDia: null,
     conjugeAniversarioMes: null,
+    dataCasamento: null,
   };
 }
 
@@ -139,6 +146,7 @@ export const memberSelfEditSchema = memberBaseSchema.pick({
   conjugeDataNascimento: true,
   conjugeAniversarioDia: true,
   conjugeAniversarioMes: true,
+  dataCasamento: true,
   filhos: true,
 });
 export type MemberSelfEditValues = z.infer<typeof memberSelfEditSchema>;
