@@ -7,6 +7,12 @@ import { Button, Input, Textarea } from '@vl6/ui';
 import { FormField } from '@/components/forms/form-field';
 import type { ContentActionState } from '../actions/content-actions';
 
+function toDateInputValue(date: Date | null): string | undefined {
+  if (!date) return undefined;
+  const pad = (value: number) => String(value).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+
 export interface NewsFormProps {
   action: (state: ContentActionState, formData: FormData) => Promise<ContentActionState>;
   news?: News;
@@ -35,6 +41,18 @@ export function NewsForm({ action, news }: NewsFormProps) {
       </FormField>
       <FormField label="URL da imagem de capa" htmlFor="imagemCapaUrl">
         <Input id="imagemCapaUrl" name="imagemCapaUrl" defaultValue={news?.imagemCapaUrl ?? ''} />
+      </FormField>
+      <FormField
+        label="Data de publicação"
+        htmlFor="dataPublicacao"
+        description="Aparece nas Notícias para os Irmãos. Deixe em branco para usar a data em que a notícia for publicada aqui no Portal — corrija aqui quando a notícia já foi veiculada antes, como as importadas do site VL6."
+      >
+        <Input
+          id="dataPublicacao"
+          name="dataPublicacao"
+          type="date"
+          defaultValue={toDateInputValue(news?.dataPublicacao ?? null)}
+        />
       </FormField>
       <FormField label="Conteúdo" htmlFor="conteudoHtml">
         <Textarea

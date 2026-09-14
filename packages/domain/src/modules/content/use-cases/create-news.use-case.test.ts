@@ -26,6 +26,7 @@ const baseInput: NewsFormValues = {
   imagemCapaUrl: null,
   conteudoHtml: '<p>Conteúdo</p>',
   categoria: 'geral',
+  dataPublicacao: null,
 };
 
 function buildUseCase() {

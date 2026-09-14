@@ -19,7 +19,14 @@ async function fetchWithTimeout(url: string): Promise<Response> {
 }
 
 export type ScrapeNewsMetadataResult =
-  | { ok: true; title: string; description: string | null; image: string | null }
+  | {
+      ok: true;
+      title: string;
+      description: string | null;
+      image: string | null;
+      /** Data de publicação original (`article:published_time`) — nem toda página emite essa tag. */
+      publishedAt: Date | null;
+    }
   | { ok: false; error: string };
 
 /**
@@ -68,5 +75,13 @@ export async function scrapeNewsMetadata(pageUrl: string): Promise<ScrapeNewsMet
     return { ok: false, error: 'Não foi possível encontrar um título nessa página.' };
   }
 
-  return { ok: true, title: meta.title, description: meta.description, image: meta.image };
+  const publishedAt = meta.publishedAt ? new Date(meta.publishedAt) : null;
+
+  return {
+    ok: true,
+    title: meta.title,
+    description: meta.description,
+    image: meta.image,
+    publishedAt: publishedAt && !Number.isNaN(publishedAt.getTime()) ? publishedAt : null,
+  };
 }

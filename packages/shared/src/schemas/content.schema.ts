@@ -11,6 +11,8 @@ export const newsSchema = z.object({
   imagemCapaUrl: z.string().url().nullable(),
   conteudoHtml: z.string().min(1),
   categoria: z.string().min(1),
+  /** Data em que a notícia foi (ou será) considerada publicada — editável para corrigir o caso de notícias importadas de outra fonte, cuja publicação original é anterior à importação. */
+  dataPublicacao: z.coerce.date().nullable(),
 });
 export type NewsFormValues = z.infer<typeof newsSchema>;
 

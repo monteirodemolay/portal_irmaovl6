@@ -106,6 +106,7 @@ export async function importNewsFromUrlAction(url: string): Promise<ImportNewsRe
         imagemCapaUrl,
         conteudoHtml,
         categoria: 'Not\u00edcias VL6',
+        dataPublicacao: scraped.publishedAt,
       });
     } catch {
       return {
@@ -151,6 +152,7 @@ export async function createNewsAction(
       imagemCapaUrl: formData.get('imagemCapaUrl') || null,
       conteudoHtml: formData.get('conteudoHtml'),
       categoria: formData.get('categoria'),
+      dataPublicacao: formData.get('dataPublicacao') || null,
     });
   } catch {
     return { error: 'Dados inválidos. Verifique os campos obrigatórios.' };
@@ -180,6 +182,7 @@ export async function updateNewsAction(
       imagemCapaUrl: formData.get('imagemCapaUrl') || null,
       conteudoHtml: formData.get('conteudoHtml'),
       categoria: formData.get('categoria'),
+      dataPublicacao: formData.get('dataPublicacao') || null,
     });
   } catch {
     return { error: 'Dados inválidos. Verifique os campos obrigatórios.' };

@@ -31,7 +31,11 @@ export class CreateNewsUseCase {
       ...input,
       autorId: ctx.uid,
       publicado: false,
-      dataPublicacao: null,
+      // Normalmente fica `null` até a publicação (`PublishNewsUseCase`
+      // carimba a data ali) — mas uma notícia importada de outra fonte já
+      // trouxe sua data de publicação original, que não pode virar "hoje"
+      // quando o Administrador publicar depois de revisar o rascunho.
+      dataPublicacao: input.dataPublicacao,
       contagemVisualizacoes: 0,
       createdAt: now,
       updatedAt: now,
