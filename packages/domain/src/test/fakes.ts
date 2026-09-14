@@ -317,7 +317,10 @@ export class InMemoryMemberRepository implements IMemberRepository {
   }
   async findUnclaimedByTenant(tenantId: string) {
     return [...this.byId.values()]
-      .filter((m) => m.tenantId === tenantId && m.userId === null && !m.deletedAt)
+      .filter(
+        (m) =>
+          m.tenantId === tenantId && m.userId === null && !m.deletedAt && m.situacao === 'ativo',
+      )
       .sort((a, b) => a.nomeCompleto.localeCompare(b.nomeCompleto))
       .map((m) => ({ id: m.id, nomeCompleto: m.nomeCompleto }));
   }
