@@ -31,6 +31,23 @@ function textOrCurrent(formData: FormData, key: string, current: string | null):
   return typeof value === 'string' && value.trim() ? value : null;
 }
 
+function numberOrCurrent(formData: FormData, key: string, current: number | null): number | null {
+  if (!formData.has(key)) return current;
+  const value = formData.get(key);
+  return typeof value === 'string' && value.trim() ? Number(value) : null;
+}
+
+function jsonArrayOrCurrent<T>(formData: FormData, key: string, current: T[]): T[] {
+  if (!formData.has(key)) return current;
+  const raw = formData.get(key);
+  if (typeof raw !== 'string' || !raw.trim()) return [];
+  try {
+    return JSON.parse(raw) as T[];
+  } catch {
+    return current;
+  }
+}
+
 export async function updateMyProfileAction(
   _prevState: SelfProfileActionState,
   formData: FormData,
@@ -78,6 +95,17 @@ export async function updateMyProfileAction(
         conjugeDataNascimento: formData.has('conjugeDataNascimento')
           ? formData.get('conjugeDataNascimento') || null
           : member.conjugeDataNascimento,
+        conjugeAniversarioDia: numberOrCurrent(
+          formData,
+          'conjugeAniversarioDia',
+          member.conjugeAniversarioDia,
+        ),
+        conjugeAniversarioMes: numberOrCurrent(
+          formData,
+          'conjugeAniversarioMes',
+          member.conjugeAniversarioMes,
+        ),
+        filhos: jsonArrayOrCurrent(formData, 'filhos', member.filhos),
       }),
     );
   } catch {

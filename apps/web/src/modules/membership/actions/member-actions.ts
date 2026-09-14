@@ -106,6 +106,9 @@ async function parseMemberForm(
     estadoCivil: formData.get('estadoCivil') || null,
     conjugeNome: formData.get('conjugeNome') || null,
     conjugeDataNascimento: formData.get('conjugeDataNascimento') || null,
+    conjugeAniversarioDia: null,
+    conjugeAniversarioMes: null,
+    filhos: [],
     biografia: formData.get('biografia') || null,
     redesSociais: {
       instagram: formData.get('instagram') || null,
@@ -366,6 +369,27 @@ function textOrCurrentAdmin(
   return typeof value === 'string' && value.trim() ? value : null;
 }
 
+function numberOrCurrentAdmin(
+  formData: FormData,
+  key: string,
+  current: number | null,
+): number | null {
+  if (!formData.has(key)) return current;
+  const value = formData.get(key);
+  return typeof value === 'string' && value.trim() ? Number(value) : null;
+}
+
+function jsonArrayOrCurrentAdmin<T>(formData: FormData, key: string, current: T[]): T[] {
+  if (!formData.has(key)) return current;
+  const raw = formData.get(key);
+  if (typeof raw !== 'string' || !raw.trim()) return [];
+  try {
+    return JSON.parse(raw) as T[];
+  } catch {
+    return current;
+  }
+}
+
 /**
  * Edição administrativa dos campos também editáveis pelo próprio Irmão —
  * mesmo subconjunto de `updateMyProfileAction`, usada pelos cartões
@@ -430,6 +454,17 @@ export async function updateMemberProfileAction(
         conjugeDataNascimento: formData.has('conjugeDataNascimento')
           ? formData.get('conjugeDataNascimento') || null
           : current.conjugeDataNascimento,
+        conjugeAniversarioDia: numberOrCurrentAdmin(
+          formData,
+          'conjugeAniversarioDia',
+          current.conjugeAniversarioDia,
+        ),
+        conjugeAniversarioMes: numberOrCurrentAdmin(
+          formData,
+          'conjugeAniversarioMes',
+          current.conjugeAniversarioMes,
+        ),
+        filhos: jsonArrayOrCurrentAdmin(formData, 'filhos', current.filhos),
         biografia: current.biografia,
         redesSociais: current.redesSociais,
         observacoes: current.observacoes,
@@ -526,6 +561,9 @@ export async function updateMemberIdentityAction(
         estadoCivil: current.estadoCivil,
         conjugeNome: current.conjugeNome,
         conjugeDataNascimento: current.conjugeDataNascimento,
+        conjugeAniversarioDia: current.conjugeAniversarioDia,
+        conjugeAniversarioMes: current.conjugeAniversarioMes,
+        filhos: current.filhos,
         biografia: textOrCurrentAdmin(formData, 'biografia', current.biografia),
         redesSociais: {
           instagram: textOrCurrentAdmin(formData, 'instagram', current.redesSociais.instagram),
@@ -1077,6 +1115,9 @@ async function registerImportRow(
         estadoCivil: null,
         conjugeNome: null,
         conjugeDataNascimento: null,
+        conjugeAniversarioDia: null,
+        conjugeAniversarioMes: null,
+        filhos: [],
         biografia: null,
         redesSociais: { instagram: null, facebook: null, linkedin: null },
         observacoes: null,

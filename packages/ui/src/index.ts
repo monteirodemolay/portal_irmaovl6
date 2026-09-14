@@ -79,6 +79,7 @@ export {
   Briefcase,
   Share2,
   Heart,
+  Baby,
   Search,
   Phone,
   MessageCircle,

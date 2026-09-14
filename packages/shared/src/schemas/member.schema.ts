@@ -8,6 +8,14 @@ import {
 } from '../enums/membership';
 import { addressSchema } from './tenant.schema';
 
+const memberChildSchema = z.object({
+  id: z.string().min(1),
+  nome: z.string().min(1).max(150),
+  aniversarioDia: z.number().int().min(1).max(31),
+  aniversarioMes: z.number().int().min(1).max(12),
+});
+export type MemberChildValues = z.infer<typeof memberChildSchema>;
+
 const memberBaseSchema = z.object({
   nomeCompleto: z.string().min(3).max(150),
   fotoUrl: z.string().url().nullable(),
@@ -33,6 +41,11 @@ const memberBaseSchema = z.object({
   /** Só faz sentido quando `estadoCivil` implica cônjuge — normalizado por `normalizeConjugeFields`. */
   conjugeNome: z.string().nullable(),
   conjugeDataNascimento: z.coerce.date().nullable(),
+  /** Fallback quando não se sabe o ano de nascimento da cônjuge — só usado (`ListUpcomingAnniversariesUseCase`) quando `conjugeDataNascimento` é null. */
+  conjugeAniversarioDia: z.number().int().min(1).max(31).nullable(),
+  conjugeAniversarioMes: z.number().int().min(1).max(12).nullable(),
+  /** Filhos do Irmão — só dia/mês de aniversário, nunca o ano (mesmo motivo do fallback da cônjuge). */
+  filhos: z.array(memberChildSchema),
   biografia: z.string().max(4000).nullable(),
   redesSociais: z.object({
     instagram: z.string().url().nullable().optional(),
@@ -86,12 +99,20 @@ export function normalizeConjugeFields<
     estadoCivil: MaritalStatus | null;
     conjugeNome: string | null;
     conjugeDataNascimento: Date | null;
+    conjugeAniversarioDia: number | null;
+    conjugeAniversarioMes: number | null;
   },
 >(input: T): T {
   if (input.estadoCivil && MARITAL_STATUSES_WITH_SPOUSE.includes(input.estadoCivil)) {
     return input;
   }
-  return { ...input, conjugeNome: null, conjugeDataNascimento: null };
+  return {
+    ...input,
+    conjugeNome: null,
+    conjugeDataNascimento: null,
+    conjugeAniversarioDia: null,
+    conjugeAniversarioMes: null,
+  };
 }
 
 /**
@@ -116,5 +137,8 @@ export const memberSelfEditSchema = memberBaseSchema.pick({
   estadoCivil: true,
   conjugeNome: true,
   conjugeDataNascimento: true,
+  conjugeAniversarioDia: true,
+  conjugeAniversarioMes: true,
+  filhos: true,
 });
 export type MemberSelfEditValues = z.infer<typeof memberSelfEditSchema>;
