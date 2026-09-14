@@ -5,6 +5,8 @@ import { NotFoundError, ok, err, type Result } from '../../../shared/result';
 import type { IMemberRepository } from '../../membership/repositories/member.repository';
 import type { IMemberPositionHistoryRepository } from '../../membership/repositories/member-position-history.repository';
 import type { MemberPositionHistory } from '../../membership/entities/member-position-history.entity';
+import type { IMemberTitleRepository } from '../../honors/repositories/member-title.repository';
+import { grantMestreInstaladoTitleIfNeeded } from '../../honors/lib/grant-mestre-instalado-title';
 import type { BoardPositionAssignment } from '../entities/board-position-assignment.entity';
 import type { IBoardTermRepository } from '../repositories/board-term.repository';
 import type { IBoardPositionAssignmentRepository } from '../repositories/board-position-assignment.repository';
@@ -22,6 +24,7 @@ export interface AssignBoardPositionDeps {
   assignmentRepository: IBoardPositionAssignmentRepository;
   memberRepository: IMemberRepository;
   positionHistoryRepository: IMemberPositionHistoryRepository;
+  memberTitleRepository: IMemberTitleRepository;
   clock: IClock;
   idGenerator: IIdGenerator;
 }
@@ -142,6 +145,16 @@ export class AssignBoardPositionUseCase {
       updatedAt: now,
       updatedBy: ctx.uid,
     });
+
+    if (active.cargo === 'veneravel_mestre') {
+      await grantMestreInstaladoTitleIfNeeded(this.deps, {
+        tenantId: ctx.tenantId,
+        memberId,
+        dataFimCargo: now,
+        uid: ctx.uid,
+        fundamento: 'Concedido automaticamente ao encerrar o cargo de Venerável Mestre.',
+      });
+    }
 
     const previousMember = await this.deps.memberRepository.findById(memberId);
     if (previousMember?.cargoAtualId) {

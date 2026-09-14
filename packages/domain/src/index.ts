@@ -100,6 +100,9 @@ export * from './modules/governance/use-cases/update-committee.use-case';
 export * from './modules/governance/lib/historical-board-terms-vl6';
 export * from './modules/governance/use-cases/import-historical-board-terms.use-case';
 export * from './modules/governance/use-cases/dedupe-member-position-history.use-case';
+export * from './modules/governance/use-cases/backfill-mestre-instalado-titles.use-case';
+export * from './modules/governance/use-cases/audit-board-term-coverage.use-case';
+export * from './modules/honors/lib/grant-mestre-instalado-title';
 export * from './modules/membership/use-cases/list-duplicate-members.use-case';
 export * from './modules/membership/use-cases/merge-duplicate-members.use-case';
 

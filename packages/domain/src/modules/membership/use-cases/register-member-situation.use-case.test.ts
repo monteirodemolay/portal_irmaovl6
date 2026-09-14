@@ -6,6 +6,7 @@ import {
   InMemoryMemberPositionHistoryRepository,
   InMemoryMemberRepository,
   InMemoryMemberSituationRecordRepository,
+  InMemoryMemberTitleRepository,
   SequentialIdGenerator,
 } from '../../../test/fakes';
 import type { Member } from '../entities/member.entity';
@@ -76,14 +77,22 @@ function buildUseCase(member: Member) {
   memberRepository.create(member);
   const situationRecordRepository = new InMemoryMemberSituationRecordRepository();
   const positionHistoryRepository = new InMemoryMemberPositionHistoryRepository();
+  const memberTitleRepository = new InMemoryMemberTitleRepository();
   const useCase = new RegisterMemberSituationUseCase({
     memberRepository,
     situationRecordRepository,
     positionHistoryRepository,
+    memberTitleRepository,
     clock: new FixedClock(new Date('2026-08-10T00:00:00Z')),
     idGenerator: new SequentialIdGenerator(),
   });
-  return { useCase, memberRepository, situationRecordRepository, positionHistoryRepository };
+  return {
+    useCase,
+    memberRepository,
+    situationRecordRepository,
+    positionHistoryRepository,
+    memberTitleRepository,
+  };
 }
 
 describe('RegisterMemberSituationUseCase', () => {
@@ -174,6 +183,39 @@ describe('RegisterMemberSituationUseCase', () => {
     expect(correcao.ok).toBe(true);
     if (!correcao.ok) return;
     expect(correcao.value.member.dataFalecimento).toBeNull();
+  });
+
+  it('concede Mestre Instalado quando encerra a Situação de quem estava ativo como Venerável Mestre', async () => {
+    const member = buildMember();
+    const { useCase, positionHistoryRepository, memberTitleRepository } = buildUseCase(member);
+    await positionHistoryRepository.create({
+      id: 'cargo-1',
+      tenantId: 't1',
+      memberId: 'm1',
+      cargo: 'veneravel_mestre',
+      gestaoId: 'gestao-1',
+      dataInicio: new Date('2025-06-01T00:00:00Z'),
+      dataFim: null,
+      observacoes: null,
+      createdAt: new Date('2025-06-01T00:00:00Z'),
+      updatedAt: new Date('2025-06-01T00:00:00Z'),
+      createdBy: 'admin-1',
+      updatedBy: 'admin-1',
+      deletedAt: null,
+      status: 'active',
+      ativo: true,
+    });
+
+    const result = await useCase.execute(ctx, 'm1', {
+      situacao: 'desligado',
+      motivo: 'quite_placet',
+      dataInicio: new Date('2026-08-10T00:00:00Z'),
+    });
+    expect(result.ok).toBe(true);
+
+    const titles = await memberTitleRepository.listByMemberId('t1', 'm1');
+    expect(titles).toHaveLength(1);
+    expect(titles[0]?.titulo).toBe('mestre_instalado');
   });
 
   it('permite o retorno do Irmão preservando o Quite-Placet no histórico', async () => {

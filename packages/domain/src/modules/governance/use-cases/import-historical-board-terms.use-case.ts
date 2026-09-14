@@ -10,6 +10,8 @@ import type { MemberPositionHistory } from '../../membership/entities/member-pos
 import type { IMemberRepository } from '../../membership/repositories/member.repository';
 import type { IMemberSituationRecordRepository } from '../../membership/repositories/member-situation-record.repository';
 import type { IMemberPositionHistoryRepository } from '../../membership/repositories/member-position-history.repository';
+import type { IMemberTitleRepository } from '../../honors/repositories/member-title.repository';
+import { grantMestreInstaladoTitleIfNeeded } from '../../honors/lib/grant-mestre-instalado-title';
 import type { BoardPositionAssignment } from '../entities/board-position-assignment.entity';
 import type { BoardTerm } from '../entities/board-term.entity';
 import type { IBoardTermRepository } from '../repositories/board-term.repository';
@@ -20,6 +22,7 @@ export interface ImportHistoricalBoardTermsDeps {
   memberRepository: IMemberRepository;
   situationRecordRepository: IMemberSituationRecordRepository;
   positionHistoryRepository: IMemberPositionHistoryRepository;
+  memberTitleRepository: IMemberTitleRepository;
   boardTermRepository: IBoardTermRepository;
   assignmentRepository: IBoardPositionAssignmentRepository;
   clock: IClock;
@@ -167,6 +170,13 @@ export class ImportHistoricalBoardTermsUseCase {
     // paralelo — cada entrada é uma escrita independente.
     const report: ImportHistoricalBoardTermsRow[] = [];
     const historyWrites: Array<Promise<void>> = [];
+    // Todo Irmão que foi Venerável Mestre vira Mestre Instalado um dia após
+    // o fim do cargo (convenção institucional) — um Set por execução evita
+    // conceder duas vezes quando o mesmo Irmão aparece como VM em mais de
+    // uma gestão/segmento aqui dentro (a checagem de idempotência real, contra
+    // o que já existe no banco, é feita dentro de `grantMestreInstaladoTitleIfNeeded`).
+    const grantedMestreInstaladoFor = new Set<string>();
+    const titleGrants: Array<Promise<void>> = [];
 
     interface CargoGroup {
       boardTerm: BoardTerm;
@@ -211,6 +221,19 @@ export class ImportHistoricalBoardTermsUseCase {
           const member = memberByName.get(normalized)!;
           const dataInicio = new Date(segment.dataInicio);
           const key = historyKey(member.id, cargo, boardTerm.id, dataInicio);
+
+          if (cargo === 'veneravel_mestre' && !grantedMestreInstaladoFor.has(member.id)) {
+            grantedMestreInstaladoFor.add(member.id);
+            titleGrants.push(
+              grantMestreInstaladoTitleIfNeeded(this.deps, {
+                tenantId: ctx.tenantId,
+                memberId: member.id,
+                dataFimCargo: new Date(segment.dataFim),
+                uid: ctx.uid,
+                fundamento: `Concedido automaticamente por ter exercido o cargo de Venerável Mestre — ${boardTerm.nome}.`,
+              }),
+            );
+          }
 
           if (existingHistoryKeys.has(key)) {
             report.push({
@@ -258,7 +281,7 @@ export class ImportHistoricalBoardTermsUseCase {
         }
       }
     }
-    await Promise.all(historyWrites);
+    await Promise.all([...historyWrites, ...titleGrants]);
 
     // memberStatus/fotoAtualizada do relatório: recalcula com base no que
     // cada Irmão era ANTES da Fase 1 (existingMembers), não no estado atual.

@@ -6,6 +6,7 @@ import {
   InMemoryBoardTermRepository,
   InMemoryMemberPositionHistoryRepository,
   InMemoryMemberRepository,
+  InMemoryMemberTitleRepository,
   SequentialIdGenerator,
 } from '../../../test/fakes';
 import type { BoardTerm } from '../entities/board-term.entity';
@@ -84,11 +85,13 @@ function buildUseCase() {
   const assignmentRepository = new InMemoryBoardPositionAssignmentRepository();
   const memberRepository = new InMemoryMemberRepository();
   const positionHistoryRepository = new InMemoryMemberPositionHistoryRepository();
+  const memberTitleRepository = new InMemoryMemberTitleRepository();
   const useCase = new AssignBoardPositionUseCase({
     boardTermRepository,
     assignmentRepository,
     memberRepository,
     positionHistoryRepository,
+    memberTitleRepository,
     clock: new FixedClock(new Date('2026-06-01T00:00:00Z')),
     idGenerator: new SequentialIdGenerator(),
   });
@@ -98,6 +101,7 @@ function buildUseCase() {
     assignmentRepository,
     memberRepository,
     positionHistoryRepository,
+    memberTitleRepository,
   };
 }
 
@@ -171,5 +175,77 @@ describe('AssignBoardPositionUseCase', () => {
 
     const assignments = await assignmentRepository.listByGestao('term-1');
     expect(assignments.filter((a) => a.cargo === 'diacono')).toHaveLength(2);
+  });
+
+  it('concede Mestre Instalado ao Venerável Mestre que sai do cargo', async () => {
+    const { useCase, boardTermRepository, memberRepository, memberTitleRepository } =
+      buildUseCase();
+    await boardTermRepository.create(term);
+    await memberRepository.create(buildMember('m1'));
+    await memberRepository.create(buildMember('m2'));
+
+    await useCase.execute(ctx, {
+      gestaoId: 'term-1',
+      cargo: 'veneravel_mestre',
+      memberId: 'm1',
+      ordem: 1,
+    });
+    // Ainda no cargo — não vira Mestre Instalado antes de sair.
+    expect(await memberTitleRepository.listByMemberId('t1', 'm1')).toHaveLength(0);
+
+    await useCase.execute(ctx, {
+      gestaoId: 'term-1',
+      cargo: 'veneravel_mestre',
+      memberId: 'm2',
+      ordem: 1,
+    });
+
+    const titles = await memberTitleRepository.listByMemberId('t1', 'm1');
+    expect(titles).toHaveLength(1);
+    expect(titles[0]?.titulo).toBe('mestre_instalado');
+    // Concedido no dia seguinte ao fim do cargo (clock fixo em 2026-06-01).
+    expect(titles[0]?.dataConcessao?.toISOString().slice(0, 10)).toBe('2026-06-02');
+
+    // Não mexe em quem não foi Venerável — só encerra o cargo, sem título.
+    expect(await memberTitleRepository.listByMemberId('t1', 'm2')).toHaveLength(0);
+  });
+
+  it('não duplica o título de Mestre Instalado se o Irmão já tiver', async () => {
+    const { useCase, boardTermRepository, memberRepository, memberTitleRepository } =
+      buildUseCase();
+    await boardTermRepository.create(term);
+    await memberRepository.create(buildMember('m1'));
+    await memberRepository.create(buildMember('m2'));
+    await memberTitleRepository.create({
+      id: 'title-pre',
+      tenantId: 't1',
+      memberId: 'm1',
+      titulo: 'mestre_instalado',
+      tituloOutro: null,
+      dataConcessao: new Date('2010-01-01'),
+      fundamento: null,
+      createdAt: new Date('2010-01-01'),
+      updatedAt: new Date('2010-01-01'),
+      createdBy: 'admin-1',
+      updatedBy: 'admin-1',
+      deletedAt: null,
+      status: 'active',
+      ativo: true,
+    });
+
+    await useCase.execute(ctx, {
+      gestaoId: 'term-1',
+      cargo: 'veneravel_mestre',
+      memberId: 'm1',
+      ordem: 1,
+    });
+    await useCase.execute(ctx, {
+      gestaoId: 'term-1',
+      cargo: 'veneravel_mestre',
+      memberId: 'm2',
+      ordem: 1,
+    });
+
+    expect(await memberTitleRepository.listByMemberId('t1', 'm1')).toHaveLength(1);
   });
 });

@@ -24,11 +24,14 @@ import type {
 import type { IMemberRepository } from '../repositories/member.repository';
 import type { IMemberSituationRecordRepository } from '../repositories/member-situation-record.repository';
 import type { IMemberPositionHistoryRepository } from '../repositories/member-position-history.repository';
+import type { IMemberTitleRepository } from '../../honors/repositories/member-title.repository';
+import { grantMestreInstaladoTitleIfNeeded } from '../../honors/lib/grant-mestre-instalado-title';
 
 export interface RegisterMemberSituationDeps {
   memberRepository: IMemberRepository;
   situationRecordRepository: IMemberSituationRecordRepository;
   positionHistoryRepository: IMemberPositionHistoryRepository;
+  memberTitleRepository: IMemberTitleRepository;
   clock: IClock;
   idGenerator: IIdGenerator;
 }
@@ -166,6 +169,16 @@ export class RegisterMemberSituationUseCase {
           updatedAt: now,
           updatedBy: ctx.uid,
         });
+
+        if (activePosition.cargo === 'veneravel_mestre') {
+          await grantMestreInstaladoTitleIfNeeded(this.deps, {
+            tenantId: ctx.tenantId,
+            memberId,
+            dataFimCargo: now,
+            uid: ctx.uid,
+            fundamento: 'Concedido automaticamente ao encerrar o cargo de Venerável Mestre.',
+          });
+        }
       }
     }
 
