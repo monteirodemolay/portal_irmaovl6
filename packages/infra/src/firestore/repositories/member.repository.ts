@@ -18,6 +18,7 @@ const DATE_FIELDS = [
   'dataExaltacao',
   'conjugeDataNascimento',
   'dataFalecimento',
+  'dataCasamento',
 ] as const;
 
 /**
