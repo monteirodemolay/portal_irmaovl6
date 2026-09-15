@@ -6,6 +6,7 @@ import { ProfileOverviewTab } from './profile-overview-tab';
 import { ProfileTrajectoryTab } from './profile-trajectory-tab';
 import { ProfileFamilyTab } from './profile-family-tab';
 import { ProfileAcervoTab } from './profile-acervo-tab';
+import { InMemoriamProfileView } from './in-memoriam-profile-view';
 
 function SectionHeading({ title, id }: { title: string; id?: string }) {
   return (
@@ -67,6 +68,25 @@ export function PublicMemberProfileView({
    */
   layout?: 'full' | 'compact';
 }) {
+  // Perfil In Memoriam (situação terminal `falecido`) usa uma grade "bento"
+  // própria (crítica direta do Administrador sobre a versão anterior: "a
+  // tela ficou disforme... insira em contextos") em vez das seções
+  // empilhadas em largura cheia usadas pelo Irmão ativo — ver
+  // `InMemoriamProfileView` pro racional completo.
+  if (profile.situacao === 'falecido') {
+    return (
+      <InMemoriamProfileView
+        profile={profile}
+        canViewAcervo={canViewAcervo}
+        memberTitles={memberTitles}
+        honors={honors}
+        philosophicalJourneys={philosophicalJourneys}
+        acervoPhotos={acervoPhotos}
+        acervoRelationsSlot={acervoRelationsSlot}
+      />
+    );
+  }
+
   return (
     <div className="flex flex-col gap-6">
       <ProfileHeaderCard profile={profile} isOwnProfile={isOwnProfile} />
