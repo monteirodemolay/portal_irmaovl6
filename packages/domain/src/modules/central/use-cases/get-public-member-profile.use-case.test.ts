@@ -12,6 +12,7 @@ import {
   InMemoryMemberCentralProfileRepository,
   InMemoryMemberPositionHistoryRepository,
   InMemoryMemberRepository,
+  InMemoryMemberSituationRecordRepository,
   InMemoryPublicationSettingsRepository,
 } from '../../../test/fakes';
 import type { Member } from '../../membership/entities/member.entity';
@@ -117,6 +118,7 @@ function buildUseCase() {
   const memberCentralProfileRepository = new InMemoryMemberCentralProfileRepository();
   const publicationSettingsRepository = new InMemoryPublicationSettingsRepository();
   const memberPositionHistoryRepository = new InMemoryMemberPositionHistoryRepository();
+  const memberSituationRecordRepository = new InMemoryMemberSituationRecordRepository();
   const boardTermRepository = new InMemoryBoardTermRepository();
   const committeeRepository = new InMemoryCommitteeRepository();
   const archiveMediaRepository = new InMemoryArchiveMediaRepository();
@@ -130,6 +132,7 @@ function buildUseCase() {
     memberCentralProfileRepository,
     publicationSettingsRepository,
     memberPositionHistoryRepository,
+    memberSituationRecordRepository,
     boardTermRepository,
     committeeRepository,
     archiveMediaRepository,
@@ -144,6 +147,7 @@ function buildUseCase() {
     memberRepository,
     publicationSettingsRepository,
     memberPositionHistoryRepository,
+    memberSituationRecordRepository,
     boardTermRepository,
     committeeRepository,
     archiveMediaRepository,
@@ -441,5 +445,89 @@ describe('GetPublicMemberProfileUseCase', () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.value).toBeNull();
+  });
+
+  it('traz o encerramento da trajetória pra Irmão falecido, a partir do registro vigente', async () => {
+    const {
+      useCase,
+      memberRepository,
+      publicationSettingsRepository,
+      memberSituationRecordRepository,
+    } = buildUseCase();
+    await memberRepository.create(
+      buildMember({ situacao: 'falecido', dataFalecimento: new Date('2023-06-15') }),
+    );
+    await publicationSettingsRepository.create(buildSettings());
+    await memberSituationRecordRepository.create({
+      id: 'rec-1',
+      tenantId: 't1',
+      memberId: 'member-1',
+      situacao: 'falecido',
+      motivo: 'passou_ao_oriente_eterno',
+      motivoOutroDescricao: null,
+      dataInicio: new Date('2023-06-15'),
+      dataFim: null,
+      lojaId: 't1',
+      potencia: 'GOB',
+      documentoNumero: null,
+      documentoData: null,
+      observacoes: null,
+      anexos: [],
+      vigente: true,
+      dataInicioEstimada: false,
+      justificativaEdicaoRetroativa: null,
+      origem: null,
+      sourceCode: null,
+      sourceLabel: null,
+      recordKind: null,
+      lojaOrigemId: null,
+      lojaDestinoId: null,
+      importBatchId: null,
+      createdAt: new Date('2026-01-01'),
+      updatedAt: new Date('2026-01-01'),
+      createdBy: 'user-1',
+      updatedBy: 'user-1',
+      deletedAt: null,
+      status: 'active',
+      ativo: true,
+    });
+
+    const result = await useCase.execute(ctx, 'member-1');
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value?.trajetoria?.encerramento).toEqual({
+      situacao: 'falecido',
+      motivo: 'passou_ao_oriente_eterno',
+      motivoOutroDescricao: null,
+      dataInicio: new Date('2023-06-15'),
+    });
+  });
+
+  it('nunca traz encerramento pra Irmão ativo', async () => {
+    const { useCase, memberRepository, publicationSettingsRepository } = buildUseCase();
+    await memberRepository.create(buildMember({ situacao: 'ativo' }));
+    await publicationSettingsRepository.create(buildSettings());
+
+    const result = await useCase.execute(ctx, 'member-1');
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value?.trajetoria?.encerramento).toBeNull();
+  });
+
+  it('nunca traz encerramento quando não há registro vigente correspondente', async () => {
+    const { useCase, memberRepository, publicationSettingsRepository } = buildUseCase();
+    await memberRepository.create(
+      buildMember({ situacao: 'falecido', dataFalecimento: new Date('2023-06-15') }),
+    );
+    await publicationSettingsRepository.create(buildSettings());
+    // sem criar o MemberSituationRecord correspondente
+
+    const result = await useCase.execute(ctx, 'member-1');
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value?.trajetoria?.encerramento).toBeNull();
   });
 });

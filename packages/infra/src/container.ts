@@ -857,6 +857,7 @@ export function createServerContainer() {
       memberCentralProfileRepository: repositories.memberCentralProfile,
       publicationSettingsRepository: repositories.publicationSettings,
       memberPositionHistoryRepository: repositories.memberPositionHistory,
+      memberSituationRecordRepository: repositories.memberSituationRecord,
       boardTermRepository: repositories.boardTerm,
       committeeRepository: repositories.committee,
       archiveMediaRepository: repositories.archiveMedia,

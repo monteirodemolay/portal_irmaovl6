@@ -80,6 +80,7 @@ export {
   Share2,
   Heart,
   Cross,
+  LogOut,
   Baby,
   Search,
   Phone,
