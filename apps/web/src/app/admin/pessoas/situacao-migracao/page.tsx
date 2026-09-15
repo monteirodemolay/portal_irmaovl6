@@ -1,5 +1,6 @@
 import { requirePagePermission } from '@/lib/auth/require-permission';
 import { SituacaoMigracaoRunner } from '@/modules/membership/components/situacao/situacao-migracao-runner';
+import { BackfillDataFalecimentoRunner } from '@/modules/membership/components/situacao/backfill-data-falecimento-runner';
 
 export default async function SituacaoMigracaoPage() {
   await requirePagePermission('member:manage');
@@ -15,6 +16,19 @@ export default async function SituacaoMigracaoPage() {
         </p>
       </div>
       <SituacaoMigracaoRunner />
+
+      <div className="border-border bg-background rounded-xl border border-dashed p-4">
+        <p className="text-sm font-semibold">Datas de falecimento em branco</p>
+        <p className="text-muted mt-1 text-xs">
+          In Memoriam sem a data de falecimento registrada no cadastro faz o Selo de Trajetória
+          continuar contando &quot;tempo de Loja&quot; até hoje, em vez de parar no dia do
+          falecimento. O botão abaixo completa a partir do histórico de Situação Maçônica de cada
+          Irmão — seguro rodar quantas vezes for preciso.
+        </p>
+        <div className="mt-3">
+          <BackfillDataFalecimentoRunner />
+        </div>
+      </div>
     </div>
   );
 }

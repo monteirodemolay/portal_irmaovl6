@@ -47,6 +47,12 @@ export function LodgeTenureBadge({
   if (!dataIniciacao) return null;
   const anos = anosNaLoja(dataIniciacao, dataFalecimento);
   if (anos < 1) return null;
+  // Em memória: a contagem já parou no falecimento (acima) — o texto
+  // também precisa deixar de soar como algo em andamento ("Há X anos"
+  // sugere um relógio que continua correndo).
+  const label = dataFalecimento
+    ? `Foi Maçom por ${anos} ${anos === 1 ? 'ano' : 'anos'}`
+    : `Há ${anos} ${anos === 1 ? 'ano' : 'anos'} na Loja`;
 
   return (
     <span
@@ -56,7 +62,7 @@ export function LodgeTenureBadge({
       )}
     >
       <Milestone size={12} className="shrink-0" />
-      Há {anos} {anos === 1 ? 'ano' : 'anos'} na Loja
+      {label}
       {typeof participacoes === 'number' && participacoes > 0
         ? ` · ${participacoes} ${participacoesLabel}`
         : ''}

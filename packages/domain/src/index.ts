@@ -65,6 +65,7 @@ export * from './modules/membership/use-cases/update-my-profile.use-case';
 export * from './modules/membership/use-cases/register-member-situation.use-case';
 export * from './modules/membership/use-cases/edit-member-situation-record.use-case';
 export * from './modules/membership/use-cases/seed-member-situation-history.use-case';
+export * from './modules/membership/use-cases/backfill-data-falecimento.use-case';
 export * from './modules/membership/use-cases/seed-initiation-archive-items.use-case';
 export * from './modules/membership/use-cases/seed-elevation-archive-items.use-case';
 export * from './modules/membership/use-cases/seed-exaltation-archive-items.use-case';

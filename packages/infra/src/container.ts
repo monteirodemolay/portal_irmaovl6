@@ -225,6 +225,7 @@ import {
   ApplyActiveMembersReconciliationUseCase,
   EditMemberSituationRecordUseCase,
   SeedMemberSituationHistoryUseCase,
+  BackfillDataFalecimentoUseCase,
   SeedInitiationArchiveItemsUseCase,
   SeedElevationArchiveItemsUseCase,
   SeedExaltationArchiveItemsUseCase,
@@ -652,6 +653,11 @@ export function createServerContainer() {
       situationRecordRepository: repositories.memberSituationRecord,
       clock,
       idGenerator,
+    }),
+    backfillDataFalecimento: new BackfillDataFalecimentoUseCase({
+      memberRepository: repositories.member,
+      situationRecordRepository: repositories.memberSituationRecord,
+      clock,
     }),
     // Fase 1 da Fundação do Acervo VL6 (docs/architecture/11-acervo-vl6.md
     // §11.5) — backfill retroativo, disparado manualmente pelo Admin em

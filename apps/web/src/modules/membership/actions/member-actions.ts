@@ -29,6 +29,7 @@ import {
 } from '@vl6/infra';
 import {
   requirePermission,
+  type BackfillDataFalecimentoResult,
   type Member,
   type MemberSituationAttachment,
   type SeedMemberSituationHistoryReportRow,
@@ -1011,6 +1012,39 @@ export async function seedMemberSituationHistoryAction(): Promise<SeedSituationH
     });
     Sentry.captureException(error, { tags: { route: 'seedMemberSituationHistoryAction' } });
     return { error: 'Não foi possível concluir a migração. Tente novamente.', report: null };
+  }
+}
+
+export interface BackfillDataFalecimentoState {
+  error: string | null;
+  result: BackfillDataFalecimentoResult | null;
+}
+
+/**
+ * Corrige `Member.dataFalecimento` de quem está In Memoriam mas ficou com
+ * o campo em branco — o "Selo de Trajetória" (`LodgeTenureBadge`) só para
+ * de contar tempo de Loja quando essa data existe. Seguro rodar de novo:
+ * só mexe em quem ainda está com `dataFalecimento: null`.
+ */
+export async function backfillDataFalecimentoAction(): Promise<BackfillDataFalecimentoState> {
+  const session = await requireSession();
+  const container = createServerContainer();
+
+  try {
+    const result = await container.useCases.backfillDataFalecimento.execute(session.authContext);
+    if (!result.ok) {
+      return { error: result.error.message, result: null };
+    }
+    revalidatePath('/admin/pessoas/irmaos');
+    revalidatePath('/admin/pessoas/situacao-migracao');
+    return { error: null, result: result.value };
+  } catch (error) {
+    logger.error('Falha ao corrigir dataFalecimento', {
+      route: 'backfillDataFalecimentoAction',
+      ...errorToLogContext(error),
+    });
+    Sentry.captureException(error, { tags: { route: 'backfillDataFalecimentoAction' } });
+    return { error: 'Não foi possível concluir a correção. Tente novamente.', result: null };
   }
 }
 
