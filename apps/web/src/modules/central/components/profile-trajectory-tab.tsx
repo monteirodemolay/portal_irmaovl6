@@ -1,17 +1,12 @@
 import Link from 'next/link';
 import type { Honor, MemberTitle, PhilosophicalJourney, PublicMemberProfileDTO } from '@vl6/domain';
-import {
-  getBoardPositionLabel,
-  HONOR_TYPE_LABELS,
-  MEMBER_SITUATION_REASON_LABELS,
-  MEMBER_TITLE_LABELS,
-} from '@vl6/shared';
-import { Award, Cross, EmptyState, LogOut, Milestone, Sparkles, Users } from '@vl6/ui';
-import { TimelineEntry } from '@/components/membership/institutional-panel';
+import { HONOR_TYPE_LABELS, MEMBER_TITLE_LABELS } from '@vl6/shared';
+import { Award, EmptyState, Sparkles, Users } from '@vl6/ui';
 import { CeremonyMatesPanel } from '@/components/membership/ceremony-mates-panel';
 import { HONOR_TYPE_BADGE_ICON, MEMBER_TITLE_BADGE_ICON } from '@/modules/honors/honor-badge-icons';
-import { formatCompactDate, formatDate, Panel } from './profile-shared';
+import { formatDate, Panel } from './profile-shared';
 import { HonorDetailDialog } from './honor-detail-dialog';
+import { TrajectoryTimelinePanel } from './trajectory-timeline-panel';
 
 /**
  * Aba "Trajetória e Honrarias" do Perfil único (Fase 2/3, mock-up
@@ -55,99 +50,13 @@ export function ProfileTrajectoryTab({
       profile.trajetoria.encerramento),
   );
 
-  const trajetoria = profile.trajetoria;
-  const encerramento = trajetoria?.encerramento ?? null;
-  const isFalecimento = encerramento?.situacao === 'falecido';
-  const encerramentoMotivoLabel =
-    encerramento && encerramento.motivo !== 'outro'
-      ? (MEMBER_SITUATION_REASON_LABELS[
-          encerramento.motivo as keyof typeof MEMBER_SITUATION_REASON_LABELS
-        ] ?? null)
-      : null;
-  const encerramentoDetail = isFalecimento
-    ? 'Passou ao Oriente Eterno'
-    : (encerramento?.motivoOutroDescricao ?? encerramentoMotivoLabel ?? 'Motivo não especificado');
-
   const hasSecondary =
     memberTitles.length > 0 ||
     honors.length > 0 ||
     visibleJourneys.length > 0 ||
     profile.irmaosGemeos.length > 0;
 
-  const trajetoriaPanel =
-    hasTrajetoria && trajetoria ? (
-      <Panel kicker="TRAJETÓRIA" title="Caminho na Loja" icon={Milestone}>
-        <div className="flex flex-col gap-4">
-          {trajetoria.dataIniciacao && (
-            <TimelineEntry
-              label="Iniciação"
-              dateLabel={formatCompactDate(trajetoria.dataIniciacao)}
-              active
-              href={
-                trajetoria.ceremonyEventIds.iniciacao
-                  ? `/acervo/eventos/${trajetoria.ceremonyEventIds.iniciacao}`
-                  : undefined
-              }
-            />
-          )}
-          {trajetoria.dataElevacao && (
-            <TimelineEntry
-              label="Elevação"
-              dateLabel={formatCompactDate(trajetoria.dataElevacao)}
-              active
-              href={
-                trajetoria.ceremonyEventIds.elevacao
-                  ? `/acervo/eventos/${trajetoria.ceremonyEventIds.elevacao}`
-                  : undefined
-              }
-            />
-          )}
-          {trajetoria.dataExaltacao && (
-            <TimelineEntry
-              label="Exaltação"
-              dateLabel={formatCompactDate(trajetoria.dataExaltacao)}
-              active
-              href={
-                trajetoria.ceremonyEventIds.exaltacao
-                  ? `/acervo/eventos/${trajetoria.ceremonyEventIds.exaltacao}`
-                  : undefined
-              }
-            />
-          )}
-          {trajetoria.cargos.map((entry, index) => (
-            <TimelineEntry
-              key={`cargo-${index}`}
-              label={getBoardPositionLabel(entry.cargo)}
-              dateLabel={formatCompactDate(entry.dataInicio)}
-              active={!entry.dataFim}
-              current={!entry.dataFim}
-              detail={`Cargo · ${entry.gestaoNome}${entry.dataFim ? ` até ${formatCompactDate(entry.dataFim)}` : ' · em curso'}`}
-              href={`/acervo/gestoes/${entry.gestaoId}`}
-            />
-          ))}
-          {trajetoria.comissoes.map((entry, index) => (
-            <TimelineEntry
-              key={`comissao-${index}`}
-              label={entry.nome}
-              dateLabel={formatCompactDate(entry.dataInicio)}
-              active={!entry.dataFim}
-              current={!entry.dataFim}
-              detail={`Comissão · ${entry.gestaoNome}${entry.dataFim ? ` até ${formatCompactDate(entry.dataFim)}` : ' · em curso'}`}
-              href={`/acervo/gestoes/${entry.gestaoId}`}
-            />
-          ))}
-          {encerramento && (
-            <TimelineEntry
-              label={isFalecimento ? 'Falecimento' : 'Desligamento'}
-              detail={encerramentoDetail}
-              dateLabel={formatCompactDate(encerramento.dataInicio)}
-              icon={isFalecimento ? Cross : LogOut}
-              tone={isFalecimento ? 'memoriam' : 'encerramento'}
-            />
-          )}
-        </div>
-      </Panel>
-    ) : null;
+  const trajetoriaPanel = hasTrajetoria ? <TrajectoryTimelinePanel profile={profile} /> : null;
 
   const titlesPanel = memberTitles.length > 0 && (
     <Panel kicker="TÍTULOS" title="Títulos e Condições Maçônicas" icon={Users} compact>
