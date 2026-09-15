@@ -29,7 +29,13 @@ function formatDate(date: Date): string {
  * `groups` vem vazio (nenhuma cerimônia teve mais de um participante),
  * nunca mostra um card vazio.
  */
-export function CeremonyMatesPanel({ groups }: { groups: CeremonyMatesGroup[] }) {
+export function CeremonyMatesPanel({
+  groups,
+  compact = false,
+}: {
+  groups: CeremonyMatesGroup[];
+  compact?: boolean;
+}) {
   if (groups.length === 0) return null;
 
   const title = groups.some((g) => g.tipo === 'iniciacao')
@@ -37,7 +43,7 @@ export function CeremonyMatesPanel({ groups }: { groups: CeremonyMatesGroup[] })
     : 'Colegas de Cerimônia';
 
   return (
-    <Panel kicker="MEMÓRIA" title={title} icon={Users}>
+    <Panel kicker="MEMÓRIA" title={title} icon={Users} compact={compact}>
       <div className="flex flex-col gap-5">
         {groups.map((group) => (
           <div key={group.tipo} className="flex flex-col gap-2.5">
