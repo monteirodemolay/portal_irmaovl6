@@ -110,6 +110,22 @@ export interface PublicMemberProfileDTO {
       dataInicio: Date;
       dataFim: Date | null;
     }[];
+    /**
+     * O fim da trajetória, quando existe — só preenchido para `situacao`
+     * terminal (`desligado`/`falecido`, `TERMINAL_MEMBER_SITUATION_STATUSES`).
+     * Vem do registro vigente de `MemberSituationRecord` (mesma fonte de
+     * `Member.dataFalecimento`) — nunca inventado a partir só do `situacao`
+     * em `Member`, porque o motivo (Quite-Placet, transferência, Passou ao
+     * Oriente Eterno…) só existe no histórico. Pedido explícito do
+     * Administrador: "Caminho na Loja" precisa mostrar como/por que a
+     * trajetória institucional terminou, não só onde ela começou.
+     */
+    encerramento: {
+      situacao: MemberSituationStatus;
+      motivo: string;
+      motivoOutroDescricao: string | null;
+      dataInicio: Date;
+    } | null;
   } | null;
   /**
    * Fotografias do Acervo VL6 em que este Irmão está identificado — ponte

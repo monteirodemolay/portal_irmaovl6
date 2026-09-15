@@ -58,8 +58,8 @@ export function Panel({
 
 /**
  * Uma entrada da linha do tempo institucional (iniciação/elevação/
- * exaltação, cargo, comissão) — ponto sólido dourado quando em curso
- * (`active`), contorno vazado quando encerrado. Mesma peça visual em
+ * exaltação, cargo, comissão, encerramento) — ponto sólido dourado quando em
+ * curso (`active`), contorno vazado quando encerrado. Mesma peça visual em
  * "Caminho na Loja" (Perfil do Irmão) e "Trajetória institucional"
  * (Pessoa do Acervo VL6). `href` opcional — cargo/comissão levam pra Gestão
  * (`/acervo/gestoes/[gestaoId]`), iniciação/elevação/exaltação pro Evento da
@@ -72,6 +72,13 @@ export function Panel({
  * piscando (`animate-ping`) e um selo "Atual", pedido explícito do
  * Administrador pra diferenciar de bater o olho e não saber se aquele é o
  * cargo de hoje ou só um marco histórico já encerrado.
+ *
+ * `tone` colore o ponto e o selo do marco de encerramento (falecimento vs.
+ * desligamento) — `undefined` mantém o tratamento padrão dourado/contorno.
+ * Layout em flex (não mais grid de colunas fixas) com uma linha vertical
+ * contínua ligando os pontos (`group-last:hidden` no traço, escondido só na
+ * última entrada da lista) e data compacta em uma linha só, pra nunca
+ * quebrar em duas (pedido do Administrador: "mais fluída e proporcional").
  */
 export function TimelineEntry({
   label,
@@ -80,6 +87,8 @@ export function TimelineEntry({
   active = false,
   current = false,
   href,
+  icon: Icon,
+  tone,
 }: {
   label: string;
   detail?: string;
@@ -87,30 +96,44 @@ export function TimelineEntry({
   active?: boolean;
   current?: boolean;
   href?: string;
+  icon?: IconType;
+  tone?: 'memoriam' | 'encerramento';
 }) {
+  const dotToneClass =
+    tone === 'memoriam'
+      ? 'bg-neutral-700'
+      : tone === 'encerramento'
+        ? 'bg-neutral-400'
+        : current
+          ? 'relative bg-yellow-400'
+          : active
+            ? 'bg-accent'
+            : 'border-border border-2 bg-transparent';
+
   const content = (
-    <div className="grid grid-cols-[16px_92px_1fr] items-start gap-3">
-      <span className="relative mt-1 flex h-3.5 w-3.5 shrink-0 items-center justify-center">
-        {current && (
-          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-yellow-400 opacity-75" />
-        )}
-        <span
-          className={
-            current
-              ? 'relative h-3.5 w-3.5 rounded-full bg-yellow-400'
-              : active
-                ? 'bg-accent h-3.5 w-3.5 rounded-full'
-                : 'border-border h-3.5 w-3.5 rounded-full border-2 bg-transparent'
-          }
-        />
-      </span>
-      <span className="text-muted text-[10px] font-bold uppercase tabular-nums">{dateLabel}</span>
-      <div>
+    <div className="group flex items-start gap-3">
+      <div className="relative flex shrink-0 flex-col items-center self-stretch">
+        <span className="relative mt-1 flex h-3.5 w-3.5 shrink-0 items-center justify-center">
+          {current && (
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-yellow-400 opacity-75" />
+          )}
+          {Icon ? (
+            <Icon size={14} strokeWidth={2} className="text-muted relative" />
+          ) : (
+            <span className={`h-3.5 w-3.5 rounded-full ${dotToneClass}`} />
+          )}
+        </span>
+        <span className="border-border mt-1 w-px grow border-l group-last:hidden" />
+      </div>
+      <div className="min-w-0 flex-1 pb-5 group-last:pb-0">
+        <span className="text-muted block text-[10px] font-bold uppercase tabular-nums">
+          {dateLabel}
+        </span>
         <p
           className={
             href
-              ? 'flex items-center gap-2 text-sm font-semibold hover:underline'
-              : 'flex items-center gap-2 text-sm font-semibold'
+              ? 'mt-0.5 flex flex-wrap items-center gap-2 text-sm font-semibold hover:underline'
+              : 'mt-0.5 flex flex-wrap items-center gap-2 text-sm font-semibold'
           }
         >
           {label}
@@ -120,7 +143,7 @@ export function TimelineEntry({
             </span>
           )}
         </p>
-        {detail && <p className="text-muted text-xs">{detail}</p>}
+        {detail && <p className="text-muted mt-0.5 text-xs">{detail}</p>}
       </div>
     </div>
   );

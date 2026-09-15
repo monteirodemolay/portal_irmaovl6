@@ -14,6 +14,32 @@ export function formatDate(date: Date): string {
   return new Intl.DateTimeFormat('pt-BR', { dateStyle: 'long' }).format(new Date(date));
 }
 
+const COMPACT_MONTH_LABELS = [
+  'jan',
+  'fev',
+  'mar',
+  'abr',
+  'mai',
+  'jun',
+  'jul',
+  'ago',
+  'set',
+  'out',
+  'nov',
+  'dez',
+];
+
+/**
+ * Data compacta em uma linha só ("23 nov 2003") pra linha do tempo
+ * "Caminho na Loja" — `formatDate`/`dateStyle: 'long'` ("23 de novembro de
+ * 2003") quebra em duas linhas na coluna estreita da data, pedido explícito
+ * do Administrador pra deixar a trajetória "mais fluída e proporcional".
+ */
+export function formatCompactDate(date: Date): string {
+  const d = new Date(date);
+  return `${d.getDate()} ${COMPACT_MONTH_LABELS[d.getMonth()]} ${d.getFullYear()}`;
+}
+
 /**
  * Cargo ou comissão em curso — vira o selo de "gestão atual" no cabeçalho.
  * Prioriza cargo sobre comissão quando os dois estão em aberto.

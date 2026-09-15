@@ -1,3 +1,4 @@
+import { TERMINAL_MEMBER_SITUATION_STATUSES } from '@vl6/shared';
 import type { AuthContext } from '../../../shared/auth-context';
 import { requirePermission } from '../../../shared/auth-context';
 import { ok, type Result } from '../../../shared/result';
@@ -10,6 +11,7 @@ import type { IMemberCentralProfileRepository } from '../repositories/member-cen
 import type { IPublicationSettingsRepository } from '../repositories/publication-settings.repository';
 import type { IMemberRepository } from '../../membership/repositories/member.repository';
 import type { IMemberPositionHistoryRepository } from '../../membership/repositories/member-position-history.repository';
+import type { IMemberSituationRecordRepository } from '../../membership/repositories/member-situation-record.repository';
 import type { IBoardTermRepository } from '../../governance/repositories/board-term.repository';
 import type { ICommitteeRepository } from '../../governance/repositories/committee.repository';
 import {
@@ -30,6 +32,7 @@ export interface GetPublicMemberProfileDeps {
   memberCentralProfileRepository: IMemberCentralProfileRepository;
   publicationSettingsRepository: IPublicationSettingsRepository;
   memberPositionHistoryRepository: IMemberPositionHistoryRepository;
+  memberSituationRecordRepository: IMemberSituationRecordRepository;
   boardTermRepository: IBoardTermRepository;
   committeeRepository: ICommitteeRepository;
   archiveMediaRepository: IArchiveMediaRepository;
@@ -88,13 +91,28 @@ export class GetPublicMemberProfileUseCase {
     // exibida, publicado ou não. Cargos de Diretoria e comissões são dois
     // registros distintos (`ICommitteeRepository` não deriva de
     // `IMemberPositionHistoryRepository`), por isso duas chamadas.
-    const [cargos, comissoes, familia, irmaosGemeos, ceremonyEventIds] = await Promise.all([
-      getMemberJourneyCargos(this.deps, targetMemberId),
-      getMemberJourneyCommittees(this.deps, ctx.tenantId, targetMemberId),
-      buildPublicFamiliaLegado(this.deps, ctx.tenantId, targetMemberId),
-      getCeremonyMates(this.deps, member),
-      getMemberCeremonyEventIds(this.deps, member),
-    ]);
+    const [cargos, comissoes, familia, irmaosGemeos, ceremonyEventIds, vigenteSituationRecord] =
+      await Promise.all([
+        getMemberJourneyCargos(this.deps, targetMemberId),
+        getMemberJourneyCommittees(this.deps, ctx.tenantId, targetMemberId),
+        buildPublicFamiliaLegado(this.deps, ctx.tenantId, targetMemberId),
+        getCeremonyMates(this.deps, member),
+        getMemberCeremonyEventIds(this.deps, member),
+        this.deps.memberSituationRecordRepository.findVigenteByMemberId(targetMemberId),
+      ]);
+
+    // O fim da trajetória — só existe pra situação terminal, e só com o
+    // registro certo (o motivo real, não presumido do `situacao` sozinho).
+    const encerramento =
+      TERMINAL_MEMBER_SITUATION_STATUSES.includes(member.situacao) &&
+      vigenteSituationRecord?.situacao === member.situacao
+        ? {
+            situacao: vigenteSituationRecord.situacao,
+            motivo: vigenteSituationRecord.motivo,
+            motivoOutroDescricao: vigenteSituationRecord.motivoOutroDescricao,
+            dataInicio: vigenteSituationRecord.dataInicio,
+          }
+        : null;
 
     // Memória fotográfica — ponte Diretório → Acervo (Fase B). Ao contrário
     // da trajetória institucional, é claramente preferência do titular, por
@@ -139,6 +157,7 @@ export class GetPublicMemberProfileUseCase {
         ceremonyEventIds,
         cargos,
         comissoes,
+        encerramento,
       },
       memoriaFotografica,
       familia,
