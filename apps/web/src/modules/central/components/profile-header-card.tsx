@@ -7,7 +7,7 @@ import {
   CardContent,
   CalendarDays,
   Compass,
-  Heart,
+  Cross,
   MapPin,
   Sparkles,
   Star,
@@ -57,7 +57,7 @@ export function ProfileHeaderCard({
       <div className="from-primary to-primary-dark relative h-24 bg-gradient-to-br sm:h-28">
         {isInMemoriam && (
           <span className="bg-surface/90 text-primary-dark absolute right-4 top-4 flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold shadow-sm">
-            <Heart size={13} strokeWidth={1.75} className="text-accent" />
+            <Cross size={13} strokeWidth={1.75} className="text-accent" />
             In Memoriam
           </span>
         )}
@@ -111,8 +111,8 @@ export function ProfileHeaderCard({
           )}
           {isInMemoriam && profile.dataFalecimento && (
             <span className="border-border bg-background text-muted flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium">
-              <Heart size={13} strokeWidth={1.75} />
-              Em memória desde {formatDate(profile.dataFalecimento)}
+              <Cross size={13} strokeWidth={1.75} />
+              Faleceu em {formatDate(profile.dataFalecimento)}
             </span>
           )}
         </div>

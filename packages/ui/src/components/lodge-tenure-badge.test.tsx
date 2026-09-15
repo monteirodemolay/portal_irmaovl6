@@ -23,8 +23,11 @@ describe('LodgeTenureBadge', () => {
       />,
     );
 
-    expect(screen.getByText(/Há 6 anos na Loja/)).toBeInTheDocument();
+    // Em memória: fala no passado ("foi Maçom por"), não "há X anos" — o
+    // texto não pode soar como se o tempo ainda estivesse correndo.
+    expect(screen.getByText(/Foi Maçom por 6 anos/)).toBeInTheDocument();
     expect(screen.queryByText(/Há 22 anos na Loja/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Há .* na Loja/)).not.toBeInTheDocument();
 
     vi.useRealTimers();
   });
