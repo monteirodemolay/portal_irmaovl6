@@ -13,6 +13,8 @@ export function roleDisplayLabel(role: Role | null): string {
         return 'Administrador Geral';
       case 'admin':
         return 'Administrador da Loja';
+      case 'paramaconica':
+        return 'Paramaçônica';
       default:
         return 'Membro';
     }
