@@ -14,6 +14,7 @@ import {
   Badge,
   Bookmark,
   Button,
+  CheckCircle2,
   Compass,
   Dialog,
   DialogContent,
@@ -25,13 +26,17 @@ import {
   Info,
   Input,
   Label,
+  Link2,
   Maximize2,
   Minimize2,
   Pin,
+  Play,
   RotateCcw,
   Save,
   Search,
   Select,
+  Sparkles,
+  Star,
   Textarea,
   X,
   cn,
@@ -96,6 +101,7 @@ export function InteractiveConstellationExplorer({ roots }: InteractiveConstella
   const [branches, setBranches] = React.useState<Record<string, BranchState>>({});
   const [query, setQuery] = React.useState('');
   const [fullScreen, setFullScreen] = React.useState(false);
+  const [showGuide, setShowGuide] = React.useState(true);
 
   const [enabledKinds, setEnabledKinds] = React.useState<Set<ExplorerNodeKind>>(
     () => new Set(LEAF_KINDS),
@@ -285,25 +291,96 @@ export function InteractiveConstellationExplorer({ roots }: InteractiveConstella
 
   const pinnedList = [...pinned].map((key) => discovered[key]);
   const hiddenList = [...hidden].map((key) => discovered[key]);
+  const discoveredRecords = Object.values(discovered).filter(
+    (node) => node.kind !== 'root' && node.kind !== 'group',
+  ).length;
+  const openedTrails = roots.filter((root) => branches[root.key]).length;
+
+  const exploreSurprise = React.useCallback(() => {
+    if (roots.length === 0) return;
+    const unopened = roots.filter((root) => !branches[root.key]);
+    const candidates = unopened.length > 0 ? unopened : roots;
+    const chosen = candidates[Math.floor(Math.random() * candidates.length)];
+    if (chosen) void loadBranch(chosen);
+  }, [roots, branches, loadBranch]);
 
   return (
     <div
       className={cn(
-        'grid gap-5 lg:grid-cols-[minmax(0,1fr)_20rem]',
+        'grid gap-5 lg:grid-cols-[minmax(0,1fr)_21rem]',
         fullScreen && 'bg-background fixed inset-0 z-50 grid-rows-[auto_1fr] overflow-auto p-4',
       )}
     >
       <section aria-label="Explorador da Constelação" className="min-w-0">
-        <div className="border-border bg-surface rounded-xl border p-4">
+        {showGuide && (
+          <div className="border-accent/30 bg-accent/5 mb-4 flex flex-col gap-4 rounded-[16px] border p-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex gap-3">
+              <div className="bg-primary text-accent flex h-10 w-10 shrink-0 items-center justify-center rounded-full">
+                <Play size={17} fill="currentColor" />
+              </div>
+              <div>
+                <p className="font-display font-semibold">Sua jornada começa pelo primeiro ponto</p>
+                <p className="text-muted mt-1 max-w-2xl text-xs leading-5">
+                  Abra uma trilha, escolha um registro e siga suas ligações. Fixe o que for
+                  importante e salve o resultado como um quadro pessoal.
+                </p>
+              </div>
+            </div>
+            <Button type="button" size="sm" variant="outline" onClick={() => setShowGuide(false)}>
+              Entendi, começar
+            </Button>
+          </div>
+        )}
+
+        <div className="border-border bg-surface overflow-hidden rounded-[18px] border shadow-sm">
+          <div className="from-primary to-primary-dark grid gap-4 bg-gradient-to-r px-4 py-4 text-white sm:grid-cols-[1fr_auto] sm:items-center sm:px-5">
+            <div>
+              <div className="flex items-center gap-2">
+                <Sparkles className="text-accent" size={17} />
+                <p className="font-display font-semibold">Mesa de exploração</p>
+                {activeViewName && (
+                  <Badge className="border-white/20 bg-white/10 text-white">
+                    <Bookmark size={11} className="mr-1" /> {activeViewName}
+                  </Badge>
+                )}
+              </div>
+              <p className="mt-1 text-xs text-white/60">
+                {openedTrails} de {roots.length} trilhas abertas · {discoveredRecords} registros
+                descobertos
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                className="border-white/20 bg-white/5 text-white hover:bg-white/10"
+                onClick={exploreSurprise}
+              >
+                <Star size={14} className="text-accent mr-1.5" />
+                Surpreenda-me
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="border-white/20 bg-white/5 text-white hover:bg-white/10"
+                onClick={() => setFullScreen((value) => !value)}
+              >
+                {fullScreen ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
+                <span className="ml-1.5 hidden sm:inline">
+                  {fullScreen ? 'Sair da tela cheia' : 'Tela cheia'}
+                </span>
+              </Button>
+            </div>
+          </div>
+
+          <div className="p-4 sm:p-5">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-2">
-              <p className="font-display text-sm font-semibold">Acervo VL6</p>
-              {activeViewName && (
-                <Badge variant="outline" className="gap-1">
-                  <Bookmark size={11} />
-                  {activeViewName}
-                </Badge>
-              )}
+              <p className="text-muted text-xs font-semibold uppercase tracking-wider">
+                Escolha uma trilha
+              </p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <div className="relative">
@@ -321,19 +398,6 @@ export function InteractiveConstellationExplorer({ roots }: InteractiveConstella
               <Button type="button" variant="outline" size="sm" onClick={collapseAll}>
                 <RotateCcw size={14} className="mr-1.5" />
                 Recolher tudo
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => setFullScreen((value) => !value)}
-              >
-                {fullScreen ? (
-                  <Minimize2 size={14} className="mr-1.5" />
-                ) : (
-                  <Maximize2 size={14} className="mr-1.5" />
-                )}
-                {fullScreen ? 'Sair da tela cheia' : 'Quadro geral'}
               </Button>
               <Dialog open={viewsDialogOpen} onOpenChange={setViewsDialogOpen}>
                 <DialogTrigger asChild>
@@ -417,7 +481,7 @@ export function InteractiveConstellationExplorer({ roots }: InteractiveConstella
               Nenhum grupo com conteúdo publicado ainda.
             </p>
           ) : (
-            <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            <ul className="relative grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
               {filterRoots(roots, query)
                 .filter(nodePassesFilters)
                 .map((node) => (
@@ -439,15 +503,45 @@ export function InteractiveConstellationExplorer({ roots }: InteractiveConstella
                 ))}
             </ul>
           )}
+          </div>
         </div>
       </section>
 
       <aside
         aria-label="Detalhes do registro e quadro pessoal"
-        className="border-border bg-surface flex h-fit flex-col gap-5 rounded-xl border p-4"
+        className="border-border bg-surface flex h-fit flex-col gap-5 overflow-hidden rounded-[18px] border shadow-sm"
       >
+        <div className="bg-primary px-5 py-4 text-white">
+          <p className="text-accent text-[10px] font-semibold uppercase tracking-[0.2em]">
+            Caderno de descobertas
+          </p>
+          <div className="mt-3 flex items-end justify-between gap-3">
+            <div>
+              <strong className="font-display text-3xl">{discoveredRecords}</strong>
+              <span className="ml-2 text-xs text-white/55">registros encontrados</span>
+            </div>
+            <Sparkles className="text-accent" size={22} />
+          </div>
+          <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/10">
+            <div
+              className="bg-accent h-full rounded-full transition-all"
+              style={{ width: `${Math.min(100, (openedTrails / Math.max(roots.length, 1)) * 100)}%` }}
+            />
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-5 p-5 pt-0">
         {selected ? (
           <div className="flex flex-col gap-3">
+            {selected.thumbnailUrl && (
+              <div className="border-border -mx-5 aspect-[16/8] overflow-hidden border-b">
+                <img
+                  src={selected.thumbnailUrl}
+                  alt=""
+                  className="h-full w-full object-cover"
+                />
+              </div>
+            )}
             <p className="text-muted text-xs font-semibold uppercase tracking-wide">
               {selected.kindLabel}
             </p>
@@ -479,11 +573,24 @@ export function InteractiveConstellationExplorer({ roots }: InteractiveConstella
             </div>
           </div>
         ) : (
-          <p className="text-muted flex items-center gap-2 text-sm">
-            <Compass size={16} className="shrink-0" />
-            Selecione um grupo ou registro para ver seus detalhes e vínculos.
-          </p>
+          <div className="py-3 text-center">
+            <Compass size={28} className="text-accent mx-auto" strokeWidth={1.4} />
+            <p className="font-display mt-3 font-semibold">Escolha seu primeiro ponto</p>
+            <p className="text-muted mt-1 text-xs leading-5">
+              Os detalhes, documentos e caminhos encontrados aparecerão aqui.
+            </p>
+          </div>
         )}
+
+        <div className="border-border rounded-xl border p-3">
+          <p className="flex items-center gap-2 text-xs font-semibold">
+            <Link2 size={14} className="text-accent" /> Como ler as ligações
+          </p>
+          <ul className="text-muted mt-2 space-y-1.5 text-[11px] leading-4">
+            <li className="flex gap-2"><CheckCircle2 size={12} className="text-accent mt-0.5 shrink-0" /> Confirmado: relação registrada pela curadoria.</li>
+            <li className="flex gap-2"><Sparkles size={12} className="text-accent mt-0.5 shrink-0" /> Automático: relação identificada nos dados do Acervo.</li>
+          </ul>
+        </div>
 
         {pinnedList.length > 0 && (
           <div className="border-t pt-3">
@@ -540,6 +647,7 @@ export function InteractiveConstellationExplorer({ roots }: InteractiveConstella
             </ul>
           </div>
         )}
+        </div>
       </aside>
 
       <Dialog open={whyEdge !== null} onOpenChange={(open) => !open && setWhyEdge(null)}>
@@ -600,7 +708,9 @@ function ExplorerBranch({
     <li className="min-w-0">
       <div
         className={cn(
-          'border-border hover:border-accent aria-[current=true]:border-accent flex w-full items-center justify-between gap-2 rounded-lg border px-3 py-3 transition-colors',
+          'border-border hover:border-accent aria-[current=true]:border-accent group relative flex w-full items-center justify-between gap-2 overflow-hidden rounded-xl border px-3 py-3 transition-all hover:-translate-y-0.5 hover:shadow-md',
+          node.kind === 'group' && 'min-h-[5.5rem] bg-gradient-to-br from-white to-slate-50',
+          isOpen && 'border-accent bg-accent/5 shadow-sm',
           isPinned && 'border-accent bg-accent/5',
         )}
         aria-current={selectedKey === node.key ? 'true' : undefined}
@@ -613,7 +723,7 @@ function ExplorerBranch({
         >
           <span className="flex items-center gap-1.5">
             {isPinned && <Pin size={11} className="text-accent shrink-0" />}
-            <span className="block truncate text-sm font-medium">{node.label}</span>
+            <span className="font-display block truncate text-sm font-semibold">{node.label}</span>
           </span>
           <span className="text-muted block text-xs">{node.kindLabel}</span>
           {edgeInfo && (
