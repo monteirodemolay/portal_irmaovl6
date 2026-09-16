@@ -3,6 +3,7 @@ import { classifyFamilyDisplayGroup } from '@vl6/shared';
 import type { IFamilyPersonRepository } from '../../family-legacy/repositories/family-person.repository';
 import type { IFamilyRelationshipRepository } from '../../family-legacy/repositories/family-relationship.repository';
 import type { IMemberRepository } from '../../membership/repositories/member.repository';
+import type { IPersonFraternalRecordRepository } from '../../family-legacy/repositories/person-fraternal-record.repository';
 import {
   deriveKinships,
   type FamilyRef,
@@ -17,6 +18,23 @@ export interface PublicFamiliaLegadoItemDTO {
   fotoUrl: string | null;
   parentesco: string;
   lifeStatus: PersonLifeStatus | null;
+  /**
+   * Aniversário natalício — só preenchido pra `familyPerson` (familiar sem
+   * cadastro de `Member`). Um familiar `kind === 'member'` nunca expõe essa
+   * data aqui, mesmo tratamento de privacidade já dado a
+   * `Member.dataNascimento` no resto do perfil público — nunca sai do
+   * registro institucional do próprio Irmão. Usado só pra ordenar a lista
+   * pelo próximo aniversário a acontecer (pedido do Administrador).
+   */
+  dataNascimento: Date | null;
+  /**
+   * `true` quando a pessoa é Maçom — sempre `true` pra `kind === 'member'`
+   * (Irmão cadastrado no Portal); pra `familyPerson`, checa se existe algum
+   * `PersonFraternalRecord` com `affiliationKind === 'mason'` e visível
+   * publicamente (um familiar pode ter vínculo com outra ordem
+   * paramaçônica — DeMolay, Filhas de Jó etc. — sem ser Maçom).
+   */
+  isMacom: boolean;
 }
 
 export type PublicFamiliaLegadoDTO = Partial<Record<FamilyDisplayGroup, PublicFamiliaLegadoItemDTO[]>>;
@@ -28,6 +46,7 @@ export interface BuildPublicFamiliaLegadoDeps {
   familyRelationshipRepository: IFamilyRelationshipRepository;
   familyPersonRepository: IFamilyPersonRepository;
   memberRepository: IMemberRepository;
+  personFraternalRecordRepository: IPersonFraternalRecordRepository;
 }
 
 /**
@@ -109,16 +128,36 @@ export async function buildPublicFamiliaLegado(
   const memberIds = [
     ...new Set(visibleEntries.filter((e) => e.ref.kind === 'member').map((e) => e.ref.id)),
   ];
-  const [familyPersons, resolvedMembers] = await Promise.all([
+  const [familyPersons, resolvedMembers, fraternalRecordsByPersonId] = await Promise.all([
     familyPersonIds.length > 0
       ? deps.familyPersonRepository.listByIds(tenantId, familyPersonIds)
       : Promise.resolve([]),
     Promise.all(memberIds.map((id) => deps.memberRepository.findById(id))),
+    Promise.all(
+      familyPersonIds.map(async (id) => {
+        const records = await deps.personFraternalRecordRepository.listByPerson(
+          tenantId,
+          'familyPerson',
+          id,
+        );
+        return [id, records] as const;
+      }),
+    ),
   ]);
   const familyPersonById = new Map(familyPersons.map((p) => [p.id, p]));
   const memberById = new Map(
     resolvedMembers.filter((m): m is NonNullable<typeof m> => m !== null).map((m) => [m.id, m]),
   );
+  const fraternalRecordsById = new Map(fraternalRecordsByPersonId);
+  // Só considera Maçom quando existe um registro de afiliação
+  // `affiliationKind === 'mason'` (não qualquer vínculo paramaçônico —
+  // DeMolay/Filhas de Jó/Estrela do Oriente também usam `has_affiliation`)
+  // que o próprio familiar (ou quem o cadastrou) marcou visível publicamente.
+  const isFamilyPersonMacom = (id: string) =>
+    (fraternalRecordsById.get(id) ?? []).some(
+      (record) =>
+        record.affiliationKind === 'mason' && PUBLIC_VISIBILITY_LEVELS.includes(record.visibility),
+    );
 
   const groups: PublicFamiliaLegadoDTO = {};
   for (const entry of visibleEntries) {
@@ -142,6 +181,8 @@ export async function buildPublicFamiliaLegado(
       fotoUrl: member?.fotoUrl ?? familyPerson?.fotoUrl ?? null,
       parentesco: entry.label,
       lifeStatus: familyPerson?.lifeStatus ?? null,
+      dataNascimento: familyPerson?.dataNascimento ?? null,
+      isMacom: entry.ref.kind === 'member' ? true : isFamilyPersonMacom(entry.ref.id),
     };
     (groups[group] ??= []).push(item);
   }

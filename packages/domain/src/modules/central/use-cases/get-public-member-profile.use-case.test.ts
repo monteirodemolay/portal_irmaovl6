@@ -13,6 +13,7 @@ import {
   InMemoryMemberPositionHistoryRepository,
   InMemoryMemberRepository,
   InMemoryMemberSituationRecordRepository,
+  InMemoryPersonFraternalRecordRepository,
   InMemoryPublicationSettingsRepository,
 } from '../../../test/fakes';
 import type { Member } from '../../membership/entities/member.entity';
@@ -127,6 +128,7 @@ function buildUseCase() {
   const eventRepository = new InMemoryEventRepository();
   const familyRelationshipRepository = new InMemoryFamilyRelationshipRepository();
   const familyPersonRepository = new InMemoryFamilyPersonRepository();
+  const personFraternalRecordRepository = new InMemoryPersonFraternalRecordRepository();
   const useCase = new GetPublicMemberProfileUseCase({
     memberRepository,
     memberCentralProfileRepository,
@@ -141,6 +143,7 @@ function buildUseCase() {
     eventRepository,
     familyRelationshipRepository,
     familyPersonRepository,
+    personFraternalRecordRepository,
   });
   return {
     useCase,
@@ -156,6 +159,7 @@ function buildUseCase() {
     eventRepository,
     familyRelationshipRepository,
     familyPersonRepository,
+    personFraternalRecordRepository,
   };
 }
 

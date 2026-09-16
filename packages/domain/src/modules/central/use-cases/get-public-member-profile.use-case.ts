@@ -25,6 +25,7 @@ import type { IEventRepository } from '../../agenda/repositories/event.repositor
 import { getCeremonyMates, getMemberCeremonyEventIds } from '../../archive/lib/get-ceremony-mates';
 import type { IFamilyRelationshipRepository } from '../../family-legacy/repositories/family-relationship.repository';
 import type { IFamilyPersonRepository } from '../../family-legacy/repositories/family-person.repository';
+import type { IPersonFraternalRecordRepository } from '../../family-legacy/repositories/person-fraternal-record.repository';
 import { buildPublicFamiliaLegado } from '../lib/build-public-familia-legado';
 
 export interface GetPublicMemberProfileDeps {
@@ -41,6 +42,7 @@ export interface GetPublicMemberProfileDeps {
   eventRepository: IEventRepository;
   familyRelationshipRepository: IFamilyRelationshipRepository;
   familyPersonRepository: IFamilyPersonRepository;
+  personFraternalRecordRepository: IPersonFraternalRecordRepository;
 }
 
 /**

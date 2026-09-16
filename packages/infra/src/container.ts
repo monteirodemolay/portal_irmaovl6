@@ -866,6 +866,7 @@ export function createServerContainer() {
       eventRepository: repositories.event,
       familyRelationshipRepository: repositories.familyRelationship,
       familyPersonRepository: repositories.familyPerson,
+      personFraternalRecordRepository: repositories.personFraternalRecord,
     }),
     searchDirectory: new SearchDirectoryUseCase({
       memberRepository: repositories.member,
