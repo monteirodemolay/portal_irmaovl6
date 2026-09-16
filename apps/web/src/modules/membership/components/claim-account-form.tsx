@@ -3,15 +3,15 @@
 import { useActionState, useState } from 'react';
 import { useFormStatus } from 'react-dom';
 import type { UnclaimedMember } from '@vl6/domain';
-import { Button, Input, Select } from '@vl6/ui';
+import { Button, Eye, EyeOff, Input, Select } from '@vl6/ui';
 import { FormField } from '@/components/forms/form-field';
-import { submitMemberAccessClaimAction, type ClaimActionState } from '../actions/claim-actions';
+import { claimMemberAccountAction, type ClaimActionState } from '../actions/claim-actions';
 
-const EMPTY_STATE: ClaimActionState = { error: null, success: false };
+const EMPTY_STATE: ClaimActionState = { error: null };
 
 export function ClaimAccountForm({ unclaimedMembers }: { unclaimedMembers: UnclaimedMember[] }) {
   const [state, formAction] = useActionState<ClaimActionState, FormData>(
-    submitMemberAccessClaimAction,
+    claimMemberAccountAction,
     EMPTY_STATE,
   );
   // Todos os campos controlados de propósito: depois de uma tentativa que
@@ -22,18 +22,12 @@ export function ClaimAccountForm({ unclaimedMembers }: { unclaimedMembers: Uncla
   const [memberId, setMemberId] = useState('');
   const [cim, setCim] = useState('');
   const [email, setEmail] = useState('');
-
-  if (state.success) {
-    return (
-      <div className="flex flex-col gap-3 text-center">
-        <p className="text-sm">
-          Solicitação enviada. Um Administrador da Loja vai revisar seu pedido de acesso em breve —
-          você recebe um e-mail assim que ele for aprovado.
-        </p>
-        <p className="text-muted text-sm">Se demorar, fale com a Secretaria da Loja.</p>
-      </div>
-    );
-  }
+  const [senha, setSenha] = useState('');
+  // Mostra a senha em texto por padrão: pra quem tem mais dificuldade de
+  // digitar sem ver o que escreveu, é mais fácil conferir o campo do que
+  // digitar duas vezes um valor escondido — por isso nenhum campo de
+  // "confirmar senha" aqui, só este alternador.
+  const [showSenha, setShowSenha] = useState(true);
 
   if (unclaimedMembers.length === 0) {
     return (
@@ -45,11 +39,12 @@ export function ClaimAccountForm({ unclaimedMembers }: { unclaimedMembers: Uncla
   }
 
   return (
-    <form action={formAction} className="flex flex-col gap-4">
+    <form action={formAction} className="flex flex-col gap-5">
       <FormField label="Seu nome" htmlFor="memberId">
         <Select
           id="memberId"
           name="memberId"
+          className="h-12 text-base"
           value={memberId}
           onChange={(event) => setMemberId(event.target.value)}
         >
@@ -64,25 +59,58 @@ export function ClaimAccountForm({ unclaimedMembers }: { unclaimedMembers: Uncla
 
       {memberId && (
         <>
-          <FormField
-            label="CIM"
-            htmlFor="cim"
-            description="Confirma que o cadastro é realmente seu."
-          >
-            <Input id="cim" name="cim" value={cim} onChange={(e) => setCim(e.target.value)} />
+          <FormField label="Sua CIM" htmlFor="cim" description="O número que confirma que é você.">
+            <Input
+              id="cim"
+              name="cim"
+              inputMode="numeric"
+              className="h-12 text-base"
+              value={cim}
+              onChange={(e) => setCim(e.target.value)}
+            />
           </FormField>
           <FormField
-            label="E-mail"
+            label="Seu e-mail"
             htmlFor="email"
-            description="Pra onde enviamos o link de acesso, depois que um Administrador aprovar."
+            description="É com ele que você vai entrar no Portal."
           >
             <Input
               id="email"
               name="email"
               type="email"
+              className="h-12 text-base"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
+          </FormField>
+          <FormField
+            label="Crie uma senha"
+            htmlFor="senha"
+            description="Pelo menos 6 letras ou números — pode ser algo fácil de lembrar."
+          >
+            <div className="relative">
+              <Input
+                id="senha"
+                name="senha"
+                type={showSenha ? 'text' : 'password'}
+                minLength={6}
+                className="h-12 pr-12 text-base"
+                value={senha}
+                onChange={(e) => setSenha(e.target.value)}
+              />
+              <button
+                type="button"
+                onClick={() => setShowSenha((value) => !value)}
+                aria-label={showSenha ? 'Ocultar senha' : 'Mostrar senha'}
+                className="text-muted hover:bg-background hover:text-foreground absolute right-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-md transition-colors"
+              >
+                {showSenha ? (
+                  <EyeOff size={18} strokeWidth={1.7} />
+                ) : (
+                  <Eye size={18} strokeWidth={1.7} />
+                )}
+              </button>
+            </div>
           </FormField>
         </>
       )}
@@ -96,8 +124,8 @@ export function ClaimAccountForm({ unclaimedMembers }: { unclaimedMembers: Uncla
 function SubmitButton() {
   const { pending } = useFormStatus();
   return (
-    <Button type="submit" disabled={pending} className="w-full">
-      {pending ? 'Enviando…' : 'Solicitar acesso'}
+    <Button type="submit" disabled={pending} className="h-12 w-full text-base">
+      {pending ? 'Criando seu acesso…' : 'Entrar no Portal'}
     </Button>
   );
 }

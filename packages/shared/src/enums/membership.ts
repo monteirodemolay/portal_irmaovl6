@@ -147,22 +147,6 @@ export const MEMBER_STATUS_RECORD_KIND_LABELS: Record<MemberStatusRecordKind, st
   outro: 'Outro',
 };
 
-/**
- * Status de uma solicitação de acesso via "Reivindicar Cadastro" — nasce
- * sempre `pendente`; só um Administrador (`member:manage`) aprova ou
- * rejeita. Mesmo formato de `ArchiveContributionStatus` (`@vl6/shared`
- * enums/archive.ts), propositalmente: é o mesmo padrão de fila de revisão
- * usado no resto do Portal.
- */
-export const MEMBER_ACCESS_CLAIM_STATUS_KEYS = ['pendente', 'aprovada', 'rejeitada'] as const;
-export type MemberAccessClaimStatus = (typeof MEMBER_ACCESS_CLAIM_STATUS_KEYS)[number];
-
-export const MEMBER_ACCESS_CLAIM_STATUS_LABELS: Record<MemberAccessClaimStatus, string> = {
-  pendente: 'Aguardando aprovação',
-  aprovada: 'Aprovada',
-  rejeitada: 'Rejeitada',
-};
-
 export const MARITAL_STATUSES = [
   'solteiro',
   'casado',

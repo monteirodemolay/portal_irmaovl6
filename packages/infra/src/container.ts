@@ -14,10 +14,7 @@ import {
   AuthenticateUserUseCase,
   BootstrapPlatformAdminUseCase,
   BootstrapTenantAdminUseCase,
-  SubmitMemberAccessClaimUseCase,
-  ListPendingMemberAccessClaimsUseCase,
-  ApproveMemberAccessClaimUseCase,
-  RejectMemberAccessClaimUseCase,
+  ClaimMemberAccountUseCase,
   ConfirmAttendanceUseCase,
   CreateAnnouncementUseCase,
   UpdateAnnouncementUseCase,
@@ -308,7 +305,6 @@ import { FirestoreConstellationViewRevisionRepository } from './firestore/reposi
 import { FirestoreArchiveExhibitionRepository } from './firestore/repositories/archive-exhibition.repository';
 import { FirestoreArchiveCatalogEntryRepository } from './firestore/repositories/archive-catalog-entry.repository';
 import { FirestoreArchiveContributionRepository } from './firestore/repositories/archive-contribution.repository';
-import { FirestoreMemberAccessClaimRepository } from './firestore/repositories/member-access-claim.repository';
 import { FirestoreArchiveItemRepository } from './firestore/repositories/archive-item.repository';
 import { FirestoreMediaAssetRepository } from './firestore/repositories/media-asset.repository';
 import { FirestoreArchiveMediaRepository } from './firestore/repositories/archive-media.repository';
@@ -488,11 +484,6 @@ export function createServerContainer() {
       'archiveContributions',
       auditDeps,
     ),
-    memberAccessClaim: withAudit(
-      new FirestoreMemberAccessClaimRepository(db),
-      'memberAccessClaims',
-      auditDeps,
-    ),
     archiveItem: withAudit(new FirestoreArchiveItemRepository(db), 'archiveItems', auditDeps),
     mediaAsset: withAudit(new FirestoreMediaAssetRepository(db), 'mediaAssets', auditDeps),
     archiveMedia: withAudit(new FirestoreArchiveMediaRepository(db), 'archiveMedia', auditDeps),
@@ -617,22 +608,8 @@ export function createServerContainer() {
     }),
     updateMyPhoto: new UpdateMyPhotoUseCase({ memberRepository: repositories.member, clock }),
     updateMyProfile: new UpdateMyProfileUseCase({ memberRepository: repositories.member, clock }),
-    submitMemberAccessClaim: new SubmitMemberAccessClaimUseCase({
+    claimMemberAccount: new ClaimMemberAccountUseCase({
       memberRepository: repositories.member,
-      memberAccessClaimRepository: repositories.memberAccessClaim,
-      clock,
-      idGenerator,
-    }),
-    listPendingMemberAccessClaims: new ListPendingMemberAccessClaimsUseCase({
-      memberAccessClaimRepository: repositories.memberAccessClaim,
-    }),
-    approveMemberAccessClaim: new ApproveMemberAccessClaimUseCase({
-      memberAccessClaimRepository: repositories.memberAccessClaim,
-      memberRepository: repositories.member,
-      clock,
-    }),
-    rejectMemberAccessClaim: new RejectMemberAccessClaimUseCase({
-      memberAccessClaimRepository: repositories.memberAccessClaim,
       clock,
     }),
     registerMemberSituation: registerMemberSituationUseCase,
