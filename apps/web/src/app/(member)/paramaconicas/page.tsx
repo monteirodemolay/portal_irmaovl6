@@ -1,11 +1,48 @@
+import Link from 'next/link';
 import { hasPermission } from '@vl6/domain';
+import { FRATERNAL_AFFILIATION_LABELS, type FraternalAffiliationKind } from '@vl6/shared';
 import { createServerContainer } from '@vl6/infra';
-import { EmptyState, Handshake, Lock, ShieldCheck, Users } from '@vl6/ui';
+import {
+  ArchiveItemCard,
+  ArrowLeft,
+  EmptyState,
+  FilterBar,
+  Handshake,
+  Lock,
+  ShieldCheck,
+  Users,
+} from '@vl6/ui';
 import { requireSession } from '@/lib/auth/require-session';
 import { ParamasonicMemberCard } from '@/modules/family-legacy/components/paramasonic-member-card';
 
-export default async function ParamasonicCommunityPage() {
+function buildHref(affiliationKind?: string): string {
+  return affiliationKind
+    ? `/paramaconicas?entidade=${encodeURIComponent(affiliationKind)}`
+    : '/paramaconicas';
+}
+
+/**
+ * Comunidade Paramaçônica VL6 — ponto único pra tudo relacionado a
+ * organizações paramaçônicas (docs/architecture/12), com duas seções por
+ * papel de acesso:
+ *
+ * - "Diretório institucional" (`listParamasonicMemberDirectory`): recorte
+ *   seguro dos Irmãos ativos, visível a qualquer conta com
+ *   `paramasonicCommunity:read` — inclui o papel `paramaconica`, convidado
+ *   externo de menor privilégio (docs/architecture/12 §12.3).
+ * - "Vínculos Paramaçônicos" (`listParamasonicDirectory`): Irmãos e
+ *   familiares com afiliação cadastrada a uma ordem paramaçônica (DeMolay,
+ *   Filhas de Jó etc.) — exige `familyLegacy:read`, que o papel
+ *   `paramaconica` deliberadamente não tem (exporia dados de família a um
+ *   convidado externo). Só aparece pra Irmãos/Administração.
+ */
+export default async function ParamasonicCommunityPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ entidade?: string }>;
+}) {
   const session = await requireSession();
+  const params = await searchParams;
 
   if (!hasPermission(session.authContext, 'paramasonicCommunity:read')) {
     return (
@@ -18,12 +55,39 @@ export default async function ParamasonicCommunityPage() {
   }
 
   const container = createServerContainer();
-  const members = await container.useCases.listParamasonicMemberDirectory.execute(
-    session.authContext,
-  );
+  const canSeeVinculos = hasPermission(session.authContext, 'familyLegacy:read');
+
+  const [members, vinculos] = await Promise.all([
+    container.useCases.listParamasonicMemberDirectory.execute(session.authContext),
+    canSeeVinculos
+      ? container.useCases.listParamasonicDirectory.execute(session.authContext)
+      : Promise.resolve([]),
+  ]);
+
+  const entidadesPresentes = [
+    ...new Set(vinculos.map((v) => v.affiliationKind)),
+  ] as FraternalAffiliationKind[];
+  const filterItems = entidadesPresentes.map((affiliationKind) => ({
+    value: affiliationKind,
+    label: FRATERNAL_AFFILIATION_LABELS[affiliationKind],
+    href: buildHref(params.entidade === affiliationKind ? undefined : affiliationKind),
+  }));
+  const filteredVinculos = params.entidade
+    ? vinculos.filter((v) => v.affiliationKind === params.entidade)
+    : vinculos;
 
   return (
     <div className="mx-auto flex w-full max-w-[1200px] flex-col gap-8">
+      {hasPermission(session.authContext, 'memberDirectory:read') && (
+        <Link
+          href="/irmaos"
+          className="border-border bg-surface hover:border-primary hover:text-primary flex w-fit items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm transition-colors"
+        >
+          <ArrowLeft size={16} />
+          Voltar à Comunidade VL6
+        </Link>
+      )}
+
       <header className="border-border from-primary-dark to-primary relative overflow-hidden rounded-2xl border bg-gradient-to-br p-6 text-white shadow-sm sm:p-8">
         <div className="relative z-10 max-w-3xl">
           <span className="text-accent flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em]">
@@ -89,6 +153,79 @@ export default async function ParamasonicCommunityPage() {
           </div>
         )}
       </section>
+
+      {canSeeVinculos && (
+        <section className="flex flex-col gap-4">
+          <div>
+            <span className="text-accent text-xs font-semibold uppercase tracking-wide">
+              Família e Legado
+            </span>
+            <h2 className="font-display text-2xl font-semibold">Vínculos Paramaçônicos</h2>
+            <p className="text-muted mt-1 text-sm">
+              Irmãos e familiares vinculados a ordens paramaçônicas — DeMolay, Filhas de Jó, Estrela
+              do Oriente, Arco-Íris, Fraternidade Feminina e demais organizações irmãs da Loja.
+              Visível apenas para Irmãos e Administração.
+            </p>
+          </div>
+
+          {filterItems.length > 0 && (
+            <FilterBar
+              items={filterItems}
+              activeValue={params.entidade}
+              ariaLabel="Filtrar por entidade paramaçônica"
+              linkComponent={Link}
+            />
+          )}
+
+          {filteredVinculos.length === 0 ? (
+            <EmptyState
+              icon={<Handshake size={22} strokeWidth={1.75} />}
+              title="Nenhum vínculo paramaçônico cadastrado ainda"
+              description="Vínculos com DeMolay, Filhas de Jó, Estrela do Oriente, Fraternidade Feminina e outras organizações irmãs aparecerão aqui assim que forem cadastrados em Família e Legado."
+            />
+          ) : (
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {filteredVinculos.map((entry) => {
+                const descricaoPartes = [
+                  entry.unidadeNome,
+                  entry.organizacaoNome,
+                  [entry.cidade, entry.estado].filter(Boolean).join(' - '),
+                ].filter(Boolean);
+                const descricao = descricaoPartes.length > 0 ? descricaoPartes.join(' · ') : null;
+                const icon = <Handshake size={14} strokeWidth={1.75} className="shrink-0" />;
+
+                return entry.personKind === 'member' ? (
+                  <ArchiveItemCard
+                    key={entry.recordId}
+                    href={`/irmaos/${entry.personId}#trajetoria`}
+                    kindLabel={FRATERNAL_AFFILIATION_LABELS[entry.affiliationKind]}
+                    icon={icon}
+                    titulo={entry.nomeCompleto}
+                    descricao={descricao}
+                    linkComponent={Link}
+                  />
+                ) : (
+                  <div
+                    key={entry.recordId}
+                    className="border-border rounded-lg border p-4 text-left"
+                  >
+                    <div className="text-accent flex items-center gap-2 text-[10px] font-semibold uppercase tracking-wider">
+                      {icon}
+                      {FRATERNAL_AFFILIATION_LABELS[entry.affiliationKind]}
+                    </div>
+                    <h3 className="font-display mt-2 line-clamp-2 font-semibold">
+                      {entry.nomeCompleto}
+                    </h3>
+                    {descricao && (
+                      <p className="text-muted mt-1 line-clamp-2 text-xs leading-5">{descricao}</p>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </section>
+      )}
     </div>
   );
 }

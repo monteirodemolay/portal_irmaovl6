@@ -78,12 +78,12 @@ function UploadStep({
         />
         <p className="text-muted text-xs">
           .xlsx: mesmas colunas da exportação (Nome, CIM, Grau, Situação, E-mail, Cidade) — só Nome
-          é obrigatório, deixe E-mail em branco pra o Irmão reivindicar o próprio acesso depois em
-          "Reivindicar meu cadastro". .pdf: o relatório de outro sistema (Nome, CIM, Loja, Grau) —
-          nunca tem e-mail, e todo mundo entra com situação "Regular"; os Irmãos marcados por cor no
-          PDF original (Desligado, Irregular, etc.) precisam ser ajustados à mão depois, pelo botão
-          "Situação" na tela de cada um. Nada é gravado agora — na próxima tela você revisa e
-          escolhe quem entra.
+          é obrigatório, deixe E-mail em branco pra o Irmão criar o próprio acesso depois na tela de
+          login, em "Reivindique seu cadastro". .pdf: o relatório de outro sistema (Nome, CIM, Loja,
+          Grau) — nunca tem e-mail, e todo mundo entra com situação "Regular"; os Irmãos marcados
+          por cor no PDF original (Desligado, Irregular, etc.) precisam ser ajustados à mão depois,
+          pelo botão "Situação" na tela de cada um. Nada é gravado agora — na próxima tela você
+          revisa e escolhe quem entra.
         </p>
       </div>
       {error && <p className="text-sm text-red-600">{error}</p>}

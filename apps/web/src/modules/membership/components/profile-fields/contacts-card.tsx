@@ -37,7 +37,7 @@ export function ContactsCard({ member, action }: { member: Member; action: Profi
           description={
             member.email
               ? 'Vinculado à conta de acesso.'
-              : 'Ainda não cadastrado — o Irmão pode reivindicar o próprio acesso em "Reivindicar meu cadastro" na tela de login.'
+              : 'Ainda não cadastrado — o Irmão pode criar o próprio acesso na tela de login, em "Reivindique seu cadastro".'
           }
         >
           <Input id="email" value={member.email ?? 'Sem e-mail cadastrado'} disabled />

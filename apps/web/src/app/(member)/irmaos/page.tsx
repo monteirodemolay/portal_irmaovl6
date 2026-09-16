@@ -151,14 +151,16 @@ export default async function ComunidadeVL6Page({
             Pessoas, conhecimentos, empresas e serviços que fortalecem nossa Loja.
           </p>
         </div>
-        <Link
-          href="/irmaos/paramaconicas"
-          className="border-border bg-surface hover:border-primary hover:text-primary flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors"
-        >
-          <Handshake size={14} strokeWidth={1.75} />
-          Diretório de Paramaçônicas
-          <ArrowUpRight size={13} strokeWidth={2} />
-        </Link>
+        {hasPermission(session.authContext, 'paramasonicCommunity:read') && (
+          <Link
+            href="/paramaconicas"
+            className="border-border bg-surface hover:border-primary hover:text-primary flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors"
+          >
+            <Handshake size={14} strokeWidth={1.75} />
+            Comunidade Paramaçônica
+            <ArrowUpRight size={13} strokeWidth={2} />
+          </Link>
+        )}
       </div>
 
       {member ? (

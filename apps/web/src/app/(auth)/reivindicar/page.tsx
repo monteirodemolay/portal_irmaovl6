@@ -6,11 +6,11 @@ import { ClaimAccountForm } from '@/modules/membership/components/claim-account-
 
 /**
  * Fluxo público (sem login) pelo qual um Irmão já cadastrado — mas ainda
- * sem acesso, ex.: importado em massa de uma planilha — SOLICITA o próprio
- * acesso ao Portal. Nunca listado em `PROTECTED_PREFIXES` (middleware.ts):
- * fica público de propósito, junto de `/login`. A conta só nasce depois que
- * um Administrador aprovar a solicitação em
- * `/admin/pessoas/solicitacoes-acesso` — ver `SubmitMemberAccessClaimUseCase`.
+ * sem acesso, ex.: importado em massa de uma planilha — CRIA o próprio
+ * acesso ao Portal na hora, em um passo só. Nunca listado em
+ * `PROTECTED_PREFIXES` (middleware.ts): fica público de propósito, junto de
+ * `/login`. Sem fila de aprovação do Administrador de propósito — ver
+ * `ClaimMemberAccountUseCase`.
  */
 export default async function ClaimAccountPage() {
   const current = await getCurrentTenant();
@@ -36,10 +36,10 @@ export default async function ClaimAccountPage() {
   return (
     <main className="bg-background flex min-h-screen items-center justify-center p-6">
       <div className="border-accent/25 bg-surface/95 w-full max-w-lg rounded-[26px] border p-8 shadow-md sm:p-10">
-        <h1 className="font-display text-center text-2xl font-medium">Reivindicar meu cadastro</h1>
+        <h1 className="font-display text-center text-2xl font-medium">Criar meu acesso</h1>
         <p className="text-muted mb-8 mt-2 text-center text-sm">
-          {current.tenant.nome} — escolha seu nome, confirme sua CIM e solicite seu acesso ao
-          Portal. Um Administrador revisa antes de liberar.
+          {current.tenant.nome} — escolha seu nome, confirme sua CIM e crie uma senha. Pronto, seu
+          acesso já fica liberado.
         </p>
 
         <ClaimAccountForm unclaimedMembers={unclaimedMembers} />

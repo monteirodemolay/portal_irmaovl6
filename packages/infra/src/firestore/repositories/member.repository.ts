@@ -91,7 +91,7 @@ export class FirestoreMemberRepository implements IMemberRepository {
         // Administrador: um Irmão desligado continuava aparecendo na lista
         // pública pra "reivindicar" (licenciado/suspenso/desligado/In
         // Memoriam não têm acesso ao Portal, mesma regra de
-        // `ApproveMemberAccessClaimUseCase`).
+        // `ClaimMemberAccountUseCase`).
         .filter((member) => member.situacao === 'ativo')
         .map((member) => ({
           id: member.id,
