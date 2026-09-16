@@ -37,6 +37,16 @@ export class FirestoreArchiveContributionRepository implements IArchiveContribut
     return snap.docs.map((doc) => doc.data());
   }
 
+  async countPendingByTenant(tenantId: string): Promise<number> {
+    const snap = await this.collection
+      .where('tenantId', '==', tenantId)
+      .where('deletedAt', '==', null)
+      .where('moderacaoStatus', '==', 'pendente')
+      .count()
+      .get();
+    return snap.data().count;
+  }
+
   async create(contribution: ArchiveContribution): Promise<void> {
     await this.collection.doc(contribution.id).set(contribution);
   }

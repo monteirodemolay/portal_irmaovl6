@@ -7,7 +7,11 @@ import type {
   PageResult,
   UnclaimedMember,
 } from '@vl6/domain';
-import { formatBrazilianPersonName, normalizeNameForSearch } from '@vl6/shared';
+import {
+  formatBrazilianPersonName,
+  normalizeNameForSearch,
+  type MemberSituationStatus,
+} from '@vl6/shared';
 import { createEntityConverter } from '../converters/entity.converter';
 
 const COLLECTION = 'members';
@@ -198,6 +202,16 @@ export class FirestoreMemberRepository implements IMemberRepository {
     const snap = await this.collection
       .where('tenantId', '==', tenantId)
       .where('deletedAt', '==', null)
+      .count()
+      .get();
+    return snap.data().count;
+  }
+
+  async countBySituacao(tenantId: string, situacao: MemberSituationStatus): Promise<number> {
+    const snap = await this.collection
+      .where('tenantId', '==', tenantId)
+      .where('deletedAt', '==', null)
+      .where('situacao', '==', situacao)
       .count()
       .get();
     return snap.data().count;

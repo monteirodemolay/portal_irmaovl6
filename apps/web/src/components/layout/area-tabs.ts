@@ -96,5 +96,6 @@ export const ADMIN_AREA_TABS: Record<AdminAreaKey, AreaTabDef[]> = {
   configuracoes: [
     { href: '/admin/configuracoes/geral', label: 'Geral', permission: null },
     { href: '/admin/configuracoes/integracoes', label: 'Integrações', permission: 'tenant:manage' },
+    { href: '/admin/configuracoes/auditoria', label: 'Auditoria', permission: 'auditLog:read' },
   ],
 };

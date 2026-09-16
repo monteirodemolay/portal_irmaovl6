@@ -32,6 +32,11 @@ export class FirestoreUserRepository implements IUserRepository {
     return snap.docs.map((doc) => doc.data());
   }
 
+  async countByTenant(tenantId: string): Promise<number> {
+    const snap = await this.collection.where('tenantId', '==', tenantId).count().get();
+    return snap.data().count;
+  }
+
   async create(user: User): Promise<void> {
     await this.collection.doc(user.id).set(user);
   }
