@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import {
   hasPermission,
   type DirectoryMemberDTO,
@@ -5,7 +6,7 @@ import {
 } from '@vl6/domain';
 import type { AreaAtuacaoKey, MemberDegree, MemberSituationStatus } from '@vl6/shared';
 import { createServerContainer } from '@vl6/infra';
-import { EmptyState, Lock, Search } from '@vl6/ui';
+import { ArrowUpRight, EmptyState, Handshake, Lock, Search } from '@vl6/ui';
 import { requireSession } from '@/lib/auth/require-session';
 import { AreaExploreGrid } from '@/modules/central/components/directorio/area-explore-grid';
 import { BusinessDirectoryCard } from '@/modules/central/components/negocios/business-directory-card';
@@ -143,11 +144,21 @@ export default async function ComunidadeVL6Page({
 
   return (
     <div className="flex flex-col gap-8">
-      <div>
-        <h1 className="font-display text-2xl font-semibold">Comunidade VL6</h1>
-        <p className="text-muted text-sm">
-          Pessoas, conhecimentos, empresas e serviços que fortalecem nossa Loja.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="font-display text-2xl font-semibold">Comunidade VL6</h1>
+          <p className="text-muted text-sm">
+            Pessoas, conhecimentos, empresas e serviços que fortalecem nossa Loja.
+          </p>
+        </div>
+        <Link
+          href="/irmaos/paramaconicas"
+          className="border-border bg-surface hover:border-primary hover:text-primary flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors"
+        >
+          <Handshake size={14} strokeWidth={1.75} />
+          Diretório de Paramaçônicas
+          <ArrowUpRight size={13} strokeWidth={2} />
+        </Link>
       </div>
 
       {member ? (

@@ -5,6 +5,7 @@ import {
   FixedClock,
   InMemoryFamilyPersonRepository,
   InMemoryFamilyRelationshipRepository,
+  InMemoryPersonFraternalRecordRepository,
   SequentialIdGenerator,
 } from '../../../test/fakes';
 import type { FamilyPerson } from '../entities/family-person.entity';
@@ -66,16 +67,23 @@ function managedFamilyPerson(id: string, managedByMemberId: string): FamilyPerso
 async function buildUseCase(managedByLuis: string[] = ['mae-1']) {
   const familyRelationshipRepository = new InMemoryFamilyRelationshipRepository();
   const familyPersonRepository = new InMemoryFamilyPersonRepository();
+  const personFraternalRecordRepository = new InMemoryPersonFraternalRecordRepository();
   for (const id of managedByLuis) {
     await familyPersonRepository.create(managedFamilyPerson(id, 'luis'));
   }
   const useCase = new CreateFamilyRelationshipUseCase({
     familyRelationshipRepository,
     familyPersonRepository,
+    personFraternalRecordRepository,
     clock: new FixedClock(new Date('2026-01-01T00:00:00Z')),
     idGenerator: new SequentialIdGenerator(),
   });
-  return { useCase, familyRelationshipRepository, familyPersonRepository };
+  return {
+    useCase,
+    familyRelationshipRepository,
+    familyPersonRepository,
+    personFraternalRecordRepository,
+  };
 }
 
 describe('CreateFamilyRelationshipUseCase', () => {
@@ -203,5 +211,143 @@ describe('CreateFamilyRelationshipUseCase', () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.value.confirmationStatus).toBe('not_required');
+  });
+
+  it('registra automaticamente a Fraternidade Feminina pra cônjuge (spouse_of) de Irmão', async () => {
+    const { useCase, personFraternalRecordRepository } = await buildUseCase();
+    const result = await useCase.execute(
+      ctx,
+      'luis',
+      baseInput({
+        fromKind: 'member',
+        fromId: 'luis',
+        toKind: 'familyPerson',
+        toId: 'conjuge-1',
+        relationKind: 'spouse_of',
+        parentRole: null,
+        visibility: 'members',
+      }),
+    );
+
+    expect(result.ok).toBe(true);
+    const records = await personFraternalRecordRepository.listByPerson(
+      't1',
+      'familyPerson',
+      'conjuge-1',
+    );
+    expect(records).toHaveLength(1);
+    expect(records[0]).toMatchObject({
+      affiliationKind: 'female_fraternity',
+      visibility: 'members',
+      sourceKind: 'lodge_record',
+    });
+  });
+
+  it('registra automaticamente a Fraternidade Feminina pra companheira (partner_of) de Irmão', async () => {
+    const { useCase, personFraternalRecordRepository } = await buildUseCase();
+    const result = await useCase.execute(
+      ctx,
+      'luis',
+      baseInput({
+        fromKind: 'member',
+        fromId: 'luis',
+        toKind: 'familyPerson',
+        toId: 'companheira-1',
+        relationKind: 'partner_of',
+        parentRole: null,
+      }),
+    );
+
+    expect(result.ok).toBe(true);
+    const records = await personFraternalRecordRepository.listByPerson(
+      't1',
+      'familyPerson',
+      'companheira-1',
+    );
+    expect(records).toHaveLength(1);
+    expect(records[0]?.affiliationKind).toBe('female_fraternity');
+  });
+
+  it('nunca duplica o registro se a pessoa já tem afiliação de Fraternidade Feminina', async () => {
+    const { useCase, personFraternalRecordRepository } = await buildUseCase();
+    await personFraternalRecordRepository.create({
+      id: 'record-existente',
+      tenantId: 't1',
+      personKind: 'familyPerson',
+      personId: 'conjuge-1',
+      affiliationKind: 'female_fraternity',
+      organizacaoNome: null,
+      unidadeTipo: 'fraternity',
+      unidadeNome: null,
+      unidadeNumero: null,
+      cidade: null,
+      estado: null,
+      pais: null,
+      potencia: null,
+      rito: null,
+      dataIniciacao: null,
+      dataElevacao: null,
+      dataExaltacao: null,
+      grau: null,
+      cargos: [],
+      titulos: [],
+      passouAoOrienteEternoEm: null,
+      resumoLegado: null,
+      visibility: 'private',
+      reviewStatus: 'draft',
+      sourceKind: 'self_declaration',
+      sourceDescription: null,
+      createdAt: new Date('2020-01-01'),
+      updatedAt: new Date('2020-01-01'),
+      createdBy: 'luis',
+      updatedBy: 'luis',
+      deletedAt: null,
+      status: 'active',
+      ativo: true,
+    });
+
+    await useCase.execute(
+      ctx,
+      'luis',
+      baseInput({
+        fromKind: 'member',
+        fromId: 'luis',
+        toKind: 'familyPerson',
+        toId: 'conjuge-1',
+        relationKind: 'spouse_of',
+        parentRole: null,
+      }),
+    );
+
+    const records = await personFraternalRecordRepository.listByPerson(
+      't1',
+      'familyPerson',
+      'conjuge-1',
+    );
+    expect(records).toHaveLength(1);
+    expect(records[0]?.id).toBe('record-existente');
+  });
+
+  it('nunca registra Fraternidade Feminina quando os dois lados do vínculo já são Members', async () => {
+    const { useCase, personFraternalRecordRepository } = await buildUseCase();
+    await useCase.execute(
+      ctx,
+      'luis',
+      baseInput({
+        fromKind: 'member',
+        fromId: 'luis',
+        toKind: 'member',
+        toId: 'outra-irma',
+        relationKind: 'spouse_of',
+        parentRole: null,
+      }),
+    );
+
+    const records = await personFraternalRecordRepository.listByPerson(
+      't1',
+      'member',
+      'outra-irma',
+    );
+    expect(records).toHaveLength(0);
   });
 });

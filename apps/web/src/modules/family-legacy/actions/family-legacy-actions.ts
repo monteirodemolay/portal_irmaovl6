@@ -13,7 +13,7 @@ import {
   resolveRelationEndpoints,
   type DirectLinkKind,
 } from '../lib/family-display-groups';
-import type { FamilyPersonCandidate } from '@vl6/domain';
+import type { BackfillFraternidadeFemininaResult, FamilyPersonCandidate } from '@vl6/domain';
 
 export interface FamilyLegacyActionState {
   error: string | null;
@@ -201,6 +201,29 @@ export async function declineFamilyRelationshipAction(
 
   revalidatePath('/irmaos/meu-espaco');
   return EMPTY_STATE;
+}
+
+export interface BackfillFraternidadeFemininaState {
+  error: string | null;
+  result: BackfillFraternidadeFemininaResult | null;
+}
+
+/**
+ * Correção retroativa da regra "toda esposa de Irmão é da Fraternidade
+ * Feminina" (ver `CreateFamilyRelationshipUseCase`, que já aplica isso pra
+ * todo vínculo conjugal criado a partir de agora) — cobre os vínculos
+ * `spouse_of`/`partner_of` já existentes de antes dessa regra. Seguro rodar
+ * mais de uma vez.
+ */
+export async function backfillFraternidadeFemininaAction(): Promise<BackfillFraternidadeFemininaState> {
+  const session = await requireSession();
+  const container = createServerContainer();
+
+  const result = await container.useCases.backfillFraternidadeFeminina.execute(session.authContext);
+  if (!result.ok) return { error: result.error.message, result: null };
+
+  revalidatePath('/irmaos/paramaconicas');
+  return { error: null, result: result.value };
 }
 
 export async function removeFamilyRelationshipAction(

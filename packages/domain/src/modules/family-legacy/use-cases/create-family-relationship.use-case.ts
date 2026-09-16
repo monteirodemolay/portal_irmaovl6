@@ -3,19 +3,24 @@ import type { AuthContext } from '../../../shared/auth-context';
 import type { IClock, IIdGenerator } from '../../../shared/ports';
 import { ConflictError, ForbiddenError, err, ok, type Result } from '../../../shared/result';
 import type { FamilyRelationship } from '../entities/family-relationship.entity';
+import type { PersonFraternalRecord } from '../entities/person-fraternal-record.entity';
 import type { IFamilyPersonRepository } from '../repositories/family-person.repository';
 import type { IFamilyRelationshipRepository } from '../repositories/family-relationship.repository';
+import type { IPersonFraternalRecordRepository } from '../repositories/person-fraternal-record.repository';
 import { wouldCreateAncestryCycle, type RelationshipEdge } from '../services/derive-kinships';
 
 export interface CreateFamilyRelationshipDeps {
   familyRelationshipRepository: IFamilyRelationshipRepository;
   familyPersonRepository: IFamilyPersonRepository;
+  personFraternalRecordRepository: IPersonFraternalRecordRepository;
   clock: IClock;
   idGenerator: IIdGenerator;
 }
 
 const SYMMETRIC_RELATION_KINDS = new Set(['spouse_of', 'partner_of', 'sibling_of']);
 const ANCESTRY_RELATION_KINDS = new Set(['parent_of', 'adoptive_parent_of']);
+/** `conjuge`/`companheiro` no formulário — as duas modalidades de vínculo conjugal do vocabulário fechado. */
+const SPOUSAL_RELATION_KINDS = new Set(['spouse_of', 'partner_of']);
 
 function toEdge(relation: FamilyRelationship): RelationshipEdge {
   return {
@@ -41,6 +46,16 @@ function toEdge(relation: FamilyRelationship): RelationshipEdge {
  * Aplica as regras de integridade de 03_ARQUITETURA_E_DADOS.md: sem
  * autorrelação (já barrado pelo schema Zod, revalidado aqui), sem aresta
  * duplicada simétrica, sem ciclo de ascendência.
+ *
+ * Regra institucional confirmada pelo Administrador: toda esposa de Irmão é
+ * automaticamente da Fraternidade Feminina — um vínculo `spouse_of`/
+ * `partner_of` entre um `Member` e uma `FamilyPerson` sem cadastro próprio
+ * gera aqui, de tabela, um `PersonFraternalRecord` (`affiliationKind:
+ * 'female_fraternity'`) pra ela, sem precisar de um segundo cadastro manual.
+ * Nunca duplica: só cria se ela ainda não tiver nenhum registro dessa
+ * afiliação. Só se aplica quando a outra ponta já é uma `FamilyPerson` (uma
+ * eventual Irmã cadastrada como `Member` já tem sua própria trajetória
+ * maçônica — nunca se presume Fraternidade Feminina pra ela).
  */
 export class CreateFamilyRelationshipUseCase {
   constructor(private readonly deps: CreateFamilyRelationshipDeps) {}
@@ -144,7 +159,75 @@ export class CreateFamilyRelationshipUseCase {
     };
 
     await this.deps.familyRelationshipRepository.create(relation);
+
+    if (SPOUSAL_RELATION_KINDS.has(relation.relationKind)) {
+      const spouseId =
+        relation.fromKind === 'member' && relation.toKind === 'familyPerson'
+          ? relation.toId
+          : relation.toKind === 'member' && relation.fromKind === 'familyPerson'
+            ? relation.fromId
+            : null;
+      if (spouseId) {
+        await this.ensureFraternidadeFemininaRecord(ctx, spouseId, relation.visibility, now);
+      }
+    }
+
     return ok(relation);
+  }
+
+  /**
+   * Idempotente: nunca cria um segundo registro se ela já tiver algum
+   * `PersonFraternalRecord` com `affiliationKind: 'female_fraternity'`.
+   */
+  private async ensureFraternidadeFemininaRecord(
+    ctx: AuthContext,
+    familyPersonId: string,
+    visibility: FamilyRelationship['visibility'],
+    now: Date,
+  ): Promise<void> {
+    const existing = await this.deps.personFraternalRecordRepository.listByPerson(
+      ctx.tenantId,
+      'familyPerson',
+      familyPersonId,
+    );
+    if (existing.some((record) => record.affiliationKind === 'female_fraternity')) return;
+
+    const record: PersonFraternalRecord = {
+      id: this.deps.idGenerator.next(),
+      tenantId: ctx.tenantId,
+      personKind: 'familyPerson',
+      personId: familyPersonId,
+      affiliationKind: 'female_fraternity',
+      organizacaoNome: null,
+      unidadeTipo: 'fraternity',
+      unidadeNome: null,
+      unidadeNumero: null,
+      cidade: null,
+      estado: null,
+      pais: null,
+      potencia: null,
+      rito: null,
+      dataIniciacao: null,
+      dataElevacao: null,
+      dataExaltacao: null,
+      grau: null,
+      cargos: [],
+      titulos: [],
+      passouAoOrienteEternoEm: null,
+      resumoLegado: null,
+      visibility,
+      reviewStatus: 'draft',
+      sourceKind: 'lodge_record',
+      sourceDescription: 'Gerado automaticamente: cônjuge de Irmão cadastrado na Loja.',
+      createdAt: now,
+      updatedAt: now,
+      createdBy: ctx.uid,
+      updatedBy: ctx.uid,
+      deletedAt: null,
+      status: 'active',
+      ativo: true,
+    };
+    await this.deps.personFraternalRecordRepository.create(record);
   }
 
   private async isActingMemberAParty(

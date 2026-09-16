@@ -112,6 +112,8 @@ import {
   ListOwnerFamilyNetworkUseCase,
   FindSharedFamilyPersonsUseCase,
   CreatePersonFraternalRecordUseCase,
+  ListParamasonicDirectoryUseCase,
+  BackfillFraternidadeFemininaUseCase,
   FindBoardTermForDateUseCase,
   CreateBoardTermUseCase,
   CreateCommitteeUseCase,
@@ -1816,6 +1818,7 @@ export function createServerContainer() {
     createFamilyRelationship: new CreateFamilyRelationshipUseCase({
       familyRelationshipRepository: repositories.familyRelationship,
       familyPersonRepository: repositories.familyPerson,
+      personFraternalRecordRepository: repositories.personFraternalRecord,
       clock,
       idGenerator,
     }),
@@ -1846,6 +1849,18 @@ export function createServerContainer() {
     createPersonFraternalRecord: new CreatePersonFraternalRecordUseCase({
       personFraternalRecordRepository: repositories.personFraternalRecord,
       familyPersonRepository: repositories.familyPerson,
+      clock,
+      idGenerator,
+    }),
+    listParamasonicDirectory: new ListParamasonicDirectoryUseCase({
+      personFraternalRecordRepository: repositories.personFraternalRecord,
+      familyPersonRepository: repositories.familyPerson,
+      memberRepository: repositories.member,
+    }),
+    backfillFraternidadeFeminina: new BackfillFraternidadeFemininaUseCase({
+      familyRelationshipRepository: repositories.familyRelationship,
+      familyPersonRepository: repositories.familyPerson,
+      personFraternalRecordRepository: repositories.personFraternalRecord,
       clock,
       idGenerator,
     }),

@@ -1845,6 +1845,9 @@ export class InMemoryPersonFraternalRecordRepository implements IPersonFraternal
       (r) => r.tenantId === tenantId && !r.deletedAt && r.personKind === kind && r.personId === id,
     );
   }
+  async listByTenant(tenantId: string) {
+    return [...this.byId.values()].filter((r) => r.tenantId === tenantId && !r.deletedAt);
+  }
   async create(entity: PersonFraternalRecord) {
     this.byId.set(entity.id, entity);
   }
