@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { createServerContainer } from '@vl6/infra';
 import { FRATERNAL_AFFILIATION_LABELS, PARAMASONIC_ENTITY_STATUS_LABELS } from '@vl6/shared';
 import { Badge, EmptyState, Handshake } from '@vl6/ui';
@@ -50,9 +51,10 @@ export default async function ParamasonicEntitiesPage() {
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {entities.map((entity) => (
-            <div
+            <Link
               key={entity.id}
-              className="border-border bg-surface flex flex-col gap-3 rounded-xl border p-4"
+              href={`/admin/pessoas/paramaconicas/${entity.id}`}
+              className="border-border bg-surface hover:border-primary flex flex-col gap-3 rounded-xl border p-4 transition-colors"
             >
               <div className="flex items-start justify-between gap-2">
                 <div className="border-accent text-accent bg-surface flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-dashed text-sm font-semibold">
@@ -70,7 +72,7 @@ export default async function ParamasonicEntitiesPage() {
               </div>
               <p className="text-muted text-xs leading-5">{entity.name}</p>
               <p className="text-muted mt-auto text-[11px]">{entity.parentUnitName}</p>
-            </div>
+            </Link>
           ))}
         </div>
       )}

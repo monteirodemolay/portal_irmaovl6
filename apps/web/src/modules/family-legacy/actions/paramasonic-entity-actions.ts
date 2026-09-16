@@ -3,8 +3,10 @@
 import { revalidatePath } from 'next/cache';
 import {
   PARAMASONIC_ENTITY_KINDS,
+  PARAMASONIC_ENTITY_MEMBER_SITUATIONS,
   PARAMASONIC_ENTITY_STATUSES,
   type FraternalAffiliationKind,
+  type ParamasonicEntityMemberSituation,
   type ParamasonicEntityStatus,
 } from '@vl6/shared';
 import { createServerContainer } from '@vl6/infra';
@@ -54,4 +56,53 @@ export async function createParamasonicEntityAction(
 
   revalidatePath('/admin/pessoas/paramaconicas');
   return { error: null };
+}
+
+export async function addParamasonicEntityMemberAction(
+  entityId: string,
+  _prevState: ParamasonicEntityActionState,
+  formData: FormData,
+): Promise<ParamasonicEntityActionState> {
+  const session = await requireSession();
+
+  const situacao = formData.get('situacao');
+  if (
+    typeof situacao !== 'string' ||
+    !PARAMASONIC_ENTITY_MEMBER_SITUATIONS.includes(situacao as ParamasonicEntityMemberSituation)
+  ) {
+    return { error: 'Dados inválidos. Verifique os campos obrigatórios.' };
+  }
+
+  const memberId = (formData.get('memberId') as string) || null;
+  const dataIngresso = formData.get('dataIngresso');
+
+  const container = createServerContainer();
+  const result = await container.useCases.addParamasonicEntityMember.execute(session.authContext, {
+    entityId,
+    memberId,
+    nomeCompleto: memberId ? null : (formData.get('nomeCompleto') as string) || null,
+    contato: memberId ? null : (formData.get('contato') as string) || null,
+    cargo: (formData.get('cargo') as string) || null,
+    situacao: situacao as ParamasonicEntityMemberSituation,
+    dataIngresso: typeof dataIngresso === 'string' && dataIngresso ? new Date(dataIngresso) : null,
+  });
+  if (!result.ok) return { error: result.error.message };
+
+  revalidatePath(`/admin/pessoas/paramaconicas/${entityId}`);
+  return { error: null };
+}
+
+export async function removeParamasonicEntityMemberAction(
+  entityId: string,
+  memberEntryId: string,
+): Promise<void> {
+  const session = await requireSession();
+
+  const container = createServerContainer();
+  await container.useCases.removeParamasonicEntityMember.execute(
+    session.authContext,
+    memberEntryId,
+  );
+
+  revalidatePath(`/admin/pessoas/paramaconicas/${entityId}`);
 }

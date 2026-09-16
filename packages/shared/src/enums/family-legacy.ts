@@ -165,6 +165,18 @@ export const PARAMASONIC_ENTITY_STATUS_LABELS: Record<ParamasonicEntityStatus, s
   inativa: 'Inativa',
 };
 
+export const PARAMASONIC_ENTITY_MEMBER_SITUATIONS = ['ativo', 'inativo'] as const;
+export type ParamasonicEntityMemberSituation =
+  (typeof PARAMASONIC_ENTITY_MEMBER_SITUATIONS)[number];
+
+export const PARAMASONIC_ENTITY_MEMBER_SITUATION_LABELS: Record<
+  ParamasonicEntityMemberSituation,
+  string
+> = {
+  ativo: 'Ativo',
+  inativo: 'Inativo',
+};
+
 export const FRATERNAL_UNIT_KINDS = [
   'lodge',
   'chapter',
