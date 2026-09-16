@@ -41,6 +41,21 @@ export function formatCompactDate(date: Date): string {
 }
 
 /**
+ * Quantos dias faltam pro próximo aniversário de `date` (só mês/dia
+ * importam, o ano é ignorado) — usado pra ordenar a lista de Família e
+ * Legado do mais próximo de acontecer ao mais longe (pedido do
+ * Administrador). Sempre não-negativo: hoje mesmo conta como `0`.
+ */
+export function daysUntilNextOccurrence(date: Date, today: Date = new Date()): number {
+  const todayStripped = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  let next = new Date(todayStripped.getFullYear(), date.getMonth(), date.getDate());
+  if (next < todayStripped) {
+    next = new Date(todayStripped.getFullYear() + 1, date.getMonth(), date.getDate());
+  }
+  return Math.round((next.getTime() - todayStripped.getTime()) / 86_400_000);
+}
+
+/**
  * Cargo ou comissão em curso — vira o selo de "gestão atual" no cabeçalho.
  * Prioriza cargo sobre comissão quando os dois estão em aberto.
  */
