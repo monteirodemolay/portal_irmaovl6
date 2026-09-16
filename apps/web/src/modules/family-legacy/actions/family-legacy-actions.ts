@@ -222,7 +222,7 @@ export async function backfillFraternidadeFemininaAction(): Promise<BackfillFrat
   const result = await container.useCases.backfillFraternidadeFeminina.execute(session.authContext);
   if (!result.ok) return { error: result.error.message, result: null };
 
-  revalidatePath('/irmaos/paramaconicas');
+  revalidatePath('/paramaconicas');
   return { error: null, result: result.value };
 }
 
