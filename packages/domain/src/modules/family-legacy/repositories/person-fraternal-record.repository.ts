@@ -8,6 +8,8 @@ export interface IPersonFraternalRecordRepository {
     kind: FamilyPersonRefKind,
     id: string,
   ): Promise<PersonFraternalRecord[]>;
+  /** Todos os registros do tenant — base da "Diretório de Paramaçônicas" e do backfill retroativo. */
+  listByTenant(tenantId: string): Promise<PersonFraternalRecord[]>;
   create(entity: PersonFraternalRecord): Promise<void>;
   update(entity: PersonFraternalRecord): Promise<void>;
 }

@@ -40,6 +40,14 @@ export class FirestorePersonFraternalRecordRepository implements IPersonFraterna
     return snap.docs.map((doc) => doc.data());
   }
 
+  async listByTenant(tenantId: string): Promise<PersonFraternalRecord[]> {
+    const snap = await this.collection
+      .where('tenantId', '==', tenantId)
+      .where('deletedAt', '==', null)
+      .get();
+    return snap.docs.map((doc) => doc.data());
+  }
+
   async create(entity: PersonFraternalRecord): Promise<void> {
     await this.collection.doc(entity.id).set(entity);
   }
