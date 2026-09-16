@@ -5,6 +5,7 @@ import {
   CalendarDays,
   Compass,
   Globe,
+  Handshake,
   Image as GalleryIcon,
   LayoutDashboard,
   Megaphone,
@@ -46,11 +47,15 @@ const PORTAL_ITEMS: Array<{
   { href: '/avisos', label: 'Central de Notificações', icon: Megaphone },
   // Módulo "Irmãos" (docs/architecture) — Diretório institucional privado e
   // voluntário + "Meu Espaço" (autoatendimento), unificados em duas abas
-  // internas sob uma única rota. Sem `permission` aqui de propósito: "Meu
-  // Espaço" nunca teve gate (é o autoatendimento de qualquer autenticado);
-  // a aba "Diretório" checa `memberDirectory:read` sozinha e degrada com
-  // uma mensagem explicativa em vez de esconder o item inteiro do menu.
-  { href: '/irmaos', label: 'Irmãos', icon: Users },
+  // internas sob uma única rota. A entrada exige `memberDirectory:read` para
+  // não oferecer o Diretório maçônico completo a convidados paramaçônicos.
+  { href: '/irmaos', label: 'Irmãos', icon: Users, permission: 'memberDirectory:read' },
+  {
+    href: '/paramaconicas',
+    label: 'Paramaçônicas',
+    icon: Handshake,
+    permission: 'paramasonicCommunity:read',
+  },
   // Sem `permission`: notícia publicada é conteúdo público (papel Visitante
   // já tem `news:read`, ver a própria página).
   { href: '/noticias', label: 'Notícias', icon: Newspaper },
@@ -155,7 +160,10 @@ export function buildNavSections(
         ),
       })),
     },
-    {
+  ];
+
+  if (hasPermission(authContext, 'archiveItem:read')) {
+    sections.push({
       title: 'Memória e conhecimento',
       items: [
         {
@@ -163,8 +171,8 @@ export function buildNavSections(
           content: navContent(ACERVO_ITEM.icon, ACERVO_ITEM.label),
         },
       ],
-    },
-  ];
+    });
+  }
 
   if (isAdminTier(role)) {
     const visibleAdminItems = ADMIN_ITEMS.filter((item) =>

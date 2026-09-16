@@ -38,6 +38,10 @@ describe('roleDisplayLabel', () => {
     expect(roleDisplayLabel(buildRole({ chave: 'membro' }))).toBe('Membro');
   });
 
+  it('paramaconica vira "Paramaçônica"', () => {
+    expect(roleDisplayLabel(buildRole({ chave: 'paramaconica' }))).toBe('Paramaçônica');
+  });
+
   it('papel customizado usa o próprio nome cadastrado', () => {
     expect(
       roleDisplayLabel(buildRole({ chave: 'editor-noticias', sistemico: false, nome: 'Editor de Notícias' })),

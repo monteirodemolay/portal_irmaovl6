@@ -29,7 +29,7 @@ export interface CreateTenantDeps {
 /**
  * Provisiona uma nova Loja na plataforma: cria o `Tenant`, o `TenantBranding`
  * padrão (paleta seed — docs/architecture/09), as `TenantSettings` padrão e
- * os 2 papéis de fábrica (`admin`, `membro`) com a matriz RBAC de
+ * os 3 papéis de fábrica (`admin`, `membro`, `paramaconica`) com a matriz RBAC de
  * docs/architecture/08-permissoes-rbac.md §8.2 (`super_admin` fica de fora —
  * é cross-tenant, provisionado uma única vez via `BootstrapPlatformAdminUseCase`,
  * nunca por Loja). Restrito a `tenant:create`, concedido apenas ao papel

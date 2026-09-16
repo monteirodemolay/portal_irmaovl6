@@ -3,6 +3,7 @@ import { createServerContainer } from '@vl6/infra';
 import { Badge } from '@vl6/ui';
 import { requirePagePermission } from '@/lib/auth/require-permission';
 import { SyncRolePermissionsButton } from '@/modules/identity-access/components/sync-role-permissions-button';
+import { EnsureParamasonicRoleButton } from '@/modules/identity-access/components/ensure-paramasonic-role-button';
 
 export default async function PermissionsPage() {
   const session = await requirePagePermission('role:read');
@@ -13,11 +14,14 @@ export default async function PermissionsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="font-display text-2xl font-semibold">Permissões</h1>
-        <p className="text-muted">
-          Matriz de permissões por papel — ver docs/architecture/08-permissoes-rbac.md.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="font-display text-2xl font-semibold">Permissões</h1>
+          <p className="text-muted">
+            Matriz de permissões por papel — ver docs/architecture/08-permissoes-rbac.md.
+          </p>
+        </div>
+        {canManage && <EnsureParamasonicRoleButton />}
       </div>
 
       <div className="flex flex-col gap-4">

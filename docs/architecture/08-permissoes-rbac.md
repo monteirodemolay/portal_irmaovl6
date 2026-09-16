@@ -17,26 +17,25 @@ Ações (`ActionKey`): `create`, `read`, `update`, `delete`, `publish`,
 
 ## 8.2 Matriz de papéis padrão × permissões
 
-Só 3 níveis de fábrica — `admin`/`membro` são o seed de toda Loja nova,
+Quatro papéis sistêmicos — `admin`, `membro` e `paramaconica` são o seed de toda Loja nova,
 `super_admin` é cross-tenant e nunca pertence a uma Loja específica (§8.3).
 `✔` = todas as ações (`manage`) · `R` = somente leitura · `–` = sem acesso.
 
-| Recurso                 | Admin Geral (`super_admin`) | Administrador da Loja (`admin`) | Membro (`membro`) |
-| ----------------------- | --------------------------- | ------------------------------- | ----------------- |
-| tenant (config da Loja) | ✔ (todas)                   | ✔ (própria)                     | R                 |
-| branding                | ✔                           | ✔                               | –                 |
-| member                  | ✔                           | ✔                               | R                 |
-| boardTerm / committee   | ✔                           | ✔                               | R                 |
-| file                    | ✔                           | ✔                               | R                 |
-| libraryItem             | ✔                           | ✔                               | R                 |
-| event                   | ✔                           | ✔                               | R                 |
-| news                    | ✔                           | ✔                               | R                 |
-| announcement            | ✔                           | ✔                               | R                 |
-| gallery                 | ✔                           | ✔                               | R                 |
-| link                    | ✔                           | ✔                               | R                 |
-| user                    | ✔                           | ✔ (do tenant)                   | –                 |
-| role                    | ✔                           | ✔ (do tenant)                   | –                 |
-| auditLog                | ✔                           | R (do tenant)                   | –                 |
+| Recurso                 | Admin Geral (`super_admin`) | Administrador (`admin`) | Membro (`membro`) | Paramaçônica (`paramaconica`) |
+| ----------------------- | --------------------------- | ----------------------- | ----------------- | ----------------------------- |
+| tenant (config da Loja) | ✔ (todas)                   | ✔ (própria)             | R                 | R                             |
+| branding                | ✔                           | ✔                       | –                 | –                             |
+| member                  | ✔                           | ✔                       | R                 | –                             |
+| boardTerm / committee   | ✔                           | ✔                       | R                 | –                             |
+| file / libraryItem      | ✔                           | ✔                       | R                 | –                             |
+| event                   | ✔                           | ✔                       | R                 | R                             |
+| news / announcement     | ✔                           | ✔                       | R                 | R                             |
+| gallery / link          | ✔                           | ✔                       | R                 | –                             |
+| user / role             | ✔                           | ✔ (do tenant)           | –                 | –                             |
+| auditLog                | ✔                           | R (do tenant)           | –                 | –                             |
+| memberDirectory         | ✔                           | R                       | R                 | –                             |
+| familyLegacy            | ✔                           | ✔                       | R                 | –                             |
+| paramasonicCommunity    | ✔                           | ✔                       | R                 | R                             |
 
 > A matriz acima é a configuração **padrão de fábrica** de cada novo tenant
 > (seed inicial). O Administrador do tenant pode, a partir do Painel de

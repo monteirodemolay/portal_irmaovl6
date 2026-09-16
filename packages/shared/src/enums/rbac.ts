@@ -3,12 +3,12 @@
 // constantes descrevem apenas o *seed* de papéis padrão (`sistemico = true`)
 // e o vocabulário fechado de recursos/ações que compõe uma PermissionKey.
 
-export const SYSTEM_ROLE_KEYS = ['super_admin', 'admin', 'membro'] as const;
+export const SYSTEM_ROLE_KEYS = ['super_admin', 'admin', 'membro', 'paramaconica'] as const;
 export type RoleKey = (typeof SYSTEM_ROLE_KEYS)[number];
 
 // `super_admin` não pertence a nenhum tenant (docs/architecture/08 §8.3) —
 // vive sozinho sob `PLATFORM_TENANT_ID`, nunca no seed de fábrica de uma
-// Loja. Os outros 2 (`admin`, `membro`) são os papéis de fábrica criados
+// Loja. Os outros 3 (`admin`, `membro`, `paramaconica`) são os papéis de fábrica criados
 // por `CreateTenantUseCase`. Cargo institucional (Venerável Mestre,
 // Secretário, Tesoureiro etc. — `BoardPositionKey`, packages/shared/src/
 // enums/governance.ts) é um conceito à parte, sem relação com o papel de
@@ -98,6 +98,13 @@ export const RESOURCE_KEYS = [
   // caso de uso confirma posse (`Member` resolvido pelo `uid`, parte de uma
   // das pontas da relação) em vez de exigir `familyLegacy:create/update`.
   'familyLegacy',
+  // Comunidade Paramaçônica — acesso externo autenticado e de menor
+  // privilégio. Não reutiliza `memberDirectory:read`, pois o Diretório dos
+  // Irmãos contém dados institucionais maçônicos que não devem ser
+  // entregues integralmente a convidados. O caso de uso próprio produz um
+  // DTO reduzido, somente com identidade e campos voluntariamente
+  // publicados pelo Irmão.
+  'paramasonicCommunity',
   // Central de Avisos (docs/architecture) — só a ADMINISTRAÇÃO de
   // notificações (compor/enviar aviso manual, ver relatórios de leitura,
   // Fase 3) passa por `notification:manage`. Ler/marcar como
@@ -149,12 +156,12 @@ export function isPermissionKey(value: string): value is PermissionKey {
  * Seed de fábrica aplicado a todo novo tenant — ver matriz completa em
  * docs/architecture/08-permissoes-rbac.md §8.2. `manage` implica todas as
  * ações sobre o recurso; papéis sem entrada para um recurso não têm acesso.
- * Só 3 níveis: `super_admin` (Administrador Geral, cross-tenant — todas as
+ * Quatro papéis sistêmicos: `super_admin` (Administrador Geral, cross-tenant — todas as
  * ações sobre tudo), `admin` (Administrador da Loja — todas as ações
  * dentro do próprio tenant) e `membro` (Irmão — só leitura). Quem precisa
  * de mais que leitura sem ser Administrador da Loja recebe `admin` mesmo;
- * não há nível intermediário de fábrica (tenants podem criar papéis
- * customizados com `sistemico = false` se precisarem de um).
+ * O papel `paramaconica` é um convidado autenticado de menor privilégio;
+ * tenants ainda podem criar papéis customizados com `sistemico = false`.
  */
 export const DEFAULT_ROLE_PERMISSIONS: Record<RoleKey, PermissionKey[]> = {
   super_admin: [...RESOURCE_KEYS.map((resource) => `${resource}:manage` as PermissionKey)],
@@ -188,6 +195,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<RoleKey, PermissionKey[]> = {
     'notification:manage',
     'communication:manage',
     'familyLegacy:manage',
+    'paramasonicCommunity:manage',
     'honor:manage',
   ],
   membro: [
@@ -213,6 +221,14 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<RoleKey, PermissionKey[]> = {
     'archiveMedia:read',
     'quote:read',
     'familyLegacy:read',
+    'paramasonicCommunity:read',
     'honor:read',
+  ],
+  paramaconica: [
+    'tenant:read',
+    'event:read',
+    'news:read',
+    'announcement:read',
+    'paramasonicCommunity:read',
   ],
 };

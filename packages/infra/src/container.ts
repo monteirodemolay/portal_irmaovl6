@@ -113,6 +113,8 @@ import {
   FindSharedFamilyPersonsUseCase,
   CreatePersonFraternalRecordUseCase,
   ListParamasonicDirectoryUseCase,
+  ListParamasonicMemberDirectoryUseCase,
+  EnsureParamasonicRoleUseCase,
   BackfillFraternidadeFemininaUseCase,
   FindBoardTermForDateUseCase,
   CreateBoardTermUseCase,
@@ -1856,6 +1858,18 @@ export function createServerContainer() {
       personFraternalRecordRepository: repositories.personFraternalRecord,
       familyPersonRepository: repositories.familyPerson,
       memberRepository: repositories.member,
+    }),
+    listParamasonicMemberDirectory: new ListParamasonicMemberDirectoryUseCase({
+      memberRepository: repositories.member,
+      memberCentralProfileRepository: repositories.memberCentralProfile,
+      publicationSettingsRepository: repositories.publicationSettings,
+      boardTermRepository: repositories.boardTerm,
+      boardPositionAssignmentRepository: repositories.boardPositionAssignment,
+    }),
+    ensureParamasonicRole: new EnsureParamasonicRoleUseCase({
+      roleRepository: repositories.role,
+      clock,
+      idGenerator,
     }),
     backfillFraternidadeFeminina: new BackfillFraternidadeFemininaUseCase({
       familyRelationshipRepository: repositories.familyRelationship,
