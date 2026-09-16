@@ -2,17 +2,18 @@ import Link from 'next/link';
 import { hasPermission } from '@vl6/domain';
 import { createServerContainer } from '@vl6/infra';
 import {
+  Archive,
   BookOpen,
   CalendarDays,
   ChevronRight,
   Compass,
   FileText,
   Heart,
+  History,
   Image as GalleryIcon,
-  Quote,
+  Landmark,
   Search,
-  ShieldCheck,
-  Sparkles,
+  Share2,
   Users,
 } from '@vl6/ui';
 import { getCurrentSession } from '@/lib/auth/get-current-session';
@@ -23,6 +24,7 @@ import {
   loadArchiveSearchResults,
   matchesArchiveSearch,
   type ArchiveSearchKind,
+  type ArchiveSearchResult,
 } from '@/modules/archive/lib/search-archive';
 import {
   loadPublishedArchiveDocuments,
@@ -34,16 +36,44 @@ function formatCount(value: number | null, singular: string, plural: string): st
   return `${value} ${value === 1 ? singular : plural}`;
 }
 
-/** Fisher-Yates — nunca muta o array recebido, cada carregamento da página embaralha de novo. */
-function shuffle<T>(items: T[]): T[] {
-  const result = [...items];
-  for (let i = result.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    const temp = result[i]!;
-    result[i] = result[j]!;
-    result[j] = temp;
-  }
-  return result;
+function formatShortDate(value: Date): string {
+  return new Intl.DateTimeFormat('pt-BR', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  }).format(new Date(value));
+}
+
+function resultIcon(kind: ArchiveSearchKind) {
+  if (kind === 'documento') return FileText;
+  if (kind === 'biblioteca') return BookOpen;
+  if (kind === 'fotografia') return GalleryIcon;
+  return CalendarDays;
+}
+
+function ArchiveResultImage({
+  result,
+  featured = false,
+}: {
+  result: ArchiveSearchResult;
+  featured?: boolean;
+}) {
+  const KindIcon = resultIcon(result.kind);
+  return result.imageUrl ? (
+    <img
+      src={result.imageUrl}
+      alt=""
+      loading="lazy"
+      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+    />
+  ) : (
+    <div className="from-primary to-primary-dark flex h-full w-full flex-col justify-between bg-gradient-to-br p-4 text-white">
+      <KindIcon size={featured ? 24 : 18} strokeWidth={1.5} className="text-accent" />
+      <p className={`font-display font-semibold leading-tight ${featured ? 'text-xl' : 'text-sm'}`}>
+        {result.title}
+      </p>
+    </div>
+  );
 }
 
 export default async function AcervoPage({
@@ -62,6 +92,7 @@ export default async function AcervoPage({
   const canReadFiles = hasPermission(authContext, 'file:read');
   const canReadLibrary = hasPermission(authContext, 'libraryItem:read');
   const canReadGallery = hasPermission(authContext, 'gallery:read');
+  const canReadCollections = hasPermission(authContext, 'archiveCollection:read');
   const canReadConstellation = hasPermission(authContext, 'archiveRelation:read');
   const container = createServerContainer();
 
@@ -73,6 +104,7 @@ export default async function AcervoPage({
     legacyAlbumCount,
     archiveDocuments,
     archiveEventCards,
+    collections,
     constellationRoots,
   ] = await Promise.all([
     loadArchiveSearchResults(authContext, container, role),
@@ -92,22 +124,20 @@ export default async function AcervoPage({
     canReadGallery
       ? loadPublishedArchiveEventCards(container, authContext, role)
       : Promise.resolve([]),
+    canReadCollections
+      ? container.useCases.listPublishedArchiveCollections.execute(authContext)
+      : Promise.resolve([]),
     canReadConstellation
       ? container.useCases.getConstellationRoots.execute(authContext)
       : Promise.resolve(null),
   ]);
 
-  // Conta os dois modelos que hoje coexistem por trás de "Documentos"/"Fotos
-  // e Vídeos" (`FileAsset`/`GalleryAlbum` legados + `ArchiveItem` publicado
-  // pela Central de Publicação) — nunca só o legado, senão o card mostra
-  // "0" mesmo com conteúdo publicado de verdade (ver `/acervo/documentos`
-  // e `/acervo/fotografias`, que já juntam as duas fontes).
   const documentCount =
     legacyDocumentCount === null ? null : legacyDocumentCount + archiveDocuments.length;
-  const eventPhotoAlbumCount = archiveEventCards.filter(
+  const publishedEventAlbumCount = archiveEventCards.filter(
     (card) => card.counts.foto + card.counts.video > 0,
   ).length;
-  const albumCount = legacyAlbumCount === null ? null : legacyAlbumCount + eventPhotoAlbumCount;
+  const albumCount = legacyAlbumCount === null ? null : legacyAlbumCount + publishedEventAlbumCount;
 
   const query = params.q?.trim() ?? '';
   const requestedKind = params.tipo as ArchiveSearchKind | undefined;
@@ -116,22 +146,57 @@ export default async function AcervoPage({
   const filteredResults = allResults
     .filter((result) => !validKind || result.kind === validKind)
     .filter((result) => matchesArchiveSearch(result, query));
-  // "Conteúdos para descobrir" (sem busca/filtro ativo) embaralha a cada
-  // carregamento — sem isso, a concatenação de `loadArchiveSearchResults`
-  // (Documentos, depois Biblioteca, só depois Fotos/Eventos) sempre
-  // mostrava os mesmos Documentos sem miniatura primeiro, escondendo os
-  // resultados com foto que tornam o grid mais atrativo.
-  const visibleResults = (query || validKind ? filteredResults : shuffle(allResults)).slice(0, 12);
+  const recentResults = [...allResults].sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+  );
+  const featuredResult =
+    recentResults.find((result) => result.imageUrl) ?? recentResults[0] ?? null;
+  const discoveryResults = (query || validKind ? filteredResults : recentResults)
+    .filter((result) => result.compositeId !== featuredResult?.compositeId)
+    .slice(0, 3);
+
   const fullSearchParams = new URLSearchParams();
   if (query) fullSearchParams.set('q', query);
   if (validKind) fullSearchParams.set('tipo', validKind);
   const fullSearchHref = `/acervo/pesquisar${fullSearchParams.size ? `?${fullSearchParams}` : ''}`;
 
-  const categories = [
+  const explorePaths = [
+    {
+      href: '/acervo/linha-do-tempo',
+      title: 'Linha do tempo',
+      description: 'Gestões e acontecimentos por ano.',
+      icon: History,
+    },
+    {
+      href: '/acervo/eventos',
+      title: 'Eventos',
+      description: 'Sessões, solenidades e ações.',
+      icon: CalendarDays,
+    },
+    {
+      href: '/acervo/gestoes',
+      title: 'Gestões',
+      description: 'Veneráveis e Diretorias.',
+      icon: Landmark,
+    },
+    {
+      href: '/acervo/pessoas',
+      title: 'Pessoas',
+      description: 'Trajetórias e presença histórica.',
+      icon: Users,
+    },
+    {
+      href: '/acervo/descobrir',
+      title: 'Descobrir',
+      description: 'Temas e registros relacionados.',
+      icon: Compass,
+    },
+  ];
+
+  const contentAreas = [
     {
       href: '/acervo/documentos',
       title: 'Documentos',
-      description: 'Atas autorizadas, circulares, registros e documentos institucionais.',
       count: formatCount(documentCount, 'arquivo', 'arquivos'),
       icon: FileText,
       available: canReadFiles,
@@ -139,15 +204,13 @@ export default async function AcervoPage({
     {
       href: '/acervo/biblioteca',
       title: 'Biblioteca',
-      description: 'Livros, estudos, revistas e leituras selecionadas para os Irmãos.',
       count: formatCount(libraryCount, 'item', 'itens'),
       icon: BookOpen,
       available: canReadLibrary,
     },
     {
       href: '/acervo/fotografias',
-      title: 'Fotos e Vídeos',
-      description: 'Álbuns de sessões, solenidades e acontecimentos da Loja.',
+      title: 'Fotos e vídeos',
       count: formatCount(albumCount, 'álbum', 'álbuns'),
       icon: GalleryIcon,
       available: canReadGallery,
@@ -155,65 +218,55 @@ export default async function AcervoPage({
     {
       href: '/downloads',
       title: 'Favoritos',
-      description: 'Sua seleção pessoal de conteúdos para consultar novamente.',
       count: formatCount(favorites.length, 'item', 'itens'),
       icon: Heart,
       available: canReadLibrary,
     },
-  ];
+  ].filter((area) => area.available);
 
   return (
-    <div className="flex flex-col gap-9">
-      <section className="from-primary via-primary to-primary-dark relative overflow-hidden rounded-[22px] bg-gradient-to-br px-6 py-9 text-white shadow-md sm:px-9 lg:px-12 lg:py-12">
-        <div className="border-accent/20 pointer-events-none absolute -right-28 -top-36 h-80 w-80 rounded-full border" />
-        <div className="border-accent/10 pointer-events-none absolute -right-12 -top-20 h-80 w-80 rounded-full border" />
-        <div className="bg-accent/10 pointer-events-none absolute bottom-0 right-0 h-40 w-64 blur-3xl" />
-
-        <div className="relative max-w-3xl">
-          <div className="text-accent mb-5 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.22em]">
-            <Compass size={17} strokeWidth={1.6} />
-            Memória, História e Conhecimento
-          </div>
-          <h1 className="font-display text-4xl font-semibold leading-none sm:text-5xl">
-            Acervo VL6
-          </h1>
-          <p className="mt-4 max-w-2xl text-sm leading-6 text-white/75 sm:text-base">
-            Um único centro de pesquisa para documentos, biblioteca, fotos e vídeos que preservam a
-            trajetória da {current.tenant.nome}.
+    <div className="flex flex-col gap-8">
+      <section className="from-primary via-primary to-primary-dark relative overflow-hidden rounded-[22px] bg-gradient-to-br px-6 py-8 text-white shadow-md sm:px-9 lg:px-11 lg:py-10">
+        <div className="border-accent/15 pointer-events-none absolute -right-24 -top-40 h-96 w-96 rounded-full border" />
+        <div className="border-accent/10 pointer-events-none absolute -right-8 -top-24 h-80 w-80 rounded-full border" />
+        <div className="relative max-w-4xl">
+          <p className="text-accent text-[11px] font-semibold uppercase tracking-[0.22em]">
+            Centro digital de memória
           </p>
-
-          <form action="/acervo/pesquisar" method="get" role="search" className="mt-7">
+          <h1 className="font-display mt-2 text-3xl font-semibold leading-tight sm:text-4xl">
+            Encontre a história da {current.tenant.nome}
+          </h1>
+          <p className="mt-3 max-w-2xl text-sm leading-6 text-white/70">
+            Pesquise pessoas, gestões, eventos, fotografias, atas, livros e documentos em um único
+            lugar.
+          </p>
+          <form action="/acervo/pesquisar" method="get" role="search" className="mt-6">
             <label htmlFor="archive-search" className="sr-only">
               Pesquisar no Acervo VL6
             </label>
-            <div className="flex max-w-2xl items-center gap-3 rounded-lg border border-white/15 bg-white px-4 py-1.5 shadow-md">
-              <Search className="text-primary/65 shrink-0" size={21} />
-              <input
-                id="archive-search"
-                name="q"
-                defaultValue={query}
-                placeholder="Pesquise títulos, assuntos ou tipos de conteúdo..."
-                className="text-primary-dark min-w-0 flex-1 bg-transparent py-3 text-sm outline-none placeholder:text-slate-500"
-              />
+            <div className="flex max-w-3xl flex-col gap-2 sm:flex-row">
+              <div className="flex min-w-0 flex-1 items-center gap-3 rounded-[10px] bg-white px-4 shadow-md">
+                <Search className="text-primary/60 shrink-0" size={20} />
+                <input
+                  id="archive-search"
+                  name="q"
+                  defaultValue={query}
+                  placeholder="Busque por nome, ano, evento, gestão ou documento"
+                  className="text-primary-dark min-w-0 flex-1 bg-transparent py-3.5 text-sm outline-none placeholder:text-slate-500"
+                />
+              </div>
               <button
                 type="submit"
-                className="bg-primary hover:bg-primary-dark rounded-[9px] px-4 py-2 text-sm font-semibold text-white transition-colors"
+                className="bg-accent text-primary-dark hover:bg-accent/90 rounded-[10px] px-5 py-3 text-sm font-semibold transition-colors"
               >
-                Pesquisar
+                Pesquisar no Acervo
               </button>
             </div>
           </form>
-
           <nav
             aria-label="Atalhos do Acervo"
-            className="mt-4 flex flex-wrap gap-x-5 gap-y-1 text-xs"
+            className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-xs"
           >
-            <Link href="/acervo/pesquisar" className="text-white/70 hover:text-white">
-              Pesquisar
-            </Link>
-            <Link href="/acervo/descobrir" className="text-white/70 hover:text-white">
-              Descobrir
-            </Link>
             <Link href="/acervo/colecoes" className="text-white/70 hover:text-white">
               Coleções
             </Link>
@@ -223,255 +276,310 @@ export default async function AcervoPage({
             <Link href="/acervo/audiovisual" className="text-white/70 hover:text-white">
               Audiovisual
             </Link>
-            <Link href="/acervo/pessoas" className="text-white/70 hover:text-white">
-              Pessoas
-            </Link>
-            <Link href="/acervo/gestoes" className="text-white/70 hover:text-white">
-              Gestões
-            </Link>
-            <Link href="/acervo/eventos" className="text-white/70 hover:text-white">
-              Eventos
-            </Link>
-            <Link href="/acervo/linha-do-tempo" className="text-white/70 hover:text-white">
-              Linha do Tempo
-            </Link>
             <Link href="/acervo/contribuir" className="text-white/70 hover:text-white">
-              Contribuir
+              Contribuir com a memória
             </Link>
           </nav>
-
-          <div className="mt-6 flex max-w-2xl items-start gap-3 border-l border-white/20 pl-4">
-            <Quote className="text-accent mt-0.5 shrink-0" size={18} />
-            <p className="font-display text-sm italic leading-6 text-white/80 sm:text-base">
-              “Preservar a memória é manter acesa a Luz que orienta as gerações.”
-              <span className="font-body mt-1 block text-[10px] uppercase not-italic tracking-wider text-white/45">
-                Manifesto do Acervo VL6
-              </span>
-            </p>
-          </div>
         </div>
       </section>
 
       <section aria-labelledby="explore-title">
-        <div className="mb-4 flex items-end justify-between gap-4">
-          <div>
-            <p className="text-accent text-[11px] font-semibold uppercase tracking-widest">
-              Um acervo, diferentes caminhos
-            </p>
-            <h2 id="explore-title" className="font-display text-2xl font-semibold">
-              Explore o Acervo
-            </h2>
-          </div>
-          <p className="text-muted hidden max-w-md text-right text-xs leading-5 md:block">
-            As áreas atuais permanecem disponíveis e passam a integrar uma única experiência de
-            pesquisa e descoberta.
+        <div className="mb-4">
+          <p className="text-accent text-[11px] font-semibold uppercase tracking-widest">
+            Caminhos de exploração
           </p>
+          <h2 id="explore-title" className="font-display text-2xl font-semibold">
+            Como você quer conhecer o Acervo?
+          </h2>
         </div>
-
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          {categories
-            .filter((category) => category.available)
-            .map((category) => (
-              <Link
-                key={category.href}
-                href={category.href}
-                className="border-border bg-surface hover:border-accent group flex min-h-48 flex-col rounded-[16px] border p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
-              >
-                <div className="bg-primary/5 text-primary group-hover:bg-primary group-hover:text-accent flex h-11 w-11 items-center justify-center rounded-[12px] transition-colors">
-                  <category.icon size={22} strokeWidth={1.6} />
-                </div>
-                <h3 className="font-display mt-5 text-lg font-semibold">{category.title}</h3>
-                <p className="text-muted mt-1 flex-1 text-xs leading-5">{category.description}</p>
-                <div className="mt-4 flex items-center justify-between gap-3 text-xs">
-                  <span className="text-muted">{category.count}</span>
-                  <ChevronRight
-                    size={17}
-                    className="text-accent transition-transform group-hover:translate-x-0.5"
-                  />
-                </div>
-              </Link>
-            ))}
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+          {explorePaths.map((path) => (
+            <Link
+              key={path.href}
+              href={path.href}
+              className="border-border bg-surface hover:border-accent group flex min-h-36 flex-col rounded-[15px] border p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
+            >
+              <path.icon className="text-accent" size={21} strokeWidth={1.6} />
+              <h3 className="font-display mt-4 font-semibold">{path.title}</h3>
+              <p className="text-muted mt-1 text-xs leading-5">{path.description}</p>
+            </Link>
+          ))}
         </div>
       </section>
 
-      <section aria-labelledby="research-title" className="grid gap-5 lg:grid-cols-[1.45fr_0.55fr]">
+      <section aria-labelledby="featured-title" className="grid gap-4 lg:grid-cols-[1.55fr_0.75fr]">
+        <div>
+          <div className="mb-4 flex items-end justify-between gap-4">
+            <div>
+              <p className="text-accent text-[11px] font-semibold uppercase tracking-widest">
+                Em destaque
+              </p>
+              <h2 id="featured-title" className="font-display text-2xl font-semibold">
+                Memória em evidência
+              </h2>
+            </div>
+            <Link
+              href="/acervo/descobrir"
+              className="text-muted hover:text-accent text-xs font-medium"
+            >
+              Descobrir mais
+            </Link>
+          </div>
+          {featuredResult ? (
+            <Link
+              href={featuredResult.href}
+              className="border-border bg-surface hover:border-accent group grid overflow-hidden rounded-[18px] border shadow-sm transition-colors sm:grid-cols-[0.9fr_1.1fr]"
+            >
+              <div className="min-h-52 overflow-hidden sm:min-h-72">
+                <ArchiveResultImage result={featuredResult} featured />
+              </div>
+              <div className="flex flex-col justify-center p-6 sm:p-7">
+                <p className="text-accent text-[10px] font-semibold uppercase tracking-wider">
+                  {ARCHIVE_SEARCH_KIND_LABELS[featuredResult.kind]}
+                </p>
+                <h3 className="font-display mt-2 text-2xl font-semibold leading-tight">
+                  {featuredResult.title}
+                </h3>
+                <p className="text-muted mt-3 line-clamp-3 text-sm leading-6">
+                  {featuredResult.description}
+                </p>
+                <span className="text-primary mt-5 inline-flex items-center gap-1.5 text-xs font-semibold">
+                  Abrir memória completa <ChevronRight size={15} />
+                </span>
+              </div>
+            </Link>
+          ) : (
+            <div className="border-border bg-surface rounded-[18px] border p-8">
+              <Archive className="text-accent" size={27} />
+              <h3 className="font-display mt-4 text-xl font-semibold">
+                O Acervo está pronto para receber memórias
+              </h3>
+              <p className="text-muted mt-2 text-sm">
+                Conteúdos publicados aparecerão aqui em destaque.
+              </p>
+            </div>
+          )}
+        </div>
+        <aside className="flex flex-col gap-3 lg:pt-[68px]">
+          {canReadConstellation && (
+            <Link
+              href="/acervo/constelacao"
+              className="from-primary to-primary-dark group flex flex-1 flex-col justify-between rounded-[17px] bg-gradient-to-br p-5 text-white shadow-sm"
+            >
+              <Share2 className="text-accent" size={23} />
+              <div className="mt-8">
+                <p className="text-accent text-[10px] font-semibold uppercase tracking-widest">
+                  Relações e laços
+                </p>
+                <h3 className="font-display mt-2 text-xl font-semibold">Constelação VL6</h3>
+                <p className="mt-2 text-xs leading-5 text-white/65">
+                  Explore como pessoas, gestões, eventos, coleções e documentos se conectam.
+                </p>
+                {constellationRoots && constellationRoots.groups.length > 0 && (
+                  <p className="mt-4 text-[11px] text-white/55">
+                    {constellationRoots.groups.reduce(
+                      (total, group) => total + group.childCount,
+                      0,
+                    )}{' '}
+                    registros disponíveis para explorar
+                  </p>
+                )}
+              </div>
+            </Link>
+          )}
+          <Link
+            href="/acervo/pessoas"
+            className="border-border bg-surface hover:border-accent rounded-[17px] border p-5 shadow-sm transition-colors"
+          >
+            <Users className="text-accent" size={21} />
+            <h3 className="font-display mt-4 font-semibold">Pessoas e trajetórias</h3>
+            <p className="text-muted mt-1 text-xs leading-5">
+              Veja onde cada Irmão aparece na memória da Loja.
+            </p>
+          </Link>
+        </aside>
+      </section>
+
+      {collections.length > 0 && (
+        <section aria-labelledby="collections-title">
+          <div className="mb-4 flex items-end justify-between gap-4">
+            <div>
+              <p className="text-accent text-[11px] font-semibold uppercase tracking-widest">
+                Curadoria do Acervo
+              </p>
+              <h2 id="collections-title" className="font-display text-2xl font-semibold">
+                Coleções para começar
+              </h2>
+            </div>
+            <Link
+              href="/acervo/colecoes"
+              className="text-muted hover:text-accent text-xs font-medium"
+            >
+              Todas as coleções
+            </Link>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            {collections.slice(0, 4).map((collection) => (
+              <Link
+                key={collection.id}
+                href={`/acervo/colecoes/${collection.slug}`}
+                className="border-border bg-surface hover:border-accent group overflow-hidden rounded-[16px] border shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
+              >
+                <div className="from-primary to-primary-dark h-32 overflow-hidden bg-gradient-to-br">
+                  {collection.capaUrl ? (
+                    <img
+                      src={collection.capaUrl}
+                      alt=""
+                      loading="lazy"
+                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    />
+                  ) : (
+                    <div className="flex h-full items-end p-4">
+                      <Compass className="text-accent" size={26} />
+                    </div>
+                  )}
+                </div>
+                <div className="p-4">
+                  <h3 className="font-display font-semibold">{collection.titulo}</h3>
+                  {collection.descricaoEditorial && (
+                    <p className="text-muted mt-1 line-clamp-2 text-xs leading-5">
+                      {collection.descricaoEditorial}
+                    </p>
+                  )}
+                  <p className="text-muted mt-3 text-[11px]">
+                    {collection.itemIds.length}{' '}
+                    {collection.itemIds.length === 1 ? 'item relacionado' : 'itens relacionados'}
+                  </p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+
+      <section aria-labelledby="content-title">
+        <div className="mb-4">
+          <p className="text-accent text-[11px] font-semibold uppercase tracking-widest">
+            Tipos de conteúdo
+          </p>
+          <h2 id="content-title" className="font-display text-2xl font-semibold">
+            Acesse diretamente
+          </h2>
+        </div>
+        <div className="border-border bg-surface grid overflow-hidden rounded-[17px] border sm:grid-cols-2 lg:grid-cols-4">
+          {contentAreas.map((area, index) => (
+            <Link
+              key={area.href}
+              href={area.href}
+              className={`hover:bg-primary/[0.03] group flex items-center gap-4 p-5 transition-colors ${index > 0 ? 'border-border border-t sm:border-l sm:border-t-0' : ''}`}
+            >
+              <span className="bg-primary/5 text-primary group-hover:bg-primary group-hover:text-accent flex h-11 w-11 shrink-0 items-center justify-center rounded-[12px] transition-colors">
+                <area.icon size={21} strokeWidth={1.6} />
+              </span>
+              <span className="min-w-0">
+                <strong className="font-display block font-semibold">{area.title}</strong>
+                <small className="text-muted mt-0.5 block truncate text-[11px]">{area.count}</small>
+              </span>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      <section aria-labelledby="recent-title" className="grid gap-5 lg:grid-cols-[1.25fr_0.75fr]">
         <div className="border-border bg-surface rounded-[18px] border p-5 sm:p-6">
-          <div className="border-border flex flex-col gap-4 border-b pb-5 sm:flex-row sm:items-end sm:justify-between">
+          <div className="border-border flex items-end justify-between gap-4 border-b pb-4">
+            <div>
+              <p className="text-accent text-[11px] font-semibold uppercase tracking-widest">
+                Atualizações do Acervo
+              </p>
+              <h2 id="recent-title" className="font-display text-2xl font-semibold">
+                Adicionados recentemente
+              </h2>
+            </div>
+            <Link
+              href="/acervo/descobrir"
+              className="text-muted hover:text-accent text-xs font-medium"
+            >
+              Explorar tudo
+            </Link>
+          </div>
+          <div className="divide-border mt-1 divide-y">
+            {recentResults.slice(0, 4).map((result) => {
+              const KindIcon = resultIcon(result.kind);
+              return (
+                <Link
+                  key={result.compositeId}
+                  href={result.href}
+                  className="group grid grid-cols-[72px_1fr] items-center gap-4 py-3 sm:grid-cols-[82px_1fr_auto]"
+                >
+                  <div className="border-border h-14 overflow-hidden rounded-[9px] border">
+                    <ArchiveResultImage result={result} />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="font-display group-hover:text-accent truncate font-semibold transition-colors">
+                      {result.title}
+                    </p>
+                    <p className="text-muted mt-1 flex items-center gap-1.5 text-[11px]">
+                      <KindIcon size={12} /> {ARCHIVE_SEARCH_KIND_LABELS[result.kind]} ·{' '}
+                      {formatShortDate(result.createdAt)}
+                    </p>
+                  </div>
+                  <ChevronRight className="text-muted hidden sm:block" size={17} />
+                </Link>
+              );
+            })}
+            {recentResults.length === 0 && (
+              <p className="text-muted py-8 text-center text-sm">
+                Nenhum conteúdo publicado ainda.
+              </p>
+            )}
+          </div>
+        </div>
+
+        <aside className="border-border bg-surface rounded-[18px] border p-5 sm:p-6">
+          <div className="flex items-center justify-between gap-4">
             <div>
               <p className="text-accent text-[11px] font-semibold uppercase tracking-widest">
                 Pesquisa integrada
               </p>
-              <h2 id="research-title" className="font-display text-2xl font-semibold">
-                {query ? `Resultados para “${query}”` : 'Conteúdos para descobrir'}
+              <h2 className="font-display text-xl font-semibold">
+                {query ? `Resultados para “${query}”` : 'Descubra mais registros'}
               </h2>
             </div>
-            <Link
-              href={fullSearchHref}
-              className="text-muted hover:text-accent text-xs font-medium"
-            >
-              Ver pesquisa completa
-            </Link>
+            <Search className="text-accent" size={22} />
           </div>
-
           <div className="mt-4 flex flex-wrap gap-2" aria-label="Filtrar por tipo">
             {ARCHIVE_SEARCH_KINDS.map((kind) => (
               <Link
                 key={kind}
                 href={`/acervo?tipo=${kind}${query ? `&q=${encodeURIComponent(query)}` : ''}`}
-                className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
-                  validKind === kind
-                    ? 'border-primary bg-primary text-white'
-                    : 'border-border text-muted hover:border-accent hover:text-foreground'
-                }`}
+                className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${validKind === kind ? 'border-primary bg-primary text-white' : 'border-border text-muted hover:border-accent hover:text-foreground'}`}
               >
                 {ARCHIVE_SEARCH_KIND_LABELS[kind]}
               </Link>
             ))}
           </div>
-
-          {visibleResults.length === 0 ? (
-            <div className="py-12 text-center">
-              <Search className="text-muted mx-auto" size={28} strokeWidth={1.4} />
-              <p className="font-display mt-3 text-lg font-semibold">Nenhum conteúdo encontrado</p>
-              <p className="text-muted mt-1 text-sm">
-                Tente outro termo ou consulte uma das áreas do Acervo.
-              </p>
-            </div>
-          ) : (
-            <div className="mt-5 grid gap-3 sm:grid-cols-2">
-              {visibleResults.map((result) => {
-                const KindIcon =
-                  result.kind === 'documento'
-                    ? FileText
-                    : result.kind === 'biblioteca'
-                      ? BookOpen
-                      : result.kind === 'fotografia'
-                        ? GalleryIcon
-                        : CalendarDays;
-                return (
-                  <Link
-                    key={`${result.kind}-${result.id}`}
-                    href={result.href}
-                    className="border-border hover:border-accent group flex h-full flex-col rounded-[13px] border p-4 transition-colors"
-                  >
-                    <div className="border-border mb-3 aspect-video w-full shrink-0 overflow-hidden rounded-md border">
-                      {result.imageUrl ? (
-                        <img
-                          src={result.imageUrl}
-                          alt=""
-                          loading="lazy"
-                          className="h-full w-full object-cover transition-transform group-hover:scale-105"
-                        />
-                      ) : (
-                        // Sem foto própria (comum em Iniciação/Elevação/
-                        // Exaltação, raramente têm mídia anexada) — nunca
-                        // empresta foto de outro resultado (mostrava fotos de
-                        // eventos distintos, achado do Administrador). O
-                        // título fica incorporado na própria "imagem", sobre
-                        // fundo azul escuro institucional (--color-primary),
-                        // mesmo tom do cabeçalho desta página.
-                        <div className="from-primary to-primary-dark relative flex h-full w-full flex-col justify-between overflow-hidden bg-gradient-to-br p-3.5 text-white">
-                          <KindIcon size={17} strokeWidth={1.6} className="text-accent shrink-0" />
-                          <p className="font-display line-clamp-3 text-sm font-semibold leading-tight">
-                            {result.title}
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                    <div className="text-accent flex items-center gap-2 text-[10px] font-semibold uppercase tracking-wider">
-                      <KindIcon size={14} />
-                      {ARCHIVE_SEARCH_KIND_LABELS[result.kind]}
-                    </div>
-                    <h3 className="font-display group-hover:text-accent mt-2 line-clamp-2 font-semibold transition-colors">
-                      {result.title}
-                    </h3>
-                    <p className="text-muted mt-1 line-clamp-2 text-xs leading-5">
-                      {result.description}
-                    </p>
-                  </Link>
-                );
-              })}
-            </div>
-          )}
-        </div>
-
-        <aside className="from-primary to-primary-dark relative overflow-hidden rounded-[18px] bg-gradient-to-b p-6 text-white">
-          <Sparkles className="text-accent" size={24} strokeWidth={1.5} />
-          <p className="text-accent mt-6 text-[10px] font-semibold uppercase tracking-[0.2em]">
-            Constelação da Memória
-          </p>
-          <h2 className="font-display mt-2 text-2xl font-semibold leading-tight">
-            O contexto transforma um arquivo em história.
-          </h2>
-          <p className="mt-3 text-xs leading-5 text-white/65">
-            Cada registro do Acervo pode ser conectado às pessoas, gestões, acontecimentos e
-            coleções que lhe dão significado — sempre com uma lista textual completa ao lado do
-            desenho.
-          </p>
-          {constellationRoots && constellationRoots.groups.length > 0 && (
-            <div className="mt-5 flex flex-wrap gap-x-4 gap-y-1.5 border-t border-white/10 pt-4 text-[11px] text-white/70">
-              {constellationRoots.groups.map((group) => (
-                <span key={group.key}>
-                  <strong className="text-white">{group.childCount}</strong> {group.label}
-                </span>
-              ))}
-            </div>
-          )}
-          <div className="mt-7 space-y-3 text-xs text-white/75">
-            <Link
-              href="/acervo/constelacao"
-              className="flex items-center gap-3 font-semibold text-white hover:underline"
-            >
-              <Sparkles className="text-accent" size={17} /> Ver todas as relações
-            </Link>
-            <Link href="/acervo/pessoas" className="flex items-center gap-3 hover:text-white">
-              <Users className="text-accent" size={17} /> Pessoas e trajetórias
-            </Link>
-            <Link href="/acervo/gestoes" className="flex items-center gap-3 hover:text-white">
-              <CalendarDays className="text-accent" size={17} /> Gestões e Diretorias
-            </Link>
-            <Link href="/acervo/eventos" className="flex items-center gap-3 hover:text-white">
-              <CalendarDays className="text-accent" size={17} /> Eventos e períodos históricos
-            </Link>
-            <Link
-              href="/acervo/linha-do-tempo"
-              className="flex items-center gap-3 hover:text-white"
-            >
-              <Compass className="text-accent" size={17} /> Coleções e linha do tempo
-            </Link>
+          <div className="mt-5 space-y-3">
+            {discoveryResults.map((result) => (
+              <Link
+                key={result.compositeId}
+                href={result.href}
+                className="border-border hover:border-accent group block border-l-2 pl-3"
+              >
+                <p className="font-display group-hover:text-accent line-clamp-1 font-semibold transition-colors">
+                  {result.title}
+                </p>
+                <p className="text-muted mt-0.5 line-clamp-1 text-[11px]">{result.description}</p>
+              </Link>
+            ))}
           </div>
-        </aside>
-      </section>
-
-      <section className="border-border grid overflow-hidden rounded-[18px] border md:grid-cols-3">
-        {[
-          {
-            icon: ShieldCheck,
-            title: 'Procedência',
-            text: 'Origem, autoria e responsabilidade pela catalogação.',
-          },
-          {
-            icon: Compass,
-            title: 'Contexto',
-            text: 'Relações históricas que dão significado a cada registro.',
-          },
-          {
-            icon: Sparkles,
-            title: 'Legado',
-            text: 'Memória organizada para orientar as próximas gerações.',
-          },
-        ].map((principle, index) => (
-          <div
-            key={principle.title}
-            className={`bg-surface flex gap-4 p-5 ${index > 0 ? 'border-border border-t md:border-l md:border-t-0' : ''}`}
+          <Link
+            href={fullSearchHref}
+            className="border-border text-primary hover:border-accent mt-6 flex items-center justify-between rounded-[10px] border px-4 py-3 text-xs font-semibold"
           >
-            <principle.icon className="text-accent shrink-0" size={21} strokeWidth={1.5} />
-            <div>
-              <h2 className="font-display font-semibold">{principle.title}</h2>
-              <p className="text-muted mt-1 text-xs leading-5">{principle.text}</p>
-            </div>
-          </div>
-        ))}
+            Ver pesquisa completa <ChevronRight size={16} />
+          </Link>
+        </aside>
       </section>
     </div>
   );
