@@ -105,6 +105,15 @@ export const RESOURCE_KEYS = [
   // DTO reduzido, somente com identidade e campos voluntariamente
   // publicados pelo Irmão.
   'paramasonicCommunity',
+  // Entidades Paramaçônicas (DeMolay, Filhas de Jó, Fraternidade Feminina,
+  // Castelo, Abelhinhas etc.) — cadastro/gestão administrativa das
+  // organizações em si (`ParamasonicEntity`), separado de
+  // `paramasonicCommunity` (acesso de LEITURA de convidados externos ao
+  // diretório institucional) e de `familyLegacy` (vínculo pessoal de um
+  // Irmão/familiar a uma dessas organizações). Só a Administração da Loja
+  // cria/edita entidades; `membro` só lê (vê a lista na Comunidade
+  // Paramaçônica).
+  'paramasonicEntity',
   // Central de Avisos (docs/architecture) — só a ADMINISTRAÇÃO de
   // notificações (compor/enviar aviso manual, ver relatórios de leitura,
   // Fase 3) passa por `notification:manage`. Ler/marcar como
@@ -196,6 +205,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<RoleKey, PermissionKey[]> = {
     'communication:manage',
     'familyLegacy:manage',
     'paramasonicCommunity:manage',
+    'paramasonicEntity:manage',
     'honor:manage',
   ],
   membro: [
@@ -222,6 +232,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<RoleKey, PermissionKey[]> = {
     'quote:read',
     'familyLegacy:read',
     'paramasonicCommunity:read',
+    'paramasonicEntity:read',
     'honor:read',
   ],
   paramaconica: [

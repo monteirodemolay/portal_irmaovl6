@@ -113,6 +113,10 @@ import {
   ListParamasonicMemberDirectoryUseCase,
   EnsureParamasonicRoleUseCase,
   BackfillFraternidadeFemininaUseCase,
+  CreateParamasonicEntityUseCase,
+  UpdateParamasonicEntityUseCase,
+  ListParamasonicEntitiesUseCase,
+  SoftDeleteParamasonicEntityUseCase,
   FindBoardTermForDateUseCase,
   CreateBoardTermUseCase,
   CreateCommitteeUseCase,
@@ -311,6 +315,7 @@ import { FirestoreArchiveMediaRepository } from './firestore/repositories/archiv
 import { FirestoreFamilyPersonRepository } from './firestore/repositories/family-person.repository';
 import { FirestoreFamilyRelationshipRepository } from './firestore/repositories/family-relationship.repository';
 import { FirestorePersonFraternalRecordRepository } from './firestore/repositories/person-fraternal-record.repository';
+import { FirestoreParamasonicEntityRepository } from './firestore/repositories/paramasonic-entity.repository';
 import { FirestoreAuditLogRepository } from './firestore/repositories/audit-log.repository';
 import { FirestoreBoardPositionAssignmentRepository } from './firestore/repositories/board-position-assignment.repository';
 import { FirestoreBoardTermRepository } from './firestore/repositories/board-term.repository';
@@ -496,6 +501,11 @@ export function createServerContainer() {
     personFraternalRecord: withAudit(
       new FirestorePersonFraternalRecordRepository(db),
       'personFraternalRecords',
+      auditDeps,
+    ),
+    paramasonicEntity: withAudit(
+      new FirestoreParamasonicEntityRepository(db),
+      'paramasonicEntities',
       auditDeps,
     ),
   };
@@ -1041,6 +1051,22 @@ export function createServerContainer() {
     }),
     removeHonor: new RemoveHonorUseCase({
       honorRepository: repositories.honor,
+      clock,
+    }),
+    createParamasonicEntity: new CreateParamasonicEntityUseCase({
+      paramasonicEntityRepository: repositories.paramasonicEntity,
+      clock,
+      idGenerator,
+    }),
+    updateParamasonicEntity: new UpdateParamasonicEntityUseCase({
+      paramasonicEntityRepository: repositories.paramasonicEntity,
+      clock,
+    }),
+    listParamasonicEntities: new ListParamasonicEntitiesUseCase({
+      paramasonicEntityRepository: repositories.paramasonicEntity,
+    }),
+    softDeleteParamasonicEntity: new SoftDeleteParamasonicEntityUseCase({
+      paramasonicEntityRepository: repositories.paramasonicEntity,
       clock,
     }),
     registerPhilosophicalJourney: new RegisterPhilosophicalJourneyUseCase({

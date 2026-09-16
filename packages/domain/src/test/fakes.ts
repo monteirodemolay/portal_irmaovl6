@@ -135,8 +135,10 @@ import type { ITokenCipher, IOAuthStateSigner, OAuthStatePayload } from '../shar
 import type { FamilyPerson } from '../modules/family-legacy/entities/family-person.entity';
 import type { FamilyRelationship } from '../modules/family-legacy/entities/family-relationship.entity';
 import type { PersonFraternalRecord } from '../modules/family-legacy/entities/person-fraternal-record.entity';
+import type { ParamasonicEntity } from '../modules/family-legacy/entities/paramasonic-entity.entity';
 import type { IFamilyPersonRepository } from '../modules/family-legacy/repositories/family-person.repository';
 import type { IFamilyRelationshipRepository } from '../modules/family-legacy/repositories/family-relationship.repository';
+import type { IParamasonicEntityRepository } from '../modules/family-legacy/repositories/paramasonic-entity.repository';
 import type {
   ConstellationView,
   ConstellationViewRevision,
@@ -1843,6 +1845,29 @@ export class InMemoryPersonFraternalRecordRepository implements IPersonFraternal
   }
   async update(entity: PersonFraternalRecord) {
     this.byId.set(entity.id, entity);
+  }
+}
+
+export class InMemoryParamasonicEntityRepository implements IParamasonicEntityRepository {
+  private readonly byId = new Map<string, ParamasonicEntity>();
+
+  async findById(id: string) {
+    return this.byId.get(id) ?? null;
+  }
+  async listByTenant(tenantId: string) {
+    return [...this.byId.values()].filter((e) => e.tenantId === tenantId && !e.deletedAt);
+  }
+  async create(entity: ParamasonicEntity) {
+    this.byId.set(entity.id, entity);
+  }
+  async update(entity: ParamasonicEntity) {
+    this.byId.set(entity.id, entity);
+  }
+  async softDelete(id: string, deletedAt: Date, updatedBy: string) {
+    const entity = this.byId.get(id);
+    if (entity) {
+      this.byId.set(id, { ...entity, deletedAt, updatedAt: deletedAt, updatedBy, ativo: false });
+    }
   }
 }
 
