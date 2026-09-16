@@ -294,6 +294,9 @@ export class InMemoryUserRepository implements IUserRepository {
   async listByTenant(tenantId: string) {
     return [...this.byId.values()].filter((u) => u.tenantId === tenantId);
   }
+  async countByTenant(tenantId: string) {
+    return [...this.byId.values()].filter((u) => u.tenantId === tenantId).length;
+  }
   async create(user: User) {
     this.byId.set(user.id, user);
   }
@@ -334,6 +337,11 @@ export class InMemoryMemberRepository implements IMemberRepository {
   }
   async countByTenant(tenantId: string) {
     return [...this.byId.values()].filter((m) => m.tenantId === tenantId).length;
+  }
+  async countBySituacao(tenantId: string, situacao: Member['situacao']) {
+    return [...this.byId.values()].filter(
+      (m) => m.tenantId === tenantId && !m.deletedAt && m.situacao === situacao,
+    ).length;
   }
   async create(member: Member) {
     this.byId.set(member.id, member);
@@ -846,6 +854,11 @@ export class InMemoryArchiveContributionRepository implements IArchiveContributi
     return [...this.byId.values()].filter(
       (c) => c.tenantId === tenantId && c.memberId === memberId && c.deletedAt === null,
     );
+  }
+  async countPendingByTenant(tenantId: string) {
+    return [...this.byId.values()].filter(
+      (c) => c.tenantId === tenantId && c.deletedAt === null && c.moderacaoStatus === 'pendente',
+    ).length;
   }
   async create(contribution: ArchiveContribution) {
     this.byId.set(contribution.id, contribution);
@@ -1484,6 +1497,11 @@ export class InMemoryPublicationSettingsRepository implements IPublicationSettin
     return [...this.byId.values()]
       .filter((s) => s.tenantId === tenantId && s.profilePublished && s.suspendedAt === null)
       .map((s) => ({ memberId: s.memberId }));
+  }
+  async countPublishedByTenant(tenantId: string): Promise<number> {
+    return [...this.byId.values()].filter(
+      (s) => s.tenantId === tenantId && s.profilePublished && s.suspendedAt === null,
+    ).length;
   }
   async listByTenant(tenantId: string) {
     return [...this.byId.values()].filter((s) => s.tenantId === tenantId);

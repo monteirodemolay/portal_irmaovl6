@@ -41,6 +41,16 @@ export class FirestorePublicationSettingsRepository implements IPublicationSetti
     return snap.docs.map((doc) => ({ memberId: doc.data().memberId }));
   }
 
+  async countPublishedByTenant(tenantId: string): Promise<number> {
+    const snap = await this.collection
+      .where('tenantId', '==', tenantId)
+      .where('profilePublished', '==', true)
+      .where('suspendedAt', '==', null)
+      .count()
+      .get();
+    return snap.data().count;
+  }
+
   async listByTenant(tenantId: string): Promise<PublicationSettings[]> {
     const snap = await this.collection.where('tenantId', '==', tenantId).get();
     return snap.docs.map((doc) => doc.data());

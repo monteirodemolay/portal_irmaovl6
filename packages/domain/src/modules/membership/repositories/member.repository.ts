@@ -1,3 +1,4 @@
+import type { MemberSituationStatus } from '@vl6/shared';
 import type { PageRequest, PageResult } from '../../../shared/pagination';
 import type { Member } from '../entities/member.entity';
 
@@ -24,6 +25,8 @@ export interface IMemberRepository {
   search(filters: MemberSearchFilters, page: PageRequest): Promise<PageResult<Member>>;
   /** Total de Irmãos cadastrados (não excluídos) — usado pelo Painel administrativo. */
   countByTenant(tenantId: string): Promise<number>;
+  /** Irmãos numa situação específica (ex.: "ativo") — usado pelo Painel administrativo. */
+  countBySituacao(tenantId: string, situacao: MemberSituationStatus): Promise<number>;
   create(member: Member): Promise<void>;
   update(member: Member): Promise<void>;
 }

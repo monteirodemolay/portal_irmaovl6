@@ -4,6 +4,8 @@ export interface IUserRepository {
   findById(uid: string): Promise<User | null>;
   findByEmail(tenantId: string, email: string): Promise<User | null>;
   listByTenant(tenantId: string): Promise<User[]>;
+  /** Total de contas de acesso do tenant — usado pelo Painel administrativo. */
+  countByTenant(tenantId: string): Promise<number>;
   create(user: User): Promise<void>;
   update(user: User): Promise<void>;
   /**
