@@ -13,6 +13,7 @@ import {
   Users,
 } from '@vl6/ui';
 import { requireSession } from '@/lib/auth/require-session';
+import { ParamasonicEntityMembersBrowser } from '@/modules/family-legacy/components/paramasonic-entity-members-browser';
 
 function buildHref(affiliationKind?: string): string {
   return affiliationKind
@@ -52,10 +53,19 @@ export default async function ParamasonicCommunityPage({
 
   const container = createServerContainer();
   const canSeeVinculos = hasPermission(session.authContext, 'familyLegacy:read');
+  const canSeeEntidades = hasPermission(session.authContext, 'paramasonicEntity:read');
 
-  const vinculos = canSeeVinculos
-    ? await container.useCases.listParamasonicDirectory.execute(session.authContext)
-    : [];
+  const [vinculos, entidades, todosOsIntegrantes] = await Promise.all([
+    canSeeVinculos
+      ? container.useCases.listParamasonicDirectory.execute(session.authContext)
+      : Promise.resolve([]),
+    canSeeEntidades
+      ? container.useCases.listParamasonicEntities.execute(session.authContext)
+      : Promise.resolve([]),
+    canSeeEntidades
+      ? container.useCases.listAllParamasonicEntityMembers.execute(session.authContext)
+      : Promise.resolve([]),
+  ]);
 
   const entidadesPresentes = [
     ...new Set(vinculos.map((v) => v.affiliationKind)),
@@ -122,6 +132,64 @@ export default async function ParamasonicCommunityPage({
           </p>
         </div>
       </section>
+
+      {canSeeEntidades && entidades.length > 0 && (
+        <section className="flex flex-col gap-4">
+          <div>
+            <span className="text-accent text-xs font-semibold uppercase tracking-wide">
+              Organizações irmãs
+            </span>
+            <h2 className="font-display text-2xl font-semibold">Entidades Paramaçônicas</h2>
+            <p className="text-muted mt-1 text-sm">
+              Cada organização tem página própria, com dados institucionais e a lista completa dos
+              seus integrantes.
+            </p>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {entidades.map((entidade) => (
+              <ArchiveItemCard
+                key={entidade.id}
+                href={`/paramaconicas/${entidade.id}`}
+                kindLabel={FRATERNAL_AFFILIATION_LABELS[entidade.kind]}
+                icon={<Handshake size={14} strokeWidth={1.75} className="shrink-0" />}
+                titulo={entidade.shortName}
+                descricao={entidade.name}
+                linkComponent={Link}
+              />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {canSeeEntidades && todosOsIntegrantes.length > 0 && (
+        <section className="flex flex-col gap-4">
+          <div>
+            <span className="text-accent text-xs font-semibold uppercase tracking-wide">
+              Organizações irmãs
+            </span>
+            <h2 className="font-display text-2xl font-semibold">
+              Membros das Entidades Paramaçônicas
+            </h2>
+            <p className="text-muted mt-1 text-sm">
+              Todos os integrantes cadastrados nas entidades acima, segmentados por categoria e
+              filtráveis por entidade, categoria e situação.
+            </p>
+          </div>
+          <ParamasonicEntityMembersBrowser
+            showEntidadeColumn
+            members={todosOsIntegrantes.map((m) => ({
+              id: m.id,
+              nomeCompleto: m.nomeCompleto,
+              memberId: m.memberId,
+              cargo: m.cargo,
+              categoria: m.categoria,
+              situacao: m.situacao,
+              entidadeNome: m.entityShortName,
+              entidadeHref: `/paramaconicas/${m.entityId}`,
+            }))}
+          />
+        </section>
+      )}
 
       {canSeeVinculos ? (
         <section className="flex flex-col gap-4">
