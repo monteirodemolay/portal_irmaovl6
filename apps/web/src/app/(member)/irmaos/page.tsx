@@ -55,6 +55,15 @@ export default async function ComunidadeVL6Page({
   );
 
   const tipo = parseTipo(params.tipo);
+  // Situação sempre tem um valor efetivo (nunca "sem filtro" de verdade):
+  // sem escolha explícita na URL, mostra só quem está "Ativo" — pra ver
+  // todo mundo (incluindo licenciados, desligados, In Memoriam), o Irmão
+  // precisa escolher "Todos" no seletor, o que grava `situacao=todos` na
+  // URL e vira `undefined` aqui (nenhum filtro passado ao caso de uso).
+  const situacaoParam = params.situacao;
+  const situacaoFilter: MemberSituationStatus | undefined =
+    situacaoParam === 'todos' ? undefined : (situacaoParam as MemberSituationStatus) || 'ativo';
+
   const filters: CommunityFiltersValues = {
     q: params.q || undefined,
     cidade: params.cidade || undefined,
@@ -66,7 +75,7 @@ export default async function ComunidadeVL6Page({
     online: params.online === '1' || undefined,
     desconto: params.desconto === '1' || undefined,
     grau: (params.grau as MemberDegree) || undefined,
-    situacao: (params.situacao as MemberSituationStatus) || undefined,
+    situacao: situacaoFilter,
     cargo: params.cargo || undefined,
     comissao: params.comissao || undefined,
     perfilEnriquecido: params.perfilEnriquecido === '1' || undefined,
