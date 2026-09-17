@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState, useEffect, useRef, useState } from 'react';
+import { useActionState, useEffect, useRef } from 'react';
 import { useFormStatus } from 'react-dom';
 import {
   PARAMASONIC_ENTITY_MEMBER_CATEGORIES,
@@ -9,6 +9,8 @@ import {
   PARAMASONIC_ENTITY_MEMBER_CATEGORY_LABELS,
   PARAMASONIC_ENTITY_MEMBER_SITUATION_LABELS,
   PARAMASONIC_ENTITY_MEMBER_SITUATIONS,
+  type ParamasonicEntityMemberCategory,
+  type ParamasonicEntityMemberSituation,
 } from '@vl6/shared';
 import {
   Button,
@@ -18,99 +20,86 @@ import {
   DialogTitle,
   DialogTrigger,
   Input,
-  Plus,
   Select,
 } from '@vl6/ui';
 import { FormField } from '@/components/forms/form-field';
 import {
-  addParamasonicEntityMemberAction,
+  updateParamasonicEntityMemberAction,
   type ParamasonicEntityActionState,
 } from '../actions/paramasonic-entity-actions';
+import type { PositionOption } from './add-paramasonic-entity-member-dialog';
 
-export interface MemberOption {
+export interface EditableParamasonicEntityMember {
   id: string;
+  memberId: string | null;
   nomeCompleto: string;
+  contato: string | null;
+  cargo: string | null;
+  categoria: ParamasonicEntityMemberCategory | null;
+  situacao: ParamasonicEntityMemberSituation;
+  dataIngresso: Date | null;
 }
 
-export interface PositionOption {
-  id: string;
-  nome: string;
+function toDateInputValue(date: Date | null): string {
+  if (!date) return '';
+  return date.toISOString().slice(0, 10);
 }
 
-export function AddParamasonicEntityMemberDialog({
+export function EditParamasonicEntityMemberDialog({
   entityId,
-  allowLinkingMember,
-  memberOptions,
+  member,
   positionOptions,
+  /** Só quem tem `familyLegacy:manage` pode marcar ex-DeMolay / Past-Presidente do Conselho Consultivo. */
+  allowFamilyLegacyActions,
 }: {
   entityId: string;
-  /** `false` pra Fraternidade Feminina — só tem corpo próprio, nunca Irmão vinculado. */
-  allowLinkingMember: boolean;
-  memberOptions: MemberOption[];
+  member: EditableParamasonicEntityMember;
   positionOptions: PositionOption[];
+  allowFamilyLegacyActions: boolean;
 }) {
-  const boundAction = addParamasonicEntityMemberAction.bind(null, entityId);
+  const boundAction = updateParamasonicEntityMemberAction.bind(null, entityId, member.id);
   const [state, formAction] = useActionState<ParamasonicEntityActionState, FormData>(boundAction, {
     error: null,
   });
   const formRef = useRef<HTMLFormElement>(null);
-  const [linkMember, setLinkMember] = useState(false);
 
   useEffect(() => {
-    if (state.error === null) {
-      formRef.current?.reset();
-      setLinkMember(false);
-    }
+    if (state.error === null) formRef.current?.reset();
   }, [state]);
 
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button>
-          <Plus size={16} />
-          Adicionar integrante
+        <Button type="button" variant="ghost" size="sm">
+          Editar
         </Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Adicionar integrante</DialogTitle>
+          <DialogTitle>Editar integrante</DialogTitle>
         </DialogHeader>
         <form ref={formRef} action={formAction} className="flex flex-col gap-4">
-          {allowLinkingMember && (
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={linkMember}
-                onChange={(e) => setLinkMember(e.target.checked)}
-              />
-              É um Irmão cadastrado que ocupou/ocupa cargo nesta entidade
-            </label>
-          )}
-
-          {linkMember ? (
-            <FormField label="Irmão" htmlFor="memberId">
-              <Select id="memberId" name="memberId" required defaultValue="">
-                <option value="" disabled>
-                  Selecione
-                </option>
-                {memberOptions.map((m) => (
-                  <option key={m.id} value={m.id}>
-                    {m.nomeCompleto}
-                  </option>
-                ))}
-              </Select>
-            </FormField>
+          {member.memberId ? (
+            <p className="text-muted text-sm">
+              <span className="text-foreground font-medium">{member.nomeCompleto}</span> — Irmão
+              vinculado, nome e contato não são editáveis aqui.
+            </p>
           ) : (
             <>
               <FormField label="Nome completo" htmlFor="nomeCompleto">
-                <Input id="nomeCompleto" name="nomeCompleto" required />
+                <Input
+                  id="nomeCompleto"
+                  name="nomeCompleto"
+                  required
+                  defaultValue={member.nomeCompleto}
+                />
               </FormField>
               <FormField
                 label="Contato"
                 htmlFor="contato"
                 description="Opcional — e-mail ou telefone."
               >
-                <Input id="contato" name="contato" />
+                <Input id="contato" name="contato" defaultValue={member.contato ?? ''} />
               </FormField>
             </>
           )}
@@ -124,7 +113,7 @@ export function AddParamasonicEntityMemberDialog({
                 : 'Opcional.'
             }
           >
-            <Select id="cargo" name="cargo" defaultValue="">
+            <Select id="cargo" name="cargo" defaultValue={member.cargo ?? ''}>
               <option value="">Sem cargo</option>
               {positionOptions.map((p) => (
                 <option key={p.id} value={p.nome}>
@@ -133,12 +122,13 @@ export function AddParamasonicEntityMemberDialog({
               ))}
             </Select>
           </FormField>
+
           <FormField
             label="Categoria"
             htmlFor="categoria"
             description="Opcional — classificação institucional do integrante."
           >
-            <Select id="categoria" name="categoria" defaultValue="">
+            <Select id="categoria" name="categoria" defaultValue={member.categoria ?? ''}>
               <option value="">Sem categoria definida</option>
               {(['membros_juvenis', 'membros_adultos', 'outros_vinculos_apoio'] as const).map(
                 (group) => (
@@ -159,8 +149,9 @@ export function AddParamasonicEntityMemberDialog({
               )}
             </Select>
           </FormField>
+
           <FormField label="Situação" htmlFor="situacao">
-            <Select id="situacao" name="situacao" required defaultValue="ativo">
+            <Select id="situacao" name="situacao" required defaultValue={member.situacao}>
               {PARAMASONIC_ENTITY_MEMBER_SITUATIONS.map((situacao) => (
                 <option key={situacao} value={situacao}>
                   {PARAMASONIC_ENTITY_MEMBER_SITUATION_LABELS[situacao]}
@@ -168,9 +159,34 @@ export function AddParamasonicEntityMemberDialog({
               ))}
             </Select>
           </FormField>
+
           <FormField label="Data de ingresso" htmlFor="dataIngresso" description="Opcional.">
-            <Input id="dataIngresso" name="dataIngresso" type="date" />
+            <Input
+              id="dataIngresso"
+              name="dataIngresso"
+              type="date"
+              defaultValue={toDateInputValue(member.dataIngresso)}
+            />
           </FormField>
+
+          {member.memberId && allowFamilyLegacyActions && (
+            <div className="border-border bg-surface flex flex-col gap-2 rounded-lg border border-dashed p-3">
+              <p className="text-muted text-xs">
+                Caso do Conselho Consultivo — marque o que se aplica a este Irmão (pode ser os
+                dois):
+              </p>
+              <label className="flex items-center gap-2 text-sm">
+                <input type="checkbox" name="marcarComoExDemolay" />
+                Também foi DeMolay Ativo neste Capítulo — cria/atualiza a Afiliação em Família e
+                Legado
+              </label>
+              <label className="flex items-center gap-2 text-sm">
+                <input type="checkbox" name="marcarComoPastPresidenteConselho" />
+                Foi Presidente do Conselho Consultivo (concede o título Past-Presidente do Conselho
+                Consultivo)
+              </label>
+            </div>
+          )}
 
           {state.error && <p className="text-sm text-red-600">{state.error}</p>}
           <SubmitButton />
@@ -184,7 +200,7 @@ function SubmitButton() {
   const { pending } = useFormStatus();
   return (
     <Button type="submit" disabled={pending} className="w-fit">
-      {pending ? 'Adicionando…' : 'Adicionar'}
+      {pending ? 'Salvando…' : 'Salvar'}
     </Button>
   );
 }

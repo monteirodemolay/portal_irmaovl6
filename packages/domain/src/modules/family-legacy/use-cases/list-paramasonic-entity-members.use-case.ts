@@ -15,6 +15,7 @@ export interface ParamasonicEntityMemberDTO {
   nomeCompleto: string;
   contato: string | null;
   cargo: string | null;
+  categoria: ParamasonicEntityMember['categoria'];
   situacao: ParamasonicEntityMember['situacao'];
   dataIngresso: Date | null;
 }
@@ -52,6 +53,7 @@ export class ListParamasonicEntityMembersUseCase {
         : (m.nomeCompleto ?? '—'),
       contato: m.contato,
       cargo: m.cargo,
+      categoria: m.categoria,
       situacao: m.situacao,
       dataIngresso: m.dataIngresso,
     }));

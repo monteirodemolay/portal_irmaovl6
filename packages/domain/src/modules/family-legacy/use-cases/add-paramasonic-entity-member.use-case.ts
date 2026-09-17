@@ -1,4 +1,7 @@
-import type { ParamasonicEntityMemberSituation } from '@vl6/shared';
+import type {
+  ParamasonicEntityMemberCategory,
+  ParamasonicEntityMemberSituation,
+} from '@vl6/shared';
 import type { AuthContext } from '../../../shared/auth-context';
 import { requirePermission } from '../../../shared/auth-context';
 import type { IClock, IIdGenerator } from '../../../shared/ports';
@@ -15,6 +18,7 @@ export interface AddParamasonicEntityMemberInput {
   nomeCompleto: string | null;
   contato: string | null;
   cargo: string | null;
+  categoria?: ParamasonicEntityMemberCategory | null;
   situacao: ParamasonicEntityMemberSituation;
   dataIngresso: Date | null;
 }
@@ -72,6 +76,7 @@ export class AddParamasonicEntityMemberUseCase {
       nomeCompleto: input.memberId ? null : input.nomeCompleto!.trim(),
       contato: input.memberId ? null : input.contato,
       cargo: input.cargo?.trim() || null,
+      categoria: input.categoria ?? null,
       situacao: input.situacao,
       dataIngresso: input.dataIngresso,
       createdAt: now,

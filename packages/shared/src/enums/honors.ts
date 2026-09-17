@@ -11,6 +11,7 @@ export const MEMBER_TITLE_KEYS = [
   'membro_remido',
   'benfeitor',
   'fundador',
+  'past_presidente_conselho_consultivo',
   'outro',
 ] as const;
 export type MemberTitleKey = (typeof MEMBER_TITLE_KEYS)[number];
@@ -21,6 +22,7 @@ export const MEMBER_TITLE_LABELS: Record<MemberTitleKey, string> = {
   membro_remido: 'Membro Remido',
   benfeitor: 'Benfeitor',
   fundador: 'Fundador',
+  past_presidente_conselho_consultivo: 'Past-Presidente do Conselho Consultivo',
   outro: 'Outro',
 };
 

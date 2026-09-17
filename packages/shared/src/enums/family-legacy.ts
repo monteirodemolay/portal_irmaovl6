@@ -177,6 +177,65 @@ export const PARAMASONIC_ENTITY_MEMBER_SITUATION_LABELS: Record<
   inativo: 'Inativo',
 };
 
+/**
+ * Classificação institucional do integrante dentro da entidade paramaçônica
+ * (estrutura do DeMolay confirmada pelo Administrador — reaproveitável por
+ * outras entidades que tenham categorias equivalentes). `null` em
+ * `ParamasonicEntityMember.categoria` significa "ainda não classificado" —
+ * o cadastro histórico (import DeMolay, corpo próprio de outras entidades)
+ * entra assim e fica disponível pra revisão manual, um por um.
+ */
+export const PARAMASONIC_ENTITY_MEMBER_CATEGORIES = [
+  'escudeiro',
+  'demolay_ativo',
+  'cavaleiro',
+  'senior_demolay',
+  'macom_conselho',
+  'clube_apoio',
+] as const;
+export type ParamasonicEntityMemberCategory = (typeof PARAMASONIC_ENTITY_MEMBER_CATEGORIES)[number];
+
+export const PARAMASONIC_ENTITY_MEMBER_CATEGORY_LABELS: Record<
+  ParamasonicEntityMemberCategory,
+  string
+> = {
+  escudeiro: 'Escudeiro',
+  demolay_ativo: 'DeMolay Ativo',
+  cavaleiro: 'Cavaleiro',
+  senior_demolay: 'Sênior DeMolay',
+  macom_conselho: 'Maçom (Conselho Consultivo)',
+  clube_apoio: 'Clube de Mães e Amigos',
+};
+
+export const PARAMASONIC_ENTITY_MEMBER_CATEGORY_GROUPS = [
+  'membros_juvenis',
+  'membros_adultos',
+  'outros_vinculos_apoio',
+] as const;
+export type ParamasonicEntityMemberCategoryGroup =
+  (typeof PARAMASONIC_ENTITY_MEMBER_CATEGORY_GROUPS)[number];
+
+export const PARAMASONIC_ENTITY_MEMBER_CATEGORY_GROUP_LABELS: Record<
+  ParamasonicEntityMemberCategoryGroup,
+  string
+> = {
+  membros_juvenis: 'Membros Juvenis (Ativos)',
+  membros_adultos: 'Membros Adultos',
+  outros_vinculos_apoio: 'Outros Vínculos de Apoio',
+};
+
+export const PARAMASONIC_ENTITY_MEMBER_CATEGORY_GROUP_BY_CATEGORY: Record<
+  ParamasonicEntityMemberCategory,
+  ParamasonicEntityMemberCategoryGroup
+> = {
+  escudeiro: 'membros_juvenis',
+  demolay_ativo: 'membros_juvenis',
+  cavaleiro: 'membros_juvenis',
+  senior_demolay: 'membros_adultos',
+  macom_conselho: 'membros_adultos',
+  clube_apoio: 'outros_vinculos_apoio',
+};
+
 export const FRATERNAL_UNIT_KINDS = [
   'lodge',
   'chapter',

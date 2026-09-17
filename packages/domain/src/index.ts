@@ -99,6 +99,7 @@ export * from './modules/governance/use-cases/dedupe-member-position-history.use
 export * from './modules/governance/use-cases/backfill-mestre-instalado-titles.use-case';
 export * from './modules/governance/use-cases/audit-board-term-coverage.use-case';
 export * from './modules/honors/lib/grant-mestre-instalado-title';
+export * from './modules/honors/lib/grant-past-presidente-conselho-consultivo-title';
 export * from './modules/membership/use-cases/list-duplicate-members.use-case';
 export * from './modules/membership/use-cases/merge-duplicate-members.use-case';
 
@@ -467,12 +468,14 @@ export * from './modules/family-legacy/use-cases/soft-delete-paramasonic-entity.
 export * from './modules/family-legacy/use-cases/add-paramasonic-entity-member.use-case';
 export * from './modules/family-legacy/use-cases/list-paramasonic-entity-members.use-case';
 export * from './modules/family-legacy/use-cases/remove-paramasonic-entity-member.use-case';
+export * from './modules/family-legacy/use-cases/update-paramasonic-entity-member.use-case';
 export * from './modules/family-legacy/use-cases/create-paramasonic-entity-position.use-case';
 export * from './modules/family-legacy/use-cases/list-paramasonic-entity-positions.use-case';
 export * from './modules/family-legacy/use-cases/remove-paramasonic-entity-position.use-case';
 export * from './modules/family-legacy/lib/demolay-roster.types';
 export * from './modules/family-legacy/lib/demolay-rio-verde-350-roster';
 export * from './modules/family-legacy/lib/format-demolay-cargo-label';
+export * from './modules/family-legacy/lib/upsert-demolay-fraternal-record';
 export * from './modules/family-legacy/use-cases/import-demolay-chapter-roster.use-case';
 export * from './modules/family-legacy/use-cases/cross-reference-demolay-roster.use-case';
 export * from './modules/family-legacy/use-cases/list-paramasonic-member-directory.use-case';

@@ -82,6 +82,7 @@ export class ImportDemolayChapterRosterUseCase {
         nomeCompleto: row.nomeCompleto,
         contato: null,
         cargo: formatDemolayCargoLabel(row),
+        categoria: null,
         situacao: INACTIVE_STATUSES.has(row.status) ? 'inativo' : 'ativo',
         dataIngresso: null,
         createdAt: now,

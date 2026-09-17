@@ -121,6 +121,7 @@ import {
   AddParamasonicEntityMemberUseCase,
   ListParamasonicEntityMembersUseCase,
   RemoveParamasonicEntityMemberUseCase,
+  UpdateParamasonicEntityMemberUseCase,
   CreateParamasonicEntityPositionUseCase,
   ListParamasonicEntityPositionsUseCase,
   RemoveParamasonicEntityPositionUseCase,
@@ -1099,6 +1100,15 @@ export function createServerContainer() {
     removeParamasonicEntityMember: new RemoveParamasonicEntityMemberUseCase({
       paramasonicEntityMemberRepository: repositories.paramasonicEntityMember,
       clock,
+    }),
+    updateParamasonicEntityMember: new UpdateParamasonicEntityMemberUseCase({
+      paramasonicEntityMemberRepository: repositories.paramasonicEntityMember,
+      paramasonicEntityRepository: repositories.paramasonicEntity,
+      personFraternalRecordRepository: repositories.personFraternalRecord,
+      memberTitleRepository: repositories.memberTitle,
+      memberRepository: repositories.member,
+      clock,
+      idGenerator,
     }),
     createParamasonicEntityPosition: new CreateParamasonicEntityPositionUseCase({
       paramasonicEntityPositionRepository: repositories.paramasonicEntityPosition,
