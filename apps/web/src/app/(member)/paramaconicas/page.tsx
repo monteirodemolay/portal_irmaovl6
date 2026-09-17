@@ -123,7 +123,7 @@ export default async function ParamasonicCommunityPage({
         </div>
       </section>
 
-      {canSeeVinculos && (
+      {canSeeVinculos ? (
         <section className="flex flex-col gap-4">
           <div>
             <span className="text-accent text-xs font-semibold uppercase tracking-wide">
@@ -194,6 +194,12 @@ export default async function ParamasonicCommunityPage({
             </div>
           )}
         </section>
+      ) : (
+        <EmptyState
+          icon={<Handshake size={22} strokeWidth={1.75} />}
+          title="Novos conteúdos em breve"
+          description="Esta área está sendo liberada de forma gradual pela Administração da Verdadeira Luz nº 06. Volte em breve para conhecer as organizações irmãs da Loja."
+        />
       )}
     </div>
   );
