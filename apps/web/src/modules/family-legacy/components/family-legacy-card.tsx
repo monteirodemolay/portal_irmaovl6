@@ -49,6 +49,7 @@ import {
   declineFamilyRelationshipAction,
   removeFamilyRelationshipAction,
   searchFamilyPersonCandidatesAction,
+  updateFamilyRelationshipLabelAction,
   type FamilyLegacyActionState,
 } from '../actions/family-legacy-actions';
 import { EditFamilyPersonDialog } from './edit-family-person-dialog';
@@ -250,6 +251,12 @@ function PersonRow({
         )}
         {person.confirmationStatus === 'declined' && <Badge variant="destructive">Recusado</Badge>}
         {person.canEdit && <EditFamilyPersonDialog person={person} />}
+        {person.labelEditable && person.relationshipId && (
+          <EditRelationshipLabelDialog
+            relationshipId={person.relationshipId}
+            currentLabel={person.parentesco}
+          />
+        )}
         {person.direct && person.relationshipId && (
           <form action={removeAction}>
             <input type="hidden" name="relationshipId" value={person.relationshipId} />
@@ -261,6 +268,51 @@ function PersonRow({
       </div>
       {state.error && <p className="text-xs text-red-600">{state.error}</p>}
     </div>
+  );
+}
+
+function EditRelationshipLabelDialog({
+  relationshipId,
+  currentLabel,
+}: {
+  relationshipId: string;
+  currentLabel: string;
+}) {
+  const boundAction = updateFamilyRelationshipLabelAction.bind(null, relationshipId);
+  const [state, formAction] = useActionState(boundAction, EMPTY_STATE);
+
+  return (
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button type="button" size="sm" variant="ghost" title="Editar vínculo">
+          Editar vínculo
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Editar vínculo</DialogTitle>
+          <DialogDescription>
+            Corrige o parentesco declarado pra essa pessoa (ex.: "Bisavô").
+          </DialogDescription>
+        </DialogHeader>
+        <form action={formAction} className="flex flex-col gap-4">
+          <FormField label="Parentesco" htmlFor="declaredLabel">
+            <Input id="declaredLabel" name="declaredLabel" required defaultValue={currentLabel} />
+          </FormField>
+          {state.error && <p className="text-sm text-red-600">{state.error}</p>}
+          <SubmitLabelButton />
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function SubmitLabelButton() {
+  const { pending } = useFormStatus();
+  return (
+    <Button type="submit" disabled={pending} className="w-fit">
+      {pending ? 'Salvando…' : 'Salvar'}
+    </Button>
   );
 }
 

@@ -29,6 +29,7 @@ import { FormField } from '@/components/forms/form-field';
 import type { OwnerFamilyNetworkDTO } from '../lib/load-owner-family-network-dto';
 import {
   createPersonFraternalRecordAction,
+  deleteFamilyPersonAction,
   updateFamilyMemberAction,
   type FamilyLegacyActionState,
 } from '../actions/family-legacy-actions';
@@ -70,6 +71,9 @@ export function EditFamilyPersonDialog({ person }: { person: PersonCard }) {
           <PersonDataForm person={person} />
           <div className="border-border-soft border-t pt-5">
             <FraternalRecordForm person={person} />
+          </div>
+          <div className="border-border-soft border-t pt-5">
+            <DeletePersonButton person={person} />
           </div>
         </div>
       </DialogContent>
@@ -161,6 +165,9 @@ function PersonDataForm({ person }: { person: PersonCard }) {
 function FraternalRecordForm({ person }: { person: PersonCard }) {
   const boundAction = createPersonFraternalRecordAction.bind(null, person.id);
   const [state, formAction] = useActionState(boundAction, EMPTY_STATE);
+  const isMacom = person.fraternalRecords.some(
+    (record) => record.label === FRATERNAL_AFFILIATION_LABELS.mason,
+  );
 
   return (
     <div className="flex flex-col gap-3">
@@ -179,60 +186,110 @@ function FraternalRecordForm({ person }: { person: PersonCard }) {
         </ul>
       )}
 
-      <form action={formAction} className="flex flex-col gap-3">
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <FormField label="Tipo de vínculo" htmlFor="affiliationKind">
-            <Select id="affiliationKind" name="affiliationKind" defaultValue="mason">
-              {FRATERNAL_AFFILIATION_KINDS.map((kind) => (
-                <option key={kind} value={kind}>
-                  {FRATERNAL_AFFILIATION_LABELS[kind]}
-                </option>
-              ))}
-            </Select>
-          </FormField>
-          <FormField label="Tipo de unidade" htmlFor="unidadeTipo">
-            <Select id="unidadeTipo" name="unidadeTipo" defaultValue="lodge">
-              {FRATERNAL_UNIT_KINDS.map((kind) => (
-                <option key={kind} value={kind}>
-                  {FRATERNAL_UNIT_KIND_LABELS[kind]}
-                </option>
-              ))}
-            </Select>
-          </FormField>
-        </div>
+      {/* Controle único e direto pro caso mais comum — pedido do
+          Administrador: "deixe apenas uma opção pra marcar se é ou não
+          Maçom". Não exige Loja/detalhes pra registrar isso; quem quiser
+          detalhar a trajetória usa o formulário completo logo abaixo. */}
+      {isMacom ? (
+        <p className="border-accent/30 bg-accent/5 flex items-center gap-2 rounded-md border px-3 py-2 text-sm">
+          <Badge>Maçom</Badge>
+          Já marcado como Maçom.
+        </p>
+      ) : (
+        <form action={formAction}>
+          <input type="hidden" name="affiliationKind" value="mason" />
+          <input type="hidden" name="unidadeTipo" value="lodge" />
+          <Button type="submit" variant="outline" size="sm" className="w-fit">
+            Marcar como Maçom
+          </Button>
+        </form>
+      )}
 
-        <FormField
-          label="Nome da Loja, Capítulo ou unidade"
-          htmlFor="unidadeNome"
-          description='Texto livre — ex.: "Estrela Rioverdense".'
-        >
-          <Input id="unidadeNome" name="unidadeNome" required maxLength={200} />
-        </FormField>
+      <details className="text-sm">
+        <summary className="text-muted cursor-pointer select-none">
+          Adicionar vínculo com detalhes (Loja, Capítulo, DeMolay etc.)
+        </summary>
+        <form action={formAction} className="mt-3 flex flex-col gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <FormField label="Tipo de vínculo" htmlFor="affiliationKind">
+              <Select id="affiliationKind" name="affiliationKind" defaultValue="mason">
+                {FRATERNAL_AFFILIATION_KINDS.map((kind) => (
+                  <option key={kind} value={kind}>
+                    {FRATERNAL_AFFILIATION_LABELS[kind]}
+                  </option>
+                ))}
+              </Select>
+            </FormField>
+            <FormField label="Tipo de unidade" htmlFor="unidadeTipo">
+              <Select id="unidadeTipo" name="unidadeTipo" defaultValue="lodge">
+                {FRATERNAL_UNIT_KINDS.map((kind) => (
+                  <option key={kind} value={kind}>
+                    {FRATERNAL_UNIT_KIND_LABELS[kind]}
+                  </option>
+                ))}
+              </Select>
+            </FormField>
+          </div>
 
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <FormField label="Número (opcional)" htmlFor="unidadeNumero">
-            <Input id="unidadeNumero" name="unidadeNumero" maxLength={30} />
+          <FormField
+            label="Nome da Loja, Capítulo ou unidade (opcional)"
+            htmlFor="unidadeNome"
+            description='Texto livre — ex.: "Estrela Rioverdense".'
+          >
+            <Input id="unidadeNome" name="unidadeNome" maxLength={200} />
           </FormField>
-          <FormField label="Cidade (opcional)" htmlFor="fraternalCidade">
-            <Input id="fraternalCidade" name="cidade" />
-          </FormField>
-          <FormField label="Estado (opcional)" htmlFor="fraternalEstado">
-            <Input id="fraternalEstado" name="estado" maxLength={2} />
-          </FormField>
-        </div>
 
-        <FormField
-          label="Sobre essa trajetória (opcional)"
-          htmlFor="resumoLegado"
-          description="Texto livre — ex.: fundação da Loja, cargos exercidos, memórias."
-        >
-          <Textarea id="resumoLegado" name="resumoLegado" rows={3} />
-        </FormField>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <FormField label="Número (opcional)" htmlFor="unidadeNumero">
+              <Input id="unidadeNumero" name="unidadeNumero" maxLength={30} />
+            </FormField>
+            <FormField label="Cidade (opcional)" htmlFor="fraternalCidade">
+              <Input id="fraternalCidade" name="cidade" />
+            </FormField>
+            <FormField label="Estado (opcional)" htmlFor="fraternalEstado">
+              <Input id="fraternalEstado" name="estado" maxLength={2} />
+            </FormField>
+          </div>
 
-        {state.error && <p className="text-sm text-red-600">{state.error}</p>}
-        <SubmitButton label="Adicionar vínculo" />
-      </form>
+          <FormField
+            label="Sobre essa trajetória (opcional)"
+            htmlFor="resumoLegado"
+            description="Texto livre — ex.: fundação da Loja, cargos exercidos, memórias."
+          >
+            <Textarea id="resumoLegado" name="resumoLegado" rows={3} />
+          </FormField>
+
+          <SubmitButton label="Adicionar vínculo" />
+        </form>
+      </details>
+
+      {state.error && <p className="text-sm text-red-600">{state.error}</p>}
     </div>
+  );
+}
+
+function DeletePersonButton({ person }: { person: PersonCard }) {
+  const boundAction = deleteFamilyPersonAction.bind(null, person.id);
+  const [state, formAction] = useActionState(boundAction, EMPTY_STATE);
+
+  return (
+    <form
+      action={formAction}
+      onSubmit={(event) => {
+        if (
+          !window.confirm(
+            `Excluir "${person.nomeCompleto}"? Isso remove a pessoa e o vínculo familiar com ela. Não pode ser desfeito por você — use isto pra corrigir um cadastro duplicado ou por engano.`,
+          )
+        ) {
+          event.preventDefault();
+        }
+      }}
+    >
+      <Button type="submit" variant="ghost" size="sm" className="text-red-600 hover:text-red-700">
+        Excluir pessoa (cadastro duplicado ou por engano)
+      </Button>
+      {state.error && <p className="mt-1.5 text-sm text-red-600">{state.error}</p>}
+    </form>
   );
 }
 

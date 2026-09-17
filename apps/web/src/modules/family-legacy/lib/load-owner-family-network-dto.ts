@@ -31,6 +31,12 @@ export interface FamilyLegacyPersonCardDTO {
   /** Só presente quando `direct` — usado pelas ações de confirmar/recusar/remover. */
   relationshipId: string | null;
   /**
+   * `true` só quando `relationshipId` é um vínculo `declared_kinship`
+   * (texto livre, ex. "Bisavô") — os demais tipos diretos (mãe/pai/cônjuge)
+   * têm rótulo calculado por `deriveKinships`, nunca texto editável.
+   */
+  labelEditable: boolean;
+  /**
    * `true` só para `kind === 'familyPerson'` gerenciada pelo próprio titular
    * (`managedByMemberId === ownerMemberId`) — controla se o card mostra
    * "Editar". Um `familyPerson` compartilhado (ex.: mesmo avô cadastrado por
@@ -189,6 +195,7 @@ export async function loadOwnerFamilyNetworkDTO(
       confirmationStatus: directRelation?.confirmationStatus ?? null,
       direct: kinship.direct,
       relationshipId: directRelation?.id ?? null,
+      labelEditable: false,
       canEdit: kinship.person.kind === 'familyPerson' && familyPerson?.managedByMemberId === ownerMemberId,
       biografia: familyPerson?.biografia ?? null,
       cidade: familyPerson?.cidade ?? null,
@@ -239,6 +246,7 @@ export async function loadOwnerFamilyNetworkDTO(
       confirmationStatus: relation.confirmationStatus,
       direct: true,
       relationshipId: relation.id,
+      labelEditable: relation.relationKind === 'declared_kinship',
       canEdit: other.kind === 'familyPerson' && familyPerson?.managedByMemberId === ownerMemberId,
       biografia: familyPerson?.biografia ?? null,
       cidade: familyPerson?.cidade ?? null,
