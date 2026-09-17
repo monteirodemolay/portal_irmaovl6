@@ -28,15 +28,22 @@ export interface MemberOption {
   nomeCompleto: string;
 }
 
+export interface PositionOption {
+  id: string;
+  nome: string;
+}
+
 export function AddParamasonicEntityMemberDialog({
   entityId,
   allowLinkingMember,
   memberOptions,
+  positionOptions,
 }: {
   entityId: string;
   /** `false` pra Fraternidade Feminina — só tem corpo próprio, nunca Irmão vinculado. */
   allowLinkingMember: boolean;
   memberOptions: MemberOption[];
+  positionOptions: PositionOption[];
 }) {
   const boundAction = addParamasonicEntityMemberAction.bind(null, entityId);
   const [state, formAction] = useActionState<ParamasonicEntityActionState, FormData>(boundAction, {
@@ -107,9 +114,20 @@ export function AddParamasonicEntityMemberDialog({
           <FormField
             label="Cargo"
             htmlFor="cargo"
-            description="Opcional, texto livre — ex.: Presidência, Secretaria."
+            description={
+              positionOptions.length === 0
+                ? 'Nenhum cargo cadastrado ainda — cadastre em "Cargos" antes de atribuir um.'
+                : 'Opcional.'
+            }
           >
-            <Input id="cargo" name="cargo" />
+            <Select id="cargo" name="cargo" defaultValue="">
+              <option value="">Sem cargo</option>
+              {positionOptions.map((p) => (
+                <option key={p.id} value={p.nome}>
+                  {p.nome}
+                </option>
+              ))}
+            </Select>
           </FormField>
           <FormField label="Situação" htmlFor="situacao">
             <Select id="situacao" name="situacao" required defaultValue="ativo">

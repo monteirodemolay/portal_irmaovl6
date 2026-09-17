@@ -10,7 +10,9 @@ import {
 import { ArrowLeft, Badge, EmptyState, Users } from '@vl6/ui';
 import { requirePagePermission } from '@/lib/auth/require-permission';
 import { AddParamasonicEntityMemberDialog } from '@/modules/family-legacy/components/add-paramasonic-entity-member-dialog';
+import { AddParamasonicEntityPositionDialog } from '@/modules/family-legacy/components/add-paramasonic-entity-position-dialog';
 import { RemoveParamasonicEntityMemberButton } from '@/modules/family-legacy/components/remove-paramasonic-entity-member-button';
+import { RemoveParamasonicEntityPositionButton } from '@/modules/family-legacy/components/remove-paramasonic-entity-position-button';
 
 const STATUS_BADGE_VARIANT = {
   ativa: 'success',
@@ -36,8 +38,9 @@ export default async function ParamasonicEntityDetailPage({
   const canLinkMembers =
     entity.kind !== 'female_fraternity' && hasPermission(session.authContext, 'member:read');
 
-  const [members, memberOptionsPage] = await Promise.all([
+  const [members, positions, memberOptionsPage] = await Promise.all([
     container.useCases.listParamasonicEntityMembers.execute(session.authContext, entityId),
+    container.useCases.listParamasonicEntityPositions.execute(session.authContext, entityId),
     canLinkMembers
       ? container.useCases.searchMembers.execute(session.authContext, {}, { limit: 100 })
       : Promise.resolve(null),
@@ -70,6 +73,37 @@ export default async function ParamasonicEntityDetailPage({
         </Badge>
       </div>
 
+      <section className="flex flex-col gap-3">
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <h2 className="font-display text-lg font-semibold">Cargos</h2>
+            <p className="text-muted text-xs">
+              Cadastre uma vez e reaproveite ao adicionar integrantes.
+            </p>
+          </div>
+          <AddParamasonicEntityPositionDialog entityId={entity.id} />
+        </div>
+
+        {positions.length === 0 ? (
+          <p className="text-muted text-sm">Nenhum cargo cadastrado ainda.</p>
+        ) : (
+          <div className="flex flex-wrap gap-2">
+            {positions.map((position) => (
+              <span
+                key={position.id}
+                className="border-border bg-surface flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs"
+              >
+                {position.nome}
+                <RemoveParamasonicEntityPositionButton
+                  entityId={entity.id}
+                  positionId={position.id}
+                />
+              </span>
+            ))}
+          </div>
+        )}
+      </section>
+
       <section className="flex flex-col gap-4">
         <div className="flex items-center justify-between gap-4">
           <h2 className="font-display text-lg font-semibold">Integrantes</h2>
@@ -77,6 +111,7 @@ export default async function ParamasonicEntityDetailPage({
             entityId={entity.id}
             allowLinkingMember={canLinkMembers}
             memberOptions={memberOptions}
+            positionOptions={positions.map((p) => ({ id: p.id, nome: p.nome }))}
           />
         </div>
 

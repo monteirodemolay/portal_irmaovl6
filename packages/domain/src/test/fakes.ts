@@ -137,10 +137,12 @@ import type { FamilyRelationship } from '../modules/family-legacy/entities/famil
 import type { PersonFraternalRecord } from '../modules/family-legacy/entities/person-fraternal-record.entity';
 import type { ParamasonicEntity } from '../modules/family-legacy/entities/paramasonic-entity.entity';
 import type { ParamasonicEntityMember } from '../modules/family-legacy/entities/paramasonic-entity-member.entity';
+import type { ParamasonicEntityPosition } from '../modules/family-legacy/entities/paramasonic-entity-position.entity';
 import type { IFamilyPersonRepository } from '../modules/family-legacy/repositories/family-person.repository';
 import type { IFamilyRelationshipRepository } from '../modules/family-legacy/repositories/family-relationship.repository';
 import type { IParamasonicEntityRepository } from '../modules/family-legacy/repositories/paramasonic-entity.repository';
 import type { IParamasonicEntityMemberRepository } from '../modules/family-legacy/repositories/paramasonic-entity-member.repository';
+import type { IParamasonicEntityPositionRepository } from '../modules/family-legacy/repositories/paramasonic-entity-position.repository';
 import type {
   ConstellationView,
   ConstellationViewRevision,
@@ -1891,6 +1893,28 @@ export class InMemoryParamasonicEntityMemberRepository implements IParamasonicEn
     const entity = this.byId.get(id);
     if (entity) {
       this.byId.set(id, { ...entity, deletedAt, updatedAt: deletedAt, updatedBy, ativo: false });
+    }
+  }
+}
+
+export class InMemoryParamasonicEntityPositionRepository implements IParamasonicEntityPositionRepository {
+  private readonly byId = new Map<string, ParamasonicEntityPosition>();
+
+  async findById(id: string) {
+    return this.byId.get(id) ?? null;
+  }
+  async listByEntity(tenantId: string, entityId: string) {
+    return [...this.byId.values()].filter(
+      (p) => p.tenantId === tenantId && p.entityId === entityId && !p.deletedAt,
+    );
+  }
+  async create(position: ParamasonicEntityPosition) {
+    this.byId.set(position.id, position);
+  }
+  async softDelete(id: string, deletedAt: Date, updatedBy: string) {
+    const position = this.byId.get(id);
+    if (position) {
+      this.byId.set(id, { ...position, deletedAt, updatedAt: deletedAt, updatedBy, ativo: false });
     }
   }
 }

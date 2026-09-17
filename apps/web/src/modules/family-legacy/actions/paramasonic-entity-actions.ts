@@ -106,3 +106,36 @@ export async function removeParamasonicEntityMemberAction(
 
   revalidatePath(`/admin/pessoas/paramaconicas/${entityId}`);
 }
+
+export async function createParamasonicEntityPositionAction(
+  entityId: string,
+  _prevState: ParamasonicEntityActionState,
+  formData: FormData,
+): Promise<ParamasonicEntityActionState> {
+  const session = await requireSession();
+
+  const nome = (formData.get('nome') as string) || '';
+
+  const container = createServerContainer();
+  const result = await container.useCases.createParamasonicEntityPosition.execute(
+    session.authContext,
+    entityId,
+    nome,
+  );
+  if (!result.ok) return { error: result.error.message };
+
+  revalidatePath(`/admin/pessoas/paramaconicas/${entityId}`);
+  return { error: null };
+}
+
+export async function removeParamasonicEntityPositionAction(
+  entityId: string,
+  positionId: string,
+): Promise<void> {
+  const session = await requireSession();
+
+  const container = createServerContainer();
+  await container.useCases.removeParamasonicEntityPosition.execute(session.authContext, positionId);
+
+  revalidatePath(`/admin/pessoas/paramaconicas/${entityId}`);
+}

@@ -13,7 +13,6 @@ import {
   Users,
 } from '@vl6/ui';
 import { requireSession } from '@/lib/auth/require-session';
-import { ParamasonicMemberCard } from '@/modules/family-legacy/components/paramasonic-member-card';
 
 function buildHref(affiliationKind?: string): string {
   return affiliationKind
@@ -23,18 +22,15 @@ function buildHref(affiliationKind?: string): string {
 
 /**
  * Comunidade Paramaçônica VL6 — ponto único pra tudo relacionado a
- * organizações paramaçônicas (docs/architecture/12), com duas seções por
- * papel de acesso:
+ * organizações paramaçônicas (docs/architecture/12). Único conteúdo hoje:
+ * "Vínculos Paramaçônicos" (`listParamasonicDirectory`) — Irmãos e
+ * familiares com afiliação cadastrada a uma ordem paramaçônica (DeMolay,
+ * Filhas de Jó etc.) — exige `familyLegacy:read`, que o papel `paramaconica`
+ * deliberadamente não tem (exporia dados de família a um convidado
+ * externo). Só aparece pra Irmãos/Administração.
  *
- * - "Diretório institucional" (`listParamasonicMemberDirectory`): recorte
- *   seguro dos Irmãos ativos, visível a qualquer conta com
- *   `paramasonicCommunity:read` — inclui o papel `paramaconica`, convidado
- *   externo de menor privilégio (docs/architecture/12 §12.3).
- * - "Vínculos Paramaçônicos" (`listParamasonicDirectory`): Irmãos e
- *   familiares com afiliação cadastrada a uma ordem paramaçônica (DeMolay,
- *   Filhas de Jó etc.) — exige `familyLegacy:read`, que o papel
- *   `paramaconica` deliberadamente não tem (exporia dados de família a um
- *   convidado externo). Só aparece pra Irmãos/Administração.
+ * O Diretório de Irmãos da Loja NUNCA é duplicado aqui — já existe em
+ * `/irmaos`, que é pra onde este espaço leva quem tem acesso a ele.
  */
 export default async function ParamasonicCommunityPage({
   searchParams,
@@ -57,12 +53,9 @@ export default async function ParamasonicCommunityPage({
   const container = createServerContainer();
   const canSeeVinculos = hasPermission(session.authContext, 'familyLegacy:read');
 
-  const [members, vinculos] = await Promise.all([
-    container.useCases.listParamasonicMemberDirectory.execute(session.authContext),
-    canSeeVinculos
-      ? container.useCases.listParamasonicDirectory.execute(session.authContext)
-      : Promise.resolve([]),
-  ]);
+  const vinculos = canSeeVinculos
+    ? await container.useCases.listParamasonicDirectory.execute(session.authContext)
+    : [];
 
   const entidadesPresentes = [
     ...new Set(vinculos.map((v) => v.affiliationKind)),
@@ -116,8 +109,10 @@ export default async function ParamasonicCommunityPage({
         </div>
         <div className="border-border bg-surface rounded-xl border p-4">
           <Users className="text-accent" size={20} />
-          <h2 className="font-display mt-2 font-semibold">Diretório institucional</h2>
-          <p className="text-muted mt-1 text-sm">Conheça os Irmãos e suas atuações publicadas.</p>
+          <h2 className="font-display mt-2 font-semibold">Vínculos institucionais</h2>
+          <p className="text-muted mt-1 text-sm">
+            Irmãos e familiares vinculados a organizações irmãs da Loja.
+          </p>
         </div>
         <div className="border-border bg-surface rounded-xl border p-4">
           <Handshake className="text-accent" size={20} />
@@ -126,32 +121,6 @@ export default async function ParamasonicCommunityPage({
             Novos conteúdos serão liberados conforme a necessidade.
           </p>
         </div>
-      </section>
-
-      <section className="flex flex-col gap-4">
-        <div>
-          <span className="text-accent text-xs font-semibold uppercase tracking-wide">
-            Diretório
-          </span>
-          <h2 className="font-display text-2xl font-semibold">Irmãos da Verdadeira Luz nº 06</h2>
-          <p className="text-muted mt-1 text-sm">
-            São exibidos apenas dados institucionais e informações voluntariamente publicadas por
-            cada Irmão. Informações maçônicas internas e contatos pessoais permanecem protegidos.
-          </p>
-        </div>
-
-        {members.length === 0 ? (
-          <EmptyState
-            icon={<Users size={22} strokeWidth={1.75} />}
-            title="Diretório ainda sem registros disponíveis"
-          />
-        ) : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {members.map((member) => (
-              <ParamasonicMemberCard key={member.memberId} member={member} />
-            ))}
-          </div>
-        )}
       </section>
 
       {canSeeVinculos && (
