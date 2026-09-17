@@ -124,6 +124,7 @@ import {
   CreateParamasonicEntityPositionUseCase,
   ListParamasonicEntityPositionsUseCase,
   RemoveParamasonicEntityPositionUseCase,
+  ImportDemolayChapterRosterUseCase,
   FindBoardTermForDateUseCase,
   CreateBoardTermUseCase,
   CreateCommitteeUseCase,
@@ -1110,6 +1111,12 @@ export function createServerContainer() {
     removeParamasonicEntityPosition: new RemoveParamasonicEntityPositionUseCase({
       paramasonicEntityPositionRepository: repositories.paramasonicEntityPosition,
       clock,
+    }),
+    importDemolayChapterRoster: new ImportDemolayChapterRosterUseCase({
+      paramasonicEntityMemberRepository: repositories.paramasonicEntityMember,
+      paramasonicEntityRepository: repositories.paramasonicEntity,
+      clock,
+      idGenerator,
     }),
     registerPhilosophicalJourney: new RegisterPhilosophicalJourneyUseCase({
       philosophicalJourneyRepository: repositories.philosophicalJourney,

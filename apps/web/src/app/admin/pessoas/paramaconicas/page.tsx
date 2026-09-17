@@ -1,7 +1,8 @@
 import Link from 'next/link';
 import { createServerContainer } from '@vl6/infra';
 import { FRATERNAL_AFFILIATION_LABELS, PARAMASONIC_ENTITY_STATUS_LABELS } from '@vl6/shared';
-import { Badge, EmptyState, Handshake } from '@vl6/ui';
+import { Badge, Button, EmptyState, Handshake } from '@vl6/ui';
+import { hasPermission } from '@vl6/domain';
 import { requirePagePermission } from '@/lib/auth/require-permission';
 import { getCurrentTenant } from '@/lib/tenant/get-current-tenant';
 import { CreateParamasonicEntityDialog } from '@/modules/family-legacy/components/create-paramasonic-entity-dialog';
@@ -37,9 +38,18 @@ export default async function ParamasonicEntitiesPage() {
             Páginas próprias, gestão integrada e acesso controlado pela Loja.
           </p>
         </div>
-        <CreateParamasonicEntityDialog
-          defaultParentUnitName={currentTenant?.tenant.nome ?? 'Loja Verdadeira Luz nº 06'}
-        />
+        <div className="flex items-center gap-2">
+          {hasPermission(session.authContext, 'paramasonicEntity:manage') && (
+            <Button variant="outline" asChild>
+              <Link href="/admin/pessoas/paramaconicas/importar-demolay-rio-verde-350">
+                Importar nominata DeMolay
+              </Link>
+            </Button>
+          )}
+          <CreateParamasonicEntityDialog
+            defaultParentUnitName={currentTenant?.tenant.nome ?? 'Loja Verdadeira Luz nº 06'}
+          />
+        </div>
       </div>
 
       {entities.length === 0 ? (
