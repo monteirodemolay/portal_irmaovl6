@@ -1,4 +1,7 @@
-import type { ParamasonicEntityMemberSituation } from '@vl6/shared';
+import type {
+  ParamasonicEntityMemberCategory,
+  ParamasonicEntityMemberSituation,
+} from '@vl6/shared';
 import type { BaseEntity } from '../../../shared/base-entity';
 
 /**
@@ -22,6 +25,13 @@ export interface ParamasonicEntityMember extends BaseEntity {
   contato: string | null;
   /** Texto livre — ex.: "Presidência", "Secretaria", ou `null` pra integrante sem cargo. */
   cargo: string | null;
+  /**
+   * Classificação institucional (Escudeiro, DeMolay Ativo, Cavaleiro, Sênior
+   * DeMolay, Maçom/Conselho Consultivo, Clube de Mães e Amigos…). `null`
+   * quando ainda não classificado — cadastro histórico aguardando revisão
+   * manual do Administrador.
+   */
+  categoria: ParamasonicEntityMemberCategory | null;
   situacao: ParamasonicEntityMemberSituation;
   dataIngresso: Date | null;
 }

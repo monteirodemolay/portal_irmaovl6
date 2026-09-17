@@ -3,9 +3,11 @@
 import { revalidatePath } from 'next/cache';
 import {
   PARAMASONIC_ENTITY_KINDS,
+  PARAMASONIC_ENTITY_MEMBER_CATEGORIES,
   PARAMASONIC_ENTITY_MEMBER_SITUATIONS,
   PARAMASONIC_ENTITY_STATUSES,
   type FraternalAffiliationKind,
+  type ParamasonicEntityMemberCategory,
   type ParamasonicEntityMemberSituation,
   type ParamasonicEntityStatus,
 } from '@vl6/shared';
@@ -75,6 +77,7 @@ export async function addParamasonicEntityMemberAction(
 
   const memberId = (formData.get('memberId') as string) || null;
   const dataIngresso = formData.get('dataIngresso');
+  const categoria = (formData.get('categoria') as string) || null;
 
   const container = createServerContainer();
   const result = await container.useCases.addParamasonicEntityMember.execute(session.authContext, {
@@ -83,9 +86,58 @@ export async function addParamasonicEntityMemberAction(
     nomeCompleto: memberId ? null : (formData.get('nomeCompleto') as string) || null,
     contato: memberId ? null : (formData.get('contato') as string) || null,
     cargo: (formData.get('cargo') as string) || null,
+    categoria: categoria as ParamasonicEntityMemberCategory | null,
     situacao: situacao as ParamasonicEntityMemberSituation,
     dataIngresso: typeof dataIngresso === 'string' && dataIngresso ? new Date(dataIngresso) : null,
   });
+  if (!result.ok) return { error: result.error.message };
+
+  revalidatePath(`/admin/pessoas/paramaconicas/${entityId}`);
+  return { error: null };
+}
+
+export async function updateParamasonicEntityMemberAction(
+  entityId: string,
+  memberEntryId: string,
+  _prevState: ParamasonicEntityActionState,
+  formData: FormData,
+): Promise<ParamasonicEntityActionState> {
+  const session = await requireSession();
+
+  const situacao = formData.get('situacao');
+  if (
+    typeof situacao !== 'string' ||
+    !PARAMASONIC_ENTITY_MEMBER_SITUATIONS.includes(situacao as ParamasonicEntityMemberSituation)
+  ) {
+    return { error: 'Dados inválidos. Verifique os campos obrigatórios.' };
+  }
+
+  const categoria = (formData.get('categoria') as string) || null;
+  if (
+    categoria &&
+    !PARAMASONIC_ENTITY_MEMBER_CATEGORIES.includes(categoria as ParamasonicEntityMemberCategory)
+  ) {
+    return { error: 'Categoria inválida.' };
+  }
+
+  const dataIngresso = formData.get('dataIngresso');
+
+  const container = createServerContainer();
+  const result = await container.useCases.updateParamasonicEntityMember.execute(
+    session.authContext,
+    {
+      id: memberEntryId,
+      nomeCompleto: (formData.get('nomeCompleto') as string) || null,
+      contato: (formData.get('contato') as string) || null,
+      cargo: (formData.get('cargo') as string) || null,
+      categoria: categoria as ParamasonicEntityMemberCategory | null,
+      situacao: situacao as ParamasonicEntityMemberSituation,
+      dataIngresso:
+        typeof dataIngresso === 'string' && dataIngresso ? new Date(dataIngresso) : null,
+      marcarComoExDemolay: formData.get('marcarComoExDemolay') === 'on',
+      marcarComoPastPresidenteConselho: formData.get('marcarComoPastPresidenteConselho') === 'on',
+    },
+  );
   if (!result.ok) return { error: result.error.message };
 
   revalidatePath(`/admin/pessoas/paramaconicas/${entityId}`);
