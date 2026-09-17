@@ -1,7 +1,8 @@
 import Link from 'next/link';
-import { DEMOLAY_RIO_VERDE_350_ROSTER } from '@vl6/domain';
+import { DEMOLAY_RIO_VERDE_350_ROSTER, hasPermission } from '@vl6/domain';
 import { ArrowLeft } from '@vl6/ui';
 import { requirePagePermission } from '@/lib/auth/require-permission';
+import { CrossReferenceDemolayRosterForm } from '@/modules/family-legacy/components/cross-reference-demolay-roster-form';
 import { ImportDemolayRosterForm } from '@/modules/family-legacy/components/import-demolay-roster-form';
 
 /**
@@ -11,7 +12,8 @@ import { ImportDemolayRosterForm } from '@/modules/family-legacy/components/impo
  * Idempotente: pode rodar de novo sem duplicar ninguém.
  */
 export default async function ImportDemolayRosterPage() {
-  await requirePagePermission('paramasonicEntity:manage');
+  const session = await requirePagePermission('paramasonicEntity:manage');
+  const canCrossReference = hasPermission(session.authContext, 'familyLegacy:manage');
 
   return (
     <div className="flex max-w-2xl flex-col gap-6">
@@ -41,10 +43,10 @@ export default async function ImportDemolayRosterPage() {
             existir.
           </li>
           <li>
-            Todo integrante entra como corpo próprio da entidade — nenhum é vinculado
-            automaticamente a um Irmão já cadastrado, mesmo quando também é Maçom (situação marcada
-            como &quot;Sênior&quot;/&quot;Sênior/Consultor&quot; na planilha, embora isso possa
-            variar). Esse cruzamento fica pra uma etapa seguinte.
+            Todo integrante entra primeiro como corpo próprio da entidade — o cruzamento com Irmãos
+            já cadastrados (quem também é Maçom, tipicamente marcado como
+            &quot;Sênior&quot;/&quot;Sênior/Consultor&quot; na planilha, embora isso possa variar) é
+            um passo separado, logo abaixo, disparado só depois de importar.
           </li>
           <li>
             O campo Cargo guarda a classificação de situação do DeMolay (Regular, Irregular, Sênior,
@@ -56,6 +58,8 @@ export default async function ImportDemolayRosterPage() {
       </div>
 
       <ImportDemolayRosterForm />
+
+      {canCrossReference && <CrossReferenceDemolayRosterForm />}
     </div>
   );
 }

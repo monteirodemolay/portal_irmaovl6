@@ -31,6 +31,10 @@ export class FirestoreParamasonicEntityMemberRepository implements IParamasonicE
     await this.collection.doc(entity.id).set(entity);
   }
 
+  async update(entity: ParamasonicEntityMember): Promise<void> {
+    await this.collection.doc(entity.id).set(entity);
+  }
+
   async softDelete(id: string, deletedAt: Date, updatedBy: string): Promise<void> {
     await this.collection.doc(id).update({
       deletedAt,

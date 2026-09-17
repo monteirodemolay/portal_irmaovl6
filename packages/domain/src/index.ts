@@ -474,6 +474,7 @@ export * from './modules/family-legacy/lib/demolay-roster.types';
 export * from './modules/family-legacy/lib/demolay-rio-verde-350-roster';
 export * from './modules/family-legacy/lib/format-demolay-cargo-label';
 export * from './modules/family-legacy/use-cases/import-demolay-chapter-roster.use-case';
+export * from './modules/family-legacy/use-cases/cross-reference-demolay-roster.use-case';
 export * from './modules/family-legacy/use-cases/list-paramasonic-member-directory.use-case';
 export * from './modules/family-legacy/use-cases/backfill-fraternidade-feminina.use-case';
 export * from './modules/identity-access/use-cases/ensure-paramasonic-role.use-case';

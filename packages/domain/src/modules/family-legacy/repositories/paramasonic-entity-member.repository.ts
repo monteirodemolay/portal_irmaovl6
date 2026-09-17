@@ -5,5 +5,6 @@ export interface IParamasonicEntityMemberRepository {
   /** Integrantes de uma entidade (não excluídos) — base da aba "Integrantes". */
   listByEntity(tenantId: string, entityId: string): Promise<ParamasonicEntityMember[]>;
   create(entity: ParamasonicEntityMember): Promise<void>;
+  update(entity: ParamasonicEntityMember): Promise<void>;
   softDelete(id: string, deletedAt: Date, updatedBy: string): Promise<void>;
 }

@@ -125,6 +125,7 @@ import {
   ListParamasonicEntityPositionsUseCase,
   RemoveParamasonicEntityPositionUseCase,
   ImportDemolayChapterRosterUseCase,
+  CrossReferenceDemolayRosterUseCase,
   FindBoardTermForDateUseCase,
   CreateBoardTermUseCase,
   CreateCommitteeUseCase,
@@ -1115,6 +1116,14 @@ export function createServerContainer() {
     importDemolayChapterRoster: new ImportDemolayChapterRosterUseCase({
       paramasonicEntityMemberRepository: repositories.paramasonicEntityMember,
       paramasonicEntityRepository: repositories.paramasonicEntity,
+      clock,
+      idGenerator,
+    }),
+    crossReferenceDemolayRoster: new CrossReferenceDemolayRosterUseCase({
+      paramasonicEntityMemberRepository: repositories.paramasonicEntityMember,
+      paramasonicEntityRepository: repositories.paramasonicEntity,
+      personFraternalRecordRepository: repositories.personFraternalRecord,
+      memberRepository: repositories.member,
       clock,
       idGenerator,
     }),

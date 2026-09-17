@@ -1889,6 +1889,9 @@ export class InMemoryParamasonicEntityMemberRepository implements IParamasonicEn
   async create(entity: ParamasonicEntityMember) {
     this.byId.set(entity.id, entity);
   }
+  async update(entity: ParamasonicEntityMember) {
+    this.byId.set(entity.id, entity);
+  }
   async softDelete(id: string, deletedAt: Date, updatedBy: string) {
     const entity = this.byId.get(id);
     if (entity) {
