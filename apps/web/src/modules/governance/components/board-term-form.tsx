@@ -16,7 +16,11 @@ export function BoardTermForm() {
 
   return (
     <form action={formAction} className="flex max-w-sm flex-col gap-4">
-      <FormField label="Nome da gestão" htmlFor="nome" description='Ex.: "Gestão 2026/2027"'>
+      <FormField
+        label="Nome da gestão"
+        htmlFor="nome"
+        description='Só o ano — ex.: "2026/2027". A palavra "Gestão" já aparece automaticamente onde for exibido, sem precisar repetir aqui.'
+      >
         <Input id="nome" name="nome" required />
       </FormField>
       <FormField label="Início do período" htmlFor="periodoInicio">

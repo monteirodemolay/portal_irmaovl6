@@ -130,6 +130,7 @@ import {
   CrossReferenceDemolayRosterUseCase,
   FindBoardTermForDateUseCase,
   CreateBoardTermUseCase,
+  UpdateBoardTermUseCase,
   CreateCommitteeUseCase,
   CreateEventUseCase,
   SeedSessionClassificationUseCase,
@@ -733,6 +734,10 @@ export function createServerContainer() {
       boardTermRepository: repositories.boardTerm,
       clock,
       idGenerator,
+    }),
+    updateBoardTerm: new UpdateBoardTermUseCase({
+      boardTermRepository: repositories.boardTerm,
+      clock,
     }),
     assignBoardPosition: new AssignBoardPositionUseCase({
       boardTermRepository: repositories.boardTerm,
