@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { createServerContainer } from '@vl6/infra';
 import { Button, Card, CardContent, CardHeader, CardTitle, EmptyState } from '@vl6/ui';
 import { requirePagePermission } from '@/lib/auth/require-permission';
+import { NormalizeBoardTermNamesRunner } from '@/modules/governance/components/normalize-board-term-names-runner';
 
 function formatDate(date: Date): string {
   return new Intl.DateTimeFormat('pt-BR').format(new Date(date));
@@ -15,15 +16,20 @@ export default async function BoardTermsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-start justify-between gap-4">
         <h1 className="font-display text-2xl font-semibold">Gestões / Diretoria</h1>
-        <div className="flex gap-2">
-          <Button asChild variant="outline">
-            <Link href="/admin/pessoas/gestoes/importar-nominata">Importar Nominata Histórica</Link>
-          </Button>
-          <Button asChild>
-            <Link href="/admin/pessoas/gestoes/nova">Nova Gestão</Link>
-          </Button>
+        <div className="flex flex-col items-end gap-2">
+          <div className="flex gap-2">
+            <Button asChild variant="outline">
+              <Link href="/admin/pessoas/gestoes/importar-nominata">
+                Importar Nominata Histórica
+              </Link>
+            </Button>
+            <Button asChild>
+              <Link href="/admin/pessoas/gestoes/nova">Nova Gestão</Link>
+            </Button>
+          </div>
+          <NormalizeBoardTermNamesRunner />
         </div>
       </div>
 

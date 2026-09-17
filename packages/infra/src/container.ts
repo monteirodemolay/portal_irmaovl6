@@ -131,6 +131,7 @@ import {
   FindBoardTermForDateUseCase,
   CreateBoardTermUseCase,
   UpdateBoardTermUseCase,
+  NormalizeBoardTermNamesUseCase,
   CreateCommitteeUseCase,
   CreateEventUseCase,
   SeedSessionClassificationUseCase,
@@ -736,6 +737,10 @@ export function createServerContainer() {
       idGenerator,
     }),
     updateBoardTerm: new UpdateBoardTermUseCase({
+      boardTermRepository: repositories.boardTerm,
+      clock,
+    }),
+    normalizeBoardTermNames: new NormalizeBoardTermNamesUseCase({
       boardTermRepository: repositories.boardTerm,
       clock,
     }),
