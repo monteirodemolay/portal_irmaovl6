@@ -13,9 +13,9 @@ import { formatDate, Panel } from '../profile-shared';
 export function RegistrationDataCard({ profile }: { profile: PublicMemberProfileDTO }) {
   const isInMemoriam = profile.situacao === 'falecido';
 
+  // CIM já aparece no cabeçalho (`ProfileHero`) — não repete aqui.
   const fields: { label: string; value: string }[] = [
     { label: 'Nome completo', value: profile.nomeCompleto },
-    profile.cim ? { label: 'CIM', value: profile.cim } : null,
     { label: 'Situação maçônica', value: MEMBER_SITUATION_STATUS_LABELS[profile.situacao] },
     profile.potencia ? { label: 'Potência', value: profile.potencia } : null,
     profile.loja ? { label: 'Loja', value: profile.loja } : null,

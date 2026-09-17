@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import type { PublicMemberProfileDTO } from '@vl6/domain';
 import { MEMBER_SITUATION_STATUS_LABELS } from '@vl6/shared';
-import { CalendarDays, Cross, ShieldCheck } from '@vl6/ui';
+import { Cross, ShieldCheck } from '@vl6/ui';
 import { MemberAvatar } from '@/components/membership/member-avatar';
 import { MEMBER_DEGREE_LABELS } from '@/lib/membership/member-degree-label';
 import { formatDate, getCurrentAssignment } from '../profile-shared';
@@ -21,7 +21,6 @@ export function ProfileHero({
   isOwnProfile?: boolean;
 }) {
   const current = getCurrentAssignment(profile.trajetoria);
-  const dataIniciacao = profile.trajetoria?.dataIniciacao ?? profile.dataIniciacao;
   const isInMemoriam = profile.situacao === 'falecido';
   const canEdit = isOwnProfile && !isInMemoriam;
 
@@ -71,21 +70,16 @@ export function ProfileHero({
         </div>
       </div>
 
-      {(dataIniciacao || (isInMemoriam && profile.dataFalecimento)) && (
+      {/* A data de iniciação já aparece na coluna de identidade ("Ingresso
+          na Loja") e na linha do tempo — repeti-la aqui era redundante. A
+          passagem ao Oriente Eterno continua, é o único selo de estado que
+          só existe nesta faixa. */}
+      {isInMemoriam && profile.dataFalecimento && (
         <div className="relative border-t border-white/10 px-6 py-3 text-center text-xs text-white/60 min-[620px]:text-left sm:px-8">
-          {isInMemoriam
-            ? profile.dataFalecimento && (
-                <span className="flex items-center justify-center gap-1.5 min-[620px]:justify-start">
-                  <Cross size={12} strokeWidth={1.75} />
-                  Passou ao Oriente Eterno em {formatDate(profile.dataFalecimento)}
-                </span>
-              )
-            : dataIniciacao && (
-                <span className="flex items-center justify-center gap-1.5 min-[620px]:justify-start">
-                  <CalendarDays size={12} strokeWidth={1.75} />
-                  Iniciado em {formatDate(dataIniciacao)}
-                </span>
-              )}
+          <span className="flex items-center justify-center gap-1.5 min-[620px]:justify-start">
+            <Cross size={12} strokeWidth={1.75} />
+            Passou ao Oriente Eterno em {formatDate(profile.dataFalecimento)}
+          </span>
         </div>
       )}
     </section>

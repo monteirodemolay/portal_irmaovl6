@@ -1,7 +1,7 @@
 import type { PublicMemberProfileDTO } from '@vl6/domain';
-import { Briefcase, Building2, Card, CardContent, Compass, MapPin, Sparkles } from '@vl6/ui';
+import { Building2, Card, CardContent, Compass, MapPin, Sparkles } from '@vl6/ui';
 import { MEMBER_DEGREE_LABELS } from '@/lib/membership/member-degree-label';
-import { formatDate, getCurrentAssignment } from '../profile-shared';
+import { formatDate, getCurrentAssignment, SummaryRow } from '../profile-shared';
 
 export interface ProfileSectionLink {
   id: string;
@@ -24,7 +24,6 @@ export function ProfileIdentityRail({
 }) {
   const current = getCurrentAssignment(profile.trajetoria);
   const dataIniciacao = profile.trajetoria?.dataIniciacao ?? profile.dataIniciacao;
-  const profissao = profile.profissional?.profissao ?? null;
 
   const facts: { icon: typeof Compass; label: string; value: string }[] = [
     { icon: Compass, label: 'Grau simbólico', value: MEMBER_DEGREE_LABELS[profile.grau] },
@@ -38,11 +37,34 @@ export function ProfileIdentityRail({
         }
       : null,
     profile.oriente ? { icon: MapPin, label: 'Oriente', value: profile.oriente } : null,
-    profissao ? { icon: Briefcase, label: 'Profissão', value: profissao } : null,
     dataIniciacao
       ? { icon: Sparkles, label: 'Ingresso na Loja', value: formatDate(dataIniciacao) }
       : null,
   ].filter((fact): fact is { icon: typeof Compass; label: string; value: string } => fact !== null);
+
+  // "Perfil em resumo" (Cidade/Profissão/Área/Formação) — morava solto mais
+  // abaixo na coluna central, mas é a mesma natureza dos quickfacts acima
+  // (fatos rápidos sobre o Irmão), então passou a viver aqui, sem duplicar
+  // "Profissão" nos dois lugares.
+  const summaryRows: { label: string; value: string }[] = [
+    profile.informacoesPessoais?.cidadeExibicao
+      ? { label: 'Cidade', value: profile.informacoesPessoais.cidadeExibicao }
+      : null,
+    profile.profissional?.profissao
+      ? { label: 'Profissão', value: profile.profissional.profissao }
+      : null,
+    profile.profissional?.areaAtuacao
+      ? {
+          label: 'Área',
+          value: profile.profissional.especializacao
+            ? `${profile.profissional.areaAtuacao} · ${profile.profissional.especializacao}`
+            : profile.profissional.areaAtuacao,
+        }
+      : null,
+    profile.profissional?.formacao
+      ? { label: 'Formação', value: profile.profissional.formacao }
+      : null,
+  ].filter((row): row is { label: string; value: string } => row !== null);
 
   return (
     <>
@@ -76,6 +98,19 @@ export function ProfileIdentityRail({
                   </div>
                 ))}
               </dl>
+            )}
+
+            {summaryRows.length > 0 && (
+              <div className="border-border flex flex-col gap-2.5 border-t pt-4">
+                <p className="text-muted text-[10px] font-bold uppercase tracking-wide">
+                  Perfil em resumo
+                </p>
+                <dl className="flex flex-col gap-2.5">
+                  {summaryRows.map((row) => (
+                    <SummaryRow key={row.label} label={row.label} value={row.value} />
+                  ))}
+                </dl>
+              </div>
             )}
 
             <p className="bg-background text-muted rounded-xl p-3 text-[11px] leading-relaxed">

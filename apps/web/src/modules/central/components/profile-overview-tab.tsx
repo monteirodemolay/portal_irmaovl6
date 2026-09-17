@@ -37,9 +37,10 @@ export function ProfileOverviewTab({
    * `true` — usado pelo novo layout de 3 colunas (`profile-layout/`), que já
    * mostra a biografia/mensagem de homenagem no card "Apresentação" próprio
    * — evita duas cópias do mesmo texto na página. Esconde a coluna
-   * esquerda inteira (homenagem + "Sobre" + aviso de perfil vazio),
-   * mantendo só o resumo lateral (Perfil em resumo, Vivência Maçônica,
-   * Afiliações, Contato e Redes).
+   * esquerda inteira (homenagem + "Sobre" + aviso de perfil vazio) E o
+   * painel "Perfil em resumo" (que nesse layout já mora na coluna de
+   * identidade, `ProfileIdentityRail`, junto de Grau/Profissão/Ingresso),
+   * mantendo só Vivência Maçônica, Afiliações e Contato e Redes.
    */
   hideBio?: boolean;
 }) {
@@ -145,20 +146,21 @@ export function ProfileOverviewTab({
             : 'flex flex-col gap-6'
         }
       >
-        {(profile.informacoesPessoais?.cidadeExibicao ||
-          profile.grau ||
-          summaryRows.length > 0) && (
-          <Panel kicker="RESUMO" title="Perfil em resumo" compact>
-            <dl className="flex flex-col gap-2.5">
-              {profile.informacoesPessoais?.cidadeExibicao && (
-                <SummaryRow label="Cidade" value={profile.informacoesPessoais.cidadeExibicao} />
-              )}
-              {summaryRows.map((row) => (
-                <SummaryRow key={row.label} label={row.label} value={row.value} />
-              ))}
-            </dl>
-          </Panel>
-        )}
+        {!hideBio &&
+          (profile.informacoesPessoais?.cidadeExibicao ||
+            profile.grau ||
+            summaryRows.length > 0) && (
+            <Panel kicker="RESUMO" title="Perfil em resumo" compact>
+              <dl className="flex flex-col gap-2.5">
+                {profile.informacoesPessoais?.cidadeExibicao && (
+                  <SummaryRow label="Cidade" value={profile.informacoesPessoais.cidadeExibicao} />
+                )}
+                {summaryRows.map((row) => (
+                  <SummaryRow key={row.label} label={row.label} value={row.value} />
+                ))}
+              </dl>
+            </Panel>
+          )}
 
         {hasVidaMaconica && profile.informacoesMaconicas && (
           <Panel
