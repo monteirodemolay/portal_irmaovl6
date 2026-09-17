@@ -42,6 +42,24 @@ export type PublicFamiliaLegadoDTO = Partial<Record<FamilyDisplayGroup, PublicFa
 const PUBLIC_VISIBILITY_LEVELS: readonly FamilyVisibilityLevel[] = ['members', 'archive'];
 const DECLARED_KINDS = new Set(['declared_kinship', 'guardian_of', 'step_parent_of']);
 
+/**
+ * `deriveKinships` não sabe o gênero de quem está do outro lado do
+ * parentesco (não existe campo gênero em `Member`/`FamilyPerson`), por isso
+ * seus rótulos são sempre no par ("Filho ou filha", "Avô ou avó",
+ * "Padrasto ou madrasta de"...). Mas um `kind === 'member'` é sempre um
+ * Maçom regular — jurisdição masculina — o mesmo fato que já torna
+ * `isMacom` incondicional pra esse `kind` logo abaixo. Aqui usamos essa
+ * mesma certeza pra masculinizar o rótulo só na exibição, sem precisar de
+ * um campo de gênero novo: "Filho ou filha" → "Filho", "Enteado(a) de" →
+ * "Enteado de".
+ */
+export function masculinizeKinshipLabel(label: string): string {
+  return label
+    .replace(/\(a\)/gi, '')
+    .replace(/\s+ou\s+\S+/i, '')
+    .trim();
+}
+
 export interface BuildPublicFamiliaLegadoDeps {
   familyRelationshipRepository: IFamilyRelationshipRepository;
   familyPersonRepository: IFamilyPersonRepository;
@@ -179,7 +197,7 @@ export async function buildPublicFamiliaLegado(
       id: entry.ref.id,
       nomeCompleto: displayName,
       fotoUrl: member?.fotoUrl ?? familyPerson?.fotoUrl ?? null,
-      parentesco: entry.label,
+      parentesco: entry.ref.kind === 'member' ? masculinizeKinshipLabel(entry.label) : entry.label,
       lifeStatus: familyPerson?.lifeStatus ?? null,
       dataNascimento: familyPerson?.dataNascimento ?? null,
       isMacom: entry.ref.kind === 'member' ? true : isFamilyPersonMacom(entry.ref.id),

@@ -1,5 +1,6 @@
 import 'server-only';
 import type { AuthContext } from '@vl6/domain';
+import { masculinizeKinshipLabel } from '@vl6/domain';
 import type { ServerContainer } from '@vl6/infra';
 import { FAMILY_DISPLAY_GROUPS, type FamilyDisplayGroup } from '@vl6/shared';
 import { classifyFamilyDisplayGroup } from './family-display-groups';
@@ -136,7 +137,8 @@ export async function loadOwnerFamilyNetworkDTO(
       id: kinship.person.id,
       nomeCompleto: displayName,
       fotoUrl: member?.fotoUrl ?? familyPerson?.fotoUrl ?? null,
-      parentesco: kinship.label,
+      parentesco:
+        kinship.person.kind === 'member' ? masculinizeKinshipLabel(kinship.label) : kinship.label,
       ladoLinhagem: kinship.lineageSide,
       lifeStatus: familyPerson?.lifeStatus ?? null,
       visibility: directRelation?.visibility ?? familyPerson?.visibility ?? 'private',
@@ -175,7 +177,7 @@ export async function loadOwnerFamilyNetworkDTO(
       id: other.id,
       nomeCompleto: displayName,
       fotoUrl: member?.fotoUrl ?? familyPerson?.fotoUrl ?? null,
-      parentesco: label,
+      parentesco: other.kind === 'member' ? masculinizeKinshipLabel(label) : label,
       ladoLinhagem: 'unknown',
       lifeStatus: familyPerson?.lifeStatus ?? null,
       visibility: relation.visibility,
