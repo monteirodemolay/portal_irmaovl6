@@ -26,10 +26,12 @@ import { getCeremonyMates, getMemberCeremonyEventIds } from '../../archive/lib/g
 import type { IFamilyRelationshipRepository } from '../../family-legacy/repositories/family-relationship.repository';
 import type { IFamilyPersonRepository } from '../../family-legacy/repositories/family-person.repository';
 import type { IPersonFraternalRecordRepository } from '../../family-legacy/repositories/person-fraternal-record.repository';
+import type { ITenantRepository } from '../../tenancy/repositories/tenant.repository';
 import { buildPublicFamiliaLegado } from '../lib/build-public-familia-legado';
 
 export interface GetPublicMemberProfileDeps {
   memberRepository: IMemberRepository;
+  tenantRepository: ITenantRepository;
   memberCentralProfileRepository: IMemberCentralProfileRepository;
   publicationSettingsRepository: IPublicationSettingsRepository;
   memberPositionHistoryRepository: IMemberPositionHistoryRepository;
@@ -93,15 +95,26 @@ export class GetPublicMemberProfileUseCase {
     // exibida, publicado ou não. Cargos de Diretoria e comissões são dois
     // registros distintos (`ICommitteeRepository` não deriva de
     // `IMemberPositionHistoryRepository`), por isso duas chamadas.
-    const [cargos, comissoes, familia, irmaosGemeos, ceremonyEventIds, vigenteSituationRecord] =
-      await Promise.all([
-        getMemberJourneyCargos(this.deps, targetMemberId),
-        getMemberJourneyCommittees(this.deps, ctx.tenantId, targetMemberId),
-        buildPublicFamiliaLegado(this.deps, ctx.tenantId, targetMemberId),
-        getCeremonyMates(this.deps, member),
-        getMemberCeremonyEventIds(this.deps, member),
-        this.deps.memberSituationRecordRepository.findVigenteByMemberId(targetMemberId),
-      ]);
+    const [
+      cargos,
+      comissoes,
+      familia,
+      irmaosGemeos,
+      ceremonyEventIds,
+      vigenteSituationRecord,
+      tenant,
+    ] = await Promise.all([
+      getMemberJourneyCargos(this.deps, targetMemberId),
+      getMemberJourneyCommittees(this.deps, ctx.tenantId, targetMemberId),
+      buildPublicFamiliaLegado(this.deps, ctx.tenantId, targetMemberId),
+      getCeremonyMates(this.deps, member),
+      getMemberCeremonyEventIds(this.deps, member),
+      this.deps.memberSituationRecordRepository.findVigenteByMemberId(targetMemberId),
+      // `Tenant.id === tenantId` sempre (docs/architecture/03-modelo-dados.md)
+      // — não existe entidade "Loja" própria, então o nome/Oriente exibidos
+      // no card de identidade vêm do próprio tenant.
+      this.deps.tenantRepository.findById(ctx.tenantId),
+    ]);
 
     // O fim da trajetória — só existe pra situação terminal, e só com o
     // registro certo (o motivo real, não presumido do `situacao` sozinho).
@@ -152,6 +165,10 @@ export class GetPublicMemberProfileUseCase {
 
     return ok({
       ...dto,
+      loja: tenant?.nome ?? null,
+      oriente: tenant?.endereco
+        ? [tenant.endereco.cidade, tenant.endereco.estado].filter(Boolean).join(' — ') || null
+        : null,
       trajetoria: {
         dataIniciacao: member.dataIniciacao,
         dataElevacao: member.dataElevacao,

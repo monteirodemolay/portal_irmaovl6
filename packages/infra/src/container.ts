@@ -860,6 +860,7 @@ export function createServerContainer() {
     }),
     getPublicMemberProfile: new GetPublicMemberProfileUseCase({
       memberRepository: repositories.member,
+      tenantRepository: repositories.tenant,
       memberCentralProfileRepository: repositories.memberCentralProfile,
       publicationSettingsRepository: repositories.publicationSettings,
       memberPositionHistoryRepository: repositories.memberPositionHistory,

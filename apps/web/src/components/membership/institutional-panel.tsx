@@ -17,6 +17,7 @@ export type IconType = React.ComponentType<{
  * tipográfico para colunas laterais.
  */
 export function Panel({
+  id,
   kicker,
   title,
   icon: Icon,
@@ -24,6 +25,8 @@ export function Panel({
   compact = false,
   children,
 }: {
+  /** Âncora opcional pro nav de seções da coluna de identidade (`ProfileIdentityRail`). */
+  id?: string;
   kicker: string;
   title: string;
   icon?: IconType;
@@ -32,7 +35,10 @@ export function Panel({
   children: React.ReactNode;
 }) {
   return (
-    <article className="border-border bg-surface flex flex-col gap-4 rounded-2xl border p-5 shadow-sm sm:p-6">
+    <article
+      id={id}
+      className="border-border bg-surface flex scroll-mt-24 flex-col gap-4 rounded-2xl border p-5 shadow-sm sm:p-6"
+    >
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-muted text-[10px] font-bold tracking-[0.14em]">{kicker}</p>
