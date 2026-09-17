@@ -9,20 +9,18 @@ import { formatDate, Panel } from '../profile-shared';
  * `nomeCompleto` é obrigatório. Serve tanto o Irmão ativo quanto o In
  * Memoriam — a diferença é só "Passagem ao Oriente Eterno", que só entra na
  * lista quando `profile.dataFalecimento` existe.
+ *
+ * CIM, Potência, Loja, Oriente e Profissão NÃO entram aqui — já aparecem no
+ * cabeçalho e no card de identidade (`ProfileHero`/`ProfileIdentityRail`,
+ * inclusive "Perfil em resumo"). Empilhado no celular, repetir esses campos
+ * lia como a mesma informação três vezes seguidas.
  */
 export function RegistrationDataCard({ profile }: { profile: PublicMemberProfileDTO }) {
   const isInMemoriam = profile.situacao === 'falecido';
 
-  // CIM já aparece no cabeçalho (`ProfileHero`) — não repete aqui.
   const fields: { label: string; value: string }[] = [
     { label: 'Nome completo', value: profile.nomeCompleto },
     { label: 'Situação maçônica', value: MEMBER_SITUATION_STATUS_LABELS[profile.situacao] },
-    profile.potencia ? { label: 'Potência', value: profile.potencia } : null,
-    profile.loja ? { label: 'Loja', value: profile.loja } : null,
-    profile.oriente ? { label: 'Oriente', value: profile.oriente } : null,
-    profile.profissional?.profissao
-      ? { label: 'Cadastro profissional', value: profile.profissional.profissao }
-      : null,
     isInMemoriam && profile.dataFalecimento
       ? { label: 'Passagem ao Oriente Eterno', value: formatDate(profile.dataFalecimento) }
       : null,
