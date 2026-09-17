@@ -1,13 +1,13 @@
-import Link from 'next/link';
 import {
   hasPermission,
-  type DirectoryMemberDTO,
   type BusinessDirectoryEntryDTO,
+  type DirectoryMemberDTO,
 } from '@vl6/domain';
 import type { AreaAtuacaoKey, MemberDegree, MemberSituationStatus } from '@vl6/shared';
 import { createServerContainer } from '@vl6/infra';
-import { ArrowUpRight, EmptyState, Handshake, Lock, Search } from '@vl6/ui';
+import { EmptyState, Lock, Search } from '@vl6/ui';
 import { requireSession } from '@/lib/auth/require-session';
+import { getCurrentTenant } from '@/lib/tenant/get-current-tenant';
 import { AreaExploreGrid } from '@/modules/central/components/directorio/area-explore-grid';
 import { BusinessDirectoryCard } from '@/modules/central/components/negocios/business-directory-card';
 import {
@@ -15,7 +15,9 @@ import {
   type CommunityFiltersValues,
   type CommunityTipo,
 } from '@/modules/central/components/comunidade/community-search-panel';
-import { CommunityMemberCard } from '@/modules/central/components/comunidade/community-member-card';
+import { CommunityHero } from '@/modules/central/components/comunidade/community-hero';
+import { CommunityMemberResults } from '@/modules/central/components/comunidade/community-member-results';
+import { CommunitySidebar } from '@/modules/central/components/comunidade/community-sidebar';
 import { PersonalSummaryCard } from '@/modules/central/components/comunidade/personal-summary-card';
 
 type SearchParams = Record<string, string | undefined>;
@@ -44,6 +46,13 @@ export default async function ComunidadeVL6Page({
   }
 
   const container = createServerContainer();
+  const currentTenant = await getCurrentTenant();
+  const canManageHeroPhoto = hasPermission(session.authContext, 'tenant:manage');
+  const showGaleriaDeHonra = hasPermission(session.authContext, 'honor:read');
+  const showComunidadeParamaconica = hasPermission(
+    session.authContext,
+    'paramasonicCommunity:read',
+  );
 
   const tipo = parseTipo(params.tipo);
   const filters: CommunityFiltersValues = {
@@ -143,25 +152,10 @@ export default async function ComunidadeVL6Page({
   const hasActiveFilter = Object.values(filters).some(Boolean);
 
   return (
-    <div className="flex flex-col gap-8">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="font-display text-2xl font-semibold">Comunidade VL6</h1>
-          <p className="text-muted text-sm">
-            Pessoas, conhecimentos, empresas e serviços que fortalecem nossa Loja.
-          </p>
-        </div>
-        {hasPermission(session.authContext, 'paramasonicCommunity:read') && (
-          <Link
-            href="/paramaconicas"
-            className="border-border bg-surface hover:border-primary hover:text-primary flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors"
-          >
-            <Handshake size={14} strokeWidth={1.75} />
-            Comunidade Paramaçônica
-            <ArrowUpRight size={13} strokeWidth={2} />
-          </Link>
-        )}
-      </div>
+    <div className="flex flex-col gap-6">
+      {currentTenant && (
+        <CommunityHero tenant={currentTenant.tenant} canManagePhoto={canManageHeroPhoto} />
+      )}
 
       {member ? (
         <PersonalSummaryCard
@@ -176,64 +170,69 @@ export default async function ComunidadeVL6Page({
         />
       )}
 
-      <CommunitySearchPanel
-        tipo={tipo}
-        filters={filters}
-        directoryOptions={directoryOptions}
-        businessOptions={businessOptions}
-        areaFacets={areaFacets}
-        resultCount={resultCount}
-      />
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_270px] lg:items-start">
+        <div className="flex min-w-0 flex-col gap-8">
+          <CommunitySearchPanel
+            tipo={tipo}
+            filters={filters}
+            directoryOptions={directoryOptions}
+            businessOptions={businessOptions}
+            areaFacets={areaFacets}
+            resultCount={resultCount}
+          />
 
-      {tipo !== 'negocios' && areaFacets.length > 0 && (
-        <section className="flex flex-col gap-3">
-          <h2 className="font-display text-lg font-semibold">Explore por área</h2>
-          <AreaExploreGrid areaFacets={areaFacets} activeArea={filters.areaAtuacao} />
-        </section>
-      )}
+          {tipo !== 'negocios' && areaFacets.length > 0 && (
+            <section className="flex flex-col gap-3">
+              <h2 className="font-display text-lg font-semibold">Explore por área</h2>
+              <AreaExploreGrid areaFacets={areaFacets} activeArea={filters.areaAtuacao} />
+            </section>
+          )}
 
-      {resultCount === 0 ? (
-        <EmptyState
-          icon={<Search size={22} strokeWidth={1.75} />}
-          title={
-            hasActiveFilter ? 'Nenhum resultado encontrado' : 'A Comunidade ainda está começando'
-          }
-          description={
-            hasActiveFilter
-              ? 'Tente buscar por outro nome, profissão, competência, empresa ou cidade.'
-              : 'Assim que Irmãos publicarem perfis e negócios, eles aparecem aqui.'
-          }
+          {resultCount === 0 ? (
+            <EmptyState
+              icon={<Search size={22} strokeWidth={1.75} />}
+              title={
+                hasActiveFilter
+                  ? 'Nenhum resultado encontrado'
+                  : 'A Comunidade ainda está começando'
+              }
+              description={
+                hasActiveFilter
+                  ? 'Tente buscar por outro nome, profissão, competência, empresa ou cidade.'
+                  : 'Assim que Irmãos publicarem perfis e negócios, eles aparecem aqui.'
+              }
+            />
+          ) : (
+            <>
+              {tipo !== 'negocios' && memberItems.length > 0 && (
+                <CommunityMemberResults items={memberItems} />
+              )}
+
+              {tipo !== 'irmaos' && businessItems.length > 0 && (
+                <section className="flex flex-col gap-3">
+                  <h2 className="font-display text-lg font-semibold">Negócios e Serviços</h2>
+                  <p className="text-muted text-sm">
+                    Empresas, profissionais e serviços compartilhados voluntariamente pelos Irmãos
+                    da Verdadeira Luz. As informações são publicadas pelos respectivos responsáveis
+                    — a Loja não intermedeia contratações nem garante produtos ou serviços.
+                  </p>
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    {businessItems.map((entry) => (
+                      <BusinessDirectoryCard key={entry.businessId} entry={entry} />
+                    ))}
+                  </div>
+                </section>
+              )}
+            </>
+          )}
+        </div>
+
+        <CommunitySidebar
+          member={member}
+          showGaleriaDeHonra={showGaleriaDeHonra}
+          showComunidadeParamaconica={showComunidadeParamaconica}
         />
-      ) : (
-        <>
-          {tipo !== 'negocios' && memberItems.length > 0 && (
-            <section className="flex flex-col gap-3">
-              <h2 className="font-display text-lg font-semibold">Irmãos</h2>
-              <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-                {memberItems.map((profile) => (
-                  <CommunityMemberCard key={profile.memberId} profile={profile} />
-                ))}
-              </div>
-            </section>
-          )}
-
-          {tipo !== 'irmaos' && businessItems.length > 0 && (
-            <section className="flex flex-col gap-3">
-              <h2 className="font-display text-lg font-semibold">Negócios e Serviços</h2>
-              <p className="text-muted text-sm">
-                Empresas, profissionais e serviços compartilhados voluntariamente pelos Irmãos da
-                Verdadeira Luz. As informações são publicadas pelos respectivos responsáveis — a
-                Loja não intermedeia contratações nem garante produtos ou serviços.
-              </p>
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {businessItems.map((entry) => (
-                  <BusinessDirectoryCard key={entry.businessId} entry={entry} />
-                ))}
-              </div>
-            </section>
-          )}
-        </>
-      )}
+      </div>
     </div>
   );
 }

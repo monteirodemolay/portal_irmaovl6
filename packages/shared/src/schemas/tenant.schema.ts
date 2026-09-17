@@ -71,3 +71,15 @@ export const updateTenantSettingsSchema = z.object({
   citacaoRotacao: quoteRotationSchema,
 });
 export type UpdateTenantSettingsInput = z.infer<typeof updateTenantSettingsSchema>;
+
+/**
+ * Foto de fundo da hero da Comunidade VL6 (`/irmaos`) — ver
+ * `Tenant.comunidadeHeroFotoUrl`/`comunidadeHeroFotoPosicao`. `fotoUrl: null`
+ * remove a foto (hero volta ao gradiente padrão); `posicao` é o
+ * enquadramento vertical, 0–100.
+ */
+export const updateComunidadeHeroFotoSchema = z.object({
+  fotoUrl: z.string().url().nullable(),
+  posicao: z.number().min(0).max(100).nullable(),
+});
+export type UpdateComunidadeHeroFotoInput = z.infer<typeof updateComunidadeHeroFotoSchema>;

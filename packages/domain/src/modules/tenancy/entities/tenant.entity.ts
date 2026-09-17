@@ -19,4 +19,16 @@ export interface Tenant extends BaseEntity {
   site: string | null;
   email: string;
   modulosHabilitados: string[];
+  /**
+   * Fotografia de fundo da hero da Comunidade VL6 (`/irmaos`) — configurável
+   * pelo Administrador da Loja (`tenant:manage`), nunca por Irmão comum.
+   * `null` enquanto nenhuma foto foi enviada (hero cai no gradiente padrão).
+   */
+  comunidadeHeroFotoUrl: string | null;
+  /**
+   * Enquadramento vertical da foto acima, 0–100 (equivalente a
+   * `object-position: center Y%`). `null` junto com `comunidadeHeroFotoUrl`
+   * nulo, ou quando a foto foi enviada sem ajuste (usa o centro, 50).
+   */
+  comunidadeHeroFotoPosicao: number | null;
 }
