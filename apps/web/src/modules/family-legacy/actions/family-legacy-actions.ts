@@ -4,10 +4,15 @@ import { revalidatePath } from 'next/cache';
 import {
   familyPersonSchema,
   familyRelationshipSchema,
+  personFraternalRecordSchema,
   type FamilyPersonRefKind,
 } from '@vl6/shared';
 import { createServerContainer } from '@vl6/infra';
 import { requireSession } from '@/lib/auth/require-session';
+import {
+  uploadFamilyPersonPhoto,
+  validatePhotoFile,
+} from '@/lib/family-legacy/family-person-photo-upload';
 import {
   DIRECT_LINK_KINDS,
   resolveRelationEndpoints,
@@ -91,10 +96,10 @@ export async function addFamilyMemberAction(
       dataNascimento: dataNascimentoRaw ? dataNascimentoRaw : null,
       dataFalecimento: dataFalecimentoRaw ? dataFalecimentoRaw : null,
       lifeStatus: formData.get('lifeStatus') || 'living',
-      cidade: null,
-      estado: null,
-      pais: null,
-      biografia: null,
+      cidade: (formData.get('cidade') as string) || null,
+      estado: (formData.get('estado') as string) || null,
+      pais: (formData.get('pais') as string) || null,
+      biografia: (formData.get('biografia') as string) || null,
       menorDeIdade: false,
       fraternalLinkStatus: formData.get('fraternalLinkStatus') || 'unknown',
       visibility: formData.get('visibility') || 'private',
@@ -112,6 +117,27 @@ export async function addFamilyMemberAction(
     );
     if (!personResult.ok) return { error: personResult.error.message };
     personRef = { kind: 'familyPerson', id: personResult.value.id };
+
+    // Upload de foto exige o `id` gerado na criação — segundo passo, igual
+    // ao padrão de `updateFamilyMemberAction` (edição), só que aqui em
+    // sequência com a criação em vez de partir de um registro já existente.
+    const fotoFile = formData.get('foto');
+    if (fotoFile instanceof File && fotoFile.size > 0) {
+      const photoError = validatePhotoFile(fotoFile);
+      if (photoError) return { error: photoError };
+      const fotoUrl = await uploadFamilyPersonPhoto(
+        fotoFile,
+        session.authContext.tenantId,
+        personResult.value.id,
+      );
+      const updateResult = await container.useCases.updateFamilyPerson.execute(
+        session.authContext,
+        member.id,
+        personResult.value.id,
+        { ...parsed.data, fotoUrl },
+      );
+      if (!updateResult.ok) return { error: updateResult.error.message };
+    }
   }
 
   const endpoints = resolveRelationEndpoints(linkKind, anchor, personRef);
@@ -245,6 +271,146 @@ export async function removeFamilyRelationshipAction(
     session.authContext,
     member.id,
     relationshipId,
+  );
+  if (!result.ok) return { error: result.error.message };
+
+  revalidatePath('/irmaos/meu-espaco');
+  return EMPTY_STATE;
+}
+
+/**
+ * Edição de um `FamilyPerson` já cadastrado (nome, foto, biografia,
+ * cidade/estado/país, datas, situação e vínculo maçônico/paramaçônico) —
+ * cobre o caso "cadastrei a pessoa errada/incompleta e não tinha onde
+ * corrigir" (pedido do Administrador). `personId` vem por `.bind()` no
+ * componente, igual ao padrão de `updateParamasonicEntityMemberAction`.
+ * `UpdateFamilyPersonUseCase` já garante que só quem gerencia o registro
+ * pode editar — os campos que este formulário não expõe (fonte,
+ * visibilidade avançada) são preservados do registro atual.
+ */
+export async function updateFamilyMemberAction(
+  personId: string,
+  _prevState: FamilyLegacyActionState,
+  formData: FormData,
+): Promise<FamilyLegacyActionState> {
+  const session = await requireSession();
+  const container = createServerContainer();
+
+  const member = await container.repositories.member.findByUserId(
+    session.authContext.tenantId,
+    session.user.id,
+  );
+  if (!member) return { error: 'Cadastro de Irmão não encontrado.' };
+
+  const existing = await container.repositories.familyPerson.findById(personId);
+  if (!existing || existing.tenantId !== session.authContext.tenantId || existing.deletedAt) {
+    return { error: 'Pessoa não encontrada.' };
+  }
+  if (existing.managedByMemberId !== member.id) {
+    return { error: 'Só quem cadastrou esta pessoa pode editá-la.' };
+  }
+
+  let fotoUrl = existing.fotoUrl;
+  const fotoFile = formData.get('foto');
+  if (fotoFile instanceof File && fotoFile.size > 0) {
+    const photoError = validatePhotoFile(fotoFile);
+    if (photoError) return { error: photoError };
+    fotoUrl = await uploadFamilyPersonPhoto(fotoFile, session.authContext.tenantId, personId);
+  }
+
+  const dataNascimentoRaw = formData.get('dataNascimento');
+  const dataFalecimentoRaw = formData.get('dataFalecimento');
+  const parsed = familyPersonSchema.safeParse({
+    linkedMemberId: existing.linkedMemberId,
+    nomeCompleto: formData.get('nomeCompleto'),
+    fotoUrl,
+    dataNascimento: dataNascimentoRaw ? dataNascimentoRaw : null,
+    dataFalecimento: dataFalecimentoRaw ? dataFalecimentoRaw : null,
+    lifeStatus: formData.get('lifeStatus') || 'living',
+    cidade: (formData.get('cidade') as string) || null,
+    estado: (formData.get('estado') as string) || null,
+    pais: (formData.get('pais') as string) || null,
+    biografia: (formData.get('biografia') as string) || null,
+    menorDeIdade: existing.menorDeIdade,
+    fraternalLinkStatus: formData.get('fraternalLinkStatus') || 'unknown',
+    visibility: formData.get('visibility') || existing.visibility,
+    sourceKind: existing.sourceKind,
+    sourceDescription: existing.sourceDescription,
+  });
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? 'Dados inválidos.' };
+  }
+
+  const result = await container.useCases.updateFamilyPerson.execute(
+    session.authContext,
+    member.id,
+    personId,
+    parsed.data,
+  );
+  if (!result.ok) return { error: result.error.message };
+
+  revalidatePath('/irmaos/meu-espaco');
+  return EMPTY_STATE;
+}
+
+/**
+ * Registra uma trajetória maçônica/paramaçônica ("de qual Loja ele era") de
+ * um `FamilyPerson` — pedido do Administrador a partir do caso concreto do
+ * bisavô fundador da própria Loja: `unidadeNome` é texto livre, sem exigir
+ * cadastro prévio de uma "Loja co-irmã". `personId` por `.bind()`, mesmo
+ * padrão de `updateFamilyMemberAction`.
+ */
+export async function createPersonFraternalRecordAction(
+  personId: string,
+  _prevState: FamilyLegacyActionState,
+  formData: FormData,
+): Promise<FamilyLegacyActionState> {
+  const session = await requireSession();
+  const container = createServerContainer();
+
+  const member = await container.repositories.member.findByUserId(
+    session.authContext.tenantId,
+    session.user.id,
+  );
+  if (!member) return { error: 'Cadastro de Irmão não encontrado.' };
+
+  const unidadeNome = (formData.get('unidadeNome') as string) || null;
+  if (!unidadeNome) return { error: 'Informe o nome da Loja, Capítulo ou unidade.' };
+
+  const parsed = personFraternalRecordSchema.safeParse({
+    personKind: 'familyPerson',
+    personId,
+    affiliationKind: formData.get('affiliationKind') || 'mason',
+    organizacaoNome: null,
+    unidadeTipo: formData.get('unidadeTipo') || 'lodge',
+    unidadeNome,
+    unidadeNumero: (formData.get('unidadeNumero') as string) || null,
+    cidade: (formData.get('cidade') as string) || null,
+    estado: (formData.get('estado') as string) || null,
+    pais: null,
+    potencia: null,
+    rito: null,
+    dataIniciacao: null,
+    dataElevacao: null,
+    dataExaltacao: null,
+    grau: null,
+    cargos: [],
+    titulos: [],
+    passouAoOrienteEternoEm: null,
+    resumoLegado: (formData.get('resumoLegado') as string) || null,
+    visibility: 'members',
+    sourceKind: 'family_report',
+    sourceDescription: null,
+    reviewStatus: 'draft',
+  });
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? 'Dados inválidos.' };
+  }
+
+  const result = await container.useCases.createPersonFraternalRecord.execute(
+    session.authContext,
+    member.id,
+    parsed.data,
   );
   if (!result.ok) return { error: result.error.message };
 
