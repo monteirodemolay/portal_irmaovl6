@@ -37,6 +37,35 @@ export async function createBoardTermAction(
   redirect(`/admin/pessoas/gestoes/${result.value.id}`);
 }
 
+export async function updateBoardTermAction(
+  termId: string,
+  _prevState: GovernanceActionState,
+  formData: FormData,
+): Promise<GovernanceActionState> {
+  const session = await requireSession();
+
+  const nome = String(formData.get('nome') ?? '');
+  const periodoInicio = new Date(String(formData.get('periodoInicio')));
+  const periodoFim = new Date(String(formData.get('periodoFim')));
+  if (!nome || Number.isNaN(periodoInicio.getTime()) || Number.isNaN(periodoFim.getTime())) {
+    return { error: 'Preencha nome e as duas datas do período.' };
+  }
+
+  const container = createServerContainer();
+  const result = await container.useCases.updateBoardTerm.execute(session.authContext, termId, {
+    nome,
+    periodoInicio,
+    periodoFim,
+  });
+  if (!result.ok) {
+    return { error: result.error.message };
+  }
+
+  revalidatePath(`/admin/pessoas/gestoes/${termId}`);
+  revalidatePath('/admin/pessoas/gestoes');
+  return { error: null };
+}
+
 export async function assignBoardPositionAction(
   gestaoId: string,
   _prevState: GovernanceActionState,

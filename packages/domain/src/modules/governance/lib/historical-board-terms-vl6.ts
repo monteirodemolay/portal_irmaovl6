@@ -37,7 +37,7 @@ export const HISTORICAL_BOARD_TERMS_VL6: HistoricalBoardTermInput[] = [
   {
     // Primeira Diretoria, antes do reconhecimento pela GLEG (1951) e da
     // interrupção dos trabalhos em 1953 — ver docs enviados pela Loja.
-    nome: 'Gestão 1947/1953',
+    nome: '1947/1953',
     periodoInicio: '1947-07-31',
     periodoFim: '1953-10-19',
     segments: [
@@ -62,7 +62,7 @@ export const HISTORICAL_BOARD_TERMS_VL6: HistoricalBoardTermInput[] = [
     ],
   },
   {
-    nome: 'Gestão 1978/1979',
+    nome: '1978/1979',
     periodoInicio: '1978-08-19',
     periodoFim: '1979-05-31',
     segments: [
@@ -72,7 +72,7 @@ export const HISTORICAL_BOARD_TERMS_VL6: HistoricalBoardTermInput[] = [
     ],
   },
   {
-    nome: 'Gestão 1979/1980',
+    nome: '1979/1980',
     periodoInicio: '1979-06-01',
     periodoFim: '1980-05-31',
     segments: [
@@ -82,7 +82,7 @@ export const HISTORICAL_BOARD_TERMS_VL6: HistoricalBoardTermInput[] = [
     ],
   },
   {
-    nome: 'Gestão 1980/1981',
+    nome: '1980/1981',
     periodoInicio: '1980-06-01',
     periodoFim: '1981-05-31',
     segments: [
@@ -95,7 +95,7 @@ export const HISTORICAL_BOARD_TERMS_VL6: HistoricalBoardTermInput[] = [
     // Documento original lista "1º VIG" duas vezes (Tasso Dias Noleto,
     // depois Moisés Vieira Clemente) — tratado aqui como 1º/2º Vig
     // respectivamente, provável erro de digitação do original.
-    nome: 'Gestão 1981/1982',
+    nome: '1981/1982',
     periodoInicio: '1981-06-01',
     periodoFim: '1982-05-31',
     segments: [
@@ -105,7 +105,7 @@ export const HISTORICAL_BOARD_TERMS_VL6: HistoricalBoardTermInput[] = [
     ],
   },
   {
-    nome: 'Gestão 1982/1983',
+    nome: '1982/1983',
     periodoInicio: '1982-06-01',
     periodoFim: '1983-05-31',
     segments: [
@@ -115,7 +115,7 @@ export const HISTORICAL_BOARD_TERMS_VL6: HistoricalBoardTermInput[] = [
     ],
   },
   {
-    nome: 'Gestão 1983/1984',
+    nome: '1983/1984',
     periodoInicio: '1983-06-01',
     periodoFim: '1984-05-31',
     segments: [
@@ -125,7 +125,7 @@ export const HISTORICAL_BOARD_TERMS_VL6: HistoricalBoardTermInput[] = [
     ],
   },
   {
-    nome: 'Gestão 1984/1985',
+    nome: '1984/1985',
     periodoInicio: '1984-06-01',
     periodoFim: '1985-05-31',
     segments: [
@@ -135,7 +135,7 @@ export const HISTORICAL_BOARD_TERMS_VL6: HistoricalBoardTermInput[] = [
     ],
   },
   {
-    nome: 'Gestão 1985/1986',
+    nome: '1985/1986',
     periodoInicio: '1985-06-01',
     periodoFim: '1986-05-31',
     segments: [
@@ -145,7 +145,7 @@ export const HISTORICAL_BOARD_TERMS_VL6: HistoricalBoardTermInput[] = [
     ],
   },
   {
-    nome: 'Gestão 1986/1987',
+    nome: '1986/1987',
     periodoInicio: '1986-06-01',
     periodoFim: '1987-05-31',
     segments: [
@@ -155,7 +155,7 @@ export const HISTORICAL_BOARD_TERMS_VL6: HistoricalBoardTermInput[] = [
     ],
   },
   {
-    nome: 'Gestão 1987/1988',
+    nome: '1987/1988',
     periodoInicio: '1987-06-01',
     periodoFim: '1988-05-31',
     segments: [
@@ -165,7 +165,7 @@ export const HISTORICAL_BOARD_TERMS_VL6: HistoricalBoardTermInput[] = [
     ],
   },
   {
-    nome: 'Gestão 1988/1989',
+    nome: '1988/1989',
     periodoInicio: '1988-06-01',
     periodoFim: '1989-05-31',
     segments: [
@@ -175,7 +175,7 @@ export const HISTORICAL_BOARD_TERMS_VL6: HistoricalBoardTermInput[] = [
     ],
   },
   {
-    nome: 'Gestão 1989/1990',
+    nome: '1989/1990',
     periodoInicio: '1989-06-01',
     periodoFim: '1990-05-31',
     segments: [
@@ -185,7 +185,7 @@ export const HISTORICAL_BOARD_TERMS_VL6: HistoricalBoardTermInput[] = [
     ],
   },
   {
-    nome: 'Gestão 1990/1991',
+    nome: '1990/1991',
     periodoInicio: '1990-06-01',
     periodoFim: '1991-05-31',
     segments: [
@@ -197,7 +197,7 @@ export const HISTORICAL_BOARD_TERMS_VL6: HistoricalBoardTermInput[] = [
   {
     // Troca de Venerável em novembro/1991 (mudança de Oriente do Ir. Anézio)
     // — os 3 cargos mudaram de titular no mesmo mês, conforme o documento.
-    nome: 'Gestão 1991/1992',
+    nome: '1991/1992',
     periodoInicio: '1991-06-01',
     periodoFim: '1992-05-31',
     segments: [
@@ -210,7 +210,7 @@ export const HISTORICAL_BOARD_TERMS_VL6: HistoricalBoardTermInput[] = [
     ],
   },
   {
-    nome: 'Gestão 1992/1993',
+    nome: '1992/1993',
     periodoInicio: '1992-06-01',
     periodoFim: '1993-05-31',
     segments: [
@@ -220,7 +220,7 @@ export const HISTORICAL_BOARD_TERMS_VL6: HistoricalBoardTermInput[] = [
     ],
   },
   {
-    nome: 'Gestão 1993/1994',
+    nome: '1993/1994',
     periodoInicio: '1993-06-01',
     periodoFim: '1994-05-31',
     segments: [
@@ -230,7 +230,7 @@ export const HISTORICAL_BOARD_TERMS_VL6: HistoricalBoardTermInput[] = [
     ],
   },
   {
-    nome: 'Gestão 1994/1995',
+    nome: '1994/1995',
     periodoInicio: '1994-06-01',
     periodoFim: '1995-05-31',
     segments: [
@@ -240,7 +240,7 @@ export const HISTORICAL_BOARD_TERMS_VL6: HistoricalBoardTermInput[] = [
     ],
   },
   {
-    nome: 'Gestão 1995/1996',
+    nome: '1995/1996',
     periodoInicio: '1995-06-01',
     periodoFim: '1996-05-31',
     segments: [
@@ -250,7 +250,7 @@ export const HISTORICAL_BOARD_TERMS_VL6: HistoricalBoardTermInput[] = [
     ],
   },
   {
-    nome: 'Gestão 1996/1997',
+    nome: '1996/1997',
     periodoInicio: '1996-06-01',
     periodoFim: '1997-05-31',
     segments: [
@@ -260,7 +260,7 @@ export const HISTORICAL_BOARD_TERMS_VL6: HistoricalBoardTermInput[] = [
     ],
   },
   {
-    nome: 'Gestão 1997/1998',
+    nome: '1997/1998',
     periodoInicio: '1997-06-01',
     periodoFim: '1998-05-31',
     segments: [
@@ -270,7 +270,7 @@ export const HISTORICAL_BOARD_TERMS_VL6: HistoricalBoardTermInput[] = [
     ],
   },
   {
-    nome: 'Gestão 1998/1999',
+    nome: '1998/1999',
     periodoInicio: '1998-06-01',
     periodoFim: '1999-05-31',
     segments: [
@@ -280,7 +280,7 @@ export const HISTORICAL_BOARD_TERMS_VL6: HistoricalBoardTermInput[] = [
     ],
   },
   {
-    nome: 'Gestão 1999/2000',
+    nome: '1999/2000',
     periodoInicio: '1999-06-01',
     periodoFim: '2000-05-31',
     segments: [
@@ -290,7 +290,7 @@ export const HISTORICAL_BOARD_TERMS_VL6: HistoricalBoardTermInput[] = [
     ],
   },
   {
-    nome: 'Gestão 2000/2001',
+    nome: '2000/2001',
     periodoInicio: '2000-06-01',
     periodoFim: '2001-05-31',
     segments: [
@@ -300,7 +300,7 @@ export const HISTORICAL_BOARD_TERMS_VL6: HistoricalBoardTermInput[] = [
     ],
   },
   {
-    nome: 'Gestão 2001/2002',
+    nome: '2001/2002',
     periodoInicio: '2001-06-01',
     periodoFim: '2002-05-31',
     segments: [
@@ -310,7 +310,7 @@ export const HISTORICAL_BOARD_TERMS_VL6: HistoricalBoardTermInput[] = [
     ],
   },
   {
-    nome: 'Gestão 2002/2003',
+    nome: '2002/2003',
     periodoInicio: '2002-06-01',
     periodoFim: '2003-05-31',
     segments: [
@@ -320,7 +320,7 @@ export const HISTORICAL_BOARD_TERMS_VL6: HistoricalBoardTermInput[] = [
     ],
   },
   {
-    nome: 'Gestão 2003/2005',
+    nome: '2003/2005',
     periodoInicio: '2003-06-01',
     periodoFim: '2005-05-31',
     segments: [
@@ -330,7 +330,7 @@ export const HISTORICAL_BOARD_TERMS_VL6: HistoricalBoardTermInput[] = [
     ],
   },
   {
-    nome: 'Gestão 2005/2006',
+    nome: '2005/2006',
     periodoInicio: '2005-06-01',
     periodoFim: '2006-05-31',
     segments: [
@@ -340,7 +340,7 @@ export const HISTORICAL_BOARD_TERMS_VL6: HistoricalBoardTermInput[] = [
     ],
   },
   {
-    nome: 'Gestão 2006/2007',
+    nome: '2006/2007',
     periodoInicio: '2006-06-01',
     periodoFim: '2007-05-31',
     segments: [
@@ -352,7 +352,7 @@ export const HISTORICAL_BOARD_TERMS_VL6: HistoricalBoardTermInput[] = [
   {
     // Troca de Venerável em setembro/2007 (mudança de Oriente do Ir.
     // Adalberto para SP) — 1º/2º Vig continuaram os mesmos.
-    nome: 'Gestão 2007/2008',
+    nome: '2007/2008',
     periodoInicio: '2007-06-01',
     periodoFim: '2008-05-31',
     segments: [
@@ -363,7 +363,7 @@ export const HISTORICAL_BOARD_TERMS_VL6: HistoricalBoardTermInput[] = [
     ],
   },
   {
-    nome: 'Gestão 2008/2009',
+    nome: '2008/2009',
     periodoInicio: '2008-06-01',
     periodoFim: '2009-05-31',
     segments: [
@@ -373,7 +373,7 @@ export const HISTORICAL_BOARD_TERMS_VL6: HistoricalBoardTermInput[] = [
     ],
   },
   {
-    nome: 'Gestão 2009/2010',
+    nome: '2009/2010',
     periodoInicio: '2009-06-01',
     periodoFim: '2010-05-31',
     segments: [
@@ -383,7 +383,7 @@ export const HISTORICAL_BOARD_TERMS_VL6: HistoricalBoardTermInput[] = [
     ],
   },
   {
-    nome: 'Gestão 2010/2011',
+    nome: '2010/2011',
     periodoInicio: '2010-06-01',
     periodoFim: '2011-05-31',
     segments: [
@@ -393,7 +393,7 @@ export const HISTORICAL_BOARD_TERMS_VL6: HistoricalBoardTermInput[] = [
     ],
   },
   {
-    nome: 'Gestão 2011/2012',
+    nome: '2011/2012',
     periodoInicio: '2011-06-01',
     periodoFim: '2012-05-31',
     segments: [
@@ -406,7 +406,7 @@ export const HISTORICAL_BOARD_TERMS_VL6: HistoricalBoardTermInput[] = [
     // Ir. Eduardo Lima, acometido por enfermidade grave, foi substituído
     // interinamente pelo 1º Vig. Ricardo Hahimoto de Menezes em nov/2012
     // (sem nova eleição) — Ricardo assume "ad hoc" até o fim da gestão.
-    nome: 'Gestão 2012/2013',
+    nome: '2012/2013',
     periodoInicio: '2012-06-01',
     periodoFim: '2013-05-31',
     segments: [
@@ -419,7 +419,7 @@ export const HISTORICAL_BOARD_TERMS_VL6: HistoricalBoardTermInput[] = [
     ],
   },
   {
-    nome: 'Gestão 2013/2014',
+    nome: '2013/2014',
     periodoInicio: '2013-06-01',
     periodoFim: '2014-05-31',
     segments: [
@@ -429,7 +429,7 @@ export const HISTORICAL_BOARD_TERMS_VL6: HistoricalBoardTermInput[] = [
     ],
   },
   {
-    nome: 'Gestão 2014/2015',
+    nome: '2014/2015',
     periodoInicio: '2014-06-01',
     periodoFim: '2015-05-31',
     segments: [
@@ -439,7 +439,7 @@ export const HISTORICAL_BOARD_TERMS_VL6: HistoricalBoardTermInput[] = [
     ],
   },
   {
-    nome: 'Gestão 2015/2016',
+    nome: '2015/2016',
     periodoInicio: '2015-06-01',
     periodoFim: '2016-05-31',
     segments: [
@@ -449,7 +449,7 @@ export const HISTORICAL_BOARD_TERMS_VL6: HistoricalBoardTermInput[] = [
     ],
   },
   {
-    nome: 'Gestão 2016/2017',
+    nome: '2016/2017',
     periodoInicio: '2016-06-01',
     periodoFim: '2017-05-31',
     segments: [
@@ -459,7 +459,7 @@ export const HISTORICAL_BOARD_TERMS_VL6: HistoricalBoardTermInput[] = [
     ],
   },
   {
-    nome: 'Gestão 2017/2018',
+    nome: '2017/2018',
     periodoInicio: '2017-06-01',
     periodoFim: '2018-05-31',
     segments: [
@@ -469,7 +469,7 @@ export const HISTORICAL_BOARD_TERMS_VL6: HistoricalBoardTermInput[] = [
     ],
   },
   {
-    nome: 'Gestão 2018/2019',
+    nome: '2018/2019',
     periodoInicio: '2018-06-01',
     periodoFim: '2019-05-31',
     segments: [
@@ -479,7 +479,7 @@ export const HISTORICAL_BOARD_TERMS_VL6: HistoricalBoardTermInput[] = [
     ],
   },
   {
-    nome: 'Gestão 2019/2020',
+    nome: '2019/2020',
     periodoInicio: '2019-06-01',
     periodoFim: '2020-05-31',
     segments: [
@@ -489,7 +489,7 @@ export const HISTORICAL_BOARD_TERMS_VL6: HistoricalBoardTermInput[] = [
     ],
   },
   {
-    nome: 'Gestão 2020/2021',
+    nome: '2020/2021',
     periodoInicio: '2020-06-01',
     periodoFim: '2021-05-31',
     segments: [
@@ -499,7 +499,7 @@ export const HISTORICAL_BOARD_TERMS_VL6: HistoricalBoardTermInput[] = [
     ],
   },
   {
-    nome: 'Gestão 2021/2022',
+    nome: '2021/2022',
     periodoInicio: '2021-06-01',
     periodoFim: '2022-05-31',
     segments: [
@@ -509,7 +509,7 @@ export const HISTORICAL_BOARD_TERMS_VL6: HistoricalBoardTermInput[] = [
     ],
   },
   {
-    nome: 'Gestão 2022/2023',
+    nome: '2022/2023',
     periodoInicio: '2022-06-01',
     periodoFim: '2023-05-31',
     segments: [
@@ -519,7 +519,7 @@ export const HISTORICAL_BOARD_TERMS_VL6: HistoricalBoardTermInput[] = [
     ],
   },
   {
-    nome: 'Gestão 2023/2024',
+    nome: '2023/2024',
     periodoInicio: '2023-06-01',
     periodoFim: '2024-05-31',
     segments: [
@@ -529,7 +529,7 @@ export const HISTORICAL_BOARD_TERMS_VL6: HistoricalBoardTermInput[] = [
     ],
   },
   {
-    nome: 'Gestão 2024/2025',
+    nome: '2024/2025',
     periodoInicio: '2024-06-01',
     periodoFim: '2025-05-31',
     segments: [
@@ -539,7 +539,7 @@ export const HISTORICAL_BOARD_TERMS_VL6: HistoricalBoardTermInput[] = [
     ],
   },
   {
-    nome: 'Gestão 2025/2026',
+    nome: '2025/2026',
     periodoInicio: '2025-06-01',
     periodoFim: '2026-05-31',
     segments: [

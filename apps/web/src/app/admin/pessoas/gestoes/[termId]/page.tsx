@@ -5,6 +5,7 @@ import { Badge, Card, CardContent, CardHeader, CardTitle } from '@vl6/ui';
 import { requirePagePermission } from '@/lib/auth/require-permission';
 import { AssignPositionForm } from '@/modules/governance/components/assign-position-form';
 import { CommitteeForm } from '@/modules/governance/components/committee-form';
+import { EditBoardTermDialog } from '@/modules/governance/components/edit-board-term-dialog';
 import { EditCommitteeDialog } from '@/modules/governance/components/edit-committee-dialog';
 import { createCommitteeAction } from '@/modules/governance/actions/governance-actions';
 
@@ -51,11 +52,14 @@ export default async function BoardTermDetailPage({
 
   return (
     <div className="flex flex-col gap-8">
-      <div>
-        <h1 className="font-display text-2xl font-semibold">{term.nome}</h1>
-        <p className="text-muted">
-          {formatDate(term.periodoInicio)} — {formatDate(term.periodoFim)}
-        </p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="font-display text-2xl font-semibold">{term.nome}</h1>
+          <p className="text-muted">
+            {formatDate(term.periodoInicio)} — {formatDate(term.periodoFim)}
+          </p>
+        </div>
+        <EditBoardTermDialog term={term} />
       </div>
 
       <Card className="max-w-lg">
