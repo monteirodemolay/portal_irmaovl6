@@ -93,6 +93,29 @@ async function resolveLibraryItem(
     return null;
   }
 
+  const category = await container.repositories.libraryCategory.findById(item.categoriaId);
+  if (!item.fileId) {
+    return {
+      compositeId: buildArchiveItemId('library', item.id),
+      kind: 'library',
+      kindLabel: KIND_LABELS.library,
+      titulo: item.titulo ?? 'Obra da Biblioteca',
+      descricao: item.sinopse ?? null,
+      autor: item.autor ?? null,
+      categoriaNome: category?.nome ?? null,
+      tipoDetalhado: item.tipoMaterial ?? null,
+      thumbnailUrl: item.capaUrl ?? null,
+      viewHref: `/acervo/biblioteca/${item.id}`,
+      downloadHref: null,
+      tamanhoBytes: null,
+      dataReferencia: item.anoPublicacao ? new Date(item.anoPublicacao, 0, 1) : null,
+      catalogadoEm: item.createdAt,
+      legacyHref: '/acervo/biblioteca',
+      legacyLabel: 'Ver na Biblioteca',
+      catalogo: null,
+    };
+  }
+
   const file = await container.repositories.fileAsset.findById(item.fileId);
   if (
     !file ||
@@ -103,8 +126,6 @@ async function resolveLibraryItem(
   ) {
     return null;
   }
-
-  const category = await container.repositories.libraryCategory.findById(item.categoriaId);
 
   return {
     compositeId: buildArchiveItemId('library', item.id),

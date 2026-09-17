@@ -39,6 +39,9 @@ export class RecordLibraryDownloadUseCase {
       return err(new NotFoundError('LibraryItem', libraryItemId));
     }
 
+    if (!item.fileId) {
+      return err(new ForbiddenError('libraryItem:download'));
+    }
     const file = await this.deps.fileAssetRepository.findById(item.fileId);
     if (!file || !file.permitirDownload) {
       return err(new ForbiddenError('libraryItem:download'));

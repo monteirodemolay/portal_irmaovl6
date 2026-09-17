@@ -59,4 +59,8 @@ export class FirestoreLibraryItemRepository implements ILibraryItemRepository {
   async incrementViews(id: string): Promise<void> {
     await this.collection.doc(id).update({ contagemVisualizacoes: FieldValue.increment(1) });
   }
+
+  async incrementLoans(id: string): Promise<void> {
+    await this.collection.doc(id).update({ contagemEmprestimos: FieldValue.increment(1) });
+  }
 }

@@ -7,10 +7,23 @@ import type { LibraryItem } from '../entities/library-item.entity';
 import type { ILibraryItemRepository } from '../repositories/library-item.repository';
 
 export interface AddLibraryItemInput {
-  fileId: string;
+  fileId: string | null;
   categoriaId: string;
   subcategoriaId: string | null;
   permiteLeituraOnline: boolean;
+  titulo?: string;
+  autor?: string | null;
+  tipoMaterial?: LibraryItem['tipoMaterial'];
+  formato?: LibraryItem['formato'];
+  anoPublicacao?: number | null;
+  editora?: string | null;
+  isbn?: string | null;
+  codigoClassificacao?: string | null;
+  palavrasChave?: string[];
+  sinopse?: string | null;
+  parecerBibliotecario?: string | null;
+  capaUrl?: string | null;
+  prazoEmprestimoDias?: number;
 }
 
 export interface AddLibraryItemDeps {
@@ -30,9 +43,11 @@ export class AddLibraryItemUseCase {
   async execute(ctx: AuthContext, input: AddLibraryItemInput): Promise<Result<LibraryItem>> {
     requirePermission(ctx, 'libraryItem:create');
 
-    const file = await this.deps.fileAssetRepository.findById(input.fileId);
-    if (!file || file.tenantId !== ctx.tenantId) {
-      return err(new NotFoundError('FileAsset', input.fileId));
+    if (input.fileId) {
+      const file = await this.deps.fileAssetRepository.findById(input.fileId);
+      if (!file || file.tenantId !== ctx.tenantId) {
+        return err(new NotFoundError('FileAsset', input.fileId));
+      }
     }
 
     const now = this.deps.clock.now();
@@ -42,6 +57,9 @@ export class AddLibraryItemUseCase {
       ...input,
       contagemDownloads: 0,
       contagemVisualizacoes: 0,
+      contagemEmprestimos: 0,
+      somaAvaliacoes: 0,
+      quantidadeAvaliacoes: 0,
       createdAt: now,
       updatedAt: now,
       createdBy: ctx.uid,

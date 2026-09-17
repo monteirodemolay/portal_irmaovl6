@@ -71,6 +71,9 @@ export class MigrateLibraryItemUseCase {
       return err(new NotFoundError('LibraryItem', input.libraryItemId));
     }
 
+    if (!libraryItem.fileId) {
+      return err(new NotFoundError('FileAsset', 'not-linked'));
+    }
     const file = await this.deps.fileAssetRepository.findById(libraryItem.fileId);
     if (!file || file.tenantId !== ctx.tenantId || file.deletedAt) {
       return err(new NotFoundError('FileAsset', libraryItem.fileId));

@@ -1,0 +1,3 @@
+import { isLibraryLoanOpen } from '@vl6/domain';
+export interface LibraryLoanPackage<T>{id:string;loans:T[];createdAt:Date;active:boolean}
+export function groupLibraryLoansByPackage<T extends {id:string;requestPackageId?:string;createdAt:Date;statusEmprestimo:Parameters<typeof isLibraryLoanOpen>[0]}>(loans:T[]):LibraryLoanPackage<T>[]{const map=new Map<string,T[]>();for(const loan of loans){const key=loan.requestPackageId??loan.id;map.set(key,[...(map.get(key)??[]),loan]);}return [...map].map(([id,entries])=>({id,loans:entries,createdAt:new Date(Math.min(...entries.map(x=>x.createdAt.getTime()))),active:entries.some(x=>isLibraryLoanOpen(x.statusEmprestimo))})).sort((a,b)=>b.createdAt.getTime()-a.createdAt.getTime());}

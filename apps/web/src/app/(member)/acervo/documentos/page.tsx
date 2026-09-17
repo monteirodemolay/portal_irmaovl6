@@ -103,7 +103,9 @@ export default async function ArchiveDocumentsPage({
   ]);
 
   const categoryNameById = new Map(categories.map((c) => [c.id, c.nome]));
-  const libraryFileIds = new Set(libraryItems.map((item) => item.fileId));
+  const libraryFileIds = new Set(
+    libraryItems.map((item) => item.fileId).filter((id): id is string => Boolean(id)),
+  );
 
   const allDocuments = filesPage.items.filter(
     (file) => file.publicado && !libraryFileIds.has(file.id),

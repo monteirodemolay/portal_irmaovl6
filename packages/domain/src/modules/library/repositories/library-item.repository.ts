@@ -10,4 +10,5 @@ export interface ILibraryItemRepository {
   update(item: LibraryItem): Promise<void>;
   incrementDownloads(id: string): Promise<void>;
   incrementViews(id: string): Promise<void>;
+  incrementLoans(id: string): Promise<void>;
 }
