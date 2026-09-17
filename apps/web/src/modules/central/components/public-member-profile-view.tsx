@@ -3,7 +3,7 @@ import type { Honor, MemberTitle, PhilosophicalJourney, PublicMemberProfileDTO }
 import type { PersonPhoto } from '@/modules/archive/components/person-photo-grid';
 import { ProfileHeaderCard } from './profile-header-card';
 import { ProfileOverviewTab } from './profile-overview-tab';
-import { ProfileTrajectoryTab } from './profile-trajectory-tab';
+import { ProfileTrajectoryTab, type ParamasonicAffiliationDisplay } from './profile-trajectory-tab';
 import { ProfileFamilyTab } from './profile-family-tab';
 import { ProfileAcervoTab } from './profile-acervo-tab';
 import { InMemoriamProfileView } from './in-memoriam-profile-view';
@@ -41,6 +41,7 @@ export function PublicMemberProfileView({
   memberTitles = [],
   honors = [],
   philosophicalJourneys = [],
+  paramasonicAffiliations = [],
   acervoPhotos = [],
   acervoRelationsSlot = null,
   layout = 'full',
@@ -56,6 +57,8 @@ export function PublicMemberProfileView({
   honors?: Honor[];
   /** Graus Filosóficos/Corpos Maçônicos (Fase 3) — só os `visivel` chegam a Trajetória. */
   philosophicalJourneys?: PhilosophicalJourney[];
+  /** Vínculos com ordens paramaçônicas (DeMolay etc.) — exibidos em Trajetória, com link pro perfil da entidade quando existir. */
+  paramasonicAffiliations?: ParamasonicAffiliationDisplay[];
   /** Fotos institucionais do Acervo VL6 em que este Irmão está marcado — ver `ProfileAcervoTab`. */
   acervoPhotos?: PersonPhoto[];
   /** `RelationsSection` (Server Component, precisa de `container`/`authContext`) já renderizado pela página. */
@@ -99,6 +102,7 @@ export function PublicMemberProfileView({
         memberTitles={memberTitles}
         honors={honors}
         philosophicalJourneys={philosophicalJourneys}
+        paramasonicAffiliations={paramasonicAffiliations}
       />
 
       <SectionHeading title="Família e Legado" />

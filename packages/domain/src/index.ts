@@ -467,6 +467,7 @@ export * from './modules/family-legacy/use-cases/get-paramasonic-entity.use-case
 export * from './modules/family-legacy/use-cases/soft-delete-paramasonic-entity.use-case';
 export * from './modules/family-legacy/use-cases/add-paramasonic-entity-member.use-case';
 export * from './modules/family-legacy/use-cases/list-paramasonic-entity-members.use-case';
+export * from './modules/family-legacy/use-cases/list-all-paramasonic-entity-members.use-case';
 export * from './modules/family-legacy/use-cases/remove-paramasonic-entity-member.use-case';
 export * from './modules/family-legacy/use-cases/update-paramasonic-entity-member.use-case';
 export * from './modules/family-legacy/use-cases/create-paramasonic-entity-position.use-case';
