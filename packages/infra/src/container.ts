@@ -105,6 +105,8 @@ import {
   ConfirmFamilyRelationshipUseCase,
   DeclineFamilyRelationshipUseCase,
   SoftDeleteFamilyRelationshipUseCase,
+  UpdateFamilyRelationshipLabelUseCase,
+  DeleteFamilyPersonUseCase,
   DeriveFamilyKinshipsUseCase,
   ListOwnerFamilyNetworkUseCase,
   FindSharedFamilyPersonsUseCase,
@@ -1926,6 +1928,15 @@ export function createServerContainer() {
       clock,
     }),
     softDeleteFamilyRelationship: new SoftDeleteFamilyRelationshipUseCase({
+      familyRelationshipRepository: repositories.familyRelationship,
+      clock,
+    }),
+    updateFamilyRelationshipLabel: new UpdateFamilyRelationshipLabelUseCase({
+      familyRelationshipRepository: repositories.familyRelationship,
+      clock,
+    }),
+    deleteFamilyPerson: new DeleteFamilyPersonUseCase({
+      familyPersonRepository: repositories.familyPerson,
       familyRelationshipRepository: repositories.familyRelationship,
       clock,
     }),

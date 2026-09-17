@@ -86,11 +86,9 @@ export function PublicMemberProfileView({
   }
 
   const hasApresentacao = Boolean(profile.apresentacao?.texto);
+  // Cidade/profissão/área/formação não entram aqui — já aparecem em
+  // "Perfil em resumo", dentro da coluna de identidade (`ProfileIdentityRail`).
   const hasVivenciaContato = Boolean(
-    profile.informacoesPessoais?.cidadeExibicao ||
-    profile.profissional?.profissao ||
-    profile.profissional?.areaAtuacao ||
-    profile.profissional?.formacao ||
     profile.informacoesMaconicas?.lojasVisitadas ||
     profile.informacoesMaconicas?.interessesMaconicos ||
     (profile.afiliacoes && profile.afiliacoes.length > 0) ||

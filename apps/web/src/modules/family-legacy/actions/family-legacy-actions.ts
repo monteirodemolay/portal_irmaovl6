@@ -279,6 +279,73 @@ export async function removeFamilyRelationshipAction(
 }
 
 /**
+ * Corrige o texto de um vínculo declarado ("Bisavô", "Padrinho" etc.) já
+ * cadastrado — pedido do Administrador ("que possa ser editável o
+ * vínculo"), pra não precisar remover e recriar a relação. Só funciona
+ * pra vínculos do tipo `declared_kinship` — o use case rejeita os demais.
+ */
+export async function updateFamilyRelationshipLabelAction(
+  relationshipId: string,
+  _prevState: FamilyLegacyActionState,
+  formData: FormData,
+): Promise<FamilyLegacyActionState> {
+  const session = await requireSession();
+  const container = createServerContainer();
+  const member = await container.repositories.member.findByUserId(
+    session.authContext.tenantId,
+    session.user.id,
+  );
+  if (!member) return { error: 'Cadastro de Irmão não encontrado.' };
+
+  const declaredLabel = ((formData.get('declaredLabel') as string) || '').trim();
+  if (!declaredLabel) return { error: 'Informe o parentesco.' };
+
+  const result = await container.useCases.updateFamilyRelationshipLabel.execute(
+    session.authContext,
+    member.id,
+    relationshipId,
+    declaredLabel,
+  );
+  if (!result.ok) return { error: result.error.message };
+
+  revalidatePath('/irmaos/meu-espaco');
+  revalidatePath('/irmaos/[memberId]', 'page');
+  return EMPTY_STATE;
+}
+
+/**
+ * Remove um `FamilyPerson` cadastrado por engano ou duplicado — cobre o
+ * caso concreto trazido pelo Administrador (duas pessoas "Rosulino Campos"
+ * criadas sem querer, uma delas sem dado nenhum). Encadeia a remoção dos
+ * vínculos que apontam pra essa pessoa, pra nunca sobrar um vínculo
+ * "fantasma" ("Familiar sem dados cadastrados") depois de excluir.
+ */
+export async function deleteFamilyPersonAction(
+  personId: string,
+  _prevState: FamilyLegacyActionState,
+  _formData: FormData,
+): Promise<FamilyLegacyActionState> {
+  const session = await requireSession();
+  const container = createServerContainer();
+  const member = await container.repositories.member.findByUserId(
+    session.authContext.tenantId,
+    session.user.id,
+  );
+  if (!member) return { error: 'Cadastro de Irmão não encontrado.' };
+
+  const result = await container.useCases.deleteFamilyPerson.execute(
+    session.authContext,
+    member.id,
+    personId,
+  );
+  if (!result.ok) return { error: result.error.message };
+
+  revalidatePath('/irmaos/meu-espaco');
+  revalidatePath('/irmaos/[memberId]', 'page');
+  return EMPTY_STATE;
+}
+
+/**
  * Edição de um `FamilyPerson` já cadastrado (nome, foto, biografia,
  * cidade/estado/país, datas, situação e vínculo maçônico/paramaçônico) —
  * cobre o caso "cadastrei a pessoa errada/incompleta e não tinha onde
@@ -350,6 +417,7 @@ export async function updateFamilyMemberAction(
   if (!result.ok) return { error: result.error.message };
 
   revalidatePath('/irmaos/meu-espaco');
+  revalidatePath('/irmaos/[memberId]', 'page');
   return EMPTY_STATE;
 }
 
@@ -374,8 +442,10 @@ export async function createPersonFraternalRecordAction(
   );
   if (!member) return { error: 'Cadastro de Irmão não encontrado.' };
 
+  // Nome da Loja/Capítulo é só detalhe opcional — marcar "É Maçom" não pode
+  // depender de saber qual Loja, pra não travar o caso mais comum (só sei
+  // que era Maçom, sem detalhes de onde).
   const unidadeNome = (formData.get('unidadeNome') as string) || null;
-  if (!unidadeNome) return { error: 'Informe o nome da Loja, Capítulo ou unidade.' };
 
   const parsed = personFraternalRecordSchema.safeParse({
     personKind: 'familyPerson',
@@ -415,5 +485,6 @@ export async function createPersonFraternalRecordAction(
   if (!result.ok) return { error: result.error.message };
 
   revalidatePath('/irmaos/meu-espaco');
+  revalidatePath('/irmaos/[memberId]', 'page');
   return EMPTY_STATE;
 }

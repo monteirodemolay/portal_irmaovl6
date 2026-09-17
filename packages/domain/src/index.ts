@@ -457,6 +457,8 @@ export * from './modules/family-legacy/use-cases/create-family-relationship.use-
 export * from './modules/family-legacy/use-cases/confirm-family-relationship.use-case';
 export * from './modules/family-legacy/use-cases/decline-family-relationship.use-case';
 export * from './modules/family-legacy/use-cases/soft-delete-family-relationship.use-case';
+export * from './modules/family-legacy/use-cases/update-family-relationship-label.use-case';
+export * from './modules/family-legacy/use-cases/delete-family-person.use-case';
 export * from './modules/family-legacy/use-cases/derive-family-kinships.use-case';
 export * from './modules/family-legacy/use-cases/list-owner-family-network.use-case';
 export * from './modules/family-legacy/use-cases/find-shared-family-persons.use-case';
