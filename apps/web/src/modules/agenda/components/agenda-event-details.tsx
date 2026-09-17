@@ -1,10 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { Event } from '@vl6/domain';
 import { Badge, Button, MapPin, Share2 } from '@vl6/ui';
 import { buildGoogleCalendarUrl, EVENT_KIND_LABELS } from '@vl6/shared';
 import { AddToCalendarMenu } from '@/modules/dashboard/components/add-to-calendar-menu';
+import { getMyAttendanceStatusAction } from '../actions/agenda-actions';
+import { AttendanceButtons } from './attendance-buttons';
 import { AgendaEventAttachments } from './agenda-event-attachments';
 import { AgendaEventImportantInfo } from './agenda-event-important-info';
 import { AgendaEventSummary } from './agenda-event-summary';
@@ -43,6 +45,8 @@ export function AgendaEventDetails({ event, isFeatured }: { event: Event; isFeat
         </div>
       </div>
 
+      {event.exigeConfirmacaoPresenca && <EventAttendanceSection eventId={event.id} />}
+
       <AgendaEventSummary event={event} />
 
       {event.descricao && (
@@ -67,6 +71,42 @@ export function AgendaEventDetails({ event, isFeatured }: { event: Event; isFeat
         </h3>
         <AgendaEventAttachments eventId={event.id} />
       </section>
+    </div>
+  );
+}
+
+/**
+ * Confirmação de presença embutida no drawer institucional — pedido do
+ * Administrador de unificar a Agenda: em vez de um painel lateral simples
+ * separado só pra isso (redundante com este drawer, que já é "a" tela
+ * completa do evento), o botão fica direto aqui.
+ */
+function EventAttendanceSection({ eventId }: { eventId: string }) {
+  const [status, setStatus] = useState<'confirmado' | 'recusado' | 'pendente' | null>(null);
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoaded(false);
+    getMyAttendanceStatusAction(eventId).then((result) => {
+      if (!cancelled) {
+        setStatus(result);
+        setLoaded(true);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [eventId]);
+
+  if (!loaded) return null;
+
+  return (
+    <div className="border-border bg-background flex flex-col gap-2 rounded-xl border p-4">
+      <p className="text-muted text-[10px] font-bold uppercase tracking-wide">
+        Confirmação de presença
+      </p>
+      <AttendanceButtons eventId={eventId} currentStatus={status} />
     </div>
   );
 }

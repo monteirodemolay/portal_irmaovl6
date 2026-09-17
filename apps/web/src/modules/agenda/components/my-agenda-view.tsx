@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import type { Event, PersonalEvent, PersonalNote } from '@vl6/domain';
 import {
   SESSION_ACCESS_KINDS,
@@ -91,6 +92,7 @@ export function MyAgendaView({
   personalNotes,
 }: MyAgendaViewProps) {
   const agenda = useAgendaOptional();
+  const router = useRouter();
   const [view, setView] = useState('lista');
   const [sourceFilter, setSourceFilter] = useState<CalendarSource | 'all'>('vl6');
   const [sessionFilter, setSessionFilter] =
@@ -135,6 +137,26 @@ export function MyAgendaView({
 
   function isVl6InDrawer(item: CalendarItem): boolean {
     return agenda !== null && agenda.events.some((event) => event.id === item.id);
+  }
+
+  /**
+   * Item da Loja: abre direto a gaveta institucional (a mesma usada em todo
+   * o resto do Portal) — nunca mais o painel simples só pra isso, sem passo
+   * intermediário de "Ver detalhes completos". Fora da janela carregada
+   * pela gaveta (evento muito distante/antigo — raro), cai na ficha
+   * completa em `/eventos/[eventId]`, que já tem confirmação de presença.
+   * Pessoal/Google continuam no painel simples (`EventDetailPanel`).
+   */
+  function handleSelectItem(item: CalendarItem) {
+    if (item.source === 'vl6' && !item.isBirthday) {
+      if (isVl6InDrawer(item)) {
+        agenda?.openAgenda(item.id, {});
+      } else {
+        router.push(`/eventos/${item.id}`);
+      }
+      return;
+    }
+    setSelectedItem(item);
   }
 
   return (
@@ -189,7 +211,7 @@ export function MyAgendaView({
             items={todayItems}
             emptyTitle="Nada agendado para hoje"
             overlapping={overlapping}
-            onSelectItem={setSelectedItem}
+            onSelectItem={handleSelectItem}
           />
         </TabsContent>
 
@@ -198,7 +220,7 @@ export function MyAgendaView({
             items={filteredItems}
             referenceDate={now}
             overlapping={overlapping}
-            onSelectItem={setSelectedItem}
+            onSelectItem={handleSelectItem}
             onNewPersonal={(date) => openNewPersonal(date)}
           />
         </TabsContent>
@@ -218,7 +240,7 @@ export function MyAgendaView({
                 items={dayItems}
                 emptyTitle="Nenhum compromisso neste dia"
                 overlapping={overlapping}
-                onSelectItem={setSelectedItem}
+                onSelectItem={handleSelectItem}
                 action={
                   <button
                     type="button"
@@ -238,7 +260,7 @@ export function MyAgendaView({
             items={upcomingItems}
             emptyTitle="Nenhum compromisso futuro"
             overlapping={overlapping}
-            onSelectItem={setSelectedItem}
+            onSelectItem={handleSelectItem}
           />
         </TabsContent>
       </Tabs>
@@ -265,8 +287,6 @@ export function MyAgendaView({
         onOpenChange={(open) => {
           if (!open) setSelectedItem(null);
         }}
-        isVl6InDrawer={isVl6InDrawer}
-        onOpenVl6Drawer={(id) => agenda?.openAgenda(id)}
         onEditPersonal={openEditPersonal}
         personalNotes={personalNotes}
         overlapping={overlapping}

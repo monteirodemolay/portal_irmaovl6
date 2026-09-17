@@ -1,11 +1,9 @@
 'use client';
 
 import { useEffect, useRef, useState, useTransition } from 'react';
-import Link from 'next/link';
 import type { PersonalNote } from '@vl6/domain';
 import {
   AlertTriangle,
-  ArrowUpRight,
   Button,
   Clock,
   Drawer,
@@ -17,8 +15,6 @@ import {
   Textarea,
   cn,
 } from '@vl6/ui';
-import { AttendanceButtons } from './attendance-buttons';
-import { getMyAttendanceStatusAction } from '../actions/agenda-actions';
 import { upsertPersonalEventNoteAction } from '../actions/personal-note-actions';
 import { SOURCE_BADGE_CLASS, SOURCE_LABELS, type CalendarItem } from '../lib/calendar-item';
 
@@ -38,11 +34,14 @@ function formatDateTime(item: CalendarItem): string {
 }
 
 export interface EventDetailPanelProps {
+  /**
+   * Nunca `source: 'vl6'` — evento da Loja abre direto a gaveta
+   * institucional (`AgendaDrawer`) ou, fora da janela carregada por ela,
+   * `/eventos/[eventId]` (ver `MyAgendaView.handleSelectItem`). Este painel
+   * só existe pra Pessoal e Google, que não têm outro lugar unificado.
+   */
   item: CalendarItem | null;
   onOpenChange: (open: boolean) => void;
-  /** Só true se o evento estiver no conjunto carregado pelo `AgendaProvider` global (drawer institucional). */
-  isVl6InDrawer: (item: CalendarItem) => boolean;
-  onOpenVl6Drawer: (id: string) => void;
   onEditPersonal: (item: CalendarItem) => void;
   personalNotes: PersonalNote[];
   /** IDs de itens com choque de horário — aviso informativo, nunca bloqueia salvar. */
@@ -50,18 +49,15 @@ export interface EventDetailPanelProps {
 }
 
 /**
- * Painel lateral de detalhes — resumo rápido para qualquer origem, sem
- * duplicar o drawer institucional (VL6 só mostra um resumo + botão "Ver
- * detalhes completos" que abre o `AgendaDrawer` de verdade, intocado) nem o
- * `PersonalEventDrawer` (pessoal mostra resumo + "Editar", que abre aquele
- * drawer já existente). Único conteúdo genuinamente novo aqui: a anotação
- * privada vinculada ao evento, com autosave ao perder o foco.
+ * Painel lateral de detalhes de compromisso Pessoal/Google — resumo rápido
+ * sem duplicar o `PersonalEventDrawer` (pessoal mostra resumo + "Editar",
+ * que abre aquele drawer já existente). Único conteúdo genuinamente novo
+ * aqui: a anotação privada vinculada ao evento, com autosave ao perder o
+ * foco.
  */
 export function EventDetailPanel({
   item,
   onOpenChange,
-  isVl6InDrawer,
-  onOpenVl6Drawer,
   onEditPersonal,
   personalNotes,
   overlapping,
@@ -80,8 +76,6 @@ export function EventDetailPanel({
         {lastItem && (
           <EventDetailPanelBody
             item={lastItem}
-            isVl6InDrawer={isVl6InDrawer}
-            onOpenVl6Drawer={onOpenVl6Drawer}
             onEditPersonal={onEditPersonal}
             personalNotes={personalNotes}
             hasConflict={overlapping.has(lastItem.id)}
@@ -95,16 +89,12 @@ export function EventDetailPanel({
 
 function EventDetailPanelBody({
   item,
-  isVl6InDrawer,
-  onOpenVl6Drawer,
   onEditPersonal,
   personalNotes,
   hasConflict,
   onClose,
 }: {
   item: CalendarItem;
-  isVl6InDrawer: (item: CalendarItem) => boolean;
-  onOpenVl6Drawer: (id: string) => void;
   onEditPersonal: (item: CalendarItem) => void;
   personalNotes: PersonalNote[];
   hasConflict: boolean;
@@ -165,15 +155,6 @@ function EventDetailPanelBody({
           </div>
         )}
 
-        {item.source === 'vl6' && !item.isBirthday && (
-          <Vl6Section
-            item={item}
-            isVl6InDrawer={isVl6InDrawer}
-            onOpenVl6Drawer={onOpenVl6Drawer}
-            onClose={onClose}
-          />
-        )}
-
         {item.source === 'personal' && (
           <Button
             variant="outline"
@@ -200,64 +181,6 @@ function EventDetailPanelBody({
         )}
       </DrawerBody>
     </>
-  );
-}
-
-function Vl6Section({
-  item,
-  isVl6InDrawer,
-  onOpenVl6Drawer,
-  onClose,
-}: {
-  item: CalendarItem;
-  isVl6InDrawer: (item: CalendarItem) => boolean;
-  onOpenVl6Drawer: (id: string) => void;
-  onClose: () => void;
-}) {
-  const [status, setStatus] = useState<'confirmado' | 'recusado' | 'pendente' | null>(null);
-  const [loaded, setLoaded] = useState(false);
-
-  useEffect(() => {
-    let cancelled = false;
-    setLoaded(false);
-    getMyAttendanceStatusAction(item.id).then((result) => {
-      if (!cancelled) {
-        setStatus(result);
-        setLoaded(true);
-      }
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [item.id]);
-
-  const inDrawer = isVl6InDrawer(item);
-
-  return (
-    <div className="flex flex-col gap-3">
-      {loaded && <AttendanceButtons eventId={item.id} currentStatus={status} />}
-      {inDrawer ? (
-        <button
-          type="button"
-          onClick={() => {
-            onClose();
-            onOpenVl6Drawer(item.id);
-          }}
-          className="text-primary flex w-fit items-center gap-1 text-xs font-semibold hover:underline"
-        >
-          Ver detalhes completos
-          <ArrowUpRight size={12} strokeWidth={2} />
-        </button>
-      ) : (
-        <Link
-          href={`/eventos/${item.id}`}
-          className="text-primary flex w-fit items-center gap-1 text-xs font-semibold hover:underline"
-        >
-          Ver detalhes completos
-          <ArrowUpRight size={12} strokeWidth={2} />
-        </Link>
-      )}
-    </div>
   );
 }
 
