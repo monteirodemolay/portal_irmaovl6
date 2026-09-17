@@ -171,7 +171,7 @@ export function ProfileTrajectoryTab({
   );
 
   const paramasonicPanel = paramasonicAffiliations.length > 0 && (
-    <Panel kicker="ORGANIZAÇÕES IRMÃS" title="Vínculos Paramaçônicos" icon={Handshake} compact>
+    <Panel kicker="ENTIDADES PARAMAÇÔNICAS" title="Vínculos" icon={Handshake} compact>
       <ul className="flex flex-col gap-2">
         {paramasonicAffiliations.map((affiliation) => {
           const conteudo = (
