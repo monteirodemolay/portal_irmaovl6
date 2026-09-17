@@ -57,7 +57,14 @@ function buildHref(tipo: CommunityTipo, preserved: Partial<CommunityFiltersValue
 
 function removeParamHref(current: URLSearchParams, key: string): string {
   const params = new URLSearchParams(current);
-  params.delete(key);
+  // "Situação" tem padrão "Ativo" (nunca "sem filtro") — remover o parâmetro
+  // voltaria a cair nesse padrão em vez de mostrar todo mundo, então o chip
+  // precisa apontar pra "todos" explicitamente.
+  if (key === 'situacao') {
+    params.set('situacao', 'todos');
+  } else {
+    params.delete(key);
+  }
   const qs = params.toString();
   return qs ? `/irmaos?${qs}` : '/irmaos';
 }
@@ -228,138 +235,67 @@ export function CommunitySearchPanel({
           </button>
         </div>
 
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          {tipo !== 'negocios' && (
-            <label className="flex flex-col gap-1.5 text-sm">
-              Situação
-              <Select name="situacao" defaultValue={filters.situacao ?? ''}>
-                <option value="">Todos</option>
-                {MEMBER_SITUATION_STATUSES.map((situacao) => (
-                  <option key={situacao} value={situacao}>
-                    {MEMBER_SITUATION_STATUS_LABELS[situacao]}
-                  </option>
-                ))}
-              </Select>
-            </label>
-          )}
-          {tipo !== 'negocios' && (
-            <label className="flex flex-col gap-1.5 text-sm">
-              Grau
-              <Select name="grau" defaultValue={filters.grau ?? ''}>
-                <option value="">Todos</option>
-                {MEMBER_DEGREES.map((grau) => (
-                  <option key={grau} value={grau}>
-                    {MEMBER_DEGREE_LABELS[grau]}
-                  </option>
-                ))}
-              </Select>
-            </label>
-          )}
-          {tipo !== 'negocios' && areaFacets.length > 0 && (
-            <label className="flex flex-col gap-1.5 text-sm">
-              Área de atuação
-              <Select name="areaAtuacao" defaultValue={filters.areaAtuacao ?? ''}>
-                <option value="">Todas</option>
-                {areaFacets.map((area) => (
-                  <option key={area.key} value={area.key}>
-                    {AREA_ATUACAO_LABELS[area.key]} ({area.count})
-                  </option>
-                ))}
-              </Select>
-            </label>
-          )}
-          {tipo !== 'irmaos' && businessOptions.segmentos.length > 0 && (
-            <label className="flex flex-col gap-1.5 text-sm">
-              Segmento
-              <Select name="segmento" defaultValue={filters.segmento ?? ''}>
-                <option value="">Todos</option>
-                {businessOptions.segmentos.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.value} ({opt.count})
-                  </option>
-                ))}
-              </Select>
-            </label>
-          )}
-          {cidadeOptions.length > 0 && (
-            <label className="flex flex-col gap-1.5 text-sm">
-              Cidade
-              <Select name="cidade" defaultValue={filters.cidade ?? ''}>
-                <option value="">Todas</option>
-                {cidadeOptions.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.value} ({opt.count})
-                  </option>
-                ))}
-              </Select>
-            </label>
-          )}
-        </div>
-
-        <div
-          hidden={!advancedOpen}
-          className="border-border bg-surface flex flex-col gap-4 rounded-xl border p-4"
-        >
-          {tipo !== 'negocios' && hasAnyAdvancedOption && (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-              {directoryOptions.profissoes.length > 0 && (
+        {advancedOpen && (
+          <div className="border-border bg-surface flex flex-col gap-4 rounded-xl border p-4">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              {tipo !== 'negocios' && (
                 <label className="flex flex-col gap-1.5 text-sm">
-                  Profissão
-                  <Select name="profissao" defaultValue={filters.profissao ?? ''}>
-                    <option value="">Todas</option>
-                    {directoryOptions.profissoes.map((opt) => (
-                      <option key={opt.value} value={opt.value}>
-                        {opt.value} ({opt.count})
+                  Situação
+                  <Select name="situacao" defaultValue={filters.situacao ?? 'todos'}>
+                    <option value="todos">Todos</option>
+                    {MEMBER_SITUATION_STATUSES.map((situacao) => (
+                      <option key={situacao} value={situacao}>
+                        {MEMBER_SITUATION_STATUS_LABELS[situacao]}
                       </option>
                     ))}
                   </Select>
                 </label>
               )}
-              {directoryOptions.tags.length > 0 && (
+              {tipo !== 'negocios' && (
                 <label className="flex flex-col gap-1.5 text-sm">
-                  Competência ou serviço
-                  <Select name="tag" defaultValue={filters.tag ?? ''}>
-                    <option value="">Todas</option>
-                    {directoryOptions.tags.map((opt) => (
-                      <option key={opt.value} value={opt.value}>
-                        {opt.value} ({opt.count})
-                      </option>
-                    ))}
-                  </Select>
-                </label>
-              )}
-              {directoryOptions.empresas.length > 0 && (
-                <label className="flex flex-col gap-1.5 text-sm">
-                  Empresa
-                  <Select name="empresa" defaultValue={filters.empresa ?? ''}>
-                    <option value="">Todas</option>
-                    {directoryOptions.empresas.map((opt) => (
-                      <option key={opt.value} value={opt.value}>
-                        {opt.value} ({opt.count})
-                      </option>
-                    ))}
-                  </Select>
-                </label>
-              )}
-              {directoryOptions.cargos.length > 0 && (
-                <label className="flex flex-col gap-1.5 text-sm">
-                  Cargo
-                  <Select name="cargo" defaultValue={filters.cargo ?? ''}>
+                  Grau
+                  <Select name="grau" defaultValue={filters.grau ?? ''}>
                     <option value="">Todos</option>
-                    {directoryOptions.cargos.map((opt) => (
-                      <option key={opt.value} value={opt.value}>
-                        {opt.value} ({opt.count})
+                    {MEMBER_DEGREES.map((grau) => (
+                      <option key={grau} value={grau}>
+                        {MEMBER_DEGREE_LABELS[grau]}
                       </option>
                     ))}
                   </Select>
                 </label>
               )}
-              {directoryOptions.comissoes.length > 0 && (
+              {tipo !== 'negocios' && areaFacets.length > 0 && (
                 <label className="flex flex-col gap-1.5 text-sm">
-                  Comissão
-                  <Select name="comissao" defaultValue={filters.comissao ?? ''}>
+                  Área de atuação
+                  <Select name="areaAtuacao" defaultValue={filters.areaAtuacao ?? ''}>
                     <option value="">Todas</option>
-                    {directoryOptions.comissoes.map((opt) => (
+                    {areaFacets.map((area) => (
+                      <option key={area.key} value={area.key}>
+                        {AREA_ATUACAO_LABELS[area.key]} ({area.count})
+                      </option>
+                    ))}
+                  </Select>
+                </label>
+              )}
+              {tipo !== 'irmaos' && businessOptions.segmentos.length > 0 && (
+                <label className="flex flex-col gap-1.5 text-sm">
+                  Segmento
+                  <Select name="segmento" defaultValue={filters.segmento ?? ''}>
+                    <option value="">Todos</option>
+                    {businessOptions.segmentos.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.value} ({opt.count})
+                      </option>
+                    ))}
+                  </Select>
+                </label>
+              )}
+              {cidadeOptions.length > 0 && (
+                <label className="flex flex-col gap-1.5 text-sm">
+                  Cidade
+                  <Select name="cidade" defaultValue={filters.cidade ?? ''}>
+                    <option value="">Todas</option>
+                    {cidadeOptions.map((opt) => (
                       <option key={opt.value} value={opt.value}>
                         {opt.value} ({opt.count})
                       </option>
@@ -368,65 +304,135 @@ export function CommunitySearchPanel({
                 </label>
               )}
             </div>
-          )}
 
-          {tipo !== 'negocios' && (
-            <div className="flex flex-wrap gap-4">
-              <label className="flex items-center gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  name="perfilEnriquecido"
-                  value="1"
-                  defaultChecked={Boolean(filters.perfilEnriquecido)}
-                  className="accent-primary"
-                />
-                Possui perfil enriquecido
-              </label>
-              <label className="flex items-center gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  name="negocioPublicado"
-                  value="1"
-                  defaultChecked={Boolean(filters.negocioPublicado)}
-                  className="accent-primary"
-                />
-                Possui negócio publicado
-              </label>
-            </div>
-          )}
+            {tipo !== 'negocios' && hasAnyAdvancedOption && (
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                {directoryOptions.profissoes.length > 0 && (
+                  <label className="flex flex-col gap-1.5 text-sm">
+                    Profissão
+                    <Select name="profissao" defaultValue={filters.profissao ?? ''}>
+                      <option value="">Todas</option>
+                      {directoryOptions.profissoes.map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                          {opt.value} ({opt.count})
+                        </option>
+                      ))}
+                    </Select>
+                  </label>
+                )}
+                {directoryOptions.tags.length > 0 && (
+                  <label className="flex flex-col gap-1.5 text-sm">
+                    Competência ou serviço
+                    <Select name="tag" defaultValue={filters.tag ?? ''}>
+                      <option value="">Todas</option>
+                      {directoryOptions.tags.map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                          {opt.value} ({opt.count})
+                        </option>
+                      ))}
+                    </Select>
+                  </label>
+                )}
+                {directoryOptions.empresas.length > 0 && (
+                  <label className="flex flex-col gap-1.5 text-sm">
+                    Empresa
+                    <Select name="empresa" defaultValue={filters.empresa ?? ''}>
+                      <option value="">Todas</option>
+                      {directoryOptions.empresas.map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                          {opt.value} ({opt.count})
+                        </option>
+                      ))}
+                    </Select>
+                  </label>
+                )}
+                {directoryOptions.cargos.length > 0 && (
+                  <label className="flex flex-col gap-1.5 text-sm">
+                    Cargo
+                    <Select name="cargo" defaultValue={filters.cargo ?? ''}>
+                      <option value="">Todos</option>
+                      {directoryOptions.cargos.map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                          {opt.value} ({opt.count})
+                        </option>
+                      ))}
+                    </Select>
+                  </label>
+                )}
+                {directoryOptions.comissoes.length > 0 && (
+                  <label className="flex flex-col gap-1.5 text-sm">
+                    Comissão
+                    <Select name="comissao" defaultValue={filters.comissao ?? ''}>
+                      <option value="">Todas</option>
+                      {directoryOptions.comissoes.map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                          {opt.value} ({opt.count})
+                        </option>
+                      ))}
+                    </Select>
+                  </label>
+                )}
+              </div>
+            )}
 
-          {tipo !== 'irmaos' && (
-            <div className="flex flex-wrap gap-4">
-              <label className="flex items-center gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  name="online"
-                  value="1"
-                  defaultChecked={Boolean(filters.online)}
-                  className="accent-primary"
-                />
-                Atende online/remoto
-              </label>
-              <label className="flex items-center gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  name="desconto"
-                  value="1"
-                  defaultChecked={Boolean(filters.desconto)}
-                  className="accent-primary"
-                />
-                Condição especial para Irmãos
-              </label>
-            </div>
-          )}
+            {tipo !== 'negocios' && (
+              <div className="flex flex-wrap gap-4">
+                <label className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    name="perfilEnriquecido"
+                    value="1"
+                    defaultChecked={Boolean(filters.perfilEnriquecido)}
+                    className="accent-primary"
+                  />
+                  Possui perfil enriquecido
+                </label>
+                <label className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    name="negocioPublicado"
+                    value="1"
+                    defaultChecked={Boolean(filters.negocioPublicado)}
+                    className="accent-primary"
+                  />
+                  Possui negócio publicado
+                </label>
+              </div>
+            )}
 
-          <button
-            type="submit"
-            className="bg-primary w-fit rounded-lg px-4 py-2 text-sm font-semibold text-white"
-          >
-            Aplicar filtros
-          </button>
-        </div>
+            {tipo !== 'irmaos' && (
+              <div className="flex flex-wrap gap-4">
+                <label className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    name="online"
+                    value="1"
+                    defaultChecked={Boolean(filters.online)}
+                    className="accent-primary"
+                  />
+                  Atende online/remoto
+                </label>
+                <label className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    name="desconto"
+                    value="1"
+                    defaultChecked={Boolean(filters.desconto)}
+                    className="accent-primary"
+                  />
+                  Condição especial para Irmãos
+                </label>
+              </div>
+            )}
+
+            <button
+              type="submit"
+              className="bg-primary w-fit rounded-lg px-4 py-2 text-sm font-semibold text-white"
+            >
+              Aplicar filtros
+            </button>
+          </div>
+        )}
       </form>
 
       {chips.length > 0 && (
