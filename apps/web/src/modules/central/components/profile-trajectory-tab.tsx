@@ -50,12 +50,23 @@ export function ProfileTrajectoryTab({
   honors,
   philosophicalJourneys,
   paramasonicAffiliations = [],
+  showTrajectory = true,
 }: {
   profile: PublicMemberProfileDTO;
   memberTitles: MemberTitle[];
   honors: Honor[];
   philosophicalJourneys: PhilosophicalJourney[];
   paramasonicAffiliations?: ParamasonicAffiliationDisplay[];
+  /**
+   * `false` — usado pelo novo layout de 3 colunas do Perfil único
+   * (`profile-layout/`), que já mostra "Caminho na Loja" sozinho na coluna
+   * de linha do tempo (`TrajectoryTimelinePanel`) — evita duas cópias do
+   * mesmo painel na página. Nesse modo só os selos secundários (Títulos,
+   * Honrarias, Graus Filosóficos, Vínculos, Irmãos Gêmeos) são renderizados,
+   * todos empilhados (sem a grade de duas colunas que reserva espaço pro
+   * "Caminho na Loja").
+   */
+  showTrajectory?: boolean;
 }) {
   const visibleJourneys = philosophicalJourneys.filter((journey) => journey.visivel);
   const hasTrajetoria = Boolean(
@@ -75,10 +86,11 @@ export function ProfileTrajectoryTab({
     profile.irmaosGemeos.length > 0 ||
     paramasonicAffiliations.length > 0;
 
-  const trajetoriaPanel = hasTrajetoria ? <TrajectoryTimelinePanel profile={profile} /> : null;
+  const trajetoriaPanel =
+    showTrajectory && hasTrajetoria ? <TrajectoryTimelinePanel profile={profile} /> : null;
 
   const titlesPanel = memberTitles.length > 0 && (
-    <Panel kicker="TÍTULOS" title="Títulos e Condições Maçônicas" icon={Users} compact>
+    <Panel id="titulos" kicker="TÍTULOS" title="Títulos e Condições Maçônicas" icon={Users} compact>
       <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         {memberTitles.map((title) => (
           <li
@@ -104,6 +116,7 @@ export function ProfileTrajectoryTab({
 
   const honorsPanel = honors.length > 0 && (
     <Panel
+      id="honrarias"
       kicker="HONRARIAS"
       title="Honrarias e Condecorações"
       icon={Award}
@@ -144,6 +157,7 @@ export function ProfileTrajectoryTab({
 
   const journeysPanel = visibleJourneys.length > 0 && (
     <Panel
+      id="graus"
       kicker="GRAUS FILOSÓFICOS"
       title="Graus Filosóficos e Corpos Maçônicos"
       icon={Sparkles}
@@ -167,7 +181,7 @@ export function ProfileTrajectoryTab({
   );
 
   const ceremonyPanel = profile.irmaosGemeos.length > 0 && (
-    <CeremonyMatesPanel groups={profile.irmaosGemeos} compact />
+    <CeremonyMatesPanel id="irmaos-gemeos" groups={profile.irmaosGemeos} compact />
   );
 
   const paramasonicPanel = paramasonicAffiliations.length > 0 && (
@@ -207,6 +221,18 @@ export function ProfileTrajectoryTab({
       </ul>
     </Panel>
   );
+
+  if (!showTrajectory) {
+    return hasSecondary ? (
+      <div className="flex flex-col gap-6">
+        {titlesPanel}
+        {honorsPanel}
+        {journeysPanel}
+        {paramasonicPanel}
+        {ceremonyPanel}
+      </div>
+    ) : null;
+  }
 
   return (
     <div
