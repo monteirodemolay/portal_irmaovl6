@@ -64,6 +64,8 @@ export class CreateTenantUseCase {
       site: input.site,
       email: input.email,
       modulosHabilitados: input.modulosHabilitados,
+      comunidadeHeroFotoUrl: null,
+      comunidadeHeroFotoPosicao: null,
       createdAt: now,
       updatedAt: now,
       createdBy: ctx.uid,

@@ -29,6 +29,8 @@ const validInput = {
   site: null,
   email: 'contato@vl6.org.br',
   modulosHabilitados: [],
+  comunidadeHeroFotoUrl: null,
+  comunidadeHeroFotoPosicao: null,
 };
 
 function buildUseCase() {
