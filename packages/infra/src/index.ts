@@ -26,6 +26,7 @@ export * from './firestore/repositories/file-asset.repository';
 export * from './firestore/repositories/library-category.repository';
 export * from './firestore/repositories/library-item.repository';
 export * from './firestore/repositories/library-favorite.repository';
+export * from './firestore/repositories/library-circulation.repository';
 export * from './firestore/repositories/event.repository';
 export * from './firestore/repositories/event-attendance.repository';
 export * from './firestore/repositories/notification.repository';

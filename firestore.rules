@@ -171,6 +171,46 @@ service cloud.firestore {
       allow write: if sameTenant(request.resource.data) && hasPermission('libraryItem:manage');
     }
 
+    // Circulação bibliotecária. Toda mutação passa por Server Actions + Admin SDK,
+    // onde as transições de estado e a reserva atômica do exemplar são validadas.
+    match /libraryShelves/{id} {
+      allow read: if sameTenant(resource.data) && hasPermission('libraryItem:read');
+      allow write: if sameTenant(request.resource.data) && hasPermission('libraryItem:manage');
+    }
+
+    match /libraryCopies/{id} {
+      allow read: if sameTenant(resource.data) && hasPermission('libraryItem:read');
+      allow write: if sameTenant(request.resource.data) && hasPermission('libraryItem:manage');
+    }
+
+    match /libraryLoans/{id} {
+      allow read: if sameTenant(resource.data) &&
+        (hasPermission('libraryItem:manage') || isOwner(resource.data, 'borrowerUserId'));
+      allow write: if false;
+    }
+
+    match /libraryReviews/{id} {
+      allow read: if sameTenant(resource.data) && hasPermission('libraryItem:read');
+      allow write: if false;
+    }
+
+    match /libraryInteractions/{id} {
+      allow read: if sameTenant(resource.data) &&
+        (hasPermission('libraryItem:manage') || isOwner(resource.data, 'userId'));
+      allow write: if false;
+    }
+
+    match /libraryLoanEvents/{id} {
+      allow read: if sameTenant(resource.data) && hasPermission('libraryItem:manage');
+      allow write: if false;
+    }
+
+    match /libraryOccurrences/{id} {
+      allow read: if sameTenant(resource.data) &&
+        (hasPermission('libraryItem:manage') || isOwner(resource.data, 'reportedByUserId'));
+      allow write: if false;
+    }
+
     match /libraryFavorites/{id} {
       allow read, write: if isSignedIn() && isOwner(resource.data, 'userId');
       allow create: if isSignedIn() && isOwner(request.resource.data, 'userId') && sameTenant(request.resource.data);

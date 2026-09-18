@@ -190,9 +190,13 @@ export async function loadLibraryMigrationCandidatesAction(): Promise<
   );
   const categoriaNomeById = new Map(categories.map((category) => [category.id, category.nome]));
 
-  const pendingItems = libraryItems.filter((item) => !migratedLibraryItemIds.has(item.id));
+  const pendingItems = libraryItems.filter(
+    (item) => Boolean(item.fileId) && !migratedLibraryItemIds.has(item.id),
+  );
   const files = await Promise.all(
-    pendingItems.map((item) => container.repositories.fileAsset.findById(item.fileId)),
+    pendingItems.map((item) =>
+      item.fileId ? container.repositories.fileAsset.findById(item.fileId) : null,
+    ),
   );
 
   return pendingItems.flatMap((item, index) => {

@@ -73,7 +73,9 @@ export async function loadArchiveSearchResults(
   );
 
   const fileById = new Map(filesPage.items.map((file) => [file.id, file]));
-  const libraryFileIds = new Set(libraryItems.map((item) => item.fileId));
+  const libraryFileIds = new Set(
+    libraryItems.map((item) => item.fileId).filter((id): id is string => Boolean(id)),
+  );
 
   const documentResults: ArchiveSearchResult[] = filesPage.items
     .filter((file) => file.publicado && !libraryFileIds.has(file.id))
@@ -90,19 +92,19 @@ export async function loadArchiveSearchResults(
     }));
 
   const libraryResults: ArchiveSearchResult[] = libraryItems.flatMap((item) => {
-    const file = fileById.get(item.fileId);
-    if (!file) return [];
+    const file = item.fileId ? fileById.get(item.fileId) : null;
     return [
       {
         id: item.id,
         kind: 'biblioteca' as const,
-        title: file.titulo,
-        description: file.descricao || 'Estudo e leitura selecionada para os Irmãos.',
-        href: archiveItemHref('library', item.id),
+        title: item.titulo ?? file?.titulo ?? 'Obra da Biblioteca',
+        description:
+          item.sinopse ?? file?.descricao ?? 'Estudo e leitura selecionada para os Irmãos.',
+        href: `/acervo/biblioteca/${item.id}`,
         compositeId: buildArchiveItemId('library', item.id),
         createdAt: item.createdAt,
         catalogText: catalogTextByOrigemId.get(buildArchiveItemId('library', item.id)) ?? null,
-        imageUrl: null,
+        imageUrl: item.capaUrl ?? file?.urlMiniatura ?? null,
       },
     ];
   });

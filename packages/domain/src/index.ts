@@ -204,9 +204,12 @@ export * from './modules/document-management/use-cases/soft-delete-file-asset.us
 export * from './modules/library/entities/library-category.entity';
 export * from './modules/library/entities/library-item.entity';
 export * from './modules/library/entities/library-favorite.entity';
+export * from './modules/library/entities/library-circulation.entity';
 export * from './modules/library/repositories/library-category.repository';
 export * from './modules/library/repositories/library-item.repository';
 export * from './modules/library/repositories/library-favorite.repository';
+export * from './modules/library/repositories/library-circulation.repository';
+export * from './modules/library/services/library-circulation-policy';
 export * from './modules/library/use-cases/create-library-category.use-case';
 export * from './modules/library/use-cases/list-library-categories.use-case';
 export * from './modules/library/use-cases/add-library-item.use-case';

@@ -356,6 +356,7 @@ import { FirestoreGoogleCalendarEventCacheRepository } from './firestore/reposit
 import { FirestoreLibraryCategoryRepository } from './firestore/repositories/library-category.repository';
 import { FirestoreLibraryFavoriteRepository } from './firestore/repositories/library-favorite.repository';
 import { FirestoreLibraryItemRepository } from './firestore/repositories/library-item.repository';
+import { FirestoreLibraryCirculationRepository } from './firestore/repositories/library-circulation.repository';
 import { FirestoreLinkRepository } from './firestore/repositories/link.repository';
 import { FirestoreLinkFavoriteRepository } from './firestore/repositories/link-favorite.repository';
 import { FirestoreLinkSuggestionRepository } from './firestore/repositories/link-suggestion.repository';
@@ -446,6 +447,7 @@ export function createServerContainer() {
     libraryCategory: new FirestoreLibraryCategoryRepository(db),
     libraryItem: new FirestoreLibraryItemRepository(db),
     libraryFavorite: new FirestoreLibraryFavoriteRepository(db),
+    libraryCirculation: new FirestoreLibraryCirculationRepository(db),
     event: new FirestoreEventRepository(db),
     eventAttendance: new FirestoreEventAttendanceRepository(db),
     personalEvent: new FirestorePersonalEventRepository(db),

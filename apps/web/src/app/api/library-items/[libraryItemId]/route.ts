@@ -38,6 +38,7 @@ export async function GET(
       return NextResponse.json({ error: 'not_found' }, { status: 404 });
     }
 
+    if (!item.fileId) return NextResponse.json({ error: 'not_found' }, { status: 404 });
     const file = await container.repositories.fileAsset.findById(item.fileId);
     if (
       !file ||
@@ -59,6 +60,22 @@ export async function GET(
       const status = interactionResult.error.code === 'forbidden' ? 403 : 404;
       return NextResponse.json({ error: interactionResult.error.code }, { status });
     }
+    const now = new Date();
+    await container.repositories.libraryCirculation.recordInteraction({
+      id: container.db.collection('libraryInteractions').doc().id,
+      tenantId: session.authContext.tenantId,
+      libraryItemId,
+      userId: session.authContext.uid,
+      tipo: mode === 'download' ? 'download' : 'visualizacao',
+      occurredAt: now,
+      createdAt: now,
+      updatedAt: now,
+      createdBy: session.authContext.uid,
+      updatedBy: session.authContext.uid,
+      deletedAt: null,
+      status: 'active',
+      ativo: true,
+    });
 
     const upstream = await fetch(file.urlArquivo);
     if (!upstream.ok || !upstream.body) {

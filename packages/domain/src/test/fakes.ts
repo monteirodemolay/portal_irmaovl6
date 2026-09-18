@@ -1135,6 +1135,12 @@ export class InMemoryLibraryItemRepository implements ILibraryItemRepository {
     const item = this.byId.get(id);
     if (item) this.byId.set(id, { ...item, contagemVisualizacoes: item.contagemVisualizacoes + 1 });
   }
+  async incrementLoans(id: string) {
+    const item = this.byId.get(id);
+    if (item) {
+      this.byId.set(id, { ...item, contagemEmprestimos: (item.contagemEmprestimos ?? 0) + 1 });
+    }
+  }
 }
 
 export class InMemoryLibraryCategoryRepository implements ILibraryCategoryRepository {

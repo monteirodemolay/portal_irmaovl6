@@ -17,7 +17,9 @@ export default async function DownloadsPage() {
     ),
   );
   const files = await Promise.all(
-    items.map((item) => (item ? container.repositories.fileAsset.findById(item.fileId) : null)),
+    items.map((item) =>
+      item?.fileId ? container.repositories.fileAsset.findById(item.fileId) : null,
+    ),
   );
 
   const rows = items
