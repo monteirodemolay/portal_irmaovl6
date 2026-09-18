@@ -15,6 +15,7 @@ export interface LibraryItem extends BaseEntity {
   anoPublicacao?: number | null;
   editora?: string | null;
   isbn?: string | null;
+  codigoBarras?: string | null;
   codigoClassificacao?: string | null;
   palavrasChave?: string[];
   sinopse?: string | null;

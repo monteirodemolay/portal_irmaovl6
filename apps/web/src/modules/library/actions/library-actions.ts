@@ -28,11 +28,14 @@ import {
 import { createServerContainer, type ServerContainer } from '@vl6/infra';
 import { requireSession } from '@/lib/auth/require-session';
 import { uploadLibraryCover, validateLibraryCover } from '@/lib/library/library-cover-upload';
+import { isValidIsbn, normalizeBookCode } from '../lib/book-catalog-assistant';
 
 export interface LibraryActionState {
   error: string | null;
   success?: string | null;
   warning?: string | null;
+  createdCategory?: { id: string; nome: string } | null;
+  createdShelf?: { id: string; codigo: string; nome: string } | null;
 }
 const shelfLocation = (s: { codigo: string; nome: string }) => `${s.codigo} · ${s.nome}`;
 const revalidateLibrary = () => {
@@ -45,6 +48,131 @@ const revalidateLibrary = () => {
   ])
     revalidatePath(p);
 };
+
+export interface LibraryBookLookupResult {
+  found: boolean;
+  titulo?: string;
+  autor?: string;
+  anoPublicacao?: number;
+  editora?: string;
+  isbn?: string;
+  sinopse?: string;
+  palavrasChave?: string[];
+  source?: 'google-books' | 'open-library';
+}
+
+const cleanExternalText = (value: unknown, maximum = 4000): string | undefined => {
+  if (typeof value !== 'string') return undefined;
+  const text = value
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/\s+/g, ' ')
+    .trim();
+  return text ? text.slice(0, maximum) : undefined;
+};
+
+const publicationYear = (value: unknown): number | undefined => {
+  const match = String(value ?? '').match(/(?:18|19|20)\d{2}/);
+  return match ? Number(match[0]) : undefined;
+};
+
+export async function lookupLibraryBookAction(input: {
+  code?: string;
+  query?: string;
+}): Promise<LibraryBookLookupResult> {
+  const session = await requireSession();
+  if (!hasPermission(session.authContext, 'libraryItem:create')) return { found: false };
+
+  const code = normalizeBookCode(input.code ?? '');
+  const query = cleanExternalText(input.query, 180)?.replace(/[^\p{L}\p{N}\s'-]/gu, ' ');
+  const terms = isValidIsbn(code) ? `isbn:${code}` : query?.split(/\s+/).slice(0, 24).join(' ');
+  if (!terms) return { found: false };
+
+  try {
+    const googleUrl = new URL('https://www.googleapis.com/books/v1/volumes');
+    googleUrl.searchParams.set('q', terms);
+    googleUrl.searchParams.set('maxResults', '3');
+    googleUrl.searchParams.set('printType', 'books');
+    const response = await fetch(googleUrl, { signal: AbortSignal.timeout(7000) });
+    if (response.ok) {
+      const payload = (await response.json()) as {
+        items?: Array<{
+          volumeInfo?: {
+            title?: string;
+            authors?: string[];
+            publisher?: string;
+            publishedDate?: string;
+            description?: string;
+            categories?: string[];
+            industryIdentifiers?: Array<{ type?: string; identifier?: string }>;
+          };
+        }>;
+      };
+      const info = payload.items?.[0]?.volumeInfo;
+      if (info?.title) {
+        const isbn = info.industryIdentifiers?.find((id) =>
+          ['ISBN_13', 'ISBN_10'].includes(id.type ?? ''),
+        )?.identifier;
+        return {
+          found: true,
+          titulo: cleanExternalText(info.title, 240),
+          autor: cleanExternalText(info.authors?.join('; '), 180),
+          anoPublicacao: publicationYear(info.publishedDate),
+          editora: cleanExternalText(info.publisher, 180),
+          isbn: cleanExternalText(isbn, 32),
+          sinopse: cleanExternalText(info.description),
+          palavrasChave: info.categories?.slice(0, 8).map((value) => value.slice(0, 50)),
+          source: 'google-books',
+        };
+      }
+    }
+  } catch {
+    // A leitura local continua disponível quando o catálogo externo está indisponível.
+  }
+
+  try {
+    const openLibraryUrl = new URL('https://openlibrary.org/search.json');
+    openLibraryUrl.searchParams.set('q', isValidIsbn(code) ? code : terms);
+    openLibraryUrl.searchParams.set('limit', '1');
+    openLibraryUrl.searchParams.set(
+      'fields',
+      'title,author_name,publisher,first_publish_year,isbn,subject',
+    );
+    const response = await fetch(openLibraryUrl, { signal: AbortSignal.timeout(7000) });
+    if (response.ok) {
+      const payload = (await response.json()) as {
+        docs?: Array<{
+          title?: string;
+          author_name?: string[];
+          publisher?: string[];
+          first_publish_year?: number;
+          isbn?: string[];
+          subject?: string[];
+        }>;
+      };
+      const info = payload.docs?.[0];
+      if (info?.title) {
+        const isbn = info.isbn?.find(isValidIsbn);
+        return {
+          found: true,
+          titulo: cleanExternalText(info.title, 240),
+          autor: cleanExternalText(info.author_name?.join('; '), 180),
+          anoPublicacao: info.first_publish_year,
+          editora: cleanExternalText(info.publisher?.[0], 180),
+          isbn: cleanExternalText(isbn, 32),
+          palavrasChave: info.subject?.slice(0, 8).map((value) => value.slice(0, 50)),
+          source: 'open-library',
+        };
+      }
+    }
+  } catch {
+    // O Bibliotecário ainda poderá revisar e completar os campos extraídos pelo OCR.
+  }
+  return { found: false };
+}
 
 export async function createLibraryCategoryAction(
   _: LibraryActionState,
@@ -61,7 +189,11 @@ export async function createLibraryCategoryAction(
   const result = await c.useCases.createLibraryCategory.execute(session.authContext, parsed.data);
   if (!result.ok) return { error: result.error.message };
   revalidateLibrary();
-  return { error: null };
+  return {
+    error: null,
+    success: 'Categoria cadastrada.',
+    createdCategory: { id: result.value.id, nome: result.value.nome },
+  };
 }
 
 export async function createLibraryShelfAction(
@@ -83,7 +215,7 @@ export async function createLibraryShelfAction(
   if (shelves.some((s) => s.codigo.toLowerCase() === parsed.data.codigo.toLowerCase()))
     return { error: 'Código já utilizado.' };
   const now = new Date();
-  await c.repositories.libraryCirculation.createShelf({
+  const shelf = {
     id: c.db.collection('libraryShelves').doc().id,
     tenantId: session.authContext.tenantId,
     ...parsed.data,
@@ -94,9 +226,14 @@ export async function createLibraryShelfAction(
     deletedAt: null,
     status: 'active',
     ativo: true,
-  });
+  } as const;
+  await c.repositories.libraryCirculation.createShelf(shelf);
   revalidateLibrary();
-  return { error: null, success: 'Estante cadastrada.' };
+  return {
+    error: null,
+    success: 'Estante cadastrada.',
+    createdShelf: { id: shelf.id, codigo: shelf.codigo, nome: shelf.nome },
+  };
 }
 export async function updateLibraryShelfAction(id: string, fd: FormData): Promise<void> {
   const session = await requireSession();
@@ -186,6 +323,7 @@ export async function addLibraryItemAction(
     anoPublicacao: fd.get('anoPublicacao') || null,
     editora: fd.get('editora') || null,
     isbn: fd.get('isbn') || null,
+    codigoBarras: fd.get('codigoBarras') || null,
     codigoClassificacao: fd.get('codigoClassificacao') || null,
     palavrasChave: String(fd.get('palavrasChave') ?? '')
       .split(',')
