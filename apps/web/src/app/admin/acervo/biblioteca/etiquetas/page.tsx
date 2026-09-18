@@ -1,7 +1,6 @@
 import { headers } from 'next/headers';
-import Link from 'next/link';
 import QRCode from 'qrcode';
-import { Badge, Button, Card, CardContent, EmptyState } from '@vl6/ui';
+import { Badge, Card, CardContent, EmptyState } from '@vl6/ui';
 import { createServerContainer } from '@vl6/infra';
 import { requirePagePermission } from '@/lib/auth/require-permission';
 import { PrintLibraryLabelsButton } from '@/modules/library/components/print-library-labels-button';
@@ -44,12 +43,11 @@ export default async function Page() {
           <h1 className="font-display text-2xl font-semibold">Etiquetas QR dos exemplares</h1>
           <p className="text-muted text-sm">Identificação individual e localização atual.</p>
         </div>
-        <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto">
-          <Button asChild variant="outline" className="w-full sm:w-auto">
-            <Link href="/admin/acervo/biblioteca">Voltar</Link>
-          </Button>
-          {labels.length > 0 && <PrintLibraryLabelsButton />}
-        </div>
+        {labels.length > 0 && (
+          <div className="w-full sm:w-auto">
+            <PrintLibraryLabelsButton />
+          </div>
+        )}
       </header>
       {!base ? (
         <EmptyState title="Endereço público não identificado" />

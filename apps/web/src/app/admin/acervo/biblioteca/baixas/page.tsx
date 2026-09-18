@@ -1,11 +1,9 @@
-import Link from 'next/link';
 import { createServerContainer } from '@vl6/infra';
-import { Button, Card, CardContent, EmptyState, Input, Select, Textarea } from '@vl6/ui';
+import { Button, Card, CardContent, Input, Select, Textarea } from '@vl6/ui';
 import { requirePagePermission } from '@/lib/auth/require-permission';
-import {
-  attestLibraryOccurrenceAction,
-  createLibraryWriteOffAction,
-} from '@/modules/library/actions/library-actions';
+import { BaixasTabs } from '@/modules/library/components/baixas-tabs';
+import { createLibraryWriteOffAction } from '@/modules/library/actions/library-actions';
+
 export default async function Page() {
   const session = await requirePagePermission('libraryItem:manage');
   const c = createServerContainer();
@@ -15,19 +13,19 @@ export default async function Page() {
     c.repositories.libraryCirculation.listOccurrencesByTenant(session.authContext.tenantId),
   ]);
   const itemMap = new Map(items.map((i) => [i.id, i]));
+  const pendingCount = occurrences.filter((o) =>
+    ['relatado', 'em_analise'].includes(o.statusOcorrencia),
+  ).length;
+
   return (
     <div className="grid gap-6">
-      <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h1 className="font-display text-2xl font-semibold">Ocorrências e baixa de livros</h1>
-          <p className="text-muted text-sm">
-            Perda, roubo, extravio ou dano irrecuperável, sempre com atesto.
-          </p>
-        </div>
-        <Button asChild variant="outline" className="w-full sm:w-auto">
-          <Link href="/admin/acervo/biblioteca">Voltar</Link>
-        </Button>
+      <header>
+        <h1 className="font-display text-2xl font-semibold">Ocorrências e baixa de livros</h1>
+        <p className="text-muted text-sm">
+          Perda, roubo, extravio ou dano irrecuperável, sempre com atesto.
+        </p>
       </header>
+      <BaixasTabs active="registrar" pendingCount={pendingCount} />
       <Card>
         <CardContent className="p-5">
           <form
@@ -69,53 +67,6 @@ export default async function Page() {
           </form>
         </CardContent>
       </Card>
-      {!occurrences.length ? (
-        <EmptyState title="Nenhuma ocorrência" />
-      ) : (
-        <div className="grid gap-3">
-          {occurrences.map((o) => (
-            <Card key={o.id}>
-              <CardContent className="grid gap-2 p-4">
-                <b>
-                  {itemMap.get(o.libraryItemId)?.titulo ?? 'Obra'} · {o.motivo}
-                </b>
-                <p className="text-sm">{o.relato}</p>
-                <p className="text-muted text-xs">Situação: {o.statusOcorrencia}</p>
-                {['relatado', 'em_analise'].includes(o.statusOcorrencia) && (
-                  <form
-                    action={attestLibraryOccurrenceAction}
-                    className="grid gap-2 sm:grid-cols-[1fr_auto_auto]"
-                  >
-                    <input type="hidden" name="occurrenceId" value={o.id} />
-                    <Textarea
-                      name="librarianAttestation"
-                      required
-                      minLength={10}
-                      placeholder="Atesto do Bibliotecário"
-                    />
-                    <Button
-                      name="decision"
-                      value="confirmado"
-                      variant="destructive"
-                      className="w-full sm:w-auto"
-                    >
-                      Confirmar baixa
-                    </Button>
-                    <Button
-                      name="decision"
-                      value="rejeitado"
-                      variant="outline"
-                      className="w-full sm:w-auto"
-                    >
-                      Rejeitar relato
-                    </Button>
-                  </form>
-                )}
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
     </div>
   );
 }
