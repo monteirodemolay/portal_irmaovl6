@@ -1,11 +1,27 @@
 'use client';
 
 import { type FormEvent, useEffect, useMemo, useRef, useState, useTransition } from 'react';
+import jsQR from 'jsqr';
 import type { LibraryCopy, LibraryItem } from '@vl6/domain';
 import { BookOpen, Badge, Button, Camera, Card, CardContent, Input } from '@vl6/ui';
 import { registerLibraryDirectLoanAction } from '../actions/library-actions';
 
-type ScannerControls = { stop: () => void };
+/**
+ * `BarcodeDetector` ainda não está nos tipos padrão do DOM (lib.dom.d.ts) —
+ * suportado nativamente por Chrome/Edge/Android (motor de detecção do
+ * próprio sistema, muito mais rápido e confiável que decodificação em JS).
+ * Onde falta (Firefox, Safari mais antigo), cai para `jsQR` lendo os frames
+ * via canvas.
+ */
+interface DetectedBarcode {
+  rawValue: string;
+}
+interface BarcodeDetectorLike {
+  detect(source: CanvasImageSource): Promise<DetectedBarcode[]>;
+}
+interface BarcodeDetectorConstructor {
+  new (options?: { formats: string[] }): BarcodeDetectorLike;
+}
 
 interface MemberOption {
   id: string;
@@ -62,7 +78,6 @@ export function PresentialCheckout({
   const [cameraError, setCameraError] = useState<string | null>(null);
   const scanRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const scannerControlsRef = useRef<ScannerControls | null>(null);
   const lastCameraCodeRef = useRef<string | null>(null);
 
   const physicalItems = useMemo(() => items.filter((item) => item.formato !== 'digital'), [items]);
@@ -142,30 +157,78 @@ export function PresentialCheckout({
   useEffect(() => {
     if (!cameraOpen) return;
     let cancelled = false;
+    let stream: MediaStream | null = null;
+    let rafId: number | null = null;
     setCameraError(null);
     lastCameraCodeRef.current = null;
-    import('@zxing/browser')
-      .then(({ BrowserQRCodeReader }) => {
-        if (cancelled || !videoRef.current) return;
-        const reader = new BrowserQRCodeReader();
-        return reader.decodeFromVideoDevice(undefined, videoRef.current, (result) => {
-          const text = result?.getText();
-          if (!text || text === lastCameraCodeRef.current) return;
-          lastCameraCodeRef.current = text;
-          processScanCode(text);
+
+    async function start() {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: { ideal: 'environment' },
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
+          },
+          audio: false,
         });
-      })
-      .then((controls) => {
-        if (cancelled) controls?.stop();
-        else scannerControlsRef.current = controls ?? null;
-      })
-      .catch(() => {
+        if (cancelled || !videoRef.current) {
+          stream.getTracks().forEach((track) => track.stop());
+          return;
+        }
+        const video = videoRef.current;
+        video.srcObject = stream;
+        await video.play();
+
+        const BarcodeDetectorCtor = (
+          window as unknown as { BarcodeDetector?: BarcodeDetectorConstructor }
+        ).BarcodeDetector;
+        const detector = BarcodeDetectorCtor
+          ? new BarcodeDetectorCtor({ formats: ['qr_code'] })
+          : null;
+        const canvas = detector ? null : document.createElement('canvas');
+        const ctx = canvas?.getContext('2d', { willReadFrequently: true }) ?? null;
+
+        const tick = async () => {
+          if (cancelled) return;
+          if (video.readyState === video.HAVE_ENOUGH_DATA) {
+            let text: string | undefined;
+            try {
+              if (detector) {
+                const results = await detector.detect(video);
+                text = results[0]?.rawValue;
+              } else if (ctx && canvas) {
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                const frame = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                text =
+                  jsQR(frame.data, frame.width, frame.height, { inversionAttempts: 'dontInvert' })
+                    ?.data ?? undefined;
+              }
+            } catch {
+              // Frame instável (foco, movimento) — tenta de novo no próximo ciclo.
+            }
+            if (text && text !== lastCameraCodeRef.current) {
+              lastCameraCodeRef.current = text;
+              processScanCode(text);
+            }
+          }
+          if (!cancelled) rafId = requestAnimationFrame(tick);
+        };
+        rafId = requestAnimationFrame(tick);
+      } catch {
         if (!cancelled) setCameraError('Não foi possível acessar a câmera do aparelho.');
-      });
+      }
+    }
+
+    start();
+
     return () => {
       cancelled = true;
-      scannerControlsRef.current?.stop();
-      scannerControlsRef.current = null;
+      if (rafId !== null) cancelAnimationFrame(rafId);
+      stream?.getTracks().forEach((track) => track.stop());
+      if (videoRef.current) videoRef.current.srcObject = null;
     };
   }, [cameraOpen]);
 
