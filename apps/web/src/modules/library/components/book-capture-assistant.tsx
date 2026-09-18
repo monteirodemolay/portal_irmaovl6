@@ -2,7 +2,10 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { BookOpen, Button, Camera, RefreshCw, Sparkles } from '@vl6/ui';
-import { lookupLibraryBookAction } from '../actions/library-actions';
+import {
+  fetchLibrarySuggestedCoverAction,
+  lookupLibraryBookAction,
+} from '../actions/library-actions';
 import {
   extractCoverSuggestion,
   extractBarcodeCandidate,
@@ -16,6 +19,7 @@ export interface BookCaptureResult extends BookCatalogSuggestion {
   anoPublicacao?: number;
   editora?: string;
   palavrasChave?: string[];
+  capaUrl?: string;
 }
 
 export function BookCaptureAssistant({
@@ -95,6 +99,14 @@ export function BookCaptureAssistant({
         code: barcode || undefined,
         query: coverText || undefined,
       });
+
+      let capaUrl: string | undefined;
+      if (catalog.capaUrl) {
+        setMessage('Baixando a capa encontrada…');
+        const coverResult = await fetchLibrarySuggestedCoverAction(catalog.capaUrl);
+        if ('capaUrl' in coverResult) capaUrl = coverResult.capaUrl;
+      }
+
       onSuggestion({
         titulo: catalog.titulo || localSuggestion.titulo,
         autor: catalog.autor || localSuggestion.autor,
@@ -104,10 +116,11 @@ export function BookCaptureAssistant({
         codigoBarras: localSuggestion.codigoBarras,
         sinopse: catalog.sinopse || localSuggestion.sinopse,
         palavrasChave: catalog.palavrasChave,
+        capaUrl,
       });
       setMessage(
         catalog.found
-          ? 'Dados localizados e preenchidos. Confira antes de publicar.'
+          ? `Dados localizados${capaUrl ? ' (com capa)' : ''} e preenchidos. Confira antes de publicar.`
           : 'Texto lido e campos sugeridos. Confira antes de publicar.',
       );
     } catch {

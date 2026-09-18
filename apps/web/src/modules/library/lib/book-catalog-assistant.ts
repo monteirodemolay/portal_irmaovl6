@@ -30,6 +30,18 @@ export function isValidIsbn(value: string): boolean {
   return false;
 }
 
+export function isValidIssn(value: string): boolean {
+  const code = normalizeBookCode(value);
+  if (code.length !== 8) return false;
+  const sum = [...code.slice(0, 7)].reduce(
+    (total, char, index) => total + Number(char) * (8 - index),
+    0,
+  );
+  const remainder = sum % 11;
+  const check = remainder === 0 ? 0 : 11 - remainder;
+  return code[7] === (check === 10 ? 'X' : String(check));
+}
+
 export function isValidGtin(value: string): boolean {
   const code = normalizeBookCode(value);
   if (![8, 12, 13, 14].includes(code.length) || !/^\d+$/.test(code)) return false;

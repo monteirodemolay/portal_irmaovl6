@@ -35,7 +35,7 @@ import {
   uploadLibraryDigitalFile,
   validateLibraryDigitalFile,
 } from '@/lib/library/library-digital-upload';
-import { isValidIsbn, normalizeBookCode } from '../lib/book-catalog-assistant';
+import { isValidIsbn, isValidIssn, normalizeBookCode } from '../lib/book-catalog-assistant';
 import {
   generateLibraryAccessionNumber,
   LIBRARY_ACCESSION_RANDOM_LIMIT,
@@ -69,7 +69,8 @@ export interface LibraryBookLookupResult {
   isbn?: string;
   sinopse?: string;
   palavrasChave?: string[];
-  source?: 'google-books' | 'open-library';
+  capaUrl?: string;
+  source?: 'google-books' | 'open-library' | 'crossref';
 }
 
 const cleanExternalText = (value: unknown, maximum = 4000): string | undefined => {
@@ -98,6 +99,34 @@ export async function lookupLibraryBookAction(input: {
   if (!hasPermission(session.authContext, 'libraryItem:create')) return { found: false };
 
   const code = normalizeBookCode(input.code ?? '');
+
+  if (isValidIssn(code) && !isValidIsbn(code)) {
+    try {
+      const issn = `${code.slice(0, 4)}-${code.slice(4)}`;
+      const response = await fetch(`https://api.crossref.org/journals/${issn}`, {
+        signal: AbortSignal.timeout(7000),
+      });
+      if (response.ok) {
+        const payload = (await response.json()) as {
+          message?: { title?: string; publisher?: string };
+        };
+        const info = payload.message;
+        if (info?.title) {
+          return {
+            found: true,
+            titulo: cleanExternalText(info.title, 240),
+            editora: cleanExternalText(info.publisher, 180),
+            isbn: issn,
+            source: 'crossref',
+          };
+        }
+      }
+    } catch {
+      // Sem serviço de ISSN disponível — o Bibliotecário completa manualmente.
+    }
+    return { found: false };
+  }
+
   const query = cleanExternalText(input.query, 180)?.replace(/[^\p{L}\p{N}\s'-]/gu, ' ');
   const terms = isValidIsbn(code) ? `isbn:${code}` : query?.split(/\s+/).slice(0, 24).join(' ');
   if (!terms) return { found: false };
@@ -119,6 +148,7 @@ export async function lookupLibraryBookAction(input: {
             description?: string;
             categories?: string[];
             industryIdentifiers?: Array<{ type?: string; identifier?: string }>;
+            imageLinks?: { thumbnail?: string; smallThumbnail?: string };
           };
         }>;
       };
@@ -127,6 +157,7 @@ export async function lookupLibraryBookAction(input: {
         const isbn = info.industryIdentifiers?.find((id) =>
           ['ISBN_13', 'ISBN_10'].includes(id.type ?? ''),
         )?.identifier;
+        const thumbnail = info.imageLinks?.thumbnail ?? info.imageLinks?.smallThumbnail;
         return {
           found: true,
           titulo: cleanExternalText(info.title, 240),
@@ -136,6 +167,7 @@ export async function lookupLibraryBookAction(input: {
           isbn: cleanExternalText(isbn, 32),
           sinopse: cleanExternalText(info.description),
           palavrasChave: info.categories?.slice(0, 8).map((value) => value.slice(0, 50)),
+          capaUrl: thumbnail?.replace(/^http:/, 'https:'),
           source: 'google-books',
         };
       }
@@ -175,6 +207,9 @@ export async function lookupLibraryBookAction(input: {
           editora: cleanExternalText(info.publisher?.[0], 180),
           isbn: cleanExternalText(isbn, 32),
           palavrasChave: info.subject?.slice(0, 8).map((value) => value.slice(0, 50)),
+          capaUrl: isbn
+            ? `https://covers.openlibrary.org/b/isbn/${isbn}-L.jpg?default=false`
+            : undefined,
           source: 'open-library',
         };
       }
@@ -183,6 +218,52 @@ export async function lookupLibraryBookAction(input: {
     // O Bibliotecário ainda poderá revisar e completar os campos extraídos pelo OCR.
   }
   return { found: false };
+}
+
+const ALLOWED_COVER_HOSTS = new Set([
+  'books.google.com',
+  'books.googleusercontent.com',
+  'covers.openlibrary.org',
+]);
+const COVER_CONTENT_TYPES: Record<string, string> = {
+  'image/jpeg': 'jpg',
+  'image/png': 'png',
+  'image/webp': 'webp',
+};
+
+/**
+ * Baixa a capa sugerida por `lookupLibraryBookAction` (Google Books/Open Library) e a envia para
+ * o nosso próprio armazenamento — nunca linka direto pro catálogo externo, que pode ficar fora do
+ * ar ou trocar de endereço. Origem restrita à allowlist para não virar um proxy de SSRF.
+ */
+export async function fetchLibrarySuggestedCoverAction(
+  sourceUrl: string,
+): Promise<{ capaUrl: string } | { error: string }> {
+  const session = await requireSession();
+  if (!hasPermission(session.authContext, 'libraryItem:create')) return { error: 'forbidden' };
+  let parsed: URL;
+  try {
+    parsed = new URL(sourceUrl);
+  } catch {
+    return { error: 'Link de capa inválido.' };
+  }
+  if (parsed.protocol !== 'https:' || !ALLOWED_COVER_HOSTS.has(parsed.hostname))
+    return { error: 'Origem da capa não permitida.' };
+  try {
+    const response = await fetch(parsed, { signal: AbortSignal.timeout(8000) });
+    if (!response.ok) return { error: 'Não foi possível baixar a capa sugerida.' };
+    const contentType = (response.headers.get('content-type') ?? '').split(';')[0]!.trim();
+    const extension = COVER_CONTENT_TYPES[contentType];
+    if (!extension) return { error: 'Formato de imagem não suportado.' };
+    const buffer = Buffer.from(await response.arrayBuffer());
+    if (buffer.byteLength === 0 || buffer.byteLength > 5 * 1024 * 1024)
+      return { error: 'Capa sugerida indisponível ou grande demais.' };
+    const file = new File([buffer], `capa-sugerida.${extension}`, { type: contentType });
+    const capaUrl = await uploadLibraryCover(file, session.authContext.tenantId);
+    return { capaUrl };
+  } catch {
+    return { error: 'Não foi possível baixar a capa sugerida.' };
+  }
 }
 
 export async function createLibraryCategoryAction(
@@ -351,7 +432,7 @@ export async function addLibraryItemAction(
   const camera = fd.get('capaCamera');
   const uploaded = fd.get('capaUpload');
   const cover = camera instanceof File && camera.size ? camera : uploaded;
-  let capaUrl: string | null = null;
+  let capaUrl: string | null = String(fd.get('capaSugeridaUrl') ?? '').trim() || null;
   if (cover instanceof File && cover.size) {
     const e = validateLibraryCover(cover);
     if (e) return { error: e };
@@ -537,7 +618,8 @@ export async function updateLibraryItemAction(
   const camera = fd.get('capaCamera');
   const uploadedCover = fd.get('capaUpload');
   const cover = camera instanceof File && camera.size ? camera : uploadedCover;
-  let capaUrl = current.capaUrl ?? null;
+  const suggestedCover = String(fd.get('capaSugeridaUrl') ?? '').trim() || null;
+  let capaUrl = suggestedCover ?? current.capaUrl ?? null;
   if (cover instanceof File && cover.size) {
     const coverError = validateLibraryCover(cover);
     if (coverError) return { error: coverError };
