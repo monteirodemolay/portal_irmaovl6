@@ -2,7 +2,7 @@
 
 import { useActionState, useEffect, useState } from 'react';
 import type { Event as LodgeEvent, LibraryItem } from '@vl6/domain';
-import { Button, Card, CardContent, EmptyState, Select } from '@vl6/ui';
+import { BookOpen, Button, Card, CardContent, EmptyState, Select } from '@vl6/ui';
 import { requestLibraryCartAction, type LibraryActionState } from '../actions/library-actions';
 
 const CART_KEY = 'vl6-library-cart';
@@ -64,12 +64,28 @@ export function LibraryCart({ items, events }: { items: LibraryItem[]; events: L
     <div className="grid gap-4">
       {selected.map((item) => (
         <Card key={item.id}>
-          <CardContent className="flex flex-col items-stretch gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
-            <b className="min-w-0 break-words">{item.titulo}</b>
+          <CardContent className="flex items-center gap-3 p-3 sm:gap-4 sm:p-4">
+            <div className="bg-surface text-muted flex h-20 w-14 shrink-0 items-center justify-center overflow-hidden rounded-md border sm:h-24 sm:w-16">
+              {item.capaUrl ? (
+                <img
+                  src={item.capaUrl}
+                  alt={`Capa de ${item.titulo ?? 'obra'}`}
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <BookOpen size={24} aria-hidden="true" />
+              )}
+            </div>
+            <div className="min-w-0 flex-1">
+              <b className="block break-words">{item.titulo}</b>
+              <span className="text-muted mt-1 block text-sm">
+                {item.autor ?? 'Autoria não informada'}
+              </span>
+            </div>
             <Button
               type="button"
               variant="ghost"
-              className="w-full sm:w-auto"
+              className="shrink-0"
               onClick={() => {
                 const next = ids.filter((id) => id !== item.id);
                 setIds(next);

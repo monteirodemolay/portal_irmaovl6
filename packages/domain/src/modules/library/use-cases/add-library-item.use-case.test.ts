@@ -113,4 +113,19 @@ describe('AddLibraryItemUseCase', () => {
     if (result.ok) return;
     expect(result.error.code).toBe('not_found');
   });
+
+  it('cataloga um link externo sem exigir FileAsset', async () => {
+    const { useCase, libraryItemRepository } = buildUseCase();
+
+    const result = await useCase.execute(
+      ctx,
+      buildInput({ fileId: null, urlExterna: 'https://biblioteca.example.org/obra' }),
+    );
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value.fileId).toBeNull();
+    expect(result.value.urlExterna).toBe('https://biblioteca.example.org/obra');
+    expect(await libraryItemRepository.findById(result.value.id)).not.toBeNull();
+  });
 });

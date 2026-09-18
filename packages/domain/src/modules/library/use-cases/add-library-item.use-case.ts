@@ -8,6 +8,7 @@ import type { ILibraryItemRepository } from '../repositories/library-item.reposi
 
 export interface AddLibraryItemInput {
   fileId: string | null;
+  urlExterna?: string | null;
   categoriaId: string;
   subcategoriaId: string | null;
   permiteLeituraOnline: boolean;

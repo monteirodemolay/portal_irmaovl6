@@ -3,6 +3,7 @@ import type { BaseEntity } from '../../../shared/base-entity';
 /** Camada de curadoria/categorização sobre um `FileAsset` — não duplica o binário. */
 export interface LibraryItem extends BaseEntity {
   fileId: string | null;
+  urlExterna?: string | null;
   categoriaId: string;
   subcategoriaId: string | null;
   permiteLeituraOnline: boolean;
@@ -25,4 +26,6 @@ export interface LibraryItem extends BaseEntity {
   contagemEmprestimos?: number;
   somaAvaliacoes?: number;
   quantidadeAvaliacoes?: number;
+  motivoExclusao?: string | null;
+  excluidoPor?: string | null;
 }

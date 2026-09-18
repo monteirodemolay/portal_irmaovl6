@@ -1,5 +1,6 @@
 'use server';
 
+import { randomInt } from 'node:crypto';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import {
@@ -28,7 +29,16 @@ import {
 import { createServerContainer, type ServerContainer } from '@vl6/infra';
 import { requireSession } from '@/lib/auth/require-session';
 import { uploadLibraryCover, validateLibraryCover } from '@/lib/library/library-cover-upload';
+import {
+  deleteLibraryDigitalFile,
+  uploadLibraryDigitalFile,
+  validateLibraryDigitalFile,
+} from '@/lib/library/library-digital-upload';
 import { isValidIsbn, normalizeBookCode } from '../lib/book-catalog-assistant';
+import {
+  generateLibraryAccessionNumber,
+  LIBRARY_ACCESSION_RANDOM_LIMIT,
+} from '../lib/library-accession-number';
 
 export interface LibraryActionState {
   error: string | null;
@@ -298,6 +308,45 @@ export async function addLibraryItemAction(
   fd: FormData,
 ): Promise<LibraryActionState> {
   const session = await requireSession();
+  const c = createServerContainer();
+  const format = String(fd.get('formato') ?? 'fisico');
+  const digitalSource = String(fd.get('digitalSource') ?? 'existing');
+  const digitalUpload = fd.get('arquivoDigitalUpload');
+  const digitalFile =
+    format !== 'fisico' &&
+    digitalSource === 'upload' &&
+    digitalUpload instanceof File &&
+    digitalUpload.size > 0
+      ? digitalUpload
+      : null;
+  const fileId = format !== 'fisico' && digitalSource === 'existing' ? fd.get('fileId') : null;
+  const urlExterna = format !== 'fisico' && digitalSource === 'link' ? fd.get('urlExterna') : null;
+
+  if (format !== 'fisico' && digitalSource === 'upload') {
+    if (!digitalFile) return { error: 'Selecione o arquivo digital.' };
+    const uploadError = validateLibraryDigitalFile(digitalFile);
+    if (uploadError) return { error: uploadError };
+  }
+
+  let copies = [] as Awaited<
+    ReturnType<typeof c.repositories.libraryCirculation.listCopiesByTenant>
+  >;
+  let codigoTombo: string | null = null;
+  if (format !== 'digital') {
+    copies = await c.repositories.libraryCirculation.listCopiesByTenant(
+      session.authContext.tenantId,
+    );
+    try {
+      codigoTombo = generateLibraryAccessionNumber(
+        copies.map((copy) => copy.codigoTombo),
+        new Date().getUTCFullYear(),
+        () => randomInt(0, LIBRARY_ACCESSION_RANDOM_LIMIT),
+      );
+    } catch (error) {
+      return { error: error instanceof Error ? error.message : 'Não foi possível gerar o tombo.' };
+    }
+  }
+
   const camera = fd.get('capaCamera');
   const uploaded = fd.get('capaUpload');
   const cover = camera instanceof File && camera.size ? camera : uploaded;
@@ -312,14 +361,15 @@ export async function addLibraryItemAction(
     }
   }
   const parsed = libraryItemSchema.safeParse({
-    fileId: fd.get('fileId') || null,
+    fileId: digitalFile ? 'upload-pendente' : fileId || null,
+    urlExterna: urlExterna || null,
     categoriaId: fd.get('categoriaId'),
     subcategoriaId: fd.get('subcategoriaId') || null,
     permiteLeituraOnline: fd.get('permiteLeituraOnline') === 'on',
     titulo: fd.get('titulo'),
     autor: fd.get('autor') || null,
     tipoMaterial: fd.get('tipoMaterial'),
-    formato: fd.get('formato'),
+    formato: format,
     anoPublicacao: fd.get('anoPublicacao') || null,
     editora: fd.get('editora') || null,
     isbn: fd.get('isbn') || null,
@@ -333,14 +383,13 @@ export async function addLibraryItemAction(
     parecerBibliotecario: fd.get('parecerBibliotecario') || null,
     capaUrl,
     prazoEmprestimoDias: fd.get('prazoEmprestimoDias') || 21,
-    codigoTombo: fd.get('codigoTombo') || null,
+    codigoTombo,
     shelfId: fd.get('shelfId') || null,
     localizacao: null,
     estadoGeral: fd.get('estadoGeral') || null,
     observacoesExemplar: fd.get('observacoesExemplar') || null,
   });
   if (!parsed.success) return { error: 'Verifique os campos obrigatórios da obra e do exemplar.' };
-  const c = createServerContainer();
   let shelf = null;
   if (parsed.data.formato !== 'digital') {
     shelf = await c.repositories.libraryCirculation.findShelfById(parsed.data.shelfId!);
@@ -348,24 +397,73 @@ export async function addLibraryItemAction(
       return { error: 'Selecione uma estante válida.' };
     parsed.data.localizacao = shelfLocation(shelf);
   }
-  const { codigoTombo, shelfId, localizacao, estadoGeral, observacoesExemplar, ...itemInput } =
-    parsed.data;
-  if (codigoTombo) {
-    const copies = await c.repositories.libraryCirculation.listCopiesByTenant(
-      session.authContext.tenantId,
-    );
-    if (copies.some((copy) => copy.codigoTombo.toLowerCase() === codigoTombo.toLowerCase()))
-      return { error: 'O número de tombo já está em uso.' };
+  const {
+    codigoTombo: parsedCodigoTombo,
+    shelfId,
+    localizacao,
+    estadoGeral,
+    observacoesExemplar,
+    ...itemInput
+  } = parsed.data;
+
+  let uploadedDigital: Awaited<ReturnType<typeof uploadLibraryDigitalFile>> | null = null;
+  let createdFileId: string | null = null;
+  if (digitalFile) {
+    try {
+      uploadedDigital = await uploadLibraryDigitalFile(digitalFile, session.authContext.tenantId);
+      const now = new Date();
+      createdFileId = c.db.collection('files').doc().id;
+      await c.repositories.fileAsset.create({
+        id: createdFileId,
+        tenantId: session.authContext.tenantId,
+        titulo: parsed.data.titulo,
+        descricao: `Arquivo digital da Biblioteca: ${parsed.data.titulo}`,
+        categoriaId: parsed.data.categoriaId,
+        acervo: 'Biblioteca',
+        autor: parsed.data.autor,
+        tipo: uploadedDigital.kind,
+        urlArquivo: uploadedDigital.url,
+        urlMiniatura: capaUrl,
+        versao: 1,
+        publicado: true,
+        permitirDownload: true,
+        contagemDownloads: 0,
+        contagemVisualizacoes: 0,
+        dataPublicacao: now,
+        ordem: 0,
+        tamanhoBytes: uploadedDigital.sizeBytes,
+        createdAt: now,
+        updatedAt: now,
+        createdBy: session.authContext.uid,
+        updatedBy: session.authContext.uid,
+        deletedAt: null,
+        status: 'active',
+        ativo: true,
+      });
+      itemInput.fileId = createdFileId;
+    } catch {
+      if (uploadedDigital) await deleteLibraryDigitalFile(uploadedDigital.path).catch(() => {});
+      return { error: 'Não foi possível enviar o arquivo digital.' };
+    }
   }
+
   const result = await c.useCases.addLibraryItem.execute(session.authContext, itemInput);
-  if (!result.ok) return { error: result.error.message };
+  if (!result.ok) {
+    if (uploadedDigital && createdFileId) {
+      await Promise.allSettled([
+        deleteLibraryDigitalFile(uploadedDigital.path),
+        c.db.collection('files').doc(createdFileId).delete(),
+      ]);
+    }
+    return { error: result.error.message };
+  }
   if (parsed.data.formato !== 'digital') {
     const now = new Date();
     await c.repositories.libraryCirculation.createCopy({
       id: c.db.collection('libraryCopies').doc().id,
       tenantId: session.authContext.tenantId,
       libraryItemId: result.value.id,
-      codigoTombo: codigoTombo!,
+      codigoTombo: parsedCodigoTombo!,
       shelfId: shelfId!,
       localizacao: localizacao!,
       estadoGeral: estadoGeral!,
@@ -380,6 +478,305 @@ export async function addLibraryItemAction(
       ativo: true,
     });
   }
+  revalidateLibrary();
+  redirect('/admin/acervo/biblioteca');
+}
+
+export async function updateLibraryItemAction(
+  libraryItemId: string,
+  _: LibraryActionState,
+  fd: FormData,
+): Promise<LibraryActionState> {
+  const session = await requireSession();
+  if (!hasPermission(session.authContext, 'libraryItem:manage')) return { error: 'Sem permissão.' };
+
+  const c = createServerContainer();
+  const current = await c.repositories.libraryItem.findById(libraryItemId);
+  if (!current || current.tenantId !== session.authContext.tenantId || current.deletedAt)
+    return { error: 'Obra não encontrada.' };
+
+  const existingCopies = await c.repositories.libraryCirculation.listCopiesByItem(
+    session.authContext.tenantId,
+    libraryItemId,
+  );
+  const copy = existingCopies[0] ?? null;
+  const format = String(fd.get('formato') ?? current.formato ?? 'fisico');
+  if (format === 'digital' && existingCopies.length > 0)
+    return {
+      error: 'Uma obra com exemplar físico não pode ser convertida em somente digital.',
+    };
+
+  const digitalSource = String(fd.get('digitalSource') ?? 'existing');
+  const uploadEntry = fd.get('arquivoDigitalUpload');
+  const digitalFile =
+    format !== 'fisico' &&
+    digitalSource === 'upload' &&
+    uploadEntry instanceof File &&
+    uploadEntry.size > 0
+      ? uploadEntry
+      : null;
+  if (format !== 'fisico' && digitalSource === 'upload') {
+    if (!digitalFile) return { error: 'Selecione o arquivo digital.' };
+    const uploadError = validateLibraryDigitalFile(digitalFile);
+    if (uploadError) return { error: uploadError };
+  }
+
+  let accessionNumber = copy?.codigoTombo ?? null;
+  if (format !== 'digital' && !accessionNumber) {
+    const tenantCopies = await c.repositories.libraryCirculation.listCopiesByTenant(
+      session.authContext.tenantId,
+    );
+    accessionNumber = generateLibraryAccessionNumber(
+      tenantCopies.map((entry) => entry.codigoTombo),
+      new Date().getUTCFullYear(),
+      () => randomInt(0, LIBRARY_ACCESSION_RANDOM_LIMIT),
+    );
+  }
+
+  const camera = fd.get('capaCamera');
+  const uploadedCover = fd.get('capaUpload');
+  const cover = camera instanceof File && camera.size ? camera : uploadedCover;
+  let capaUrl = current.capaUrl ?? null;
+  if (cover instanceof File && cover.size) {
+    const coverError = validateLibraryCover(cover);
+    if (coverError) return { error: coverError };
+    try {
+      capaUrl = await uploadLibraryCover(cover, session.authContext.tenantId);
+    } catch {
+      return { error: 'Não foi possível enviar a capa.' };
+    }
+  }
+
+  const selectedFileId =
+    format !== 'fisico' && digitalSource === 'existing' ? fd.get('fileId') : null;
+  const selectedUrl = format !== 'fisico' && digitalSource === 'link' ? fd.get('urlExterna') : null;
+  const parsed = libraryItemSchema.safeParse({
+    fileId: digitalFile ? 'upload-pendente' : selectedFileId || null,
+    urlExterna: selectedUrl || null,
+    categoriaId: fd.get('categoriaId'),
+    subcategoriaId: fd.get('subcategoriaId') || null,
+    permiteLeituraOnline: fd.get('permiteLeituraOnline') === 'on',
+    titulo: fd.get('titulo'),
+    autor: fd.get('autor') || null,
+    tipoMaterial: fd.get('tipoMaterial'),
+    formato: format,
+    anoPublicacao: fd.get('anoPublicacao') || null,
+    editora: fd.get('editora') || null,
+    isbn: fd.get('isbn') || null,
+    codigoBarras: fd.get('codigoBarras') || null,
+    codigoClassificacao: fd.get('codigoClassificacao') || null,
+    palavrasChave: String(fd.get('palavrasChave') ?? '')
+      .split(',')
+      .map((value) => value.trim())
+      .filter(Boolean),
+    sinopse: fd.get('sinopse') || null,
+    parecerBibliotecario: fd.get('parecerBibliotecario') || null,
+    capaUrl,
+    prazoEmprestimoDias: fd.get('prazoEmprestimoDias') || 21,
+    codigoTombo: accessionNumber,
+    shelfId: fd.get('shelfId') || null,
+    localizacao: null,
+    estadoGeral: fd.get('estadoGeral') || null,
+    observacoesExemplar: fd.get('observacoesExemplar') || null,
+  });
+  if (!parsed.success) return { error: 'Verifique os campos obrigatórios da obra e do exemplar.' };
+
+  let shelf = null;
+  if (format !== 'digital') {
+    shelf = await c.repositories.libraryCirculation.findShelfById(parsed.data.shelfId!);
+    if (!shelf || shelf.tenantId !== session.authContext.tenantId)
+      return { error: 'Selecione uma estante válida.' };
+    parsed.data.localizacao = shelfLocation(shelf);
+  }
+
+  const { codigoTombo, shelfId, localizacao, estadoGeral, observacoesExemplar, ...itemInput } =
+    parsed.data;
+  let uploadedDigital: Awaited<ReturnType<typeof uploadLibraryDigitalFile>> | null = null;
+  let createdFileId: string | null = null;
+
+  try {
+    if (digitalFile) {
+      uploadedDigital = await uploadLibraryDigitalFile(digitalFile, session.authContext.tenantId);
+      const now = new Date();
+      createdFileId = c.db.collection('files').doc().id;
+      await c.repositories.fileAsset.create({
+        id: createdFileId,
+        tenantId: session.authContext.tenantId,
+        titulo: parsed.data.titulo,
+        descricao: `Arquivo digital da Biblioteca: ${parsed.data.titulo}`,
+        categoriaId: parsed.data.categoriaId,
+        acervo: 'Biblioteca',
+        autor: parsed.data.autor,
+        tipo: uploadedDigital.kind,
+        urlArquivo: uploadedDigital.url,
+        urlMiniatura: capaUrl,
+        versao: 1,
+        publicado: true,
+        permitirDownload: true,
+        contagemDownloads: 0,
+        contagemVisualizacoes: 0,
+        dataPublicacao: now,
+        ordem: 0,
+        tamanhoBytes: uploadedDigital.sizeBytes,
+        createdAt: now,
+        updatedAt: now,
+        createdBy: session.authContext.uid,
+        updatedBy: session.authContext.uid,
+        deletedAt: null,
+        status: 'active',
+        ativo: true,
+      });
+      itemInput.fileId = createdFileId;
+    } else if (itemInput.fileId) {
+      const file = await c.repositories.fileAsset.findById(itemInput.fileId);
+      if (!file || file.tenantId !== session.authContext.tenantId)
+        return { error: 'Selecione um arquivo digital válido.' };
+    }
+
+    const now = new Date();
+    await c.repositories.libraryItem.update({
+      ...current,
+      ...itemInput,
+      updatedAt: now,
+      updatedBy: session.authContext.uid,
+    });
+
+    if (format !== 'digital') {
+      if (copy) {
+        await c.repositories.libraryCirculation.updateCopy({
+          ...copy,
+          shelfId: shelfId!,
+          localizacao: localizacao!,
+          estadoGeral: estadoGeral!,
+          observacoes: observacoesExemplar,
+          situacao:
+            estadoGeral === 'restauracao' && copy.situacao === 'disponivel'
+              ? 'manutencao'
+              : copy.situacao,
+          updatedAt: now,
+          updatedBy: session.authContext.uid,
+        });
+      } else {
+        await c.repositories.libraryCirculation.createCopy({
+          id: c.db.collection('libraryCopies').doc().id,
+          tenantId: session.authContext.tenantId,
+          libraryItemId,
+          codigoTombo: codigoTombo!,
+          shelfId: shelfId!,
+          localizacao: localizacao!,
+          estadoGeral: estadoGeral!,
+          observacoes: observacoesExemplar,
+          situacao: estadoGeral === 'restauracao' ? 'manutencao' : 'disponivel',
+          createdAt: now,
+          updatedAt: now,
+          createdBy: session.authContext.uid,
+          updatedBy: session.authContext.uid,
+          deletedAt: null,
+          status: 'active',
+          ativo: true,
+        });
+      }
+    }
+  } catch {
+    if (uploadedDigital) await deleteLibraryDigitalFile(uploadedDigital.path).catch(() => {});
+    if (createdFileId)
+      await c.db
+        .collection('files')
+        .doc(createdFileId)
+        .delete()
+        .catch(() => {});
+    return { error: 'Não foi possível salvar as alterações.' };
+  }
+
+  revalidateLibrary();
+  redirect('/admin/acervo/biblioteca');
+}
+
+export async function deleteLibraryItemAction(
+  libraryItemId: string,
+  _: LibraryActionState,
+  fd: FormData,
+): Promise<LibraryActionState> {
+  const session = await requireSession();
+  if (!hasPermission(session.authContext, 'libraryItem:manage')) return { error: 'Sem permissão.' };
+  const reason = String(fd.get('motivo') ?? '').trim();
+  if (reason.length < 10) return { error: 'Explique o motivo em pelo menos 10 caracteres.' };
+
+  const permanent = fd.get('modo') === 'permanente';
+  const isAdministrator = ['admin', 'super_admin'].includes(session.role?.chave ?? '');
+  if (permanent && !isAdministrator)
+    return { error: 'Somente um administrador pode realizar a limpeza permanente.' };
+
+  const c = createServerContainer();
+  const item = await c.repositories.libraryItem.findById(libraryItemId);
+  if (!item || item.tenantId !== session.authContext.tenantId || item.deletedAt)
+    return { error: 'Obra não encontrada.' };
+  const loans = await c.repositories.libraryCirculation.listLoansByTenant(
+    session.authContext.tenantId,
+  );
+  if (
+    loans.some(
+      (loan) => loan.libraryItemId === libraryItemId && isLibraryLoanOpen(loan.statusEmprestimo),
+    )
+  )
+    return { error: 'Conclua ou cancele os empréstimos ativos antes de excluir a obra.' };
+
+  if (permanent) {
+    const collections = [
+      'libraryCopies',
+      'libraryLoans',
+      'libraryLoanEvents',
+      'libraryOccurrences',
+      'libraryReviews',
+      'libraryInteractions',
+      'libraryFavorites',
+    ];
+    for (const collectionName of collections) {
+      const documents = await c.db
+        .collection(collectionName)
+        .where('libraryItemId', '==', libraryItemId)
+        .get();
+      const tenantDocuments = documents.docs.filter(
+        (document) => document.data().tenantId === session.authContext.tenantId,
+      );
+      for (let offset = 0; offset < tenantDocuments.length; offset += 450) {
+        const batch = c.db.batch();
+        for (const document of tenantDocuments.slice(offset, offset + 450))
+          batch.delete(document.ref);
+        await batch.commit();
+      }
+    }
+    await c.db.collection('libraryItems').doc(libraryItemId).delete();
+  } else {
+    const now = new Date();
+    await c.repositories.libraryItem.update({
+      ...item,
+      motivoExclusao: reason,
+      excluidoPor: session.authContext.uid,
+      deletedAt: now,
+      status: 'inactive',
+      ativo: false,
+      updatedAt: now,
+      updatedBy: session.authContext.uid,
+    });
+    const copies = await c.repositories.libraryCirculation.listCopiesByItem(
+      session.authContext.tenantId,
+      libraryItemId,
+    );
+    await Promise.all(
+      copies.map((entry) =>
+        c.repositories.libraryCirculation.updateCopy({
+          ...entry,
+          deletedAt: now,
+          status: 'inactive',
+          ativo: false,
+          updatedAt: now,
+          updatedBy: session.authContext.uid,
+        }),
+      ),
+    );
+  }
+
   revalidateLibrary();
   redirect('/admin/acervo/biblioteca');
 }
