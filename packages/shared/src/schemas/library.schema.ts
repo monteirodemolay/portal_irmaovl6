@@ -71,6 +71,19 @@ export const libraryCartLoanRequestSchema = z.object({
   libraryItemIds: z.array(z.string().min(1)).min(1).max(10),
   pickupEventId: z.string().min(1),
 });
+export const libraryDirectLoanSchema = z
+  .object({
+    memberId: z.string().min(1),
+    libraryItemId: z.string().min(1),
+    copyId: z.string().min(1).nullable(),
+    checkedOutAt: z.coerce.date(),
+    dueAt: z.coerce.date(),
+  })
+  .refine((value) => value.dueAt >= value.checkedOutAt, {
+    message: 'A devolução deve ser depois da retirada.',
+    path: ['dueAt'],
+  });
+export type LibraryDirectLoanFormValues = z.infer<typeof libraryDirectLoanSchema>;
 export const libraryReviewSchema = z.object({
   libraryItemId: z.string().min(1),
   rating: z.coerce.number().int().min(1).max(5),

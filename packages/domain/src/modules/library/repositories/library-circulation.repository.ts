@@ -24,6 +24,7 @@ export interface ILibraryCirculationRepository {
   listLoansByTenant(tenantId: string): Promise<LibraryLoan[]>;
   listLoansByUser(tenantId: string, userId: string): Promise<LibraryLoan[]>;
   reserveAvailableCopy(loan: Omit<LibraryLoan, 'copyId'>): Promise<LibraryLoan | null>;
+  reserveSpecificCopy(loan: Omit<LibraryLoan, 'copyId'>, copyId: string): Promise<LibraryLoan | null>;
   updateLoanAndCopy(
     loan: LibraryLoan,
     copyStatus: LibraryCopyStatus | null,

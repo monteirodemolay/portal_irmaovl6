@@ -25,9 +25,14 @@ export default async function Page() {
           <h1 className="font-display text-2xl font-semibold">Gestão de empréstimos</h1>
           <p className="text-muted text-sm">Aprovação, retirada, prazo, devolução e cobrança.</p>
         </div>
-        <Button asChild variant="outline" className="w-full sm:w-auto">
-          <Link href="/admin/acervo/biblioteca">Voltar</Link>
-        </Button>
+        <div className="grid gap-2 sm:flex sm:w-auto sm:flex-wrap">
+          <Button asChild className="w-full sm:w-auto">
+            <Link href="/admin/acervo/biblioteca/emprestimo-presencial">Empréstimo presencial</Link>
+          </Button>
+          <Button asChild variant="outline" className="w-full sm:w-auto">
+            <Link href="/admin/acervo/biblioteca">Voltar</Link>
+          </Button>
+        </div>
       </header>
       {!loans.length ? (
         <EmptyState title="Nenhum empréstimo" />
