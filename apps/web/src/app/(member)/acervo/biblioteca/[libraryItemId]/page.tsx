@@ -81,6 +81,7 @@ export default async function LibraryItemPage({
             <Metadata label="Ano" value={item.anoPublicacao} />
             <Metadata label="Editora" value={item.editora} />
             <Metadata label="ISBN" value={item.isbn} />
+            <Metadata label="Código de barras/EAN" value={item.codigoBarras} />
             <Metadata label="Classificação" value={item.codigoClassificacao} />
             <Metadata
               label="Prazo sugerido"

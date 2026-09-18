@@ -31,6 +31,7 @@ export const libraryItemSchema = z
     anoPublicacao: z.coerce.number().int().min(1000).max(2200).nullable(),
     editora: z.string().max(180).nullable(),
     isbn: z.string().max(32).nullable(),
+    codigoBarras: z.string().max(32).nullable(),
     codigoClassificacao: z.string().max(80).nullable(),
     palavrasChave: z.array(z.string().min(1).max(50)).max(20),
     sinopse: z.string().max(4000).nullable(),

@@ -1,9 +1,35 @@
 'use client';
-import { useActionState, useState, type ReactNode } from 'react';
+
+import { useActionState, useCallback, useState, type ReactNode } from 'react';
 import { useFormStatus } from 'react-dom';
 import type { FileAsset, LibraryCategory, LibraryShelf } from '@vl6/domain';
 import { Button, Input, Select, Textarea } from '@vl6/ui';
 import { addLibraryItemAction, type LibraryActionState } from '../actions/library-actions';
+import { BookCaptureAssistant, type BookCaptureResult } from './book-capture-assistant';
+import { CreateLibraryCategoryDialog } from './create-library-category-dialog';
+import { CreateLibraryShelfDialog } from './create-library-shelf-dialog';
+
+interface SuggestedFields {
+  titulo: string;
+  autor: string;
+  anoPublicacao: string;
+  editora: string;
+  isbn: string;
+  codigoBarras: string;
+  palavrasChave: string;
+  sinopse: string;
+}
+
+const EMPTY_FIELDS: SuggestedFields = {
+  titulo: '',
+  autor: '',
+  anoPublicacao: '',
+  editora: '',
+  isbn: '',
+  codigoBarras: '',
+  palavrasChave: '',
+  sinopse: '',
+};
 
 export function LibraryItemForm({
   categories,
@@ -18,39 +44,63 @@ export function LibraryItemForm({
     error: null,
   });
   const [format, setFormat] = useState('fisico');
+  const [fields, setFields] = useState(EMPTY_FIELDS);
+  const [categoryOptions, setCategoryOptions] = useState(
+    categories.map(({ id, nome }) => ({ id, nome })),
+  );
+  const [shelfOptions, setShelfOptions] = useState(
+    shelves.map(({ id, codigo, nome }) => ({ id, codigo, nome })),
+  );
+  const [categoryId, setCategoryId] = useState('');
+  const [shelfId, setShelfId] = useState('');
+
+  const applySuggestion = useCallback((suggestion: BookCaptureResult) => {
+    setFields((current) => ({
+      titulo: current.titulo || suggestion.titulo || '',
+      autor: current.autor || suggestion.autor || '',
+      anoPublicacao:
+        current.anoPublicacao || (suggestion.anoPublicacao ? String(suggestion.anoPublicacao) : ''),
+      editora: current.editora || suggestion.editora || '',
+      isbn: current.isbn || suggestion.isbn || '',
+      codigoBarras: current.codigoBarras || suggestion.codigoBarras || '',
+      palavrasChave:
+        current.palavrasChave || (suggestion.palavrasChave?.filter(Boolean).join(', ') ?? ''),
+      sinopse: current.sinopse || suggestion.sinopse || '',
+    }));
+  }, []);
+
+  const addCategory = useCallback((category: { id: string; nome: string }) => {
+    setCategoryOptions((current) => [...current, category]);
+    setCategoryId(category.id);
+  }, []);
+
+  const addShelf = useCallback((shelf: { id: string; codigo: string; nome: string }) => {
+    setShelfOptions((current) => [...current, shelf]);
+    setShelfId(shelf.id);
+  }, []);
+
+  const updateField = (field: keyof SuggestedFields, value: string) =>
+    setFields((current) => ({ ...current, [field]: value }));
+
   return (
     <form action={action} className="grid gap-6" encType="multipart/form-data">
-      <div className="grid gap-6 lg:grid-cols-[220px_1fr]">
-        <div className="mx-auto grid w-full max-w-[260px] content-start gap-3 lg:mx-0 lg:max-w-none">
-          <div className="flex aspect-[3/4] items-center justify-center rounded-xl border border-dashed bg-stone-50 text-sm text-stone-500">
-            Capa da obra
-          </div>
-          <label className="text-sm font-medium">
-            Enviar foto
-            <Input
-              className="w-full min-w-0"
-              type="file"
-              name="capaUpload"
-              accept="image/jpeg,image/png,image/webp"
-            />
-          </label>
-          <label className="text-sm font-medium">
-            Tirar foto
-            <Input
-              className="w-full min-w-0"
-              type="file"
-              name="capaCamera"
-              accept="image/*"
-              capture="environment"
-            />
-          </label>
-        </div>
+      <div className="grid gap-6 lg:grid-cols-[260px_1fr]">
+        <BookCaptureAssistant onSuggestion={applySuggestion} />
         <div className="grid min-w-0 gap-4 sm:grid-cols-2">
           <Field label="Título">
-            <Input name="titulo" required />
+            <Input
+              name="titulo"
+              required
+              value={fields.titulo}
+              onChange={(event) => updateField('titulo', event.target.value)}
+            />
           </Field>
           <Field label="Autor ou entidade">
-            <Input name="autor" />
+            <Input
+              name="autor"
+              value={fields.autor}
+              onChange={(event) => updateField('autor', event.target.value)}
+            />
           </Field>
           <Field label="Tipo">
             <Select name="tipoMaterial" defaultValue="livro">
@@ -62,69 +112,124 @@ export function LibraryItemForm({
             </Select>
           </Field>
           <Field label="Formato">
-            <Select name="formato" value={format} onChange={(e) => setFormat(e.target.value)}>
+            <Select
+              name="formato"
+              value={format}
+              onChange={(event) => setFormat(event.target.value)}
+            >
               <option value="fisico">Físico</option>
               <option value="digital">Digital</option>
               <option value="fisico_digital">Físico + digital</option>
             </Select>
           </Field>
-          <Field label="Categoria">
-            <Select name="categoriaId" required defaultValue="">
-              <option value="" disabled>
-                Selecione…
-              </option>
-              {categories.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.nome}
+
+          <div className="grid gap-2 text-sm">
+            <label className="grid gap-1">
+              Categoria
+              <Select
+                name="categoriaId"
+                required
+                value={categoryId}
+                onChange={(event) => setCategoryId(event.target.value)}
+              >
+                <option value="" disabled>
+                  Selecione…
                 </option>
-              ))}
-            </Select>
-          </Field>
+                {categoryOptions.map((category) => (
+                  <option key={category.id} value={category.id}>
+                    {category.nome}
+                  </option>
+                ))}
+              </Select>
+            </label>
+            <CreateLibraryCategoryDialog
+              categories={categoryOptions}
+              onCreated={addCategory}
+              className="w-full sm:w-fit"
+            />
+          </div>
+
           <Field label="Arquivo digital">
             <Select name="fileId" required={format !== 'fisico'} defaultValue="">
               <option value="">Nenhum</option>
-              {fileAssets.map((f) => (
-                <option key={f.id} value={f.id}>
-                  {f.titulo}
+              {fileAssets.map((file) => (
+                <option key={file.id} value={file.id}>
+                  {file.titulo}
                 </option>
               ))}
             </Select>
           </Field>
           <Field label="Ano">
-            <Input type="number" name="anoPublicacao" />
+            <Input
+              type="number"
+              name="anoPublicacao"
+              value={fields.anoPublicacao}
+              onChange={(event) => updateField('anoPublicacao', event.target.value)}
+            />
           </Field>
           <Field label="Editora">
-            <Input name="editora" />
+            <Input
+              name="editora"
+              value={fields.editora}
+              onChange={(event) => updateField('editora', event.target.value)}
+            />
           </Field>
           <Field label="ISBN/ISSN">
-            <Input name="isbn" />
+            <Input
+              name="isbn"
+              value={fields.isbn}
+              onChange={(event) => updateField('isbn', event.target.value)}
+            />
+          </Field>
+          <Field label="Código de barras/EAN">
+            <Input
+              name="codigoBarras"
+              inputMode="numeric"
+              value={fields.codigoBarras}
+              onChange={(event) => updateField('codigoBarras', event.target.value)}
+            />
           </Field>
           <Field label="Código de classificação">
             <Input name="codigoClassificacao" />
           </Field>
           <Field label="Palavras-chave">
-            <Input name="palavrasChave" placeholder="separadas por vírgula" />
+            <Input
+              name="palavrasChave"
+              placeholder="separadas por vírgula"
+              value={fields.palavrasChave}
+              onChange={(event) => updateField('palavrasChave', event.target.value)}
+            />
           </Field>
           <Field label="Prazo padrão (dias)">
             <Input type="number" name="prazoEmprestimoDias" defaultValue="21" min="1" max="180" />
           </Field>
+
           {format !== 'digital' && (
             <>
               <Field label="Número de tombo">
                 <Input name="codigoTombo" required />
               </Field>
-              <Field label="Estante">
-                <Select name="shelfId" required defaultValue="">
-                  <option value="" disabled>
-                    Selecione…
-                  </option>
-                  {shelves.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.codigo} · {s.nome}
+              <div className="grid gap-2 text-sm">
+                <label className="grid gap-1">
+                  Estante
+                  <Select
+                    name="shelfId"
+                    required
+                    value={shelfId}
+                    onChange={(event) => setShelfId(event.target.value)}
+                  >
+                    <option value="" disabled>
+                      Selecione…
                     </option>
-                  ))}
-                </Select>
-              </Field>
+                    {shelfOptions.map((shelf) => (
+                      <option key={shelf.id} value={shelf.id}>
+                        {shelf.codigo} · {shelf.nome}
+                      </option>
+                    ))}
+                  </Select>
+                </label>
+                <CreateLibraryShelfDialog onCreated={addShelf} className="w-full sm:w-fit" />
+              </div>
               <Field label="Estado geral">
                 <Select name="estadoGeral" defaultValue="bom">
                   <option value="novo">Novo</option>
@@ -140,9 +245,18 @@ export function LibraryItemForm({
               </Field>
             </>
           )}
+
           <label className="grid gap-1 text-sm sm:col-span-2">
-            Sinopse
-            <Textarea name="sinopse" rows={5} />
+            Sinopse extraída ou informada
+            <Textarea
+              name="sinopse"
+              rows={8}
+              value={fields.sinopse}
+              onChange={(event) => updateField('sinopse', event.target.value)}
+            />
+            <span className="text-muted text-xs">
+              Revise o texto extraído da contracapa antes de publicar.
+            </span>
           </label>
           <label className="grid gap-1 text-sm sm:col-span-2">
             Dica do Bibliotecário
@@ -159,6 +273,7 @@ export function LibraryItemForm({
     </form>
   );
 }
+
 function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
     <label className="grid gap-1 text-sm">
@@ -167,6 +282,7 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
     </label>
   );
 }
+
 function Submit() {
   const { pending } = useFormStatus();
   return (

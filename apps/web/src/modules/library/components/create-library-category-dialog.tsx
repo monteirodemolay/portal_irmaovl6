@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState, useEffect, useRef } from 'react';
+import { useActionState, useEffect, useRef, useState } from 'react';
 import { useFormStatus } from 'react-dom';
 import type { LibraryCategory } from '@vl6/domain';
 import {
@@ -19,24 +19,30 @@ import { createLibraryCategoryAction, type LibraryActionState } from '../actions
 export function CreateLibraryCategoryDialog({
   categories,
   className,
+  onCreated,
 }: {
-  categories: LibraryCategory[];
+  categories: Array<Pick<LibraryCategory, 'id' | 'nome'>>;
   className?: string;
+  onCreated?: (category: { id: string; nome: string }) => void;
 }) {
   const [state, formAction] = useActionState<LibraryActionState, FormData>(
     createLibraryCategoryAction,
     { error: null },
   );
   const formRef = useRef<HTMLFormElement>(null);
+  const [open, setOpen] = useState(false);
 
   useEffect(() => {
-    if (state.error === null) formRef.current?.reset();
-  }, [state]);
+    if (!state.createdCategory) return;
+    formRef.current?.reset();
+    onCreated?.(state.createdCategory);
+    setOpen(false);
+  }, [onCreated, state.createdCategory]);
 
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" className={className}>
+        <Button type="button" variant="outline" className={className}>
           Nova categoria
         </Button>
       </DialogTrigger>
@@ -66,6 +72,7 @@ export function CreateLibraryCategoryDialog({
             <Input id="ordem" name="ordem" type="number" min={0} defaultValue={0} />
           </FormField>
           {state.error && <p className="text-sm text-red-600">{state.error}</p>}
+          {state.success && <p className="text-sm text-green-700">{state.success}</p>}
           <SubmitButton />
         </form>
       </DialogContent>
