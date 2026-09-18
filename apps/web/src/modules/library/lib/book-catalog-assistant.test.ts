@@ -4,6 +4,7 @@ import {
   extractBarcodeCandidate,
   extractSynopsisSuggestion,
   isValidIsbn,
+  isValidIssn,
   normalizeBookCode,
 } from './book-catalog-assistant';
 
@@ -17,6 +18,12 @@ describe('book catalog assistant', () => {
   it('valida ISBN-10 e ISBN-13', () => {
     expect(isValidIsbn('978-0-14032-872-1')).toBe(true);
     expect(isValidIsbn('0-306-40615-2')).toBe(true);
+  });
+
+  it('valida ISSN e rejeita dígito verificador incorreto', () => {
+    expect(isValidIssn('0378-5955')).toBe(true);
+    expect(isValidIssn('0378-5954')).toBe(false);
+    expect(isValidIssn('978-0-14032-872-1')).toBe(false);
   });
 
   it('sugere autor e título pela capa', () => {

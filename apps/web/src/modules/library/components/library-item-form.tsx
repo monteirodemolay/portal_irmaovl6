@@ -9,9 +9,11 @@ import type {
   LibraryItem,
   LibraryShelf,
 } from '@vl6/domain';
-import { Button, Input, Select, Textarea } from '@vl6/ui';
+import { Button, Input, RefreshCw, Select, Textarea } from '@vl6/ui';
 import {
   addLibraryItemAction,
+  fetchLibrarySuggestedCoverAction,
+  lookupLibraryBookAction,
   updateLibraryItemAction,
   type LibraryActionState,
 } from '../actions/library-actions';
@@ -84,6 +86,11 @@ export function LibraryItemForm({
   );
   const [categoryId, setCategoryId] = useState(item?.categoriaId ?? '');
   const [shelfId, setShelfId] = useState(copy?.shelfId ?? '');
+  const [capaSugeridaUrl, setCapaSugeridaUrl] = useState<string | null>(null);
+  const [isbnLookup, setIsbnLookup] = useState<{ busy: boolean; message: string | null }>({
+    busy: false,
+    message: null,
+  });
 
   const applySuggestion = useCallback((suggestion: BookCaptureResult) => {
     setFields((current) => ({
@@ -98,7 +105,42 @@ export function LibraryItemForm({
         current.palavrasChave || (suggestion.palavrasChave?.filter(Boolean).join(', ') ?? ''),
       sinopse: current.sinopse || suggestion.sinopse || '',
     }));
+    if (suggestion.capaUrl) setCapaSugeridaUrl(suggestion.capaUrl);
   }, []);
+
+  const searchByCode = useCallback(async () => {
+    const code = fields.isbn.trim();
+    if (!code) return;
+    setIsbnLookup({ busy: true, message: 'Consultando ISBN/ISSN…' });
+    try {
+      const result = await lookupLibraryBookAction({ code });
+      if (!result.found) {
+        setIsbnLookup({ busy: false, message: 'Nenhum dado encontrado para esse código.' });
+        return;
+      }
+      let capaUrl: string | undefined;
+      if (result.capaUrl) {
+        const coverResult = await fetchLibrarySuggestedCoverAction(result.capaUrl);
+        if ('capaUrl' in coverResult) capaUrl = coverResult.capaUrl;
+      }
+      applySuggestion({
+        titulo: result.titulo,
+        autor: result.autor,
+        anoPublicacao: result.anoPublicacao,
+        editora: result.editora,
+        isbn: result.isbn,
+        sinopse: result.sinopse,
+        palavrasChave: result.palavrasChave,
+        capaUrl,
+      });
+      setIsbnLookup({
+        busy: false,
+        message: `Dados encontrados${capaUrl ? ' com capa' : ''}. Confira antes de publicar.`,
+      });
+    } catch {
+      setIsbnLookup({ busy: false, message: 'Não foi possível consultar o código agora.' });
+    }
+  }, [applySuggestion, fields.isbn]);
 
   const addCategory = useCallback((category: { id: string; nome: string }) => {
     setCategoryOptions((current) => [...current, category]);
@@ -116,7 +158,11 @@ export function LibraryItemForm({
   return (
     <form action={action} className="grid gap-6" encType="multipart/form-data">
       <div className="grid gap-6 lg:grid-cols-[260px_1fr]">
-        <BookCaptureAssistant onSuggestion={applySuggestion} initialCoverUrl={item?.capaUrl} />
+        <BookCaptureAssistant
+          onSuggestion={applySuggestion}
+          initialCoverUrl={item?.capaUrl ?? capaSugeridaUrl}
+        />
+        <input type="hidden" name="capaSugeridaUrl" value={capaSugeridaUrl ?? ''} />
         <div className="grid min-w-0 gap-4 sm:grid-cols-2">
           <Field label="Título">
             <Input
@@ -267,11 +313,25 @@ export function LibraryItemForm({
             />
           </Field>
           <Field label="ISBN/ISSN">
-            <Input
-              name="isbn"
-              value={fields.isbn}
-              onChange={(event) => updateField('isbn', event.target.value)}
-            />
+            <div className="flex gap-2">
+              <Input
+                name="isbn"
+                value={fields.isbn}
+                onChange={(event) => updateField('isbn', event.target.value)}
+                placeholder="978-... ou NNNN-NNNN"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="shrink-0"
+                disabled={!fields.isbn.trim() || isbnLookup.busy}
+                onClick={searchByCode}
+              >
+                {isbnLookup.busy ? <RefreshCw className="animate-spin" size={16} /> : 'Buscar'}
+              </Button>
+            </div>
+            {isbnLookup.message && <span className="text-muted text-xs">{isbnLookup.message}</span>}
           </Field>
           <Field label="Código de barras/EAN">
             <Input
