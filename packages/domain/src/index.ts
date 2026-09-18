@@ -489,6 +489,7 @@ export * from './modules/family-legacy/use-cases/import-demolay-chapter-roster.u
 export * from './modules/family-legacy/use-cases/cross-reference-demolay-roster.use-case';
 export * from './modules/family-legacy/use-cases/list-paramasonic-member-directory.use-case';
 export * from './modules/family-legacy/use-cases/backfill-fraternidade-feminina.use-case';
+export * from './modules/family-legacy/use-cases/sync-spouses-to-paramasonic-entity.use-case';
 export * from './modules/identity-access/use-cases/ensure-paramasonic-role.use-case';
 
 export * from './modules/honors/entities/member-title.entity';
