@@ -210,6 +210,14 @@ export class FirestoreLibraryCirculationRepository implements ILibraryCirculatio
       .get();
     return s.docs.map((d) => d.data());
   }
+  async listLoanEventsByCopy(tenantId: string, copyId: string) {
+    const s = await this.loanEvents
+      .where('tenantId', '==', tenantId)
+      .where('copyId', '==', copyId)
+      .orderBy('occurredAt', 'desc')
+      .get();
+    return s.docs.map((d) => d.data());
+  }
   async createLoanEvent(event: LibraryLoanEvent) {
     await this.loanEvents.doc(event.id).set(event);
   }

@@ -1,9 +1,11 @@
 'use client';
 
-import { type FormEvent, useMemo, useRef, useState, useTransition } from 'react';
+import { type FormEvent, useEffect, useMemo, useRef, useState, useTransition } from 'react';
 import type { LibraryCopy, LibraryItem } from '@vl6/domain';
-import { BookOpen, Badge, Button, Card, CardContent, Input } from '@vl6/ui';
+import { BookOpen, Badge, Button, Camera, Card, CardContent, Input } from '@vl6/ui';
 import { registerLibraryDirectLoanAction } from '../actions/library-actions';
+
+type ScannerControls = { stop: () => void };
 
 interface MemberOption {
   id: string;
@@ -56,7 +58,12 @@ export function PresentialCheckout({
   const [dueAt, setDueAt] = useState(addDaysIso(21));
   const [summary, setSummary] = useState<{ ok: number; failed: number } | null>(null);
   const [pending, startTransition] = useTransition();
+  const [cameraOpen, setCameraOpen] = useState(false);
+  const [cameraError, setCameraError] = useState<string | null>(null);
   const scanRef = useRef<HTMLInputElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const scannerControlsRef = useRef<ScannerControls | null>(null);
+  const lastCameraCodeRef = useRef<string | null>(null);
 
   const physicalItems = useMemo(() => items.filter((item) => item.formato !== 'digital'), [items]);
   const availableByItem = useMemo(() => {
@@ -93,27 +100,26 @@ export function PresentialCheckout({
     setBag((current) => [...current.filter((e) => e.key !== entry.key), entry]);
   }
 
-  function handleScan(event: FormEvent) {
-    event.preventDefault();
-    setScanError(null);
-    if (!scan.trim()) return;
-    const { copyId, tombo } = parseScanCode(scan);
+  function processScanCode(raw: string): boolean {
+    if (!raw.trim()) return false;
+    const { copyId, tombo } = parseScanCode(raw);
     const copy = copyId
       ? copies.find((c) => c.id === copyId)
       : copies.find((c) => c.codigoTombo.toLowerCase() === tombo.toLowerCase());
     if (!copy) {
       setScanError('Exemplar não encontrado. Confira o QR ou o tombo digitado.');
-      return;
+      return false;
     }
     if (copy.situacao !== 'disponivel') {
       setScanError(`Este exemplar está "${copy.situacao}", não pode ser retirado agora.`);
-      return;
+      return false;
     }
     const item = itemById.get(copy.libraryItemId);
     if (!item) {
       setScanError('Obra do exemplar não encontrada.');
-      return;
+      return false;
     }
+    setScanError(null);
     addBagEntry({
       key: copy.id,
       libraryItemId: item.id,
@@ -124,9 +130,44 @@ export function PresentialCheckout({
       codigoTombo: copy.codigoTombo,
       prazoEmprestimoDias: item.prazoEmprestimoDias ?? 21,
     });
-    setScan('');
+    return true;
+  }
+
+  function handleScan(event: FormEvent) {
+    event.preventDefault();
+    if (processScanCode(scan)) setScan('');
     scanRef.current?.focus();
   }
+
+  useEffect(() => {
+    if (!cameraOpen) return;
+    let cancelled = false;
+    setCameraError(null);
+    lastCameraCodeRef.current = null;
+    import('@zxing/browser')
+      .then(({ BrowserQRCodeReader }) => {
+        if (cancelled || !videoRef.current) return;
+        const reader = new BrowserQRCodeReader();
+        return reader.decodeFromVideoDevice(undefined, videoRef.current, (result) => {
+          const text = result?.getText();
+          if (!text || text === lastCameraCodeRef.current) return;
+          lastCameraCodeRef.current = text;
+          processScanCode(text);
+        });
+      })
+      .then((controls) => {
+        if (cancelled) controls?.stop();
+        else scannerControlsRef.current = controls ?? null;
+      })
+      .catch(() => {
+        if (!cancelled) setCameraError('Não foi possível acessar a câmera do aparelho.');
+      });
+    return () => {
+      cancelled = true;
+      scannerControlsRef.current?.stop();
+      scannerControlsRef.current = null;
+    };
+  }, [cameraOpen]);
 
   function addByTitle(item: LibraryItem) {
     addBagEntry({
@@ -180,7 +221,30 @@ export function PresentialCheckout({
       <div className="grid gap-4">
         <Card>
           <CardContent className="grid gap-3 p-4 sm:p-5">
-            <h2 className="font-semibold">1. Escaneie o exemplar</h2>
+            <div className="flex items-center justify-between gap-2">
+              <h2 className="font-semibold">1. Escaneie o exemplar</h2>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setCameraOpen((open) => !open)}
+              >
+                <Camera size={16} />
+                {cameraOpen ? 'Fechar câmera' : 'Usar câmera'}
+              </Button>
+            </div>
+            {cameraOpen && (
+              <div className="grid gap-2">
+                <div className="bg-surface aspect-video w-full overflow-hidden rounded-lg border">
+                  <video ref={videoRef} className="h-full w-full object-cover" muted playsInline />
+                </div>
+                <p className="text-muted text-xs">
+                  Aponte a câmera para o QR da etiqueta — a obra é adicionada à sacola
+                  automaticamente ao reconhecer o código.
+                </p>
+                {cameraError && <p className="text-sm text-red-600">{cameraError}</p>}
+              </div>
+            )}
             <form onSubmit={handleScan} className="grid gap-2 sm:grid-cols-[1fr_auto]">
               <Input
                 ref={scanRef}
@@ -196,8 +260,8 @@ export function PresentialCheckout({
             </form>
             {scanError && <p className="text-sm text-red-600">{scanError}</p>}
             <p className="text-muted text-xs">
-              A etiqueta de cada exemplar tem um QR fixo — escanear com a câmera do celular ou um
-              leitor USB já digita o código aqui.
+              A etiqueta de cada exemplar tem um QR fixo — use a câmera acima, escaneie com um
+              leitor USB (digita aqui automaticamente) ou digite o tombo manualmente.
             </p>
           </CardContent>
         </Card>
@@ -247,11 +311,7 @@ export function PresentialCheckout({
                   >
                     <div className="bg-surface text-muted flex h-14 w-10 shrink-0 items-center justify-center overflow-hidden rounded border">
                       {entry.capaUrl ? (
-                        <img
-                          src={entry.capaUrl}
-                          alt=""
-                          className="h-full w-full object-cover"
-                        />
+                        <img src={entry.capaUrl} alt="" className="h-full w-full object-cover" />
                       ) : (
                         <BookOpen size={18} aria-hidden="true" />
                       )}
@@ -264,7 +324,9 @@ export function PresentialCheckout({
                       <span className="text-muted block text-xs">
                         {entry.codigoTombo ? `Tombo ${entry.codigoTombo}` : 'Exemplar a definir'}
                       </span>
-                      {entry.error && <span className="block text-xs text-red-600">{entry.error}</span>}
+                      {entry.error && (
+                        <span className="block text-xs text-red-600">{entry.error}</span>
+                      )}
                     </div>
                     <Button
                       type="button"
@@ -351,9 +413,7 @@ export function PresentialCheckout({
               : `Confirmar retirada${bag.length ? ` de ${bag.length} obra(s)` : ''}`}
           </Button>
           {summary && (
-            <p
-              className={`text-sm ${summary.failed ? 'text-amber-700' : 'text-green-700'}`}
-            >
+            <p className={`text-sm ${summary.failed ? 'text-amber-700' : 'text-green-700'}`}>
               {summary.ok} empréstimo(s) registrado(s)
               {summary.failed ? ` · ${summary.failed} com erro (veja a sacola)` : '.'}
             </p>

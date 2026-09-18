@@ -9,7 +9,19 @@ import type {
   LibraryItem,
   LibraryShelf,
 } from '@vl6/domain';
-import { Button, Input, RefreshCw, Select, Textarea } from '@vl6/ui';
+import {
+  Badge,
+  BookOpen,
+  Button,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  Input,
+  RefreshCw,
+  Select,
+  Textarea,
+} from '@vl6/ui';
 import {
   addLibraryItemAction,
   fetchLibrarySuggestedCoverAction,
@@ -91,6 +103,10 @@ export function LibraryItemForm({
     busy: false,
     message: null,
   });
+  const [pendingImport, setPendingImport] = useState<{
+    suggestion: BookCaptureResult;
+    origem: string;
+  } | null>(null);
 
   const applySuggestion = useCallback((suggestion: BookCaptureResult) => {
     setFields((current) => ({
@@ -108,6 +124,17 @@ export function LibraryItemForm({
     if (suggestion.capaUrl) setCapaSugeridaUrl(suggestion.capaUrl);
   }, []);
 
+  /** Toda sugestão (por código digitado ou por foto) passa por confirmação antes de preencher o formulário. */
+  const proposeImport = useCallback((suggestion: BookCaptureResult, origem: string) => {
+    setPendingImport({ suggestion, origem });
+  }, []);
+
+  const confirmImport = useCallback(() => {
+    if (!pendingImport) return;
+    applySuggestion(pendingImport.suggestion);
+    setPendingImport(null);
+  }, [applySuggestion, pendingImport]);
+
   const searchByCode = useCallback(async () => {
     const code = fields.isbn.trim();
     if (!code) return;
@@ -123,24 +150,28 @@ export function LibraryItemForm({
         const coverResult = await fetchLibrarySuggestedCoverAction(result.capaUrl);
         if ('capaUrl' in coverResult) capaUrl = coverResult.capaUrl;
       }
-      applySuggestion({
-        titulo: result.titulo,
-        autor: result.autor,
-        anoPublicacao: result.anoPublicacao,
-        editora: result.editora,
-        isbn: result.isbn,
-        sinopse: result.sinopse,
-        palavrasChave: result.palavrasChave,
-        capaUrl,
-      });
-      setIsbnLookup({
-        busy: false,
-        message: `Dados encontrados${capaUrl ? ' com capa' : ''}. Confira antes de publicar.`,
-      });
+      setIsbnLookup({ busy: false, message: null });
+      proposeImport(
+        {
+          titulo: result.titulo,
+          autor: result.autor,
+          anoPublicacao: result.anoPublicacao,
+          editora: result.editora,
+          isbn: result.isbn,
+          sinopse: result.sinopse,
+          palavrasChave: result.palavrasChave,
+          capaUrl,
+        },
+        result.source === 'crossref'
+          ? 'CrossRef (ISSN)'
+          : result.source === 'open-library'
+            ? 'Open Library'
+            : 'Google Books',
+      );
     } catch {
       setIsbnLookup({ busy: false, message: 'Não foi possível consultar o código agora.' });
     }
-  }, [applySuggestion, fields.isbn]);
+  }, [fields.isbn, proposeImport]);
 
   const addCategory = useCallback((category: { id: string; nome: string }) => {
     setCategoryOptions((current) => [...current, category]);
@@ -157,9 +188,95 @@ export function LibraryItemForm({
 
   return (
     <form action={action} className="grid gap-6" encType="multipart/form-data">
+      <div className="border-primary/30 bg-primary/5 grid gap-3 rounded-xl border-2 p-4 sm:p-5">
+        <div>
+          <h2 className="font-semibold">1. Identifique a obra pelo ISBN ou ISSN</h2>
+          <p className="text-muted mt-1 text-xs">
+            Livros usam ISBN; periódicos usam ISSN. Buscando primeiro, os dados encontrados vêm para
+            sua confirmação antes de preencher o resto do formulário.
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <Input
+            name="isbn"
+            value={fields.isbn}
+            onChange={(event) => updateField('isbn', event.target.value)}
+            placeholder="978-... ou NNNN-NNNN"
+            className="h-11 bg-white"
+          />
+          <Button
+            type="button"
+            className="h-11 shrink-0"
+            disabled={!fields.isbn.trim() || isbnLookup.busy}
+            onClick={searchByCode}
+          >
+            {isbnLookup.busy ? <RefreshCw className="animate-spin" size={16} /> : 'Buscar dados'}
+          </Button>
+        </div>
+        {isbnLookup.message && <p className="text-sm text-amber-800">{isbnLookup.message}</p>}
+      </div>
+
+      <Dialog
+        open={Boolean(pendingImport)}
+        onOpenChange={(open) => {
+          if (!open) setPendingImport(null);
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confira se é esta obra</DialogTitle>
+          </DialogHeader>
+          {pendingImport && (
+            <div className="grid gap-4 sm:grid-cols-[100px_1fr]">
+              <div className="bg-surface text-muted flex h-32 w-full items-center justify-center overflow-hidden rounded-lg border sm:h-full">
+                {pendingImport.suggestion.capaUrl ? (
+                  <img
+                    src={pendingImport.suggestion.capaUrl}
+                    alt=""
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <BookOpen size={28} aria-hidden="true" />
+                )}
+              </div>
+              <div className="grid gap-1 text-sm">
+                <Badge variant="outline" className="w-fit">
+                  Fonte: {pendingImport.origem}
+                </Badge>
+                <p className="font-semibold">
+                  {pendingImport.suggestion.titulo || 'Título não informado'}
+                </p>
+                <p className="text-muted">
+                  {pendingImport.suggestion.autor ?? 'Autoria não informada'}
+                  {pendingImport.suggestion.anoPublicacao
+                    ? ` · ${pendingImport.suggestion.anoPublicacao}`
+                    : ''}
+                </p>
+                {pendingImport.suggestion.editora && (
+                  <p className="text-muted text-xs">{pendingImport.suggestion.editora}</p>
+                )}
+                {pendingImport.suggestion.sinopse && (
+                  <p className="text-muted line-clamp-4 text-xs">
+                    {pendingImport.suggestion.sinopse}
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+          <div className="flex flex-wrap justify-end gap-2">
+            <Button type="button" variant="outline" onClick={() => setPendingImport(null)}>
+              Não é esta obra
+            </Button>
+            <Button type="button" onClick={confirmImport}>
+              Usar estes dados
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <div className="grid gap-6 lg:grid-cols-[260px_1fr]">
         <BookCaptureAssistant
-          onSuggestion={applySuggestion}
+          onSuggestion={(suggestion) => proposeImport(suggestion, 'Foto da capa/contracapa')}
           initialCoverUrl={item?.capaUrl ?? capaSugeridaUrl}
         />
         <input type="hidden" name="capaSugeridaUrl" value={capaSugeridaUrl ?? ''} />
@@ -311,27 +428,6 @@ export function LibraryItemForm({
               value={fields.editora}
               onChange={(event) => updateField('editora', event.target.value)}
             />
-          </Field>
-          <Field label="ISBN/ISSN">
-            <div className="flex gap-2">
-              <Input
-                name="isbn"
-                value={fields.isbn}
-                onChange={(event) => updateField('isbn', event.target.value)}
-                placeholder="978-... ou NNNN-NNNN"
-              />
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="shrink-0"
-                disabled={!fields.isbn.trim() || isbnLookup.busy}
-                onClick={searchByCode}
-              >
-                {isbnLookup.busy ? <RefreshCw className="animate-spin" size={16} /> : 'Buscar'}
-              </Button>
-            </div>
-            {isbnLookup.message && <span className="text-muted text-xs">{isbnLookup.message}</span>}
           </Field>
           <Field label="Código de barras/EAN">
             <Input

@@ -66,9 +66,14 @@ export default async function LibraryPage() {
       key: 'acoes',
       header: 'Ações',
       cell: (item) => (
-        <Button asChild size="sm" variant="outline">
-          <Link href={`/admin/acervo/biblioteca/${item.id}/editar`}>Editar</Link>
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button asChild size="sm" variant="outline">
+            <Link href={`/admin/acervo/biblioteca/${item.id}/editar`}>Editar</Link>
+          </Button>
+          <Button asChild size="sm" variant="outline">
+            <Link href={`/admin/acervo/biblioteca/${item.id}/historico`}>Histórico</Link>
+          </Button>
+        </div>
       ),
     },
   ];
@@ -155,9 +160,14 @@ export default async function LibraryPage() {
                       </dd>
                     </div>
                   </dl>
-                  <Button asChild size="sm" variant="outline" className="w-full">
-                    <Link href={`/admin/acervo/biblioteca/${item.id}/editar`}>Editar obra</Link>
-                  </Button>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button asChild size="sm" variant="outline" className="w-full">
+                      <Link href={`/admin/acervo/biblioteca/${item.id}/editar`}>Editar obra</Link>
+                    </Button>
+                    <Button asChild size="sm" variant="outline" className="w-full">
+                      <Link href={`/admin/acervo/biblioteca/${item.id}/historico`}>Histórico</Link>
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
             );

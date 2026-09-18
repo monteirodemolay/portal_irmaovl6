@@ -57,7 +57,13 @@ export default async function Page() {
                     <div className="min-w-0">
                       <h2 className="break-words font-semibold">{item?.titulo ?? 'Obra'}</h2>
                       <p className="text-sm">
-                        {l.borrowerName} · Tombo {copy?.codigoTombo}
+                        {l.borrowerName} · Tombo {copy?.codigoTombo}{' '}
+                        <Link
+                          href={`/admin/acervo/biblioteca/${l.libraryItemId}/historico`}
+                          className="text-accent underline underline-offset-2"
+                        >
+                          histórico
+                        </Link>
                       </p>
                       <p className="text-muted text-xs">
                         Pacote #{(l.requestPackageId ?? l.id).slice(-8).toUpperCase()} · retirada{' '}
