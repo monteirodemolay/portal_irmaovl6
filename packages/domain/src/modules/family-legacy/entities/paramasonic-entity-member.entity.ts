@@ -34,4 +34,14 @@ export interface ParamasonicEntityMember extends BaseEntity {
   categoria: ParamasonicEntityMemberCategory | null;
   situacao: ParamasonicEntityMemberSituation;
   dataIngresso: Date | null;
+  /**
+   * Rastreabilidade de quem era o Irmão da Loja quando este integrante foi
+   * sincronizado como cônjuge dele (`SyncSpousesToParamasonicEntityUseCase`)
+   * — nunca preenchido em cadastro manual. Nunca apagamos o integrante por
+   * separação/divórcio (ela faz parte da história da Fraternidade); em vez
+   * disso, o Administrador marca `situacao: 'inativo'` e desvincula este
+   * campo (`UpdateParamasonicEntityMemberUseCase.desvincularDoIrmao`), sem
+   * remover o registro.
+   */
+  conjugeDeMemberId: string | null;
 }

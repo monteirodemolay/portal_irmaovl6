@@ -79,6 +79,7 @@ export class AddParamasonicEntityMemberUseCase {
       categoria: input.categoria ?? null,
       situacao: input.situacao,
       dataIngresso: input.dataIngresso,
+      conjugeDeMemberId: null,
       createdAt: now,
       updatedAt: now,
       createdBy: ctx.uid,

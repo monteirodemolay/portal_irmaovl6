@@ -85,6 +85,7 @@ export class ImportDemolayChapterRosterUseCase {
         categoria: null,
         situacao: INACTIVE_STATUSES.has(row.status) ? 'inativo' : 'ativo',
         dataIngresso: null,
+        conjugeDeMemberId: null,
         createdAt: now,
         updatedAt: now,
         createdBy: ctx.uid,
