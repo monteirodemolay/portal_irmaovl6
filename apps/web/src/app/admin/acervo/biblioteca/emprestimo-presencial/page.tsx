@@ -1,6 +1,4 @@
-import Link from 'next/link';
 import { createServerContainer } from '@vl6/infra';
-import { Button } from '@vl6/ui';
 import { requirePagePermission } from '@/lib/auth/require-permission';
 import { PresentialCheckout } from '@/modules/library/components/presential-checkout';
 
@@ -18,17 +16,12 @@ export default async function LibraryPresentialLoanPage() {
 
   return (
     <div className="grid gap-6">
-      <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h1 className="font-display text-2xl font-semibold">Empréstimo presencial</h1>
-          <p className="text-muted text-sm">
-            Escaneie a etiqueta do exemplar (ou busque a obra pelo nome), escolha o Irmão e
-            registre a retirada na hora, como em um balcão.
-          </p>
-        </div>
-        <Button asChild variant="outline" className="w-full sm:w-auto">
-          <Link href="/admin/acervo/biblioteca/emprestimos">Voltar</Link>
-        </Button>
+      <header>
+        <h1 className="font-display text-2xl font-semibold">Empréstimo presencial</h1>
+        <p className="text-muted text-sm">
+          Escaneie a etiqueta do exemplar (ou busque a obra pelo nome), escolha o Irmão e registre a
+          retirada na hora, como em um balcão.
+        </p>
       </header>
       <PresentialCheckout items={items} copies={copies} members={members} />
     </div>

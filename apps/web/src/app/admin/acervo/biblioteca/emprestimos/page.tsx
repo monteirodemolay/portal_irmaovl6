@@ -20,19 +20,9 @@ export default async function Page() {
   const copyMap = new Map(copies.map((i) => [i.id, i]));
   return (
     <div className="grid gap-6">
-      <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h1 className="font-display text-2xl font-semibold">Gestão de empréstimos</h1>
-          <p className="text-muted text-sm">Aprovação, retirada, prazo, devolução e cobrança.</p>
-        </div>
-        <div className="grid gap-2 sm:flex sm:w-auto sm:flex-wrap">
-          <Button asChild className="w-full sm:w-auto">
-            <Link href="/admin/acervo/biblioteca/emprestimo-presencial">Empréstimo presencial</Link>
-          </Button>
-          <Button asChild variant="outline" className="w-full sm:w-auto">
-            <Link href="/admin/acervo/biblioteca">Voltar</Link>
-          </Button>
-        </div>
+      <header>
+        <h1 className="font-display text-2xl font-semibold">Gestão de empréstimos</h1>
+        <p className="text-muted text-sm">Aprovação, retirada, prazo, devolução e cobrança.</p>
       </header>
       {!loans.length ? (
         <EmptyState title="Nenhum empréstimo" />

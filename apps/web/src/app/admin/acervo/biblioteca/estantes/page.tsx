@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import { createServerContainer } from '@vl6/infra';
 import { Badge, Button, Card, CardContent, EmptyState, Input, Select, Textarea } from '@vl6/ui';
 import { requirePagePermission } from '@/lib/auth/require-permission';
@@ -16,14 +15,9 @@ export default async function Page() {
   ]);
   return (
     <div className="grid gap-6">
-      <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h1 className="font-display text-2xl font-semibold">Estantes do acervo</h1>
-          <p className="text-muted text-sm">Localização padronizada dos exemplares.</p>
-        </div>
-        <Button asChild variant="outline" className="w-full sm:w-auto">
-          <Link href="/admin/acervo/biblioteca">Voltar</Link>
-        </Button>
+      <header>
+        <h1 className="font-display text-2xl font-semibold">Estantes do acervo</h1>
+        <p className="text-muted text-sm">Localização padronizada dos exemplares.</p>
       </header>
       <CreateLibraryShelfForm />
       {!shelves.length ? (
