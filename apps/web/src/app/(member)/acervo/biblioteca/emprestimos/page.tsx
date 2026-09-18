@@ -38,10 +38,10 @@ export default async function MyLibraryLoansPage() {
           <p className="text-accent text-sm font-semibold uppercase tracking-widest">
             Minha biblioteca
           </p>
-          <h1 className="font-display text-3xl font-semibold">Meus empréstimos</h1>
+          <h1 className="font-display text-2xl font-semibold sm:text-3xl">Meus empréstimos</h1>
           <p className="text-muted">Acompanhe cada pacote, a retirada, o prazo e a devolução.</p>
         </div>
-        <Button asChild variant="outline">
+        <Button asChild variant="outline" className="w-full sm:w-auto">
           <Link href="/acervo/biblioteca">Catálogo</Link>
         </Button>
       </header>
@@ -86,9 +86,9 @@ function PackageSection({
       ) : (
         packages.map((group) => (
           <Card key={group.id}>
-            <CardContent className="grid gap-4 p-5">
+            <CardContent className="grid gap-4 p-4 sm:p-5">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <div>
+                <div className="min-w-0">
                   <p className="font-semibold">Pacote #{group.id.slice(-8).toUpperCase()}</p>
                   <p className="text-muted text-xs">
                     Solicitado em {group.createdAt.toLocaleDateString('pt-BR')} ·{' '}
@@ -105,9 +105,9 @@ function PackageSection({
                   return (
                     <article key={loan.id} className="grid gap-2 rounded-lg border p-4">
                       <div className="flex flex-wrap items-start justify-between gap-2">
-                        <div>
+                        <div className="min-w-0">
                           <Link
-                            className="font-medium hover:underline"
+                            className="break-words font-medium hover:underline"
                             href={`/acervo/biblioteca/${loan.libraryItemId}`}
                           >
                             {item?.titulo ?? 'Obra do acervo'}

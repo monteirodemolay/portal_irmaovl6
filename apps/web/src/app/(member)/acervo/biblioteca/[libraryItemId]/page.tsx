@@ -41,7 +41,7 @@ export default async function LibraryItemPage({
 
   return (
     <div className="grid gap-6">
-      <Button asChild variant="ghost" className="w-fit">
+      <Button asChild variant="ghost" className="w-full sm:w-fit">
         <Link href="/acervo/biblioteca">← Voltar ao catálogo</Link>
       </Button>
 
@@ -71,10 +71,12 @@ export default async function LibraryItemPage({
             )}
           </div>
           <div>
-            <h1 className="font-display text-3xl font-semibold">{item.titulo}</h1>
+            <h1 className="font-display break-words text-2xl font-semibold sm:text-3xl">
+              {item.titulo}
+            </h1>
             <p className="text-muted">{item.autor ?? 'Autoria não informada'}</p>
           </div>
-          <dl className="grid grid-cols-2 gap-3 text-sm md:grid-cols-3">
+          <dl className="grid grid-cols-1 gap-3 text-sm min-[390px]:grid-cols-2 md:grid-cols-3">
             <Metadata label="Tipo" value={item.tipoMaterial} />
             <Metadata label="Ano" value={item.anoPublicacao} />
             <Metadata label="Editora" value={item.editora} />
@@ -91,14 +93,14 @@ export default async function LibraryItemPage({
               avaliação(ões)
             </p>
           )}
-          <div className="flex flex-wrap gap-2">
+          <div className="grid gap-2 sm:flex sm:flex-wrap">
             {item.fileId && item.permiteLeituraOnline && (
-              <Button asChild>
+              <Button asChild className="w-full sm:w-auto">
                 <a href={`/api/library-items/${item.id}`}>Ler online</a>
               </Button>
             )}
             {item.fileId && (
-              <Button asChild variant="outline">
+              <Button asChild variant="outline" className="w-full sm:w-auto">
                 <a href={`/api/library-items/${item.id}?mode=download`}>Baixar arquivo</a>
               </Button>
             )}
@@ -129,7 +131,7 @@ export default async function LibraryItemPage({
           defaultComment={myReview?.comentario}
         />
         <Card>
-          <CardContent className="grid gap-4 p-5">
+          <CardContent className="grid gap-4 p-4 sm:p-5">
             <h2 className="font-display text-lg font-semibold">Opiniões dos Irmãos</h2>
             {reviews.length === 0 ? (
               <p className="text-muted text-sm">Seja o primeiro a avaliar esta obra.</p>

@@ -16,12 +16,12 @@ export default async function Page() {
   ]);
   return (
     <div className="grid gap-6">
-      <header className="flex justify-between">
+      <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="font-display text-2xl font-semibold">Estantes do acervo</h1>
           <p className="text-muted text-sm">Localização padronizada dos exemplares.</p>
         </div>
-        <Button asChild variant="outline">
+        <Button asChild variant="outline" className="w-full sm:w-auto">
           <Link href="/admin/acervo/biblioteca">Voltar</Link>
         </Button>
       </header>
@@ -35,8 +35,8 @@ export default async function Page() {
             return (
               <Card key={s.id}>
                 <CardContent className="grid gap-3 p-5">
-                  <div className="flex justify-between">
-                    <div>
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <div className="min-w-0">
                       <p className="text-muted text-xs uppercase">{s.codigo}</p>
                       <h2 className="font-semibold">{s.nome}</h2>
                     </div>
@@ -55,7 +55,7 @@ export default async function Page() {
                         <Input name="codigo" defaultValue={s.codigo} />
                         <Input name="nome" defaultValue={s.nome} />
                         <Textarea name="descricao" defaultValue={s.descricao ?? ''} />
-                        <Button size="sm" className="w-fit">
+                        <Button size="sm" className="w-full sm:w-fit">
                           Salvar e atualizar exemplares
                         </Button>
                       </form>

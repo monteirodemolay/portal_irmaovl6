@@ -30,12 +30,14 @@ export function DataTable<T>({
   onRowClick,
 }: DataTableProps<T>) {
   if (rows.length === 0 && emptyState) {
-    return <div className="border-border bg-surface rounded-lg border p-10">{emptyState}</div>;
+    return (
+      <div className="border-border bg-surface rounded-lg border p-5 sm:p-10">{emptyState}</div>
+    );
   }
 
   return (
     <div className="border-border bg-surface overflow-x-auto rounded-lg border shadow-sm">
-      <table className="w-full text-sm">
+      <table className="w-full min-w-max text-sm">
         <thead>
           <tr className="border-border border-b">
             {columns.map((col) => (

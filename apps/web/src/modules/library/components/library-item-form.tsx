@@ -21,20 +21,31 @@ export function LibraryItemForm({
   return (
     <form action={action} className="grid gap-6" encType="multipart/form-data">
       <div className="grid gap-6 lg:grid-cols-[220px_1fr]">
-        <div className="grid content-start gap-3">
+        <div className="mx-auto grid w-full max-w-[260px] content-start gap-3 lg:mx-0 lg:max-w-none">
           <div className="flex aspect-[3/4] items-center justify-center rounded-xl border border-dashed bg-stone-50 text-sm text-stone-500">
             Capa da obra
           </div>
           <label className="text-sm font-medium">
             Enviar foto
-            <Input type="file" name="capaUpload" accept="image/jpeg,image/png,image/webp" />
+            <Input
+              className="w-full min-w-0"
+              type="file"
+              name="capaUpload"
+              accept="image/jpeg,image/png,image/webp"
+            />
           </label>
           <label className="text-sm font-medium">
             Tirar foto
-            <Input type="file" name="capaCamera" accept="image/*" capture="environment" />
+            <Input
+              className="w-full min-w-0"
+              type="file"
+              name="capaCamera"
+              accept="image/*"
+              capture="environment"
+            />
           </label>
         </div>
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid min-w-0 gap-4 sm:grid-cols-2">
           <Field label="Título">
             <Input name="titulo" required />
           </Field>
@@ -159,7 +170,7 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
 function Submit() {
   const { pending } = useFormStatus();
   return (
-    <Button className="w-fit" disabled={pending}>
+    <Button className="w-full sm:w-fit" disabled={pending}>
       {pending ? 'Publicando…' : 'Publicar no catálogo'}
     </Button>
   );

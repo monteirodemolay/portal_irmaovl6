@@ -43,11 +43,11 @@ export default async function LibraryCatalogPage() {
         description="Consulte o acervo, leia publicações digitais e solicite obras físicas para retirada em uma sessão da Loja."
       />
 
-      <div className="flex flex-wrap gap-2">
-        <Button asChild variant="outline">
+      <div className="grid gap-2 sm:flex sm:flex-wrap">
+        <Button asChild variant="outline" className="w-full sm:w-auto">
           <Link href="/acervo/biblioteca/carrinho">Carrinho de empréstimos</Link>
         </Button>
-        <Button asChild variant="outline">
+        <Button asChild variant="outline" className="w-full sm:w-auto">
           <Link href="/acervo/biblioteca/emprestimos">Meus empréstimos</Link>
         </Button>
       </div>
@@ -110,8 +110,8 @@ export default async function LibraryCatalogPage() {
                         <Star size={15} /> {average.toFixed(1)} ({item.quantidadeAvaliacoes})
                       </p>
                     )}
-                    <div className="flex flex-wrap gap-2">
-                      <Button asChild size="sm">
+                    <div className="grid gap-2 sm:flex sm:flex-wrap">
+                      <Button asChild size="sm" className="w-full sm:w-auto">
                         <Link href={`/acervo/biblioteca/${item.id}`}>Ver obra</Link>
                       </Button>
                       {physical && available > 0 && (
@@ -147,14 +147,14 @@ function Ranking({
         ) : (
           <ol className="grid gap-2">
             {items.map((item, index) => (
-              <li key={item.id} className="flex items-center justify-between gap-3 text-sm">
+              <li key={item.id} className="flex min-w-0 items-start justify-between gap-3 text-sm">
                 <Link
-                  className="font-medium hover:underline"
+                  className="min-w-0 break-words font-medium hover:underline"
                   href={`/acervo/biblioteca/${item.id}`}
                 >
                   {index + 1}. {item.titulo ?? 'Publicação'}
                 </Link>
-                <span className="text-muted">
+                <span className="text-muted shrink-0">
                   {value === 'downloads' ? item.contagemDownloads : (item.contagemEmprestimos ?? 0)}
                 </span>
               </li>
