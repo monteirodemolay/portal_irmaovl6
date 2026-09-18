@@ -94,6 +94,7 @@ export {
   Info,
   Gift,
   LayoutGrid,
+  LayoutList,
   CalendarPlus,
   Pin,
   Scale,

@@ -104,6 +104,8 @@ const tenantComEndereco: Tenant = {
   site: null,
   email: 'contato@vl6.com.br',
   modulosHabilitados: [],
+  comunidadeHeroFotoUrl: null,
+  comunidadeHeroFotoPosicao: null,
   createdAt: new Date('2024-01-01'),
   updatedAt: new Date('2024-01-01'),
   createdBy: 'admin-1',

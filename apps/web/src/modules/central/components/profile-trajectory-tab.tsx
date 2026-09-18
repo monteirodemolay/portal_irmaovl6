@@ -1,12 +1,28 @@
 import Link from 'next/link';
 import type { Honor, MemberTitle, PhilosophicalJourney, PublicMemberProfileDTO } from '@vl6/domain';
-import { HONOR_TYPE_LABELS, MEMBER_TITLE_LABELS } from '@vl6/shared';
-import { Award, EmptyState, Sparkles, Users } from '@vl6/ui';
+import {
+  FRATERNAL_AFFILIATION_LABELS,
+  HONOR_TYPE_LABELS,
+  MEMBER_TITLE_LABELS,
+  type FraternalAffiliationKind,
+} from '@vl6/shared';
+import { Award, EmptyState, Handshake, Sparkles, Users } from '@vl6/ui';
 import { CeremonyMatesPanel } from '@/components/membership/ceremony-mates-panel';
 import { HONOR_TYPE_BADGE_ICON, MEMBER_TITLE_BADGE_ICON } from '@/modules/honors/honor-badge-icons';
 import { formatDate, Panel } from './profile-shared';
 import { HonorDetailDialog } from './honor-detail-dialog';
 import { TrajectoryTimelinePanel } from './trajectory-timeline-panel';
+
+/** Um vínculo com ordem paramaçônica (DeMolay etc.) já resolvido pra exibição. */
+export interface ParamasonicAffiliationDisplay {
+  id: string;
+  affiliationKind: FraternalAffiliationKind;
+  organizacaoNome: string | null;
+  unidadeNome: string | null;
+  cargos: string[];
+  /** Link pro perfil público da `ParamasonicEntity`, quando existir uma cadastrada com o mesmo nome. */
+  entityHref: string | null;
+}
 
 /**
  * Aba "Trajetória e Honrarias" do Perfil único (Fase 2/3, mock-up
@@ -33,11 +49,24 @@ export function ProfileTrajectoryTab({
   memberTitles,
   honors,
   philosophicalJourneys,
+  paramasonicAffiliations = [],
+  showTrajectory = true,
 }: {
   profile: PublicMemberProfileDTO;
   memberTitles: MemberTitle[];
   honors: Honor[];
   philosophicalJourneys: PhilosophicalJourney[];
+  paramasonicAffiliations?: ParamasonicAffiliationDisplay[];
+  /**
+   * `false` — usado pelo novo layout de 3 colunas do Perfil único
+   * (`profile-layout/`), que já mostra "Caminho na Loja" sozinho na coluna
+   * de linha do tempo (`TrajectoryTimelinePanel`) — evita duas cópias do
+   * mesmo painel na página. Nesse modo só os selos secundários (Títulos,
+   * Honrarias, Graus Filosóficos, Vínculos, Irmãos Gêmeos) são renderizados,
+   * todos empilhados (sem a grade de duas colunas que reserva espaço pro
+   * "Caminho na Loja").
+   */
+  showTrajectory?: boolean;
 }) {
   const visibleJourneys = philosophicalJourneys.filter((journey) => journey.visivel);
   const hasTrajetoria = Boolean(
@@ -54,12 +83,14 @@ export function ProfileTrajectoryTab({
     memberTitles.length > 0 ||
     honors.length > 0 ||
     visibleJourneys.length > 0 ||
-    profile.irmaosGemeos.length > 0;
+    profile.irmaosGemeos.length > 0 ||
+    paramasonicAffiliations.length > 0;
 
-  const trajetoriaPanel = hasTrajetoria ? <TrajectoryTimelinePanel profile={profile} /> : null;
+  const trajetoriaPanel =
+    showTrajectory && hasTrajetoria ? <TrajectoryTimelinePanel profile={profile} /> : null;
 
   const titlesPanel = memberTitles.length > 0 && (
-    <Panel kicker="TÍTULOS" title="Títulos e Condições Maçônicas" icon={Users} compact>
+    <Panel id="titulos" kicker="TÍTULOS" title="Títulos e Condições Maçônicas" icon={Users} compact>
       <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         {memberTitles.map((title) => (
           <li
@@ -85,6 +116,7 @@ export function ProfileTrajectoryTab({
 
   const honorsPanel = honors.length > 0 && (
     <Panel
+      id="honrarias"
       kicker="HONRARIAS"
       title="Honrarias e Condecorações"
       icon={Award}
@@ -125,6 +157,7 @@ export function ProfileTrajectoryTab({
 
   const journeysPanel = visibleJourneys.length > 0 && (
     <Panel
+      id="graus"
       kicker="GRAUS FILOSÓFICOS"
       title="Graus Filosóficos e Corpos Maçônicos"
       icon={Sparkles}
@@ -148,8 +181,58 @@ export function ProfileTrajectoryTab({
   );
 
   const ceremonyPanel = profile.irmaosGemeos.length > 0 && (
-    <CeremonyMatesPanel groups={profile.irmaosGemeos} compact />
+    <CeremonyMatesPanel id="irmaos-gemeos" groups={profile.irmaosGemeos} compact />
   );
+
+  const paramasonicPanel = paramasonicAffiliations.length > 0 && (
+    <Panel kicker="ENTIDADES PARAMAÇÔNICAS" title="Vínculos" icon={Handshake} compact>
+      <ul className="flex flex-col gap-2">
+        {paramasonicAffiliations.map((affiliation) => {
+          const conteudo = (
+            <>
+              <span className="flex items-center gap-1.5">
+                <span className="text-accent text-[10px] font-semibold uppercase tracking-wider">
+                  {FRATERNAL_AFFILIATION_LABELS[affiliation.affiliationKind]}
+                </span>
+              </span>
+              <span className="block font-medium">
+                {affiliation.organizacaoNome ?? affiliation.unidadeNome}
+              </span>
+              {affiliation.cargos.length > 0 && (
+                <span className="text-muted block text-xs">{affiliation.cargos.join(' · ')}</span>
+              )}
+            </>
+          );
+          return (
+            <li
+              key={affiliation.id}
+              className="border-border bg-background rounded-xl border p-3 text-sm"
+            >
+              {affiliation.entityHref ? (
+                <Link href={affiliation.entityHref} className="hover:underline">
+                  {conteudo}
+                </Link>
+              ) : (
+                conteudo
+              )}
+            </li>
+          );
+        })}
+      </ul>
+    </Panel>
+  );
+
+  if (!showTrajectory) {
+    return hasSecondary ? (
+      <div className="flex flex-col gap-6">
+        {titlesPanel}
+        {honorsPanel}
+        {journeysPanel}
+        {paramasonicPanel}
+        {ceremonyPanel}
+      </div>
+    ) : null;
+  }
 
   return (
     <div
@@ -180,6 +263,7 @@ export function ProfileTrajectoryTab({
           {titlesPanel}
           {honorsPanel}
           {journeysPanel}
+          {paramasonicPanel}
           {ceremonyPanel}
         </div>
       )}

@@ -38,6 +38,8 @@ function buildTenant(overrides: Partial<Tenant> = {}): Tenant {
     site: null,
     email: 'contato@teste.org',
     modulosHabilitados: [],
+    comunidadeHeroFotoUrl: null,
+    comunidadeHeroFotoPosicao: null,
     createdAt: new Date('2025-01-01'),
     updatedAt: new Date('2025-01-01'),
     createdBy: 'system',

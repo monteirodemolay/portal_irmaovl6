@@ -14,7 +14,14 @@ import { SituacaoBadge } from '@/modules/membership/components/situacao/situacao
  * tratamento "In memoriam" — respeitoso, sem qualquer afordância de contato
  * atual.
  */
-export function CommunityMemberCard({ profile }: { profile: DirectoryMemberDTO }) {
+export function CommunityMemberCard({
+  profile,
+  variant = 'grid',
+}: {
+  profile: DirectoryMemberDTO;
+  /** "Grade" (padrão) ou "Lista" — alternância do toggle acima dos resultados de Irmãos. */
+  variant?: 'grid' | 'list';
+}) {
   const isFalecido = profile.situacao === 'falecido';
   const tags = [
     ...(profile.optional.competencias ?? []),
@@ -25,6 +32,49 @@ export function CommunityMemberCard({ profile }: { profile: DirectoryMemberDTO }
   const empresa = profile.optional.negocios?.[0]?.nomeEmpresa;
   const cidade = profile.optional.cidadeExibicao;
   const cargoOuComissao = profile.cargoAtual ?? profile.comissoes[0]?.nome ?? null;
+
+  if (variant === 'list') {
+    return (
+      <Card className="hover:border-primary focus-within:ring-primary h-full transition-colors focus-within:ring-2 focus-within:ring-offset-2 hover:shadow-md">
+        <Link
+          href={`/irmaos/${profile.memberId}`}
+          className="flex items-center gap-4 rounded-[inherit] p-4 outline-none sm:gap-5"
+        >
+          <MemberAvatar
+            fotoUrl={profile.fotoUrl}
+            nome={profile.nomeCompleto}
+            className="h-14 w-14 shrink-0"
+          />
+          <div className="grid min-w-0 flex-1 grid-cols-1 items-center gap-x-4 gap-y-1 sm:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
+            <div className="min-w-0">
+              <p className="truncate font-medium leading-snug">{profile.nomeCompleto}</p>
+              <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                <MemberDegreeBadge grau={profile.grau} compact />
+                <LodgeTenureBadge
+                  dataIniciacao={profile.dataIniciacao}
+                  dataFalecimento={profile.dataFalecimento}
+                />
+                {profile.situacao !== 'ativo' && <SituacaoBadge situacao={profile.situacao} />}
+              </div>
+            </div>
+            {isFalecido ? (
+              <p className="text-muted text-xs">In memoriam</p>
+            ) : (
+              <div className="text-muted min-w-0 text-xs">
+                <p className="truncate">{cargoOuComissao ?? 'Irmão do Quadro'}</p>
+                {(profissaoOuArea || cidade) && (
+                  <p className="truncate">
+                    {[profissaoOuArea, empresa, cidade].filter(Boolean).join(' · ')}
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+          <ChevronRight size={18} className="text-muted shrink-0" />
+        </Link>
+      </Card>
+    );
+  }
 
   return (
     <Card className="hover:border-primary focus-within:ring-primary h-full transition-colors focus-within:ring-2 focus-within:ring-offset-2 hover:shadow-md">

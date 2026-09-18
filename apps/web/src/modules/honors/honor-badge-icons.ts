@@ -12,6 +12,9 @@ export const MEMBER_TITLE_BADGE_ICON: Record<MemberTitleKey, string> = {
   membro_remido: '/honors/membro-remido.png',
   benfeitor: '/honors/benfeitor.png',
   fundador: '/honors/fundador.png',
+  // Reaproveita o selo genérico — não há arte própria ainda pra estes títulos.
+  past_presidente_conselho_consultivo: '/honors/outro-titulo.png',
+  pos_mortem: '/honors/outro-titulo.png',
   outro: '/honors/outro-titulo.png',
 };
 

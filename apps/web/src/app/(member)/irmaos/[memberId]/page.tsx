@@ -1,13 +1,17 @@
 import Link from 'next/link';
 import { hasPermission, type DirectoryMemberDTO } from '@vl6/domain';
 import { createServerContainer } from '@vl6/infra';
+import { normalizeNameForSearch, type FamilyVisibilityLevel } from '@vl6/shared';
 import { ArrowLeft, Card, CardContent, EmptyState, Lock } from '@vl6/ui';
 import { requireSession } from '@/lib/auth/require-session';
 import { PublicMemberProfileView } from '@/modules/central/components/public-member-profile-view';
+import type { ParamasonicAffiliationDisplay } from '@/modules/central/components/profile-trajectory-tab';
 import { SeeAlsoSection } from '@/modules/central/components/directorio/see-also-section';
 import { RelationsSection } from '@/modules/archive/components/relations-section';
 import { isAccessLevelVisible } from '@/modules/archive/lib/access-level-visibility';
 import type { PersonPhoto } from '@/modules/archive/components/person-photo-grid';
+
+const PUBLIC_VISIBILITY_LEVELS: readonly FamilyVisibilityLevel[] = ['members', 'archive'];
 
 export default async function IrmaoProfilePage({
   params,
@@ -76,6 +80,46 @@ export default async function IrmaoProfilePage({
     ? await container.useCases.listPhilosophicalJourneys.execute(session.authContext, memberId)
     : [];
 
+  // Vínculos Paramaçônicos (ex.: "foi DeMolay") — pedido do Administrador:
+  // mostrar no próprio Perfil do Irmão, com link pro perfil da entidade
+  // (`/paramaconicas/[entityId]`), quando existir uma `ParamasonicEntity`
+  // cadastrada com o mesmo nome da organização do vínculo.
+  let paramasonicAffiliations: ParamasonicAffiliationDisplay[] = [];
+  if (profile && hasPermission(session.authContext, 'familyLegacy:read')) {
+    const [records, entities] = await Promise.all([
+      container.repositories.personFraternalRecord.listByPerson(
+        session.authContext.tenantId,
+        'member',
+        memberId,
+      ),
+      hasPermission(session.authContext, 'paramasonicEntity:read')
+        ? container.useCases.listParamasonicEntities.execute(session.authContext)
+        : Promise.resolve([]),
+    ]);
+    const entityIdByNormalizedName = new Map(
+      entities.map((entity) => [normalizeNameForSearch(entity.name), entity.id]),
+    );
+    paramasonicAffiliations = records
+      .filter(
+        (record) =>
+          record.affiliationKind !== 'mason' &&
+          PUBLIC_VISIBILITY_LEVELS.includes(record.visibility),
+      )
+      .map((record) => {
+        const entityId = record.organizacaoNome
+          ? entityIdByNormalizedName.get(normalizeNameForSearch(record.organizacaoNome))
+          : undefined;
+        return {
+          id: record.id,
+          affiliationKind: record.affiliationKind,
+          organizacaoNome: record.organizacaoNome,
+          unidadeNome: record.unidadeNome,
+          cargos: record.cargos,
+          entityHref: entityId ? `/paramaconicas/${entityId}` : null,
+        };
+      });
+  }
+
   // Seção "Acervo" — herda `/acervo/pessoas/[memberId]`: fotos institucionais
   // marcadas (nunca gated pelo consentimento voluntário do Irmão, só pelo
   // nível de acesso da sessão) + Constelação da Memória. Só carregada
@@ -130,6 +174,7 @@ export default async function IrmaoProfilePage({
           memberTitles={memberTitles}
           honors={honors}
           philosophicalJourneys={philosophicalJourneys}
+          paramasonicAffiliations={paramasonicAffiliations}
           acervoPhotos={acervoPhotos}
           acervoRelationsSlot={
             canViewAcervo && (

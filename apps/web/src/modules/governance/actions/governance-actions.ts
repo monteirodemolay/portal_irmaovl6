@@ -2,12 +2,34 @@
 
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
+import type { NormalizeBoardTermNamesResult } from '@vl6/domain';
 import { createServerContainer } from '@vl6/infra';
 import { requireSession } from '@/lib/auth/require-session';
 import { CUSTOM_CARGO_VALUE } from '../lib/cargo-constants';
 
 export interface GovernanceActionState {
   error: string | null;
+}
+
+export interface NormalizeBoardTermNamesState {
+  error: string | null;
+  result: NormalizeBoardTermNamesResult | null;
+}
+
+/**
+ * Correção em massa, um clique: tira o prefixo "Gestão " redundante do
+ * nome de toda gestão já cadastrada (a UI já antepõe essa palavra sozinha
+ * em vários lugares — pedido direto do Administrador).
+ */
+export async function normalizeBoardTermNamesAction(): Promise<NormalizeBoardTermNamesState> {
+  const session = await requireSession();
+  const container = createServerContainer();
+
+  const result = await container.useCases.normalizeBoardTermNames.execute(session.authContext);
+  if (!result.ok) return { error: result.error.message, result: null };
+
+  revalidatePath('/admin/pessoas/gestoes');
+  return { error: null, result: result.value };
 }
 
 export async function createBoardTermAction(
@@ -35,6 +57,35 @@ export async function createBoardTermAction(
 
   revalidatePath('/admin/pessoas/gestoes');
   redirect(`/admin/pessoas/gestoes/${result.value.id}`);
+}
+
+export async function updateBoardTermAction(
+  termId: string,
+  _prevState: GovernanceActionState,
+  formData: FormData,
+): Promise<GovernanceActionState> {
+  const session = await requireSession();
+
+  const nome = String(formData.get('nome') ?? '');
+  const periodoInicio = new Date(String(formData.get('periodoInicio')));
+  const periodoFim = new Date(String(formData.get('periodoFim')));
+  if (!nome || Number.isNaN(periodoInicio.getTime()) || Number.isNaN(periodoFim.getTime())) {
+    return { error: 'Preencha nome e as duas datas do período.' };
+  }
+
+  const container = createServerContainer();
+  const result = await container.useCases.updateBoardTerm.execute(session.authContext, termId, {
+    nome,
+    periodoInicio,
+    periodoFim,
+  });
+  if (!result.ok) {
+    return { error: result.error.message };
+  }
+
+  revalidatePath(`/admin/pessoas/gestoes/${termId}`);
+  revalidatePath('/admin/pessoas/gestoes');
+  return { error: null };
 }
 
 export async function assignBoardPositionAction(

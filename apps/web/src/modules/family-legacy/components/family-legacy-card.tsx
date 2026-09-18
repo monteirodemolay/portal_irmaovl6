@@ -16,6 +16,7 @@ import type { FamilyPersonCandidate, SharedFamilyPersonMatch } from '@vl6/domain
 import {
   Avatar,
   AvatarFallback,
+  AvatarImage,
   Badge,
   Button,
   Check,
@@ -30,6 +31,7 @@ import {
   Plus,
   Search,
   Select,
+  Textarea,
   Users,
   X,
 } from '@vl6/ui';
@@ -47,8 +49,10 @@ import {
   declineFamilyRelationshipAction,
   removeFamilyRelationshipAction,
   searchFamilyPersonCandidatesAction,
+  updateFamilyRelationshipLabelAction,
   type FamilyLegacyActionState,
 } from '../actions/family-legacy-actions';
+import { EditFamilyPersonDialog } from './edit-family-person-dialog';
 
 const EMPTY_STATE: FamilyLegacyActionState = { error: null };
 
@@ -211,6 +215,7 @@ function PersonRow({
   const identity = (
     <>
       <Avatar>
+        <AvatarImage src={person.fotoUrl ?? undefined} alt="" />
         <AvatarFallback>{initials(person.nomeCompleto)}</AvatarFallback>
       </Avatar>
       <div className="flex flex-col">
@@ -245,6 +250,13 @@ function PersonRow({
           <Badge variant="warning">Aguardando confirmação</Badge>
         )}
         {person.confirmationStatus === 'declined' && <Badge variant="destructive">Recusado</Badge>}
+        {person.canEdit && <EditFamilyPersonDialog person={person} />}
+        {person.labelEditable && person.relationshipId && (
+          <EditRelationshipLabelDialog
+            relationshipId={person.relationshipId}
+            currentLabel={person.parentesco}
+          />
+        )}
         {person.direct && person.relationshipId && (
           <form action={removeAction}>
             <input type="hidden" name="relationshipId" value={person.relationshipId} />
@@ -256,6 +268,51 @@ function PersonRow({
       </div>
       {state.error && <p className="text-xs text-red-600">{state.error}</p>}
     </div>
+  );
+}
+
+function EditRelationshipLabelDialog({
+  relationshipId,
+  currentLabel,
+}: {
+  relationshipId: string;
+  currentLabel: string;
+}) {
+  const boundAction = updateFamilyRelationshipLabelAction.bind(null, relationshipId);
+  const [state, formAction] = useActionState(boundAction, EMPTY_STATE);
+
+  return (
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button type="button" size="sm" variant="ghost" title="Editar vínculo">
+          Editar vínculo
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Editar vínculo</DialogTitle>
+          <DialogDescription>
+            Corrige o parentesco declarado pra essa pessoa (ex.: "Bisavô").
+          </DialogDescription>
+        </DialogHeader>
+        <form action={formAction} className="flex flex-col gap-4">
+          <FormField label="Parentesco" htmlFor="declaredLabel">
+            <Input id="declaredLabel" name="declaredLabel" required defaultValue={currentLabel} />
+          </FormField>
+          {state.error && <p className="text-sm text-red-600">{state.error}</p>}
+          <SubmitLabelButton />
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function SubmitLabelButton() {
+  const { pending } = useFormStatus();
+  return (
+    <Button type="submit" disabled={pending} className="w-fit">
+      {pending ? 'Salvando…' : 'Salvar'}
+    </Button>
   );
 }
 
@@ -428,6 +485,14 @@ function AddFamilyMemberForm({
 
       {showCreationFields && (
         <>
+          <FormField
+            label="Foto (opcional)"
+            htmlFor="foto"
+            description="Você pode adicionar depois, editando a pessoa."
+          >
+            <Input id="foto" name="foto" type="file" accept="image/jpeg,image/png,image/webp" />
+          </FormField>
+
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <FormField label="Data de nascimento (opcional)" htmlFor="dataNascimento">
               <Input id="dataNascimento" name="dataNascimento" type="date" />
@@ -440,6 +505,26 @@ function AddFamilyMemberForm({
               </Select>
             </FormField>
           </div>
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <FormField label="Cidade (opcional)" htmlFor="cidade">
+              <Input id="cidade" name="cidade" />
+            </FormField>
+            <FormField label="Estado (opcional)" htmlFor="estado">
+              <Input id="estado" name="estado" maxLength={2} />
+            </FormField>
+            <FormField label="País (opcional)" htmlFor="pais">
+              <Input id="pais" name="pais" />
+            </FormField>
+          </div>
+
+          <FormField
+            label="Biografia (opcional)"
+            htmlFor="biografia"
+            description="Texto livre — conte quem foi essa pessoa."
+          >
+            <Textarea id="biografia" name="biografia" rows={3} />
+          </FormField>
 
           <FormField label="Vínculo maçônico ou paramaçônico" htmlFor="fraternalLinkStatus">
             <Select id="fraternalLinkStatus" name="fraternalLinkStatus" defaultValue="unknown">

@@ -105,6 +105,8 @@ import {
   ConfirmFamilyRelationshipUseCase,
   DeclineFamilyRelationshipUseCase,
   SoftDeleteFamilyRelationshipUseCase,
+  UpdateFamilyRelationshipLabelUseCase,
+  DeleteFamilyPersonUseCase,
   DeriveFamilyKinshipsUseCase,
   ListOwnerFamilyNetworkUseCase,
   FindSharedFamilyPersonsUseCase,
@@ -113,8 +115,25 @@ import {
   ListParamasonicMemberDirectoryUseCase,
   EnsureParamasonicRoleUseCase,
   BackfillFraternidadeFemininaUseCase,
+  CreateParamasonicEntityUseCase,
+  UpdateParamasonicEntityUseCase,
+  ListParamasonicEntitiesUseCase,
+  GetParamasonicEntityUseCase,
+  SoftDeleteParamasonicEntityUseCase,
+  AddParamasonicEntityMemberUseCase,
+  ListParamasonicEntityMembersUseCase,
+  ListAllParamasonicEntityMembersUseCase,
+  RemoveParamasonicEntityMemberUseCase,
+  UpdateParamasonicEntityMemberUseCase,
+  CreateParamasonicEntityPositionUseCase,
+  ListParamasonicEntityPositionsUseCase,
+  RemoveParamasonicEntityPositionUseCase,
+  ImportDemolayChapterRosterUseCase,
+  CrossReferenceDemolayRosterUseCase,
   FindBoardTermForDateUseCase,
   CreateBoardTermUseCase,
+  UpdateBoardTermUseCase,
+  NormalizeBoardTermNamesUseCase,
   CreateCommitteeUseCase,
   CreateEventUseCase,
   SeedSessionClassificationUseCase,
@@ -264,6 +283,7 @@ import {
   UpdateNotificationPreferenceUseCase,
   UpdatePublicationSettingsUseCase,
   UpdateTenantBrandingUseCase,
+  UpdateComunidadeHeroFotoUseCase,
   UpdateTenantSettingsUseCase,
   VerifyDomainUseCase,
   WithdrawFromDirectoryUseCase,
@@ -311,6 +331,9 @@ import { FirestoreArchiveMediaRepository } from './firestore/repositories/archiv
 import { FirestoreFamilyPersonRepository } from './firestore/repositories/family-person.repository';
 import { FirestoreFamilyRelationshipRepository } from './firestore/repositories/family-relationship.repository';
 import { FirestorePersonFraternalRecordRepository } from './firestore/repositories/person-fraternal-record.repository';
+import { FirestoreParamasonicEntityRepository } from './firestore/repositories/paramasonic-entity.repository';
+import { FirestoreParamasonicEntityMemberRepository } from './firestore/repositories/paramasonic-entity-member.repository';
+import { FirestoreParamasonicEntityPositionRepository } from './firestore/repositories/paramasonic-entity-position.repository';
 import { FirestoreAuditLogRepository } from './firestore/repositories/audit-log.repository';
 import { FirestoreBoardPositionAssignmentRepository } from './firestore/repositories/board-position-assignment.repository';
 import { FirestoreBoardTermRepository } from './firestore/repositories/board-term.repository';
@@ -500,6 +523,13 @@ export function createServerContainer() {
       'personFraternalRecords',
       auditDeps,
     ),
+    paramasonicEntity: withAudit(
+      new FirestoreParamasonicEntityRepository(db),
+      'paramasonicEntities',
+      auditDeps,
+    ),
+    paramasonicEntityMember: new FirestoreParamasonicEntityMemberRepository(db),
+    paramasonicEntityPosition: new FirestoreParamasonicEntityPositionRepository(db),
   };
 
   const notificationGateway = new NoopNotificationGateway();
@@ -534,6 +564,10 @@ export function createServerContainer() {
     }),
     updateTenantBranding: new UpdateTenantBrandingUseCase({
       brandingRepository: repositories.tenantBranding,
+      clock,
+    }),
+    updateComunidadeHeroFoto: new UpdateComunidadeHeroFotoUseCase({
+      tenantRepository: repositories.tenant,
       clock,
     }),
     updateTenantSettings: new UpdateTenantSettingsUseCase({
@@ -711,6 +745,14 @@ export function createServerContainer() {
       clock,
       idGenerator,
     }),
+    updateBoardTerm: new UpdateBoardTermUseCase({
+      boardTermRepository: repositories.boardTerm,
+      clock,
+    }),
+    normalizeBoardTermNames: new NormalizeBoardTermNamesUseCase({
+      boardTermRepository: repositories.boardTerm,
+      clock,
+    }),
     assignBoardPosition: new AssignBoardPositionUseCase({
       boardTermRepository: repositories.boardTerm,
       assignmentRepository: repositories.boardPositionAssignment,
@@ -837,6 +879,7 @@ export function createServerContainer() {
     }),
     getPublicMemberProfile: new GetPublicMemberProfileUseCase({
       memberRepository: repositories.member,
+      tenantRepository: repositories.tenant,
       memberCentralProfileRepository: repositories.memberCentralProfile,
       publicationSettingsRepository: repositories.publicationSettings,
       memberPositionHistoryRepository: repositories.memberPositionHistory,
@@ -1044,6 +1087,81 @@ export function createServerContainer() {
     removeHonor: new RemoveHonorUseCase({
       honorRepository: repositories.honor,
       clock,
+    }),
+    createParamasonicEntity: new CreateParamasonicEntityUseCase({
+      paramasonicEntityRepository: repositories.paramasonicEntity,
+      clock,
+      idGenerator,
+    }),
+    updateParamasonicEntity: new UpdateParamasonicEntityUseCase({
+      paramasonicEntityRepository: repositories.paramasonicEntity,
+      clock,
+    }),
+    listParamasonicEntities: new ListParamasonicEntitiesUseCase({
+      paramasonicEntityRepository: repositories.paramasonicEntity,
+    }),
+    getParamasonicEntity: new GetParamasonicEntityUseCase({
+      paramasonicEntityRepository: repositories.paramasonicEntity,
+    }),
+    softDeleteParamasonicEntity: new SoftDeleteParamasonicEntityUseCase({
+      paramasonicEntityRepository: repositories.paramasonicEntity,
+      clock,
+    }),
+    addParamasonicEntityMember: new AddParamasonicEntityMemberUseCase({
+      paramasonicEntityMemberRepository: repositories.paramasonicEntityMember,
+      paramasonicEntityRepository: repositories.paramasonicEntity,
+      memberRepository: repositories.member,
+      clock,
+      idGenerator,
+    }),
+    listParamasonicEntityMembers: new ListParamasonicEntityMembersUseCase({
+      paramasonicEntityMemberRepository: repositories.paramasonicEntityMember,
+      memberRepository: repositories.member,
+    }),
+    listAllParamasonicEntityMembers: new ListAllParamasonicEntityMembersUseCase({
+      paramasonicEntityMemberRepository: repositories.paramasonicEntityMember,
+      paramasonicEntityRepository: repositories.paramasonicEntity,
+      memberRepository: repositories.member,
+    }),
+    removeParamasonicEntityMember: new RemoveParamasonicEntityMemberUseCase({
+      paramasonicEntityMemberRepository: repositories.paramasonicEntityMember,
+      clock,
+    }),
+    updateParamasonicEntityMember: new UpdateParamasonicEntityMemberUseCase({
+      paramasonicEntityMemberRepository: repositories.paramasonicEntityMember,
+      paramasonicEntityRepository: repositories.paramasonicEntity,
+      personFraternalRecordRepository: repositories.personFraternalRecord,
+      memberTitleRepository: repositories.memberTitle,
+      memberRepository: repositories.member,
+      clock,
+      idGenerator,
+    }),
+    createParamasonicEntityPosition: new CreateParamasonicEntityPositionUseCase({
+      paramasonicEntityPositionRepository: repositories.paramasonicEntityPosition,
+      paramasonicEntityRepository: repositories.paramasonicEntity,
+      clock,
+      idGenerator,
+    }),
+    listParamasonicEntityPositions: new ListParamasonicEntityPositionsUseCase({
+      paramasonicEntityPositionRepository: repositories.paramasonicEntityPosition,
+    }),
+    removeParamasonicEntityPosition: new RemoveParamasonicEntityPositionUseCase({
+      paramasonicEntityPositionRepository: repositories.paramasonicEntityPosition,
+      clock,
+    }),
+    importDemolayChapterRoster: new ImportDemolayChapterRosterUseCase({
+      paramasonicEntityMemberRepository: repositories.paramasonicEntityMember,
+      paramasonicEntityRepository: repositories.paramasonicEntity,
+      clock,
+      idGenerator,
+    }),
+    crossReferenceDemolayRoster: new CrossReferenceDemolayRosterUseCase({
+      paramasonicEntityMemberRepository: repositories.paramasonicEntityMember,
+      paramasonicEntityRepository: repositories.paramasonicEntity,
+      personFraternalRecordRepository: repositories.personFraternalRecord,
+      memberRepository: repositories.member,
+      clock,
+      idGenerator,
     }),
     registerPhilosophicalJourney: new RegisterPhilosophicalJourneyUseCase({
       philosophicalJourneyRepository: repositories.philosophicalJourney,
@@ -1812,6 +1930,15 @@ export function createServerContainer() {
       clock,
     }),
     softDeleteFamilyRelationship: new SoftDeleteFamilyRelationshipUseCase({
+      familyRelationshipRepository: repositories.familyRelationship,
+      clock,
+    }),
+    updateFamilyRelationshipLabel: new UpdateFamilyRelationshipLabelUseCase({
+      familyRelationshipRepository: repositories.familyRelationship,
+      clock,
+    }),
+    deleteFamilyPerson: new DeleteFamilyPersonUseCase({
+      familyPersonRepository: repositories.familyPerson,
       familyRelationshipRepository: repositories.familyRelationship,
       clock,
     }),

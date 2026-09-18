@@ -32,9 +32,12 @@ function formatDate(date: Date): string {
 export function CeremonyMatesPanel({
   groups,
   compact = false,
+  id,
 }: {
   groups: CeremonyMatesGroup[];
   compact?: boolean;
+  /** Âncora opcional pro nav de seções da coluna de identidade do Perfil. */
+  id?: string;
 }) {
   if (groups.length === 0) return null;
 
@@ -43,7 +46,7 @@ export function CeremonyMatesPanel({
     : 'Colegas de Cerimônia';
 
   return (
-    <Panel kicker="MEMÓRIA" title={title} icon={Users} compact={compact}>
+    <Panel id={id} kicker="MEMÓRIA" title={title} icon={Users} compact={compact}>
       <div className="flex flex-col gap-5">
         {groups.map((group) => (
           <div key={group.tipo} className="flex flex-col gap-2.5">

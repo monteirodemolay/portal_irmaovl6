@@ -28,10 +28,21 @@ export function ProfileOverviewTab({
   profile,
   isOwnProfile = false,
   layout = 'full',
+  hideBio = false,
 }: {
   profile: PublicMemberProfileDTO;
   isOwnProfile?: boolean;
   layout?: 'full' | 'compact';
+  /**
+   * `true` — usado pelo novo layout de 3 colunas (`profile-layout/`), que já
+   * mostra a biografia/mensagem de homenagem no card "Apresentação" próprio
+   * — evita duas cópias do mesmo texto na página. Esconde a coluna
+   * esquerda inteira (homenagem + "Sobre" + aviso de perfil vazio) E o
+   * painel "Perfil em resumo" (que nesse layout já mora na coluna de
+   * identidade, `ProfileIdentityRail`, junto de Grau/Profissão/Ingresso),
+   * mantendo só Vivência Maçônica, Afiliações e Contato e Redes.
+   */
+  hideBio?: boolean;
 }) {
   const isInMemoriam = profile.situacao === 'falecido';
   const canEdit = isOwnProfile && !isInMemoriam;
@@ -89,50 +100,67 @@ export function ProfileOverviewTab({
   ].filter((row): row is { label: string; value: string } => row !== null);
 
   return (
-    <div className={layout === 'full' ? 'grid grid-cols-1 gap-6 md:grid-cols-12' : 'grid gap-6'}>
-      <div
-        className={layout === 'full' ? 'flex flex-col gap-6 md:col-span-8' : 'flex flex-col gap-6'}
-      >
-        {isInMemoriam && profile.mensagemHomenagem && (
-          <article className="from-primary/5 to-accent/10 border-accent/20 flex flex-col gap-3 rounded-2xl border bg-gradient-to-br p-6 sm:p-8">
-            <p className="font-display whitespace-pre-line text-base italic leading-relaxed sm:text-lg">
-              {profile.mensagemHomenagem}
-            </p>
-          </article>
-        )}
+    <div
+      className={
+        hideBio
+          ? 'flex flex-col gap-6'
+          : layout === 'full'
+            ? 'grid grid-cols-1 gap-6 md:grid-cols-12'
+            : 'grid gap-6'
+      }
+    >
+      {!hideBio && (
+        <div
+          className={
+            layout === 'full' ? 'flex flex-col gap-6 md:col-span-8' : 'flex flex-col gap-6'
+          }
+        >
+          {isInMemoriam && profile.mensagemHomenagem && (
+            <article className="from-primary/5 to-accent/10 border-accent/20 flex flex-col gap-3 rounded-2xl border bg-gradient-to-br p-6 sm:p-8">
+              <p className="font-display whitespace-pre-line text-base italic leading-relaxed sm:text-lg">
+                {profile.mensagemHomenagem}
+              </p>
+            </article>
+          )}
 
-        {profile.apresentacao?.texto && (
-          <Panel kicker="APRESENTAÇÃO" title="Sobre" editTab={canEdit ? 'geral' : undefined}>
-            <ProfileBioText text={profile.apresentacao.texto} />
-          </Panel>
-        )}
+          {profile.apresentacao?.texto && (
+            <Panel kicker="APRESENTAÇÃO" title="Sobre" editTab={canEdit ? 'geral' : undefined}>
+              <ProfileBioText text={profile.apresentacao.texto} />
+            </Panel>
+          )}
 
-        {!hasVoluntaryContent && (
-          <div className="border-border bg-surface text-muted rounded-2xl border border-dashed p-6 text-sm">
-            {canEdit
-              ? 'Você ainda não compartilhou informações pessoais ou profissionais no seu perfil. Complete seu espaço na Comunidade VL6.'
-              : 'Este Irmão ainda não compartilhou informações pessoais ou profissionais no Diretório.'}
-          </div>
-        )}
-      </div>
+          {!hasVoluntaryContent && (
+            <div className="border-border bg-surface text-muted rounded-2xl border border-dashed p-6 text-sm">
+              {canEdit
+                ? 'Você ainda não compartilhou informações pessoais ou profissionais no seu perfil. Complete seu espaço na Comunidade VL6.'
+                : 'Este Irmão ainda não compartilhou informações pessoais ou profissionais no Diretório.'}
+            </div>
+          )}
+        </div>
+      )}
 
       <aside
-        className={layout === 'full' ? 'flex flex-col gap-6 md:col-span-4' : 'flex flex-col gap-6'}
+        className={
+          !hideBio && layout === 'full'
+            ? 'flex flex-col gap-6 md:col-span-4'
+            : 'flex flex-col gap-6'
+        }
       >
-        {(profile.informacoesPessoais?.cidadeExibicao ||
-          profile.grau ||
-          summaryRows.length > 0) && (
-          <Panel kicker="RESUMO" title="Perfil em resumo" compact>
-            <dl className="flex flex-col gap-2.5">
-              {profile.informacoesPessoais?.cidadeExibicao && (
-                <SummaryRow label="Cidade" value={profile.informacoesPessoais.cidadeExibicao} />
-              )}
-              {summaryRows.map((row) => (
-                <SummaryRow key={row.label} label={row.label} value={row.value} />
-              ))}
-            </dl>
-          </Panel>
-        )}
+        {!hideBio &&
+          (profile.informacoesPessoais?.cidadeExibicao ||
+            profile.grau ||
+            summaryRows.length > 0) && (
+            <Panel kicker="RESUMO" title="Perfil em resumo" compact>
+              <dl className="flex flex-col gap-2.5">
+                {profile.informacoesPessoais?.cidadeExibicao && (
+                  <SummaryRow label="Cidade" value={profile.informacoesPessoais.cidadeExibicao} />
+                )}
+                {summaryRows.map((row) => (
+                  <SummaryRow key={row.label} label={row.label} value={row.value} />
+                ))}
+              </dl>
+            </Panel>
+          )}
 
         {hasVidaMaconica && profile.informacoesMaconicas && (
           <Panel

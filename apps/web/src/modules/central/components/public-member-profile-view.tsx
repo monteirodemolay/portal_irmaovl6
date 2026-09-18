@@ -1,38 +1,34 @@
 import type { ReactNode } from 'react';
 import type { Honor, MemberTitle, PhilosophicalJourney, PublicMemberProfileDTO } from '@vl6/domain';
 import type { PersonPhoto } from '@/modules/archive/components/person-photo-grid';
-import { ProfileHeaderCard } from './profile-header-card';
+import { ProfileShell } from './profile-layout/profile-shell';
+import { ProfileHero } from './profile-layout/profile-hero';
+import {
+  ProfileIdentityRail,
+  type ProfileSectionLink,
+} from './profile-layout/profile-identity-rail';
+import { ProfileStatsStrip } from './profile-layout/profile-stats-strip';
+import { PresentationCard } from './profile-layout/presentation-card';
+import { RegistrationDataCard } from './profile-layout/registration-data-card';
+import { RegistryRecordsCard } from './profile-layout/registry-records-card';
+import { TrajectoryTimelinePanel } from './trajectory-timeline-panel';
 import { ProfileOverviewTab } from './profile-overview-tab';
-import { ProfileTrajectoryTab } from './profile-trajectory-tab';
-import { ProfileFamilyTab } from './profile-family-tab';
+import { type ParamasonicAffiliationDisplay } from './profile-trajectory-tab';
 import { ProfileAcervoTab } from './profile-acervo-tab';
 import { InMemoriamProfileView } from './in-memoriam-profile-view';
 
-function SectionHeading({ title, id }: { title: string; id?: string }) {
-  return (
-    <h2
-      id={id}
-      className="border-border text-muted scroll-mt-6 border-t pt-6 text-xs font-bold uppercase tracking-[0.14em]"
-    >
-      {title}
-    </h2>
-  );
-}
-
 /**
- * Perfil único do Irmão (Fase 2 — unificação Acervo/Diretório, ver relatório
- * "Saneamento do Acervo VL6" publicado nesta sessão) — cabeçalho
- * institucional seguido de todas as seções empilhadas numa página só
- * (Visão Geral / Trajetória e Honrarias / Família e Legado / Acervo).
- * Chegou a ter 4 abas clicáveis (`ProfileTabs`), mas o Administrador achou
- * o formato desengajador pra revisar o cadastro de um Irmão — "se a gente
- * cria muita aba, perde-se o interesse em verificar as coisas" — por isso
- * virou rolagem única, sem componente client-side de troca de aba. Antes
- * desta fase, `/acervo/pessoas/[memberId]` e o drawer lateral do Diretório
- * duplicavam esse conteúdo em telas separadas — agora tudo mora aqui, e as
- * duas rotas passam a apontar (ou redirecionar) pra esta mesma página.
+ * Perfil único do Irmão — layout de 3 colunas (identidade fixa à esquerda,
+ * conteúdo documental em cards no centro, linha do tempo à direita), mesma
+ * estrutura pedida pelo Administrador no mock-up "Perfil VL6"
+ * (`/tmp/claude-0/mockup/perfil-vl6`). Antes empilhava seções (Visão Geral /
+ * Trajetória e Honrarias / Família e Legado / Acervo) em largura cheia —
+ * agora tudo mora nas 3 colunas de `ProfileShell`, reorganizando os mesmos
+ * subcomponentes de sempre (`ProfileOverviewTab`, `ProfileTrajectoryTab`,
+ * `ProfileFamilyTab`, `ProfileAcervoTab`, `TrajectoryTimelinePanel`) — nenhum
+ * dado ou regra de visibilidade foi reescrito, só a disposição espacial.
  * Nunca renderiza uma seção vazia: se uma delas não tem nada pra mostrar,
- * ela mesma decide o que exibir no lugar (ver cada `Profile*Tab`).
+ * ela mesma decide o que exibir no lugar (ver cada `Profile*Tab`/card).
  */
 export function PublicMemberProfileView({
   profile,
@@ -41,6 +37,7 @@ export function PublicMemberProfileView({
   memberTitles = [],
   honors = [],
   philosophicalJourneys = [],
+  paramasonicAffiliations = [],
   acervoPhotos = [],
   acervoRelationsSlot = null,
   layout = 'full',
@@ -50,12 +47,14 @@ export function PublicMemberProfileView({
   canViewAcervo?: boolean;
   /** Sessão atual == dono deste perfil → mostra "Editar meu perfil" e "Editar" por bloco. */
   isOwnProfile?: boolean;
-  /** Títulos e Condições Maçônicas cadastrados (Fase 1 de Honrarias) — exibidos em Trajetória. */
+  /** Títulos e Condições Maçônicas cadastrados (Fase 1 de Honrarias) — exibidos em Registros maçônicos. */
   memberTitles?: MemberTitle[];
-  /** Honrarias e Condecorações cadastradas (Fase 3 de Honrarias) — exibidas em Trajetória. */
+  /** Honrarias e Condecorações cadastradas (Fase 3 de Honrarias) — exibidas em Registros maçônicos. */
   honors?: Honor[];
-  /** Graus Filosóficos/Corpos Maçônicos (Fase 3) — só os `visivel` chegam a Trajetória. */
+  /** Graus Filosóficos/Corpos Maçônicos (Fase 3) — só os `visivel` chegam à UI. */
   philosophicalJourneys?: PhilosophicalJourney[];
+  /** Vínculos com ordens paramaçônicas (DeMolay etc.) — exibidos em Registros maçônicos, com link pro perfil da entidade quando existir. */
+  paramasonicAffiliations?: ParamasonicAffiliationDisplay[];
   /** Fotos institucionais do Acervo VL6 em que este Irmão está marcado — ver `ProfileAcervoTab`. */
   acervoPhotos?: PersonPhoto[];
   /** `RelationsSection` (Server Component, precisa de `container`/`authContext`) já renderizado pela página. */
@@ -63,16 +62,13 @@ export function PublicMemberProfileView({
   /**
    * `'full'` (padrão) — página cheia (`/irmaos/[memberId]`). `'compact'` —
    * "Ver como os outros veem" (Dialog, sempre mais estreito que a página
-   * cheia) — força grid de 1 coluna na Visão Geral, sem depender de nenhum
-   * breakpoint de viewport.
+   * cheia) — força 1 coluna, sem depender de nenhum breakpoint de viewport
+   * (`ProfileShell` já trata isso).
    */
   layout?: 'full' | 'compact';
 }) {
-  // Perfil In Memoriam (situação terminal `falecido`) usa uma grade "bento"
-  // própria (crítica direta do Administrador sobre a versão anterior: "a
-  // tela ficou disforme... insira em contextos") em vez das seções
-  // empilhadas em largura cheia usadas pelo Irmão ativo — ver
-  // `InMemoriamProfileView` pro racional completo.
+  // Perfil In Memoriam (situação terminal `falecido`) usa a mesma estrutura
+  // de 3 colunas, só trocando o conteúdo — ver `InMemoriamProfileView`.
   if (profile.situacao === 'falecido') {
     return (
       <InMemoriamProfileView
@@ -81,40 +77,88 @@ export function PublicMemberProfileView({
         memberTitles={memberTitles}
         honors={honors}
         philosophicalJourneys={philosophicalJourneys}
+        paramasonicAffiliations={paramasonicAffiliations}
         acervoPhotos={acervoPhotos}
         acervoRelationsSlot={acervoRelationsSlot}
+        layout={layout}
       />
     );
   }
 
+  const hasApresentacao = Boolean(profile.apresentacao?.texto);
+  // Cidade/profissão/área/formação não entram aqui — já aparecem em
+  // "Perfil em resumo", dentro da coluna de identidade (`ProfileIdentityRail`).
+  const hasVivenciaContato = Boolean(
+    profile.informacoesMaconicas?.lojasVisitadas ||
+    profile.informacoesMaconicas?.interessesMaconicos ||
+    (profile.afiliacoes && profile.afiliacoes.length > 0) ||
+    (profile.contatos && Object.values(profile.contatos).some(Boolean)) ||
+    (profile.redes && Object.values(profile.redes).some(Boolean)) ||
+    profile.endereco,
+  );
+  const hasRegistros = Boolean(
+    (profile.trajetoria &&
+      (profile.trajetoria.cargos.length > 0 || profile.trajetoria.comissoes.length > 0)) ||
+    memberTitles.length > 0 ||
+    honors.length > 0 ||
+    philosophicalJourneys.some((journey) => journey.visivel) ||
+    paramasonicAffiliations.length > 0 ||
+    profile.irmaosGemeos.length > 0 ||
+    (profile.familia && Object.values(profile.familia).some((group) => (group?.length ?? 0) > 0)),
+  );
+
+  const sections: ProfileSectionLink[] = [
+    hasApresentacao ? { id: 'apresentacao', label: 'Apresentação' } : null,
+    { id: 'dados', label: 'Dados cadastrais' },
+    hasVivenciaContato ? { id: 'visao-geral', label: 'Vivência e contato' } : null,
+    hasRegistros ? { id: 'registros', label: 'Registros maçônicos' } : null,
+    canViewAcervo ? { id: 'acervo', label: 'Acervo' } : null,
+  ].filter((section): section is ProfileSectionLink => section !== null);
+
   return (
     <div className="flex flex-col gap-6">
-      <ProfileHeaderCard profile={profile} isOwnProfile={isOwnProfile} />
+      <ProfileHero profile={profile} isOwnProfile={isOwnProfile} />
 
-      <ProfileOverviewTab profile={profile} isOwnProfile={isOwnProfile} layout={layout} />
-
-      <SectionHeading title="Trajetória e Honrarias" id="trajetoria" />
-      <ProfileTrajectoryTab
-        profile={profile}
-        memberTitles={memberTitles}
-        honors={honors}
-        philosophicalJourneys={philosophicalJourneys}
+      <ProfileShell
+        layout={layout}
+        identity={<ProfileIdentityRail profile={profile} sections={sections} />}
+        main={
+          <>
+            <ProfileStatsStrip profile={profile} memberTitles={memberTitles} honors={honors} />
+            <PresentationCard profile={profile} isOwnProfile={isOwnProfile} />
+            <RegistrationDataCard profile={profile} />
+            {hasVivenciaContato && (
+              <div id="visao-geral" className="scroll-mt-24">
+                <ProfileOverviewTab
+                  profile={profile}
+                  isOwnProfile={isOwnProfile}
+                  layout="compact"
+                  hideBio
+                />
+              </div>
+            )}
+            <RegistryRecordsCard
+              profile={profile}
+              canViewAcervo={canViewAcervo}
+              memberTitles={memberTitles}
+              honors={honors}
+              philosophicalJourneys={philosophicalJourneys}
+              paramasonicAffiliations={paramasonicAffiliations}
+            />
+            {canViewAcervo && (
+              <div id="acervo" className="scroll-mt-24">
+                <ProfileAcervoTab
+                  profile={profile}
+                  canViewAcervo={canViewAcervo}
+                  acervoPhotos={acervoPhotos}
+                  relationsSlot={acervoRelationsSlot}
+                />
+              </div>
+            )}
+          </>
+        }
+        timeline={<TrajectoryTimelinePanel profile={profile} />}
       />
-
-      <SectionHeading title="Família e Legado" />
-      <ProfileFamilyTab profile={profile} canViewAcervo={canViewAcervo} />
-
-      {canViewAcervo && (
-        <>
-          <SectionHeading title="Acervo" id="acervo" />
-          <ProfileAcervoTab
-            profile={profile}
-            canViewAcervo={canViewAcervo}
-            acervoPhotos={acervoPhotos}
-            relationsSlot={acervoRelationsSlot}
-          />
-        </>
-      )}
     </div>
   );
 }

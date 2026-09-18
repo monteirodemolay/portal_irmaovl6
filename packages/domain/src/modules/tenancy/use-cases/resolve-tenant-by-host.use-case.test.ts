@@ -18,6 +18,8 @@ function buildTenant(overrides: Partial<Tenant> = {}): Tenant {
     site: null,
     email: 'contato@vl6.org.br',
     modulosHabilitados: [],
+    comunidadeHeroFotoUrl: null,
+    comunidadeHeroFotoPosicao: null,
     createdAt: new Date('2025-01-01'),
     updatedAt: new Date('2025-01-01'),
     createdBy: 'admin-1',

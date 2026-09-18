@@ -1,8 +1,19 @@
 import 'server-only';
 import type { AuthContext } from '@vl6/domain';
+import { masculinizeKinshipLabel } from '@vl6/domain';
 import type { ServerContainer } from '@vl6/infra';
-import { FAMILY_DISPLAY_GROUPS, type FamilyDisplayGroup } from '@vl6/shared';
+import {
+  FAMILY_DISPLAY_GROUPS,
+  FRATERNAL_AFFILIATION_LABELS,
+  type FamilyDisplayGroup,
+} from '@vl6/shared';
 import { classifyFamilyDisplayGroup } from './family-display-groups';
+
+export interface FamilyPersonFraternalRecordSummaryDTO {
+  id: string;
+  label: string;
+  unidadeNome: string | null;
+}
 
 export interface FamilyLegacyPersonCardDTO {
   key: string;
@@ -19,6 +30,27 @@ export interface FamilyLegacyPersonCardDTO {
   direct: boolean;
   /** Só presente quando `direct` — usado pelas ações de confirmar/recusar/remover. */
   relationshipId: string | null;
+  /**
+   * `true` só quando `relationshipId` é um vínculo `declared_kinship`
+   * (texto livre, ex. "Bisavô") — os demais tipos diretos (mãe/pai/cônjuge)
+   * têm rótulo calculado por `deriveKinships`, nunca texto editável.
+   */
+  labelEditable: boolean;
+  /**
+   * `true` só para `kind === 'familyPerson'` gerenciada pelo próprio titular
+   * (`managedByMemberId === ownerMemberId`) — controla se o card mostra
+   * "Editar". Um `familyPerson` compartilhado (ex.: mesmo avô cadastrado por
+   * outro Irmão) nunca é editável por quem não o cadastrou.
+   */
+  canEdit: boolean;
+  biografia: string | null;
+  cidade: string | null;
+  estado: string | null;
+  pais: string | null;
+  dataNascimento: Date | null;
+  dataFalecimento: Date | null;
+  /** Vínculos maçônicos/paramaçônicos já registrados — só para `familyPerson`. */
+  fraternalRecords: FamilyPersonFraternalRecordSummaryDTO[];
 }
 
 export interface PendingConfirmationDTO {
@@ -85,6 +117,25 @@ export async function loadOwnerFamilyNetworkDTO(
   ]);
 
   const familyPersonById = new Map(network.referencedFamilyPersons.map((p) => [p.id, p]));
+  const fraternalRecordsByPersonId = new Map(
+    await Promise.all(
+      network.referencedFamilyPersons.map(async (person) => {
+        const records = await container.repositories.personFraternalRecord.listByPerson(
+          ctx.tenantId,
+          'familyPerson',
+          person.id,
+        );
+        const summaries: FamilyPersonFraternalRecordSummaryDTO[] = records
+          .filter((record) => !record.deletedAt)
+          .map((record) => ({
+            id: record.id,
+            label: FRATERNAL_AFFILIATION_LABELS[record.affiliationKind],
+            unidadeNome: record.unidadeNome ?? record.organizacaoNome,
+          }));
+        return [person.id, summaries] as const;
+      }),
+    ),
+  );
   const memberIdsToResolve = new Set(
     network.derivedKinships.filter((k) => k.person.kind === 'member').map((k) => k.person.id),
   );
@@ -136,13 +187,26 @@ export async function loadOwnerFamilyNetworkDTO(
       id: kinship.person.id,
       nomeCompleto: displayName,
       fotoUrl: member?.fotoUrl ?? familyPerson?.fotoUrl ?? null,
-      parentesco: kinship.label,
+      parentesco:
+        kinship.person.kind === 'member' ? masculinizeKinshipLabel(kinship.label) : kinship.label,
       ladoLinhagem: kinship.lineageSide,
       lifeStatus: familyPerson?.lifeStatus ?? null,
       visibility: directRelation?.visibility ?? familyPerson?.visibility ?? 'private',
       confirmationStatus: directRelation?.confirmationStatus ?? null,
       direct: kinship.direct,
       relationshipId: directRelation?.id ?? null,
+      labelEditable: false,
+      canEdit: kinship.person.kind === 'familyPerson' && familyPerson?.managedByMemberId === ownerMemberId,
+      biografia: familyPerson?.biografia ?? null,
+      cidade: familyPerson?.cidade ?? null,
+      estado: familyPerson?.estado ?? null,
+      pais: familyPerson?.pais ?? null,
+      dataNascimento: familyPerson?.dataNascimento ?? null,
+      dataFalecimento: familyPerson?.dataFalecimento ?? null,
+      fraternalRecords:
+        kinship.person.kind === 'familyPerson'
+          ? (fraternalRecordsByPersonId.get(kinship.person.id) ?? [])
+          : [],
     });
   }
 
@@ -175,13 +239,23 @@ export async function loadOwnerFamilyNetworkDTO(
       id: other.id,
       nomeCompleto: displayName,
       fotoUrl: member?.fotoUrl ?? familyPerson?.fotoUrl ?? null,
-      parentesco: label,
+      parentesco: other.kind === 'member' ? masculinizeKinshipLabel(label) : label,
       ladoLinhagem: 'unknown',
       lifeStatus: familyPerson?.lifeStatus ?? null,
       visibility: relation.visibility,
       confirmationStatus: relation.confirmationStatus,
       direct: true,
       relationshipId: relation.id,
+      labelEditable: relation.relationKind === 'declared_kinship',
+      canEdit: other.kind === 'familyPerson' && familyPerson?.managedByMemberId === ownerMemberId,
+      biografia: familyPerson?.biografia ?? null,
+      cidade: familyPerson?.cidade ?? null,
+      estado: familyPerson?.estado ?? null,
+      pais: familyPerson?.pais ?? null,
+      dataNascimento: familyPerson?.dataNascimento ?? null,
+      dataFalecimento: familyPerson?.dataFalecimento ?? null,
+      fraternalRecords:
+        other.kind === 'familyPerson' ? (fraternalRecordsByPersonId.get(other.id) ?? []) : [],
     });
   }
 

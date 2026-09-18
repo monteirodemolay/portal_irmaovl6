@@ -16,6 +16,34 @@ export interface PublicMemberProfileDTO {
   fotoUrl: string | null;
   grau: Member['grau'];
   /**
+   * CIM (Carteira de Identidade Maçônica) — espelho direto de `Member.cim`,
+   * registro institucional (mesmo tratamento de `grau`/`dataIniciacao`:
+   * nunca passa pelos blocos de `PublicationSettings`). Card de identidade
+   * do novo layout (mock-up "Perfil VL6") — campo que o mock-up mostra mas
+   * o DTO ainda não tinha.
+   */
+  cim: string | null;
+  /**
+   * Nome de exibição da Loja a que este Irmão pertence — resolvido a partir
+   * do `Tenant` (`Tenant.id === tenantId` sempre, ver
+   * docs/architecture/03-modelo-dados.md; `Member.lojaId` é hoje só um
+   * espelho do `tenantId`, sem entidade "Loja" própria consultável). `null`
+   * só se o tenant não for encontrado (não deveria acontecer em uso normal).
+   */
+  loja: string | null;
+  /**
+   * Potência maçônica — espelho direto de `Member.potencia`, já existente
+   * na entidade (registro institucional, mesmo tratamento de `cim`/`grau`).
+   */
+  potencia: string;
+  /**
+   * "Oriente" (cidade/estado) da Loja — resolvido do endereço do `Tenant`
+   * (`Tenant.endereco`), já que não existe um campo de Oriente dedicado em
+   * nenhuma entidade do domínio. `null` quando o tenant não tem endereço
+   * cadastrado — a UI simplesmente omite o quickfact "Oriente" nesse caso.
+   */
+  oriente: string | null;
+  /**
    * Situação Maçônica atual — registro institucional da Loja, mesmo
    * espírito de `grau`/`dataIniciacao` abaixo: nunca passa pelos blocos de
    * `PublicationSettings`. A UI usa isto (não um campo booleano à parte)
@@ -197,6 +225,12 @@ export function buildPublicMemberProfileDTO(
     nomeCompleto: member.nomeCompleto,
     fotoUrl: member.fotoUrl,
     grau: member.grau,
+    cim: member.cim,
+    potencia: member.potencia,
+    // Preenchidos depois, pelo use case (precisam do `Tenant`, que esta
+    // função pura não recebe) — ver comentário no campo da interface.
+    loja: null,
+    oriente: null,
     situacao: member.situacao,
     dataFalecimento: member.dataFalecimento,
     mensagemHomenagem: member.mensagemHomenagem,

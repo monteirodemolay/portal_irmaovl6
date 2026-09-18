@@ -86,6 +86,7 @@ export function Panel({
   trailing,
   ...props
 }: {
+  id?: string;
   kicker: string;
   title: string;
   icon?: IconType;

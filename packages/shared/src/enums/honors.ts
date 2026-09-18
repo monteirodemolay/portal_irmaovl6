@@ -11,6 +11,8 @@ export const MEMBER_TITLE_KEYS = [
   'membro_remido',
   'benfeitor',
   'fundador',
+  'past_presidente_conselho_consultivo',
+  'pos_mortem',
   'outro',
 ] as const;
 export type MemberTitleKey = (typeof MEMBER_TITLE_KEYS)[number];
@@ -21,6 +23,12 @@ export const MEMBER_TITLE_LABELS: Record<MemberTitleKey, string> = {
   membro_remido: 'Membro Remido',
   benfeitor: 'Benfeitor',
   fundador: 'Fundador',
+  past_presidente_conselho_consultivo: 'Past-Presidente do Conselho Consultivo',
+  // Título/condição concedido postumamente (mock-up "Perfil VL6", inventário
+  // de conteúdo preservado) — só faz sentido pra Irmãos em situação
+  // `falecido`, mas o cadastro em si não impõe essa regra (mesmo tratamento
+  // dos demais títulos: quem decide se aplica é quem cadastra).
+  pos_mortem: 'Pós Mortem',
   outro: 'Outro',
 };
 
