@@ -1,7 +1,15 @@
 import Link from 'next/link';
 import { createServerContainer } from '@vl6/infra';
 import type { LibraryItem } from '@vl6/domain';
-import { Badge, Button, DataTable, EmptyState, type DataTableColumn } from '@vl6/ui';
+import {
+  Badge,
+  Button,
+  Card,
+  CardContent,
+  DataTable,
+  EmptyState,
+  type DataTableColumn,
+} from '@vl6/ui';
 import { requirePagePermission } from '@/lib/auth/require-permission';
 import { CreateLibraryCategoryDialog } from '@/modules/library/components/create-library-category-dialog';
 
@@ -58,17 +66,25 @@ export default async function LibraryPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between">
-        <h1 className="font-display text-2xl font-semibold">Biblioteca</h1>
-        <div className="flex gap-2">
-          <CreateLibraryCategoryDialog categories={categories} />
-          <Button asChild variant="outline">
+      <header className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+        <div>
+          <h1 className="font-display text-2xl font-semibold">Biblioteca</h1>
+          <p className="text-muted text-sm">
+            Catálogo, circulação, localização e histórico das obras.
+          </p>
+        </div>
+        <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-wrap xl:max-w-4xl xl:justify-end">
+          <Button asChild className="col-span-2 w-full sm:w-auto">
+            <Link href="/admin/acervo/biblioteca/novo">Adicionar obra</Link>
+          </Button>
+          <CreateLibraryCategoryDialog categories={categories} className="w-full sm:w-auto" />
+          <Button asChild variant="outline" className="w-full sm:w-auto">
             <Link href="/admin/acervo/biblioteca/estantes">Estantes</Link>
           </Button>
-          <Button asChild variant="outline">
+          <Button asChild variant="outline" className="w-full sm:w-auto">
             <Link href="/admin/acervo/biblioteca/etiquetas">Etiquetas QR</Link>
           </Button>
-          <Button asChild variant="outline">
+          <Button asChild variant="outline" className="w-full sm:w-auto">
             <Link href="/admin/acervo/biblioteca/emprestimos">
               Empréstimos (
               {
@@ -79,34 +95,79 @@ export default async function LibraryPage() {
               )
             </Link>
           </Button>
-          <Button asChild variant="outline">
+          <Button asChild variant="outline" className="w-full sm:w-auto">
             <Link href="/admin/acervo/biblioteca/baixas">Baixas</Link>
           </Button>
-          <Button asChild variant="outline">
+          <Button asChild variant="outline" className="w-full sm:w-auto">
             <Link href="/admin/acervo/biblioteca/downloads">Downloads</Link>
           </Button>
-          <Button asChild>
-            <Link href="/admin/acervo/biblioteca/novo">Adicionar à Biblioteca</Link>
-          </Button>
         </div>
-      </div>
+      </header>
 
-      <DataTable
-        columns={columns}
-        rows={items}
-        getRowId={(item) => item.id}
-        emptyState={
-          <EmptyState
-            title="Nenhum item na Biblioteca"
-            description="Cadastre um Arquivo primeiro e depois cadastre-o aqui para curadoria."
-            action={
-              <Button asChild size="sm">
-                <Link href="/admin/acervo/biblioteca/novo">Adicionar à Biblioteca</Link>
-              </Button>
-            }
-          />
-        }
-      />
+      {items.length > 0 && (
+        <section className="grid gap-3 md:hidden" aria-label="Obras da Biblioteca">
+          {items.map((item) => {
+            const itemCopies = copies.filter((copy) => copy.libraryItemId === item.id);
+            const available = itemCopies.filter((copy) => copy.situacao === 'disponivel').length;
+            return (
+              <Card key={item.id}>
+                <CardContent className="grid gap-3 p-4">
+                  <div className="flex min-w-0 items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <h2 className="break-words font-semibold">
+                        {item.titulo ??
+                          (item.fileId ? fileTitleById.get(item.fileId) : null) ??
+                          'Obra sem título'}
+                      </h2>
+                      <p className="text-muted text-sm">
+                        {categoryNameById.get(item.categoriaId) ?? 'Sem categoria'}
+                      </p>
+                    </div>
+                    <Badge variant="outline" className="shrink-0">
+                      {item.formato ?? 'digital'}
+                    </Badge>
+                  </div>
+                  <dl className="grid grid-cols-2 gap-3 text-sm">
+                    <div>
+                      <dt className="text-muted text-xs">Exemplares</dt>
+                      <dd className="font-medium">
+                        {available}/{itemCopies.length} disponíveis
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-muted text-xs">Uso</dt>
+                      <dd className="font-medium">
+                        {item.contagemDownloads} downloads
+                        <br />
+                        {item.contagemEmprestimos ?? 0} empréstimos
+                      </dd>
+                    </div>
+                  </dl>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </section>
+      )}
+
+      <div className={items.length > 0 ? 'hidden md:block' : undefined}>
+        <DataTable
+          columns={columns}
+          rows={items}
+          getRowId={(item) => item.id}
+          emptyState={
+            <EmptyState
+              title="Nenhum item na Biblioteca"
+              description="Cadastre a primeira obra física ou digital para iniciar o catálogo."
+              action={
+                <Button asChild size="sm" className="w-full sm:w-auto">
+                  <Link href="/admin/acervo/biblioteca/novo">Adicionar obra</Link>
+                </Button>
+              }
+            />
+          }
+        />
+      </div>
     </div>
   );
 }

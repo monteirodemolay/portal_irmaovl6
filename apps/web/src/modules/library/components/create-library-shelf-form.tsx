@@ -23,7 +23,7 @@ export function CreateLibraryShelfForm() {
             Descrição
             <Textarea name="descricao" rows={1} />
           </label>
-          <Button>Cadastrar</Button>
+          <Button className="w-full sm:w-auto">Cadastrar</Button>
         </form>
         {state.error && <p className="text-sm text-red-600">{state.error}</p>}
         {state.success && <p className="text-sm text-green-700">{state.success}</p>}

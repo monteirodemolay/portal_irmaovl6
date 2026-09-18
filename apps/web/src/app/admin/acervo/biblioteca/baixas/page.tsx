@@ -17,14 +17,14 @@ export default async function Page() {
   const itemMap = new Map(items.map((i) => [i.id, i]));
   return (
     <div className="grid gap-6">
-      <header className="flex justify-between">
+      <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="font-display text-2xl font-semibold">Ocorrências e baixa de livros</h1>
           <p className="text-muted text-sm">
             Perda, roubo, extravio ou dano irrecuperável, sempre com atesto.
           </p>
         </div>
-        <Button asChild variant="outline">
+        <Button asChild variant="outline" className="w-full sm:w-auto">
           <Link href="/admin/acervo/biblioteca">Voltar</Link>
         </Button>
       </header>
@@ -63,7 +63,7 @@ export default async function Page() {
               required
               placeholder="Relato e atesto do Bibliotecário"
             />
-            <Button className="w-fit" variant="destructive">
+            <Button className="w-full md:w-fit" variant="destructive">
               Registrar baixa
             </Button>
           </form>
@@ -93,10 +93,20 @@ export default async function Page() {
                       minLength={10}
                       placeholder="Atesto do Bibliotecário"
                     />
-                    <Button name="decision" value="confirmado" variant="destructive">
+                    <Button
+                      name="decision"
+                      value="confirmado"
+                      variant="destructive"
+                      className="w-full sm:w-auto"
+                    >
                       Confirmar baixa
                     </Button>
-                    <Button name="decision" value="rejeitado" variant="outline">
+                    <Button
+                      name="decision"
+                      value="rejeitado"
+                      variant="outline"
+                      className="w-full sm:w-auto"
+                    >
                       Rejeitar relato
                     </Button>
                   </form>

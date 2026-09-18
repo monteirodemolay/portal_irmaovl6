@@ -24,13 +24,15 @@ export function AddToLibraryCartButton({ itemId, title }: { itemId: string; titl
       size="sm"
       variant="outline"
       disabled={added}
+      className="w-full sm:w-auto"
+      aria-label={added ? `${title} já está no carrinho` : `Adicionar ${title} ao carrinho`}
       onClick={() => {
         localStorage.setItem(CART_KEY, JSON.stringify([...new Set([...readCart(), itemId])]));
         setAdded(true);
         window.dispatchEvent(new globalThis.Event('library-cart'));
       }}
     >
-      {added ? 'No carrinho' : `Adicionar “${title}” ao carrinho`}
+      {added ? 'No carrinho' : 'Adicionar ao carrinho'}
     </Button>
   );
 }
@@ -62,11 +64,12 @@ export function LibraryCart({ items, events }: { items: LibraryItem[]; events: L
     <div className="grid gap-4">
       {selected.map((item) => (
         <Card key={item.id}>
-          <CardContent className="flex items-center justify-between p-4">
-            <b>{item.titulo}</b>
+          <CardContent className="flex flex-col items-stretch gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+            <b className="min-w-0 break-words">{item.titulo}</b>
             <Button
               type="button"
               variant="ghost"
+              className="w-full sm:w-auto"
               onClick={() => {
                 const next = ids.filter((id) => id !== item.id);
                 setIds(next);
@@ -103,7 +106,7 @@ export function LibraryCart({ items, events }: { items: LibraryItem[]; events: L
               Não há sessões futuras cadastradas para retirada.
             </p>
           )}
-          <Button className="w-fit" disabled={events.length === 0}>
+          <Button className="w-full sm:w-fit" disabled={events.length === 0}>
             Solicitar pacote com {selected.length} obra(s)
           </Button>
           {state.error && <p className="text-sm text-red-600">{state.error}</p>}

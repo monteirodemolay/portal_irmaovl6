@@ -20,12 +20,12 @@ export default async function Page() {
   const copyMap = new Map(copies.map((i) => [i.id, i]));
   return (
     <div className="grid gap-6">
-      <header className="flex justify-between">
+      <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="font-display text-2xl font-semibold">Gestão de empréstimos</h1>
           <p className="text-muted text-sm">Aprovação, retirada, prazo, devolução e cobrança.</p>
         </div>
-        <Button asChild variant="outline">
+        <Button asChild variant="outline" className="w-full sm:w-auto">
           <Link href="/admin/acervo/biblioteca">Voltar</Link>
         </Button>
       </header>
@@ -47,10 +47,10 @@ export default async function Page() {
             maxExtended.setDate(maxExtended.getDate() + 60);
             return (
               <Card key={l.id} className={overdue ? 'border-red-300' : undefined}>
-                <CardContent className="grid gap-4 p-5">
+                <CardContent className="grid gap-4 p-4 sm:p-5">
                   <div className="flex flex-wrap justify-between gap-3">
-                    <div>
-                      <h2 className="font-semibold">{item?.titulo ?? 'Obra'}</h2>
+                    <div className="min-w-0">
+                      <h2 className="break-words font-semibold">{item?.titulo ?? 'Obra'}</h2>
                       <p className="text-sm">
                         {l.borrowerName} · Tombo {copy?.codigoTombo}
                       </p>
@@ -81,12 +81,12 @@ export default async function Page() {
                     <div className="grid gap-2">
                       <form
                         action={updateLibraryLoanStatusAction.bind(null, l.id, 'aprovado')}
-                        className="flex flex-wrap items-end gap-2"
+                        className="grid gap-2 sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] lg:items-end"
                       >
                         <label className="grid text-xs">
                           Retirar até
                           <input
-                            className="h-8 rounded border px-2"
+                            className="h-10 w-full min-w-0 rounded border px-2"
                             name="pickupDeadlineAt"
                             type="date"
                             min={l.requestedPickupAt.toISOString().slice(0, 10)}
@@ -97,7 +97,7 @@ export default async function Page() {
                         <label className="grid text-xs">
                           Devolver até
                           <input
-                            className="h-8 rounded border px-2"
+                            className="h-10 w-full min-w-0 rounded border px-2"
                             name="dueAt"
                             type="date"
                             min={l.requestedPickupAt.toISOString().slice(0, 10)}
@@ -105,20 +105,22 @@ export default async function Page() {
                             defaultValue={l.dueAt.toISOString().slice(0, 10)}
                           />
                         </label>
-                        <Button size="sm">Aprovar</Button>
+                        <Button size="sm" className="w-full sm:col-span-2 lg:col-span-1 lg:w-auto">
+                          Aprovar
+                        </Button>
                       </form>
                       <form
                         action={updateLibraryLoanStatusAction.bind(null, l.id, 'recusado')}
-                        className="flex gap-2"
+                        className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]"
                       >
                         <input
-                          className="h-8 rounded border px-2"
+                          className="h-10 w-full min-w-0 rounded border px-2"
                           name="reason"
                           placeholder="Motivo da recusa"
                           minLength={5}
                           required
                         />
-                        <Button size="sm" variant="outline">
+                        <Button size="sm" variant="outline" className="w-full sm:w-auto">
                           Recusar
                         </Button>
                       </form>
@@ -127,55 +129,57 @@ export default async function Page() {
                   {l.statusEmprestimo === 'aprovado' && (
                     <div className="grid gap-2">
                       <form action={updateLibraryLoanStatusAction.bind(null, l.id, 'retirado')}>
-                        <Button size="sm">Confirmar retirada</Button>
+                        <Button size="sm" className="w-full sm:w-auto">
+                          Confirmar retirada
+                        </Button>
                       </form>
                       <form
                         action={extendLibraryLoanPickupAction.bind(null, l.id)}
-                        className="flex flex-wrap gap-2"
+                        className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]"
                       >
                         <input
-                          className="h-8 rounded border px-2"
+                          className="h-10 w-full min-w-0 rounded border px-2"
                           type="date"
                           name="pickupDeadlineAt"
                           max={maxExtended.toISOString().slice(0, 10)}
                           required
                         />
                         <input
-                          className="h-8 rounded border px-2"
+                          className="h-10 w-full min-w-0 rounded border px-2"
                           name="reason"
                           placeholder="Motivo"
                           minLength={5}
                           required
                         />
-                        <Button size="sm" variant="outline">
+                        <Button size="sm" variant="outline" className="w-full sm:w-auto">
                           Prorrogar
                         </Button>
                       </form>
                       <form
                         action={updateLibraryLoanStatusAction.bind(null, l.id, 'cancelado')}
-                        className="flex gap-2"
+                        className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]"
                       >
                         <input
-                          className="h-8 rounded border px-2"
+                          className="h-10 w-full min-w-0 rounded border px-2"
                           name="reason"
                           placeholder="Não retirado: motivo"
                           minLength={5}
                           required
                         />
-                        <Button size="sm" variant="destructive">
+                        <Button size="sm" variant="destructive" className="w-full sm:w-auto">
                           Liberar exemplar
                         </Button>
                       </form>
                     </div>
                   )}
                   {['retirado', 'atrasado'].includes(l.statusEmprestimo) && (
-                    <div className="flex flex-wrap gap-2">
+                    <div className="grid gap-2 sm:flex sm:flex-wrap">
                       <form
                         action={updateLibraryLoanStatusAction.bind(null, l.id, 'devolvido')}
-                        className="flex gap-2"
+                        className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]"
                       >
                         <select
-                          className="h-8 rounded border px-2"
+                          className="h-10 w-full min-w-0 rounded border px-2"
                           name="shelfId"
                           defaultValue={copy?.shelfId ?? ''}
                         >
@@ -185,20 +189,22 @@ export default async function Page() {
                             </option>
                           ))}
                         </select>
-                        <Button size="sm">Confirmar devolução</Button>
+                        <Button size="sm" className="w-full sm:w-auto">
+                          Confirmar devolução
+                        </Button>
                       </form>
                       <form action={sendLibraryLoanReminderAction.bind(null, l.id)}>
-                        <Button size="sm" variant="outline">
+                        <Button size="sm" variant="outline" className="w-full sm:w-auto">
                           Avisar no Portal
                         </Button>
                       </form>
                       {l.borrowerEmail && (
-                        <Button asChild size="sm" variant="outline">
+                        <Button asChild size="sm" variant="outline" className="w-full sm:w-auto">
                           <a href={`mailto:${l.borrowerEmail}`}>E-mail</a>
                         </Button>
                       )}
                       {l.borrowerWhatsapp && (
-                        <Button asChild size="sm" variant="outline">
+                        <Button asChild size="sm" variant="outline" className="w-full sm:w-auto">
                           <a
                             target="_blank"
                             rel="noreferrer"

@@ -28,9 +28,9 @@ export default async function Page() {
   const emails = new Map(users.map((u) => [u.id, u.email]));
   return (
     <div className="grid gap-6">
-      <header className="flex justify-between">
+      <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <h1 className="font-display text-2xl font-semibold">Histórico digital</h1>
-        <Button asChild variant="outline">
+        <Button asChild variant="outline" className="w-full sm:w-auto">
           <Link href="/admin/acervo/biblioteca">Voltar</Link>
         </Button>
       </header>
@@ -40,13 +40,13 @@ export default async function Page() {
         <div className="grid gap-2">
           {rows.map(({ i, item }) => (
             <Card key={i.id}>
-              <CardContent className="flex justify-between p-4 text-sm">
-                <span>
+              <CardContent className="flex flex-col gap-2 p-4 text-sm sm:flex-row sm:justify-between">
+                <span className="min-w-0 break-words">
                   <b>{item.titulo ?? 'Obra'}</b>
                   <br />
                   {emails.get(i.userId) ?? i.userId}
                 </span>
-                <time>{i.occurredAt.toLocaleString('pt-BR')}</time>
+                <time className="text-muted shrink-0">{i.occurredAt.toLocaleString('pt-BR')}</time>
               </CardContent>
             </Card>
           ))}

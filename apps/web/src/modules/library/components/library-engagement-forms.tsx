@@ -34,7 +34,7 @@ export function LoanRequestForm({
               </option>
             ))}
           </Select>
-          <Button>Enviar ao Bibliotecário</Button>
+          <Button className="w-full sm:w-fit">Enviar ao Bibliotecário</Button>
         </form>
         {state.error && <p className="text-sm text-red-600">{state.error}</p>}
         {state.success && <p className="text-sm text-green-700">{state.success}</p>}
@@ -72,7 +72,7 @@ export function ReviewForm({
             defaultValue={defaultComment ?? ''}
             placeholder="Deixe sua opinião sobre a obra"
           />
-          <Button>Publicar avaliação</Button>
+          <Button className="w-full sm:w-fit">Publicar avaliação</Button>
         </form>
         {state.error && <p className="text-sm text-red-600">{state.error}</p>}
         {state.success && <p className="text-sm text-green-700">{state.success}</p>}
@@ -100,7 +100,9 @@ export function OccurrenceReportForm({ loanId }: { loanId: string }) {
           </Select>
           <input className="h-10 rounded border px-3" type="date" name="occurredAt" required />
           <Textarea name="relato" minLength={20} required />
-          <Button variant="destructive">Enviar ao Bibliotecário</Button>
+          <Button variant="destructive" className="w-full sm:w-fit">
+            Enviar ao Bibliotecário
+          </Button>
         </form>
         {state.error && <p className="text-sm text-red-600">{state.error}</p>}
         {state.success && <p className="text-sm text-green-700">{state.success}</p>}

@@ -17,13 +17,13 @@ export default async function LibraryCartPage() {
         <p className="text-accent text-sm font-semibold uppercase tracking-widest">
           Biblioteca VL6
         </p>
-        <h1 className="font-display text-3xl font-semibold">Carrinho de empréstimos</h1>
+        <h1 className="font-display text-2xl font-semibold sm:text-3xl">Carrinho de empréstimos</h1>
         <p className="text-muted">
           Envie várias obras no mesmo pacote e selecione uma sessão para retirada.
         </p>
       </header>
       <LibraryCart items={items} events={events.items} />
-      <Button asChild variant="ghost" className="w-fit">
+      <Button asChild variant="ghost" className="w-full sm:w-fit">
         <Link href="/acervo/biblioteca">← Continuar escolhendo</Link>
       </Button>
     </div>

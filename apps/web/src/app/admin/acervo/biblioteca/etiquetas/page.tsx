@@ -44,8 +44,8 @@ export default async function Page() {
           <h1 className="font-display text-2xl font-semibold">Etiquetas QR dos exemplares</h1>
           <p className="text-muted text-sm">Identificação individual e localização atual.</p>
         </div>
-        <div className="flex gap-2">
-          <Button asChild variant="outline">
+        <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto">
+          <Button asChild variant="outline" className="w-full sm:w-auto">
             <Link href="/admin/acervo/biblioteca">Voltar</Link>
           </Button>
           {labels.length > 0 && <PrintLibraryLabelsButton />}
@@ -62,18 +62,21 @@ export default async function Page() {
             const shelf = copy.shelfId ? shelfMap.get(copy.shelfId) : null;
             return (
               <Card key={copy.id} className="break-inside-avoid print:shadow-none">
-                <CardContent className="grid grid-cols-[128px_1fr] items-center gap-3 p-3">
-                  <div className="h-32 w-32" dangerouslySetInnerHTML={{ __html: svg }} />
-                  <div className="grid gap-1">
+                <CardContent className="grid min-w-0 justify-items-center gap-3 p-3 text-center min-[420px]:grid-cols-[112px_minmax(0,1fr)] min-[420px]:justify-items-stretch min-[420px]:text-left">
+                  <div className="h-28 w-28" dangerouslySetInnerHTML={{ __html: svg }} />
+                  <div className="grid min-w-0 gap-1">
                     <p className="text-muted text-[10px] uppercase">Biblioteca VL6</p>
-                    <h2 className="text-sm font-semibold">{item?.titulo ?? 'Obra'}</h2>
+                    <h2 className="break-words text-sm font-semibold">{item?.titulo ?? 'Obra'}</h2>
                     <p className="text-xs">
                       <b>Tombo:</b> {copy.codigoTombo}
                     </p>
                     <p className="text-xs">
                       <b>Estante:</b> {shelf ? `${shelf.codigo} · ${shelf.nome}` : copy.localizacao}
                     </p>
-                    <Badge variant="outline" className="w-fit print:hidden">
+                    <Badge
+                      variant="outline"
+                      className="mx-auto w-fit min-[420px]:mx-0 print:hidden"
+                    >
                       {copy.estadoGeral}
                     </Badge>
                   </div>

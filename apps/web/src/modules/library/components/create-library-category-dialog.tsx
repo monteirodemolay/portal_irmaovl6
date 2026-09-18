@@ -16,7 +16,13 @@ import {
 import { FormField } from '@/components/forms/form-field';
 import { createLibraryCategoryAction, type LibraryActionState } from '../actions/library-actions';
 
-export function CreateLibraryCategoryDialog({ categories }: { categories: LibraryCategory[] }) {
+export function CreateLibraryCategoryDialog({
+  categories,
+  className,
+}: {
+  categories: LibraryCategory[];
+  className?: string;
+}) {
   const [state, formAction] = useActionState<LibraryActionState, FormData>(
     createLibraryCategoryAction,
     { error: null },
@@ -30,7 +36,9 @@ export function CreateLibraryCategoryDialog({ categories }: { categories: Librar
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button variant="outline">Nova Categoria</Button>
+        <Button variant="outline" className={className}>
+          Nova categoria
+        </Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
@@ -68,7 +76,7 @@ export function CreateLibraryCategoryDialog({ categories }: { categories: Librar
 function SubmitButton() {
   const { pending } = useFormStatus();
   return (
-    <Button type="submit" disabled={pending} className="w-fit">
+    <Button type="submit" disabled={pending} className="w-full sm:w-fit">
       {pending ? 'Criando…' : 'Criar categoria'}
     </Button>
   );
