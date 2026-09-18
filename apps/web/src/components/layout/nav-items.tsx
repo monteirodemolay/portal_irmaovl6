@@ -16,7 +16,8 @@ import {
 } from '@vl6/ui';
 import { isAdminTier } from '@/lib/auth/is-admin-tier';
 import type { Dictionary } from '@/lib/i18n/get-dictionary';
-import type { AppShellNavSection } from './app-shell';
+import { ADMIN_AREA_TABS, type AdminAreaKey } from './area-tabs';
+import type { AppShellNavFlyout, AppShellNavSection } from './app-shell';
 
 const ICON_SIZE = 18;
 const ICON_STROKE = 1.75;
@@ -86,6 +87,25 @@ function hasAnyPermission(authContext: AuthContext, permission: PermissionKey | 
   return permissions.some((p) => hasPermission(authContext, p));
 }
 
+/**
+ * Monta o menu deslizante de uma área administrativa consolidada a partir
+ * das MESMAS abas de `ADMIN_AREA_TABS` (fonte única de verdade também usada
+ * pelo `AreaTabNav`) — o atalho pula direto pra aba certa, evitando cair na
+ * tela-índice da área só pra escolher a aba em seguida.
+ */
+function buildAreaFlyout(
+  authContext: AuthContext,
+  areaKey: AdminAreaKey,
+  title: string,
+  full: { href: string; label: string },
+): AppShellNavFlyout | undefined {
+  const links = ADMIN_AREA_TABS[areaKey]
+    .filter((tab) => !tab.permission || hasPermission(authContext, tab.permission))
+    .map((tab) => ({ href: tab.href, label: tab.label }));
+  if (links.length === 0) return undefined;
+  return { title, links, full };
+}
+
 const ADMIN_ITEMS: AdminNavItemDef[] = [
   { href: '/admin', labelKey: 'dashboard', icon: LayoutDashboard, permission: 'tenant:read' },
   {
@@ -146,6 +166,30 @@ export function buildNavSections(
   dictionary: Dictionary,
   unreadNotificationsCount = 0,
 ): AppShellNavSection[] {
+  const irmaosFlyout: AppShellNavFlyout = {
+    title: 'Irmãos',
+    description: 'Diretório e autoatendimento',
+    links: [
+      { href: '/irmaos/meu-espaco', label: 'Meu Espaço (editar perfil)' },
+      { href: '/irmaos/negocios', label: 'Meus Negócios & Serviços' },
+      { href: '/irmaos/galeria-de-honra', label: 'Galeria de Honra' },
+    ],
+    full: { href: '/irmaos', label: 'Ver diretório completo' },
+  };
+
+  const acervoFlyout: AppShellNavFlyout = {
+    title: ACERVO_ITEM.label,
+    description: 'Memória e conhecimento',
+    links: [
+      { href: '/acervo/documentos', label: 'Documentos' },
+      { href: '/acervo/biblioteca', label: 'Biblioteca' },
+      { href: '/acervo/fotografias', label: 'Fotos e vídeos' },
+      { href: '/downloads', label: 'Favoritos' },
+      { href: '/acervo/pesquisar', label: 'Pesquisar tudo' },
+    ],
+    full: { href: ACERVO_ITEM.href, label: 'Abrir Acervo completo' },
+  };
+
   const sections: AppShellNavSection[] = [
     {
       title: 'Portal',
@@ -158,6 +202,7 @@ export function buildNavSections(
           item.label,
           item.href === '/avisos' ? unreadNotificationsCount : undefined,
         ),
+        flyout: item.href === '/irmaos' ? irmaosFlyout : undefined,
       })),
     },
   ];
@@ -169,6 +214,7 @@ export function buildNavSections(
         {
           href: ACERVO_ITEM.href,
           content: navContent(ACERVO_ITEM.icon, ACERVO_ITEM.label),
+          flyout: acervoFlyout,
         },
       ],
     });
@@ -179,11 +225,32 @@ export function buildNavSections(
       hasAnyPermission(authContext, item.permission),
     );
     if (visibleAdminItems.length > 0) {
+      const adminAreaFlyouts: Partial<Record<string, AppShellNavFlyout | undefined>> = {
+        '/admin/pessoas': buildAreaFlyout(authContext, 'pessoas', 'Pessoas & Loja', {
+          href: '/admin/pessoas',
+          label: 'Ver Pessoas & Loja completo',
+        }),
+        '/admin/conteudo': buildAreaFlyout(authContext, 'conteudo', 'Conteúdo', {
+          href: '/admin/conteudo',
+          label: 'Ver Conteúdo completo',
+        }),
+        '/admin/acervo': buildAreaFlyout(authContext, 'acervo', 'Acervo (administração)', {
+          href: '/admin/acervo',
+          label: 'Ver Acervo completo',
+        }),
+        '/admin/configuracoes': buildAreaFlyout(
+          authContext,
+          'configuracoes',
+          'Configurações do Portal',
+          { href: '/admin/configuracoes', label: 'Ver Configurações completo' },
+        ),
+      };
       sections.push({
         title: 'Administração',
         items: visibleAdminItems.map((item) => ({
           href: item.href,
           content: navContent(item.icon, dictionary.nav[item.labelKey]),
+          flyout: adminAreaFlyouts[item.href],
         })),
       });
     }
@@ -196,6 +263,12 @@ export function buildNavSections(
         {
           href: '/plataforma',
           content: navContent(Building2, 'Painel da Plataforma'),
+          flyout: {
+            title: 'Painel da Plataforma',
+            description: 'Gestão multi-tenant',
+            links: [{ href: '/plataforma/lojas/nova', label: 'Cadastrar nova Loja' }],
+            full: { href: '/plataforma', label: 'Abrir Painel da Plataforma' },
+          },
         },
       ],
     });
