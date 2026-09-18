@@ -38,6 +38,38 @@ export async function GET(
       return NextResponse.json({ error: 'not_found' }, { status: 404 });
     }
 
+    const requestedMode = request.nextUrl.searchParams.get('mode');
+    if (requestedMode === 'external') {
+      if (!item.urlExterna || !item.permiteLeituraOnline) {
+        return NextResponse.json({ error: 'not_found' }, { status: 404 });
+      }
+      const interactionResult = await container.useCases.recordLibraryView.execute(
+        session.authContext,
+        libraryItemId,
+      );
+      if (!interactionResult.ok) {
+        const status = interactionResult.error.code === 'forbidden' ? 403 : 404;
+        return NextResponse.json({ error: interactionResult.error.code }, { status });
+      }
+      const now = new Date();
+      await container.repositories.libraryCirculation.recordInteraction({
+        id: container.db.collection('libraryInteractions').doc().id,
+        tenantId: session.authContext.tenantId,
+        libraryItemId,
+        userId: session.authContext.uid,
+        tipo: 'visualizacao',
+        occurredAt: now,
+        createdAt: now,
+        updatedAt: now,
+        createdBy: session.authContext.uid,
+        updatedBy: session.authContext.uid,
+        deletedAt: null,
+        status: 'active',
+        ativo: true,
+      });
+      return NextResponse.redirect(item.urlExterna, 302);
+    }
+
     if (!item.fileId) return NextResponse.json({ error: 'not_found' }, { status: 404 });
     const file = await container.repositories.fileAsset.findById(item.fileId);
     if (
@@ -50,7 +82,7 @@ export async function GET(
       return NextResponse.json({ error: 'not_found' }, { status: 404 });
     }
 
-    const mode = request.nextUrl.searchParams.get('mode') === 'download' ? 'download' : 'view';
+    const mode = requestedMode === 'download' ? 'download' : 'view';
 
     const interactionResult =
       mode === 'download'

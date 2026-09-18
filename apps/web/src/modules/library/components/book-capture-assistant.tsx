@@ -20,25 +20,27 @@ export interface BookCaptureResult extends BookCatalogSuggestion {
 
 export function BookCaptureAssistant({
   onSuggestion,
+  initialCoverUrl,
 }: {
   onSuggestion: (suggestion: BookCaptureResult) => void;
+  initialCoverUrl?: string | null;
 }) {
   const [coverFile, setCoverFile] = useState<File | null>(null);
   const [backFile, setBackFile] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(initialCoverUrl ?? null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!coverFile) {
-      setPreviewUrl(null);
+      setPreviewUrl(initialCoverUrl ?? null);
       return;
     }
     const url = URL.createObjectURL(coverFile);
     setPreviewUrl(url);
     return () => URL.revokeObjectURL(url);
-  }, [coverFile]);
+  }, [coverFile, initialCoverUrl]);
 
   const canAnalyze = useMemo(() => Boolean(coverFile || backFile), [backFile, coverFile]);
 

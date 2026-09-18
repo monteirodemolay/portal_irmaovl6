@@ -29,7 +29,7 @@ export default async function Page() {
           copy,
           svg: await QRCode.toString(`${base}/acervo/biblioteca/exemplares/${copy.id}`, {
             type: 'svg',
-            width: 160,
+            width: 96,
             margin: 1,
             errorCorrectionLevel: 'M',
             color: { dark: '#002b55', light: '#ffffff' },
@@ -56,27 +56,34 @@ export default async function Page() {
       ) : !labels.length ? (
         <EmptyState title="Nenhum exemplar para etiquetar" />
       ) : (
-        <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 print:grid-cols-3">
+        <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 print:grid-cols-3 print:gap-2">
           {labels.map(({ copy, svg }) => {
             const item = itemMap.get(copy.libraryItemId);
             const shelf = copy.shelfId ? shelfMap.get(copy.shelfId) : null;
             return (
-              <Card key={copy.id} className="break-inside-avoid print:shadow-none">
-                <CardContent className="grid min-w-0 justify-items-center gap-3 p-3 text-center min-[420px]:grid-cols-[112px_minmax(0,1fr)] min-[420px]:justify-items-stretch min-[420px]:text-left">
-                  <div className="h-28 w-28" dangerouslySetInnerHTML={{ __html: svg }} />
-                  <div className="grid min-w-0 gap-1">
-                    <p className="text-muted text-[10px] uppercase">Biblioteca VL6</p>
-                    <h2 className="break-words text-sm font-semibold">{item?.titulo ?? 'Obra'}</h2>
-                    <p className="text-xs">
-                      <b>Tombo:</b> {copy.codigoTombo}
+              <Card
+                key={copy.id}
+                className="break-inside-avoid overflow-hidden print:rounded-md print:shadow-none"
+              >
+                <CardContent className="grid min-w-0 grid-cols-[96px_minmax(0,1fr)] items-center gap-3 p-3 text-left print:gap-2 print:p-2">
+                  <div
+                    className="h-24 w-24 shrink-0 overflow-hidden [&_svg]:block [&_svg]:h-full [&_svg]:w-full"
+                    dangerouslySetInnerHTML={{ __html: svg }}
+                  />
+                  <div className="min-w-0 border-l pl-3 print:pl-2">
+                    <p className="text-primary text-[9px] font-semibold uppercase tracking-[0.12em]">
+                      Biblioteca VL6
                     </p>
-                    <p className="text-xs">
-                      <b>Estante:</b> {shelf ? `${shelf.codigo} · ${shelf.nome}` : copy.localizacao}
+                    <h2 className="mt-1 line-clamp-2 break-words text-xs font-semibold leading-tight">
+                      {item?.titulo ?? 'Obra'}
+                    </h2>
+                    <p className="mt-2 truncate font-mono text-[10px] font-bold">
+                      {copy.codigoTombo}
                     </p>
-                    <Badge
-                      variant="outline"
-                      className="mx-auto w-fit min-[420px]:mx-0 print:hidden"
-                    >
+                    <p className="text-muted mt-0.5 truncate text-[9px]">
+                      {shelf ? `${shelf.codigo} · ${shelf.nome}` : copy.localizacao}
+                    </p>
+                    <Badge variant="outline" className="mt-1 h-4 px-1.5 text-[8px] print:hidden">
                       {copy.estadoGeral}
                     </Badge>
                   </div>

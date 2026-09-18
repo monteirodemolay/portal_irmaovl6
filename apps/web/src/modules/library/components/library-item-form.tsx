@@ -2,9 +2,19 @@
 
 import { useActionState, useCallback, useState, type ReactNode } from 'react';
 import { useFormStatus } from 'react-dom';
-import type { FileAsset, LibraryCategory, LibraryShelf } from '@vl6/domain';
+import type {
+  FileAsset,
+  LibraryCategory,
+  LibraryCopy,
+  LibraryItem,
+  LibraryShelf,
+} from '@vl6/domain';
 import { Button, Input, Select, Textarea } from '@vl6/ui';
-import { addLibraryItemAction, type LibraryActionState } from '../actions/library-actions';
+import {
+  addLibraryItemAction,
+  updateLibraryItemAction,
+  type LibraryActionState,
+} from '../actions/library-actions';
 import { BookCaptureAssistant, type BookCaptureResult } from './book-capture-assistant';
 import { CreateLibraryCategoryDialog } from './create-library-category-dialog';
 import { CreateLibraryShelfDialog } from './create-library-shelf-dialog';
@@ -35,24 +45,45 @@ export function LibraryItemForm({
   categories,
   fileAssets,
   shelves,
+  item,
+  copy,
 }: {
   categories: LibraryCategory[];
   fileAssets: FileAsset[];
   shelves: LibraryShelf[];
+  item?: LibraryItem;
+  copy?: LibraryCopy | null;
 }) {
-  const [state, action] = useActionState<LibraryActionState, FormData>(addLibraryItemAction, {
+  const submitAction = item ? updateLibraryItemAction.bind(null, item.id) : addLibraryItemAction;
+  const [state, action] = useActionState<LibraryActionState, FormData>(submitAction, {
     error: null,
   });
-  const [format, setFormat] = useState('fisico');
-  const [fields, setFields] = useState(EMPTY_FIELDS);
+  const [format, setFormat] = useState(item?.formato ?? 'fisico');
+  const [digitalSource, setDigitalSource] = useState<'existing' | 'upload' | 'link'>(
+    item?.urlExterna ? 'link' : 'existing',
+  );
+  const [fields, setFields] = useState<SuggestedFields>(() =>
+    item
+      ? {
+          titulo: item.titulo ?? '',
+          autor: item.autor ?? '',
+          anoPublicacao: item.anoPublicacao ? String(item.anoPublicacao) : '',
+          editora: item.editora ?? '',
+          isbn: item.isbn ?? '',
+          codigoBarras: item.codigoBarras ?? '',
+          palavrasChave: item.palavrasChave?.join(', ') ?? '',
+          sinopse: item.sinopse ?? '',
+        }
+      : EMPTY_FIELDS,
+  );
   const [categoryOptions, setCategoryOptions] = useState(
     categories.map(({ id, nome }) => ({ id, nome })),
   );
   const [shelfOptions, setShelfOptions] = useState(
     shelves.map(({ id, codigo, nome }) => ({ id, codigo, nome })),
   );
-  const [categoryId, setCategoryId] = useState('');
-  const [shelfId, setShelfId] = useState('');
+  const [categoryId, setCategoryId] = useState(item?.categoriaId ?? '');
+  const [shelfId, setShelfId] = useState(copy?.shelfId ?? '');
 
   const applySuggestion = useCallback((suggestion: BookCaptureResult) => {
     setFields((current) => ({
@@ -85,7 +116,7 @@ export function LibraryItemForm({
   return (
     <form action={action} className="grid gap-6" encType="multipart/form-data">
       <div className="grid gap-6 lg:grid-cols-[260px_1fr]">
-        <BookCaptureAssistant onSuggestion={applySuggestion} />
+        <BookCaptureAssistant onSuggestion={applySuggestion} initialCoverUrl={item?.capaUrl} />
         <div className="grid min-w-0 gap-4 sm:grid-cols-2">
           <Field label="Título">
             <Input
@@ -103,7 +134,7 @@ export function LibraryItemForm({
             />
           </Field>
           <Field label="Tipo">
-            <Select name="tipoMaterial" defaultValue="livro">
+            <Select name="tipoMaterial" defaultValue={item?.tipoMaterial ?? 'livro'}>
               <option value="livro">Livro</option>
               <option value="artigo">Artigo</option>
               <option value="periodico">Periódico</option>
@@ -115,7 +146,9 @@ export function LibraryItemForm({
             <Select
               name="formato"
               value={format}
-              onChange={(event) => setFormat(event.target.value)}
+              onChange={(event) =>
+                setFormat(event.target.value as 'digital' | 'fisico' | 'fisico_digital')
+              }
             >
               <option value="fisico">Físico</option>
               <option value="digital">Digital</option>
@@ -149,16 +182,75 @@ export function LibraryItemForm({
             />
           </div>
 
-          <Field label="Arquivo digital">
-            <Select name="fileId" required={format !== 'fisico'} defaultValue="">
-              <option value="">Nenhum</option>
-              {fileAssets.map((file) => (
-                <option key={file.id} value={file.id}>
-                  {file.titulo}
-                </option>
-              ))}
-            </Select>
-          </Field>
+          {format !== 'fisico' && (
+            <fieldset className="border-border grid gap-3 rounded-xl border p-4 sm:col-span-2">
+              <legend className="px-1 text-sm font-medium">Conteúdo digital</legend>
+              <p className="text-muted text-xs">
+                Escolha uma única origem para o arquivo desta publicação.
+              </p>
+              <div className="grid gap-2 sm:grid-cols-3">
+                {(
+                  [
+                    ['existing', 'Já cadastrado'],
+                    ['upload', 'Enviar arquivo'],
+                    ['link', 'Informar link'],
+                  ] as const
+                ).map(([value, label]) => (
+                  <label
+                    key={value}
+                    className={`flex min-h-11 cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm ${digitalSource === value ? 'border-primary bg-primary/5' : 'border-border'}`}
+                  >
+                    <input
+                      type="radio"
+                      name="digitalSource"
+                      value={value}
+                      checked={digitalSource === value}
+                      onChange={() => setDigitalSource(value)}
+                    />
+                    {label}
+                  </label>
+                ))}
+              </div>
+              {digitalSource === 'existing' && (
+                <Field label="Arquivo já cadastrado">
+                  <Select name="fileId" required defaultValue={item?.fileId ?? ''}>
+                    <option value="">Selecione…</option>
+                    {fileAssets.map((file) => (
+                      <option key={file.id} value={file.id}>
+                        {file.titulo}
+                      </option>
+                    ))}
+                  </Select>
+                </Field>
+              )}
+              {digitalSource === 'upload' && (
+                <Field label="Enviar arquivo agora">
+                  <Input
+                    name="arquivoDigitalUpload"
+                    type="file"
+                    accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                    required
+                  />
+                  <span className="text-muted text-xs">PDF, DOC ou DOCX, com até 12 MB.</span>
+                </Field>
+              )}
+              {digitalSource === 'link' && (
+                <Field label="Link externo do livro ou publicação">
+                  <Input
+                    name="urlExterna"
+                    type="url"
+                    inputMode="url"
+                    placeholder="https://exemplo.org/publicacao"
+                    defaultValue={item?.urlExterna ?? ''}
+                    required
+                  />
+                  <span className="text-muted text-xs">
+                    Use um endereço HTTPS autorizado e estável.
+                  </span>
+                </Field>
+              )}
+            </fieldset>
+          )}
           <Field label="Ano">
             <Input
               type="number"
@@ -190,7 +282,7 @@ export function LibraryItemForm({
             />
           </Field>
           <Field label="Código de classificação">
-            <Input name="codigoClassificacao" />
+            <Input name="codigoClassificacao" defaultValue={item?.codigoClassificacao ?? ''} />
           </Field>
           <Field label="Palavras-chave">
             <Input
@@ -201,14 +293,22 @@ export function LibraryItemForm({
             />
           </Field>
           <Field label="Prazo padrão (dias)">
-            <Input type="number" name="prazoEmprestimoDias" defaultValue="21" min="1" max="180" />
+            <Input
+              type="number"
+              name="prazoEmprestimoDias"
+              defaultValue={item?.prazoEmprestimoDias ?? 21}
+              min="1"
+              max="180"
+            />
           </Field>
 
           {format !== 'digital' && (
             <>
-              <Field label="Número de tombo">
-                <Input name="codigoTombo" required />
-              </Field>
+              <div className="border-border bg-muted/30 grid gap-1 rounded-xl border p-3 text-sm">
+                <span className="font-medium">Número de tombo</span>
+                <strong>{copy?.codigoTombo ?? 'Gerado automaticamente ao publicar'}</strong>
+                <span className="text-muted text-xs">Padrão: VL6-ANO-XXXXXXXX</span>
+              </div>
               <div className="grid gap-2 text-sm">
                 <label className="grid gap-1">
                   Estante
@@ -231,7 +331,7 @@ export function LibraryItemForm({
                 <CreateLibraryShelfDialog onCreated={addShelf} className="w-full sm:w-fit" />
               </div>
               <Field label="Estado geral">
-                <Select name="estadoGeral" defaultValue="bom">
+                <Select name="estadoGeral" defaultValue={copy?.estadoGeral ?? 'bom'}>
                   <option value="novo">Novo</option>
                   <option value="otimo">Ótimo</option>
                   <option value="bom">Bom</option>
@@ -241,7 +341,7 @@ export function LibraryItemForm({
                 </Select>
               </Field>
               <Field label="Observação do exemplar">
-                <Input name="observacoesExemplar" />
+                <Input name="observacoesExemplar" defaultValue={copy?.observacoes ?? ''} />
               </Field>
             </>
           )}
@@ -260,16 +360,24 @@ export function LibraryItemForm({
           </label>
           <label className="grid gap-1 text-sm sm:col-span-2">
             Dica do Bibliotecário
-            <Textarea name="parecerBibliotecario" rows={4} />
+            <Textarea
+              name="parecerBibliotecario"
+              rows={4}
+              defaultValue={item?.parecerBibliotecario ?? ''}
+            />
           </label>
           <label className="flex items-center gap-2 text-sm">
-            <input type="checkbox" name="permiteLeituraOnline" defaultChecked /> Permitir leitura
-            online
+            <input
+              type="checkbox"
+              name="permiteLeituraOnline"
+              defaultChecked={item?.permiteLeituraOnline ?? true}
+            />{' '}
+            Permitir leitura online
           </label>
         </div>
       </div>
       {state.error && <p className="text-sm text-red-600">{state.error}</p>}
-      <Submit />
+      <Submit editing={Boolean(item)} />
     </form>
   );
 }
@@ -283,11 +391,11 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
   );
 }
 
-function Submit() {
+function Submit({ editing }: { editing: boolean }) {
   const { pending } = useFormStatus();
   return (
     <Button className="w-full sm:w-fit" disabled={pending}>
-      {pending ? 'Publicando…' : 'Publicar no catálogo'}
+      {pending ? 'Salvando…' : editing ? 'Salvar alterações' : 'Publicar no catálogo'}
     </Button>
   );
 }

@@ -62,6 +62,15 @@ export default async function LibraryPage() {
       cell: (item) =>
         `${item.contagemDownloads} downloads · ${item.contagemEmprestimos ?? 0} empréstimos`,
     },
+    {
+      key: 'acoes',
+      header: 'Ações',
+      cell: (item) => (
+        <Button asChild size="sm" variant="outline">
+          <Link href={`/admin/acervo/biblioteca/${item.id}/editar`}>Editar</Link>
+        </Button>
+      ),
+    },
   ];
 
   return (
@@ -143,6 +152,9 @@ export default async function LibraryPage() {
                       </dd>
                     </div>
                   </dl>
+                  <Button asChild size="sm" variant="outline" className="w-full">
+                    <Link href={`/admin/acervo/biblioteca/${item.id}/editar`}>Editar obra</Link>
+                  </Button>
                 </CardContent>
               </Card>
             );

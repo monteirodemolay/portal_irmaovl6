@@ -21,6 +21,11 @@ export const libraryPickupExtensionSchema = z.object({
 export const libraryItemSchema = z
   .object({
     fileId: z.string().min(1).nullable(),
+    urlExterna: z
+      .string()
+      .url()
+      .refine((value) => new URL(value).protocol === 'https:', 'Use um link HTTPS.')
+      .nullable(),
     categoriaId: z.string().min(1),
     subcategoriaId: z.string().nullable(),
     permiteLeituraOnline: z.boolean(),
@@ -47,11 +52,11 @@ export const libraryItemSchema = z
     observacoesExemplar: z.string().max(1000).nullable(),
   })
   .superRefine((value, ctx) => {
-    if (value.formato !== 'fisico' && !value.fileId)
+    if (value.formato !== 'fisico' && !value.fileId && !value.urlExterna)
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ['fileId'],
-        message: 'Arquivo digital obrigatório.',
+        message: 'Arquivo ou link digital obrigatório.',
       });
     if (value.formato !== 'digital' && (!value.codigoTombo || !value.shelfId || !value.estadoGeral))
       ctx.addIssue({

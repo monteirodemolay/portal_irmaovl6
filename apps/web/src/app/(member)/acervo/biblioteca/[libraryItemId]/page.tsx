@@ -105,6 +105,17 @@ export default async function LibraryItemPage({
                 <a href={`/api/library-items/${item.id}?mode=download`}>Baixar arquivo</a>
               </Button>
             )}
+            {item.urlExterna && item.permiteLeituraOnline && (
+              <Button asChild className="w-full sm:w-auto">
+                <a
+                  href={`/api/library-items/${item.id}?mode=external`}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Acessar link externo
+                </a>
+              </Button>
+            )}
             {physical && available.length > 0 && (
               <AddToLibraryCartButton itemId={item.id} title={item.titulo ?? 'obra'} />
             )}
