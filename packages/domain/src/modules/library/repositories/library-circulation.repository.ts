@@ -24,13 +24,18 @@ export interface ILibraryCirculationRepository {
   listLoansByTenant(tenantId: string): Promise<LibraryLoan[]>;
   listLoansByUser(tenantId: string, userId: string): Promise<LibraryLoan[]>;
   reserveAvailableCopy(loan: Omit<LibraryLoan, 'copyId'>): Promise<LibraryLoan | null>;
-  reserveSpecificCopy(loan: Omit<LibraryLoan, 'copyId'>, copyId: string): Promise<LibraryLoan | null>;
+  reserveSpecificCopy(
+    loan: Omit<LibraryLoan, 'copyId'>,
+    copyId: string,
+  ): Promise<LibraryLoan | null>;
   updateLoanAndCopy(
     loan: LibraryLoan,
     copyStatus: LibraryCopyStatus | null,
     copyPlacement?: { shelfId: string; localizacao: string },
   ): Promise<void>;
   listLoanEvents(tenantId: string, loanId: string): Promise<LibraryLoanEvent[]>;
+  /** Histórico completo de um exemplar (todos os empréstimos que já passaram por ele). */
+  listLoanEventsByCopy(tenantId: string, copyId: string): Promise<LibraryLoanEvent[]>;
   createLoanEvent(event: LibraryLoanEvent): Promise<void>;
   listOccurrencesByTenant(tenantId: string): Promise<LibraryOccurrence[]>;
   listOccurrencesByUser(tenantId: string, userId: string): Promise<LibraryOccurrence[]>;

@@ -1516,6 +1516,15 @@
       ]
     },
     {
+      "collectionGroup": "libraryLoanEvents",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "tenantId", "order": "ASCENDING" },
+        { "fieldPath": "copyId", "order": "ASCENDING" },
+        { "fieldPath": "occurredAt", "order": "DESCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "libraryOccurrences",
       "queryScope": "COLLECTION",
       "fields": [
