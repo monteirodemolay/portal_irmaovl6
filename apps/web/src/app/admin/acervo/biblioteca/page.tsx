@@ -94,6 +94,9 @@ export default async function LibraryPage() {
             <Link href="/admin/acervo/biblioteca/etiquetas">Etiquetas QR</Link>
           </Button>
           <Button asChild variant="outline" className="w-full sm:w-auto">
+            <Link href="/admin/acervo/biblioteca/emprestimo-presencial">Empréstimo presencial</Link>
+          </Button>
+          <Button asChild variant="outline" className="w-full sm:w-auto">
             <Link href="/admin/acervo/biblioteca/emprestimos">
               Empréstimos (
               {

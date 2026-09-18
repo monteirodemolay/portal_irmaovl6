@@ -6,6 +6,7 @@ import { redirect } from 'next/navigation';
 import {
   libraryCategorySchema,
   libraryCartLoanRequestSchema,
+  libraryDirectLoanSchema,
   libraryItemSchema,
   libraryOccurrenceAttestationSchema,
   libraryOccurrenceSchema,
@@ -919,6 +920,106 @@ async function requestLoans(ids: string[], eventId: string): Promise<LibraryActi
     warning: open.length
       ? `Você já possui ${open.length} pedido(s) em aberto; a nova retirada depende de autorização.`
       : undefined,
+  };
+}
+
+/**
+ * Registra presencialmente um empréstimo já decidido no balcão: o Bibliotecário escaneia o QR
+ * do exemplar (ou busca a obra pelo nome), escolhe o Irmão, informa quando retirou e até quando
+ * deve devolver — sem passar pelo carrinho/aprovação. Quando vem de um escaneamento, reserva o
+ * exemplar exato (`reserveSpecificCopy`); na busca por nome, deixa o repositório escolher um
+ * exemplar disponível (`reserveAvailableCopy`) — mesma reserva atômica do fluxo comum — e já
+ * finaliza a retirada, para o registro aparecer de imediato em "Meus empréstimos" do Irmão.
+ */
+export async function registerLibraryDirectLoanAction(
+  _: LibraryActionState,
+  fd: FormData,
+): Promise<LibraryActionState> {
+  const session = await requireSession();
+  if (!hasPermission(session.authContext, 'libraryItem:manage')) throw new Error('forbidden');
+  const p = libraryDirectLoanSchema.safeParse({
+    memberId: fd.get('memberId'),
+    libraryItemId: fd.get('libraryItemId'),
+    copyId: fd.get('copyId') || null,
+    checkedOutAt: fd.get('checkedOutAt') ? `${fd.get('checkedOutAt')}T12:00:00` : undefined,
+    dueAt: fd.get('dueAt') ? `${fd.get('dueAt')}T23:59:59` : undefined,
+  });
+  if (!p.success) return { error: 'Selecione o Irmão, a obra e datas válidas.' };
+  const c = createServerContainer();
+  const [item, member] = await Promise.all([
+    c.repositories.libraryItem.findById(p.data.libraryItemId),
+    c.repositories.member.findById(p.data.memberId),
+  ]);
+  if (!item || item.tenantId !== session.authContext.tenantId || item.formato === 'digital')
+    return { error: 'Obra física não encontrada.' };
+  if (!member || member.tenantId !== session.authContext.tenantId)
+    return { error: 'Irmão não encontrado.' };
+  if (!member.userId) return { error: 'Este Irmão ainda não tem acesso ao Portal.' };
+  const open = await c.repositories.libraryCirculation.listLoansByUser(
+    session.authContext.tenantId,
+    member.userId,
+  );
+  if (open.some((l) => l.libraryItemId === item.id && isLibraryLoanOpen(l.statusEmprestimo)))
+    return { error: `${member.nomeCompleto} já possui um empréstimo em aberto desta obra.` };
+  const now = new Date();
+  const draft = {
+    id: c.db.collection('libraryLoans').doc().id,
+    tenantId: session.authContext.tenantId,
+    libraryItemId: item.id,
+    borrowerUserId: member.userId,
+    borrowerMemberId: member.id,
+    borrowerName: member.nomeCompleto,
+    borrowerEmail: member.email,
+    borrowerWhatsapp: member.whatsapp ?? member.telefone,
+    statusEmprestimo: 'retirado' as const,
+    requestedPickupAt: p.data.checkedOutAt,
+    suggestedPickupEventId: null,
+    pickupDeadlineAt: null,
+    pickupExtensionCount: 0,
+    approvedAt: now,
+    checkedOutAt: p.data.checkedOutAt,
+    dueAt: p.data.dueAt,
+    dueAtConfirmed: true,
+    suggestedReturnEventId: null,
+    returnedAt: null,
+    renewalCount: 0,
+    librarianNotes: 'Empréstimo registrado presencialmente pelo Bibliotecário.',
+    lastReminderAt: null,
+    reminderCount: 0,
+    createdAt: now,
+    updatedAt: now,
+    createdBy: session.authContext.uid,
+    updatedBy: session.authContext.uid,
+    deletedAt: null,
+    status: 'active' as const,
+    ativo: true,
+  };
+  const loan = p.data.copyId
+    ? await c.repositories.libraryCirculation.reserveSpecificCopy(draft, p.data.copyId)
+    : await c.repositories.libraryCirculation.reserveAvailableCopy(draft);
+  if (!loan) return { error: 'Exemplar indisponível — escaneie outro ou atualize a busca.' };
+  await c.repositories.libraryCirculation.updateLoanAndCopy(loan, 'emprestado');
+  await c.repositories.libraryItem.incrementLoans(item.id);
+  await recordLoanEvent(
+    c,
+    loan,
+    'retirada',
+    `Empréstimo registrado presencialmente pelo Bibliotecário para ${member.nomeCompleto}.`,
+    session.authContext.uid,
+  );
+  await c.useCases.notifyRecipient.execute({
+    tenantId: session.authContext.tenantId,
+    destinatarioId: member.userId,
+    tipo: 'acervo',
+    titulo: 'Empréstimo registrado',
+    mensagem: `"${item.titulo}" foi registrado como retirado. Devolução até ${p.data.dueAt.toLocaleDateString('pt-BR')}.`,
+    link: '/acervo/biblioteca/emprestimos',
+    priority: 'normal',
+  });
+  revalidateLibrary();
+  return {
+    error: null,
+    success: `Empréstimo de "${item.titulo}" registrado para ${member.nomeCompleto}.`,
   };
 }
 

@@ -164,6 +164,28 @@ export class FirestoreLibraryCirculationRepository implements ILibraryCirculatio
       return reserved;
     });
   }
+  async reserveSpecificCopy(loan: Omit<LibraryLoan, 'copyId'>, copyId: string) {
+    return this.db.runTransaction(async (t) => {
+      const ref = this.copies.doc(copyId);
+      const snap = await t.get(ref);
+      const copy = snap.exists ? snap.data()! : null;
+      if (
+        !copy ||
+        copy.tenantId !== loan.tenantId ||
+        copy.libraryItemId !== loan.libraryItemId ||
+        copy.situacao !== 'disponivel'
+      )
+        return null;
+      const reserved = { ...loan, copyId };
+      t.set(this.loans.doc(loan.id), reserved);
+      t.update(ref, {
+        situacao: 'reservado',
+        updatedAt: loan.updatedAt,
+        updatedBy: loan.updatedBy,
+      });
+      return reserved;
+    });
+  }
   async updateLoanAndCopy(
     loan: LibraryLoan,
     copyStatus: LibraryCopyStatus | null,
