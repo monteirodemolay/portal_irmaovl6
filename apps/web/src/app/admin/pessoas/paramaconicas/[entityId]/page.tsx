@@ -18,6 +18,7 @@ import { AddParamasonicEntityPositionDialog } from '@/modules/family-legacy/comp
 import { EditParamasonicEntityMemberDialog } from '@/modules/family-legacy/components/edit-paramasonic-entity-member-dialog';
 import { RemoveParamasonicEntityMemberButton } from '@/modules/family-legacy/components/remove-paramasonic-entity-member-button';
 import { RemoveParamasonicEntityPositionButton } from '@/modules/family-legacy/components/remove-paramasonic-entity-position-button';
+import { SyncSpousesToParamasonicEntityRunner } from '@/modules/family-legacy/components/sync-spouses-to-paramasonic-entity-runner';
 
 const CATEGORY_GROUP_ORDER: ParamasonicEntityMemberCategoryGroup[] = [
   'membros_juvenis',
@@ -146,12 +147,17 @@ export default async function ParamasonicEntityDetailPage({
       <section className="flex flex-col gap-4">
         <div className="flex items-center justify-between gap-4">
           <h2 className="font-display text-lg font-semibold">Integrantes</h2>
-          <AddParamasonicEntityMemberDialog
-            entityId={entity.id}
-            allowLinkingMember={canLinkMembers}
-            memberOptions={memberOptions}
-            positionOptions={positions.map((p) => ({ id: p.id, nome: p.nome }))}
-          />
+          <div className="flex items-center gap-2">
+            {entity.kind === 'female_fraternity' && (
+              <SyncSpousesToParamasonicEntityRunner entityId={entity.id} />
+            )}
+            <AddParamasonicEntityMemberDialog
+              entityId={entity.id}
+              allowLinkingMember={canLinkMembers}
+              memberOptions={memberOptions}
+              positionOptions={positions.map((p) => ({ id: p.id, nome: p.nome }))}
+            />
+          </div>
         </div>
 
         {members.length === 0 ? (

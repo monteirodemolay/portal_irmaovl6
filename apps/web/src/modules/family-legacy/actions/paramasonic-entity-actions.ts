@@ -12,6 +12,7 @@ import {
   type ParamasonicEntityStatus,
 } from '@vl6/shared';
 import { createServerContainer } from '@vl6/infra';
+import type { SyncSpousesToParamasonicEntityResult } from '@vl6/domain';
 import { requireSession } from '@/lib/auth/require-session';
 
 export interface ParamasonicEntityActionState {
@@ -190,4 +191,31 @@ export async function removeParamasonicEntityPositionAction(
   await container.useCases.removeParamasonicEntityPosition.execute(session.authContext, positionId);
 
   revalidatePath(`/admin/pessoas/paramaconicas/${entityId}`);
+}
+
+export interface SyncSpousesToParamasonicEntityState {
+  error: string | null;
+  result: SyncSpousesToParamasonicEntityResult | null;
+}
+
+/**
+ * Sincroniza o cônjuge cadastrado no Member (`conjugeNome`, preenchido no
+ * cadastro/importação do Irmão) como Integrante do corpo próprio da
+ * Fraternidade Feminina — só disponível pra entidades desse tipo (o use
+ * case rejeita qualquer outra). Seguro rodar mais de uma vez.
+ */
+export async function syncSpousesToParamasonicEntityAction(
+  entityId: string,
+): Promise<SyncSpousesToParamasonicEntityState> {
+  const session = await requireSession();
+  const container = createServerContainer();
+
+  const result = await container.useCases.syncSpousesToParamasonicEntity.execute(
+    session.authContext,
+    entityId,
+  );
+  if (!result.ok) return { error: result.error.message, result: null };
+
+  revalidatePath(`/admin/pessoas/paramaconicas/${entityId}`);
+  return { error: null, result: result.value };
 }
