@@ -1121,6 +1121,9 @@ export class InMemoryLibraryItemRepository implements ILibraryItemRepository {
   async countByTenant(tenantId: string) {
     return [...this.byId.values()].filter((i) => i.tenantId === tenantId).length;
   }
+  async listDeletedByTenant(tenantId: string) {
+    return [...this.byId.values()].filter((i) => i.tenantId === tenantId && i.deletedAt !== null);
+  }
   async create(item: LibraryItem) {
     this.byId.set(item.id, item);
   }

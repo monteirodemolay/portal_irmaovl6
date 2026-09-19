@@ -44,6 +44,14 @@ export class FirestoreLibraryItemRepository implements ILibraryItemRepository {
     return snap.data().count;
   }
 
+  async listDeletedByTenant(tenantId: string): Promise<LibraryItem[]> {
+    // Filtra `deletedAt` em memória em vez de `!=` na query — evita depender
+    // de outro índice composto (mesmo cuidado do fix do histórico) e o total
+    // de obras por tenant é pequeno o bastante pra isso ser barato.
+    const snap = await this.collection.where('tenantId', '==', tenantId).get();
+    return snap.docs.map((doc) => doc.data()).filter((item) => item.deletedAt !== null);
+  }
+
   async create(item: LibraryItem): Promise<void> {
     await this.collection.doc(item.id).set(item);
   }
