@@ -337,7 +337,7 @@ export function PresentialCheckout({
             {cameraOpen && (
               <div className="grid gap-2">
                 <div
-                  className={`bg-surface relative aspect-[3/4] w-full overflow-hidden rounded-lg border-4 transition-colors sm:aspect-video ${
+                  className={`bg-surface relative aspect-[3/4] w-full touch-manipulation overflow-hidden rounded-lg border-4 transition-colors sm:aspect-video ${
                     scanFlash ? 'border-emerald-500' : 'border-transparent'
                   }`}
                 >
