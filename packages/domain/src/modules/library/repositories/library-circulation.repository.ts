@@ -23,6 +23,8 @@ export interface ILibraryCirculationRepository {
   findLoanById(id: string): Promise<LibraryLoan | null>;
   listLoansByTenant(tenantId: string): Promise<LibraryLoan[]>;
   listLoansByUser(tenantId: string, userId: string): Promise<LibraryLoan[]>;
+  /** Empréstimo em aberto (retirado/atrasado) de um exemplar específico — devolução rápida no balcão. */
+  findOpenLoanByCopy(tenantId: string, copyId: string): Promise<LibraryLoan | null>;
   reserveAvailableCopy(loan: Omit<LibraryLoan, 'copyId'>): Promise<LibraryLoan | null>;
   reserveSpecificCopy(
     loan: Omit<LibraryLoan, 'copyId'>,

@@ -1112,6 +1112,70 @@ export async function registerLibraryDirectLoanAction(
   };
 }
 
+/**
+ * Devolução rápida no balcão — o Bibliotecário escaneia o QR do exemplar (ou
+ * digita o tombo) e o empréstimo em aberto dele é encerrado na hora, sem
+ * pedir mais nada (Irmão, datas, estante): o exemplar volta pra mesma
+ * localização em que já estava (`shelfId`/`localizacao` gravados nele desde
+ * a última organização de estante) — trocar de estante continua sendo feito
+ * na tela de "Estantes" quando for o caso, não é o fluxo comum de devolução.
+ */
+export async function registerLibraryDirectReturnAction(
+  _: LibraryActionState,
+  fd: FormData,
+): Promise<LibraryActionState> {
+  const session = await requireSession();
+  if (!hasPermission(session.authContext, 'libraryItem:manage')) throw new Error('forbidden');
+  const copyId = String(fd.get('copyId') ?? '').trim();
+  if (!copyId) return { error: 'Exemplar não identificado.' };
+  const c = createServerContainer();
+  const copy = await c.repositories.libraryCirculation.findCopyById(copyId);
+  if (!copy || copy.tenantId !== session.authContext.tenantId)
+    return { error: 'Exemplar não encontrado.' };
+  const loan = await c.repositories.libraryCirculation.findOpenLoanByCopy(
+    session.authContext.tenantId,
+    copyId,
+  );
+  if (!loan) return { error: 'Este exemplar não está emprestado no momento.' };
+  const [item, member] = await Promise.all([
+    c.repositories.libraryItem.findById(loan.libraryItemId),
+    loan.borrowerMemberId ? c.repositories.member.findById(loan.borrowerMemberId) : null,
+  ]);
+  const now = new Date();
+  const updated: LibraryLoan = {
+    ...loan,
+    statusEmprestimo: 'devolvido',
+    returnedAt: now,
+    librarianNotes: 'Devolução registrada presencialmente pelo Bibliotecário.',
+    updatedAt: now,
+    updatedBy: session.authContext.uid,
+  };
+  await c.repositories.libraryCirculation.updateLoanAndCopy(updated, 'disponivel');
+  await recordLoanEvent(
+    c,
+    updated,
+    'devolucao',
+    'Devolução registrada presencialmente pelo Bibliotecário.',
+    session.authContext.uid,
+  );
+  if (member?.userId) {
+    await c.useCases.notifyRecipient.execute({
+      tenantId: session.authContext.tenantId,
+      destinatarioId: member.userId,
+      tipo: 'acervo',
+      titulo: 'Empréstimo devolvido',
+      mensagem: `"${item?.titulo ?? 'Obra'}" foi devolvido com sucesso. Obrigado!`,
+      link: '/acervo/biblioteca/emprestimos',
+      priority: 'normal',
+    });
+  }
+  revalidateLibrary();
+  return {
+    error: null,
+    success: `"${item?.titulo ?? 'Obra'}" devolvido${loan.borrowerName ? ` por ${loan.borrowerName}` : ''}.`,
+  };
+}
+
 export async function saveLibraryReviewAction(
   _: LibraryActionState,
   fd: FormData,

@@ -1,14 +1,15 @@
 import { FieldValue, type Firestore } from 'firebase-admin/firestore';
-import type {
-  ILibraryCirculationRepository,
-  LibraryCopy,
-  LibraryCopyStatus,
-  LibraryInteraction,
-  LibraryLoan,
-  LibraryLoanEvent,
-  LibraryOccurrence,
-  LibraryReview,
-  LibraryShelf,
+import {
+  canTransitionLibraryLoan,
+  type ILibraryCirculationRepository,
+  type LibraryCopy,
+  type LibraryCopyStatus,
+  type LibraryInteraction,
+  type LibraryLoan,
+  type LibraryLoanEvent,
+  type LibraryOccurrence,
+  type LibraryReview,
+  type LibraryShelf,
 } from '@vl6/domain';
 import { createEntityConverter } from '../converters/entity.converter';
 
@@ -141,6 +142,21 @@ export class FirestoreLibraryCirculationRepository implements ILibraryCirculatio
       .orderBy('createdAt', 'desc')
       .get();
     return s.docs.map((d) => d.data());
+  }
+  async findOpenLoanByCopy(tenantId: string, copyId: string) {
+    // Sem `orderBy` de propósito, mesmo motivo do `listLoanEventsByCopy`: duas
+    // igualdades bastam pros índices automáticos do Firestore — um exemplar
+    // tem poucos empréstimos ao longo da vida, então filtrar em memória aqui
+    // é barato e não depende de nenhum índice composto extra.
+    const s = await this.loans
+      .where('tenantId', '==', tenantId)
+      .where('copyId', '==', copyId)
+      .get();
+    return (
+      s.docs
+        .map((d) => d.data())
+        .find((l) => canTransitionLibraryLoan(l.statusEmprestimo, 'devolvido')) ?? null
+    );
   }
   async reserveAvailableCopy(loan: Omit<LibraryLoan, 'copyId'>) {
     return this.db.runTransaction(async (t) => {
