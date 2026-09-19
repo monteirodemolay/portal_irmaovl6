@@ -10,6 +10,7 @@ import {
   Button,
   CalendarDays,
   CheckCircle2,
+  ChevronLeft,
   EmptyState,
   FileText,
   Input,
@@ -72,6 +73,10 @@ export function CentralDeAvisos({ notifications }: { notifications: Notification
   const [tab, setTab] = useState<Tab>('all');
   const [search, setSearch] = useState('');
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  // No celular a lista e o detalhe nunca ficam empilhados na mesma tela — só
+  // um por vez, alternando por este flag (`lg:` sempre mostra os dois lado a
+  // lado, então ele não tem efeito nenhum a partir do breakpoint `lg`).
+  const [showDetailOnMobile, setShowDetailOnMobile] = useState(false);
   const [isPending, startTransition] = useTransition();
 
   const counts = useMemo(
@@ -119,7 +124,13 @@ export function CentralDeAvisos({ notifications }: { notifications: Notification
 
   function openNotice(id: string, lida: boolean) {
     setSelectedId(id);
+    setShowDetailOnMobile(true);
     if (!lida) startTransition(() => markNotificationAsReadAction(id));
+  }
+
+  function changeTab(key: Tab) {
+    setTab(key);
+    setShowDetailOnMobile(false);
   }
 
   function handleDeleteRead(id: string) {
@@ -176,7 +187,7 @@ export function CentralDeAvisos({ notifications }: { notifications: Notification
             type="button"
             role="tab"
             aria-selected={tab === item.key}
-            onClick={() => setTab(item.key)}
+            onClick={() => changeTab(item.key)}
             className={cn(
               'shrink-0 whitespace-nowrap border-b-2 px-3 py-2.5 text-sm font-medium transition-colors',
               tab === item.key
@@ -199,8 +210,13 @@ export function CentralDeAvisos({ notifications }: { notifications: Notification
           description="Você está em dia com esta lista."
         />
       ) : (
-        <div className="grid gap-4 lg:grid-cols-[360px_1fr]">
-          <ul className="flex flex-col gap-1.5 lg:max-h-[70vh] lg:overflow-y-auto">
+        <div className="grid items-start gap-4 lg:grid-cols-[360px_1fr]">
+          <ul
+            className={cn(
+              'flex flex-col gap-1.5 lg:max-h-[70vh] lg:overflow-y-auto',
+              showDetailOnMobile && 'hidden lg:flex',
+            )}
+          >
             {filtered.map((notification) => {
               const Icon = TYPE_ICON[notification.tipo];
               return (
@@ -257,6 +273,8 @@ export function CentralDeAvisos({ notifications }: { notifications: Notification
               notification={selected}
               startTransition={startTransition}
               onDelete={() => handleDeleteRead(selected.id)}
+              onBack={() => setShowDetailOnMobile(false)}
+              className={cn(!showDetailOnMobile && 'hidden lg:flex')}
             />
           )}
         </div>
@@ -269,16 +287,32 @@ function NoticeDetail({
   notification,
   startTransition,
   onDelete,
+  onBack,
+  className,
 }: {
   notification: Notification;
   startTransition: (fn: () => void | Promise<void>) => void;
   onDelete: () => void;
+  onBack: () => void;
+  className?: string;
 }) {
   const Icon = TYPE_ICON[notification.tipo];
   const needsAck = notification.requiresAcknowledgement && !notification.acknowledgedAt;
 
   return (
-    <article className="border-border flex flex-col gap-4 rounded-lg border p-5">
+    <article
+      className={cn(
+        'border-border flex flex-col gap-4 rounded-lg border p-5 lg:sticky lg:top-4 lg:max-h-[70vh] lg:overflow-y-auto',
+        className,
+      )}
+    >
+      <button
+        type="button"
+        onClick={onBack}
+        className="text-muted hover:text-foreground -mb-1 flex items-center gap-1 text-sm font-medium lg:hidden"
+      >
+        <ChevronLeft size={16} /> Voltar para a lista
+      </button>
       <div className="flex items-center justify-between gap-2">
         <span className="text-accent flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide">
           <Icon size={16} /> {NOTIFICATION_TYPE_LABELS[notification.tipo]}
