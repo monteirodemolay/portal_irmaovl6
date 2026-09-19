@@ -216,6 +216,57 @@ describe('UpdateParamasonicEntityMemberUseCase', () => {
     expect(pastPresidente).toHaveLength(1);
   });
 
+  it('desvincula do Irmão de origem sem apagar o integrante (separação/divórcio)', async () => {
+    const { useCase, corpoProprioEntryId, paramasonicEntityMemberRepository } =
+      await buildScenario();
+    const existing = await paramasonicEntityMemberRepository.findById(corpoProprioEntryId);
+    await paramasonicEntityMemberRepository.update({
+      ...existing!,
+      conjugeDeMemberId: 'member-1',
+    });
+
+    const result = await useCase.execute(ctx, {
+      id: corpoProprioEntryId,
+      nomeCompleto: 'Zeca Souza',
+      contato: null,
+      cargo: null,
+      categoria: null,
+      situacao: 'inativo',
+      dataIngresso: null,
+      desvincularDoIrmao: true,
+    });
+
+    expect(result.ok).toBe(true);
+    const stored = await paramasonicEntityMemberRepository.findById(corpoProprioEntryId);
+    expect(stored?.conjugeDeMemberId).toBeNull();
+    expect(stored?.situacao).toBe('inativo');
+    expect(stored?.deletedAt).toBeNull();
+    expect(stored?.nomeCompleto).toBe('Zeca Souza');
+  });
+
+  it('mantém o vínculo quando desvincularDoIrmao não é enviado', async () => {
+    const { useCase, corpoProprioEntryId, paramasonicEntityMemberRepository } =
+      await buildScenario();
+    const existing = await paramasonicEntityMemberRepository.findById(corpoProprioEntryId);
+    await paramasonicEntityMemberRepository.update({
+      ...existing!,
+      conjugeDeMemberId: 'member-1',
+    });
+
+    await useCase.execute(ctx, {
+      id: corpoProprioEntryId,
+      nomeCompleto: 'Zeca Souza',
+      contato: null,
+      cargo: null,
+      categoria: null,
+      situacao: 'ativo',
+      dataIngresso: null,
+    });
+
+    const stored = await paramasonicEntityMemberRepository.findById(corpoProprioEntryId);
+    expect(stored?.conjugeDeMemberId).toBe('member-1');
+  });
+
   it('rejeita marcar ex-DeMolay/Past-Presidente pra integrante do corpo próprio', async () => {
     const { useCase, corpoProprioEntryId } = await buildScenario();
 

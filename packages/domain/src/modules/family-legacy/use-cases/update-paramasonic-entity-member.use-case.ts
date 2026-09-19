@@ -25,6 +25,13 @@ export interface UpdateParamasonicEntityMemberInput {
   situacao: ParamasonicEntityMemberSituation;
   dataIngresso: Date | null;
   /**
+   * Remove a rastreabilidade `conjugeDeMemberId` (ex.: separação/divórcio) —
+   * nunca apaga o integrante, que continua fazendo parte do histórico da
+   * Fraternidade. Combine com `situacao: 'inativo'` na mesma edição pra
+   * marcar "não é mais cônjuge de ninguém e não está mais ativa".
+   */
+  desvincularDoIrmao?: boolean;
+  /**
    * Só considerado quando o integrante tem `memberId` — marca que o Irmão
    * também foi DeMolay ativo nesta entidade, criando/atualizando o vínculo
    * dele em Família e Legado (mesma lógica do cruzamento automático por
@@ -98,6 +105,7 @@ export class UpdateParamasonicEntityMemberUseCase {
       categoria: input.categoria,
       situacao: input.situacao,
       dataIngresso: input.dataIngresso,
+      conjugeDeMemberId: input.desvincularDoIrmao ? null : existing.conjugeDeMemberId,
       updatedAt: now,
       updatedBy: ctx.uid,
     };

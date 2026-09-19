@@ -137,6 +137,7 @@ export async function updateParamasonicEntityMemberAction(
         typeof dataIngresso === 'string' && dataIngresso ? new Date(dataIngresso) : null,
       marcarComoExDemolay: formData.get('marcarComoExDemolay') === 'on',
       marcarComoPastPresidenteConselho: formData.get('marcarComoPastPresidenteConselho') === 'on',
+      desvincularDoIrmao: formData.get('desvincularDoIrmao') === 'on',
     },
   );
   if (!result.ok) return { error: result.error.message };

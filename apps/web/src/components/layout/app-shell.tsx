@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ChevronRight, Menu, X, cn } from '@vl6/ui';
@@ -23,10 +23,11 @@ export interface AppShellNavItem {
   /** Ícone + rótulo já compostos (evita passar referência de componente através da fronteira RSC). */
   content: React.ReactNode;
   /**
-   * Áreas com várias telas internas (abas) ganham um menu deslizante de
-   * atalhos ao lado do item, em vez de levar direto pra tela cheia — evita
-   * a pessoa entrar num lugar que não precisa só pra escolher a aba certa.
-   * Itens simples (uma tela só) não definem isso e continuam navegando direto.
+   * Áreas com várias telas internas (abas) ganham uma lista de atalhos que
+   * expande logo abaixo do item na própria sidebar, em vez de levar direto
+   * pra tela cheia — evita a pessoa entrar num lugar que não precisa só pra
+   * escolher a aba certa. Itens simples (uma tela só) não definem isso e
+   * continuam navegando direto.
    */
   flyout?: AppShellNavFlyout;
 }
@@ -51,9 +52,10 @@ export interface AppShellProps {
  * e `admin/layout.tsx`. Uma só implementação resolve os 3 papéis (Membro,
  * Administrador da Loja, Administrador Geral): quem chama já filtra
  * `sections` pela sessão/permissão real antes de passar aqui (nunca é
- * escondido só por CSS). Client Component só pelo estado do menu mobile —
- * o conteúdo em si (brand/sections/topbar) é montado no servidor e injetado
- * via props/children, então nenhuma consulta ao Firestore roda no client.
+ * escondido só por CSS). Client Component só pelo estado do menu mobile e do
+ * item expandido — o conteúdo em si (brand/sections/topbar) é montado no
+ * servidor e injetado via props/children, então nenhuma consulta ao
+ * Firestore roda no client.
  */
 export function AppShell({
   brand,
@@ -65,65 +67,24 @@ export function AppShell({
 }: AppShellProps) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [openFlyout, setOpenFlyout] = useState<string | null>(null);
-  const [flyoutTop, setFlyoutTop] = useState(0);
-  const [expandedMobile, setExpandedMobile] = useState<string | null>(null);
-  const flyoutButtonRefs = useRef<Record<string, HTMLButtonElement | null>>({});
-  const flyoutPanelRef = useRef<HTMLDivElement | null>(null);
-
-  const itemsByHref = useMemo(() => {
-    const map = new Map<string, AppShellNavItem>();
-    for (const section of sections) {
-      for (const item of section.items) map.set(item.href, item);
-    }
-    return map;
-  }, [sections]);
+  const [expandedHref, setExpandedHref] = useState<string | null>(null);
 
   useEffect(() => {
     setMobileOpen(false);
-    setOpenFlyout(null);
-    setExpandedMobile(null);
+    setExpandedHref(null);
   }, [pathname]);
 
   useEffect(() => {
-    if (!mobileOpen && !openFlyout) return;
+    if (!mobileOpen) return;
     function onKeyDown(event: KeyboardEvent) {
-      if (event.key === 'Escape') {
-        setMobileOpen(false);
-        setOpenFlyout(null);
-      }
+      if (event.key === 'Escape') setMobileOpen(false);
     }
     document.addEventListener('keydown', onKeyDown);
     return () => document.removeEventListener('keydown', onKeyDown);
-  }, [mobileOpen, openFlyout]);
-
-  useEffect(() => {
-    if (!openFlyout) return;
-    function onPointerDown(event: PointerEvent) {
-      const target = event.target as Node;
-      const panel = flyoutPanelRef.current;
-      const trigger = flyoutButtonRefs.current[openFlyout ?? ''];
-      if (panel?.contains(target) || trigger?.contains(target)) return;
-      setOpenFlyout(null);
-    }
-    document.addEventListener('pointerdown', onPointerDown);
-    return () => document.removeEventListener('pointerdown', onPointerDown);
-  }, [openFlyout]);
+  }, [mobileOpen]);
 
   function isActive(href: string): boolean {
     return href === '/' ? pathname === '/' : pathname === href || pathname.startsWith(`${href}/`);
-  }
-
-  function toggleFlyout(href: string) {
-    if (openFlyout === href) {
-      setOpenFlyout(null);
-      return;
-    }
-    const trigger = flyoutButtonRefs.current[href];
-    if (trigger) {
-      setFlyoutTop(trigger.getBoundingClientRect().top);
-    }
-    setOpenFlyout(href);
   }
 
   const itemLinkClass = (active: boolean) =>
@@ -132,7 +93,7 @@ export function AppShell({
       active ? 'bg-accent text-primary-dark font-semibold' : 'hover:bg-white/10',
     );
 
-  function renderNav(variant: 'desktop' | 'mobile') {
+  function renderNav() {
     return (
       <nav className="flex flex-1 flex-col gap-0.5 overflow-y-auto px-3 py-2">
         {sections.map((section, index) => (
@@ -153,36 +114,12 @@ export function AppShell({
                 );
               }
 
-              if (variant === 'desktop') {
-                return (
-                  <button
-                    key={item.href}
-                    type="button"
-                    ref={(el) => {
-                      flyoutButtonRefs.current[item.href] = el;
-                    }}
-                    onClick={() => toggleFlyout(item.href)}
-                    aria-expanded={openFlyout === item.href}
-                    className={itemLinkClass(active || openFlyout === item.href)}
-                  >
-                    {item.content}
-                    <ChevronRight
-                      size={15}
-                      className={cn(
-                        'shrink-0 opacity-60 transition-transform',
-                        openFlyout === item.href && 'rotate-90',
-                      )}
-                    />
-                  </button>
-                );
-              }
-
-              const isExpanded = expandedMobile === item.href;
+              const isExpanded = expandedHref === item.href;
               return (
                 <div key={item.href}>
                   <button
                     type="button"
-                    onClick={() => setExpandedMobile(isExpanded ? null : item.href)}
+                    onClick={() => setExpandedHref(isExpanded ? null : item.href)}
                     aria-expanded={isExpanded}
                     className={itemLinkClass(active || isExpanded)}
                   >
@@ -227,66 +164,13 @@ export function AppShell({
     );
   }
 
-  const openFlyoutItem = openFlyout ? itemsByHref.get(openFlyout) : undefined;
-
   return (
     <div className="min-h-screen print:block">
       <aside className="from-primary to-primary-dark fixed inset-y-0 left-0 z-10 hidden w-[260px] flex-col overflow-hidden border-r border-white/10 bg-gradient-to-b lg:flex print:hidden">
         <div className="border-b border-white/10 px-5 py-5">{brand}</div>
-        {renderNav('desktop')}
+        {renderNav()}
         {sidebarFooter && <div className="border-t border-white/10 px-5 py-4">{sidebarFooter}</div>}
       </aside>
-
-      {openFlyout && openFlyoutItem?.flyout && (
-        <>
-          <div
-            className="fixed inset-0 z-20 hidden bg-black/5 lg:block"
-            onClick={() => setOpenFlyout(null)}
-            aria-hidden="true"
-          />
-          <div
-            ref={flyoutPanelRef}
-            role="menu"
-            style={{
-              top: Math.min(flyoutTop, typeof window === 'undefined' ? 0 : window.innerHeight - 24),
-            }}
-            className="border-border bg-surface fixed left-[260px] z-30 hidden w-[300px] flex-col rounded-r-2xl border border-l-0 py-2 shadow-md lg:flex print:hidden"
-          >
-            <div className="px-4 pb-2 pt-1">
-              <p className="font-display text-foreground text-[15px] font-semibold">
-                {openFlyoutItem.flyout.title}
-              </p>
-              {openFlyoutItem.flyout.description && (
-                <p className="text-muted mt-0.5 text-xs">{openFlyoutItem.flyout.description}</p>
-              )}
-            </div>
-            <div className="flex max-h-[60vh] flex-col gap-0.5 overflow-y-auto px-2">
-              {openFlyoutItem.flyout.links.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className="text-foreground hover:bg-background flex items-center justify-between gap-2 rounded-lg px-2.5 py-2 text-sm transition-colors"
-                >
-                  <span>{link.label}</span>
-                  {link.hint && <span className="text-muted text-xs">{link.hint}</span>}
-                </Link>
-              ))}
-            </div>
-            {openFlyoutItem.flyout.full && (
-              <>
-                <div className="border-border mx-2 my-2 border-t" />
-                <Link
-                  href={openFlyoutItem.flyout.full.href}
-                  className="text-primary mx-2 flex items-center justify-between gap-2 rounded-lg px-2.5 py-2 text-sm font-semibold hover:underline"
-                >
-                  {openFlyoutItem.flyout.full.label}
-                  <ChevronRight size={15} />
-                </Link>
-              </>
-            )}
-          </div>
-        </>
-      )}
 
       <div className="min-w-0 lg:pl-[260px] print:pl-0">
         <header className="border-border bg-surface sticky top-0 z-20 flex h-[72px] items-center justify-between gap-4 border-b px-5 lg:px-7 print:hidden">
@@ -328,7 +212,7 @@ export function AppShell({
                 <X size={20} />
               </button>
             </div>
-            {renderNav('mobile')}
+            {renderNav()}
             {sidebarFooter && (
               <div className="border-t border-white/10 px-5 py-4">{sidebarFooter}</div>
             )}

@@ -187,7 +187,14 @@ export default async function ParamasonicEntityDetailPage({
                   <tbody>
                     {group.members.map((member) => (
                       <tr key={member.id} className="border-border border-t">
-                        <td className="px-4 py-2">{member.nomeCompleto}</td>
+                        <td className="px-4 py-2">
+                          {member.nomeCompleto}
+                          {member.conjugeDeNome && (
+                            <span className="text-muted block text-xs">
+                              Cônjuge de {member.conjugeDeNome}
+                            </span>
+                          )}
+                        </td>
                         <td className="text-muted px-4 py-2">
                           {member.categoria
                             ? PARAMASONIC_ENTITY_MEMBER_CATEGORY_LABELS[member.categoria]

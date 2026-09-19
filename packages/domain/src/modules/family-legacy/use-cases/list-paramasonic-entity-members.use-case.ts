@@ -18,6 +18,9 @@ export interface ParamasonicEntityMemberDTO {
   categoria: ParamasonicEntityMember['categoria'];
   situacao: ParamasonicEntityMember['situacao'];
   dataIngresso: Date | null;
+  conjugeDeMemberId: string | null;
+  /** Nome do Irmão resolvido a partir de `conjugeDeMemberId` — `null` se ele já foi desvinculado ou excluído. */
+  conjugeDeNome: string | null;
 }
 
 /**
@@ -37,7 +40,13 @@ export class ListParamasonicEntityMembersUseCase {
     );
     if (members.length === 0) return [];
 
-    const memberIds = [...new Set(members.filter((m) => m.memberId).map((m) => m.memberId!))];
+    const memberIds = [
+      ...new Set(
+        members.flatMap((m) =>
+          [m.memberId, m.conjugeDeMemberId].filter((id): id is string => !!id),
+        ),
+      ),
+    ];
     const resolvedMembers = await Promise.all(
       memberIds.map((id) => this.deps.memberRepository.findById(id)),
     );
@@ -56,6 +65,10 @@ export class ListParamasonicEntityMembersUseCase {
       categoria: m.categoria,
       situacao: m.situacao,
       dataIngresso: m.dataIngresso,
+      conjugeDeMemberId: m.conjugeDeMemberId,
+      conjugeDeNome: m.conjugeDeMemberId
+        ? (memberById.get(m.conjugeDeMemberId)?.nomeCompleto ?? null)
+        : null,
     }));
 
     return dtos.sort((a, b) => a.nomeCompleto.localeCompare(b.nomeCompleto, 'pt-BR'));
