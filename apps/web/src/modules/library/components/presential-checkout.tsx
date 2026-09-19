@@ -3,7 +3,7 @@
 import { type FormEvent, useEffect, useMemo, useRef, useState, useTransition } from 'react';
 import jsQR from 'jsqr';
 import type { LibraryCopy, LibraryItem } from '@vl6/domain';
-import { BookOpen, Badge, Button, Camera, Card, CardContent, Input } from '@vl6/ui';
+import { BookOpen, Badge, Button, Camera, Card, CardContent, CheckCircle2, Input } from '@vl6/ui';
 import { registerLibraryDirectLoanAction } from '../actions/library-actions';
 
 /**
@@ -55,6 +55,28 @@ function parseScanCode(raw: string): { copyId: string | null; tombo: string } {
   return { copyId: null, tombo: value };
 }
 
+/** Bipe curto de confirmação — mesmo princípio de leitor de código de balcão. */
+function playScanBeep() {
+  try {
+    const AudioCtx =
+      window.AudioContext ??
+      (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+    if (!AudioCtx) return;
+    const ctx = new AudioCtx();
+    const oscillator = ctx.createOscillator();
+    const gain = ctx.createGain();
+    oscillator.frequency.value = 880;
+    oscillator.connect(gain);
+    gain.connect(ctx.destination);
+    gain.gain.setValueAtTime(0.15, ctx.currentTime);
+    oscillator.start();
+    oscillator.stop(ctx.currentTime + 0.12);
+    oscillator.onended = () => ctx.close();
+  } catch {
+    // Sem áudio disponível (permissão, navegador) — o retorno visual já basta.
+  }
+}
+
 export function PresentialCheckout({
   items,
   copies,
@@ -76,9 +98,11 @@ export function PresentialCheckout({
   const [pending, startTransition] = useTransition();
   const [cameraOpen, setCameraOpen] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
+  const [scanFlash, setScanFlash] = useState<{ titulo: string } | null>(null);
   const scanRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const lastCameraCodeRef = useRef<string | null>(null);
+  const flashTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const physicalItems = useMemo(() => items.filter((item) => item.formato !== 'digital'), [items]);
   const availableByItem = useMemo(() => {
@@ -135,16 +159,21 @@ export function PresentialCheckout({
       return false;
     }
     setScanError(null);
+    const titulo = item.titulo ?? 'Obra sem título';
     addBagEntry({
       key: copy.id,
       libraryItemId: item.id,
       copyId: copy.id,
-      titulo: item.titulo ?? 'Obra sem título',
+      titulo,
       autor: item.autor ?? null,
       capaUrl: item.capaUrl ?? null,
       codigoTombo: copy.codigoTombo,
       prazoEmprestimoDias: item.prazoEmprestimoDias ?? 21,
     });
+    playScanBeep();
+    if (flashTimeoutRef.current) clearTimeout(flashTimeoutRef.current);
+    setScanFlash({ titulo });
+    flashTimeoutRef.current = setTimeout(() => setScanFlash(null), 1800);
     return true;
   }
 
@@ -153,6 +182,12 @@ export function PresentialCheckout({
     if (processScanCode(scan)) setScan('');
     scanRef.current?.focus();
   }
+
+  useEffect(() => {
+    return () => {
+      if (flashTimeoutRef.current) clearTimeout(flashTimeoutRef.current);
+    };
+  }, []);
 
   useEffect(() => {
     if (!cameraOpen) return;
@@ -298,8 +333,19 @@ export function PresentialCheckout({
             </div>
             {cameraOpen && (
               <div className="grid gap-2">
-                <div className="bg-surface aspect-video w-full overflow-hidden rounded-lg border">
+                <div
+                  className={`bg-surface relative aspect-video w-full overflow-hidden rounded-lg border-4 transition-colors ${
+                    scanFlash ? 'border-emerald-500' : 'border-transparent'
+                  }`}
+                >
                   <video ref={videoRef} className="h-full w-full object-cover" muted playsInline />
+                  {scanFlash && (
+                    <div className="animate-in fade-in absolute inset-0 flex flex-col items-center justify-center gap-2 bg-emerald-600/90 text-center text-white">
+                      <CheckCircle2 size={48} />
+                      <p className="px-4 text-lg font-semibold">Livro reconhecido!</p>
+                      <p className="px-4 text-sm">{scanFlash.titulo}</p>
+                    </div>
+                  )}
                 </div>
                 <p className="text-muted text-xs">
                   Aponte a câmera para o QR da etiqueta — a obra é adicionada à sacola
@@ -322,6 +368,11 @@ export function PresentialCheckout({
               </Button>
             </form>
             {scanError && <p className="text-sm text-red-600">{scanError}</p>}
+            {scanFlash && !cameraOpen && (
+              <p className="flex items-center gap-2 text-sm font-medium text-emerald-700">
+                <CheckCircle2 size={18} /> Livro reconhecido: {scanFlash.titulo}
+              </p>
+            )}
             <p className="text-muted text-xs">
               A etiqueta de cada exemplar tem um QR fixo — use a câmera acima, escaneie com um
               leitor USB (digita aqui automaticamente) ou digite o tombo manualmente.
