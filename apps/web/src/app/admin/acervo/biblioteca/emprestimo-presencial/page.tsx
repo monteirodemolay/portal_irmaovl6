@@ -40,10 +40,10 @@ export default async function LibraryPresentialLoanPage() {
   return (
     <div className="grid gap-6">
       <header>
-        <h1 className="font-display text-2xl font-semibold">Empréstimo presencial</h1>
+        <h1 className="font-display text-2xl font-semibold">Balcão</h1>
         <p className="text-muted text-sm">
-          Escaneie a etiqueta do exemplar (ou busque a obra pelo nome), escolha o Irmão e registre a
-          retirada na hora, como em um balcão.
+          Escolha "Retirar" ou "Devolver" e aponte a câmera pro QR da etiqueta — igual a um
+          autoatendimento: escaneou, já está registrado.
         </p>
       </header>
       <PresentialCheckout items={items} copies={copies} members={members} />
