@@ -1036,10 +1036,15 @@ export async function registerLibraryDirectLoanAction(
     return { error: 'Obra física não encontrada.' };
   if (!member || member.tenantId !== session.authContext.tenantId)
     return { error: 'Irmão não encontrado.' };
-  if (!member.userId) return { error: 'Este Irmão ainda não tem acesso ao Portal.' };
+  // Irmãos sem conta no Portal também podem retirar presencialmente — o
+  // empréstimo fica registrado e rastreável pelo Bibliotecário mesmo assim,
+  // só não aparece em "Meus empréstimos" pro próprio Irmão (que exige um
+  // usuário autenticado). Usamos o id do cadastro como identificador estável
+  // nesse caso, já que não existe um uid real do Firebase Auth para gravar.
+  const borrowerUserId = member.userId ?? member.id;
   const open = await c.repositories.libraryCirculation.listLoansByUser(
     session.authContext.tenantId,
-    member.userId,
+    borrowerUserId,
   );
   if (open.some((l) => l.libraryItemId === item.id && isLibraryLoanOpen(l.statusEmprestimo)))
     return { error: `${member.nomeCompleto} já possui um empréstimo em aberto desta obra.` };
@@ -1048,7 +1053,7 @@ export async function registerLibraryDirectLoanAction(
     id: c.db.collection('libraryLoans').doc().id,
     tenantId: session.authContext.tenantId,
     libraryItemId: item.id,
-    borrowerUserId: member.userId,
+    borrowerUserId,
     borrowerMemberId: member.id,
     borrowerName: member.nomeCompleto,
     borrowerEmail: member.email,
@@ -1089,15 +1094,17 @@ export async function registerLibraryDirectLoanAction(
     `Empréstimo registrado presencialmente pelo Bibliotecário para ${member.nomeCompleto}.`,
     session.authContext.uid,
   );
-  await c.useCases.notifyRecipient.execute({
-    tenantId: session.authContext.tenantId,
-    destinatarioId: member.userId,
-    tipo: 'acervo',
-    titulo: 'Empréstimo registrado',
-    mensagem: `"${item.titulo}" foi registrado como retirado. Devolução até ${p.data.dueAt.toLocaleDateString('pt-BR')}.`,
-    link: '/acervo/biblioteca/emprestimos',
-    priority: 'normal',
-  });
+  if (member.userId) {
+    await c.useCases.notifyRecipient.execute({
+      tenantId: session.authContext.tenantId,
+      destinatarioId: member.userId,
+      tipo: 'acervo',
+      titulo: 'Empréstimo registrado',
+      mensagem: `"${item.titulo}" foi registrado como retirado. Devolução até ${p.data.dueAt.toLocaleDateString('pt-BR')}.`,
+      link: '/acervo/biblioteca/emprestimos',
+      priority: 'normal',
+    });
+  }
   revalidateLibrary();
   return {
     error: null,
