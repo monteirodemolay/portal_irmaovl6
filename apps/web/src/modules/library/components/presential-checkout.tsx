@@ -336,12 +336,29 @@ export function PresentialCheckout({
             </div>
             {cameraOpen && (
               <div className="grid gap-2">
+                {/*
+                  Quadrado fixo — mesmo tamanho e mesma forma sempre, em
+                  qualquer tela e em qualquer resolução que a câmera do
+                  aparelho devolver. O `<video>` preenche esse quadrado via
+                  `object-cover` (corta o excesso, nunca estica nem redefine
+                  o tamanho da caixa) — assim a leitura nunca "sai do
+                  padrão" e desestrutura o resto da página.
+                */}
                 <div
-                  className={`bg-surface relative aspect-[3/4] w-full touch-manipulation overflow-hidden rounded-lg border-4 transition-colors sm:aspect-video ${
+                  className={`relative mx-auto aspect-square w-full max-w-[320px] touch-manipulation overflow-hidden rounded-lg border-4 bg-black transition-colors ${
                     scanFlash ? 'border-emerald-500' : 'border-transparent'
                   }`}
                 >
-                  <video ref={videoRef} className="h-full w-full object-cover" muted playsInline />
+                  <video
+                    ref={videoRef}
+                    className="absolute inset-0 h-full w-full object-cover"
+                    muted
+                    playsInline
+                  />
+                  <div
+                    aria-hidden="true"
+                    className="pointer-events-none absolute inset-8 rounded-lg border-2 border-white/60"
+                  />
                   {scanFlash && (
                     <div className="animate-in fade-in absolute inset-0 flex flex-col items-center justify-center gap-2 bg-emerald-600/90 text-center text-white">
                       <CheckCircle2 size={48} />
