@@ -6,6 +6,8 @@ export interface ILibraryItemRepository {
   listByTenant(tenantId: string): Promise<LibraryItem[]>;
   /** Total de itens da Biblioteca (não excluídos) — usado pelo Painel administrativo. */
   countByTenant(tenantId: string): Promise<number>;
+  /** Obras excluídas (soft delete) ainda recuperáveis — Lixeira da Biblioteca. */
+  listDeletedByTenant(tenantId: string): Promise<LibraryItem[]>;
   create(item: LibraryItem): Promise<void>;
   update(item: LibraryItem): Promise<void>;
   incrementDownloads(id: string): Promise<void>;

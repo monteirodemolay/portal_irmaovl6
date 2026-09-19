@@ -1,17 +1,25 @@
+import Link from 'next/link';
 import { headers } from 'next/headers';
 import QRCode from 'qrcode';
-import { Badge, Card, CardContent, EmptyState } from '@vl6/ui';
+import { EmptyState } from '@vl6/ui';
 import { createServerContainer } from '@vl6/infra';
 import { requirePagePermission } from '@/lib/auth/require-permission';
-import { PrintLibraryLabelsButton } from '@/modules/library/components/print-library-labels-button';
+import { LibraryLabelSheet } from '@/modules/library/components/library-label-sheet';
+
 async function origin() {
   const h = await headers();
   const host = h.get('x-forwarded-host') ?? h.get('host');
   if (!host) return null;
   return `${h.get('x-forwarded-proto') ?? (host.startsWith('localhost') ? 'http' : 'https')}://${host}`;
 }
-export default async function Page() {
+
+export default async function Page({
+  searchParams,
+}: {
+  searchParams: Promise<{ libraryItemId?: string; copyId?: string }>;
+}) {
   const session = await requirePagePermission('libraryItem:manage');
+  const { libraryItemId, copyId } = await searchParams;
   const c = createServerContainer();
   const [base, copies, items, shelves] = await Promise.all([
     origin(),
@@ -21,32 +29,53 @@ export default async function Page() {
   ]);
   const itemMap = new Map(items.map((i) => [i.id, i]));
   const shelfMap = new Map(shelves.map((s) => [s.id, s]));
-  const active = copies.filter((x) => x.situacao !== 'baixado');
+  let active = copies.filter((x) => x.situacao !== 'baixado');
+  if (copyId) active = active.filter((x) => x.id === copyId);
+  else if (libraryItemId) active = active.filter((x) => x.libraryItemId === libraryItemId);
+
   const labels = base
     ? await Promise.all(
-        active.map(async (copy) => ({
-          copy,
-          svg: await QRCode.toString(`${base}/acervo/biblioteca/exemplares/${copy.id}`, {
-            type: 'svg',
-            width: 96,
-            margin: 1,
-            errorCorrectionLevel: 'M',
-            color: { dark: '#002b55', light: '#ffffff' },
-          }),
-        })),
+        active.map(async (copy) => {
+          const item = itemMap.get(copy.libraryItemId);
+          const shelf = copy.shelfId ? shelfMap.get(copy.shelfId) : null;
+          return {
+            copyId: copy.id,
+            svg: await QRCode.toString(`${base}/acervo/biblioteca/exemplares/${copy.id}`, {
+              type: 'svg',
+              width: 96,
+              margin: 1,
+              errorCorrectionLevel: 'M',
+              color: { dark: '#002b55', light: '#ffffff' },
+            }),
+            titulo: item?.titulo ?? 'Obra',
+            codigoTombo: copy.codigoTombo,
+            localizacaoLabel: shelf ? `${shelf.codigo} · ${shelf.nome}` : copy.localizacao,
+          };
+        }),
       )
     : [];
+
+  const focusedItem = libraryItemId ? itemMap.get(libraryItemId) : null;
+
   return (
     <div className="grid gap-6">
-      <header className="flex flex-wrap justify-between gap-3 print:hidden">
+      <header className="flex flex-wrap items-start justify-between gap-3 print:hidden">
         <div>
-          <h1 className="font-display text-2xl font-semibold">Etiquetas QR dos exemplares</h1>
-          <p className="text-muted text-sm">Identificação individual e localização atual.</p>
+          <h1 className="font-display text-2xl font-semibold">
+            {focusedItem
+              ? `Etiqueta de "${focusedItem.titulo ?? 'Obra'}"`
+              : 'Etiquetas QR dos exemplares'}
+          </h1>
+          <p className="text-muted text-sm">
+            {focusedItem
+              ? 'Só os exemplares desta obra. Selecione, ajuste a quantidade e imprima.'
+              : 'Selecione o que quiser imprimir — tudo, uma obra, um exemplar avulso, ou várias cópias da mesma etiqueta.'}
+          </p>
         </div>
-        {labels.length > 0 && (
-          <div className="w-full sm:w-auto">
-            <PrintLibraryLabelsButton />
-          </div>
+        {(focusedItem || copyId) && (
+          <Link href="/admin/acervo/biblioteca/etiquetas" className="text-accent text-sm underline">
+            Ver todas as etiquetas
+          </Link>
         )}
       </header>
       {!base ? (
@@ -54,42 +83,7 @@ export default async function Page() {
       ) : !labels.length ? (
         <EmptyState title="Nenhum exemplar para etiquetar" />
       ) : (
-        <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 print:grid-cols-3 print:gap-2">
-          {labels.map(({ copy, svg }) => {
-            const item = itemMap.get(copy.libraryItemId);
-            const shelf = copy.shelfId ? shelfMap.get(copy.shelfId) : null;
-            return (
-              <Card
-                key={copy.id}
-                className="break-inside-avoid overflow-hidden print:rounded-md print:shadow-none"
-              >
-                <CardContent className="grid min-w-0 grid-cols-[96px_minmax(0,1fr)] items-center gap-3 p-3 text-left print:gap-2 print:p-2">
-                  <div
-                    className="h-24 w-24 shrink-0 overflow-hidden [&_svg]:block [&_svg]:h-full [&_svg]:w-full"
-                    dangerouslySetInnerHTML={{ __html: svg }}
-                  />
-                  <div className="min-w-0 border-l pl-3 print:pl-2">
-                    <p className="text-primary text-[9px] font-semibold uppercase tracking-[0.12em]">
-                      Biblioteca VL6
-                    </p>
-                    <h2 className="mt-1 line-clamp-2 break-words text-xs font-semibold leading-tight">
-                      {item?.titulo ?? 'Obra'}
-                    </h2>
-                    <p className="mt-2 truncate font-mono text-[10px] font-bold">
-                      {copy.codigoTombo}
-                    </p>
-                    <p className="text-muted mt-0.5 truncate text-[9px]">
-                      {shelf ? `${shelf.codigo} · ${shelf.nome}` : copy.localizacao}
-                    </p>
-                    <Badge variant="outline" className="mt-1 h-4 px-1.5 text-[8px] print:hidden">
-                      {copy.estadoGeral}
-                    </Badge>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </section>
+        <LibraryLabelSheet labels={labels} />
       )}
     </div>
   );

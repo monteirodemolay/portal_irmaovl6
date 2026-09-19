@@ -22,6 +22,7 @@ const GROUPS: NavGroup[] = [
       { href: '/admin/acervo/biblioteca', label: 'Obras' },
       { href: '/admin/acervo/biblioteca/estantes', label: 'Estantes' },
       { href: '/admin/acervo/biblioteca/etiquetas', label: 'Etiquetas QR' },
+      { href: '/admin/acervo/biblioteca/lixeira', label: 'Lixeira' },
     ],
   },
   {

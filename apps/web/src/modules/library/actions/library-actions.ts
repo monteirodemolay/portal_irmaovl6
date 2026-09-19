@@ -54,6 +54,7 @@ const revalidateLibrary = () => {
     '/admin/acervo/biblioteca',
     '/admin/acervo/biblioteca/estantes',
     '/admin/acervo/biblioteca/emprestimos',
+    '/admin/acervo/biblioteca/lixeira',
     '/acervo/biblioteca',
     '/acervo/biblioteca/emprestimos',
   ])
@@ -862,6 +863,53 @@ export async function deleteLibraryItemAction(
 
   revalidateLibrary();
   redirect('/admin/acervo/biblioteca');
+}
+
+/**
+ * Lixeira da Biblioteca — reverte uma exclusão feita sem querer (a "normal",
+ * não a permanente). Restaura a obra e todos os exemplares dela juntos, do
+ * jeito que ficaram gravados no momento da exclusão — nenhum dado extra é
+ * pedido de novo, então não é preciso recatalogar nada.
+ */
+export async function restoreLibraryItemAction(
+  itemId: string,
+): Promise<{ error: string | null; success?: string }> {
+  const session = await requireSession();
+  if (!hasPermission(session.authContext, 'libraryItem:manage')) return { error: 'Sem permissão.' };
+  const c = createServerContainer();
+  const item = await c.repositories.libraryItem.findById(itemId);
+  if (!item || item.tenantId !== session.authContext.tenantId || !item.deletedAt)
+    return { error: 'Obra não encontrada na lixeira.' };
+  const now = new Date();
+  await c.repositories.libraryItem.update({
+    ...item,
+    motivoExclusao: null,
+    excluidoPor: null,
+    deletedAt: null,
+    status: 'active',
+    ativo: true,
+    updatedAt: now,
+    updatedBy: session.authContext.uid,
+  });
+  const copiesSnap = await c.db
+    .collection('libraryCopies')
+    .where('tenantId', '==', session.authContext.tenantId)
+    .where('libraryItemId', '==', itemId)
+    .get();
+  if (copiesSnap.size) {
+    const batch = c.db.batch();
+    for (const doc of copiesSnap.docs)
+      batch.update(doc.ref, {
+        deletedAt: null,
+        status: 'active',
+        ativo: true,
+        updatedAt: now,
+        updatedBy: session.authContext.uid,
+      });
+    await batch.commit();
+  }
+  revalidateLibrary();
+  return { error: null, success: `"${item.titulo ?? 'Obra'}" restaurada com sucesso.` };
 }
 
 async function recordLoanEvent(
