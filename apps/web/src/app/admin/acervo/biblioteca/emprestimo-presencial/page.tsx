@@ -8,11 +8,19 @@ export default async function LibraryPresentialLoanPage() {
   const [items, copies, membersPage] = await Promise.all([
     c.repositories.libraryItem.listByTenant(session.authContext.tenantId),
     c.repositories.libraryCirculation.listCopiesByTenant(session.authContext.tenantId),
-    c.repositories.member.search({ tenantId: session.authContext.tenantId }, { limit: 1000 }),
+    c.repositories.member.search(
+      { tenantId: session.authContext.tenantId, situacao: 'ativo' },
+      { limit: 2000 },
+    ),
   ]);
-  const members = membersPage.items
-    .filter((member) => member.userId)
-    .map((member) => ({ id: member.id, nomeCompleto: member.nomeCompleto }));
+  // Irmãos ativos entram todos na busca, tenham ou não conta no Portal — sem
+  // conta, o empréstimo continua registrado e rastreável pelo Bibliotecário,
+  // só não aparece em "Meus empréstimos" pro próprio Irmão acompanhar.
+  const members = membersPage.items.map((member) => ({
+    id: member.id,
+    nomeCompleto: member.nomeCompleto,
+    temAcessoPortal: Boolean(member.userId),
+  }));
 
   return (
     <div className="grid gap-6">

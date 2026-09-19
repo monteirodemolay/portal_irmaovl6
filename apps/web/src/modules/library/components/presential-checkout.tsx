@@ -26,6 +26,7 @@ interface BarcodeDetectorConstructor {
 interface MemberOption {
   id: string;
   nomeCompleto: string;
+  temAcessoPortal: boolean;
 }
 
 interface BagEntry {
@@ -96,7 +97,9 @@ export function PresentialCheckout({
   const [dueAt, setDueAt] = useState(addDaysIso(21));
   const [summary, setSummary] = useState<{ ok: number; failed: number } | null>(null);
   const [pending, startTransition] = useTransition();
-  const [cameraOpen, setCameraOpen] = useState(false);
+  // Já abre a câmera ao entrar na tela — essa página só existe pra escanear e
+  // entregar na hora; o Bibliotecário não devia precisar tocar em nada antes.
+  const [cameraOpen, setCameraOpen] = useState(true);
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [scanFlash, setScanFlash] = useState<{ titulo: string } | null>(null);
   const scanRef = useRef<HTMLInputElement>(null);
@@ -334,7 +337,7 @@ export function PresentialCheckout({
             {cameraOpen && (
               <div className="grid gap-2">
                 <div
-                  className={`bg-surface relative aspect-video w-full overflow-hidden rounded-lg border-4 transition-colors ${
+                  className={`bg-surface relative aspect-[3/4] w-full overflow-hidden rounded-lg border-4 transition-colors sm:aspect-video ${
                     scanFlash ? 'border-emerald-500' : 'border-transparent'
                   }`}
                 >
@@ -478,9 +481,14 @@ export function PresentialCheckout({
                         setMember(option);
                         setMemberQuery('');
                       }}
-                      className="hover:bg-accent/10 block w-full px-3 py-2 text-left text-sm"
+                      className="hover:bg-accent/10 flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm"
                     >
-                      {option.nomeCompleto}
+                      <span className="min-w-0 truncate">{option.nomeCompleto}</span>
+                      {!option.temAcessoPortal && (
+                        <Badge variant="outline" className="shrink-0 text-[10px]">
+                          sem Portal
+                        </Badge>
+                      )}
                     </button>
                   </li>
                 ))}
@@ -488,12 +496,26 @@ export function PresentialCheckout({
             )}
           </div>
           {member && (
-            <div className="bg-accent/10 flex items-center justify-between rounded-lg px-3 py-2">
-              <span className="text-sm font-medium">{member.nomeCompleto}</span>
-              <Button type="button" variant="ghost" size="sm" onClick={() => setMember(null)}>
-                Trocar
-              </Button>
+            <div className="bg-accent/10 flex items-center justify-between gap-2 rounded-lg px-3 py-2">
+              <span className="min-w-0 truncate text-sm font-medium">{member.nomeCompleto}</span>
+              <div className="flex shrink-0 items-center gap-2">
+                {!member.temAcessoPortal && (
+                  <Badge variant="outline" className="text-[10px]">
+                    sem Portal
+                  </Badge>
+                )}
+                <Button type="button" variant="ghost" size="sm" onClick={() => setMember(null)}>
+                  Trocar
+                </Button>
+              </div>
             </div>
+          )}
+          {member && !member.temAcessoPortal && (
+            <p className="text-muted text-xs">
+              {member.nomeCompleto} ainda não tem acesso ao Portal — o empréstimo fica registrado
+              normalmente, mas ele não vai conseguir acompanhar em &quot;Meus empréstimos&quot; até
+              fazer o cadastro.
+            </p>
           )}
 
           <h2 className="mt-2 font-semibold">3. Datas</h2>
@@ -516,22 +538,24 @@ export function PresentialCheckout({
             />
           </label>
 
-          <Button
-            type="button"
-            className="mt-2 w-full"
-            disabled={!member || bag.length === 0 || pending}
-            onClick={confirmCheckout}
-          >
-            {pending
-              ? 'Registrando…'
-              : `Confirmar retirada${bag.length ? ` de ${bag.length} obra(s)` : ''}`}
-          </Button>
-          {summary && (
-            <p className={`text-sm ${summary.failed ? 'text-amber-700' : 'text-green-700'}`}>
-              {summary.ok} empréstimo(s) registrado(s)
-              {summary.failed ? ` · ${summary.failed} com erro (veja a sacola)` : '.'}
-            </p>
-          )}
+          <div className="bg-surface sticky bottom-2 z-20 -mx-1 grid gap-2 rounded-lg border p-2 shadow-lg lg:static lg:mx-0 lg:border-0 lg:p-0 lg:shadow-none">
+            <Button
+              type="button"
+              className="h-12 w-full text-base"
+              disabled={!member || bag.length === 0 || pending}
+              onClick={confirmCheckout}
+            >
+              {pending
+                ? 'Registrando…'
+                : `Confirmar retirada${bag.length ? ` de ${bag.length} obra(s)` : ''}`}
+            </Button>
+            {summary && (
+              <p className={`text-sm ${summary.failed ? 'text-amber-700' : 'text-green-700'}`}>
+                {summary.ok} empréstimo(s) registrado(s)
+                {summary.failed ? ` · ${summary.failed} com erro (veja a sacola)` : '.'}
+              </p>
+            )}
+          </div>
         </CardContent>
       </Card>
     </div>
