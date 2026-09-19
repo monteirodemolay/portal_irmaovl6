@@ -211,12 +211,18 @@ export class FirestoreLibraryCirculationRepository implements ILibraryCirculatio
     return s.docs.map((d) => d.data());
   }
   async listLoanEventsByCopy(tenantId: string, copyId: string) {
+    // Sem `orderBy` de propósito: duas igualdades (`tenantId`+`copyId`) já são
+    // cobertas pelos índices automáticos do Firestore, sem precisar de um
+    // índice composto novo. Ordena em memória — a única chamadora (histórico
+    // do exemplar) já reordena a timeline combinada com ocorrências mesmo
+    // assim, então isso não muda nenhum comportamento visível.
     const s = await this.loanEvents
       .where('tenantId', '==', tenantId)
       .where('copyId', '==', copyId)
-      .orderBy('occurredAt', 'desc')
       .get();
-    return s.docs.map((d) => d.data());
+    return s.docs
+      .map((d) => d.data())
+      .sort((a, b) => b.occurredAt.getTime() - a.occurredAt.getTime());
   }
   async createLoanEvent(event: LibraryLoanEvent) {
     await this.loanEvents.doc(event.id).set(event);
