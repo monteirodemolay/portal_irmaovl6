@@ -1,3 +1,4 @@
+import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
 import { createServerContainer } from '@vl6/infra';
 import { DEFAULT_LOCALE } from '@vl6/shared';
@@ -6,16 +7,21 @@ import { buildNavSections } from '@/components/layout/nav-items';
 import { SidebarBrand } from '@/components/layout/sidebar-brand';
 import { SidebarInstitutionalLink } from '@/components/layout/sidebar-institutional-link';
 import { TopbarUser } from '@/components/layout/topbar-user';
-import { isAdminTier } from '@/lib/auth/is-admin-tier';
+import { isAdminPathAllowed, isAdminTier } from '@/lib/auth/is-admin-tier';
 import { requireSession } from '@/lib/auth/require-session';
 import { roleDisplayLabel } from '@/lib/auth/role-display-label';
 import { getDictionary } from '@/lib/i18n/get-dictionary';
 import { resolveMemberDisplayName } from '@/lib/membership/resolve-display-name';
 import { getCurrentTenant } from '@/lib/tenant/get-current-tenant';
+import { PATHNAME_HEADER } from '@/middleware';
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const session = await requireSession();
   if (!isAdminTier(session.role)) {
+    notFound();
+  }
+  const pathname = (await headers()).get(PATHNAME_HEADER) ?? '';
+  if (!isAdminPathAllowed(session.role, pathname)) {
     notFound();
   }
 

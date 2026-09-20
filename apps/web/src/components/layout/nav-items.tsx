@@ -14,7 +14,7 @@ import {
   Settings,
   Users,
 } from '@vl6/ui';
-import { isAdminTier } from '@/lib/auth/is-admin-tier';
+import { isAdminPathAllowed, isAdminTier } from '@/lib/auth/is-admin-tier';
 import type { Dictionary } from '@/lib/i18n/get-dictionary';
 import { ADMIN_AREA_TABS, type AdminAreaKey } from './area-tabs';
 import type { AppShellNavFlyout, AppShellNavSection } from './app-shell';
@@ -221,8 +221,9 @@ export function buildNavSections(
   }
 
   if (isAdminTier(role)) {
-    const visibleAdminItems = ADMIN_ITEMS.filter((item) =>
-      hasAnyPermission(authContext, item.permission),
+    const visibleAdminItems = ADMIN_ITEMS.filter(
+      (item) =>
+        hasAnyPermission(authContext, item.permission) && isAdminPathAllowed(role, item.href),
     );
     if (visibleAdminItems.length > 0) {
       const adminAreaFlyouts: Partial<Record<string, AppShellNavFlyout | undefined>> = {
