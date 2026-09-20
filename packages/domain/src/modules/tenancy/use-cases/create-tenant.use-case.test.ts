@@ -66,10 +66,11 @@ describe('CreateTenantUseCase', () => {
     expect(settings?.idiomaPadrao).toBe('pt-BR');
 
     const roles = await roleRepository.listByTenant(result.value.id);
-    expect(roles).toHaveLength(3);
+    expect(roles).toHaveLength(4);
     expect(roles.map((r) => r.chave)).toContain('admin');
     expect(roles.map((r) => r.chave)).toContain('membro');
     expect(roles.map((r) => r.chave)).toContain('paramaconica');
+    expect(roles.map((r) => r.chave)).toContain('bibliotecario');
     expect(roles.map((r) => r.chave)).not.toContain('super_admin');
   });
 

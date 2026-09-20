@@ -114,6 +114,7 @@ import {
   ListParamasonicDirectoryUseCase,
   ListParamasonicMemberDirectoryUseCase,
   EnsureParamasonicRoleUseCase,
+  EnsureBibliotecarioRoleUseCase,
   BackfillFraternidadeFemininaUseCase,
   SyncSpousesToParamasonicEntityUseCase,
   CreateParamasonicEntityUseCase,
@@ -1974,6 +1975,11 @@ export function createServerContainer() {
       boardPositionAssignmentRepository: repositories.boardPositionAssignment,
     }),
     ensureParamasonicRole: new EnsureParamasonicRoleUseCase({
+      roleRepository: repositories.role,
+      clock,
+      idGenerator,
+    }),
+    ensureBibliotecarioRole: new EnsureBibliotecarioRoleUseCase({
       roleRepository: repositories.role,
       clock,
       idGenerator,

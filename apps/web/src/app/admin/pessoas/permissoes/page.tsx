@@ -4,6 +4,7 @@ import { Badge } from '@vl6/ui';
 import { requirePagePermission } from '@/lib/auth/require-permission';
 import { SyncRolePermissionsButton } from '@/modules/identity-access/components/sync-role-permissions-button';
 import { EnsureParamasonicRoleButton } from '@/modules/identity-access/components/ensure-paramasonic-role-button';
+import { EnsureBibliotecarioRoleButton } from '@/modules/identity-access/components/ensure-bibliotecario-role-button';
 
 export default async function PermissionsPage() {
   const session = await requirePagePermission('role:read');
@@ -21,7 +22,12 @@ export default async function PermissionsPage() {
             Matriz de permissões por papel — ver docs/architecture/08-permissoes-rbac.md.
           </p>
         </div>
-        {canManage && <EnsureParamasonicRoleButton />}
+        {canManage && (
+          <div className="flex flex-wrap gap-2">
+            <EnsureBibliotecarioRoleButton />
+            <EnsureParamasonicRoleButton />
+          </div>
+        )}
       </div>
 
       <div className="flex flex-col gap-4">
