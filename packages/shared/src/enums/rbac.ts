@@ -3,13 +3,19 @@
 // constantes descrevem apenas o *seed* de papéis padrão (`sistemico = true`)
 // e o vocabulário fechado de recursos/ações que compõe uma PermissionKey.
 
-export const SYSTEM_ROLE_KEYS = ['super_admin', 'admin', 'membro', 'paramaconica'] as const;
+export const SYSTEM_ROLE_KEYS = [
+  'super_admin',
+  'admin',
+  'membro',
+  'paramaconica',
+  'bibliotecario',
+] as const;
 export type RoleKey = (typeof SYSTEM_ROLE_KEYS)[number];
 
 // `super_admin` não pertence a nenhum tenant (docs/architecture/08 §8.3) —
 // vive sozinho sob `PLATFORM_TENANT_ID`, nunca no seed de fábrica de uma
-// Loja. Os outros 3 (`admin`, `membro`, `paramaconica`) são os papéis de fábrica criados
-// por `CreateTenantUseCase`. Cargo institucional (Venerável Mestre,
+// Loja. Os outros 4 (`admin`, `membro`, `paramaconica`, `bibliotecario`) são os papéis de
+// fábrica criados por `CreateTenantUseCase`. Cargo institucional (Venerável Mestre,
 // Secretário, Tesoureiro etc. — `BoardPositionKey`, packages/shared/src/
 // enums/governance.ts) é um conceito à parte, sem relação com o papel de
 // acesso do usuário: um Secretário pode ser `membro` ou receber `admin`,
@@ -242,4 +248,14 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<RoleKey, PermissionKey[]> = {
     'announcement:read',
     'paramasonicCommunity:read',
   ],
+  // Bibliotecário — acesso restrito só ao módulo Biblioteca (Acervo VL6),
+  // pra uma conta técnica que cuida do balcão sem enxergar o resto do
+  // painel administrativo (Irmãos, Governança, Conteúdo etc.). `tenant:read`
+  // é só o mínimo pra entrar no painel (mesmo uso de `paramaconica`
+  // acima); `libraryItem:manage` cobre catálogo, balcão, etiquetas, baixas
+  // e lixeira — todas as rotas de `/admin/acervo/biblioteca` são gated por
+  // esse único recurso. `file:read` é à parte: catalogar/editar uma obra
+  // digital referencia um arquivo já enviado em Documentos, então essas
+  // telas também chamam `ListAllFileAssetsUseCase` (exige `file:read`).
+  bibliotecario: ['tenant:read', 'libraryItem:manage', 'file:read'],
 };

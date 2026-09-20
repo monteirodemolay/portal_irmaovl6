@@ -15,6 +15,8 @@ export function roleDisplayLabel(role: Role | null): string {
         return 'Administrador da Loja';
       case 'paramaconica':
         return 'Paramaçônica';
+      case 'bibliotecario':
+        return 'Bibliotecário';
       default:
         return 'Membro';
     }
