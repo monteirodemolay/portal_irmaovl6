@@ -248,14 +248,41 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<RoleKey, PermissionKey[]> = {
     'announcement:read',
     'paramasonicCommunity:read',
   ],
-  // Bibliotecário — acesso restrito só ao módulo Biblioteca (Acervo VL6),
-  // pra uma conta técnica que cuida do balcão sem enxergar o resto do
-  // painel administrativo (Irmãos, Governança, Conteúdo etc.). `tenant:read`
-  // é só o mínimo pra entrar no painel (mesmo uso de `paramaconica`
-  // acima); `libraryItem:manage` cobre catálogo, balcão, etiquetas, baixas
-  // e lixeira — todas as rotas de `/admin/acervo/biblioteca` são gated por
-  // esse único recurso. `file:read` é à parte: catalogar/editar uma obra
-  // digital referencia um arquivo já enviado em Documentos, então essas
-  // telas também chamam `ListAllFileAssetsUseCase` (exige `file:read`).
-  bibliotecario: ['tenant:read', 'libraryItem:manage', 'file:read'],
+  // Bibliotecário — na prática é sempre um Irmão da própria Loja que já
+  // usa o Portal normalmente (agenda, notícias, Diretório etc.) e por cima
+  // ganha a responsabilidade de administrar a Biblioteca — nunca uma conta
+  // técnica isolada. Por isso este papel É o mesmo conjunto de `membro`
+  // acima (mantido em sincronia manualmente — replicar aqui qualquer
+  // permissão nova adicionada a `membro`), só trocando `libraryItem:read`
+  // por `libraryItem:manage` (cobre catálogo, balcão, etiquetas, baixas e
+  // lixeira — todas as rotas de `/admin/acervo/biblioteca`). Trocar um
+  // Irmão de `membro` pra `bibliotecario` nunca tira nada dele, só
+  // acrescenta a gestão da Biblioteca.
+  bibliotecario: [
+    'tenant:read',
+    'member:read',
+    'boardTerm:read',
+    'committee:read',
+    'file:read',
+    'libraryItem:manage',
+    'event:read',
+    'news:read',
+    'announcement:read',
+    'gallery:read',
+    'link:read',
+    'memberDirectory:read',
+    'memberCentral:update',
+    'archiveCollection:read',
+    'archiveRelation:read',
+    'archiveExhibition:read',
+    'archiveCatalog:read',
+    'archiveItem:read',
+    'mediaAsset:read',
+    'archiveMedia:read',
+    'quote:read',
+    'familyLegacy:read',
+    'paramasonicCommunity:read',
+    'paramasonicEntity:read',
+    'honor:read',
+  ],
 };
