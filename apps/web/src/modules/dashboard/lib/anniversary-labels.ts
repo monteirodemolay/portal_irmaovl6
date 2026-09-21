@@ -1,4 +1,3 @@
-import { BRAZIL_TIME_ZONE } from '@vl6/shared';
 import type { AnniversaryKind, UpcomingAnniversaryEntry } from '@vl6/domain';
 
 export const ANNIVERSARY_KIND_LABELS: Record<AnniversaryKind, string> = {
@@ -10,10 +9,21 @@ export const ANNIVERSARY_KIND_LABELS: Record<AnniversaryKind, string> = {
   filho: 'Aniversário do(a) filho(a)',
 };
 
+/**
+ * `entry.data` (`ListUpcomingAnniversariesUseCase`/`computeNextOccurrence`)
+ * é uma data-calendário pura (dia/mês, sem significado real de horário),
+ * montada com o construtor local de `Date` (`new Date(ano, mes, dia)`) — só
+ * faz sentido lida pelos mesmos getters locais que a montaram
+ * (`getDate`/`getMonth`). Formatar com `Intl.DateTimeFormat` forçando
+ * `timeZone: 'America/Sao_Paulo'` tratava esse valor como um instante real,
+ * e a conversão de fuso empurrava a meia-noite construída em UTC (fuso do
+ * servidor) pro dia anterior em São Paulo (UTC-3) — bug relatado pelo
+ * Administrador: aniversário de 22/09 aparecendo como 21/09.
+ */
 function formatShortDate(data: Date): string {
-  return new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeZone: BRAZIL_TIME_ZONE })
-    .format(data)
-    .slice(0, 5);
+  const dia = String(data.getDate()).padStart(2, '0');
+  const mes = String(data.getMonth() + 1).padStart(2, '0');
+  return `${dia}/${mes}`;
 }
 
 function dayLabel(diasAte: number, data: Date): string {
