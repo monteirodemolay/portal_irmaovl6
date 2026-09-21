@@ -29,7 +29,9 @@ import {
 } from '@vl6/infra';
 import {
   requirePermission,
+  type BackfillConjugeEstadoCivilResult,
   type BackfillDataFalecimentoResult,
+  type DedupeMemberChildrenResultRow,
   type Member,
   type MemberSituationAttachment,
   type SeedMemberSituationHistoryReportRow,
@@ -1045,6 +1047,73 @@ export async function backfillDataFalecimentoAction(): Promise<BackfillDataFalec
     });
     Sentry.captureException(error, { tags: { route: 'backfillDataFalecimentoAction' } });
     return { error: 'Não foi possível concluir a correção. Tente novamente.', result: null };
+  }
+}
+
+export interface BackfillConjugeEstadoCivilState {
+  error: string | null;
+  result: BackfillConjugeEstadoCivilResult | null;
+}
+
+/**
+ * Corrige `Member.estadoCivil` de quem já tem `conjugeNome` (importação em
+ * massa de aniversários) mas ficou com `estadoCivil: null` — sem isso, os
+ * campos da cônjuge ficavam escondidos no formulário de edição, e salvar
+ * assim apagava a cônjuge (ver `BackfillConjugeEstadoCivilUseCase`). Marca
+ * como "casado" por padrão; a Secretaria ajusta caso a caso depois. Seguro
+ * rodar de novo.
+ */
+export async function backfillConjugeEstadoCivilAction(): Promise<BackfillConjugeEstadoCivilState> {
+  const session = await requireSession();
+  const container = createServerContainer();
+
+  try {
+    const result = await container.useCases.backfillConjugeEstadoCivil.execute(session.authContext);
+    if (!result.ok) {
+      return { error: result.error.message, result: null };
+    }
+    revalidatePath('/admin/pessoas/irmaos');
+    return { error: null, result: result.value };
+  } catch (error) {
+    logger.error('Falha ao corrigir estado civil da cônjuge', {
+      route: 'backfillConjugeEstadoCivilAction',
+      ...errorToLogContext(error),
+    });
+    Sentry.captureException(error, { tags: { route: 'backfillConjugeEstadoCivilAction' } });
+    return { error: 'Não foi possível concluir a correção. Tente novamente.', result: null };
+  }
+}
+
+export interface DedupeMemberChildrenState {
+  error: string | null;
+  result: DedupeMemberChildrenResultRow[] | null;
+}
+
+/**
+ * Remove filhos duplicados por grafia (ex.: "Eduardo Garcez de Moares" ×
+ * "Eduardo Garcez de Moraes") criados quando a mesma pessoa entrou pelas
+ * duas importações institucionais de aniversário com grafia levemente
+ * diferente — ver `DedupeMemberChildrenUseCase`. Seguro rodar de novo: sem
+ * duplicata, não mexe em nada.
+ */
+export async function dedupeMemberChildrenAction(): Promise<DedupeMemberChildrenState> {
+  const session = await requireSession();
+  const container = createServerContainer();
+
+  try {
+    const result = await container.useCases.dedupeMemberChildren.execute(session.authContext);
+    if (!result.ok) {
+      return { error: result.error.message, result: null };
+    }
+    revalidatePath('/admin/pessoas/irmaos');
+    return { error: null, result: result.value };
+  } catch (error) {
+    logger.error('Falha ao remover filhos duplicados', {
+      route: 'dedupeMemberChildrenAction',
+      ...errorToLogContext(error),
+    });
+    Sentry.captureException(error, { tags: { route: 'dedupeMemberChildrenAction' } });
+    return { error: 'Não foi possível concluir a limpeza. Tente novamente.', result: null };
   }
 }
 

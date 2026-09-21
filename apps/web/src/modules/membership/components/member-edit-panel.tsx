@@ -107,23 +107,61 @@ export async function MemberEditPanel({ memberId }: { memberId: string }) {
       </Card>
 
       <div className="flex max-w-3xl flex-col gap-4">
+        {/*
+          `key={member.updatedAt.getTime()}` em todo cartão abaixo — mesmo
+          motivo de `AssistedMemberEditor`: cada um guarda seu próprio
+          rascunho em `useState`/`defaultValue` a partir de `member`, lido só
+          na montagem, então sem essa `key` um salvamento (com
+          `revalidatePath` trazendo o `member` atualizado) não bastava pra
+          atualizar a tela — só um F5 mostrava o valor certo.
+        */}
         {member.situacao === 'falecido' && (
-          <MemberMemorialCard member={member} action={boundUpdateMemorialMessage} />
+          <MemberMemorialCard
+            key={member.updatedAt.getTime()}
+            member={member}
+            action={boundUpdateMemorialMessage}
+          />
         )}
-        <MemberIdentityCard member={member} action={boundUpdateIdentity} />
-        <MemberMasonicDataCard member={member} action={boundUpdateIdentity} />
+        <MemberIdentityCard
+          key={member.updatedAt.getTime()}
+          member={member}
+          action={boundUpdateIdentity}
+        />
+        <MemberMasonicDataCard
+          key={member.updatedAt.getTime()}
+          member={member}
+          action={boundUpdateIdentity}
+        />
         <MemberTitlesCard memberId={member.id} titles={memberTitles} />
         <HonorsCard memberId={member.id} honors={honors} />
         <PhilosophicalJourneyCard memberId={member.id} journeys={philosophicalJourneys} />
-        <AddressMaritalCard member={member} action={boundUpdateProfile} />
+        <AddressMaritalCard
+          key={member.updatedAt.getTime()}
+          member={member}
+          action={boundUpdateProfile}
+        />
         <ProfessionalCard
+          key={member.updatedAt.getTime()}
           member={member}
           action={boundUpdateProfile}
           customProfessions={customProfessions}
         />
-        <CompanyCard member={member} action={boundUpdateProfile} knownCompanies={customCompanies} />
-        <ContactsCard member={member} action={boundUpdateProfile} />
-        <MemberNotesCard member={member} action={boundUpdateIdentity} />
+        <CompanyCard
+          key={member.updatedAt.getTime()}
+          member={member}
+          action={boundUpdateProfile}
+          knownCompanies={customCompanies}
+        />
+        <ContactsCard
+          key={member.updatedAt.getTime()}
+          member={member}
+          action={boundUpdateProfile}
+        />
+        <MemberNotesCard
+          key={member.updatedAt.getTime()}
+          member={member}
+          action={boundUpdateIdentity}
+        />
       </div>
     </div>
   );

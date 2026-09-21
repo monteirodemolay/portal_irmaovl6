@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { memberSchema, normalizeConjugeFields, type MemberFormValues } from './member.schema';
+import {
+  memberSchema,
+  memberSelfEditSchema,
+  normalizeConjugeFields,
+  type MemberFormValues,
+} from './member.schema';
 
 const BASE: Omit<MemberFormValues, 'grau' | 'dataIniciacao' | 'dataElevacao' | 'dataExaltacao'> = {
   nomeCompleto: 'Irmão de Teste',
@@ -193,5 +198,70 @@ describe('normalizeConjugeFields', () => {
     expect(result.conjugeDataNascimento).toBeNull();
     expect(result.conjugeAniversarioDia).toBeNull();
     expect(result.conjugeAniversarioMes).toBeNull();
+  });
+});
+
+/**
+ * Reclamação recorrente do Administrador: "Dados inválidos." travando o
+ * card "Estado civil e endereço" inteiro por causa de um único campo em
+ * branco (endereço incompleto, filho ainda sem nome). Endereço/filhos do
+ * Irmão nunca podem ser tão estritos quanto o endereço institucional da
+ * Loja (`addressSchema`, `tenant.schema.ts`) — o Irmão precisa poder salvar
+ * o que já preencheu, mesmo incompleto.
+ */
+describe('memberSelfEditSchema — endereço e filhos nunca bloqueiam o salvamento por campo em branco', () => {
+  const BASE_SELF_EDIT = {
+    telefone: null,
+    whatsapp: null,
+    profissao: null,
+    empresa: null,
+    estadoCivil: null,
+    conjugeNome: null,
+    conjugeDataNascimento: null,
+    conjugeAniversarioDia: null,
+    conjugeAniversarioMes: null,
+    dataCasamento: null,
+    filhos: [],
+  };
+
+  it('aceita endereço com a maioria dos campos em branco (só CEP preenchido)', () => {
+    const result = memberSelfEditSchema.safeParse({
+      ...BASE_SELF_EDIT,
+      endereco: {
+        logradouro: '',
+        numero: '',
+        bairro: '',
+        cidade: '',
+        estado: '',
+        pais: '',
+        cep: '01310-100',
+      },
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('aceita endereço totalmente em branco', () => {
+    const result = memberSelfEditSchema.safeParse({
+      ...BASE_SELF_EDIT,
+      endereco: {
+        logradouro: '',
+        numero: '',
+        bairro: '',
+        cidade: '',
+        estado: '',
+        pais: '',
+        cep: '',
+      },
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('aceita filho ainda sem nome preenchido (linha "Adicionar filho(a)" em progresso)', () => {
+    const result = memberSelfEditSchema.safeParse({
+      ...BASE_SELF_EDIT,
+      endereco: null,
+      filhos: [{ id: 'filho-1', nome: '', aniversarioDia: 12, aniversarioMes: 5 }],
+    });
+    expect(result.success).toBe(true);
   });
 });
