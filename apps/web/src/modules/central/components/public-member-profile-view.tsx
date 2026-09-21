@@ -106,10 +106,19 @@ export function PublicMemberProfileView({
     profile.irmaosGemeos.length > 0 ||
     (profile.familia && Object.values(profile.familia).some((group) => (group?.length ?? 0) > 0)),
   );
+  // Único conteúdo que sobrou em `RegistrationDataCard` depois que Nome
+  // completo/Situação maçônica saíram (já na `ProfileHero`, acima) — aqui
+  // só situação In Memoriam (nunca vale `true` nesta função, que já
+  // redireciona `falecido` pra `InMemoriamProfileView`) e Cônjuge.
+  const hasDadosCadastrais = Boolean(
+    profile.informacoesPessoais?.conjuge?.nome ||
+    (profile.informacoesPessoais?.conjuge?.diaNascimento &&
+      profile.informacoesPessoais?.conjuge?.mesNascimento),
+  );
 
   const sections: ProfileSectionLink[] = [
     hasApresentacao ? { id: 'apresentacao', label: 'Apresentação' } : null,
-    { id: 'dados', label: 'Dados cadastrais' },
+    hasDadosCadastrais ? { id: 'dados', label: 'Dados cadastrais' } : null,
     hasVivenciaContato ? { id: 'visao-geral', label: 'Vivência e contato' } : null,
     hasRegistros ? { id: 'registros', label: 'Registros maçônicos' } : null,
     canViewAcervo ? { id: 'acervo', label: 'Acervo' } : null,

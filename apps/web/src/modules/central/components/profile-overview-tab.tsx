@@ -14,7 +14,7 @@ import {
   Phone,
 } from '@vl6/ui';
 import { ProfileBioText } from './profile-bio-text';
-import { formatDayMonth, LinkPill, Panel, SummaryRow } from './profile-shared';
+import { LinkPill, Panel, SummaryRow } from './profile-shared';
 
 /**
  * Aba "Visão Geral" do Perfil único (Fase 2) — apresentação/bio, resumo,
@@ -82,8 +82,6 @@ export function ProfileOverviewTab({
     profile.familia,
   );
 
-  const conjuge = profile.informacoesPessoais?.conjuge ?? null;
-
   const summaryRows: { label: string; value: string }[] = [
     profile.profissional?.profissao
       ? { label: 'Profissão', value: profile.profissional.profissao }
@@ -98,13 +96,6 @@ export function ProfileOverviewTab({
       : null,
     profile.profissional?.formacao
       ? { label: 'Formação', value: profile.profissional.formacao }
-      : null,
-    conjuge?.nome ? { label: 'Cônjuge', value: conjuge.nome } : null,
-    conjuge?.diaNascimento && conjuge.mesNascimento
-      ? {
-          label: 'Aniversário da cônjuge',
-          value: formatDayMonth(conjuge.diaNascimento, conjuge.mesNascimento),
-        }
       : null,
   ].filter((row): row is { label: string; value: string } => row !== null);
 

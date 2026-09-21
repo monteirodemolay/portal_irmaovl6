@@ -1,7 +1,7 @@
 import type { PublicMemberProfileDTO } from '@vl6/domain';
 import { Building2, Card, CardContent, Compass, MapPin, Sparkles } from '@vl6/ui';
 import { MEMBER_DEGREE_LABELS } from '@/lib/membership/member-degree-label';
-import { formatDate, formatDayMonth, getCurrentAssignment, SummaryRow } from '../profile-shared';
+import { formatDate, getCurrentAssignment, SummaryRow } from '../profile-shared';
 
 export interface ProfileSectionLink {
   id: string;
@@ -46,8 +46,6 @@ export function ProfileIdentityRail({
   // abaixo na coluna central, mas é a mesma natureza dos quickfacts acima
   // (fatos rápidos sobre o Irmão), então passou a viver aqui, sem duplicar
   // "Profissão" nos dois lugares.
-  const conjuge = profile.informacoesPessoais?.conjuge ?? null;
-
   const summaryRows: { label: string; value: string }[] = [
     profile.informacoesPessoais?.cidadeExibicao
       ? { label: 'Cidade', value: profile.informacoesPessoais.cidadeExibicao }
@@ -65,13 +63,6 @@ export function ProfileIdentityRail({
       : null,
     profile.profissional?.formacao
       ? { label: 'Formação', value: profile.profissional.formacao }
-      : null,
-    conjuge?.nome ? { label: 'Cônjuge', value: conjuge.nome } : null,
-    conjuge?.diaNascimento && conjuge.mesNascimento
-      ? {
-          label: 'Aniversário da cônjuge',
-          value: formatDayMonth(conjuge.diaNascimento, conjuge.mesNascimento),
-        }
       : null,
   ].filter((row): row is { label: string; value: string } => row !== null);
 

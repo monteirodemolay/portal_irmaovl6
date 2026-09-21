@@ -69,10 +69,20 @@ export function InMemoriamProfileView({
     (profile.familia && Object.values(profile.familia).some((group) => (group?.length ?? 0) > 0)),
   );
   const hasCeremonyMates = profile.irmaosGemeos.length > 0;
+  // Mesmo recorte de `PublicMemberProfileView` — o que sobra em
+  // `RegistrationDataCard` depois que Nome completo/Situação saíram (já na
+  // `ProfileHero`): Passagem ao Oriente Eterno (praticamente sempre presente
+  // aqui, mas `dataFalecimento` tecnicamente pode faltar) e Cônjuge.
+  const hasDadosCadastrais = Boolean(
+    profile.dataFalecimento ||
+    profile.informacoesPessoais?.conjuge?.nome ||
+    (profile.informacoesPessoais?.conjuge?.diaNascimento &&
+      profile.informacoesPessoais?.conjuge?.mesNascimento),
+  );
 
   const sections: ProfileSectionLink[] = [
     hasApresentacao ? { id: 'apresentacao', label: 'Apresentação' } : null,
-    { id: 'dados', label: 'Dados cadastrais' },
+    hasDadosCadastrais ? { id: 'dados', label: 'Dados cadastrais' } : null,
     hasRegistros ? { id: 'registros', label: 'Registros maçônicos' } : null,
     hasCeremonyMates ? { id: 'irmaos-gemeos', label: 'Irmãos Gêmeos' } : null,
     canViewAcervo ? { id: 'acervo', label: 'Acervo' } : null,
