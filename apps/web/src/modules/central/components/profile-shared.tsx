@@ -14,6 +14,16 @@ export function formatDate(date: Date): string {
   return new Intl.DateTimeFormat('pt-BR', { dateStyle: 'long' }).format(new Date(date));
 }
 
+/**
+ * "23/11", nunca o ano — mesma convenção de privacidade usada pro
+ * aniversário natalício do próprio Irmão (nunca expõe idade). Usado pro
+ * aniversário da cônjuge, que pode vir só como dia/mês quando o ano não é
+ * conhecido (`PublicMemberProfileDTO['informacoesPessoais'].conjuge`).
+ */
+export function formatDayMonth(dia: number, mes: number): string {
+  return `${String(dia).padStart(2, '0')}/${String(mes).padStart(2, '0')}`;
+}
+
 const COMPACT_MONTH_LABELS = [
   'jan',
   'fev',

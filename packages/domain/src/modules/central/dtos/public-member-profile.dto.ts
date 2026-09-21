@@ -70,7 +70,25 @@ export interface PublicMemberProfileDTO {
    */
   dataIniciacao: Date | null;
   apresentacao: { texto: string | null } | null;
-  informacoesPessoais: { interesses: string | null; cidadeExibicao: string | null } | null;
+  informacoesPessoais: {
+    interesses: string | null;
+    cidadeExibicao: string | null;
+    /**
+     * Dados da cônjuge — nome e aniversário natalício. Mesmo gate do resto
+     * de `informacoesPessoais` (bloco `'informacoesPessoais'` de
+     * `PublicationSettings`): só aparece se o próprio Irmão publicou esse
+     * bloco. `diaNascimento`/`mesNascimento` nunca incluem o ano (mesma
+     * convenção de privacidade do aniversário natalício do próprio Irmão,
+     * ver `ProfileFamilyTab`) — vêm de `conjugeDataNascimento` quando
+     * conhecida, ou do fallback `conjugeAniversarioDia`/`conjugeAniversarioMes`
+     * quando não. `null` quando o Irmão não tem cônjuge cadastrada.
+     */
+    conjuge: {
+      nome: string | null;
+      diaNascimento: number | null;
+      mesNascimento: number | null;
+    } | null;
+  } | null;
   profissional: {
     profissao: string | null;
     areaAtuacao: string | null;
@@ -240,6 +258,18 @@ export function buildPublicMemberProfileDTO(
       ? {
           interesses: profile?.interesses ?? null,
           cidadeExibicao: profile?.cidadeExibicao ?? null,
+          conjuge:
+            member.conjugeNome || member.conjugeDataNascimento || member.conjugeAniversarioDia
+              ? {
+                  nome: member.conjugeNome,
+                  diaNascimento: member.conjugeDataNascimento
+                    ? member.conjugeDataNascimento.getDate()
+                    : member.conjugeAniversarioDia,
+                  mesNascimento: member.conjugeDataNascimento
+                    ? member.conjugeDataNascimento.getMonth() + 1
+                    : member.conjugeAniversarioMes,
+                }
+              : null,
         }
       : null,
     profissional: blocks.profissional
