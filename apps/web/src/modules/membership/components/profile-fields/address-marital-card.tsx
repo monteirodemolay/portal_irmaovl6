@@ -76,7 +76,7 @@ export function AddressMaritalCard({
     <FormSectionCard
       icon={Heart}
       title="Estado civil e endereço"
-      description="Uso interno da Secretaria — nunca aparece no Diretório."
+      description="Cônjuge e filhos aparecem no Perfil do Irmão (Diretório), independente de publicação. Estado civil e endereço continuam de uso interno da Secretaria."
     >
       <form action={formAction} className="flex flex-col gap-4">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -153,72 +153,79 @@ export function AddressMaritalCard({
           )}
         </div>
 
-        {maritalStatusHasSpouse(estadoCivil || null) && (
-          <div className="border-border-soft flex flex-col gap-3 border-t pt-4">
-            <div className="flex items-center gap-2">
-              <Baby size={16} strokeWidth={1.75} className="text-muted" />
-              <p className="text-sm font-medium">Filhos</p>
-            </div>
-            <p className="text-muted -mt-1 text-xs">
-              Só dia/mês do aniversário — sem o ano, mesmo motivo da cônjuge acima.
-            </p>
-            {filhos.map((filho, index) => (
-              <div key={filho.id} className="flex items-end gap-3">
-                <div className="flex-1">
-                  <FormField label="Nome" htmlFor={`filho-nome-${index}`}>
-                    <Input
-                      id={`filho-nome-${index}`}
-                      value={filho.nome}
-                      onChange={(event) => updateFilho(index, { nome: event.target.value })}
-                    />
-                  </FormField>
-                </div>
-                <FormField label="Dia" htmlFor={`filho-dia-${index}`}>
+        {/*
+          Fora do `maritalStatusHasSpouse` de propósito — filhos existem
+          independente do estado civil ATUAL do Irmão (solteiro, viúvo ou
+          divorciado também podem ter filhos cadastrados), diferente de
+          cônjuge/data de casamento, que só fazem sentido junto de um
+          relacionamento em curso. Antes ficava preso ao mesmo bloco e
+          zerava a possibilidade de cadastrar filhos pra quem não estava
+          casado/em união estável (bug relatado pelo Administrador).
+        */}
+        <div className="border-border-soft flex flex-col gap-3 border-t pt-4">
+          <div className="flex items-center gap-2">
+            <Baby size={16} strokeWidth={1.75} className="text-muted" />
+            <p className="text-sm font-medium">Filhos</p>
+          </div>
+          <p className="text-muted -mt-1 text-xs">
+            Só dia/mês do aniversário — sem o ano, mesmo motivo da cônjuge acima.
+          </p>
+          {filhos.map((filho, index) => (
+            <div key={filho.id} className="flex items-end gap-3">
+              <div className="flex-1">
+                <FormField label="Nome" htmlFor={`filho-nome-${index}`}>
                   <Input
-                    id={`filho-dia-${index}`}
-                    type="number"
-                    min={1}
-                    max={31}
-                    className="w-20"
-                    value={filho.aniversarioDia}
-                    onChange={(event) =>
-                      updateFilho(index, { aniversarioDia: Number(event.target.value) })
-                    }
+                    id={`filho-nome-${index}`}
+                    value={filho.nome}
+                    onChange={(event) => updateFilho(index, { nome: event.target.value })}
                   />
                 </FormField>
-                <FormField label="Mês" htmlFor={`filho-mes-${index}`}>
-                  <div className="w-36">
-                    <MonthSelect
-                      id={`filho-mes-${index}`}
-                      value={filho.aniversarioMes}
-                      onChange={(mes) => updateFilho(index, { aniversarioMes: mes })}
-                    />
-                  </div>
-                </FormField>
-                <button
-                  type="button"
-                  aria-label={`Remover ${filho.nome || 'filho(a)'}`}
-                  onClick={() => setFilhos((current) => current.filter((_, i) => i !== index))}
-                  className="text-muted hover:text-foreground hover:bg-background mb-1.5 rounded-full p-2 transition-colors"
-                >
-                  <X size={16} />
-                </button>
               </div>
-            ))}
-            {filhos.length < MAX_FILHOS && (
-              <Button
+              <FormField label="Dia" htmlFor={`filho-dia-${index}`}>
+                <Input
+                  id={`filho-dia-${index}`}
+                  type="number"
+                  min={1}
+                  max={31}
+                  className="w-20"
+                  value={filho.aniversarioDia}
+                  onChange={(event) =>
+                    updateFilho(index, { aniversarioDia: Number(event.target.value) })
+                  }
+                />
+              </FormField>
+              <FormField label="Mês" htmlFor={`filho-mes-${index}`}>
+                <div className="w-36">
+                  <MonthSelect
+                    id={`filho-mes-${index}`}
+                    value={filho.aniversarioMes}
+                    onChange={(mes) => updateFilho(index, { aniversarioMes: mes })}
+                  />
+                </div>
+              </FormField>
+              <button
                 type="button"
-                variant="outline"
-                size="sm"
-                className="w-fit"
-                onClick={() => setFilhos((current) => [...current, emptyFilho()])}
+                aria-label={`Remover ${filho.nome || 'filho(a)'}`}
+                onClick={() => setFilhos((current) => current.filter((_, i) => i !== index))}
+                className="text-muted hover:text-foreground hover:bg-background mb-1.5 rounded-full p-2 transition-colors"
               >
-                Adicionar filho(a)
-              </Button>
-            )}
-            <input type="hidden" name="filhos" value={JSON.stringify(filhos)} />
-          </div>
-        )}
+                <X size={16} />
+              </button>
+            </div>
+          ))}
+          {filhos.length < MAX_FILHOS && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="w-fit"
+              onClick={() => setFilhos((current) => [...current, emptyFilho()])}
+            >
+              Adicionar filho(a)
+            </Button>
+          )}
+          <input type="hidden" name="filhos" value={JSON.stringify(filhos)} />
+        </div>
 
         <div className="border-border-soft grid grid-cols-1 gap-4 border-t pt-4 sm:grid-cols-2 lg:grid-cols-3">
           <FormField

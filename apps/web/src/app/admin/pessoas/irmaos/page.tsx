@@ -139,6 +139,22 @@ export default async function MembersPage({
     { key: 'cim', header: 'CIM', cell: (m) => m.cim ?? '—' },
     { key: 'grau', header: 'Grau', cell: (m) => MEMBER_DEGREE_LABELS[m.grau] },
     {
+      key: 'familia',
+      header: 'Cônjuge e filhos',
+      cell: (m) => {
+        const filhosNomes = m.filhos.map((filho) => filho.nome);
+        if (!m.conjugeNome && filhosNomes.length === 0) {
+          return <span className="text-muted text-xs">—</span>;
+        }
+        return (
+          <div className="flex flex-col gap-0.5 text-xs">
+            {m.conjugeNome && <span>{m.conjugeNome}</span>}
+            {filhosNomes.length > 0 && <span className="text-muted">{filhosNomes.join(', ')}</span>}
+          </div>
+        );
+      },
+    },
+    {
       key: 'situacao',
       header: 'Situação',
       cell: (m) => (
