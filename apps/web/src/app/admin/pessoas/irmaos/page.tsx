@@ -124,13 +124,15 @@ export default async function MembersPage({
     {
       key: 'nome',
       header: 'Nome',
+      className: 'max-w-[220px]',
       cell: (m) => (
         <Link
           href={`/admin/pessoas/irmaos/${m.id}`}
           className="flex items-center gap-2 hover:underline"
+          title={m.nomeCompleto}
         >
-          <MemberAvatar fotoUrl={m.fotoUrl} nome={m.nomeCompleto} className="h-8 w-8" />
-          <p className="font-medium">{m.nomeCompleto}</p>
+          <MemberAvatar fotoUrl={m.fotoUrl} nome={m.nomeCompleto} className="h-8 w-8 shrink-0" />
+          <p className="truncate font-medium">{m.nomeCompleto}</p>
         </Link>
       ),
     },
@@ -139,15 +141,27 @@ export default async function MembersPage({
     {
       key: 'familia',
       header: 'Cônjuge e filhos',
+      // Nomes de cônjuge/filhos concatenados podiam ficar bem mais longos
+      // que qualquer outra coluna (ex.: 3 filhos com nome completo) e
+      // empurravam a tabela inteira pra fora da tela, forçando rolagem
+      // horizontal pra ver o resto das colunas (reclamação do
+      // Administrador). Largura travada + truncamento com "…" — nome
+      // completo continua disponível no tooltip (`title`) ao passar o
+      // mouse, e no cadastro individual do Irmão.
+      className: 'max-w-[220px]',
       cell: (m) => {
         const filhosNomes = m.filhos.map((filho) => filho.nome);
         if (!m.conjugeNome && filhosNomes.length === 0) {
           return <span className="text-muted text-xs">—</span>;
         }
+        const filhosLabel = filhosNomes.join(', ');
         return (
-          <div className="flex flex-col gap-0.5 text-xs">
-            {m.conjugeNome && <span>{m.conjugeNome}</span>}
-            {filhosNomes.length > 0 && <span className="text-muted">{filhosNomes.join(', ')}</span>}
+          <div
+            className="flex flex-col gap-0.5 text-xs"
+            title={[m.conjugeNome, filhosLabel].filter(Boolean).join(' · ')}
+          >
+            {m.conjugeNome && <span className="truncate">{m.conjugeNome}</span>}
+            {filhosNomes.length > 0 && <span className="text-muted truncate">{filhosLabel}</span>}
           </div>
         );
       },
