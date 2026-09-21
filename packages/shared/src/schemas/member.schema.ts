@@ -6,11 +6,35 @@ import {
   MEMBER_SITUATION_STATUSES,
   type MaritalStatus,
 } from '../enums/membership';
-import { addressSchema } from './tenant.schema';
+/**
+ * Endereço do Irmão — mais permissivo que `addressSchema` (endereço
+ * institucional da Loja, `tenant.schema.ts`): cada campo aceita string
+ * vazia, sem `.min()`/tamanho fixo. Pedido explícito do Administrador
+ * depois de reclamação recorrente de "Dados inválidos." travando o
+ * salvamento inteiro do card "Estado civil e endereço" por causa de um
+ * único campo de endereço em branco (número de casa sem numeração, CEP não
+ * localizado, bairro não preenchido etc.) — o Irmão precisa poder salvar o
+ * que já preencheu, mesmo com o endereço incompleto. Mesmo shape de
+ * `Address` (`packages/domain`), só sem as restrições de tamanho.
+ */
+const memberAddressSchema = z.object({
+  logradouro: z.string(),
+  numero: z.string(),
+  bairro: z.string(),
+  cidade: z.string(),
+  estado: z.string(),
+  pais: z.string(),
+  cep: z.string(),
+});
 
+/**
+ * `nome` sem `.min(1)` de propósito, mesmo motivo de `memberAddressSchema`
+ * acima — uma linha de "Adicionar filho(a)" só com dia/mês preenchidos
+ * (nome ainda por vir) não pode travar o salvamento do resto do card.
+ */
 const memberChildSchema = z.object({
   id: z.string().min(1),
-  nome: z.string().min(1).max(150),
+  nome: z.string().max(150),
   aniversarioDia: z.number().int().min(1).max(31),
   aniversarioMes: z.number().int().min(1).max(12),
 });
@@ -23,7 +47,7 @@ const memberBaseSchema = z.object({
   email: z.string().email().nullable(),
   telefone: z.string().nullable(),
   whatsapp: z.string().nullable(),
-  endereco: addressSchema.nullable(),
+  endereco: memberAddressSchema.nullable(),
   dataNascimento: z.coerce.date().nullable(),
   /** Fallback quando não se sabe o ano do próprio aniversário do Irmão — só usado (`ListUpcomingAnniversariesUseCase`) quando `dataNascimento` é null. Opcional — cadastros existentes não precisam ganhar esse campo. */
   aniversarioDia: z.number().int().min(1).max(31).nullable().optional(),

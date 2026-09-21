@@ -186,7 +186,22 @@ export async function AssistedMemberEditor({ memberId }: { memberId: string }) {
         defaultOpen
       >
         <div className="flex flex-col gap-4">
-          <MemberIdentityCard member={member} action={boundUpdateIdentity} />
+          {/*
+            `key={member.updatedAt.getTime()}` em todo cartão de edição
+            abaixo — cada um guarda seu próprio rascunho em `useState`/
+            `defaultValue` a partir de `member`, lido só na montagem. Sem
+            essa `key`, salvar um campo (ex.: mês do aniversário) e o
+            `revalidatePath` trazer o `member` atualizado não bastava: React
+            via o mesmo componente na mesma posição e não reinicializava o
+            estado — só um F5 mostrava o valor certo (bug relatado pelo
+            Administrador). Trocar a `key` a cada `updatedAt` força o
+            remount, sempre com o dado fresco.
+          */}
+          <MemberIdentityCard
+            key={member.updatedAt.getTime()}
+            member={member}
+            action={boundUpdateIdentity}
+          />
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Acesso ao Portal</CardTitle>
@@ -215,7 +230,11 @@ export async function AssistedMemberEditor({ memberId }: { memberId: string }) {
             vigente={situacaoVigente}
             historico={situacaoHistorico}
           />
-          <MemberMasonicDataCard member={member} action={boundUpdateIdentity} />
+          <MemberMasonicDataCard
+            key={member.updatedAt.getTime()}
+            member={member}
+            action={boundUpdateIdentity}
+          />
         </div>
       </CollapsibleSection>
 
@@ -226,11 +245,16 @@ export async function AssistedMemberEditor({ memberId }: { memberId: string }) {
       >
         <div className="flex flex-col gap-4">
           <ProfessionalCard
+            key={member.updatedAt.getTime()}
             member={member}
             action={boundUpdateProfile}
             customProfessions={customProfessions}
           />
-          <AddressMaritalCard member={member} action={boundUpdateProfile} />
+          <AddressMaritalCard
+            key={member.updatedAt.getTime()}
+            member={member}
+            action={boundUpdateProfile}
+          />
         </div>
       </CollapsibleSection>
 
@@ -251,8 +275,17 @@ export async function AssistedMemberEditor({ memberId }: { memberId: string }) {
         title="Contatos e redes (institucional)"
         description="Telefone, WhatsApp e e-mail cadastrados — visibilidade de cada um é controlada na seção de privacidade."
       >
-        <ContactsCard member={member} action={boundUpdateProfile} />
-        <CompanyCard member={member} action={boundUpdateProfile} knownCompanies={customCompanies} />
+        <ContactsCard
+          key={member.updatedAt.getTime()}
+          member={member}
+          action={boundUpdateProfile}
+        />
+        <CompanyCard
+          key={member.updatedAt.getTime()}
+          member={member}
+          action={boundUpdateProfile}
+          knownCompanies={customCompanies}
+        />
       </CollapsibleSection>
 
       <CollapsibleSection
@@ -287,7 +320,11 @@ export async function AssistedMemberEditor({ memberId }: { memberId: string }) {
         title="Anotações internas"
         description="Visível só para a Administração."
       >
-        <MemberNotesCard member={member} action={boundUpdateIdentity} />
+        <MemberNotesCard
+          key={member.updatedAt.getTime()}
+          member={member}
+          action={boundUpdateIdentity}
+        />
       </CollapsibleSection>
     </div>
   );
