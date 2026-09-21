@@ -262,6 +262,7 @@ import {
   SearchMembersUseCase,
   ListUpcomingAnniversariesUseCase,
   ImportBirthdayDataUseCase,
+  VerifyBirthdayDataUseCase,
   ImportConsolidatedReportUseCase,
   SetTenantActiveUseCase,
   SetUserStatusUseCase,
@@ -744,6 +745,10 @@ export function createServerContainer() {
       memberRepository: repositories.member,
       clock,
       idGenerator,
+    }),
+    verifyBirthdayData: new VerifyBirthdayDataUseCase({
+      memberRepository: repositories.member,
+      clock,
     }),
     importConsolidatedReport: new ImportConsolidatedReportUseCase({
       memberRepository: repositories.member,
