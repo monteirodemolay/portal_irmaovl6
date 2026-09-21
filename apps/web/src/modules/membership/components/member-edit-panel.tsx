@@ -135,11 +135,15 @@ export async function MemberEditPanel({ memberId }: { memberId: string }) {
         <MemberTitlesCard memberId={member.id} titles={memberTitles} />
         <HonorsCard memberId={member.id} honors={honors} />
         <PhilosophicalJourneyCard memberId={member.id} journeys={philosophicalJourneys} />
-        <AddressMaritalCard
-          key={member.updatedAt.getTime()}
-          member={member}
-          action={boundUpdateProfile}
-        />
+        {/*
+          Sem `key` aqui de propósito — diferente dos cartões acima, o
+          `AddressMaritalCard` se ressincroniza com o `member` mais recente
+          via `useEffect` interno, sem remontar. Remontar no meio do próprio
+          salvamento (`useActionState` com `pending: true`) travava o botão
+          em "Salvando…" pra sempre, mesmo já salvo no servidor (bug
+          relatado pelo Administrador).
+        */}
+        <AddressMaritalCard member={member} action={boundUpdateProfile} />
         <ProfessionalCard
           key={member.updatedAt.getTime()}
           member={member}
