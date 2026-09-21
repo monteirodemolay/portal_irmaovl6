@@ -1,30 +1,38 @@
 import type { PublicMemberProfileDTO } from '@vl6/domain';
-import { MEMBER_SITUATION_STATUS_LABELS } from '@vl6/shared';
-import { formatDate, Panel } from '../profile-shared';
+import { formatDate, formatDayMonth, Panel } from '../profile-shared';
 
 /**
  * "Dados cadastrais" — consolidação tabular dos campos institucionais do
  * Irmão (mock-up "Perfil VL6", `.data-grid`). Cada campo só aparece se
- * tiver valor (nunca "não informado"); o card inteiro sempre existe porque
- * `nomeCompleto` é obrigatório. Serve tanto o Irmão ativo quanto o In
+ * tiver valor (nunca "não informado"). Serve tanto o Irmão ativo quanto o In
  * Memoriam — a diferença é só "Passagem ao Oriente Eterno", que só entra na
  * lista quando `profile.dataFalecimento` existe.
  *
- * CIM, Potência, Loja, Oriente e Profissão NÃO entram aqui — já aparecem no
- * cabeçalho e no card de identidade (`ProfileHero`/`ProfileIdentityRail`,
- * inclusive "Perfil em resumo"). Empilhado no celular, repetir esses campos
- * lia como a mesma informação três vezes seguidas.
+ * Nome completo e Situação maçônica NÃO entram aqui — já aparecem na faixa
+ * de identificação do topo (`ProfileHero`, H1 + selo de status); CIM,
+ * Potência, Loja, Oriente e Profissão também ficam de fora, pelo mesmo
+ * motivo, só que no card de identidade (`ProfileIdentityRail`, "Perfil em
+ * resumo"). Empilhado no celular, repetir esses campos lia como a mesma
+ * informação duas ou três vezes seguidas (pedido do Administrador).
  */
 export function RegistrationDataCard({ profile }: { profile: PublicMemberProfileDTO }) {
   const isInMemoriam = profile.situacao === 'falecido';
+  const conjuge = profile.informacoesPessoais?.conjuge ?? null;
 
   const fields: { label: string; value: string }[] = [
-    { label: 'Nome completo', value: profile.nomeCompleto },
-    { label: 'Situação maçônica', value: MEMBER_SITUATION_STATUS_LABELS[profile.situacao] },
     isInMemoriam && profile.dataFalecimento
       ? { label: 'Passagem ao Oriente Eterno', value: formatDate(profile.dataFalecimento) }
       : null,
+    conjuge?.nome ? { label: 'Cônjuge', value: conjuge.nome } : null,
+    conjuge?.diaNascimento && conjuge.mesNascimento
+      ? {
+          label: 'Aniversário da cônjuge',
+          value: formatDayMonth(conjuge.diaNascimento, conjuge.mesNascimento),
+        }
+      : null,
   ].filter((field): field is { label: string; value: string } => field !== null);
+
+  if (fields.length === 0) return null;
 
   return (
     <Panel id="dados" kicker="INFORMAÇÕES CONSOLIDADAS" title="Dados cadastrais">
