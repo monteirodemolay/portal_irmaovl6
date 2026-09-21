@@ -88,6 +88,15 @@ export interface PublicMemberProfileDTO {
       diaNascimento: number | null;
       mesNascimento: number | null;
     } | null;
+    /**
+     * Filhos do Irmão — espelho de `Member.filhos`, mesmo gate de
+     * `conjuge` acima. Só dia/mês do aniversário, nunca o ano (a fonte
+     * institucional, `MemberChild`, não guarda o ano). `[]` quando o Irmão
+     * não tem filhos cadastrados — nunca `null`, pra UI não precisar
+     * distinguir "sem filhos" de "bloco fechado" (isso já é responsabilidade
+     * de `informacoesPessoais` como um todo ser `null`).
+     */
+    filhos: { nome: string; diaNascimento: number; mesNascimento: number }[];
   } | null;
   profissional: {
     profissao: string | null;
@@ -270,6 +279,11 @@ export function buildPublicMemberProfileDTO(
                     : member.conjugeAniversarioMes,
                 }
               : null,
+          filhos: member.filhos.map((filho) => ({
+            nome: filho.nome,
+            diaNascimento: filho.aniversarioDia,
+            mesNascimento: filho.aniversarioMes,
+          })),
         }
       : null,
     profissional: blocks.profissional

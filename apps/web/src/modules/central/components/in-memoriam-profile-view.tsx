@@ -72,12 +72,13 @@ export function InMemoriamProfileView({
   // Mesmo recorte de `PublicMemberProfileView` — o que sobra em
   // `RegistrationDataCard` depois que Nome completo/Situação saíram (já na
   // `ProfileHero`): Passagem ao Oriente Eterno (praticamente sempre presente
-  // aqui, mas `dataFalecimento` tecnicamente pode faltar) e Cônjuge.
+  // aqui, mas `dataFalecimento` tecnicamente pode faltar), Cônjuge e Filhos.
   const hasDadosCadastrais = Boolean(
     profile.dataFalecimento ||
     profile.informacoesPessoais?.conjuge?.nome ||
     (profile.informacoesPessoais?.conjuge?.diaNascimento &&
-      profile.informacoesPessoais?.conjuge?.mesNascimento),
+      profile.informacoesPessoais?.conjuge?.mesNascimento) ||
+    (profile.informacoesPessoais?.filhos.length ?? 0) > 0,
   );
 
   const sections: ProfileSectionLink[] = [
