@@ -38,6 +38,8 @@ export interface EditableParamasonicEntityMember {
   categoria: ParamasonicEntityMemberCategory | null;
   situacao: ParamasonicEntityMemberSituation;
   dataIngresso: Date | null;
+  conjugeDeMemberId: string | null;
+  conjugeDeNome: string | null;
 }
 
 function toDateInputValue(date: Date | null): string {
@@ -168,6 +170,24 @@ export function EditParamasonicEntityMemberDialog({
               defaultValue={toDateInputValue(member.dataIngresso)}
             />
           </FormField>
+
+          {member.conjugeDeMemberId && (
+            <div className="border-border bg-surface flex flex-col gap-2 rounded-lg border border-dashed p-3">
+              <p className="text-muted text-xs">
+                Cônjuge de{' '}
+                <span className="text-foreground font-medium">
+                  {member.conjugeDeNome ?? 'um Irmão já excluído'}
+                </span>
+                {' — sincronizado automaticamente.'}
+              </p>
+              <label className="flex items-center gap-2 text-sm">
+                <input type="checkbox" name="desvincularDoIrmao" />
+                Desvincular do Irmão de origem (separação/divórcio) — mantém o registro no histórico
+                da Fraternidade, só remove essa ligação. Lembre de marcar a Situação acima como
+                Inativo também.
+              </label>
+            </div>
+          )}
 
           {member.memberId && allowFamilyLegacyActions && (
             <div className="border-border bg-surface flex flex-col gap-2 rounded-lg border border-dashed p-3">

@@ -77,6 +77,14 @@ export class SyncSpousesToParamasonicEntityUseCase {
         .filter((m) => !m.memberId && m.nomeCompleto)
         .map((m) => normalizeName(m.nomeCompleto!)),
     );
+    // Prioriza o vínculo (`conjugeDeMemberId`) sobre o nome: cobre o caso de
+    // a esposa já ter sido desvinculada manualmente (separação) e o nome
+    // continuar batendo — nesse caso ela NÃO deve ser recriada. Casos
+    // legados sem vínculo (sincronizados antes deste campo existir, ou
+    // cadastrados manualmente) continuam protegidos só pelo nome.
+    const existingByMemberId = new Set(
+      existingEntityMembers.filter((m) => m.conjugeDeMemberId).map((m) => m.conjugeDeMemberId!),
+    );
 
     const now = this.deps.clock.now();
     const adicionados: SyncSpousesToParamasonicEntityResult['adicionados'] = [];
@@ -98,6 +106,10 @@ export class SyncSpousesToParamasonicEntityUseCase {
       }
 
       totalConjugesCadastrados += 1;
+      if (existingByMemberId.has(member.id)) {
+        jaExistentes += 1;
+        continue;
+      }
       const normalized = normalizeName(conjugeNome);
       if (existingNames.has(normalized)) {
         jaExistentes += 1;
@@ -115,6 +127,7 @@ export class SyncSpousesToParamasonicEntityUseCase {
         categoria: null,
         situacao: 'ativo',
         dataIngresso: null,
+        conjugeDeMemberId: member.id,
         createdAt: now,
         updatedAt: now,
         createdBy: ctx.uid,

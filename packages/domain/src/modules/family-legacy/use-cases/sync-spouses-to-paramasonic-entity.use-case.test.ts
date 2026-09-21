@@ -122,6 +122,47 @@ describe('SyncSpousesToParamasonicEntityUseCase', () => {
     const entityMembers = await paramasonicEntityMemberRepository.listByEntity('t1', entityId);
     expect(entityMembers.map((m) => m.nomeCompleto).sort()).toEqual(['Ana Souza', 'Maria Silva']);
     expect(entityMembers.every((m) => m.memberId === null)).toBe(true);
+    expect(entityMembers.find((m) => m.nomeCompleto === 'Maria Silva')?.conjugeDeMemberId).toBe(
+      'member-1',
+    );
+    expect(entityMembers.find((m) => m.nomeCompleto === 'Ana Souza')?.conjugeDeMemberId).toBe(
+      'member-2',
+    );
+  });
+
+  it('não recria quem já está vinculada ao mesmo Irmão mesmo se o nome foi corrigido depois', async () => {
+    const { useCase, entityId, paramasonicEntityMemberRepository } = await buildScenario([
+      buildMember({ id: 'member-1', nomeCompleto: 'João Silva', conjugeNome: 'Maria Silva' }),
+    ]);
+    await paramasonicEntityMemberRepository.create({
+      id: 'existente-1',
+      tenantId: 't1',
+      entityId,
+      memberId: null,
+      nomeCompleto: 'Maria da Silva',
+      contato: null,
+      cargo: null,
+      categoria: null,
+      situacao: 'ativo',
+      dataIngresso: null,
+      conjugeDeMemberId: 'member-1',
+      createdAt: new Date('2026-01-01'),
+      updatedAt: new Date('2026-01-01'),
+      createdBy: 'admin-1',
+      updatedBy: 'admin-1',
+      deletedAt: null,
+      status: 'active',
+      ativo: true,
+    });
+
+    const result = await useCase.execute(ctx, entityId);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value.adicionados).toHaveLength(0);
+    expect(result.value.jaExistentes).toBe(1);
+    const entityMembers = await paramasonicEntityMemberRepository.listByEntity('t1', entityId);
+    expect(entityMembers).toHaveLength(1);
   });
 
   it('é idempotente: rodar de novo não duplica quem já foi adicionado', async () => {
