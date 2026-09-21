@@ -15,6 +15,7 @@ import {
 import { MembersFilterForm } from './members-filter-form';
 import { ImportBirthdayDataPanel } from '@/modules/membership/components/import-birthday-data-panel';
 import { ImportConsolidatedReportPanel } from '@/modules/membership/components/import-consolidated-report-panel';
+import { VerifyBirthdayDataPanel } from '@/modules/membership/components/verify-birthday-data-panel';
 import { BackfillConjugeFilhosRunner } from '@/modules/membership/components/backfill-conjuge-filhos-runner';
 
 const SITUATION_VARIANT: Record<
@@ -223,6 +224,7 @@ export default async function MembersPage({
 
       <ImportConsolidatedReportPanel />
       <ImportBirthdayDataPanel />
+      <VerifyBirthdayDataPanel />
       <BackfillConjugeFilhosRunner />
 
       <MembersFilterForm initial={searchFilters} />
