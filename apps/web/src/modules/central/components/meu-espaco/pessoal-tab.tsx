@@ -18,19 +18,16 @@ export function PessoalTab({
   return (
     <div className="flex flex-col gap-4">
       {/*
-        `key={member.updatedAt.getTime()}` — sem ela, salvar aqui e o
-        `revalidatePath` trazer o `member` atualizado não bastava: o
-        `AddressMaritalCard` guarda seu próprio rascunho em `useState`/
-        `defaultValue` a partir de `member`, lido só na montagem, então
-        React mantinha o mesmo componente na mesma posição sem reinicializar
-        o estado — só um F5 mostrava o valor certo (bug relatado pelo
-        Administrador). Trocar a `key` a cada `updatedAt` força o remount.
+        Sem `key` de propósito — o próprio `AddressMaritalCard` se
+        ressincroniza com o `member` mais recente via `useEffect` interno,
+        sem remontar. Remontar aqui (como já foi feito antes com
+        `key={member.updatedAt.getTime()}`) descartava a instância que
+        ainda estava em pleno salvamento (`useActionState` com
+        `pending: true`), travando o botão em "Salvando…" pra sempre mesmo
+        o servidor já tendo confirmado o salvamento (bug relatado pelo
+        Administrador).
       */}
-      <AddressMaritalCard
-        key={member.updatedAt.getTime()}
-        member={member}
-        action={updateMyProfileAction}
-      />
+      <AddressMaritalCard member={member} action={updateMyProfileAction} />
 
       <p className="text-muted flex items-center gap-1.5 text-xs">
         <MapPin size={12} /> Estado civil nunca aparece na Central. O endereço pode aparecer no seu

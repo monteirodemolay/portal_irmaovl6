@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState, useState } from 'react';
+import { useActionState, useEffect, useState } from 'react';
 import { useFormStatus } from 'react-dom';
 import { MARITAL_STATUSES, type MaritalStatus, type MemberChildValues } from '@vl6/shared';
 import type { Member } from '@vl6/domain';
@@ -53,8 +53,10 @@ export function AddressMaritalCard({
   const [estadoCivil, setEstadoCivil] = useState<MaritalStatus | ''>(
     member.estadoCivil ?? (member.conjugeNome ? 'casado' : ''),
   );
+  const [conjugeNome, setConjugeNome] = useState(member.conjugeNome ?? '');
   const [cep, setCep] = useState(member.endereco?.cep ?? '');
   const [logradouro, setLogradouro] = useState(member.endereco?.logradouro ?? '');
+  const [enderecoNumero, setEnderecoNumero] = useState(member.endereco?.numero ?? '');
   const [bairro, setBairro] = useState(member.endereco?.bairro ?? '');
   const [cidade, setCidade] = useState(member.endereco?.cidade ?? '');
   const [estado, setEstado] = useState(member.endereco?.estado ?? '');
@@ -70,6 +72,32 @@ export function AddressMaritalCard({
   const [dataCasamento, setDataCasamento] = useState(toDateInputValue(member.dataCasamento));
   const [filhos, setFilhos] = useState<MemberChildValues[]>(member.filhos ?? []);
   const { lookup, loading: cepLoading, error: cepError } = useCepLookup();
+
+  // Sincroniza o rascunho com o `member` mais recente sempre que o servidor
+  // confirma um salvamento (`revalidatePath` troca a referência do objeto,
+  // `updatedAt` muda) — SEM desmontar o formulário. Antes disso dependia de
+  // `key={member.updatedAt.getTime()}` no componente pai pra forçar
+  // remontagem, mas remontar o cartão no meio da própria transição de
+  // salvamento (o `useActionState` abaixo) descartava a instância que ainda
+  // estava com `pending: true`, e a tela ficava travada em "Salvando…" pra
+  // sempre — mesmo o servidor já tendo salvo com sucesso (bug relatado pelo
+  // Administrador). `useEffect` evita a remontagem: o mesmo componente
+  // continua de pé, só os campos são atualizados com o dado fresco.
+  useEffect(() => {
+    setEstadoCivil(member.estadoCivil ?? (member.conjugeNome ? 'casado' : ''));
+    setConjugeNome(member.conjugeNome ?? '');
+    setCep(member.endereco?.cep ?? '');
+    setLogradouro(member.endereco?.logradouro ?? '');
+    setEnderecoNumero(member.endereco?.numero ?? '');
+    setBairro(member.endereco?.bairro ?? '');
+    setCidade(member.endereco?.cidade ?? '');
+    setEstado(member.endereco?.estado ?? '');
+    setConjugeDataNascimento(toDateInputValue(member.conjugeDataNascimento));
+    setConjugeAniversarioDia(member.conjugeAniversarioDia ?? 1);
+    setConjugeAniversarioMes(member.conjugeAniversarioMes ?? 1);
+    setDataCasamento(toDateInputValue(member.dataCasamento));
+    setFilhos(member.filhos ?? []);
+  }, [member.updatedAt]);
 
   function updateFilho(index: number, patch: Partial<MemberChildValues>) {
     setFilhos((current) => current.map((f, i) => (i === index ? { ...f, ...patch } : f)));
@@ -113,7 +141,8 @@ export function AddressMaritalCard({
                 <Input
                   id="conjugeNome"
                   name="conjugeNome"
-                  defaultValue={member.conjugeNome ?? ''}
+                  value={conjugeNome}
+                  onChange={(event) => setConjugeNome(event.target.value)}
                 />
               </FormField>
               <FormField label="Data de nascimento da cônjuge" htmlFor="conjugeDataNascimento">
@@ -265,7 +294,8 @@ export function AddressMaritalCard({
             <Input
               id="enderecoNumero"
               name="enderecoNumero"
-              defaultValue={member.endereco?.numero ?? ''}
+              value={enderecoNumero}
+              onChange={(event) => setEnderecoNumero(event.target.value)}
             />
           </FormField>
           <FormField label="Bairro" htmlFor="bairro">
