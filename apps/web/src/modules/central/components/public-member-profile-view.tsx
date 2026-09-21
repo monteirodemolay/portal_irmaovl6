@@ -109,11 +109,11 @@ export function PublicMemberProfileView({
   // Único conteúdo que sobrou em `RegistrationDataCard` depois que Nome
   // completo/Situação maçônica saíram (já na `ProfileHero`, acima) — aqui
   // só situação In Memoriam (nunca vale `true` nesta função, que já
-  // redireciona `falecido` pra `InMemoriamProfileView`) e Cônjuge.
+  // redireciona `falecido` pra `InMemoriamProfileView`), Cônjuge e Filhos.
   const hasDadosCadastrais = Boolean(
-    profile.informacoesPessoais?.conjuge?.nome ||
-    (profile.informacoesPessoais?.conjuge?.diaNascimento &&
-      profile.informacoesPessoais?.conjuge?.mesNascimento),
+    profile.conjuge?.nome ||
+    (profile.conjuge?.diaNascimento && profile.conjuge?.mesNascimento) ||
+    profile.filhos.length > 0,
   );
 
   const sections: ProfileSectionLink[] = [

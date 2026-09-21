@@ -28,6 +28,7 @@ import type { IFamilyPersonRepository } from '../../family-legacy/repositories/f
 import type { IPersonFraternalRecordRepository } from '../../family-legacy/repositories/person-fraternal-record.repository';
 import type { ITenantRepository } from '../../tenancy/repositories/tenant.repository';
 import { buildPublicFamiliaLegado } from '../lib/build-public-familia-legado';
+import { resolveImmediateFamilyAffiliations } from '../lib/resolve-immediate-family-affiliations';
 
 export interface GetPublicMemberProfileDeps {
   memberRepository: IMemberRepository;
@@ -103,6 +104,7 @@ export class GetPublicMemberProfileUseCase {
       ceremonyEventIds,
       vigenteSituationRecord,
       tenant,
+      immediateFamilyAffiliations,
     ] = await Promise.all([
       getMemberJourneyCargos(this.deps, targetMemberId),
       getMemberJourneyCommittees(this.deps, ctx.tenantId, targetMemberId),
@@ -114,6 +116,12 @@ export class GetPublicMemberProfileUseCase {
       // — não existe entidade "Loja" própria, então o nome/Oriente exibidos
       // no card de identidade vêm do próprio tenant.
       this.deps.tenantRepository.findById(ctx.tenantId),
+      // Afiliação paramaçônica de cônjuge/filhos — cruza com Família e
+      // Legado (ver comentário de `resolveImmediateFamilyAffiliations`).
+      resolveImmediateFamilyAffiliations(this.deps, ctx.tenantId, targetMemberId, [
+        member.conjugeNome,
+        ...member.filhos.map((filho) => filho.nome),
+      ]),
     ]);
 
     // O fim da trajetória — só existe pra situação terminal, e só com o
@@ -169,6 +177,16 @@ export class GetPublicMemberProfileUseCase {
       oriente: tenant?.endereco
         ? [tenant.endereco.cidade, tenant.endereco.estado].filter(Boolean).join(' — ') || null
         : null,
+      conjuge: dto.conjuge && {
+        ...dto.conjuge,
+        afiliacaoParamaconica: dto.conjuge.nome
+          ? (immediateFamilyAffiliations.get(dto.conjuge.nome) ?? null)
+          : null,
+      },
+      filhos: dto.filhos.map((filho) => ({
+        ...filho,
+        afiliacaoParamaconica: immediateFamilyAffiliations.get(filho.nome) ?? null,
+      })),
       trajetoria: {
         dataIniciacao: member.dataIniciacao,
         dataElevacao: member.dataElevacao,

@@ -14,23 +14,56 @@ import { formatDate, formatDayMonth, Panel } from '../profile-shared';
  * motivo, só que no card de identidade (`ProfileIdentityRail`, "Perfil em
  * resumo"). Empilhado no celular, repetir esses campos lia como a mesma
  * informação duas ou três vezes seguidas (pedido do Administrador).
+ *
+ * Cônjuge e Filhos (`profile.conjuge`/`profile.filhos`) são registro
+ * institucional da Secretaria — aparecem aqui sempre, independente de o
+ * Irmão ter publicado seu perfil voluntário (pedido explícito do
+ * Administrador: não fica atrás do bloco "Informações pessoais" como o
+ * resto da Central). Quando um deles está cadastrado no módulo Família e
+ * Legado com vínculo paramaçônico, o rótulo da afiliação
+ * (`afiliacaoParamaconica`) entra junto do nome.
  */
 export function RegistrationDataCard({ profile }: { profile: PublicMemberProfileDTO }) {
   const isInMemoriam = profile.situacao === 'falecido';
-  const conjuge = profile.informacoesPessoais?.conjuge ?? null;
+  const conjuge = profile.conjuge;
+  const filhos = profile.filhos;
 
-  const fields: { label: string; value: string }[] = [
+  const fields: { key: string; label: string; value: string }[] = [
     isInMemoriam && profile.dataFalecimento
-      ? { label: 'Passagem ao Oriente Eterno', value: formatDate(profile.dataFalecimento) }
+      ? {
+          key: 'oriente-eterno',
+          label: 'Passagem ao Oriente Eterno',
+          value: formatDate(profile.dataFalecimento),
+        }
       : null,
-    conjuge?.nome ? { label: 'Cônjuge', value: conjuge.nome } : null,
+    conjuge?.nome
+      ? {
+          key: 'conjuge-nome',
+          label: 'Cônjuge',
+          value: conjuge.afiliacaoParamaconica
+            ? `${conjuge.nome} — ${conjuge.afiliacaoParamaconica}`
+            : conjuge.nome,
+        }
+      : null,
     conjuge?.diaNascimento && conjuge.mesNascimento
       ? {
+          key: 'conjuge-aniversario',
           label: 'Aniversário da cônjuge',
           value: formatDayMonth(conjuge.diaNascimento, conjuge.mesNascimento),
         }
       : null,
-  ].filter((field): field is { label: string; value: string } => field !== null);
+    ...filhos.map((filho, index) => ({
+      key: `filho-${index}`,
+      label: filhos.length > 1 ? `Filho(a) ${index + 1}` : 'Filho(a)',
+      value: [
+        filho.nome,
+        formatDayMonth(filho.diaNascimento, filho.mesNascimento),
+        filho.afiliacaoParamaconica,
+      ]
+        .filter(Boolean)
+        .join(' — '),
+    })),
+  ].filter((field): field is { key: string; label: string; value: string } => field !== null);
 
   if (fields.length === 0) return null;
 
@@ -39,7 +72,7 @@ export function RegistrationDataCard({ profile }: { profile: PublicMemberProfile
       <div className="grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2">
         {fields.map((field) => (
           <div
-            key={field.label}
+            key={field.key}
             className="border-border/70 border-b border-dashed pb-3 last:border-0"
           >
             <p className="text-muted text-[10px] font-bold uppercase tracking-wide">

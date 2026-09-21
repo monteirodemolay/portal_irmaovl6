@@ -8,7 +8,6 @@ import { createServerContainer } from '@vl6/infra';
 import { EmptyState, Lock, Search } from '@vl6/ui';
 import { requireSession } from '@/lib/auth/require-session';
 import { getCurrentTenant } from '@/lib/tenant/get-current-tenant';
-import { AreaExploreGrid } from '@/modules/central/components/directorio/area-explore-grid';
 import { BusinessDirectoryCard } from '@/modules/central/components/negocios/business-directory-card';
 import {
   CommunitySearchPanel,
@@ -189,13 +188,6 @@ export default async function ComunidadeVL6Page({
             areaFacets={areaFacets}
             resultCount={resultCount}
           />
-
-          {tipo !== 'negocios' && areaFacets.length > 0 && (
-            <section className="flex flex-col gap-3">
-              <h2 className="font-display text-lg font-semibold">Explore por área</h2>
-              <AreaExploreGrid areaFacets={areaFacets} activeArea={filters.areaAtuacao} />
-            </section>
-          )}
 
           {resultCount === 0 ? (
             <EmptyState
