@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { normalizeNameForSearch } from '@vl6/shared';
 import type { AuthContext } from '../../../shared/auth-context';
 import {
   InMemoryArchiveItemRepository,
@@ -537,5 +538,270 @@ describe('GetPublicMemberProfileUseCase', () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.value?.trajetoria?.encerramento).toBeNull();
+  });
+
+  it('traz cônjuge e filhos mesmo quando o bloco informacoesPessoais está desligado — registro institucional, não passa pelas configurações de publicação', async () => {
+    const { useCase, memberRepository, publicationSettingsRepository } = buildUseCase();
+    await memberRepository.create(
+      buildMember({
+        conjugeNome: 'Maria de Teste',
+        conjugeAniversarioDia: 20,
+        conjugeAniversarioMes: 9,
+        filhos: [{ id: 'filho-1', nome: 'João Filho', aniversarioDia: 5, aniversarioMes: 3 }],
+      }),
+    );
+    await publicationSettingsRepository.create(
+      buildSettings({ blocks: { ...buildSettings().blocks, informacoesPessoais: false } }),
+    );
+
+    const result = await useCase.execute(ctx, 'member-1');
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value?.informacoesPessoais).toBeNull(); // bloco continua fechado pro resto
+    expect(result.value?.conjuge).toMatchObject({
+      nome: 'Maria de Teste',
+      diaNascimento: 20,
+      mesNascimento: 9,
+    });
+    expect(result.value?.filhos).toHaveLength(1);
+    expect(result.value?.filhos[0]).toMatchObject({ nome: 'João Filho' });
+  });
+
+  it('cruza cônjuge/filhos com Família e Legado e traz o rótulo da afiliação paramaçônica quando o nome bate com um único FamilyPerson gerenciado pelo Irmão', async () => {
+    const {
+      useCase,
+      memberRepository,
+      publicationSettingsRepository,
+      familyPersonRepository,
+      personFraternalRecordRepository,
+    } = buildUseCase();
+    await memberRepository.create(
+      buildMember({
+        conjugeNome: 'Maria de Teste',
+        filhos: [{ id: 'filho-1', nome: 'Ana Filha', aniversarioDia: 5, aniversarioMes: 3 }],
+      }),
+    );
+    await publicationSettingsRepository.create(buildSettings());
+    await familyPersonRepository.create({
+      id: 'esposa-1',
+      tenantId: 't1',
+      linkedMemberId: null,
+      nomeCompleto: 'Maria de Teste',
+      nomeBusca: normalizeNameForSearch('Maria de Teste'),
+      fotoUrl: null,
+      dataNascimento: null,
+      dataFalecimento: null,
+      lifeStatus: 'living',
+      cidade: null,
+      estado: null,
+      pais: null,
+      biografia: null,
+      menorDeIdade: false,
+      fraternalLinkStatus: 'has_affiliation',
+      visibility: 'members',
+      reviewStatus: 'draft',
+      sourceKind: 'self_declaration',
+      sourceDescription: null,
+      managedByMemberId: 'member-1',
+      createdAt: new Date('2026-01-01'),
+      updatedAt: new Date('2026-01-01'),
+      createdBy: 'member-1',
+      updatedBy: 'member-1',
+      deletedAt: null,
+      status: 'active',
+      ativo: true,
+    });
+    await familyPersonRepository.create({
+      id: 'filha-1',
+      tenantId: 't1',
+      linkedMemberId: null,
+      nomeCompleto: 'Ana Filha',
+      nomeBusca: normalizeNameForSearch('Ana Filha'),
+      fotoUrl: null,
+      dataNascimento: null,
+      dataFalecimento: null,
+      lifeStatus: 'living',
+      cidade: null,
+      estado: null,
+      pais: null,
+      biografia: null,
+      menorDeIdade: true,
+      fraternalLinkStatus: 'has_affiliation',
+      visibility: 'members',
+      reviewStatus: 'draft',
+      sourceKind: 'self_declaration',
+      sourceDescription: null,
+      managedByMemberId: 'member-1',
+      createdAt: new Date('2026-01-01'),
+      updatedAt: new Date('2026-01-01'),
+      createdBy: 'member-1',
+      updatedBy: 'member-1',
+      deletedAt: null,
+      status: 'active',
+      ativo: true,
+    });
+    await personFraternalRecordRepository.create({
+      id: 'record-esposa',
+      tenantId: 't1',
+      personKind: 'familyPerson',
+      personId: 'esposa-1',
+      affiliationKind: 'eastern_star',
+      organizacaoNome: null,
+      unidadeTipo: 'chapter',
+      unidadeNome: null,
+      unidadeNumero: null,
+      cidade: null,
+      estado: null,
+      pais: null,
+      potencia: null,
+      rito: null,
+      dataIniciacao: null,
+      dataElevacao: null,
+      dataExaltacao: null,
+      grau: null,
+      cargos: [],
+      titulos: [],
+      passouAoOrienteEternoEm: null,
+      resumoLegado: null,
+      visibility: 'members',
+      reviewStatus: 'draft',
+      sourceKind: 'self_declaration',
+      sourceDescription: null,
+      createdAt: new Date('2026-01-01'),
+      updatedAt: new Date('2026-01-01'),
+      createdBy: 'member-1',
+      updatedBy: 'member-1',
+      deletedAt: null,
+      status: 'active',
+      ativo: true,
+    });
+    await personFraternalRecordRepository.create({
+      id: 'record-filha',
+      tenantId: 't1',
+      personKind: 'familyPerson',
+      personId: 'filha-1',
+      affiliationKind: 'jobs_daughters',
+      organizacaoNome: null,
+      unidadeTipo: 'bethel',
+      unidadeNome: null,
+      unidadeNumero: null,
+      cidade: null,
+      estado: null,
+      pais: null,
+      potencia: null,
+      rito: null,
+      dataIniciacao: null,
+      dataElevacao: null,
+      dataExaltacao: null,
+      grau: null,
+      cargos: [],
+      titulos: [],
+      passouAoOrienteEternoEm: null,
+      resumoLegado: null,
+      visibility: 'members',
+      reviewStatus: 'draft',
+      sourceKind: 'self_declaration',
+      sourceDescription: null,
+      createdAt: new Date('2026-01-01'),
+      updatedAt: new Date('2026-01-01'),
+      createdBy: 'member-1',
+      updatedBy: 'member-1',
+      deletedAt: null,
+      status: 'active',
+      ativo: true,
+    });
+
+    const result = await useCase.execute(ctx, 'member-1');
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value?.conjuge?.afiliacaoParamaconica).toBe('Ordem da Estrela do Oriente');
+    expect(result.value?.filhos[0]?.afiliacaoParamaconica).toBe(
+      'Ordem Internacional das Filhas de Jó',
+    );
+  });
+
+  it('não cruza afiliação paramaçônica quando o nome bate com mais de um FamilyPerson gerenciado pelo Irmão (nome ambíguo)', async () => {
+    const {
+      useCase,
+      memberRepository,
+      publicationSettingsRepository,
+      familyPersonRepository,
+      personFraternalRecordRepository,
+    } = buildUseCase();
+    await memberRepository.create(buildMember({ conjugeNome: 'Maria de Teste' }));
+    await publicationSettingsRepository.create(buildSettings());
+    const baseFamilyPerson = {
+      tenantId: 't1',
+      linkedMemberId: null,
+      nomeCompleto: 'Maria de Teste',
+      nomeBusca: normalizeNameForSearch('Maria de Teste'),
+      fotoUrl: null,
+      dataNascimento: null,
+      dataFalecimento: null,
+      lifeStatus: 'living' as const,
+      cidade: null,
+      estado: null,
+      pais: null,
+      biografia: null,
+      menorDeIdade: false,
+      fraternalLinkStatus: 'has_affiliation' as const,
+      visibility: 'members' as const,
+      reviewStatus: 'draft' as const,
+      sourceKind: 'self_declaration' as const,
+      sourceDescription: null,
+      managedByMemberId: 'member-1',
+      createdAt: new Date('2026-01-01'),
+      updatedAt: new Date('2026-01-01'),
+      createdBy: 'member-1',
+      updatedBy: 'member-1',
+      deletedAt: null,
+      status: 'active' as const,
+      ativo: true,
+    };
+    await familyPersonRepository.create({ ...baseFamilyPerson, id: 'esposa-1' });
+    await familyPersonRepository.create({ ...baseFamilyPerson, id: 'esposa-2' });
+    await personFraternalRecordRepository.create({
+      id: 'record-esposa',
+      tenantId: 't1',
+      personKind: 'familyPerson',
+      personId: 'esposa-1',
+      affiliationKind: 'eastern_star',
+      organizacaoNome: null,
+      unidadeTipo: 'chapter',
+      unidadeNome: null,
+      unidadeNumero: null,
+      cidade: null,
+      estado: null,
+      pais: null,
+      potencia: null,
+      rito: null,
+      dataIniciacao: null,
+      dataElevacao: null,
+      dataExaltacao: null,
+      grau: null,
+      cargos: [],
+      titulos: [],
+      passouAoOrienteEternoEm: null,
+      resumoLegado: null,
+      visibility: 'members',
+      reviewStatus: 'draft',
+      sourceKind: 'self_declaration',
+      sourceDescription: null,
+      createdAt: new Date('2026-01-01'),
+      updatedAt: new Date('2026-01-01'),
+      createdBy: 'member-1',
+      updatedBy: 'member-1',
+      deletedAt: null,
+      status: 'active',
+      ativo: true,
+    });
+
+    const result = await useCase.execute(ctx, 'member-1');
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value?.conjuge?.afiliacaoParamaconica).toBeNull();
   });
 });

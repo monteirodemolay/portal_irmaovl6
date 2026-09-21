@@ -14,11 +14,19 @@ import { formatDate, formatDayMonth, Panel } from '../profile-shared';
  * motivo, só que no card de identidade (`ProfileIdentityRail`, "Perfil em
  * resumo"). Empilhado no celular, repetir esses campos lia como a mesma
  * informação duas ou três vezes seguidas (pedido do Administrador).
+ *
+ * Cônjuge e Filhos (`profile.conjuge`/`profile.filhos`) são registro
+ * institucional da Secretaria — aparecem aqui sempre, independente de o
+ * Irmão ter publicado seu perfil voluntário (pedido explícito do
+ * Administrador: não fica atrás do bloco "Informações pessoais" como o
+ * resto da Central). Quando um deles está cadastrado no módulo Família e
+ * Legado com vínculo paramaçônico, o rótulo da afiliação
+ * (`afiliacaoParamaconica`) entra junto do nome.
  */
 export function RegistrationDataCard({ profile }: { profile: PublicMemberProfileDTO }) {
   const isInMemoriam = profile.situacao === 'falecido';
-  const conjuge = profile.informacoesPessoais?.conjuge ?? null;
-  const filhos = profile.informacoesPessoais?.filhos ?? [];
+  const conjuge = profile.conjuge;
+  const filhos = profile.filhos;
 
   const fields: { key: string; label: string; value: string }[] = [
     isInMemoriam && profile.dataFalecimento
@@ -28,7 +36,15 @@ export function RegistrationDataCard({ profile }: { profile: PublicMemberProfile
           value: formatDate(profile.dataFalecimento),
         }
       : null,
-    conjuge?.nome ? { key: 'conjuge-nome', label: 'Cônjuge', value: conjuge.nome } : null,
+    conjuge?.nome
+      ? {
+          key: 'conjuge-nome',
+          label: 'Cônjuge',
+          value: conjuge.afiliacaoParamaconica
+            ? `${conjuge.nome} — ${conjuge.afiliacaoParamaconica}`
+            : conjuge.nome,
+        }
+      : null,
     conjuge?.diaNascimento && conjuge.mesNascimento
       ? {
           key: 'conjuge-aniversario',
@@ -39,7 +55,13 @@ export function RegistrationDataCard({ profile }: { profile: PublicMemberProfile
     ...filhos.map((filho, index) => ({
       key: `filho-${index}`,
       label: filhos.length > 1 ? `Filho(a) ${index + 1}` : 'Filho(a)',
-      value: `${filho.nome} — ${formatDayMonth(filho.diaNascimento, filho.mesNascimento)}`,
+      value: [
+        filho.nome,
+        formatDayMonth(filho.diaNascimento, filho.mesNascimento),
+        filho.afiliacaoParamaconica,
+      ]
+        .filter(Boolean)
+        .join(' — '),
     })),
   ].filter((field): field is { key: string; label: string; value: string } => field !== null);
 

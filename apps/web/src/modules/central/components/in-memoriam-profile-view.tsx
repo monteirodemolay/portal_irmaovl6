@@ -75,10 +75,9 @@ export function InMemoriamProfileView({
   // aqui, mas `dataFalecimento` tecnicamente pode faltar), Cônjuge e Filhos.
   const hasDadosCadastrais = Boolean(
     profile.dataFalecimento ||
-    profile.informacoesPessoais?.conjuge?.nome ||
-    (profile.informacoesPessoais?.conjuge?.diaNascimento &&
-      profile.informacoesPessoais?.conjuge?.mesNascimento) ||
-    (profile.informacoesPessoais?.filhos.length ?? 0) > 0,
+    profile.conjuge?.nome ||
+    (profile.conjuge?.diaNascimento && profile.conjuge?.mesNascimento) ||
+    profile.filhos.length > 0,
   );
 
   const sections: ProfileSectionLink[] = [

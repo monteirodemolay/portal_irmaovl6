@@ -111,10 +111,9 @@ export function PublicMemberProfileView({
   // só situação In Memoriam (nunca vale `true` nesta função, que já
   // redireciona `falecido` pra `InMemoriamProfileView`), Cônjuge e Filhos.
   const hasDadosCadastrais = Boolean(
-    profile.informacoesPessoais?.conjuge?.nome ||
-    (profile.informacoesPessoais?.conjuge?.diaNascimento &&
-      profile.informacoesPessoais?.conjuge?.mesNascimento) ||
-    (profile.informacoesPessoais?.filhos.length ?? 0) > 0,
+    profile.conjuge?.nome ||
+    (profile.conjuge?.diaNascimento && profile.conjuge?.mesNascimento) ||
+    profile.filhos.length > 0,
   );
 
   const sections: ProfileSectionLink[] = [

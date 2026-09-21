@@ -69,34 +69,44 @@ export interface PublicMemberProfileDTO {
    * vem carregado por quem monta este DTO.
    */
   dataIniciacao: Date | null;
+  /**
+   * Dados da cônjuge — nome e aniversário natalício. Registro institucional
+   * da Secretaria, mesmo espírito de `situacao`/`dataIniciacao` acima:
+   * NUNCA passa pelos blocos de `PublicationSettings` (decisão explícita do
+   * Administrador — cônjuge/filhos ficam visíveis pra todo Irmão com acesso
+   * ao Diretório, independente de o titular ter publicado seu perfil
+   * voluntário ou não). `diaNascimento`/`mesNascimento` nunca incluem o ano
+   * (mesma convenção de privacidade do aniversário natalício do próprio
+   * Irmão, ver `ProfileFamilyTab`) — vêm de `conjugeDataNascimento` quando
+   * conhecida, ou do fallback `conjugeAniversarioDia`/`conjugeAniversarioMes`
+   * quando não. `null` quando o Irmão não tem cônjuge cadastrada.
+   * `afiliacaoParamaconica` é preenchido pelo use case (precisa cruzar com
+   * o módulo Família e Legado, que a função pura que monta o resto deste
+   * DTO não recebe) — `null` até lá e sempre que não houver cruzamento.
+   */
+  conjuge: {
+    nome: string | null;
+    diaNascimento: number | null;
+    mesNascimento: number | null;
+    afiliacaoParamaconica: string | null;
+  } | null;
+  /**
+   * Filhos do Irmão — espelho de `Member.filhos`, mesmo caráter
+   * institucional (nunca gated por publicação) e mesma ausência de ano de
+   * `conjuge` acima (a fonte, `MemberChild`, não guarda o ano).
+   * `afiliacaoParamaconica` também preenchido pelo use case. `[]` quando o
+   * Irmão não tem filhos cadastrados.
+   */
+  filhos: {
+    nome: string;
+    diaNascimento: number;
+    mesNascimento: number;
+    afiliacaoParamaconica: string | null;
+  }[];
   apresentacao: { texto: string | null } | null;
   informacoesPessoais: {
     interesses: string | null;
     cidadeExibicao: string | null;
-    /**
-     * Dados da cônjuge — nome e aniversário natalício. Mesmo gate do resto
-     * de `informacoesPessoais` (bloco `'informacoesPessoais'` de
-     * `PublicationSettings`): só aparece se o próprio Irmão publicou esse
-     * bloco. `diaNascimento`/`mesNascimento` nunca incluem o ano (mesma
-     * convenção de privacidade do aniversário natalício do próprio Irmão,
-     * ver `ProfileFamilyTab`) — vêm de `conjugeDataNascimento` quando
-     * conhecida, ou do fallback `conjugeAniversarioDia`/`conjugeAniversarioMes`
-     * quando não. `null` quando o Irmão não tem cônjuge cadastrada.
-     */
-    conjuge: {
-      nome: string | null;
-      diaNascimento: number | null;
-      mesNascimento: number | null;
-    } | null;
-    /**
-     * Filhos do Irmão — espelho de `Member.filhos`, mesmo gate de
-     * `conjuge` acima. Só dia/mês do aniversário, nunca o ano (a fonte
-     * institucional, `MemberChild`, não guarda o ano). `[]` quando o Irmão
-     * não tem filhos cadastrados — nunca `null`, pra UI não precisar
-     * distinguir "sem filhos" de "bloco fechado" (isso já é responsabilidade
-     * de `informacoesPessoais` como um todo ser `null`).
-     */
-    filhos: { nome: string; diaNascimento: number; mesNascimento: number }[];
   } | null;
   profissional: {
     profissao: string | null;
@@ -262,28 +272,32 @@ export function buildPublicMemberProfileDTO(
     dataFalecimento: member.dataFalecimento,
     mensagemHomenagem: member.mensagemHomenagem,
     dataIniciacao: member.dataIniciacao,
+    conjuge:
+      member.conjugeNome || member.conjugeDataNascimento || member.conjugeAniversarioDia
+        ? {
+            nome: member.conjugeNome,
+            diaNascimento: member.conjugeDataNascimento
+              ? member.conjugeDataNascimento.getDate()
+              : member.conjugeAniversarioDia,
+            mesNascimento: member.conjugeDataNascimento
+              ? member.conjugeDataNascimento.getMonth() + 1
+              : member.conjugeAniversarioMes,
+            // Preenchido depois, pelo use case — ver comentário no campo da interface.
+            afiliacaoParamaconica: null,
+          }
+        : null,
+    filhos: member.filhos.map((filho) => ({
+      nome: filho.nome,
+      diaNascimento: filho.aniversarioDia,
+      mesNascimento: filho.aniversarioMes,
+      // Preenchido depois, pelo use case — ver comentário no campo da interface.
+      afiliacaoParamaconica: null,
+    })),
     apresentacao: blocks.apresentacao ? { texto: profile?.apresentacao ?? null } : null,
     informacoesPessoais: blocks.informacoesPessoais
       ? {
           interesses: profile?.interesses ?? null,
           cidadeExibicao: profile?.cidadeExibicao ?? null,
-          conjuge:
-            member.conjugeNome || member.conjugeDataNascimento || member.conjugeAniversarioDia
-              ? {
-                  nome: member.conjugeNome,
-                  diaNascimento: member.conjugeDataNascimento
-                    ? member.conjugeDataNascimento.getDate()
-                    : member.conjugeAniversarioDia,
-                  mesNascimento: member.conjugeDataNascimento
-                    ? member.conjugeDataNascimento.getMonth() + 1
-                    : member.conjugeAniversarioMes,
-                }
-              : null,
-          filhos: member.filhos.map((filho) => ({
-            nome: filho.nome,
-            diaNascimento: filho.aniversarioDia,
-            mesNascimento: filho.aniversarioMes,
-          })),
         }
       : null,
     profissional: blocks.profissional
