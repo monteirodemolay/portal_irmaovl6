@@ -268,7 +268,7 @@ export const IMPORTED_FILHOS: ImportedChildBirthday[] = [
   { irmaoNome: 'João Batista Alves', nome: 'Joao Batista Alves Filho', dia: 4, mes: 12 },
   { irmaoNome: 'Orlando Bernardes da Silveira', nome: 'Rhomulo Moreira Bernardes', dia: 5, mes: 12 },
   { irmaoNome: 'Geraldo Pereira de Freitas', nome: 'Giordanne Guimaraes Freitas', dia: 5, mes: 12 },
-  { irmaoNome: 'Dino Moraes de Sousa', nome: 'Eduardo Garcez de Moares', dia: 7, mes: 12 },
+  { irmaoNome: 'Dino Moraes de Sousa', nome: 'Eduardo Garcez de Moraes', dia: 7, mes: 12 },
   { irmaoNome: 'Arícío Vieira da Silva Júnior', nome: 'João Lucas Castro Vieira', dia: 8, mes: 12 },
   { irmaoNome: 'Vanderlan dos Santos de Lima Junior', nome: 'Helena Teixeira Lima', dia: 10, mes: 12 },
   { irmaoNome: 'Sebastião Cirilo de Melo', nome: 'Walmir Finholdt Melo', dia: 16, mes: 12 },

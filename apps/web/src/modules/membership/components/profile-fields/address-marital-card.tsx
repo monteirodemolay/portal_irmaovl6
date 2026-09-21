@@ -40,7 +40,19 @@ export function AddressMaritalCard({
   const [state, formAction] = useActionState<ProfileFieldActionState, FormData>(action, {
     error: null,
   });
-  const [estadoCivil, setEstadoCivil] = useState<MaritalStatus | ''>(member.estadoCivil ?? '');
+  // Fallback `'casado'` quando `estadoCivil` é `null` mas já existe
+  // `conjugeNome` (cadastro herdado de importação em massa de aniversários,
+  // que grava a cônjuge sem nunca tocar `estadoCivil`) — sem isso, os
+  // campos da cônjuge abaixo ficavam escondidos (`maritalStatusHasSpouse`)
+  // mesmo já tendo dado cadastrado, e salvar assim disparava
+  // `normalizeConjugeFields` no servidor, que apagava a cônjuge por
+  // `estadoCivil` não constar entre os que implicam cônjuge. Só o valor
+  // inicial do formulário — passa a valer de verdade só quando o Admin
+  // salvar (ver também `BackfillConjugeEstadoCivilUseCase`, que corrige o
+  // cadastro já existente).
+  const [estadoCivil, setEstadoCivil] = useState<MaritalStatus | ''>(
+    member.estadoCivil ?? (member.conjugeNome ? 'casado' : ''),
+  );
   const [cep, setCep] = useState(member.endereco?.cep ?? '');
   const [logradouro, setLogradouro] = useState(member.endereco?.logradouro ?? '');
   const [bairro, setBairro] = useState(member.endereco?.bairro ?? '');

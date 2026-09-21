@@ -248,6 +248,8 @@ import {
   EditMemberSituationRecordUseCase,
   SeedMemberSituationHistoryUseCase,
   BackfillDataFalecimentoUseCase,
+  BackfillConjugeEstadoCivilUseCase,
+  DedupeMemberChildrenUseCase,
   SeedInitiationArchiveItemsUseCase,
   SeedElevationArchiveItemsUseCase,
   SeedExaltationArchiveItemsUseCase,
@@ -676,6 +678,14 @@ export function createServerContainer() {
     backfillDataFalecimento: new BackfillDataFalecimentoUseCase({
       memberRepository: repositories.member,
       situationRecordRepository: repositories.memberSituationRecord,
+      clock,
+    }),
+    backfillConjugeEstadoCivil: new BackfillConjugeEstadoCivilUseCase({
+      memberRepository: repositories.member,
+      clock,
+    }),
+    dedupeMemberChildren: new DedupeMemberChildrenUseCase({
+      memberRepository: repositories.member,
       clock,
     }),
     // Fase 1 da Fundação do Acervo VL6 (docs/architecture/11-acervo-vl6.md
