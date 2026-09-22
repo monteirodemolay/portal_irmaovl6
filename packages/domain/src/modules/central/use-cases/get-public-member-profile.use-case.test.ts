@@ -414,7 +414,7 @@ describe('GetPublicMemberProfileUseCase', () => {
     expect(result.value?.memoriaFotografica).toBeNull();
   });
 
-  it('nunca devolve null pra Irmão institucional sem perfil — abre com os blocos voluntários fechados', async () => {
+  it('nunca devolve null pra Irmão institucional sem perfil — abre com os blocos voluntários abertos por padrão (settings: null)', async () => {
     const { useCase, memberRepository } = buildUseCase();
     await memberRepository.create(buildMember());
 
@@ -424,9 +424,15 @@ describe('GetPublicMemberProfileUseCase', () => {
     if (!result.ok) return;
     expect(result.value).not.toBeNull();
     expect(result.value?.memberId).toBe('member-1');
-    expect(result.value?.profissional).toBeNull();
-    expect(result.value?.apresentacao).toBeNull();
-    expect(result.value?.contatos).toBeNull();
+    // `settings === null` (nunca configurou) é ABERTO por padrão — decisão
+    // do Administrador (setembro/2026) — não `null`/fechado como antes.
+    expect(result.value?.profissional).not.toBeNull();
+    expect(result.value?.apresentacao).not.toBeNull();
+    expect(result.value?.contatos).toEqual({
+      telefone: '11999999999',
+      whatsapp: '11999999999',
+      email: 'irmao@vl6.test',
+    });
   });
 
   it('nunca devolve null quando suspenso pela Administração — mesma ficha institucional, sem o conteúdo voluntário', async () => {

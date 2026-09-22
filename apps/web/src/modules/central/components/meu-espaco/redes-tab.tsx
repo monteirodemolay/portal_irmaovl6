@@ -97,37 +97,37 @@ export function RedesTab({
               key: 'whatsapp',
               label: 'WhatsApp',
               icon: MessageCircle,
-              defaultChecked: settings?.externalLinks.whatsapp ?? false,
+              defaultChecked: settings?.externalLinks.whatsapp ?? true,
             },
             {
               key: 'instagram',
               label: 'Instagram',
               icon: Instagram,
-              defaultChecked: settings?.externalLinks.instagram ?? false,
+              defaultChecked: settings?.externalLinks.instagram ?? true,
             },
             {
               key: 'facebook',
               label: 'Facebook',
               icon: Facebook,
-              defaultChecked: settings?.externalLinks.facebook ?? false,
+              defaultChecked: settings?.externalLinks.facebook ?? true,
             },
             {
               key: 'linkedin',
               label: 'LinkedIn',
               icon: Linkedin,
-              defaultChecked: settings?.externalLinks.linkedin ?? false,
+              defaultChecked: settings?.externalLinks.linkedin ?? true,
             },
             {
               key: 'lattes',
               label: 'Currículo Lattes',
               icon: GraduationCap,
-              defaultChecked: settings?.externalLinks.lattes ?? false,
+              defaultChecked: settings?.externalLinks.lattes ?? true,
             },
             {
               key: 'site',
               label: 'Site / portfólio',
               icon: Globe,
-              defaultChecked: settings?.externalLinks.site ?? false,
+              defaultChecked: settings?.externalLinks.site ?? true,
             },
           ]}
         />

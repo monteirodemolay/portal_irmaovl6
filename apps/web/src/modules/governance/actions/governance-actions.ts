@@ -176,6 +176,37 @@ export async function removeBoardPositionAction(
   revalidatePath(`/admin/pessoas/gestoes/${gestaoId}`);
 }
 
+/**
+ * Corrige o NOME de um cargo já atribuído (ex.: erro de digitação num
+ * cargo extra digitado à mão) sem mexer em quem ocupa nem em quando
+ * ocupou — diferente de `assignBoardPositionAction` (troca o titular).
+ */
+export async function renameBoardPositionCargoAction(
+  gestaoId: string,
+  _prevState: GovernanceActionState,
+  formData: FormData,
+): Promise<GovernanceActionState> {
+  const session = await requireSession();
+
+  const assignmentId = String(formData.get('assignmentId') ?? '');
+  const novoCargo = String(formData.get('novoCargo') ?? '');
+  if (!assignmentId || !novoCargo.trim()) {
+    return { error: 'Informe o novo nome do cargo.' };
+  }
+
+  const container = createServerContainer();
+  const result = await container.useCases.renameBoardPositionCargo.execute(session.authContext, {
+    assignmentId,
+    novoCargo,
+  });
+  if (!result.ok) {
+    return { error: result.error.message };
+  }
+
+  revalidatePath(`/admin/pessoas/gestoes/${gestaoId}`);
+  return { error: null };
+}
+
 export async function createCommitteeAction(
   gestaoId: string,
   _prevState: GovernanceActionState,

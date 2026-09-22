@@ -218,17 +218,33 @@ describe('ListParamasonicMemberDirectoryUseCase', () => {
     await expect(useCase.execute(semPermissao)).rejects.toThrow(ForbiddenError);
   });
 
-  it('traz um Irmão ativo mesmo sem nenhum bloco publicado, só com identidade', async () => {
+  it('traz um Irmão ativo sem PublicationSettings já com os blocos abertos (padrão publicado)', async () => {
     const { useCase, memberRepository } = buildDeps();
     await memberRepository.create(buildMember());
 
     const result = await useCase.execute(ctx);
 
     expect(result).toHaveLength(1);
+    // `settings === null` (nunca configurou) é ABERTO por padrão — decisão
+    // do Administrador (setembro/2026), não mais fechado/só identidade.
     expect(result[0]).toMatchObject({
       memberId: 'member-1',
       nomeCompleto: 'Irmão de Teste',
       cargoAtual: null,
+      profissao: 'Advogado',
+    });
+  });
+
+  it('esconde os blocos voluntários quando o Irmão desligou a publicação explicitamente', async () => {
+    const { useCase, memberRepository, publicationSettingsRepository } = buildDeps();
+    await memberRepository.create(buildMember());
+    await publicationSettingsRepository.create(buildSettings({ profilePublished: false }));
+
+    const result = await useCase.execute(ctx);
+
+    expect(result).toHaveLength(1);
+    expect(result[0]).toMatchObject({
+      memberId: 'member-1',
       apresentacao: null,
       profissao: null,
       areaAtuacao: null,

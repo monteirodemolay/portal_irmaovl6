@@ -4,6 +4,7 @@ import type { MemberCentralProfile } from '../entities/member-central-profile.en
 import type { PublicationSettings } from '../entities/publication-settings.entity';
 import { resolveAreaAtuacao } from '../lib/resolve-area-atuacao';
 import { resolveEspecializacao } from '../lib/resolve-especializacao';
+import { resolveEffectivePublication } from '../lib/resolve-effective-publication';
 
 /**
  * Estado do perfil voluntário do Irmão no Diretório — nunca controla se o
@@ -11,9 +12,11 @@ import { resolveEspecializacao } from '../lib/resolve-especializacao';
  * dentro do card/perfil dele.
  *
  * - `institutional_only`: nunca criou `MemberCentralProfile`.
- * - `draft`: criou o perfil (ou tem `PublicationSettings`), mas não publicou
- *   (`profilePublished !== true`).
- * - `published`: `profilePublished === true` e sem suspensão administrativa.
+ * - `draft`: desligou o perfil explicitamente (`profilePublished === false`)
+ *   depois de ter `PublicationSettings`.
+ * - `published`: `profilePublished === true`, OU nunca configurou nada
+ *   (`settings === null` — publicado por padrão, decisão do Administrador,
+ *   ver `resolveEffectivePublication`), e sem suspensão administrativa.
  * - `suspended`: Administração suspendeu a exibição (moderação) — a
  *   configuração do Irmão continua intacta, só a exibição fica congelada.
  *
@@ -28,10 +31,9 @@ export function deriveDirectoryProfileState(
   settings: PublicationSettings | null,
 ): DirectoryProfileState {
   if (!profile) return 'institutional_only';
-  if (!settings) return 'draft';
-  if (settings.suspendedAt !== null) return 'suspended';
-  if (settings.profilePublished) return 'published';
-  return 'draft';
+  if (settings?.suspendedAt) return 'suspended';
+  if (settings && !settings.profilePublished) return 'draft';
+  return 'published';
 }
 
 export interface DirectoryMemberDTO {
@@ -99,7 +101,7 @@ export function buildDirectoryMemberDTO(
 ): DirectoryMemberDTO {
   const profileState = deriveDirectoryProfileState(profile, settings);
   const authorized = profileState === 'published';
-  const blocks = authorized ? settings!.blocks : null;
+  const blocks = authorized ? resolveEffectivePublication(settings).blocks : null;
   const resolvedArea = authorized ? resolveAreaAtuacao(profile) : null;
 
   return {

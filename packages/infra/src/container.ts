@@ -3,6 +3,7 @@ import {
   AddLibraryItemUseCase,
   AssignBoardPositionUseCase,
   RemoveBoardPositionUseCase,
+  RenameBoardPositionCargoUseCase,
   ImportHistoricalBoardTermsUseCase,
   DedupeMemberPositionHistoryUseCase,
   BackfillMestreInstaladoTitlesUseCase,
@@ -767,11 +768,15 @@ export function createServerContainer() {
 
     createBoardTerm: new CreateBoardTermUseCase({
       boardTermRepository: repositories.boardTerm,
+      eventRepository: repositories.event,
+      archiveItemRepository: repositories.archiveItem,
       clock,
       idGenerator,
     }),
     updateBoardTerm: new UpdateBoardTermUseCase({
       boardTermRepository: repositories.boardTerm,
+      eventRepository: repositories.event,
+      archiveItemRepository: repositories.archiveItem,
       clock,
     }),
     normalizeBoardTermNames: new NormalizeBoardTermNamesUseCase({
@@ -794,6 +799,11 @@ export function createServerContainer() {
       memberTitleRepository: repositories.memberTitle,
       clock,
       idGenerator,
+    }),
+    renameBoardPositionCargo: new RenameBoardPositionCargoUseCase({
+      assignmentRepository: repositories.boardPositionAssignment,
+      positionHistoryRepository: repositories.memberPositionHistory,
+      clock,
     }),
     importHistoricalBoardTerms: new ImportHistoricalBoardTermsUseCase({
       memberRepository: repositories.member,
@@ -947,7 +957,9 @@ export function createServerContainer() {
     }),
     suspendCentralProfile: new SuspendCentralProfileUseCase({
       publicationSettingsRepository: repositories.publicationSettings,
+      memberRepository: repositories.member,
       clock,
+      idGenerator,
     }),
     reactivateCentralProfile: new ReactivateCentralProfileUseCase({
       publicationSettingsRepository: repositories.publicationSettings,
