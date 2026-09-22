@@ -73,13 +73,15 @@ export const updateTenantSettingsSchema = z.object({
 export type UpdateTenantSettingsInput = z.infer<typeof updateTenantSettingsSchema>;
 
 /**
- * Foto de fundo da hero da Comunidade VL6 (`/irmaos`) — ver
- * `Tenant.comunidadeHeroFotoUrl`/`comunidadeHeroFotoPosicao`. `fotoUrl: null`
- * remove a foto (hero volta ao gradiente padrão); `posicao` é o
- * enquadramento vertical, 0–100.
+ * Foto de fundo do `PageHero` padronizado de uma página — ver
+ * `Tenant.heroPhotos`. `fotoUrl: null` remove a foto (hero volta ao
+ * gradiente institucional padrão); `posicao` é o enquadramento vertical,
+ * 0–100. `pageKey` identifica a página (ex. `'comunidade'`, `'dashboard'`) —
+ * sempre um valor fixo vindo do próprio código, nunca de entrada do usuário.
  */
-export const updateComunidadeHeroFotoSchema = z.object({
+export const updateHeroPhotoSchema = z.object({
+  pageKey: z.string().min(1).max(40),
   fotoUrl: z.string().url().nullable(),
   posicao: z.number().min(0).max(100).nullable(),
 });
-export type UpdateComunidadeHeroFotoInput = z.infer<typeof updateComunidadeHeroFotoSchema>;
+export type UpdateHeroPhotoInput = z.infer<typeof updateHeroPhotoSchema>;

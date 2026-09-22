@@ -291,7 +291,7 @@ import {
   UpdateNotificationPreferenceUseCase,
   UpdatePublicationSettingsUseCase,
   UpdateTenantBrandingUseCase,
-  UpdateComunidadeHeroFotoUseCase,
+  UpdateHeroPhotoUseCase,
   UpdateTenantSettingsUseCase,
   VerifyDomainUseCase,
   WithdrawFromDirectoryUseCase,
@@ -574,7 +574,7 @@ export function createServerContainer() {
       brandingRepository: repositories.tenantBranding,
       clock,
     }),
-    updateComunidadeHeroFoto: new UpdateComunidadeHeroFotoUseCase({
+    updateHeroPhoto: new UpdateHeroPhotoUseCase({
       tenantRepository: repositories.tenant,
       clock,
     }),

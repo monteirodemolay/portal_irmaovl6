@@ -18,7 +18,8 @@ export * from './modules/tenancy/repositories/tenant-domain-verification.reposit
 export * from './modules/tenancy/services/dns-resolver';
 export * from './modules/tenancy/use-cases/create-tenant.use-case';
 export * from './modules/tenancy/use-cases/update-tenant-branding.use-case';
-export * from './modules/tenancy/use-cases/update-comunidade-hero-foto.use-case';
+export * from './modules/tenancy/use-cases/update-hero-photo.use-case';
+export * from './modules/tenancy/lib/resolve-hero-photo';
 export * from './modules/tenancy/use-cases/update-tenant-settings.use-case';
 export * from './modules/tenancy/use-cases/resolve-tenant-by-host.use-case';
 export * from './modules/tenancy/use-cases/request-domain-verification.use-case';

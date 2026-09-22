@@ -5,25 +5,26 @@ import * as Sentry from '@sentry/nextjs';
 import { errorToLogContext, logger } from '@vl6/shared';
 import { createServerContainer } from '@vl6/infra';
 import { requireSession } from '@/lib/auth/require-session';
-import {
-  uploadCommunityHeroPhoto,
-  validateHeroPhotoFile,
-} from '@/lib/tenant/community-hero-photo-upload';
+import { uploadHeroPhoto, validateHeroPhotoFile } from '@/lib/tenant/hero-photo-upload';
 
-export interface CommunityHeroPhotoActionState {
+export interface HeroPhotoActionState {
   error: string | null;
 }
 
 /**
  * Só o Administrador da Loja (`tenant:manage`) chega até aqui — o formulário
  * que dispara esta action só é renderizado pra quem tem a permissão
- * (`CommunityHeroPhotoUpload`), e o Use Case reforça a mesma checagem
- * (`requirePermission`, defesa em profundidade).
+ * (`PageHeroPhotoUpload`), e o Use Case reforça a mesma checagem
+ * (`requirePermission`, defesa em profundidade). `pageKey`/`path` vêm
+ * amarrados via `.bind(null, pageKey, path)` na própria página (nunca do
+ * `FormData`), então são sempre um valor fixo do nosso código.
  */
-export async function updateCommunityHeroPhotoAction(
-  _prevState: CommunityHeroPhotoActionState,
+export async function updateHeroPhotoAction(
+  pageKey: string,
+  path: string,
+  _prevState: HeroPhotoActionState,
   formData: FormData,
-): Promise<CommunityHeroPhotoActionState> {
+): Promise<HeroPhotoActionState> {
   const session = await requireSession();
   const container = createServerContainer();
 
@@ -39,18 +40,20 @@ export async function updateCommunityHeroPhotoAction(
 
   let fotoUrl: string;
   try {
-    fotoUrl = await uploadCommunityHeroPhoto(file, session.authContext.tenantId);
+    fotoUrl = await uploadHeroPhoto(file, session.authContext.tenantId, pageKey);
   } catch (error) {
-    logger.error('Falha ao enviar foto do Templo (hero da Comunidade VL6) para o storage', {
-      route: 'updateCommunityHeroPhotoAction',
+    logger.error('Falha ao enviar foto do PageHero para o storage', {
+      route: 'updateHeroPhotoAction',
       tenantId: session.authContext.tenantId,
+      pageKey,
       ...errorToLogContext(error),
     });
-    Sentry.captureException(error, { tags: { route: 'updateCommunityHeroPhotoAction:foto' } });
+    Sentry.captureException(error, { tags: { route: 'updateHeroPhotoAction:foto' } });
     return { error: 'Não foi possível enviar a foto. Tente novamente em instantes.' };
   }
 
-  const result = await container.useCases.updateComunidadeHeroFoto.execute(session.authContext, {
+  const result = await container.useCases.updateHeroPhoto.execute(session.authContext, {
+    pageKey,
     fotoUrl,
     posicao,
   });
@@ -58,19 +61,22 @@ export async function updateCommunityHeroPhotoAction(
     return { error: result.error.message };
   }
 
-  revalidatePath('/irmaos', 'layout');
+  revalidatePath(path, 'layout');
   return { error: null };
 }
 
 /** "Retirar foto" do mock-up — volta a hero ao gradiente padrão. */
-export async function removeCommunityHeroPhotoAction(
-  _prevState: CommunityHeroPhotoActionState,
+export async function removeHeroPhotoAction(
+  pageKey: string,
+  path: string,
+  _prevState: HeroPhotoActionState,
   _formData: FormData,
-): Promise<CommunityHeroPhotoActionState> {
+): Promise<HeroPhotoActionState> {
   const session = await requireSession();
   const container = createServerContainer();
 
-  const result = await container.useCases.updateComunidadeHeroFoto.execute(session.authContext, {
+  const result = await container.useCases.updateHeroPhoto.execute(session.authContext, {
+    pageKey,
     fotoUrl: null,
     posicao: null,
   });
@@ -78,6 +84,6 @@ export async function removeCommunityHeroPhotoAction(
     return { error: result.error.message };
   }
 
-  revalidatePath('/irmaos', 'layout');
+  revalidatePath(path, 'layout');
   return { error: null };
 }

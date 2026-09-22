@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { VercelBlobStorageAdapter } from '@vl6/infra';
 
 /**
- * Foto de fundo da hero da Comunidade VL6 (`/irmaos`), enviada pelo
+ * Foto de fundo do `PageHero` padronizado de uma página, enviada pelo
  * Administrador da Loja — mesma validação de `member-photo-upload.ts`
  * (só JPG/PNG/WEBP), limite maior (20 MB, como o protótipo já assumia)
  * porque é uma foto de ambiente/arquitetura, não um retrato.
@@ -24,12 +24,12 @@ export function validateHeroPhotoFile(file: File): string | null {
   return null;
 }
 
-export async function uploadCommunityHeroPhoto(file: File, tenantId: string): Promise<string> {
+export async function uploadHeroPhoto(file: File, tenantId: string, pageKey: string): Promise<string> {
   const buffer = Buffer.from(await file.arrayBuffer());
   const ext = ALLOWED_HERO_PHOTO_TYPES[file.type] ?? 'jpg';
   const storage = new VercelBlobStorageAdapter();
   const upload = await storage.upload({
-    path: `tenants/${tenantId}/comunidade/hero-${randomUUID()}.${ext}`,
+    path: `tenants/${tenantId}/hero/${pageKey}/hero-${randomUUID()}.${ext}`,
     buffer,
     contentType: file.type,
   });
