@@ -39,7 +39,7 @@ export function GalleryAlbumGrid({
             {item.urlMiniatura || item.tipo === 'foto' ? (
               <img
                 src={item.urlMiniatura ?? item.url}
-                alt=""
+                alt={`Fotografia ${index + 1} do álbum ${albumTitulo}`}
                 loading="lazy"
                 className="h-full w-full object-cover transition-transform group-hover:scale-105"
               />

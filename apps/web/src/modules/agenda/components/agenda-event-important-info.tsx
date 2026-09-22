@@ -20,7 +20,7 @@ export function AgendaEventImportantInfo({ event }: { event: Event }) {
       {items.map((item) => (
         <article
           key={item.label}
-          className="border-border grid grid-cols-[34px_1fr] gap-2.5 rounded-lg border bg-[#fbfcfd] p-3.5"
+          className="border-border bg-background grid grid-cols-[34px_1fr] gap-2.5 rounded-lg border p-3.5"
         >
           <span className="border-accent/40 text-accent flex h-8 w-8 items-center justify-center rounded-full border">
             <item.icon size={15} strokeWidth={1.75} />

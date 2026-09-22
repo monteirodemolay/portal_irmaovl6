@@ -59,11 +59,15 @@ export default async function GalleryAlbumDetailPage({
           <EmptyState title="Nenhuma mídia enviada ainda" />
         ) : (
           <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-            {media.map((item) => (
+            {media.map((item, index) => (
               <a key={item.id} href={item.url} target="_blank" rel="noreferrer">
                 <Card className="hover:border-accent overflow-hidden transition-colors">
                   {item.tipo === 'foto' ? (
-                    <img src={item.url} alt="" className="aspect-square w-full object-cover" />
+                    <img
+                      src={item.url}
+                      alt={`Fotografia ${index + 1} do álbum ${album.titulo}`}
+                      className="aspect-square w-full object-cover"
+                    />
                   ) : (
                     <div className="bg-background flex aspect-square w-full items-center justify-center">
                       <Badge variant="outline">Vídeo</Badge>

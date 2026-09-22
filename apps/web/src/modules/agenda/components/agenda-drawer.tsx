@@ -51,7 +51,7 @@ export function AgendaDrawer() {
           )}
         </header>
 
-        <div className="flex min-h-0 flex-1 flex-col gap-3.5 overflow-y-auto bg-[#f8f9fb] p-3.5 lg:grid lg:grid-cols-[300px_minmax(0,1fr)] lg:overflow-hidden">
+        <div className="bg-background flex min-h-0 flex-1 flex-col gap-3.5 overflow-y-auto p-3.5 lg:grid lg:grid-cols-[300px_minmax(0,1fr)] lg:overflow-hidden">
           <div className="flex min-h-0 flex-col gap-3 overflow-y-auto lg:overflow-y-auto">
             <AgendaEventList />
             <AgendaCalendar />

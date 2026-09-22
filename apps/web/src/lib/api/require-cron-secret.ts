@@ -1,5 +1,18 @@
 import 'server-only';
+import { timingSafeEqual } from 'node:crypto';
 import { NextResponse, type NextRequest } from 'next/server';
+
+function safeEqual(a: string, b: string): boolean {
+  const bufA = Buffer.from(a);
+  const bufB = Buffer.from(b);
+  if (bufA.length !== bufB.length) {
+    // Consome o buffer do outro lado com o mesmo custo antes de retornar,
+    // pra não vazar o tamanho do segredo por timing.
+    timingSafeEqual(bufA, bufA);
+    return false;
+  }
+  return timingSafeEqual(bufA, bufB);
+}
 
 /**
  * Protege rotas `/api/cron/*` disparadas pelo Vercel Cron (sem Cloud
@@ -15,7 +28,8 @@ export function requireCronSecret(request: NextRequest): NextResponse | null {
   if (!secret) {
     return NextResponse.json({ error: 'cron_secret_not_configured' }, { status: 500 });
   }
-  if (request.headers.get('authorization') !== `Bearer ${secret}`) {
+  const authorization = request.headers.get('authorization') ?? '';
+  if (!safeEqual(authorization, `Bearer ${secret}`)) {
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
   }
   return null;

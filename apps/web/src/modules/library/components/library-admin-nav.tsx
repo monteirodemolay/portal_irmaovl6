@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { cn, Select } from '@vl6/ui';
+import { UnderlineTabs } from '@/components/layout/underline-tabs';
 
 interface NavItem {
   href: string;
@@ -109,29 +110,12 @@ export function LibraryAdminNav() {
           );
         })}
       </nav>
-      <nav
-        aria-label="Sub-navegação da Biblioteca"
-        className="border-border hidden w-full max-w-full overflow-x-auto whitespace-nowrap border-b md:block"
-      >
-        {activeGroup.items.map((item) => {
-          const isActiveItem = item.href === (activeHref ?? activeGroup.items[0]!.href);
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              aria-current={isActiveItem ? 'page' : undefined}
-              className={cn(
-                'mr-1 inline-block whitespace-nowrap border-b-2 px-3 py-2.5 text-sm font-medium transition-colors last:mr-0',
-                isActiveItem
-                  ? 'border-primary text-primary'
-                  : 'text-muted hover:text-foreground border-transparent',
-              )}
-            >
-              {item.label}
-            </Link>
-          );
-        })}
-      </nav>
+      <UnderlineTabs
+        items={activeGroup.items}
+        activeHref={activeHref ?? activeGroup.items[0]!.href}
+        ariaLabel="Sub-navegação da Biblioteca"
+        className="hidden md:block"
+      />
     </div>
   );
 }

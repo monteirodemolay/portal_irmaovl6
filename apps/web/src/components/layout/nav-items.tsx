@@ -173,6 +173,8 @@ export function buildNavSections(
       { href: '/irmaos/meu-espaco', label: 'Meu Espaço (editar perfil)' },
       { href: '/irmaos/negocios', label: 'Meus Negócios & Serviços' },
       { href: '/irmaos/galeria-de-honra', label: 'Galeria de Honra' },
+      { href: '/irmaos/meu-espaco?tab=contatos', label: 'Privacidade e contatos' },
+      { href: '/irmaos/configuracoes', label: 'Configurações' },
     ],
     full: { href: '/irmaos', label: 'Ver diretório completo' },
   };

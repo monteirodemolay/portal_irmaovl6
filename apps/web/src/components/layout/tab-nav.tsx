@@ -1,8 +1,8 @@
 'use client';
 
-import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { cn, Select } from '@vl6/ui';
+import { Select } from '@vl6/ui';
+import { UnderlineTabs } from './underline-tabs';
 
 export interface TabNavItem {
   href: string;
@@ -52,29 +52,12 @@ export function TabNav({ items }: { items: TabNavItem[] }) {
           ))}
         </Select>
       </div>
-      <nav
-        aria-label="Sub-navegação"
-        className="border-border hidden w-full max-w-full overflow-x-auto whitespace-nowrap border-b md:block print:hidden"
-      >
-        {items.map((item) => {
-          const active = item.href === activeHref;
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              aria-current={active ? 'page' : undefined}
-              className={cn(
-                'mr-1 inline-block whitespace-nowrap border-b-2 px-3 py-3 text-sm font-medium transition-colors last:mr-0',
-                active
-                  ? 'border-primary text-primary'
-                  : 'text-muted hover:text-foreground border-transparent',
-              )}
-            >
-              {item.label}
-            </Link>
-          );
-        })}
-      </nav>
+      <UnderlineTabs
+        items={items}
+        activeHref={activeHref}
+        ariaLabel="Sub-navegação"
+        className="hidden md:block print:hidden"
+      />
     </>
   );
 }

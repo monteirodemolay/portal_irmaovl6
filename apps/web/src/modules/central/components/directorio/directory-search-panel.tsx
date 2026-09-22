@@ -114,6 +114,7 @@ export function DirectorySearchPanel({
           <Input
             type="search"
             name="q"
+            aria-label="Buscar Irmão, profissão, empresa, competência ou serviço"
             placeholder="Buscar Irmão, profissão, empresa, competência ou serviço…"
             defaultValue={filters.q ?? ''}
             className="pl-9"

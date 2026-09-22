@@ -47,8 +47,8 @@ export function AgendaEventList() {
                   className={cn(
                     'grid w-full grid-cols-[52px_minmax(0,1fr)_16px] items-center gap-2.5 rounded-lg px-2 py-2.5 text-left transition-colors',
                     active
-                      ? 'border-accent/60 border bg-gradient-to-r from-[#fff8df] to-white'
-                      : 'border border-transparent hover:bg-[#f9fafb]',
+                      ? 'border-accent/60 from-accent/15 to-surface border bg-gradient-to-r'
+                      : 'hover:bg-background border border-transparent',
                   )}
                 >
                   <div className="border-border/70 border-r text-center">

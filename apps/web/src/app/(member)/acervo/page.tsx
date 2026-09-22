@@ -245,7 +245,7 @@ export default async function AcervoPage({
               Pesquisar no Acervo VL6
             </label>
             <div className="flex max-w-3xl flex-col gap-2 sm:flex-row">
-              <div className="flex min-w-0 flex-1 items-center gap-3 rounded-[10px] bg-white px-4 shadow-md">
+              <div className="focus-within:ring-accent focus-within:ring-offset-primary flex min-w-0 flex-1 items-center gap-3 rounded-[10px] bg-white px-4 shadow-md focus-within:ring-2 focus-within:ring-offset-2">
                 <Search className="text-primary/60 shrink-0" size={20} />
                 <input
                   id="archive-search"

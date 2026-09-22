@@ -326,13 +326,13 @@ export function TemplateFieldEditor({ mode, action, initial }: TemplateFieldEdit
               {guides.x !== null && (
                 <div
                   className="pointer-events-none absolute inset-y-0 border-l border-dashed"
-                  style={{ left: `${guides.x}%`, borderColor: '#d4af37' }}
+                  style={{ left: `${guides.x}%`, borderColor: 'hsl(var(--color-accent))' }}
                 />
               )}
               {guides.y !== null && (
                 <div
                   className="pointer-events-none absolute inset-x-0 border-t border-dashed"
-                  style={{ top: `${guides.y}%`, borderColor: '#d4af37' }}
+                  style={{ top: `${guides.y}%`, borderColor: 'hsl(var(--color-accent))' }}
                 />
               )}
               {fields.map((field, index) => (
@@ -344,7 +344,10 @@ export function TemplateFieldEditor({ mode, action, initial }: TemplateFieldEdit
                   style={{
                     left: `${field.xPercent}%`,
                     top: `${field.yPercent}%`,
-                    borderColor: index === selectedIndex ? '#d4af37' : 'rgba(255,255,255,0.7)',
+                    borderColor:
+                      index === selectedIndex
+                        ? 'hsl(var(--color-accent))'
+                        : 'rgba(255,255,255,0.7)',
                     color: field.color,
                     fontSize: Math.max(8, field.fontSizePx * previewScale),
                     background: 'rgba(255,255,255,0.55)',

@@ -77,16 +77,19 @@ export function MembersFilterForm({ initial }: { initial: MembersFilters }) {
   return (
     <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-3 md:grid-cols-4">
       <Input
+        aria-label="Filtrar por nome"
         value={filters.nome ?? ''}
         onChange={(e) => updateText('nome', e.target.value)}
         placeholder="Nome…"
       />
       <Input
+        aria-label="Filtrar por CIM"
         value={filters.cim ?? ''}
         onChange={(e) => updateText('cim', e.target.value)}
         placeholder="CIM…"
       />
       <Input
+        aria-label="Filtrar por cidade"
         value={filters.cidade ?? ''}
         onChange={(e) => updateText('cidade', e.target.value)}
         placeholder="Cidade…"

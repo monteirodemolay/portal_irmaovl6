@@ -134,7 +134,7 @@ export function LinksUteisView({ links }: { links: LinksUteisItem[] }) {
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
                 placeholder="Busque por nome, assunto ou instituição"
-                className="text-ink focus:border-accent w-full min-w-0 rounded-xl border border-white/15 bg-white py-3.5 pl-11 pr-4 text-sm shadow-md outline-none"
+                className="text-ink focus:border-accent focus-visible:ring-accent w-full min-w-0 rounded-xl border border-white/15 bg-white py-3.5 pl-11 pr-4 text-sm shadow-md outline-none focus-visible:ring-2"
               />
             </div>
           </div>
