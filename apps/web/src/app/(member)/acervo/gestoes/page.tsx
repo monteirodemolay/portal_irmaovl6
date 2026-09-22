@@ -1,10 +1,9 @@
 import Link from 'next/link';
 import { createServerContainer } from '@vl6/infra';
 import type { BoardTerm } from '@vl6/domain';
-import { CalendarDays, EmptyState } from '@vl6/ui';
+import { Avatar, AvatarFallback, CalendarDays, EmptyState } from '@vl6/ui';
 import { requirePagePermission } from '@/lib/auth/require-permission';
 import { AcervoPageHeader } from '@/components/member/acervo-page-header';
-import { MemberAvatar } from '@/components/membership/member-avatar';
 
 /** Único cargo com card grande (foto) na abertura de uma Gestão — mesmo recorte de `[gestaoId]/page.tsx`. */
 const VENERAVEL_CARGO = 'veneravel_mestre';
@@ -14,6 +13,15 @@ function formatPeriod(inicio: Date, fim: Date): string {
   return `${formatter.format(new Date(inicio))} — ${formatter.format(new Date(fim))}`;
 }
 
+function initials(nome: string): string {
+  return nome
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join('');
+}
+
 interface GestaoCardData {
   term: BoardTerm;
   veneravelNome: string | null;
@@ -21,44 +29,48 @@ interface GestaoCardData {
 }
 
 /**
- * Card da listagem de Gestões — foto do Venerável Mestre centralizada
- * acima do nome da Gestão (pedido do Administrador), reaproveitando
- * `MemberAvatar` (recorte circular, sempre centralizado e proporcional,
- * mesmo padrão usado no resto do Portal) em vez do `thumbnailUrl`
- * retangular de `ArchiveItemCard` — pensado pra fotos de paisagem/
- * documento, não pra retrato de rosto. Sem Venerável cadastrado ainda,
- * cai no mesmo círculo com o ícone de calendário usado antes.
+ * Card da listagem de Gestões — foto do Venerável Mestre em retrato (4:5)
+ * com uma plaquinha de nome/período sobrepondo a base (margin negativa),
+ * MESMO padrão visual do `VigilanteCard` em `[gestaoId]/page.tsx` (que por
+ * sua vez já seguia o "Ex-Veneráveis" do Portal VL6 Público) — pedido
+ * direto do Administrador pra manter a apresentação consistente em vez do
+ * avatar circular pequeno usado antes. Sem Venerável cadastrado ainda, cai
+ * num quadrado neutro com o ícone de calendário no lugar da foto.
  */
 function GestaoCard({ term, veneravelNome, veneravelFotoUrl }: GestaoCardData) {
   return (
-    <Link
-      href={`/acervo/gestoes/${term.id}`}
-      className="border-border hover:border-accent focus-visible:ring-accent group flex flex-col items-center gap-3 rounded-lg border p-4 text-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
-    >
-      {veneravelNome ? (
-        <MemberAvatar
-          fotoUrl={veneravelFotoUrl}
-          nome={veneravelNome}
-          className="h-16 w-16"
-          disablePreview
-        />
-      ) : (
-        <div className="bg-background text-muted flex h-16 w-16 items-center justify-center rounded-full">
-          <CalendarDays size={22} />
-        </div>
-      )}
-      <div>
-        <div className="text-accent flex items-center justify-center gap-2 text-[10px] font-semibold uppercase tracking-wider">
-          <CalendarDays size={14} />
+    <Link href={`/acervo/gestoes/${term.id}`} className="group">
+      <div className="bg-bg border-border aspect-[4/5] overflow-hidden rounded-xl border shadow-sm">
+        {veneravelFotoUrl ? (
+          <img
+            src={veneravelFotoUrl}
+            alt={veneravelNome ?? term.nome}
+            className="h-full w-full object-cover object-top"
+          />
+        ) : (
+          <div className="flex h-full items-center justify-center">
+            <Avatar className="h-16 w-16">
+              <AvatarFallback className="text-lg">
+                {veneravelNome ? initials(veneravelNome) : <CalendarDays size={22} />}
+              </AvatarFallback>
+            </Avatar>
+          </div>
+        )}
+      </div>
+      <div className="bg-surface border-border hover:border-accent relative mx-3 -mt-7 rounded-lg border p-3 text-center shadow-md transition-colors">
+        <div className="text-accent flex items-center justify-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider">
+          <CalendarDays size={12} />
           Gestão
         </div>
-        <h3 className="font-display group-hover:text-accent mt-2 font-semibold transition-colors">
+        <h3 className="font-display group-hover:text-accent mt-1 truncate text-sm font-semibold transition-colors">
           {term.nome}
         </h3>
-        <p className="text-muted mt-1 text-xs leading-5">
+        <p className="text-muted mt-0.5 text-xs">
           {formatPeriod(term.periodoInicio, term.periodoFim)}
         </p>
-        {veneravelNome && <p className="text-muted mt-1 text-xs">{veneravelNome}</p>}
+        {veneravelNome && (
+          <p className="text-muted mt-1 truncate text-xs font-medium">{veneravelNome}</p>
+        )}
       </div>
     </Link>
   );
