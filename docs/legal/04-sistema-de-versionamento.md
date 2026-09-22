@@ -89,10 +89,22 @@ Já especificada e prototipada no mock-up funcional (artifact publicado na conve
 - Comparação entre versões → diff entre dois `conteudoMarkdown` (pode usar uma lib de diff de texto no servidor; o mock-up usa diffs pré-computados apenas para demonstração).
 - Central de solicitações → formulário que cria uma solicitação (nova coleção `privacyRequests`, com o mesmo padrão de auditoria) encaminhada à Secretaria, já que hoje não há atendimento automatizado de exportação/eliminação (ver auditoria §8, item 8).
 
-## 7. Pendências técnicas para implementação real
+## 7. Estado da implementação (atualizado em 22/09/2026)
 
-- Criar as coleções `legalDocumentVersions`, `legalDocumentAcceptances` e `privacyRequests`, com regras de Firestore análogas às de `publicationConsents`.
-- Popular `legalDocumentVersions` com a versão 1.0.0 dos dois documentos no momento da publicação oficial.
-- Adaptar a Server Action de criação de conta para exigir o aceite antes de finalizar o cadastro.
-- Implementar a UI da área "Termos e Privacidade" a partir do mock-up já validado.
-- Definir quem recebe a permissão `legalDocument:manage` (sugestão: mesmo grupo que hoje tem `auditLog:read`/`tenant:manage`).
+Implementado, com código real no `apps/web`/`packages/*` (não é mais só especificação):
+
+- Coleções `legalDocumentVersions` e `legalDocumentAcceptances` no Firestore, com regras append-only análogas a `publicationConsents` (`firestore.rules`), e índices compostos em `firestore.indexes.json`.
+- Domínio: `LegalDocumentVersion`/`LegalDocumentAcceptance` (entidades), `PublishLegalDocumentVersionUseCase`, `ListLegalDocumentVersionsUseCase`, `GetLegalAcceptanceStatusUseCase`, `RecordLegalAcceptanceUseCase` — todos com testes unitários (`packages/domain/src/modules/legal/`).
+- RBAC: recurso `legalDocument` (`read` para todo papel com acesso ao Portal, `manage` só Administração) em `packages/shared/src/enums/rbac.ts`.
+- Aceite obrigatório no cadastro: `claimMemberAccountAction` (`apps/web/src/modules/membership/actions/claim-actions.ts`) agora bloqueia a criação da conta sem as duas versões vigentes aceitas, e grava IP/User-Agent/hash no mesmo fluxo.
+- Gate de reaceite: `(member)/layout.tsx` redireciona qualquer Irmão com pendência para a área real "Termos e Privacidade" (`/irmaos/configuracoes/termos-e-privacidade`), que lê e grava dados de verdade (não é mais o mock-up isolado).
+- Leitura pública (pré-login) dos documentos vigentes em `/termos/politica-privacidade` e `/termos/termos-uso`.
+- Script de bootstrap `scripts/seed-legal-documents.ts` publica a v1.0.0 a partir de `02-politica-privacidade.md`/`03-termos-de-uso.md`.
+
+Ainda NÃO implementado (trabalho futuro, não confundir com o que está pronto):
+
+- **UI de administração** para publicar novas versões — hoje só existe o Use Case (`publishLegalDocumentVersion`) e o script de seed; publicar uma v1.1.0 exige rodar um script ou chamar o Use Case diretamente, não há formulário no `/admin`.
+- **Detecção automática de impacto** ao alterar código (checklist de PR/cron) — item 5 continua sendo processo institucional, não automação.
+- **Comparação visual entre versões** (diff) na área "Termos e Privacidade" — a página mostra o histórico completo, mas não um diff lado a lado.
+- **Central de solicitações** (exportação/eliminação sob pedido) — continua manual, via Secretaria; não há formulário nem coleção `privacyRequests` implementada.
+- Notificação automática em massa ao publicar uma nova versão (`notifyAllActiveUsers`) — o Use Case de publicação não dispara isso sozinho; quem publicar uma nova versão via script/futura UI precisa acionar a notificação separadamente.

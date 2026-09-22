@@ -317,6 +317,10 @@ import {
   ArchivePublicationUseCase,
   ListPublicationsUseCase,
   UpdatePublicationUseCase,
+  PublishLegalDocumentVersionUseCase,
+  ListLegalDocumentVersionsUseCase,
+  GetLegalAcceptanceStatusUseCase,
+  RecordLegalAcceptanceUseCase,
 } from '@vl6/domain';
 import { withAudit } from './audit/with-audit';
 import { NodeDnsResolver } from './dns/node-dns-resolver';
@@ -385,8 +389,11 @@ import { FirestoreTenantBrandingRepository } from './firestore/repositories/tena
 import { FirestoreTenantDomainVerificationRepository } from './firestore/repositories/tenant-domain-verification.repository';
 import { FirestoreTenantSettingsRepository } from './firestore/repositories/tenant-settings.repository';
 import { FirestoreUserRepository } from './firestore/repositories/user.repository';
+import { FirestoreLegalDocumentVersionRepository } from './firestore/repositories/legal-document-version.repository';
+import { FirestoreLegalDocumentAcceptanceRepository } from './firestore/repositories/legal-document-acceptance.repository';
 import { SystemClock } from './adapters/system-clock';
 import { FirestoreIdGenerator } from './adapters/firestore-id-generator';
+import { NodeHasher } from './adapters/node-hasher';
 import { NoopNotificationGateway } from './adapters/noop-notification-gateway';
 import { AesGcmCipher } from './security/aes-gcm-cipher';
 import { HmacOAuthStateSigner } from './security/hmac-oauth-state-signer';
@@ -406,6 +413,7 @@ export function createServerContainer() {
   const idGenerator = new FirestoreIdGenerator(db);
   const auditLogRepository = new FirestoreAuditLogRepository(db);
   const auditDeps = { auditLogRepository, clock, idGenerator };
+  const hasher = new NodeHasher();
 
   // Integração Google Calendar — cada método lança `IntegrationNotConfiguredError`
   // (capturado pelos use cases) quando as env vars `GOOGLE_*` não existem
@@ -537,6 +545,8 @@ export function createServerContainer() {
     ),
     paramasonicEntityMember: new FirestoreParamasonicEntityMemberRepository(db),
     paramasonicEntityPosition: new FirestoreParamasonicEntityPositionRepository(db),
+    legalDocumentVersion: new FirestoreLegalDocumentVersionRepository(db),
+    legalDocumentAcceptance: new FirestoreLegalDocumentAcceptanceRepository(db),
   };
 
   const notificationGateway = new NoopNotificationGateway();
@@ -2026,6 +2036,27 @@ export function createServerContainer() {
       paramasonicEntityMemberRepository: repositories.paramasonicEntityMember,
       paramasonicEntityRepository: repositories.paramasonicEntity,
       memberRepository: repositories.member,
+      clock,
+      idGenerator,
+    }),
+
+    publishLegalDocumentVersion: new PublishLegalDocumentVersionUseCase({
+      legalDocumentVersionRepository: repositories.legalDocumentVersion,
+      auditLogRepository,
+      clock,
+      idGenerator,
+    }),
+    listLegalDocumentVersions: new ListLegalDocumentVersionsUseCase({
+      legalDocumentVersionRepository: repositories.legalDocumentVersion,
+    }),
+    getLegalAcceptanceStatus: new GetLegalAcceptanceStatusUseCase({
+      legalDocumentVersionRepository: repositories.legalDocumentVersion,
+      legalDocumentAcceptanceRepository: repositories.legalDocumentAcceptance,
+    }),
+    recordLegalAcceptance: new RecordLegalAcceptanceUseCase({
+      legalDocumentVersionRepository: repositories.legalDocumentVersion,
+      legalDocumentAcceptanceRepository: repositories.legalDocumentAcceptance,
+      hasher,
       clock,
       idGenerator,
     }),

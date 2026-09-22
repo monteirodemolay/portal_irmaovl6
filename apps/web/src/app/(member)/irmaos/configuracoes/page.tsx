@@ -68,6 +68,11 @@ export default async function ConfiguracoesPage() {
           <Link href="/irmaos/meu-espaco" className="text-accent underline">
             Meu Espaço
           </Link>
+          . A Política de Privacidade e os Termos de Uso vigentes, seu histórico de aceite e o
+          histórico de versões ficam em{' '}
+          <Link href="/irmaos/configuracoes/termos-e-privacidade" className="text-accent underline">
+            Termos e Privacidade
+          </Link>
           .
         </p>
       </section>

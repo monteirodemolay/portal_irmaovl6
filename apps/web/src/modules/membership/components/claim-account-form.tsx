@@ -9,11 +9,22 @@ import { claimMemberAccountAction, type ClaimActionState } from '../actions/clai
 
 const EMPTY_STATE: ClaimActionState = { error: null };
 
-export function ClaimAccountForm({ unclaimedMembers }: { unclaimedMembers: UnclaimedMember[] }) {
+export function ClaimAccountForm({
+  unclaimedMembers,
+  politicaPrivacidadeVersao,
+  termosUsoVersao,
+}: {
+  unclaimedMembers: UnclaimedMember[];
+  /** `null` quando a Loja ainda não publicou nenhuma versão — nesse caso o cadastro fica bloqueado (ver `claimMemberAccountAction`) até a Secretaria publicar. */
+  politicaPrivacidadeVersao: string | null;
+  termosUsoVersao: string | null;
+}) {
   const [state, formAction] = useActionState<ClaimActionState, FormData>(
     claimMemberAccountAction,
     EMPTY_STATE,
   );
+  const [aceitePolitica, setAceitePolitica] = useState(false);
+  const [aceiteTermos, setAceiteTermos] = useState(false);
   // Todos os campos controlados de propósito: depois de uma tentativa que
   // falha (ex.: CIM errada), `useActionState` reseta os campos não
   // controlados do <form> pro valor inicial — com campos controlados, o
@@ -112,19 +123,74 @@ export function ClaimAccountForm({ unclaimedMembers }: { unclaimedMembers: Uncla
               </button>
             </div>
           </FormField>
+
+          {politicaPrivacidadeVersao && termosUsoVersao ? (
+            <div className="flex flex-col gap-2 text-sm">
+              <label className="flex items-start gap-2">
+                <input
+                  type="checkbox"
+                  name="aceitePolitica"
+                  checked={aceitePolitica}
+                  onChange={(e) => setAceitePolitica(e.target.checked)}
+                  className="mt-0.5"
+                />
+                <span>
+                  Li e estou ciente da{' '}
+                  <a
+                    href="/termos/politica-privacidade"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-accent underline"
+                  >
+                    Política de Privacidade
+                  </a>{' '}
+                  (v{politicaPrivacidadeVersao}).
+                </span>
+              </label>
+              <label className="flex items-start gap-2">
+                <input
+                  type="checkbox"
+                  name="aceiteTermos"
+                  checked={aceiteTermos}
+                  onChange={(e) => setAceiteTermos(e.target.checked)}
+                  className="mt-0.5"
+                />
+                <span>
+                  Li e concordo com os{' '}
+                  <a
+                    href="/termos/termos-uso"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-accent underline"
+                  >
+                    Termos de Uso
+                  </a>{' '}
+                  (v{termosUsoVersao}) do Portal do Irmão VL6.
+                </span>
+              </label>
+            </div>
+          ) : (
+            <p className="text-sm text-red-600">
+              Os Termos de Uso e a Política de Privacidade ainda não foram publicados nesta Loja.
+              Fale com a Secretaria antes de criar seu acesso.
+            </p>
+          )}
         </>
       )}
 
       {state.error && <p className="text-sm text-red-600">{state.error}</p>}
-      {memberId && <SubmitButton />}
+      {memberId &&
+        (politicaPrivacidadeVersao && termosUsoVersao ? (
+          <SubmitButton disabled={!aceitePolitica || !aceiteTermos} />
+        ) : null)}
     </form>
   );
 }
 
-function SubmitButton() {
+function SubmitButton({ disabled }: { disabled: boolean }) {
   const { pending } = useFormStatus();
   return (
-    <Button type="submit" disabled={pending} className="h-12 w-full text-base">
+    <Button type="submit" disabled={pending || disabled} className="h-12 w-full text-base">
       {pending ? 'Criando seu acesso…' : 'Entrar no Portal'}
     </Button>
   );
