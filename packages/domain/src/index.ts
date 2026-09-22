@@ -93,6 +93,7 @@ export * from './modules/governance/use-cases/create-board-term.use-case';
 export * from './modules/governance/use-cases/update-board-term.use-case';
 export * from './modules/governance/use-cases/normalize-board-term-names.use-case';
 export * from './modules/governance/use-cases/assign-board-position.use-case';
+export * from './modules/governance/use-cases/remove-board-position.use-case';
 export * from './modules/governance/use-cases/get-active-board.use-case';
 export * from './modules/governance/use-cases/get-public-board.use-case';
 export * from './modules/governance/use-cases/list-board-terms.use-case';

@@ -461,6 +461,9 @@ export class InMemoryBoardPositionAssignmentRepository implements IBoardPosition
   async update(assignment: BoardPositionAssignment) {
     this.byId.set(assignment.id, assignment);
   }
+  async delete(id: string) {
+    this.byId.delete(id);
+  }
 }
 
 export class InMemoryCommitteeRepository implements ICommitteeRepository {

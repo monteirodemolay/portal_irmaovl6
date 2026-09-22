@@ -47,4 +47,8 @@ export class FirestoreBoardPositionAssignmentRepository implements IBoardPositio
   async update(assignment: BoardPositionAssignment): Promise<void> {
     await this.collection.doc(assignment.id).set(assignment);
   }
+
+  async delete(id: string): Promise<void> {
+    await this.collection.doc(id).delete();
+  }
 }

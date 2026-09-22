@@ -2,6 +2,7 @@ import {
   AddGalleryMediaUseCase,
   AddLibraryItemUseCase,
   AssignBoardPositionUseCase,
+  RemoveBoardPositionUseCase,
   ImportHistoricalBoardTermsUseCase,
   DedupeMemberPositionHistoryUseCase,
   BackfillMestreInstaladoTitlesUseCase,
@@ -772,6 +773,14 @@ export function createServerContainer() {
     }),
     assignBoardPosition: new AssignBoardPositionUseCase({
       boardTermRepository: repositories.boardTerm,
+      assignmentRepository: repositories.boardPositionAssignment,
+      memberRepository: repositories.member,
+      positionHistoryRepository: repositories.memberPositionHistory,
+      memberTitleRepository: repositories.memberTitle,
+      clock,
+      idGenerator,
+    }),
+    removeBoardPosition: new RemoveBoardPositionUseCase({
       assignmentRepository: repositories.boardPositionAssignment,
       memberRepository: repositories.member,
       positionHistoryRepository: repositories.memberPositionHistory,
