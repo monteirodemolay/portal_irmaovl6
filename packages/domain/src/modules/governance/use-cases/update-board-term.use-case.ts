@@ -9,6 +9,8 @@ export interface UpdateBoardTermInput {
   nome: string;
   periodoInicio: Date;
   periodoFim: Date;
+  /** Mesmo campo de `CreateBoardTermInput` — ver o comentário lá. */
+  permitirSobreposicao?: boolean;
 }
 
 export interface UpdateBoardTermDeps {
@@ -40,14 +42,16 @@ export class UpdateBoardTermUseCase {
       return err(new ConflictError('O período final deve ser posterior ao período inicial.'));
     }
 
-    const overlaps = await this.deps.boardTermRepository.overlaps(
-      ctx.tenantId,
-      input.periodoInicio,
-      input.periodoFim,
-      termId,
-    );
-    if (overlaps) {
-      return err(new ConflictError('Já existe uma gestão cujo período se sobrepõe a este.'));
+    if (!input.permitirSobreposicao) {
+      const overlaps = await this.deps.boardTermRepository.overlaps(
+        ctx.tenantId,
+        input.periodoInicio,
+        input.periodoFim,
+        termId,
+      );
+      if (overlaps) {
+        return err(new ConflictError('Já existe uma gestão cujo período se sobrepõe a este.'));
+      }
     }
 
     const updated: BoardTerm = {

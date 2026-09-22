@@ -9,6 +9,14 @@ export interface CreateBoardTermInput {
   nome: string;
   periodoInicio: Date;
   periodoFim: Date;
+  /**
+   * Confirmação explícita do Administrador de que a sobreposição com outra
+   * gestão já cadastrada é intencional (ex.: troca de Venerável Mestre no
+   * meio do ano — duas gestões distintas cobrindo o mesmo período nominal
+   * "20XX/20XX+1"). Sem isso, `overlaps()` sempre bloqueia — a maioria das
+   * sobreposições é erro de digitação, não histórico legítimo.
+   */
+  permitirSobreposicao?: boolean;
 }
 
 export interface CreateBoardTermDeps {
@@ -28,13 +36,15 @@ export class CreateBoardTermUseCase {
       return err(new ConflictError('O período final deve ser posterior ao período inicial.'));
     }
 
-    const overlaps = await this.deps.boardTermRepository.overlaps(
-      ctx.tenantId,
-      input.periodoInicio,
-      input.periodoFim,
-    );
-    if (overlaps) {
-      return err(new ConflictError('Já existe uma gestão cujo período se sobrepõe a este.'));
+    if (!input.permitirSobreposicao) {
+      const overlaps = await this.deps.boardTermRepository.overlaps(
+        ctx.tenantId,
+        input.periodoInicio,
+        input.periodoFim,
+      );
+      if (overlaps) {
+        return err(new ConflictError('Já existe uma gestão cujo período se sobrepõe a este.'));
+      }
     }
 
     const now = this.deps.clock.now();
