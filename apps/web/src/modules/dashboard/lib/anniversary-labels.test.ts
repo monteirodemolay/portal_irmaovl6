@@ -10,6 +10,8 @@ function buildEntry(overrides: Partial<UpcomingAnniversaryEntry> = {}): Upcoming
     grau: 'mestre',
     kind: 'nascimento',
     data: new Date(2026, 8, 22), // 22/09, construído local — mesmo padrão de `computeNextOccurrence`
+    dia: 22,
+    mes: 9,
     anosCompletos: 63,
     diasAte: 1,
     conjugeNome: null,
@@ -19,13 +21,18 @@ function buildEntry(overrides: Partial<UpcomingAnniversaryEntry> = {}): Upcoming
 }
 
 describe('anniversaryHeadline', () => {
-  it('mostra o dia/mês exatamente como construído em `entry.data`, sem deslocar por fuso horário', () => {
-    // Bug relatado pelo Administrador: aniversário de 22/09 aparecendo como
-    // 21/09 — causado por formatar uma data-calendário pura (sem
-    // significado real de horário) forçando conversão de fuso horário
-    // (`timeZone: 'America/Sao_Paulo'`), que empurrava a meia-noite
-    // construída no fuso do servidor pro dia anterior.
-    const headline = anniversaryHeadline(buildEntry());
+  it('mostra `entry.dia`/`entry.mes` (números), nunca deriva de `entry.data`', () => {
+    // Bug relatado pelo Administrador, 2ª ocorrência: mesmo depois de
+    // corrigido o cálculo de "hoje" no servidor, 22/09 continuava
+    // aparecendo como 21/09 — porque este painel é um Client Component, e
+    // `entry.data` (um `Date`) é serializado como instante ISO ao
+    // atravessar a fronteira servidor/cliente e reconstruído no navegador
+    // do Irmão: `getDate()` nesse `Date` reconstruído lê o fuso do
+    // NAVEGADOR (São Paulo, UTC-3), não o do servidor, empurrando a data um
+    // dia pra trás. `entry.data` aqui está deliberadamente "errado"
+    // (21/09) pra provar que `anniversaryHeadline` ignora esse campo por
+    // completo — só `dia`/`mes` (números, imunes a fuso horário) importam.
+    const headline = anniversaryHeadline(buildEntry({ data: new Date(2026, 8, 21) }));
     expect(headline).toContain('22/09');
     expect(headline).not.toContain('21/09');
   });
