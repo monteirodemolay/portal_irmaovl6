@@ -2,6 +2,9 @@ import type { AuthContext } from '../../../shared/auth-context';
 import { requirePermission } from '../../../shared/auth-context';
 import type { IClock } from '../../../shared/ports';
 import { ConflictError, NotFoundError, ok, err, type Result } from '../../../shared/result';
+import type { IArchiveItemRepository } from '../../archive/repositories/archive-item.repository';
+import { relinkOrphanArchiveItems } from '../../archive/lib/relink-orphan-archive-items';
+import type { IEventRepository } from '../../agenda/repositories/event.repository';
 import type { BoardTerm } from '../entities/board-term.entity';
 import type { IBoardTermRepository } from '../repositories/board-term.repository';
 
@@ -15,6 +18,8 @@ export interface UpdateBoardTermInput {
 
 export interface UpdateBoardTermDeps {
   boardTermRepository: IBoardTermRepository;
+  eventRepository: IEventRepository;
+  archiveItemRepository: IArchiveItemRepository;
   clock: IClock;
 }
 
@@ -22,6 +27,11 @@ export interface UpdateBoardTermDeps {
  * Edita nome/período de uma gestão já cadastrada — corrige convenções de
  * nomenclatura sem precisar recriar o registro (ex.: "Gestão 2026/2027" →
  * "2026/2027", pra não duplicar "Gestão" onde a UI já antepõe essa palavra).
+ * Depois de salvar, vincula sozinha (`relinkOrphanArchiveItems`) todo
+ * Evento/item do Acervo VL6 dentro do período (novo) que ainda estava sem
+ * Gestão — mesmo motivo de `CreateBoardTermUseCase`: alargar/corrigir o
+ * período de uma Gestão pode passar a cobrir cerimônias que antes ficaram
+ * órfãs.
  */
 export class UpdateBoardTermUseCase {
   constructor(private readonly deps: UpdateBoardTermDeps) {}
@@ -63,6 +73,7 @@ export class UpdateBoardTermUseCase {
       updatedBy: ctx.uid,
     };
     await this.deps.boardTermRepository.update(updated);
+    await relinkOrphanArchiveItems(this.deps, ctx.tenantId, ctx.uid, updated);
 
     return ok(updated);
   }

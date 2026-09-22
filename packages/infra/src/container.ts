@@ -767,11 +767,15 @@ export function createServerContainer() {
 
     createBoardTerm: new CreateBoardTermUseCase({
       boardTermRepository: repositories.boardTerm,
+      eventRepository: repositories.event,
+      archiveItemRepository: repositories.archiveItem,
       clock,
       idGenerator,
     }),
     updateBoardTerm: new UpdateBoardTermUseCase({
       boardTermRepository: repositories.boardTerm,
+      eventRepository: repositories.event,
+      archiveItemRepository: repositories.archiveItem,
       clock,
     }),
     normalizeBoardTermNames: new NormalizeBoardTermNamesUseCase({
