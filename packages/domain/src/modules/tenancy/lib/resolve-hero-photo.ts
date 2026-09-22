@@ -14,7 +14,11 @@ export interface HeroPhoto {
  * nenhuma migração de dado ter rodado.
  */
 export function resolveHeroPhoto(tenant: Tenant, pageKey: string): HeroPhoto | null {
-  const configured = tenant.heroPhotos[pageKey];
+  // `?.` de propósito: Lojas cadastradas antes deste campo existir têm o
+  // documento no Firestore sem `heroPhotos` nenhum (não é `{}` — a chave
+  // simplesmente não está lá), então isto quebrava em produção sem o
+  // encadeamento opcional.
+  const configured = tenant.heroPhotos?.[pageKey];
   if (configured) return configured;
 
   if (pageKey === 'comunidade' && tenant.comunidadeHeroFotoUrl) {
