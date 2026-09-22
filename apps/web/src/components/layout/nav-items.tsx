@@ -186,6 +186,7 @@ export function buildNavSections(
       { href: '/acervo/documentos', label: 'Documentos' },
       { href: '/acervo/biblioteca', label: 'Biblioteca' },
       { href: '/acervo/fotografias', label: 'Fotos e vídeos' },
+      { href: '/acervo/gestoes', label: 'Gestões' },
       { href: '/downloads', label: 'Favoritos' },
       { href: '/acervo/pesquisar', label: 'Pesquisar tudo' },
     ],
