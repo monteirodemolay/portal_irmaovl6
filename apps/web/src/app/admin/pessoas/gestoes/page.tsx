@@ -3,6 +3,7 @@ import { createServerContainer } from '@vl6/infra';
 import { Button, Card, CardContent, CardHeader, CardTitle, EmptyState } from '@vl6/ui';
 import { requirePagePermission } from '@/lib/auth/require-permission';
 import { NormalizeBoardTermNamesRunner } from '@/modules/governance/components/normalize-board-term-names-runner';
+import { BackfillArchiveBoardTermLinksRunner } from '@/modules/governance/components/backfill-archive-board-term-links-runner';
 
 function formatDate(date: Date): string {
   return new Intl.DateTimeFormat('pt-BR').format(new Date(date));
@@ -30,6 +31,7 @@ export default async function BoardTermsPage() {
             </Button>
           </div>
           <NormalizeBoardTermNamesRunner />
+          <BackfillArchiveBoardTermLinksRunner />
         </div>
       </div>
 

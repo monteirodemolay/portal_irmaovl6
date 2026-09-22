@@ -2,7 +2,10 @@
 
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
-import type { NormalizeBoardTermNamesResult } from '@vl6/domain';
+import type {
+  BackfillArchiveBoardTermLinksResult,
+  NormalizeBoardTermNamesResult,
+} from '@vl6/domain';
 import { createServerContainer } from '@vl6/infra';
 import { requireSession } from '@/lib/auth/require-session';
 import { CUSTOM_CARGO_VALUE } from '../lib/cargo-constants';
@@ -14,6 +17,33 @@ export interface GovernanceActionState {
 export interface NormalizeBoardTermNamesState {
   error: string | null;
   result: NormalizeBoardTermNamesResult | null;
+}
+
+export interface BackfillArchiveBoardTermLinksState {
+  error: string | null;
+  result: BackfillArchiveBoardTermLinksResult | null;
+}
+
+/**
+ * Correção em massa, um clique: recalcula `boardTermId` de Eventos/itens do
+ * Acervo VL6 que ficaram com `null` — acontece quando a data de
+ * iniciação/elevação/exaltação de um Irmão é registrada antes de a Gestão
+ * do ano corrente existir no Portal (`findByDate` não achava nada na hora).
+ * Sem isso, "Iniciados/Elevados/Exaltados nesta Gestão" na página da Gestão
+ * nunca mostra esse Irmão, mesmo a Gestão certa já cadastrada depois.
+ */
+export async function backfillArchiveBoardTermLinksAction(): Promise<BackfillArchiveBoardTermLinksState> {
+  const session = await requireSession();
+  const container = createServerContainer();
+
+  const result = await container.useCases.backfillArchiveBoardTermLinks.execute(
+    session.authContext,
+  );
+  if (!result.ok) return { error: result.error.message, result: null };
+
+  revalidatePath('/admin/pessoas/gestoes');
+  revalidatePath('/acervo/gestoes');
+  return { error: null, result: result.value };
 }
 
 /**
