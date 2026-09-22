@@ -249,6 +249,7 @@ import {
   EditMemberSituationRecordUseCase,
   SeedMemberSituationHistoryUseCase,
   BackfillDataFalecimentoUseCase,
+  BackfillArchiveBoardTermLinksUseCase,
   BackfillConjugeEstadoCivilUseCase,
   DedupeMemberChildrenUseCase,
   SeedInitiationArchiveItemsUseCase,
@@ -680,6 +681,12 @@ export function createServerContainer() {
     backfillDataFalecimento: new BackfillDataFalecimentoUseCase({
       memberRepository: repositories.member,
       situationRecordRepository: repositories.memberSituationRecord,
+      clock,
+    }),
+    backfillArchiveBoardTermLinks: new BackfillArchiveBoardTermLinksUseCase({
+      eventRepository: repositories.event,
+      archiveItemRepository: repositories.archiveItem,
+      boardTermRepository: repositories.boardTerm,
       clock,
     }),
     backfillConjugeEstadoCivil: new BackfillConjugeEstadoCivilUseCase({

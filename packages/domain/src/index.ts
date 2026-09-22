@@ -65,6 +65,7 @@ export * from './modules/membership/use-cases/register-member-situation.use-case
 export * from './modules/membership/use-cases/edit-member-situation-record.use-case';
 export * from './modules/membership/use-cases/seed-member-situation-history.use-case';
 export * from './modules/membership/use-cases/backfill-data-falecimento.use-case';
+export * from './modules/archive/use-cases/backfill-archive-board-term-links.use-case';
 export * from './modules/membership/use-cases/backfill-conjuge-estado-civil.use-case';
 export * from './modules/membership/use-cases/dedupe-member-children.use-case';
 export * from './modules/membership/use-cases/verify-birthday-data.use-case';
