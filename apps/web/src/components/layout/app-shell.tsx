@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ChevronRight, Menu, X, cn } from '@vl6/ui';
@@ -68,19 +68,54 @@ export function AppShell({
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [expandedHref, setExpandedHref] = useState<string | null>(null);
+  const mobilePanelRef = useRef<HTMLDivElement>(null);
+  const mobileCloseButtonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     setMobileOpen(false);
     setExpandedHref(null);
   }, [pathname]);
 
+  // Trava o scroll do fundo e prende o foco dentro do drawer enquanto ele
+  // está aberto — sem isso o conteúdo por trás rolava junto (double-scroll)
+  // e o Tab escapava do menu pro conteúdo escondido atrás dele.
   useEffect(() => {
     if (!mobileOpen) return;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    mobileCloseButtonRef.current?.focus();
+
     function onKeyDown(event: KeyboardEvent) {
-      if (event.key === 'Escape') setMobileOpen(false);
+      if (event.key === 'Escape') {
+        setMobileOpen(false);
+        return;
+      }
+      if (event.key !== 'Tab') return;
+
+      const panel = mobilePanelRef.current;
+      if (!panel) return;
+      const focusable = panel.querySelectorAll<HTMLElement>(
+        'a[href], button:not([disabled]), input, select, textarea, [tabindex]:not([tabindex="-1"])',
+      );
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (!first || !last) return;
+
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
     }
+
     document.addEventListener('keydown', onKeyDown);
-    return () => document.removeEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('keydown', onKeyDown);
+      document.body.style.overflow = previousOverflow;
+    };
   }, [mobileOpen]);
 
   function isActive(href: string): boolean {
@@ -200,10 +235,14 @@ export function AppShell({
             onClick={() => setMobileOpen(false)}
             aria-hidden="true"
           />
-          <div className="from-primary to-primary-dark absolute inset-y-0 left-0 flex w-[270px] flex-col overflow-hidden bg-gradient-to-b shadow-md">
+          <div
+            ref={mobilePanelRef}
+            className="from-primary to-primary-dark absolute inset-y-0 left-0 flex w-[270px] flex-col overflow-hidden bg-gradient-to-b shadow-md"
+          >
             <div className="flex items-center justify-between gap-3 border-b border-white/10 px-5 py-5">
               {brand}
               <button
+                ref={mobileCloseButtonRef}
                 type="button"
                 onClick={() => setMobileOpen(false)}
                 aria-label="Fechar menu"

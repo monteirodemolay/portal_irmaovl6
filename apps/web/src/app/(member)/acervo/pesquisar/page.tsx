@@ -70,7 +70,7 @@ export default async function ArchiveSearchPage({
         <label htmlFor="archive-search-full" className="sr-only">
           Pesquisar no Acervo VL6
         </label>
-        <div className="border-border bg-surface flex max-w-2xl items-center gap-3 rounded-[14px] border px-4 py-1.5 shadow-sm">
+        <div className="border-border bg-surface focus-within:ring-accent flex max-w-2xl items-center gap-3 rounded-[14px] border px-4 py-1.5 shadow-sm focus-within:ring-2 focus-within:ring-offset-2">
           <Search className="text-muted shrink-0" size={20} />
           <input
             id="archive-search-full"

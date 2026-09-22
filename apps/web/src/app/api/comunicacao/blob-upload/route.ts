@@ -42,9 +42,6 @@ export async function POST(request: Request): Promise<NextResponse> {
       ...errorToLogContext(error),
     });
     Sentry.captureException(error, { tags: { route: 'POST /api/comunicacao/blob-upload' } });
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Falha no upload.' },
-      { status: 400 },
-    );
+    return NextResponse.json({ error: 'Falha no upload.' }, { status: 400 });
   }
 }
