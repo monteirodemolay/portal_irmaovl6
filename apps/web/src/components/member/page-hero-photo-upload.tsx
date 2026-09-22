@@ -4,32 +4,38 @@ import { useActionState, useEffect, useState } from 'react';
 import { useFormStatus } from 'react-dom';
 import { Camera, X } from '@vl6/ui';
 import {
-  removeCommunityHeroPhotoAction,
-  updateCommunityHeroPhotoAction,
-  type CommunityHeroPhotoActionState,
-} from '@/modules/tenancy/actions/community-hero-photo-actions';
+  removeHeroPhotoAction,
+  updateHeroPhotoAction,
+  type HeroPhotoActionState,
+} from '@/modules/tenancy/actions/hero-photo-actions';
 
 /**
- * Controles de foto do Templo na hero da Comunidade VL6 — só renderizado
- * pra quem tem `tenant:manage` (`CommunityHero` decide isso, nunca este
- * componente sozinho). Equivalente funcional dos controles do mock-up
- * ("Selecionar foto do Templo" / enquadramento / "Retirar foto"), adaptado
- * pra persistir de verdade: aqui a foto é enviada ao Blob storage e fica
- * visível pra toda a Loja, não só neste navegador.
+ * Controles de foto do `PageHero` — só renderizado pra quem tem
+ * `tenant:manage` (cada página decide isso, nunca este componente sozinho).
+ * `pageKey` identifica qual entrada de `Tenant.heroPhotos` é editada;
+ * `path` é a rota revalidada depois de salvar/remover.
  */
-export function CommunityHeroPhotoUpload({
+export function PageHeroPhotoUpload({
+  pageKey,
+  path,
   hasPhoto,
   initialPosicao,
+  photoLabel = 'Selecionar foto',
 }: {
+  pageKey: string;
+  path: string;
   hasPhoto: boolean;
   initialPosicao: number;
+  photoLabel?: string;
 }) {
-  const [updateState, updateAction] = useActionState<CommunityHeroPhotoActionState, FormData>(
-    updateCommunityHeroPhotoAction,
+  const updateActionWithKey = updateHeroPhotoAction.bind(null, pageKey, path);
+  const removeActionWithKey = removeHeroPhotoAction.bind(null, pageKey, path);
+  const [updateState, updateAction] = useActionState<HeroPhotoActionState, FormData>(
+    updateActionWithKey,
     { error: null },
   );
-  const [removeState, removeAction] = useActionState<CommunityHeroPhotoActionState, FormData>(
-    removeCommunityHeroPhotoAction,
+  const [removeState, removeAction] = useActionState<HeroPhotoActionState, FormData>(
+    removeActionWithKey,
     { error: null },
   );
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -51,7 +57,7 @@ export function CommunityHeroPhotoUpload({
       <form action={updateAction} className="flex flex-wrap items-center gap-3">
         <label className="hover:border-accent inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-white/35 bg-white/10 px-3 py-1.5 font-medium transition-colors">
           <Camera size={13} strokeWidth={1.75} />
-          Selecionar foto do Templo
+          {photoLabel}
           <input
             name="foto"
             type="file"

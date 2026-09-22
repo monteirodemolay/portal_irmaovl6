@@ -20,6 +20,7 @@ function buildTenant(overrides: Partial<Tenant> = {}): Tenant {
     modulosHabilitados: [],
     comunidadeHeroFotoUrl: null,
     comunidadeHeroFotoPosicao: null,
+    heroPhotos: {},
     createdAt: new Date('2025-01-01'),
     updatedAt: new Date('2025-01-01'),
     createdBy: 'admin-1',

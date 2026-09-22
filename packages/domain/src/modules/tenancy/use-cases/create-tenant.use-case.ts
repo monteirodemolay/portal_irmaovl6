@@ -66,6 +66,7 @@ export class CreateTenantUseCase {
       modulosHabilitados: input.modulosHabilitados,
       comunidadeHeroFotoUrl: null,
       comunidadeHeroFotoPosicao: null,
+      heroPhotos: {},
       createdAt: now,
       updatedAt: now,
       createdBy: ctx.uid,

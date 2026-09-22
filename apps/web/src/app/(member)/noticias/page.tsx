@@ -1,7 +1,16 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { resolveHeroPhoto } from '@vl6/domain';
 import { createServerContainer } from '@vl6/infra';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, EmptyState } from '@vl6/ui';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  EmptyState,
+  PageHero,
+} from '@vl6/ui';
 import { getCurrentTenant } from '@/lib/tenant/get-current-tenant';
 
 function formatDate(date: Date | null): string {
@@ -15,10 +24,20 @@ export default async function PublicNewsPage() {
 
   const container = createServerContainer();
   const page = await container.useCases.listPublishedNews.execute(current.tenant.id, { limit: 20 });
+  // Página pública (papel Visitante, sem sessão) — sem controle de foto
+  // aqui, já que não há como checar `tenant:manage` sem sessão. Uma foto já
+  // configurada em `Tenant.heroPhotos['noticias']` por outra rota continua
+  // aparecendo normalmente (só leitura).
+  const heroPhoto = resolveHeroPhoto(current.tenant, 'noticias');
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-6 px-6 py-12">
-      <h1 className="font-display text-2xl font-semibold">Notícias</h1>
+      <PageHero
+        kicker={current.tenant.nome}
+        title="Notícias"
+        photoUrl={heroPhoto?.url}
+        photoPosicao={heroPhoto?.posicao}
+      />
       {page.items.length === 0 ? (
         <EmptyState title="Nenhuma notícia publicada ainda" />
       ) : (

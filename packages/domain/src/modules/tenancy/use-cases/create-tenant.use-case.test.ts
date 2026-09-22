@@ -31,6 +31,7 @@ const validInput = {
   modulosHabilitados: [],
   comunidadeHeroFotoUrl: null,
   comunidadeHeroFotoPosicao: null,
+  heroPhotos: {},
 };
 
 function buildUseCase() {

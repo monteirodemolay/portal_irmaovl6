@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { hasPermission } from '@vl6/domain';
+import { hasPermission, resolveHeroPhoto } from '@vl6/domain';
 import { createServerContainer } from '@vl6/infra';
 import {
   Archive,
@@ -12,10 +12,12 @@ import {
   History,
   Image as GalleryIcon,
   Landmark,
+  PageHero,
   Search,
   Share2,
   Users,
 } from '@vl6/ui';
+import { PageHeroPhotoUpload } from '@/components/member/page-hero-photo-upload';
 import { getCurrentSession } from '@/lib/auth/get-current-session';
 import { getCurrentTenant } from '@/lib/tenant/get-current-tenant';
 import {
@@ -94,6 +96,8 @@ export default async function AcervoPage({
   const canReadGallery = hasPermission(authContext, 'gallery:read');
   const canReadCollections = hasPermission(authContext, 'archiveCollection:read');
   const canReadConstellation = hasPermission(authContext, 'archiveRelation:read');
+  const canManageHeroPhoto = hasPermission(authContext, 'tenant:manage');
+  const heroPhoto = resolveHeroPhoto(current.tenant, 'acervo');
   const container = createServerContainer();
 
   const [
@@ -226,62 +230,62 @@ export default async function AcervoPage({
 
   return (
     <div className="flex flex-col gap-8">
-      <section className="from-primary via-primary to-primary-dark relative overflow-hidden rounded-[22px] bg-gradient-to-br px-6 py-8 text-white shadow-md sm:px-9 lg:px-11 lg:py-10">
-        <div className="border-accent/15 pointer-events-none absolute -right-24 -top-40 h-96 w-96 rounded-full border" />
-        <div className="border-accent/10 pointer-events-none absolute -right-8 -top-24 h-80 w-80 rounded-full border" />
-        <div className="relative max-w-4xl">
-          <p className="text-accent text-[11px] font-semibold uppercase tracking-[0.22em]">
-            Centro digital de memória
-          </p>
-          <h1 className="font-display mt-2 text-3xl font-semibold leading-tight sm:text-4xl">
-            Encontre a história da {current.tenant.nome}
-          </h1>
-          <p className="mt-3 max-w-2xl text-sm leading-6 text-white/70">
-            Pesquise pessoas, gestões, eventos, fotografias, atas, livros e documentos em um único
-            lugar.
-          </p>
-          <form action="/acervo/pesquisar" method="get" role="search" className="mt-6">
-            <label htmlFor="archive-search" className="sr-only">
-              Pesquisar no Acervo VL6
-            </label>
-            <div className="flex max-w-3xl flex-col gap-2 sm:flex-row">
-              <div className="focus-within:ring-accent focus-within:ring-offset-primary flex min-w-0 flex-1 items-center gap-3 rounded-[10px] bg-white px-4 shadow-md focus-within:ring-2 focus-within:ring-offset-2">
-                <Search className="text-primary/60 shrink-0" size={20} />
-                <input
-                  id="archive-search"
-                  name="q"
-                  defaultValue={query}
-                  placeholder="Busque por nome, ano, evento, gestão ou documento"
-                  className="text-primary-dark min-w-0 flex-1 bg-transparent py-3.5 text-sm outline-none placeholder:text-slate-500"
-                />
+      <PageHero
+        kicker="Centro digital de memória"
+        title={`Encontre a história da ${current.tenant.nome}`}
+        description="Pesquise pessoas, gestões, eventos, fotografias, atas, livros e documentos em um único lugar."
+        photoUrl={heroPhoto?.url}
+        photoPosicao={heroPhoto?.posicao}
+        actions={
+          <div className="flex w-full flex-col gap-4">
+            <form action="/acervo/pesquisar" method="get" role="search">
+              <label htmlFor="archive-search" className="sr-only">
+                Pesquisar no Acervo VL6
+              </label>
+              <div className="flex max-w-3xl flex-col gap-2 sm:flex-row">
+                <div className="focus-within:ring-accent focus-within:ring-offset-primary flex min-w-0 flex-1 items-center gap-3 rounded-[10px] bg-white px-4 shadow-md focus-within:ring-2 focus-within:ring-offset-2">
+                  <Search className="text-primary/60 shrink-0" size={20} />
+                  <input
+                    id="archive-search"
+                    name="q"
+                    defaultValue={query}
+                    placeholder="Busque por nome, ano, evento, gestão ou documento"
+                    className="text-primary-dark min-w-0 flex-1 bg-transparent py-3.5 text-sm outline-none placeholder:text-slate-500"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  className="bg-accent text-primary-dark hover:bg-accent/90 rounded-[10px] px-5 py-3 text-sm font-semibold transition-colors"
+                >
+                  Pesquisar no Acervo
+                </button>
               </div>
-              <button
-                type="submit"
-                className="bg-accent text-primary-dark hover:bg-accent/90 rounded-[10px] px-5 py-3 text-sm font-semibold transition-colors"
-              >
-                Pesquisar no Acervo
-              </button>
-            </div>
-          </form>
-          <nav
-            aria-label="Atalhos do Acervo"
-            className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-xs"
-          >
-            <Link href="/acervo/colecoes" className="text-white/70 hover:text-white">
-              Coleções
-            </Link>
-            <Link href="/acervo/exposicoes" className="text-white/70 hover:text-white">
-              Exposições
-            </Link>
-            <Link href="/acervo/audiovisual" className="text-white/70 hover:text-white">
-              Audiovisual
-            </Link>
-            <Link href="/acervo/contribuir" className="text-white/70 hover:text-white">
-              Contribuir com a memória
-            </Link>
-          </nav>
-        </div>
-      </section>
+            </form>
+            <nav aria-label="Atalhos do Acervo" className="flex flex-wrap gap-x-5 gap-y-2 text-xs">
+              <Link href="/acervo/colecoes" className="text-white/70 hover:text-white">
+                Coleções
+              </Link>
+              <Link href="/acervo/exposicoes" className="text-white/70 hover:text-white">
+                Exposições
+              </Link>
+              <Link href="/acervo/audiovisual" className="text-white/70 hover:text-white">
+                Audiovisual
+              </Link>
+              <Link href="/acervo/contribuir" className="text-white/70 hover:text-white">
+                Contribuir com a memória
+              </Link>
+            </nav>
+            {canManageHeroPhoto && (
+              <PageHeroPhotoUpload
+                pageKey="acervo"
+                path="/acervo"
+                hasPhoto={Boolean(heroPhoto)}
+                initialPosicao={heroPhoto?.posicao ?? 50}
+              />
+            )}
+          </div>
+        }
+      />
 
       <section aria-labelledby="explore-title">
         <div className="mb-4">

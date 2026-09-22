@@ -1,9 +1,11 @@
 import * as Sentry from '@sentry/nextjs';
-import { hasPermission } from '@vl6/domain';
+import { hasPermission, resolveHeroPhoto } from '@vl6/domain';
 import { createServerContainer } from '@vl6/infra';
 import { errorToLogContext, logger } from '@vl6/shared';
-import { EmptyState, Lock } from '@vl6/ui';
+import { EmptyState, Lock, PageHero } from '@vl6/ui';
+import { PageHeroPhotoUpload } from '@/components/member/page-hero-photo-upload';
 import { requireSession } from '@/lib/auth/require-session';
+import { getCurrentTenant } from '@/lib/tenant/get-current-tenant';
 import { AgendaSidebar } from '@/modules/agenda/components/agenda-sidebar';
 import { MyAgendaView } from '@/modules/agenda/components/my-agenda-view';
 import type { GoogleCalendarEventSummary } from '@/modules/agenda/lib/calendar-item';
@@ -39,11 +41,14 @@ async function safeFetch<T>(resource: string, fallback: T, fn: () => Promise<T>)
 }
 
 export default async function AgendaPage() {
-  const session = await requireSession();
+  const [session, current] = await Promise.all([requireSession(), getCurrentTenant()]);
+  if (!current) return null;
   const container = createServerContainer();
   const { from, to } = buildRange();
 
   const canReadVl6 = hasPermission(session.authContext, 'event:read');
+  const canManageHeroPhoto = hasPermission(session.authContext, 'tenant:manage');
+  const heroPhoto = resolveHeroPhoto(current.tenant, 'agenda');
 
   const [vl6Events, personalEvents, googleConnection, personalTasks, personalNotes] =
     await Promise.all([
@@ -91,10 +96,23 @@ export default async function AgendaPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="font-display text-2xl font-semibold">Minha Agenda</h1>
-        <p className="text-muted text-sm">Loja, Google e compromissos pessoais em um só lugar.</p>
-      </div>
+      <PageHero
+        kicker="Minha Agenda"
+        title="Loja, Google e compromissos pessoais"
+        description="Acompanhe sessões, eventos e seus próprios compromissos em um só lugar."
+        photoUrl={heroPhoto?.url}
+        photoPosicao={heroPhoto?.posicao}
+        actions={
+          canManageHeroPhoto && (
+            <PageHeroPhotoUpload
+              pageKey="agenda"
+              path="/agenda"
+              hasPhoto={Boolean(heroPhoto)}
+              initialPosicao={heroPhoto?.posicao ?? 50}
+            />
+          )
+        }
+      />
 
       {!canReadVl6 && (
         <EmptyState

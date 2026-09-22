@@ -20,6 +20,7 @@ export * from './components/pagination';
 export * from './components/drawer';
 export * from './components/archive-item-card';
 export * from './components/archive-item-header';
+export * from './components/page-hero';
 export * from './components/provenance-panel';
 export * from './components/filter-bar';
 export * from './components/video-player';

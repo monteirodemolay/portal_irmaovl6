@@ -20,15 +20,19 @@ export interface Tenant extends BaseEntity {
   email: string;
   modulosHabilitados: string[];
   /**
-   * Fotografia de fundo da hero da Comunidade VL6 (`/irmaos`) — configurável
-   * pelo Administrador da Loja (`tenant:manage`), nunca por Irmão comum.
-   * `null` enquanto nenhuma foto foi enviada (hero cai no gradiente padrão).
+   * @deprecated Campo legado da foto de fundo da hero de `/irmaos`, de antes
+   * do cabeçalho padronizado (`PageHero`) existir. Mantido só como fallback
+   * de leitura em `resolveHeroPhoto` pra não perder a foto que a Loja já
+   * tinha configurado — nunca mais escrito. Use `heroPhotos['comunidade']`.
    */
   comunidadeHeroFotoUrl: string | null;
-  /**
-   * Enquadramento vertical da foto acima, 0–100 (equivalente a
-   * `object-position: center Y%`). `null` junto com `comunidadeHeroFotoUrl`
-   * nulo, ou quando a foto foi enviada sem ajuste (usa o centro, 50).
-   */
+  /** @deprecated Ver `comunidadeHeroFotoUrl`. */
   comunidadeHeroFotoPosicao: number | null;
+  /**
+   * Fotografias de fundo do `PageHero` padronizado, uma por página (chave
+   * livre, ex. `'comunidade'`, `'dashboard'`, `'acervo'`) — configuráveis
+   * pelo Administrador da Loja (`tenant:manage`), nunca por Irmão comum.
+   * Página sem entrada aqui cai no gradiente institucional padrão.
+   */
+  heroPhotos: Record<string, { url: string; posicao: number }>;
 }
