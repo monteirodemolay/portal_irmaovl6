@@ -1,9 +1,14 @@
 import { notFound } from 'next/navigation';
-import { BOARD_POSITION_KEYS, BOARD_POSITION_LABELS } from '@vl6/shared';
+import {
+  BOARD_POSITION_KEYS,
+  getBoardPositionHierarchyRank,
+  getBoardPositionOrdinalLabel,
+} from '@vl6/shared';
 import { createServerContainer } from '@vl6/infra';
-import { Badge, Card, CardContent, CardHeader, CardTitle } from '@vl6/ui';
+import { Card, CardContent, CardHeader, CardTitle } from '@vl6/ui';
 import { requirePagePermission } from '@/lib/auth/require-permission';
 import { AssignPositionForm } from '@/modules/governance/components/assign-position-form';
+import { BoardPositionSeatCard } from '@/modules/governance/components/board-position-seat-card';
 import { CommitteeForm } from '@/modules/governance/components/committee-form';
 import { EditBoardTermDialog } from '@/modules/governance/components/edit-board-term-dialog';
 import { EditCommitteeDialog } from '@/modules/governance/components/edit-committee-dialog';
@@ -46,9 +51,20 @@ export default async function BoardTermDetailPage({
       previousAssignments.map((a) => a.cargo).filter((cargo) => !boardPositionKeySet.has(cargo)),
     ),
   ];
-  const currentExtraCargos = [
-    ...new Set(assignments.map((a) => a.cargo).filter((cargo) => !boardPositionKeySet.has(cargo))),
-  ];
+  // Posição do titular dentro do próprio cargo (1-based) — mesma lógica de
+  // `/acervo/gestoes/[gestaoId]/page.tsx`, dá "1º Diácono"/"2º Diácono" sem
+  // depender de o Administrador ter digitado a ordem certa no cadastro.
+  const posicaoNoCargo = new Map<string, number>();
+  const counters: Record<string, number> = {};
+  for (const seat of [...assignments].sort((a, b) => a.ordem - b.ordem)) {
+    counters[seat.cargo] = (counters[seat.cargo] ?? 0) + 1;
+    posicaoNoCargo.set(seat.id, counters[seat.cargo]!);
+  }
+  const seatsOrdenados = [...assignments].sort((a, b) => {
+    const rankDiff =
+      getBoardPositionHierarchyRank(a.cargo) - getBoardPositionHierarchyRank(b.cargo);
+    return rankDiff !== 0 ? rankDiff : a.ordem - b.ordem;
+  });
 
   return (
     <div className="flex flex-col gap-8">
@@ -77,43 +93,24 @@ export default async function BoardTermDetailPage({
 
       <div>
         <h2 className="font-display mb-3 text-lg font-semibold">Diretoria atual</h2>
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
-          {BOARD_POSITION_KEYS.map((cargo) => {
-            const seats = assignments.filter((a) => a.cargo === cargo);
-            if (seats.length === 0) return null;
-            return (
-              <Card key={cargo}>
-                <CardContent className="flex flex-col gap-1 p-4">
-                  <Badge variant="accent" className="w-fit">
-                    {BOARD_POSITION_LABELS[cargo]}
-                  </Badge>
-                  {seats.map((seat) => (
-                    <p key={seat.id} className="text-sm font-medium">
-                      {membersById.get(seat.memberId)?.nomeCompleto ?? '—'}
-                    </p>
-                  ))}
-                </CardContent>
-              </Card>
-            );
-          })}
-          {currentExtraCargos.map((cargo) => {
-            const seats = assignments.filter((a) => a.cargo === cargo);
-            return (
-              <Card key={cargo}>
-                <CardContent className="flex flex-col gap-1 p-4">
-                  <Badge variant="accent" className="w-fit">
-                    {cargo}
-                  </Badge>
-                  {seats.map((seat) => (
-                    <p key={seat.id} className="text-sm font-medium">
-                      {membersById.get(seat.memberId)?.nomeCompleto ?? '—'}
-                    </p>
-                  ))}
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
+        {seatsOrdenados.length === 0 ? (
+          <p className="text-muted text-sm">Nenhum cargo atribuído nesta gestão ainda.</p>
+        ) : (
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+            {seatsOrdenados.map((seat) => (
+              <BoardPositionSeatCard
+                key={seat.id}
+                gestaoId={termId}
+                assignmentId={seat.id}
+                cargo={seat.cargo}
+                label={getBoardPositionOrdinalLabel(seat.cargo, posicaoNoCargo.get(seat.id) ?? 0)}
+                nomeAtual={membersById.get(seat.memberId)?.nomeCompleto ?? '—'}
+                ordem={seat.ordem}
+                members={membersPage.items}
+              />
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="flex flex-col gap-3">

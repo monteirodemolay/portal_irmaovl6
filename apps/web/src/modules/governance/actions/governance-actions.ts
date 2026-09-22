@@ -119,6 +119,29 @@ export async function assignBoardPositionAction(
   return { error: null };
 }
 
+/**
+ * Tira um Irmão de um cargo sem colocar outro no lugar — complementa
+ * `assignBoardPositionAction` (que só troca quem ocupa um cargo de
+ * ocorrência única) pros casos em que não há substituto ainda, ou pra
+ * remover uma ocorrência extra de Diácono/Experto.
+ */
+export async function removeBoardPositionAction(
+  gestaoId: string,
+  assignmentId: string,
+): Promise<void> {
+  const session = await requireSession();
+
+  const container = createServerContainer();
+  const result = await container.useCases.removeBoardPosition.execute(session.authContext, {
+    assignmentId,
+  });
+  if (!result.ok) {
+    throw new Error(result.error.message);
+  }
+
+  revalidatePath(`/admin/pessoas/gestoes/${gestaoId}`);
+}
+
 export async function createCommitteeAction(
   gestaoId: string,
   _prevState: GovernanceActionState,
