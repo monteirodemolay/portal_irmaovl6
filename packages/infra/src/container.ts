@@ -3,6 +3,7 @@ import {
   AddLibraryItemUseCase,
   AssignBoardPositionUseCase,
   RemoveBoardPositionUseCase,
+  RenameBoardPositionCargoUseCase,
   ImportHistoricalBoardTermsUseCase,
   DedupeMemberPositionHistoryUseCase,
   BackfillMestreInstaladoTitlesUseCase,
@@ -798,6 +799,11 @@ export function createServerContainer() {
       memberTitleRepository: repositories.memberTitle,
       clock,
       idGenerator,
+    }),
+    renameBoardPositionCargo: new RenameBoardPositionCargoUseCase({
+      assignmentRepository: repositories.boardPositionAssignment,
+      positionHistoryRepository: repositories.memberPositionHistory,
+      clock,
     }),
     importHistoricalBoardTerms: new ImportHistoricalBoardTermsUseCase({
       memberRepository: repositories.member,
