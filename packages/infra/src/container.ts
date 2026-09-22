@@ -957,7 +957,9 @@ export function createServerContainer() {
     }),
     suspendCentralProfile: new SuspendCentralProfileUseCase({
       publicationSettingsRepository: repositories.publicationSettings,
+      memberRepository: repositories.member,
       clock,
+      idGenerator,
     }),
     reactivateCentralProfile: new ReactivateCentralProfileUseCase({
       publicationSettingsRepository: repositories.publicationSettings,

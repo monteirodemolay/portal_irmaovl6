@@ -187,10 +187,32 @@ describe('SearchDirectoryUseCase', () => {
     expect(result.value.items[0]?.optional.profissional).toBeNull();
   });
 
-  it('Irmão com perfil mas sem publicar aparece como draft', async () => {
+  it('Irmão com perfil e sem PublicationSettings aparece como published (padrão aberto)', async () => {
     const { useCase, memberRepository, memberCentralProfileRepository } = buildUseCase();
     await memberRepository.create(buildMember());
     await memberCentralProfileRepository.create(buildProfile());
+
+    const result = await useCase.execute(ctx);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value.items).toHaveLength(1);
+    // `settings === null` (nunca configurou) é ABERTO por padrão — decisão
+    // do Administrador (setembro/2026), não mais "draft"/fechado.
+    expect(result.value.items[0]?.profileState).toBe('published');
+    expect(result.value.items[0]?.optional.profissional).not.toBeNull();
+  });
+
+  it('Irmão com perfil que desligou explicitamente a publicação aparece como draft', async () => {
+    const {
+      useCase,
+      memberRepository,
+      memberCentralProfileRepository,
+      publicationSettingsRepository,
+    } = buildUseCase();
+    await memberRepository.create(buildMember());
+    await memberCentralProfileRepository.create(buildProfile());
+    await publicationSettingsRepository.create(buildSettings({ profilePublished: false }));
 
     const result = await useCase.execute(ctx);
 

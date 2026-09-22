@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { buildPublicMemberProfileDTO, hasPermission, type PublicationSettings } from '@vl6/domain';
+import { buildPublicMemberProfileDTO, hasPermission } from '@vl6/domain';
 import { createServerContainer } from '@vl6/infra';
 import { ArrowLeft, Card, CardContent, Tabs, TabsContent, TabsList, TabsTrigger } from '@vl6/ui';
 import { requireSession } from '@/lib/auth/require-session';
@@ -18,40 +18,6 @@ import { PrivacidadeTab } from '@/modules/central/components/meu-espaco/privacid
 import { ProfissionalTab } from '@/modules/central/components/meu-espaco/profissional-tab';
 import { RedesTab } from '@/modules/central/components/meu-espaco/redes-tab';
 import { SpaceHeader } from '@/modules/central/components/meu-espaco/space-header';
-
-const EMPTY_PUBLICATION_SETTINGS: Omit<
-  PublicationSettings,
-  'id' | 'tenantId' | 'memberId' | 'createdAt' | 'updatedAt' | 'createdBy' | 'updatedBy'
-> = {
-  profilePublished: false,
-  blocks: {
-    apresentacao: false,
-    informacoesPessoais: false,
-    profissional: false,
-    empresa: false,
-    informacoesMaconicas: false,
-    competencias: false,
-    servicos: false,
-    afiliacoes: false,
-    endereco: false,
-    memoriaFotografica: false,
-  },
-  contacts: { telefone: false, whatsapp: false, email: false },
-  externalLinks: {
-    whatsapp: false,
-    instagram: false,
-    facebook: false,
-    linkedin: false,
-    lattes: false,
-    site: false,
-  },
-  suspendedAt: null,
-  suspendedBy: null,
-  suspendedReason: null,
-  deletedAt: null,
-  status: 'active',
-  ativo: true,
-};
 
 const VALID_TABS = [
   'geral',
@@ -122,20 +88,12 @@ export default async function MeuEspacoPage({
     ),
   ]);
 
-  const previewDto = buildPublicMemberProfileDTO(
-    member,
-    centralProfile,
-    publicationSettings ?? {
-      ...EMPTY_PUBLICATION_SETTINGS,
-      id: '',
-      tenantId: member.tenantId,
-      memberId: member.id,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      createdBy: member.id,
-      updatedBy: member.id,
-    },
-  );
+  // `publicationSettings` direto (sem sintetizar um "fechado" quando `null`)
+  // — `buildPublicMemberProfileDTO` já trata "nunca configurou" como aberto
+  // por padrão (`resolveEffectivePublication`), então o preview "como os
+  // outros veem" precisa refletir exatamente isso, não um estado fechado
+  // inventado aqui.
+  const previewDto = buildPublicMemberProfileDTO(member, centralProfile, publicationSettings);
 
   return (
     <div className="flex max-w-4xl flex-col gap-6">
@@ -150,7 +108,7 @@ export default async function MeuEspacoPage({
       <SpaceHeader
         member={member}
         profile={centralProfile}
-        profilePublished={publicationSettings?.profilePublished ?? false}
+        profilePublished={publicationSettings?.profilePublished ?? true}
         previewDto={previewDto}
       />
 
