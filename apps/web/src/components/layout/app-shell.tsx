@@ -16,6 +16,8 @@ export interface AppShellNavFlyout {
   description?: string;
   links: AppShellNavFlyoutLink[];
   full?: { href: string; label: string };
+  /** Posição do link `full` na lista — `'last'` (padrão) ou `'first'`. */
+  fullPosition?: 'first' | 'last';
 }
 
 export interface AppShellNavItem {
@@ -68,6 +70,14 @@ export function AppShell({
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [expandedHref, setExpandedHref] = useState<string | null>(null);
+  // Item ativo (numa sub-rota do próprio flyout) abre o menu por padrão,
+  // mesmo sem clique — sem isso, navegar pra um item da lista (ex.:
+  // "Documentos") fechava o dropdown de novo, escondendo os outros itens
+  // logo depois de escolher um (pedido do Administrador). Guarda quando
+  // esse padrão foi explicitamente fechado por clique, já que
+  // `expandedHref` sozinho não sabia distinguir "nunca abri" de "abri e
+  // fechei de novo" pra um item que já estava ativo.
+  const [collapsedHref, setCollapsedHref] = useState<string | null>(null);
   const mobilePanelRef = useRef<HTMLDivElement>(null);
   const mobileCloseButtonRef = useRef<HTMLButtonElement>(null);
 
@@ -149,12 +159,30 @@ export function AppShell({
                 );
               }
 
-              const isExpanded = expandedHref === item.href;
+              const isExpanded =
+                collapsedHref === item.href ? false : expandedHref === item.href || active;
+              const fullLink = item.flyout.full && (
+                <Link
+                  href={item.flyout.full.href}
+                  className="text-accent flex items-center gap-1 rounded-md px-2 py-2 text-sm font-semibold hover:underline"
+                >
+                  {item.flyout.full.label}
+                  <ChevronRight size={14} />
+                </Link>
+              );
               return (
                 <div key={item.href}>
                   <button
                     type="button"
-                    onClick={() => setExpandedHref(isExpanded ? null : item.href)}
+                    onClick={() => {
+                      if (isExpanded) {
+                        setCollapsedHref(item.href);
+                        setExpandedHref((current) => (current === item.href ? null : current));
+                      } else {
+                        setExpandedHref(item.href);
+                        setCollapsedHref((current) => (current === item.href ? null : current));
+                      }
+                    }}
                     aria-expanded={isExpanded}
                     className={itemLinkClass(active || isExpanded)}
                   >
@@ -169,6 +197,7 @@ export function AppShell({
                   </button>
                   {isExpanded && (
                     <div className="ml-4 mt-0.5 flex flex-col gap-0.5 border-l border-white/10 pl-3">
+                      {item.flyout.fullPosition === 'first' && fullLink}
                       {item.flyout.links.map((link) => (
                         <Link
                           key={link.href}
@@ -179,15 +208,7 @@ export function AppShell({
                           {link.hint && <span className="text-xs text-white/45">{link.hint}</span>}
                         </Link>
                       ))}
-                      {item.flyout.full && (
-                        <Link
-                          href={item.flyout.full.href}
-                          className="text-accent flex items-center gap-1 rounded-md px-2 py-2 text-sm font-semibold hover:underline"
-                        >
-                          {item.flyout.full.label}
-                          <ChevronRight size={14} />
-                        </Link>
-                      )}
+                      {item.flyout.fullPosition !== 'first' && fullLink}
                     </div>
                   )}
                 </div>

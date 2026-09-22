@@ -190,6 +190,7 @@ export function buildNavSections(
       { href: '/acervo/pesquisar', label: 'Pesquisar tudo' },
     ],
     full: { href: ACERVO_ITEM.href, label: 'Abrir Acervo completo' },
+    fullPosition: 'first',
   };
 
   const sections: AppShellNavSection[] = [
