@@ -41,6 +41,7 @@ export async function createBoardTermAction(
   const nome = String(formData.get('nome') ?? '');
   const periodoInicio = new Date(String(formData.get('periodoInicio')));
   const periodoFim = new Date(String(formData.get('periodoFim')));
+  const permitirSobreposicao = formData.get('permitirSobreposicao') === 'on';
   if (!nome || Number.isNaN(periodoInicio.getTime()) || Number.isNaN(periodoFim.getTime())) {
     return { error: 'Preencha nome e as duas datas do período.' };
   }
@@ -50,6 +51,7 @@ export async function createBoardTermAction(
     nome,
     periodoInicio,
     periodoFim,
+    permitirSobreposicao,
   });
   if (!result.ok) {
     return { error: result.error.message };
@@ -69,6 +71,7 @@ export async function updateBoardTermAction(
   const nome = String(formData.get('nome') ?? '');
   const periodoInicio = new Date(String(formData.get('periodoInicio')));
   const periodoFim = new Date(String(formData.get('periodoFim')));
+  const permitirSobreposicao = formData.get('permitirSobreposicao') === 'on';
   if (!nome || Number.isNaN(periodoInicio.getTime()) || Number.isNaN(periodoFim.getTime())) {
     return { error: 'Preencha nome e as duas datas do período.' };
   }
@@ -78,6 +81,7 @@ export async function updateBoardTermAction(
     nome,
     periodoInicio,
     periodoFim,
+    permitirSobreposicao,
   });
   if (!result.ok) {
     return { error: result.error.message };

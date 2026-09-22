@@ -107,4 +107,20 @@ describe('CreateBoardTermUseCase', () => {
     if (result.ok) return;
     expect(result.error.code).toBe('conflict');
   });
+
+  it('permite período sobreposto quando `permitirSobreposicao` é true', async () => {
+    const { useCase, boardTermRepository } = buildUseCase();
+    await boardTermRepository.create(existingTerm);
+
+    const result = await useCase.execute(ctx, {
+      nome: '2012/2013 (2ª gestão)',
+      periodoInicio: new Date('2025-06-01'),
+      periodoFim: new Date('2026-06-01'),
+      permitirSobreposicao: true,
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value.nome).toBe('2012/2013 (2ª gestão)');
+  });
 });
