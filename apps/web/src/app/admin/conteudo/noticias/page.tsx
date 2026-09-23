@@ -6,6 +6,8 @@ import { requirePagePermission } from '@/lib/auth/require-permission';
 import {
   deleteNewsAction,
   hardDeleteNewsAction,
+  setNewsPrimaryHighlightAction,
+  toggleNewsFeaturedAction,
   toggleNewsPublishedAction,
 } from '@/modules/content/actions/content-actions';
 import { PublishToggleButton } from '@/components/admin/publish-toggle-button';
@@ -75,16 +77,22 @@ export default async function NewsPage({
     );
   }
 
-  const page = await container.useCases.listAllNews.execute(session.authContext, { limit: 50 });
+  const page = await container.useCases.listAllNews.execute(session.authContext, { limit: 100 });
 
   const columns: DataTableColumn<News>[] = [
     {
       key: 'titulo',
       header: 'Título',
       cell: (n) => (
-        <Link href={`${BASE_PATH}/${n.id}`} className="font-medium hover:underline">
-          {n.titulo}
-        </Link>
+        <div className="min-w-[260px]">
+          <Link href={`${BASE_PATH}/${n.id}`} className="font-medium hover:underline">
+            {n.titulo}
+          </Link>
+          <div className="mt-1 flex flex-wrap gap-1.5">
+            {Boolean(n.destaquePrincipal) && <Badge variant="accent">principal</Badge>}
+            {!n.destaquePrincipal && Boolean(n.destaque) && <Badge variant="outline">destaque</Badge>}
+          </div>
+        </div>
       ),
     },
     { key: 'categoria', header: 'Categoria', cell: (n) => n.categoria },
@@ -101,7 +109,19 @@ export default async function NewsPage({
       key: 'acoes',
       header: '',
       cell: (n) => (
-        <div className="flex items-center justify-end gap-2">
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          <form action={toggleNewsFeaturedAction.bind(null, n.id, !Boolean(n.destaque))}>
+            <Button type="submit" size="sm" variant="outline">
+              {n.destaque ? 'Remover destaque' : 'Destacar'}
+            </Button>
+          </form>
+          {!n.destaquePrincipal && (
+            <form action={setNewsPrimaryHighlightAction.bind(null, n.id)}>
+              <Button type="submit" size="sm" variant="outline">
+                Tornar principal
+              </Button>
+            </form>
+          )}
           <PublishToggleButton
             published={n.publicado}
             onToggle={toggleNewsPublishedAction.bind(null, n.id)}
@@ -117,15 +137,31 @@ export default async function NewsPage({
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between">
-        <h1 className="font-display text-2xl font-semibold">Notícias</h1>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="font-display text-2xl font-semibold">Notícias</h1>
+          <p className="text-muted mt-1 text-sm">
+            Gerencie publicação, importação e a hierarquia editorial exibida no Portal.
+          </p>
+        </div>
         <Button asChild>
           <Link href={`${BASE_PATH}/nova`}>Nova Notícia</Link>
         </Button>
       </div>
 
-      <ImportNewsPanel />
-      <BackfillNewsDatesPanel />
+      <div className="grid gap-4 xl:grid-cols-2">
+        <ImportNewsPanel />
+        <BackfillNewsDatesPanel />
+      </div>
+
+      <div className="border-border bg-surface rounded-xl border p-4 text-sm">
+        <p className="font-medium">Como funcionam os destaques</p>
+        <p className="text-muted mt-1 leading-relaxed">
+          Você pode marcar várias matérias como destaque. Apenas uma pode ser a principal. Ao clicar
+          em “Tornar principal”, a anterior perde automaticamente essa condição, sem deixar de ser
+          destaque.
+        </p>
+      </div>
 
       <ConcludedTabNav basePath={BASE_PATH} aba="principal" />
 
