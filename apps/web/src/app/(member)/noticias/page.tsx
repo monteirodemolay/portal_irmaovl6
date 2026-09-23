@@ -94,7 +94,7 @@ export default async function PublicNewsPage({
       <PageHero
         kicker={current.tenant.nome}
         title="Notícias"
-        subtitle="Informação, memória e acontecimentos da Verdadeira Luz nº 06."
+        description="Informação, memória e acontecimentos da Verdadeira Luz nº 06."
         photoUrl={heroPhoto?.url}
         photoPosicao={heroPhoto?.posicao}
       />
