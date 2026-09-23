@@ -146,6 +146,89 @@ export interface BackfillNewsPublishedDateResult {
   error: string | null;
 }
 
+export interface ReimportImportedNewsResult {
+  newsId: string;
+  titulo: string;
+  url: string | null;
+  ok: boolean;
+  error: string | null;
+}
+
+/**
+ * Reimporta, em lote, todas as notícias que possuem vínculo com uma matéria
+ * original de vl6.com.br. Mantém o ID, slug, status de publicação, categoria
+ * e hierarquia editorial já existentes, mas atualiza título, subtítulo, capa,
+ * corpo completo, imagens e data original com o conteúdo atual da fonte.
+ *
+ * O link da fonte é sempre preservado de forma integral no rodapé da matéria.
+ */
+export async function reimportImportedNewsAction(): Promise<ReimportImportedNewsResult[]> {
+  const session = await requireSession();
+  const container = createServerContainer();
+  const page = await container.useCases.listAllNews.execute(session.authContext, { limit: 500 });
+  const results: ReimportImportedNewsResult[] = [];
+
+  for (const news of page.items) {
+    const match = news.conteudoHtml.match(IMPORTED_FROM_URL_REGEX);
+    if (!match?.[1]) continue;
+
+    const url = match[1].replace(/&amp;/g, '&');
+    const scraped = await scrapeNewsMetadata(url);
+
+    if (!scraped.ok) {
+      results.push({
+        newsId: news.id,
+        titulo: news.titulo,
+        url,
+        ok: false,
+        error: scraped.error,
+      });
+      continue;
+    }
+
+    let imagemCapaUrl: string | null = news.imagemCapaUrl;
+    if (scraped.image) {
+      try {
+        imagemCapaUrl = new URL(scraped.image).toString();
+      } catch {
+        imagemCapaUrl = news.imagemCapaUrl;
+      }
+    }
+
+    const sourceNote = `<p><em>Fonte original: <a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(url)}</a>.</em></p>`;
+    const input = newsSchema.parse({
+      titulo: scraped.title,
+      subtitulo: scraped.description,
+      slug: news.slug,
+      imagemCapaUrl,
+      conteudoHtml: `${scraped.contentHtml}\n${sourceNote}`,
+      categoria: news.categoria,
+      destaque: Boolean(news.destaque),
+      destaquePrincipal: Boolean(news.destaquePrincipal),
+      dataPublicacao: scraped.publishedAt ?? news.dataPublicacao,
+    });
+
+    const result = await container.useCases.updateNews.execute(session.authContext, news.id, input);
+
+    results.push({
+      newsId: news.id,
+      titulo: result.ok ? result.value.titulo : news.titulo,
+      url,
+      ok: result.ok,
+      error: result.ok ? null : result.error.message,
+    });
+  }
+
+  if (results.some((item) => item.ok)) {
+    revalidatePath('/admin/conteudo/noticias');
+    revalidatePath('/noticias');
+    revalidatePath('/dashboard');
+  }
+
+  return results;
+}
+
+
 /**
  * Corrige retroativamente a `dataPublicacao` de not\u00edcias importadas do site
  * VL6 antes deste campo existir \u2014 na \u00e9poca, `CreateNewsUseCase` sempre
