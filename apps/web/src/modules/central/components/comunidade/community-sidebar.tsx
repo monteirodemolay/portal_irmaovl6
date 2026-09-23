@@ -62,7 +62,7 @@ export function CommunitySidebar({
             <div className="mt-1 flex flex-col gap-2">
               <SideLink href="/irmaos/meu-espaco" label="Editar informações" primary />
               <SideLink href="/irmaos/meu-espaco?tab=pessoal" label="Família e Legado" />
-              <SideLink href="/irmaos/configuracoes" label="Configurações" />
+              <SideLink href="/configuracoes" label="Configurações" />
             </div>
           </CardContent>
         </Card>

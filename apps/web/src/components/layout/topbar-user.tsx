@@ -97,7 +97,7 @@ export function TopbarUser({
             Privacidade e contatos
           </Link>
           <Link
-            href="/irmaos/configuracoes"
+            href="/configuracoes"
             className="hover:bg-background rounded-md px-3 py-2 transition-colors"
           >
             Configurações
