@@ -42,7 +42,8 @@ export async function claimMemberAccountAction(
     };
   }
 
-  const ip = getClientIp({ headers: await headers() });
+  const headerList = await headers();
+  const ip = getClientIp({ headers: headerList });
   const limit = claimRateLimiter.check(`claim:${ip}`, { limit: 5, windowMs: 60 * 1000 });
   if (!limit.allowed) {
     return {
@@ -55,6 +56,8 @@ export async function claimMemberAccountAction(
   const cim = String(formData.get('cim') ?? '').trim();
   const email = String(formData.get('email') ?? '').trim();
   const senha = String(formData.get('senha') ?? '');
+  const aceitePolitica = formData.get('aceitePolitica') === 'on';
+  const aceiteTermos = formData.get('aceiteTermos') === 'on';
 
   if (!memberId || !cim) {
     return { ...EMPTY_STATE, error: 'Escolha seu nome e informe a CIM.' };
@@ -67,6 +70,32 @@ export async function claimMemberAccountAction(
   }
 
   const container = createServerContainer();
+
+  // Aceite obrigatório (Termos de Uso, Seção 2): não é possível criar a
+  // conta sem aceitar a versão VIGENTE de cada documento — a versão vem
+  // sempre da leitura do servidor, nunca de um valor enviado pelo formulário,
+  // pra não permitir que alguém "aceite" uma versão diferente da que está
+  // publicada agora.
+  const [politicaPrivacidade, termosUso] = await Promise.all([
+    container.repositories.legalDocumentVersion.findCurrent(
+      current.tenant.id,
+      'politica_privacidade',
+    ),
+    container.repositories.legalDocumentVersion.findCurrent(current.tenant.id, 'termos_uso'),
+  ]);
+  if (!politicaPrivacidade || !termosUso) {
+    return {
+      ...EMPTY_STATE,
+      error:
+        'Os Termos de Uso e a Política de Privacidade ainda não foram publicados nesta Loja. Fale com a Secretaria.',
+    };
+  }
+  if (!aceitePolitica || !aceiteTermos) {
+    return {
+      ...EMPTY_STATE,
+      error: 'É necessário aceitar a Política de Privacidade e os Termos de Uso para continuar.',
+    };
+  }
   const claimResult = await container.useCases.claimMemberAccount.execute(
     current.tenant.id,
     memberId,
@@ -122,6 +151,30 @@ export async function claimMemberAccountAction(
     updatedAt: now,
     updatedBy: authUser.uid,
   });
+
+  // Aceite registrado ANTES de qualquer sessão existir (mesmo motivo de
+  // `RecordLegalAcceptanceUseCase` não usar `AuthContext`) — o `userId` já
+  // existe (acabou de ser criado no Firebase Auth), então usamos ele
+  // diretamente. IP/dispositivo do próprio navegador que enviou o formulário.
+  const userAgent = headerList.get('user-agent');
+  await Promise.all([
+    container.useCases.recordLegalAcceptance.execute({
+      tenantId: current.tenant.id,
+      userId: authUser.uid,
+      documento: 'politica_privacidade',
+      versao: politicaPrivacidade.versao,
+      ip,
+      userAgent,
+    }),
+    container.useCases.recordLegalAcceptance.execute({
+      tenantId: current.tenant.id,
+      userId: authUser.uid,
+      documento: 'termos_uso',
+      versao: termosUso.versao,
+      ip,
+      userAgent,
+    }),
+  ]);
 
   redirect('/login?reivindicado=1');
 }

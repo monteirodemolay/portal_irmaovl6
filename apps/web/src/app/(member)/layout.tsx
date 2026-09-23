@@ -1,3 +1,4 @@
+import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { hasPermission } from '@vl6/domain';
 import { createServerContainer } from '@vl6/infra';
@@ -13,12 +14,28 @@ import { roleDisplayLabel } from '@/lib/auth/role-display-label';
 import { getDictionary } from '@/lib/i18n/get-dictionary';
 import { resolveMemberDisplayName } from '@/lib/membership/resolve-display-name';
 import { getCurrentTenant } from '@/lib/tenant/get-current-tenant';
+import { getLegalAcceptanceStatus } from '@/lib/legal/get-legal-acceptance-status';
 import { AgendaProvider } from '@/modules/agenda/components/agenda-provider';
+import { PATHNAME_HEADER } from '@/middleware';
+
+const TERMOS_E_PRIVACIDADE_PATH = '/irmaos/configuracoes/termos-e-privacidade';
 
 export default async function MemberLayout({ children }: { children: React.ReactNode }) {
   const session = await getCurrentSession();
   if (!session) {
     redirect('/login');
+  }
+
+  // Gate de reaceite obrigatório (docs/legal/04-sistema-de-versionamento.md
+  // §4) — nunca redireciona quando a requisição já é para a própria página
+  // de aceite, senão o redirect faria um loop nela mesma.
+  const headerList = await headers();
+  const pathname = headerList.get(PATHNAME_HEADER) ?? '';
+  if (!pathname.startsWith(TERMOS_E_PRIVACIDADE_PATH)) {
+    const legalStatus = await getLegalAcceptanceStatus(session.authContext);
+    if (legalStatus.some((doc) => doc.pendente)) {
+      redirect(TERMOS_E_PRIVACIDADE_PATH);
+    }
   }
 
   const container = createServerContainer();

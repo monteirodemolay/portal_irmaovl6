@@ -194,6 +194,17 @@ export * from './modules/audit/repositories/audit-log.repository';
 export * from './modules/audit/use-cases/record-audit-entry.use-case';
 export * from './modules/audit/use-cases/list-audit-log.use-case';
 
+// Sistema de versionamento — Política de Privacidade e Termos de Uso
+// (docs/legal/04-sistema-de-versionamento.md)
+export * from './modules/legal/entities/legal-document-version.entity';
+export * from './modules/legal/entities/legal-document-acceptance.entity';
+export * from './modules/legal/repositories/legal-document-version.repository';
+export * from './modules/legal/repositories/legal-document-acceptance.repository';
+export * from './modules/legal/use-cases/publish-legal-document-version.use-case';
+export * from './modules/legal/use-cases/list-legal-document-versions.use-case';
+export * from './modules/legal/use-cases/get-legal-acceptance-status.use-case';
+export * from './modules/legal/use-cases/record-legal-acceptance.use-case';
+
 // Document Management
 export * from './modules/document-management/entities/file-asset.entity';
 export * from './modules/document-management/entities/file-category.entity';

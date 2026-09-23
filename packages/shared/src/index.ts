@@ -30,6 +30,7 @@ export * from './schemas/personal-note.schema';
 export * from './schemas/notification.schema';
 export * from './schemas/gallery.schema';
 export * from './schemas/central.schema';
+export * from './schemas/legal.schema';
 export * from './schemas/archive.schema';
 export * from './schemas/family-legacy.schema';
 export * from './calendar/build-calendar-links';
