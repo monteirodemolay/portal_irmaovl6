@@ -144,6 +144,13 @@ export const RESOURCE_KEYS = [
   // Honrarias" do Perfil, sem regra de negócio própria que justifique
   // separar em três recursos.
   'honor',
+  // Sistema de versionamento de Política de Privacidade e Termos de Uso
+  // (docs/legal/04-sistema-de-versionamento.md). `read` cobre ler a versão
+  // vigente, o histórico e o próprio status de aceite — concedido a TODO
+  // papel com acesso ao Portal (inclusive `paramaconica`), porque aceitar
+  // os Termos é pré-condição de uso, não um privilégio administrativo.
+  // Só publicar uma nova versão exige `manage` (Administração da Loja).
+  'legalDocument',
 ] as const;
 export type ResourceKey = (typeof RESOURCE_KEYS)[number];
 
@@ -213,6 +220,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<RoleKey, PermissionKey[]> = {
     'paramasonicCommunity:manage',
     'paramasonicEntity:manage',
     'honor:manage',
+    'legalDocument:manage',
   ],
   membro: [
     'tenant:read',
@@ -240,6 +248,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<RoleKey, PermissionKey[]> = {
     'paramasonicCommunity:read',
     'paramasonicEntity:read',
     'honor:read',
+    'legalDocument:read',
   ],
   paramaconica: [
     'tenant:read',
@@ -247,6 +256,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<RoleKey, PermissionKey[]> = {
     'news:read',
     'announcement:read',
     'paramasonicCommunity:read',
+    'legalDocument:read',
   ],
   // Bibliotecário — na prática é sempre um Irmão da própria Loja que já
   // usa o Portal normalmente (agenda, notícias, Diretório etc.) e por cima
@@ -284,5 +294,6 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<RoleKey, PermissionKey[]> = {
     'paramasonicCommunity:read',
     'paramasonicEntity:read',
     'honor:read',
+    'legalDocument:read',
   ],
 };

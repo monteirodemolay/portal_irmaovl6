@@ -1,4 +1,11 @@
-import type { IClock, IIdGenerator } from '../shared/ports';
+import type { IClock, IHasher, IIdGenerator } from '../shared/ports';
+import type {
+  LegalDocumentVersion,
+  LegalDocumentKey,
+} from '../modules/legal/entities/legal-document-version.entity';
+import type { LegalDocumentAcceptance } from '../modules/legal/entities/legal-document-acceptance.entity';
+import type { ILegalDocumentVersionRepository } from '../modules/legal/repositories/legal-document-version.repository';
+import type { ILegalDocumentAcceptanceRepository } from '../modules/legal/repositories/legal-document-acceptance.repository';
 import type { MemberTitle } from '../modules/honors/entities/member-title.entity';
 import type { IMemberTitleRepository } from '../modules/honors/repositories/member-title.repository';
 import type { Honor } from '../modules/honors/entities/honor.entity';
@@ -163,6 +170,12 @@ export class SequentialIdGenerator implements IIdGenerator {
   next(): string {
     this.counter += 1;
     return `id-${this.counter}`;
+  }
+}
+
+export class FakeHasher implements IHasher {
+  sha256Hex(input: string): string {
+    return `fake-hash(${input.length})`;
   }
 }
 
@@ -1542,6 +1555,45 @@ export class InMemoryPublicationConsentRepository implements IPublicationConsent
   }
   async append(consent: PublicationConsent) {
     this.entries.push(consent);
+  }
+}
+
+export class InMemoryLegalDocumentVersionRepository implements ILegalDocumentVersionRepository {
+  private readonly entries: LegalDocumentVersion[] = [];
+
+  async append(version: LegalDocumentVersion) {
+    this.entries.push(version);
+  }
+  async findCurrent(tenantId: string, documento: LegalDocumentKey) {
+    const versions = await this.listByDocumento(tenantId, documento);
+    return versions[0] ?? null;
+  }
+  async listByDocumento(tenantId: string, documento: LegalDocumentKey) {
+    return this.entries
+      .filter((v) => v.tenantId === tenantId && v.documento === documento)
+      .sort((a, b) => b.publicadoEm.getTime() - a.publicadoEm.getTime());
+  }
+}
+
+export class InMemoryLegalDocumentAcceptanceRepository implements ILegalDocumentAcceptanceRepository {
+  private readonly entries: LegalDocumentAcceptance[] = [];
+
+  async append(acceptance: LegalDocumentAcceptance) {
+    this.entries.push(acceptance);
+  }
+  async findLatestByUser(tenantId: string, userId: string, documento: LegalDocumentKey) {
+    const all = await this.listByUser(tenantId, userId);
+    return all.find((a) => a.documento === documento) ?? null;
+  }
+  async listByUser(tenantId: string, userId: string) {
+    return this.entries
+      .filter((a) => a.tenantId === tenantId && a.userId === userId)
+      .sort((a, b) => b.aceitoEm.getTime() - a.aceitoEm.getTime());
+  }
+  async listByTenant(tenantId: string) {
+    return this.entries
+      .filter((a) => a.tenantId === tenantId)
+      .sort((a, b) => b.aceitoEm.getTime() - a.aceitoEm.getTime());
   }
 }
 

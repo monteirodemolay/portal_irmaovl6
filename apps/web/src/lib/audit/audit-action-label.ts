@@ -13,6 +13,7 @@ export const AUDIT_ACTION_LABELS: Record<AuditAction, string> = {
   member_profile_consent_recorded: 'Consentimento de publicação registrado',
   member_profile_blocks_published: 'Blocos do perfil publicados',
   member_profile_consent_revoked: 'Consentimento de publicação revogado',
+  legal_document_version_published: 'Versão de documento legal publicada',
 };
 
 /** Nome em pt-BR pra cada coleção auditada — chave é o `entidade` gravado em `AuditLog`. */
@@ -43,4 +44,5 @@ export const AUDIT_ENTITY_LABELS: Record<string, string> = {
   familyRelationships: 'Vínculo familiar',
   personFraternalRecords: 'Afiliação paramaçônica',
   memberSituationRecords: 'Situação do Irmão',
+  legalDocumentVersions: 'Versão de documento legal',
 };

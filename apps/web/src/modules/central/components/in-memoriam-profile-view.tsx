@@ -120,7 +120,6 @@ export function InMemoriamProfileView({
             {canViewAcervo && (
               <div id="acervo" className="scroll-mt-24">
                 <ProfileAcervoTab
-                  profile={profile}
                   canViewAcervo={canViewAcervo}
                   acervoPhotos={acervoPhotos}
                   relationsSlot={acervoRelationsSlot}
