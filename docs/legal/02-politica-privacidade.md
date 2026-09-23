@@ -1,8 +1,8 @@
 # Política de Privacidade — Portal do Irmão VL6
 
 > **Versão:** 1.0.0 · **Vigência a partir de:** 23/09/2026 · **Aprovada por:** Diretoria VL6
-> **Documento fonte:** redigido a partir de `docs/legal/01-inventario-dados-lgpd.md` (auditoria direta do código-fonte em 22/09/2026). Pontos que dependem de decisão institucional ou validação jurídica estão marcados **[A VALIDAR]** e não devem ser publicados sem essa validação.
-> Este arquivo é a versão vigente. Alterações futuras devem gerar uma nova versão nesta mesma pasta (`docs/legal/versoes/`), nunca sobrescrever esta sem preservar a anterior — ver `docs/legal/04-sistema-de-versionamento.md`.
+> **Documento fonte:** redigido a partir de `docs/legal/01-inventario-dados-lgpd.md` (auditoria direta do código-fonte em 22/09/2026).
+> Este arquivo é a versão vigente. Alterações futuras geram uma nova versão, publicada pela Administração em Configurações → Termos e Privacidade — nunca sobrescrevem esta sem preservar a anterior — ver `docs/legal/04-sistema-de-versionamento.md`.
 
 ---
 
@@ -22,7 +22,7 @@ Esta política foi redigida com base no funcionamento real do Portal, verificado
 
 A Loja Maçônica Verdadeira Luz nº 06 é a **controladora** dos dados pessoais tratados no Portal, nos termos do art. 5º, VI, da LGPD. A operação técnica e o suporte do Portal são conduzidos pela Secretaria da Loja, com apoio de fornecedores de infraestrutura em nuvem listados na Seção 11 (Compartilhamento e Subprocessadores).
 
-**Encarregado de Dados (DPO):** ainda não designado formalmente. Até a designação, solicitações relacionadas a dados pessoais devem ser dirigidas à Secretaria da Loja pelos canais informados na área "Termos e Privacidade" do Portal.
+**Encarregado de Dados (DPO):** o cargo de Encarregado é exercido, por padrão institucional, pelo Venerável Mestre da gestão em exercício da Loja VL6. Atualmente: **Dino Moraes de Sousa** — e-mail: **dinomoraes@hotmail.com**. Este contato é atualizado pela Administração (Configurações → Termos e Privacidade) a cada nova gestão, e é para onde devem ser dirigidas solicitações relacionadas a dados pessoais.
 
 ## 4. Natureza privada do Portal
 
@@ -60,7 +60,7 @@ Nome completo, nome maçônico, foto de perfil, e-mail, telefone/WhatsApp, ender
 
 Carteira de Identidade Maçônica (CIM), grau, cargo atual e histórico de cargos, datas de iniciação, elevação e exaltação, situação cadastral (ativo, licenciado, desligado, falecido) e seu histórico completo (nunca sobrescrito), condecorações e títulos honoríficos, e — quando aplicável e mediante ativação voluntária do próprio Irmão — participação em graus filosóficos de corpos com regras de sigilo próprias.
 
-**[A VALIDAR]** A Loja trata a filiação e a trajetória maçônica como informação vinculada à própria natureza associativa do Portal. Alguns aspectos dessa trajetória (participação em corpos filosóficos) podem ser equiparados a dado sensível nos termos do art. 5º, II, da LGPD (convicção filosófica); nesses casos, o Portal já exige ativação voluntária e explícita do próprio Irmão antes de tornar a informação visível a terceiros.
+A Loja trata a filiação e a trajetória maçônica como informação vinculada à própria natureza associativa do Portal. Alguns aspectos dessa trajetória (participação em corpos filosóficos) podem ser equiparados a dado sensível nos termos do art. 5º, II, da LGPD (convicção filosófica); nesses casos, o Portal exige ativação voluntária e explícita do próprio Irmão antes de tornar a informação visível a terceiros.
 
 ### 8.3 Dados profissionais e de negócios (opcionais)
 
@@ -98,7 +98,7 @@ Em conformidade com o dever de transparência, informamos que:
 
 ## 9. Dados que não coletamos
 
-O Portal não coleta, no seu funcionamento atual: geolocalização precisa, dados biométricos, dados de pagamento/financeiros de terceiros fora do módulo de indicação de negócios entre Irmãos, e não realiza rastreamento de comportamento entre sites (não há ferramentas de analytics ou publicidade instaladas). **[A VALIDAR]** Não foi identificado campo estruturado de CPF ou RG no cadastro central de Irmãos; caso esses dados sejam coletados por algum canal fora do escopo desta auditoria (ex.: documentos anexados em texto livre), a Loja se compromete a atualizar esta política assim que confirmado.
+O Portal não coleta, no seu funcionamento atual: geolocalização precisa, dados biométricos, dados de pagamento/financeiros de terceiros fora do módulo de indicação de negócios entre Irmãos, e não realiza rastreamento de comportamento entre sites (não há ferramentas de analytics ou publicidade instaladas). **O Portal não coleta CPF nem RG.** A identificação de cada Irmão para os efeitos da Loja é feita exclusivamente pela Carteira de Identidade Maçônica (CIM), descrita na Seção 8.2.
 
 ## 10. Finalidades específicas por dado
 
@@ -125,7 +125,7 @@ Os dados pessoais tratados no Portal podem ser processados pelos seguintes opera
 - **Sentry** (monitoramento de erros técnicos) — não está ativo em produção no momento desta publicação. Caso seja ativado futuramente, esta política será atualizada para listá-lo como subprocessador, já que ele passaria a processar registros técnicos de falhas do sistema que podem conter, indiretamente, identificadores de sessão.
 - **Serviços públicos de consulta de CNPJ** (BrasilAPI, Minha Receita, ReceitaWS) — consultados apenas quando o próprio Irmão informa o CNPJ de sua empresa no módulo de Negócios, para preencher automaticamente dados públicos da empresa (razão social, cidade).
 
-O Portal também disponibiliza uma **interface de integração autenticada por chave de API**, destinada a sistemas internos autorizados pela Loja para consultar dados básicos do Diretório (nome, e-mail, cidade, grau e situação). O acesso por essa via é restrito a chaves emitidas e revogáveis pela administração da Loja. **[A VALIDAR]** Nenhuma dessas chaves está hoje habilitada para terceiros externos à governança da Loja; caso isso mude, esta política será atualizada com a identificação do destinatário e a finalidade do compartilhamento.
+O Portal também disponibiliza uma **interface de integração autenticada por chave de API**, destinada a sistemas internos autorizados pela Loja para consultar dados básicos do Diretório (nome, e-mail, cidade, grau e situação). O acesso por essa via é restrito a chaves emitidas e revogáveis pela administração da Loja. **Nenhuma chave de API está habilitada para terceiros externos à governança da Loja** — o uso é exclusivamente interno. Caso isso mude no futuro, esta política será atualizada com a identificação do destinatário e a finalidade do compartilhamento.
 
 Não vendemos, alugamos ou compartilhamos dados pessoais para fins de marketing de terceiros.
 
@@ -151,7 +151,7 @@ O Portal utiliza apenas **um cookie estritamente necessário**, de sessão de au
 
 | Categoria                                                      | Prazo de retenção                                                                                                                                                              |
 | -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Cadastro de Irmão (Diretório) e histórico de situação maçônica | Enquanto durar o vínculo institucional do Irmão com a Loja, e após, pelo prazo necessário à preservação da memória histórica institucional — **[A VALIDAR: prazo definitivo]** |
+| Cadastro de Irmão (Diretório) e histórico de situação maçônica | Por prazo indeterminado, durante e após o vínculo institucional do Irmão com a Loja, como parte do acervo histórico institucional |
 | Conta de acesso ao Portal (login)                              | Até solicitação de exclusão pelo próprio titular ou desligamento formal, conforme Seção 16                                                                                     |
 | Registros de auditoria                                         | Mantidos de forma permanente e imutável, para fins de segurança e responsabilização, enquanto o Portal estiver em operação                                                     |
 | Cópias de segurança (backup)                                   | Mantidas por prazo indeterminado, enquanto o Portal estiver em operação                                                                                                        |
@@ -170,7 +170,7 @@ Você pode, a qualquer momento, solicitar:
 - **Revogação do consentimento**, quando o tratamento se basear em consentimento (ex.: publicação do perfil voluntário na Central VL6), sem prejuízo de tratamentos anteriores realizados de boa-fé;
 - **Exclusão da sua conta de acesso** ao Portal, diretamente pela própria área de configurações.
 
-**Sobre a exclusão do cadastro institucional:** a exclusão da sua conta de acesso remove seu login e desvincula seus dados de uso pessoal (agenda, notificações, favoritos). **[A VALIDAR]** O registro histórico do seu cadastro como Irmão da Loja (nome, trajetória maçônica, histórico de situação) é preservado como acervo institucional mesmo após a exclusão da conta de acesso, o que está sujeito a validação jurídica quanto ao equilíbrio entre o direito de eliminação (art. 18 LGPD) e o interesse legítimo/dever de guarda de registros associativos da Loja.
+**Sobre a exclusão do cadastro institucional:** a exclusão da sua conta de acesso remove seu login e desvincula seus dados de uso pessoal (agenda, notificações, favoritos). **O registro histórico do seu cadastro como Irmão da Loja (nome, trajetória maçônica, histórico de situação) é preservado como acervo institucional mesmo após a exclusão da conta de acesso** — a Loja entende que esse registro corresponde ao interesse legítimo e ao dever de guarda de registros associativos da Loja (art. 7º, IX, e art. 16, III, da LGPD), prevalecendo sobre o direito de eliminação para essa categoria específica de dado.
 
 ### 16.1 Como solicitar
 
@@ -188,7 +188,7 @@ Fotografias, documentos e demais materiais do Acervo Histórico constituem patri
 
 ### 17.3 Conteúdo enviado pelos Irmãos (contribuições ao Acervo e à Biblioteca)
 
-Ao enviar fotografias, documentos ou textos para o Acervo Histórico ou a Biblioteca, o Irmão concede à Loja VL6 uma **licença não exclusiva de uso institucional** desse material (exibição, reprodução e divulgação dentro do Portal e em materiais institucionais da Loja), preservando os direitos autorais do autor original. **[A VALIDAR — ver também Termos de Uso, Seção 6]** Esta cláusula formaliza, no âmbito contratual, um consentimento que hoje não possui um mecanismo técnico dedicado (como uma caixa de confirmação) no fluxo de envio; recomenda-se a implementação futura desse controle técnico.
+Ao enviar fotografias, documentos ou textos para o Acervo Histórico ou a Biblioteca, o Irmão concede à Loja VL6 uma **licença não exclusiva de uso institucional** desse material (exibição, reprodução e divulgação dentro do Portal e em materiais institucionais da Loja), preservando os direitos autorais do autor original — ver também Termos de Uso, Seção 8.2. Esta cláusula formaliza, no âmbito contratual, um consentimento que hoje não possui um mecanismo técnico dedicado (como uma caixa de confirmação) no fluxo de envio; a implementação futura desse controle técnico é recomendada, mas não é condição para a validade desta cláusula.
 
 ### 17.4 Direitos autorais e licenciamento
 
@@ -222,4 +222,4 @@ Nenhuma versão anterior existe até a publicação desta primeira versão (1.0.
 
 ---
 
-_Esta é uma minuta técnica preparada a partir da auditoria de código-fonte do Portal. Antes da publicação oficial, deve ser revisada por advogado especialista em Direito Digital/LGPD, que deverá se pronunciar em especial sobre os pontos marcados **[A VALIDAR]** ao longo do texto._
+_Esta Política de Privacidade foi redigida a partir da auditoria direta do código-fonte do Portal e aprovada pela Diretoria da Loja VL6 como sua versão 1.0.0, vigente a partir da data indicada no topo deste documento._
