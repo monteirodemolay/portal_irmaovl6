@@ -539,6 +539,10 @@ export class InMemoryNewsRepository implements INewsRepository {
   async update(news: News) {
     this.byId.set(news.id, news);
   }
+  async incrementViews(id: string) {
+    const current = this.byId.get(id);
+    if (current) this.byId.set(id, { ...current, contagemVisualizacoes: current.contagemVisualizacoes + 1 });
+  }
   async hardDelete(id: string) {
     this.byId.delete(id);
   }
