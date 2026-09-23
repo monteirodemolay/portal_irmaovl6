@@ -78,10 +78,8 @@ export async function importNewsFromUrlAction(url: string): Promise<ImportNewsRe
 
   const container = createServerContainer();
   const baseSlug = slugify(scraped.title) || 'noticia';
-  const sourceNote = `<p><em>Importado de <a href="${escapeHtml(url)}">${escapeHtml(url)}</a>. Revise e complete o conte\u00fado antes de publicar.</em></p>`;
-  const conteudoHtml = scraped.description
-    ? `<p>${escapeHtml(scraped.description)}</p>\n${sourceNote}`
-    : sourceNote;
+  const sourceNote = `<p><em>Fonte original: <a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(url)}</a>.</em></p>`;
+  const conteudoHtml = `${scraped.contentHtml}\n${sourceNote}`;
 
   let imagemCapaUrl: string | null = null;
   if (scraped.image) {
@@ -106,6 +104,8 @@ export async function importNewsFromUrlAction(url: string): Promise<ImportNewsRe
         imagemCapaUrl,
         conteudoHtml,
         categoria: 'Not\u00edcias VL6',
+        destaque: false,
+        destaquePrincipal: false,
         dataPublicacao: scraped.publishedAt,
       });
     } catch {
@@ -189,6 +189,8 @@ export async function backfillNewsPublishedDatesAction(): Promise<
       imagemCapaUrl: news.imagemCapaUrl,
       conteudoHtml: news.conteudoHtml,
       categoria: news.categoria,
+      destaque: Boolean(news.destaque),
+      destaquePrincipal: Boolean(news.destaquePrincipal),
       dataPublicacao: scraped.publishedAt,
     });
     const result = await container.useCases.updateNews.execute(session.authContext, news.id, input);
@@ -225,6 +227,8 @@ export async function createNewsAction(
       imagemCapaUrl: formData.get('imagemCapaUrl') || null,
       conteudoHtml: formData.get('conteudoHtml'),
       categoria: formData.get('categoria'),
+      destaque: formData.get('destaque') === 'on' || formData.get('destaquePrincipal') === 'on',
+      destaquePrincipal: formData.get('destaquePrincipal') === 'on',
       dataPublicacao: formData.get('dataPublicacao') || null,
     });
   } catch {
@@ -235,7 +239,13 @@ export async function createNewsAction(
   const result = await container.useCases.createNews.execute(session.authContext, input);
   if (!result.ok) return { error: result.error.message };
 
+  if (result.value.destaquePrincipal) {
+    await enforceSinglePrimaryHighlight(container, session.authContext, result.value.id);
+  }
+
   revalidatePath('/admin/conteudo/noticias');
+  revalidatePath('/noticias');
+  revalidatePath('/dashboard');
   redirect(`/admin/conteudo/noticias/${result.value.id}`);
 }
 
@@ -265,9 +275,85 @@ export async function updateNewsAction(
   const result = await container.useCases.updateNews.execute(session.authContext, newsId, input);
   if (!result.ok) return { error: result.error.message };
 
+  if (result.value.destaquePrincipal) {
+    await enforceSinglePrimaryHighlight(container, session.authContext, result.value.id);
+  }
+
   revalidatePath('/admin/conteudo/noticias');
   revalidatePath(`/admin/conteudo/noticias/${newsId}`);
+  revalidatePath('/noticias');
+  revalidatePath('/dashboard');
   return { error: null };
+}
+
+function newsToFormInput(news: import('@vl6/domain').News): NewsFormValues {
+  return {
+    titulo: news.titulo,
+    subtitulo: news.subtitulo,
+    slug: news.slug,
+    imagemCapaUrl: news.imagemCapaUrl,
+    conteudoHtml: news.conteudoHtml,
+    categoria: news.categoria,
+    destaque: Boolean(news.destaque),
+    destaquePrincipal: Boolean(news.destaquePrincipal),
+    dataPublicacao: news.dataPublicacao,
+  };
+}
+
+async function enforceSinglePrimaryHighlight(
+  container: ReturnType<typeof createServerContainer>,
+  authContext: Awaited<ReturnType<typeof requireSession>>['authContext'],
+  primaryId: string,
+): Promise<void> {
+  const page = await container.useCases.listAllNews.execute(authContext, { limit: 500 });
+  for (const item of page.items) {
+    if (item.id === primaryId || !item.destaquePrincipal) continue;
+    await container.useCases.updateNews.execute(authContext, item.id, {
+      ...newsToFormInput(item),
+      destaquePrincipal: false,
+    });
+  }
+}
+
+export async function toggleNewsFeaturedAction(newsId: string, destacar: boolean): Promise<void> {
+  const session = await requireSession();
+  const container = createServerContainer();
+  const current = await container.repositories.news.findById(newsId);
+  if (!current || current.tenantId !== session.authContext.tenantId) {
+    throw new Error('Notícia não encontrada.');
+  }
+
+  const result = await container.useCases.updateNews.execute(session.authContext, newsId, {
+    ...newsToFormInput(current),
+    destaque: destacar,
+    destaquePrincipal: destacar ? Boolean(current.destaquePrincipal) : false,
+  });
+  if (!result.ok) throw new Error(result.error.message);
+
+  revalidatePath('/admin/conteudo/noticias');
+  revalidatePath('/noticias');
+  revalidatePath('/dashboard');
+}
+
+export async function setNewsPrimaryHighlightAction(newsId: string): Promise<void> {
+  const session = await requireSession();
+  const container = createServerContainer();
+  const current = await container.repositories.news.findById(newsId);
+  if (!current || current.tenantId !== session.authContext.tenantId) {
+    throw new Error('Notícia não encontrada.');
+  }
+
+  const result = await container.useCases.updateNews.execute(session.authContext, newsId, {
+    ...newsToFormInput(current),
+    destaque: true,
+    destaquePrincipal: true,
+  });
+  if (!result.ok) throw new Error(result.error.message);
+
+  await enforceSinglePrimaryHighlight(container, session.authContext, newsId);
+  revalidatePath('/admin/conteudo/noticias');
+  revalidatePath('/noticias');
+  revalidatePath('/dashboard');
 }
 
 export async function toggleNewsPublishedAction(newsId: string, publicar: boolean): Promise<void> {
