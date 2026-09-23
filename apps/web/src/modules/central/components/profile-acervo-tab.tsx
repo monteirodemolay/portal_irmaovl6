@@ -1,36 +1,33 @@
 import type { ReactNode } from 'react';
-import type { PublicMemberProfileDTO } from '@vl6/domain';
 import { Camera, EmptyState, Lock } from '@vl6/ui';
 import { PersonPhotoGrid, type PersonPhoto } from '@/modules/archive/components/person-photo-grid';
-import { MemberPhotoGrid } from './member-photo-grid';
 import { Panel } from './profile-shared';
 
 /**
  * Aba "Acervo" do Perfil único (Fase 2) — herda o que antes vivia em
  * `/acervo/pessoas/[memberId]` (fotografias institucionais marcadas +
  * Constelação da Memória, sempre visível a quem tem `member:read`, nunca
- * gated pelo consentimento voluntário do Irmão) junto da "Memória
- * Fotográfica" que o próprio Irmão escolheu publicar no Diretório
- * (`profile.memoriaFotografica`, bloco opcional). São dois conjuntos de
- * fotos com regras de visibilidade diferentes — nunca mesclados num só
- * grid, pra não confundir "o Irmão publicou" com "está marcado em fotos do
- * Acervo".
+ * gated pelo consentimento voluntário do Irmão).
+ *
+ * Não existe mais um painel separado de "Memória Fotográfica" aqui: esse
+ * bloco (`profile.memoriaFotografica`, a seleção que o próprio Irmão opta
+ * por publicar no Diretório) é, na prática, sempre um subconjunto das fotos
+ * do Acervo abaixo — qualquer sessão que chega até esta aba já tem
+ * `member:read`/`canViewAcervo`, então mostrar os dois juntos só duplicava
+ * as mesmas fotos duas vezes na tela (reportado pelo Administrador). O
+ * campo `memoriaFotografica` continua existindo no perfil (e o Irmão
+ * continua controlando o consentimento em Meu Espaço → Privacidade) — só
+ * não tem mais um grid próprio aqui, redundante com "Fotografias".
  */
 export function ProfileAcervoTab({
-  profile,
   canViewAcervo,
   acervoPhotos,
   relationsSlot,
 }: {
-  profile: PublicMemberProfileDTO;
   canViewAcervo: boolean;
   acervoPhotos: PersonPhoto[];
   relationsSlot: ReactNode;
 }) {
-  const hasMemoriaFotografica = Boolean(
-    profile.memoriaFotografica && profile.memoriaFotografica.length > 0,
-  );
-
   if (!canViewAcervo) {
     return (
       <EmptyState
@@ -43,19 +40,11 @@ export function ProfileAcervoTab({
 
   return (
     <div className="flex flex-col gap-6">
-      {hasMemoriaFotografica && profile.memoriaFotografica && (
-        <Panel kicker="MEMÓRIA" title="Memória Fotográfica" icon={Camera}>
-          <MemberPhotoGrid photos={profile.memoriaFotografica} />
-        </Panel>
-      )}
-
-      {acervoPhotos.length > 0 && (
+      {acervoPhotos.length > 0 ? (
         <Panel kicker="ACERVO VL6" title="Fotografias" icon={Camera}>
           <PersonPhotoGrid photos={acervoPhotos} />
         </Panel>
-      )}
-
-      {!hasMemoriaFotografica && acervoPhotos.length === 0 && (
+      ) : (
         <EmptyState
           icon={<Camera size={22} />}
           title="Nenhuma fotografia ainda"
