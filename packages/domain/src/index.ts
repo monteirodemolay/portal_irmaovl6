@@ -201,6 +201,8 @@ export * from './modules/legal/use-cases/publish-legal-document-version.use-case
 export * from './modules/legal/use-cases/list-legal-document-versions.use-case';
 export * from './modules/legal/use-cases/get-legal-acceptance-status.use-case';
 export * from './modules/legal/use-cases/record-legal-acceptance.use-case';
+export * from './modules/legal/use-cases/list-legal-acceptance-overview.use-case';
+export * from './modules/legal/use-cases/list-legal-acceptance-history-for-user.use-case';
 
 // Document Management
 export * from './modules/document-management/entities/file-asset.entity';

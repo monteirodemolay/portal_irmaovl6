@@ -68,4 +68,12 @@ export class FirestoreLegalDocumentAcceptanceRepository implements ILegalDocumen
       .get();
     return snap.docs.map((doc) => doc.data());
   }
+
+  async listByTenant(tenantId: string): Promise<LegalDocumentAcceptance[]> {
+    const snap = await this.collection
+      .where('tenantId', '==', tenantId)
+      .orderBy('aceitoEm', 'desc')
+      .get();
+    return snap.docs.map((doc) => doc.data());
+  }
 }

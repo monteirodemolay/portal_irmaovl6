@@ -1590,6 +1590,11 @@ export class InMemoryLegalDocumentAcceptanceRepository implements ILegalDocument
       .filter((a) => a.tenantId === tenantId && a.userId === userId)
       .sort((a, b) => b.aceitoEm.getTime() - a.aceitoEm.getTime());
   }
+  async listByTenant(tenantId: string) {
+    return this.entries
+      .filter((a) => a.tenantId === tenantId)
+      .sort((a, b) => b.aceitoEm.getTime() - a.aceitoEm.getTime());
+  }
 }
 
 export class InMemoryGoogleCalendarConnectionRepository implements IGoogleCalendarConnectionRepository {

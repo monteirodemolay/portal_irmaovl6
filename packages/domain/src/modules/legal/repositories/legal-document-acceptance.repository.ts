@@ -12,4 +12,6 @@ export interface ILegalDocumentAcceptanceRepository {
   ): Promise<LegalDocumentAcceptance | null>;
   /** Histórico completo de aceites do usuário (ambos os documentos), mais recente primeiro. */
   listByUser(tenantId: string, userId: string): Promise<LegalDocumentAcceptance[]>;
+  /** Todos os aceites do tenant (todos os usuários, ambos os documentos), mais recente primeiro — usado pelo painel administrativo para montar a visão geral de quem já aceitou. */
+  listByTenant(tenantId: string): Promise<LegalDocumentAcceptance[]>;
 }
