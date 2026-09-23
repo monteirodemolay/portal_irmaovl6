@@ -15,6 +15,7 @@ import { DeleteButton } from '@/components/admin/delete-button';
 import { ConcludedTabNav } from '@/components/admin/concluded-tab-nav';
 import { ImportNewsPanel } from '@/modules/content/components/import-news-panel';
 import { BackfillNewsDatesPanel } from '@/modules/content/components/backfill-news-dates-panel';
+import { ReimportNewsPanel } from '@/modules/content/components/reimport-news-panel';
 
 const BASE_PATH = '/admin/conteudo/noticias';
 const PAGE_SIZE = 20;
@@ -151,6 +152,7 @@ export default async function NewsPage({
 
       <div className="grid gap-4 xl:grid-cols-2">
         <ImportNewsPanel />
+        <ReimportNewsPanel />
         <BackfillNewsDatesPanel />
       </div>
 
