@@ -227,6 +227,11 @@ export async function updateCentralProfileAction(
     'historicoProfissional',
     current?.historicoProfissional ?? [],
   );
+  const formacaoAcademica = jsonArrayOrCurrent(
+    formData,
+    'formacaoAcademica',
+    current?.formacaoAcademica ?? [],
+  );
   const competencias = jsonArrayOrCurrent(formData, 'competencias', current?.competencias ?? []);
   const servicos = jsonArrayOrCurrent(formData, 'servicos', current?.servicos ?? []);
 
@@ -339,6 +344,7 @@ export async function updateCentralProfileAction(
       ),
       negocios,
       historicoProfissional,
+      formacaoAcademica,
       competencias,
       servicos,
       afiliacoes,

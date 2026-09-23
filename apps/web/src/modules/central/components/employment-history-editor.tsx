@@ -58,9 +58,12 @@ function emptyDraft(): EmploymentDraft {
 export function EmploymentHistoryEditor({
   name,
   defaultValue,
+  knownCompanies = [],
 }: {
   name: string;
   defaultValue: CentralEmploymentEntry[];
+  /** Empresas já cadastradas no tenant (por qualquer Irmão) — alimenta um `<datalist>`, reduz duplicação. */
+  knownCompanies?: string[];
 }) {
   const [items, setItems] = useState<EmploymentDraft[]>(() => defaultValue.map(toDraft));
 
@@ -102,6 +105,7 @@ export function EmploymentHistoryEditor({
             <FormField label="Empresa" htmlFor={`historico-empresa-${item.id}`}>
               <Input
                 id={`historico-empresa-${item.id}`}
+                list="historico-empresas-conhecidas"
                 value={item.empresa}
                 onChange={(e) => update(index, { empresa: e.target.value })}
               />
@@ -169,6 +173,11 @@ export function EmploymentHistoryEditor({
           Adicionar período
         </Button>
       )}
+      <datalist id="historico-empresas-conhecidas">
+        {knownCompanies.map((company) => (
+          <option key={company} value={company} />
+        ))}
+      </datalist>
       <input type="hidden" name={name} value={JSON.stringify(payload)} />
     </div>
   );

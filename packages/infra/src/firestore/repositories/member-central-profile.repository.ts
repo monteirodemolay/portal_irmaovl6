@@ -1,6 +1,7 @@
 import { Timestamp, type Firestore } from 'firebase-admin/firestore';
 import type {
   CentralBusinessEntry,
+  CentralEducationEntry,
   CentralEmploymentEntry,
   IMemberCentralProfileRepository,
   MemberCentralProfile,
@@ -74,14 +75,24 @@ function normalizeEmploymentEntry(raw: CentralEmploymentEntry): CentralEmploymen
   };
 }
 
+function normalizeEducationEntry(raw: CentralEducationEntry): CentralEducationEntry {
+  return {
+    ...raw,
+    dataInicio: toOptionalDate(raw.dataInicio),
+    dataFim: toOptionalDate(raw.dataFim),
+  };
+}
+
 function normalizeProfile(profile: MemberCentralProfile): MemberCentralProfile {
   return {
     ...profile,
     negocios: profile.negocios.map(normalizeBusinessEntry),
-    // `historicoProfissional` é um campo novo — documentos gravados antes
-    // dele existir não têm essa chave no Firestore (`undefined`, não `[]`),
-    // mesma classe de bug que já quebrou `Tenant.heroPhotos` em produção.
+    // `historicoProfissional`/`formacaoAcademica` são campos novos —
+    // documentos gravados antes deles existirem não têm essas chaves no
+    // Firestore (`undefined`, não `[]`), mesma classe de bug que já
+    // quebrou `Tenant.heroPhotos` em produção.
     historicoProfissional: (profile.historicoProfissional ?? []).map(normalizeEmploymentEntry),
+    formacaoAcademica: (profile.formacaoAcademica ?? []).map(normalizeEducationEntry),
   };
 }
 

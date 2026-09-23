@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   centralAffiliationEntrySchema,
+  centralEducationEntrySchema,
   centralEmploymentEntrySchema,
   memberCentralProfileSchema,
 } from './central.schema';
@@ -18,6 +19,7 @@ function baseInput() {
     resumoProfissional: null,
     negocios: [],
     historicoProfissional: [],
+    formacaoAcademica: [],
     competencias: [],
     servicos: [],
     afiliacoes: [],
@@ -142,6 +144,31 @@ describe('memberCentralProfileSchema', () => {
     });
     expect(ok.success).toBe(true);
   });
+
+  it('limita formação acadêmica a 20 entradas', () => {
+    const entry = {
+      id: 'f1',
+      nivel: 'graduacao',
+      instituicao: 'Universidade X',
+      curso: null,
+      dataInicio: null,
+      dataFim: null,
+      atual: false,
+      descricao: null,
+    };
+    const excesso = Array.from({ length: 21 }, (_, i) => ({ ...entry, id: `f${i}` }));
+    const result = memberCentralProfileSchema.safeParse({
+      ...baseInput(),
+      formacaoAcademica: excesso,
+    });
+    expect(result.success).toBe(false);
+
+    const ok = memberCentralProfileSchema.safeParse({
+      ...baseInput(),
+      formacaoAcademica: excesso.slice(0, 20),
+    });
+    expect(ok.success).toBe(true);
+  });
 });
 
 describe('centralEmploymentEntrySchema', () => {
@@ -227,5 +254,54 @@ describe('centralAffiliationEntrySchema', () => {
       abrangencia: 'global',
     });
     expect(invalido.success).toBe(false);
+  });
+});
+
+describe('centralEducationEntrySchema', () => {
+  const base = {
+    id: 'f1',
+    nivel: 'graduacao' as const,
+    instituicao: 'Universidade Federal de Goiás',
+    curso: 'Direito',
+    dataInicio: new Date('2018-02-01'),
+    dataFim: new Date('2022-12-01'),
+    atual: false,
+    descricao: null,
+  };
+
+  it('exige instituição preenchida', () => {
+    const result = centralEducationEntrySchema.safeParse({ ...base, instituicao: '' });
+    expect(result.success).toBe(false);
+  });
+
+  it('só aceita uma chave válida da taxonomia de nível de ensino', () => {
+    const valido = centralEducationEntrySchema.safeParse({ ...base, nivel: 'pos_doutorado' });
+    expect(valido.success).toBe(true);
+
+    const invalido = centralEducationEntrySchema.safeParse({ ...base, nivel: 'mba' });
+    expect(invalido.success).toBe(false);
+  });
+
+  it('rejeita um período marcado como atual com data de término preenchida', () => {
+    const result = centralEducationEntrySchema.safeParse({
+      ...base,
+      atual: true,
+      dataFim: new Date('2024-01-01'),
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('aceita nível sem curso/período informado (nada é obrigatório além de nível e instituição)', () => {
+    const result = centralEducationEntrySchema.safeParse({
+      id: 'f2',
+      nivel: 'ensino_fundamental',
+      instituicao: 'Escola Municipal X',
+      curso: null,
+      dataInicio: null,
+      dataFim: null,
+      atual: false,
+      descricao: null,
+    });
+    expect(result.success).toBe(true);
   });
 });
