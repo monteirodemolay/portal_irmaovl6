@@ -145,11 +145,28 @@ export function LinkPill({
   );
 }
 
-export function SummaryRow({ label, value }: { label: string; value: string }) {
+export function SummaryRow({
+  label,
+  value,
+  href,
+}: {
+  label: string;
+  value: string;
+  /** Quando informado, `value` vira um link (ex. pra página de um negócio publicado). */
+  href?: string;
+}) {
   return (
     <div className="border-border flex items-center justify-between gap-3 border-b border-dashed pb-2.5 last:border-0 last:pb-0">
       <dt className="text-muted text-xs">{label}</dt>
-      <dd className="text-right text-xs font-semibold">{value}</dd>
+      <dd className="text-right text-xs font-semibold">
+        {href ? (
+          <Link href={href} className="text-accent hover:underline">
+            {value}
+          </Link>
+        ) : (
+          value
+        )}
+      </dd>
     </div>
   );
 }
