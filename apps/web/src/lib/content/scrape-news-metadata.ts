@@ -171,7 +171,7 @@ function sanitizeImportedHtml(source: string, baseUrl: string): string {
     /<a\b([^>]*?)\bhref\s*=\s*(["'])(.*?)\2([^>]*)>/gi,
     (_full, _before: string, _quote: string, href: string) => {
       const normalized = absoluteUrl(href, baseUrl);
-      if (!normalized) return '<span>';
+      if (!normalized) return '<a>';
       return `<a href="${escapeHtml(normalized)}" target="_blank" rel="noopener noreferrer">`;
     },
   );
