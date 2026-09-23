@@ -1,6 +1,6 @@
 # Termos de Uso — Portal do Irmão VL6
 
-> **Versão:** 1.0.0 · **Vigência a partir de:** [DATA DE PUBLICAÇÃO] · **Aprovada por:** [DIRETORIA/VENERÁVEL MESTRE — A PREENCHER]
+> **Versão:** 1.0.0 · **Vigência a partir de:** 23/09/2026 · **Aprovada por:** Diretoria VL6
 > **Documento fonte:** redigido a partir de `docs/legal/01-inventario-dados-lgpd.md` (auditoria direta do código-fonte em 22/09/2026). Pontos que dependem de decisão institucional ou validação jurídica estão marcados **[A VALIDAR]**.
 > Este documento é independente da Política de Privacidade (`docs/legal/02-politica-privacidade.md`) e deve ser lido em conjunto com ela.
 
@@ -25,17 +25,21 @@ O uso de qualquer funcionalidade do Portal implica a aceitação integral e irre
 ## 3. Cadastro e reivindicação de acesso
 
 ### 3.1 Cadastro administrativo
+
 O cadastro do Irmão no Diretório é realizado pela Secretaria da Loja, manualmente ou por importação em lote, a partir de registros institucionais.
 
 ### 3.2 Reivindicação de acesso ("Reivindicar conta")
+
 Um Irmão já cadastrado no Diretório, mas sem conta de acesso ativa, pode reivindicar seu próprio acesso informando seu nome (selecionado de uma lista pública que exibe **apenas nomes**, sem qualquer outro dado pessoal) e confirmando sua identidade por meio do número de sua Carteira de Identidade Maçônica (CIM). Após a confirmação, o Irmão define seu próprio e-mail e senha de acesso.
 
 **[A VALIDAR]** A concessão de acesso por essa via é imediata, sem fila de aprovação administrativa adicional, por decisão institucional de agilidade no acesso. A Loja recomenda que Irmãos mantenham seus dados de CIM em sigilo pessoal, já que esse número funciona como credencial de verificação de identidade nesse fluxo.
 
 ### 3.3 Autenticidade das informações
+
 O usuário é responsável por fornecer informações verdadeiras, completas e atualizadas no seu cadastro, e por manter a confidencialidade de sua senha e das informações de acesso à sua conta. É proibido compartilhar credenciais de acesso com terceiros, inclusive outros Irmãos.
 
 ### 3.4 Autenticação em duas etapas
+
 O Portal disponibiliza, de forma opcional e autoatendida, verificação em duas etapas (MFA) por aplicativo autenticador, que o Irmão pode ativar a qualquer momento em suas configurações de conta.
 
 ## 4. Responsabilidade do usuário
@@ -86,15 +90,19 @@ A Loja VL6, como instituição responsável pelo Portal, compromete-se a manter 
 ## 8. Proteção do patrimônio histórico — Acervo, Biblioteca e Arquivos
 
 ### 8.1 Natureza do Acervo Histórico
+
 O Acervo Histórico da Loja VL6 constitui patrimônio institucional. Fotografias, documentos e demais materiais nele reunidos são preservados com o objetivo de manter viva a memória da Loja.
 
 ### 8.2 Contribuições de Irmãos
+
 Qualquer Irmão pode submeter fotografias, documentos ou relatos históricos para avaliação e inclusão no Acervo, sujeitos à moderação administrativa. **Ao enviar uma contribuição, o Irmão declara possuir os direitos necessários sobre o material enviado (ou autorização de quem os detém) e concede à Loja VL6 licença não exclusiva, gratuita e por prazo indeterminado, para reprodução, exibição e divulgação institucional desse material, dentro do Portal e em materiais oficiais da Loja, preservados os créditos de autoria quando identificáveis.**
 
 ### 8.3 Biblioteca
+
 Obras digitais e físicas disponibilizadas na Biblioteca seguem as regras de circulação (prazo de empréstimo, disponibilidade) definidas pela administração. A autoria de cada obra é preservada e exibida quando informada.
 
 ### 8.4 Downloads
+
 O Portal registra estatísticas agregadas de visualização e download de arquivos e itens do Acervo/Biblioteca, sem manter um registro individualizado permanente de qual usuário acessou cada arquivo específico, exceto quando tecnicamente necessário para controle de empréstimos da Biblioteca.
 
 ## 9. Publicações e Central VL6 (Negócios)
@@ -141,14 +149,14 @@ Toda alteração relevante nestes Termos de Uso gera uma nova versão numerada, 
 
 ## 17. Foro
 
-Fica eleito o foro da comarca sede da Loja Maçônica Verdadeira Luz nº 06 para dirimir quaisquer controvérsias decorrentes destes Termos, com renúncia expressa a qualquer outro, por mais privilegiado que seja. **[A VALIDAR: confirmar comarca/cidade sede da Loja]**
+Fica eleito o foro da comarca de Rio Verde, Estado de Goiás, sede da Loja Maçônica Verdadeira Luz nº 06, para dirimir quaisquer controvérsias decorrentes destes Termos, com renúncia expressa a qualquer outro, por mais privilegiado que seja.
 
 ## 18. Data de vigência e versão
 
 - **Versão:** 1.0.0
-- **Data de vigência:** [A PREENCHER NA PUBLICAÇÃO]
+- **Data de vigência:** 23/09/2026
 - **Classificação desta versão:** Publicação inicial (Mudança institucional)
 
 ---
 
-*Esta é uma minuta técnica preparada a partir da auditoria de código-fonte do Portal. Antes da publicação oficial, deve ser revisada por advogado especialista em Direito Digital, que deverá se pronunciar em especial sobre os pontos marcados **[A VALIDAR]** ao longo do texto, incluindo a adequação ao Estatuto e ao Regimento Interno da Loja VL6.*
+_Esta é uma minuta técnica preparada a partir da auditoria de código-fonte do Portal. Antes da publicação oficial, deve ser revisada por advogado especialista em Direito Digital, que deverá se pronunciar em especial sobre os pontos marcados **[A VALIDAR]** ao longo do texto, incluindo a adequação ao Estatuto e ao Regimento Interno da Loja VL6._

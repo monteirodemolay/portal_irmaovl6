@@ -1,6 +1,6 @@
 # Política de Privacidade — Portal do Irmão VL6
 
-> **Versão:** 1.0.0 · **Vigência a partir de:** [DATA DE PUBLICAÇÃO] · **Aprovada por:** [DIRETORIA/VENERÁVEL MESTRE — A PREENCHER]
+> **Versão:** 1.0.0 · **Vigência a partir de:** 23/09/2026 · **Aprovada por:** Diretoria VL6
 > **Documento fonte:** redigido a partir de `docs/legal/01-inventario-dados-lgpd.md` (auditoria direta do código-fonte em 22/09/2026). Pontos que dependem de decisão institucional ou validação jurídica estão marcados **[A VALIDAR]** e não devem ser publicados sem essa validação.
 > Este arquivo é a versão vigente. Alterações futuras devem gerar uma nova versão nesta mesma pasta (`docs/legal/versoes/`), nunca sobrescrever esta sem preservar a anterior — ver `docs/legal/04-sistema-de-versionamento.md`.
 
@@ -22,7 +22,7 @@ Esta política foi redigida com base no funcionamento real do Portal, verificado
 
 A Loja Maçônica Verdadeira Luz nº 06 é a **controladora** dos dados pessoais tratados no Portal, nos termos do art. 5º, VI, da LGPD. A operação técnica e o suporte do Portal são conduzidos pela Secretaria da Loja, com apoio de fornecedores de infraestrutura em nuvem listados na Seção 11 (Compartilhamento e Subprocessadores).
 
-**Encarregado de Dados (DPO):** [NOME/CONTATO A DESIGNAR — A VALIDAR]. Até a designação formal, solicitações devem ser dirigidas à Secretaria da Loja pelos canais informados na área "Termos e Privacidade" do Portal.
+**Encarregado de Dados (DPO):** ainda não designado formalmente. Até a designação, solicitações relacionadas a dados pessoais devem ser dirigidas à Secretaria da Loja pelos canais informados na área "Termos e Privacidade" do Portal.
 
 ## 4. Natureza privada do Portal
 
@@ -53,35 +53,45 @@ A Loja VL6 é a controladora. Os dados são processados tecnicamente com apoio d
 Coletamos apenas os dados descritos abaixo, cada um vinculado a uma funcionalidade específica do Portal:
 
 ### 8.1 Dados de identificação e contato
+
 Nome completo, nome maçônico, foto de perfil, e-mail, telefone/WhatsApp, endereço completo, data de nascimento, estado civil.
 
 ### 8.2 Dados de trajetória maçônica
+
 Carteira de Identidade Maçônica (CIM), grau, cargo atual e histórico de cargos, datas de iniciação, elevação e exaltação, situação cadastral (ativo, licenciado, desligado, falecido) e seu histórico completo (nunca sobrescrito), condecorações e títulos honoríficos, e — quando aplicável e mediante ativação voluntária do próprio Irmão — participação em graus filosóficos de corpos com regras de sigilo próprias.
 
 **[A VALIDAR]** A Loja trata a filiação e a trajetória maçônica como informação vinculada à própria natureza associativa do Portal. Alguns aspectos dessa trajetória (participação em corpos filosóficos) podem ser equiparados a dado sensível nos termos do art. 5º, II, da LGPD (convicção filosófica); nesses casos, o Portal já exige ativação voluntária e explícita do próprio Irmão antes de tornar a informação visível a terceiros.
 
 ### 8.3 Dados profissionais e de negócios (opcionais)
+
 Profissão, empresa, e — caso o Irmão opte por preencher seu perfil voluntário na Central VL6 — dados do próprio negócio (nome da empresa, segmento, CNPJ, contatos comerciais, descrição de produtos/serviços). O preenchimento desses dados é sempre **voluntário e opcional**; o Portal nunca exige esse preenchimento e o perfil voluntário nasce vazio.
 
 ### 8.4 Dados de familiares (cônjuge, filhos e demais parentes)
+
 Nome e data de aniversário (dia/mês) do cônjuge e dos filhos do Irmão, para fins exclusivos de lembrete institucional de datas comemorativas; e, no módulo "Família e Legado", dados de árvore genealógica de parentes do Irmão (incluindo, quando aplicável, pessoas falecidas e menores de idade), voltados à preservação de memória familiar e histórica.
 
 **Esses dados são fornecidos pelo próprio Irmão, na condição de responsável ou parente**, e não pelo titular direto quando este é um terceiro (cônjuge) ou menor de idade (filho). **[A VALIDAR]** A Loja reconhece que esse tratamento envolve dados de terceiros não usuários do Portal e, quando aplicável, de crianças e adolescentes, e está revisando os controles de consentimento e visibilidade aplicáveis a essas categorias — nome e aniversário de cônjuge e filhos são hoje visíveis a todo Irmão com acesso ao Diretório interno, diferentemente do restante do perfil, que segue regras próprias de publicação (Seção 8.6).
 
 ### 8.5 Dados de uso e participação institucional
+
 Confirmação de presença em sessões e eventos, empréstimos e devoluções na Biblioteca, itens do Acervo Histórico visualizados/baixados (de forma agregada, sem identificar individualmente quem acessou cada item — Seção 10), notificações recebidas e seu status de leitura.
 
 ### 8.6 Dados de publicação voluntária (perfil da Central VL6)
+
 Apresentação pessoal, interesses, área de atuação profissional, formação, afiliações a outras instituições, redes sociais e links externos. O preenchimento e a publicação desses dados são **sempre opcionais e controlados pelo próprio Irmão**, bloco por bloco (apresentação, dados pessoais, profissional, endereço, memória fotográfica etc.), com registro formal de consentimento (data, versão do termo aceito, blocos autorizados) mantido de forma permanente para fins de comprovação.
 
 ### 8.7 Dados técnicos e de segurança
+
 Endereço IP, tipo de dispositivo e navegador (quando registrados — ver observação na Seção 8.9), horário de login, e registros de auditoria de ações administrativas relevantes (edição de cadastro, mudança de permissão, exclusões).
 
 ### 8.8 Arquivos e imagens enviados
+
 Fotografias de perfil, fotografias e documentos do Acervo Histórico, capas e arquivos digitais da Biblioteca, contribuições de conteúdo histórico enviadas por Irmãos, artes e materiais de comunicação institucional.
 
 ### 8.9 Transparência sobre lacunas técnicas atuais
+
 Em conformidade com o dever de transparência, informamos que:
+
 - Os campos de "endereço IP" e "dispositivo" previstos no nosso sistema de auditoria **não estão, no momento da publicação desta política, sendo efetivamente preenchidos** em todos os registros — ou seja, nem todo evento de auditoria tem hoje o IP/dispositivo do responsável associado. Esse ponto está em avaliação técnica.
 - O Portal **não realiza reconhecimento facial automático**: a identificação de pessoas em fotografias do Acervo Histórico é feita manualmente por administradores autorizados.
 - O Portal **não utiliza cookies de rastreamento, publicidade ou analytics de terceiros**, e não compartilha dados para fins de marketing.
@@ -92,16 +102,16 @@ O Portal não coleta, no seu funcionamento atual: geolocalização precisa, dado
 
 ## 10. Finalidades específicas por dado
 
-| Dado | Finalidade |
-|---|---|
-| Identificação e contato | Gestão do quadro de Irmãos, comunicação institucional, Diretório interno |
-| Trajetória maçônica | Registro histórico, controle de regularidade, elegibilidade a cargos |
-| Dados profissionais/negócios | Rede de apoio profissional entre Irmãos (módulo Negócios), sempre voluntário |
-| Dados de familiares | Lembretes de datas comemorativas; preservação de memória familiar (Família e Legado) |
-| Dados de uso/participação | Organização de eventos, gestão da Biblioteca, estatísticas agregadas de uso do Acervo |
-| Perfil voluntário (Central VL6) | Divulgação voluntária do Irmão a outros membros, conforme blocos que ele mesmo autorizar |
-| Dados técnicos/segurança | Prevenção a fraude, investigação de incidentes, auditoria de ações administrativas |
-| Arquivos e imagens | Preservação do patrimônio histórico da Loja, gestão da Biblioteca, comunicação institucional |
+| Dado                            | Finalidade                                                                                   |
+| ------------------------------- | -------------------------------------------------------------------------------------------- |
+| Identificação e contato         | Gestão do quadro de Irmãos, comunicação institucional, Diretório interno                     |
+| Trajetória maçônica             | Registro histórico, controle de regularidade, elegibilidade a cargos                         |
+| Dados profissionais/negócios    | Rede de apoio profissional entre Irmãos (módulo Negócios), sempre voluntário                 |
+| Dados de familiares             | Lembretes de datas comemorativas; preservação de memória familiar (Família e Legado)         |
+| Dados de uso/participação       | Organização de eventos, gestão da Biblioteca, estatísticas agregadas de uso do Acervo        |
+| Perfil voluntário (Central VL6) | Divulgação voluntária do Irmão a outros membros, conforme blocos que ele mesmo autorizar     |
+| Dados técnicos/segurança        | Prevenção a fraude, investigação de incidentes, auditoria de ações administrativas           |
+| Arquivos e imagens              | Preservação do patrimônio histórico da Loja, gestão da Biblioteca, comunicação institucional |
 
 O Portal não trata nenhum dado pessoal para finalidade diversa da institucional/fraterna descrita nesta política, e não realiza tomada de decisão automatizada que produza efeitos jurídicos ou de impacto significativo aos titulares.
 
@@ -112,7 +122,7 @@ Os dados pessoais tratados no Portal podem ser processados pelos seguintes opera
 - **Google Firebase** (Authentication e banco de dados Firestore) — infraestrutura de autenticação e armazenamento de dados.
 - **Vercel** (hospedagem da aplicação e armazenamento de arquivos/mídia — Vercel Blob) — hospedagem e armazenamento de arquivos enviados ao Portal.
 - **Google Calendar** — apenas para Irmãos que optarem por conectar sua agenda pessoal do Portal ao Google Calendar, mediante autorização explícita (OAuth) e com possibilidade de desconexão a qualquer momento. Os tokens de acesso são armazenados de forma criptografada.
-- **Sentry** (monitoramento de erros técnicos) **[A VALIDAR: confirmar se ativo em produção]** — quando ativo, processa registros técnicos de falhas do sistema, que podem conter, indiretamente, identificadores de sessão.
+- **Sentry** (monitoramento de erros técnicos) — não está ativo em produção no momento desta publicação. Caso seja ativado futuramente, esta política será atualizada para listá-lo como subprocessador, já que ele passaria a processar registros técnicos de falhas do sistema que podem conter, indiretamente, identificadores de sessão.
 - **Serviços públicos de consulta de CNPJ** (BrasilAPI, Minha Receita, ReceitaWS) — consultados apenas quando o próprio Irmão informa o CNPJ de sua empresa no módulo de Negócios, para preencher automaticamente dados públicos da empresa (razão social, cidade).
 
 O Portal também disponibiliza uma **interface de integração autenticada por chave de API**, destinada a sistemas internos autorizados pela Loja para consultar dados básicos do Diretório (nome, e-mail, cidade, grau e situação). O acesso por essa via é restrito a chaves emitidas e revogáveis pela administração da Loja. **[A VALIDAR]** Nenhuma dessas chaves está hoje habilitada para terceiros externos à governança da Loja; caso isso mude, esta política será atualizada com a identificação do destinatário e a finalidade do compartilhamento.
@@ -134,19 +144,19 @@ O Portal utiliza apenas **um cookie estritamente necessário**, de sessão de au
 - As conexões com o Portal são protegidas por criptografia em trânsito (TLS/HTTPS).
 - Senhas nunca são armazenadas ou visualizadas pela aplicação — são gerenciadas integralmente pelo provedor de autenticação (Firebase Authentication).
 - Tokens de integração com serviços de terceiros (ex.: Google Calendar) são armazenados de forma criptografada.
-- Realizamos backups diários completos dos dados do Portal para fins de continuidade de negócio e recuperação de desastres. **[A VALIDAR]** Está em avaliação a definição de um prazo máximo de retenção para essas cópias de segurança, hoje mantidas por prazo indeterminado; esta política será atualizada assim que esse prazo for formalizado.
+- Realizamos backups diários completos dos dados do Portal para fins de continuidade de negócio e recuperação de desastres, mantidos por prazo indeterminado enquanto o Portal estiver em operação.
 - Toda ação administrativa relevante sobre cadastros (criação, edição, exclusão, mudança de permissão) é registrada em um log de auditoria interno, de acesso restrito à administração da Loja, para fins de segurança e responsabilização.
 
 ## 15. Retenção de dados
 
-| Categoria | Prazo de retenção |
-|---|---|
+| Categoria                                                      | Prazo de retenção                                                                                                                                                              |
+| -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Cadastro de Irmão (Diretório) e histórico de situação maçônica | Enquanto durar o vínculo institucional do Irmão com a Loja, e após, pelo prazo necessário à preservação da memória histórica institucional — **[A VALIDAR: prazo definitivo]** |
-| Conta de acesso ao Portal (login) | Até solicitação de exclusão pelo próprio titular ou desligamento formal, conforme Seção 16 |
-| Registros de auditoria | Mantidos de forma permanente e imutável, para fins de segurança e responsabilização — **[A VALIDAR: avaliar prazo de expurgo]** |
-| Cópias de segurança (backup) | Prazo em definição — **[A VALIDAR]** |
-| Notificações internas | Até 30 dias após a leitura ou expiração, com exclusão definitiva automática 7 dias depois de arquivadas |
-| Registros de consentimento de publicação | Mantidos de forma permanente, como prova de conformidade |
+| Conta de acesso ao Portal (login)                              | Até solicitação de exclusão pelo próprio titular ou desligamento formal, conforme Seção 16                                                                                     |
+| Registros de auditoria                                         | Mantidos de forma permanente e imutável, para fins de segurança e responsabilização, enquanto o Portal estiver em operação                                                     |
+| Cópias de segurança (backup)                                   | Mantidas por prazo indeterminado, enquanto o Portal estiver em operação                                                                                                        |
+| Notificações internas                                          | Até 30 dias após a leitura ou expiração, com exclusão definitiva automática 7 dias depois de arquivadas                                                                        |
+| Registros de consentimento de publicação                       | Mantidos de forma permanente, como prova de conformidade                                                                                                                       |
 
 ## 16. Direitos do titular
 
@@ -163,20 +173,25 @@ Você pode, a qualquer momento, solicitar:
 **Sobre a exclusão do cadastro institucional:** a exclusão da sua conta de acesso remove seu login e desvincula seus dados de uso pessoal (agenda, notificações, favoritos). **[A VALIDAR]** O registro histórico do seu cadastro como Irmão da Loja (nome, trajetória maçônica, histórico de situação) é preservado como acervo institucional mesmo após a exclusão da conta de acesso, o que está sujeito a validação jurídica quanto ao equilíbrio entre o direito de eliminação (art. 18 LGPD) e o interesse legítimo/dever de guarda de registros associativos da Loja.
 
 ### 16.1 Como solicitar
+
 Todas as solicitações acima podem ser feitas pela **Central de Solicitações**, disponível na área "Termos e Privacidade" do seu perfil no Portal, ou diretamente à Secretaria da Loja. Solicitações que ainda não possam ser processadas automaticamente pelo sistema serão encaminhadas manualmente pela Secretaria, com prazo de resposta de até 15 dias.
 
 ## 17. Tratamento de arquivos, fotos e vídeos
 
 ### 17.1 Fotografias de perfil e de familiares
+
 São de responsabilidade de quem as envia (o próprio Irmão, no caso de sua foto de perfil, ou o Irmão responsável, no caso de fotos de familiares no módulo Família e Legado).
 
 ### 17.2 Acervo Histórico
+
 Fotografias, documentos e demais materiais do Acervo Histórico constituem patrimônio da Loja VL6. A identificação de pessoas em fotografias históricas é feita manualmente por administradores autorizados — o Portal não utiliza reconhecimento facial automatizado.
 
 ### 17.3 Conteúdo enviado pelos Irmãos (contribuições ao Acervo e à Biblioteca)
+
 Ao enviar fotografias, documentos ou textos para o Acervo Histórico ou a Biblioteca, o Irmão concede à Loja VL6 uma **licença não exclusiva de uso institucional** desse material (exibição, reprodução e divulgação dentro do Portal e em materiais institucionais da Loja), preservando os direitos autorais do autor original. **[A VALIDAR — ver também Termos de Uso, Seção 6]** Esta cláusula formaliza, no âmbito contratual, um consentimento que hoje não possui um mecanismo técnico dedicado (como uma caixa de confirmação) no fluxo de envio; recomenda-se a implementação futura desse controle técnico.
 
 ### 17.4 Direitos autorais e licenciamento
+
 Nenhum conteúdo do Acervo Histórico ou da Biblioteca pode ser redistribuído fora do Portal sem autorização expressa da Loja e, quando aplicável, do autor original.
 
 ## 18. Responsabilidades
@@ -202,9 +217,9 @@ Nenhuma versão anterior existe até a publicação desta primeira versão (1.0.
 ## 23. Data de vigência e versão
 
 - **Versão:** 1.0.0
-- **Data de vigência:** [A PREENCHER NA PUBLICAÇÃO]
+- **Data de vigência:** 23/09/2026
 - **Classificação desta versão:** Publicação inicial (Mudança institucional)
 
 ---
 
-*Esta é uma minuta técnica preparada a partir da auditoria de código-fonte do Portal. Antes da publicação oficial, deve ser revisada por advogado especialista em Direito Digital/LGPD, que deverá se pronunciar em especial sobre os pontos marcados **[A VALIDAR]** ao longo do texto.*
+_Esta é uma minuta técnica preparada a partir da auditoria de código-fonte do Portal. Antes da publicação oficial, deve ser revisada por advogado especialista em Direito Digital/LGPD, que deverá se pronunciar em especial sobre os pontos marcados **[A VALIDAR]** ao longo do texto._
