@@ -42,6 +42,37 @@ export function NewsForm({ action, news }: NewsFormProps) {
       <FormField label="URL da imagem de capa" htmlFor="imagemCapaUrl">
         <Input id="imagemCapaUrl" name="imagemCapaUrl" defaultValue={news?.imagemCapaUrl ?? ''} />
       </FormField>
+
+      <div className="border-border bg-surface grid gap-3 rounded-lg border p-4 sm:grid-cols-2">
+        <label className="flex cursor-pointer items-start gap-3 text-sm">
+          <input
+            type="checkbox"
+            name="destaque"
+            defaultChecked={Boolean(news?.destaque)}
+            className="mt-0.5 h-4 w-4"
+          />
+          <span>
+            <strong className="block">Destaque</strong>
+            <span className="text-muted text-xs">
+              Exibe a matéria entre os destaques editoriais do Portal.
+            </span>
+          </span>
+        </label>
+        <label className="flex cursor-pointer items-start gap-3 text-sm">
+          <input
+            type="checkbox"
+            name="destaquePrincipal"
+            defaultChecked={Boolean(news?.destaquePrincipal)}
+            className="mt-0.5 h-4 w-4"
+          />
+          <span>
+            <strong className="block">Destaque principal</strong>
+            <span className="text-muted text-xs">
+              Torna esta a manchete principal e substitui automaticamente a anterior.
+            </span>
+          </span>
+        </label>
+      </div>
       <FormField
         label="Data de publicação"
         htmlFor="dataPublicacao"
