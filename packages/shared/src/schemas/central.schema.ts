@@ -95,6 +95,29 @@ export const centralAffiliationEntrySchema = z.object({
 });
 export type CentralAffiliationEntryValues = z.infer<typeof centralAffiliationEntrySchema>;
 
+/**
+ * Um período de trabalho numa empresa — "Histórico Profissional" (currículo
+ * simplificado) no perfil do Irmão. `atual: true` significa que ele ainda
+ * trabalha lá (`dataFim` é ignorado nesse caso, sempre tratado como "hoje"
+ * na exibição). O próprio Irmão decide manter ou excluir cada período —
+ * nada aqui é automático nem obrigatório.
+ */
+export const centralEmploymentEntrySchema = z
+  .object({
+    id: z.string().min(1),
+    empresa: z.string().min(1).max(150),
+    cargo: z.string().max(150).nullable(),
+    dataInicio: z.coerce.date().nullable(),
+    dataFim: z.coerce.date().nullable(),
+    atual: z.boolean(),
+    descricao: z.string().max(500).nullable(),
+  })
+  .refine((v) => !v.atual || v.dataFim === null, {
+    message: 'Um período marcado como atual não deve ter data de término.',
+    path: ['dataFim'],
+  });
+export type CentralEmploymentEntryValues = z.infer<typeof centralEmploymentEntrySchema>;
+
 export const centralExternalLinksSchema = z.object({
   whatsapp: z.string().max(30).nullable(),
   instagram: z.string().max(200).nullable(),
@@ -122,6 +145,8 @@ export const memberCentralProfileSchema = z
     resumoProfissional: z.string().max(1000).nullable(),
     /** Limite de propósito — evita a Central virar um catálogo empresarial sem fim. */
     negocios: z.array(centralBusinessEntrySchema).max(5),
+    /** "Histórico Profissional" — um currículo simplificado, não uma lista infinita. */
+    historicoProfissional: z.array(centralEmploymentEntrySchema).max(15),
     /** Tags curtas — evita virar um currículo em forma de lista infinita. */
     competencias: z.array(tagSchema).max(10),
     servicos: z.array(tagSchema).max(10),

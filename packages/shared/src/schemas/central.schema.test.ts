@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { centralAffiliationEntrySchema, memberCentralProfileSchema } from './central.schema';
+import {
+  centralAffiliationEntrySchema,
+  centralEmploymentEntrySchema,
+  memberCentralProfileSchema,
+} from './central.schema';
 
 function baseInput() {
   return {
@@ -13,6 +17,7 @@ function baseInput() {
     formacao: null,
     resumoProfissional: null,
     negocios: [],
+    historicoProfissional: [],
     competencias: [],
     servicos: [],
     afiliacoes: [],
@@ -112,6 +117,73 @@ describe('memberCentralProfileSchema', () => {
       afiliacoes: excesso.slice(0, 20),
     });
     expect(ok.success).toBe(true);
+  });
+
+  it('limita histórico profissional a 15 entradas', () => {
+    const entry = {
+      id: 'h1',
+      empresa: 'Empresa X',
+      cargo: null,
+      dataInicio: null,
+      dataFim: null,
+      atual: false,
+      descricao: null,
+    };
+    const excesso = Array.from({ length: 16 }, (_, i) => ({ ...entry, id: `h${i}` }));
+    const result = memberCentralProfileSchema.safeParse({
+      ...baseInput(),
+      historicoProfissional: excesso,
+    });
+    expect(result.success).toBe(false);
+
+    const ok = memberCentralProfileSchema.safeParse({
+      ...baseInput(),
+      historicoProfissional: excesso.slice(0, 15),
+    });
+    expect(ok.success).toBe(true);
+  });
+});
+
+describe('centralEmploymentEntrySchema', () => {
+  const base = {
+    id: 'h1',
+    empresa: 'Prefeitura de Rio Verde',
+    cargo: 'Servidor(a) Público(a)',
+    dataInicio: new Date('2023-06-01'),
+    dataFim: null,
+    atual: true,
+    descricao: null,
+  };
+
+  it('exige empresa preenchida', () => {
+    const result = centralEmploymentEntrySchema.safeParse({ ...base, empresa: '' });
+    expect(result.success).toBe(false);
+  });
+
+  it('aceita datas em string ISO (vindas do JSON do formulário) via coerção', () => {
+    const result = centralEmploymentEntrySchema.safeParse({
+      ...base,
+      dataInicio: '2023-06-01T00:00:00.000Z',
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('rejeita um período marcado como atual com data de término preenchida', () => {
+    const result = centralEmploymentEntrySchema.safeParse({
+      ...base,
+      atual: true,
+      dataFim: new Date('2024-01-01'),
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('aceita um período encerrado (atual: false) com data de término', () => {
+    const result = centralEmploymentEntrySchema.safeParse({
+      ...base,
+      atual: false,
+      dataFim: new Date('2024-01-01'),
+    });
+    expect(result.success).toBe(true);
   });
 });
 

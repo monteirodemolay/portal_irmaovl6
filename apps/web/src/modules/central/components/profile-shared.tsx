@@ -50,6 +50,12 @@ export function formatCompactDate(date: Date): string {
   return `${d.getDate()} ${COMPACT_MONTH_LABELS[d.getMonth()]} ${d.getFullYear()}`;
 }
 
+/** "jun/2023" — granularidade de mês/ano, usada no Histórico Profissional (currículo). */
+export function formatMonthYear(date: Date): string {
+  const d = new Date(date);
+  return `${COMPACT_MONTH_LABELS[d.getMonth()]}/${d.getFullYear()}`;
+}
+
 /**
  * Quantos dias faltam pro próximo aniversário de `date` (só mês/dia
  * importam, o ano é ignorado) — usado pra ordenar a lista de Família e

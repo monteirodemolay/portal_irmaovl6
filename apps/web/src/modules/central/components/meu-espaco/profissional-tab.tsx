@@ -10,12 +10,13 @@ import {
   type AreaAtuacaoKey,
 } from '@vl6/shared';
 import type { Member, MemberCentralProfile } from '@vl6/domain';
-import { Button, Input, Select, Sparkles, Textarea } from '@vl6/ui';
+import { Briefcase, Button, Input, Select, Sparkles, Textarea } from '@vl6/ui';
 import { FormField } from '@/components/forms/form-field';
 import { FormSectionCard } from '@/components/forms/section-card';
 import { updateCentralProfileAction, type CentralActionState } from '../../actions/central-actions';
 import { updateMyProfileAction } from '@/modules/membership/actions/self-profile-actions';
 import { ProfessionalCard } from '@/modules/membership/components/profile-fields/professional-card';
+import { EmploymentHistoryEditor } from '../employment-history-editor';
 import { TagInput } from './tag-input';
 
 export function ProfissionalTab({
@@ -32,6 +33,10 @@ export function ProfissionalTab({
     { error: null },
   );
   const [tagsState, tagsAction] = useActionState<CentralActionState, FormData>(
+    updateCentralProfileAction,
+    { error: null },
+  );
+  const [historicoState, historicoAction] = useActionState<CentralActionState, FormData>(
     updateCentralProfileAction,
     { error: null },
   );
@@ -125,6 +130,21 @@ export function ProfissionalTab({
             />
           </FormField>
           {contentState.error && <p className="text-sm text-red-600">{contentState.error}</p>}
+          <SubmitButton />
+        </form>
+      </FormSectionCard>
+
+      <FormSectionCard
+        icon={Briefcase}
+        title="Histórico Profissional"
+        description="Um currículo simplificado — empresas e períodos em que você trabalha ou trabalhou. Aparece no seu perfil junto com o resto do bloco Profissional. Você pode excluir um período a qualquer momento, ou deixar o histórico registrado se preferir."
+      >
+        <form action={historicoAction} className="flex flex-col gap-4">
+          <EmploymentHistoryEditor
+            name="historicoProfissional"
+            defaultValue={profile?.historicoProfissional ?? []}
+          />
+          {historicoState.error && <p className="text-sm text-red-600">{historicoState.error}</p>}
           <SubmitButton />
         </form>
       </FormSectionCard>

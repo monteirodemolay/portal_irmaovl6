@@ -74,6 +74,24 @@ export interface CentralAffiliationEntry {
   logoUrl: string | null;
 }
 
+/**
+ * Um período de trabalho numa empresa — "Histórico Profissional" (currículo
+ * simplificado) no perfil do Irmão. `atual: true` = ainda trabalha lá
+ * (`dataFim` sempre `null` nesse caso). Sem moderação da Administração,
+ * mesmo espírito de `CentralAffiliationEntry` — o Irmão é responsável pelo
+ * que declara; a Administração pode corrigir dados equivocados via cadastro
+ * assistido, mas nunca aprova/rejeita entradas.
+ */
+export interface CentralEmploymentEntry {
+  id: string;
+  empresa: string;
+  cargo: string | null;
+  dataInicio: Date | null;
+  dataFim: Date | null;
+  atual: boolean;
+  descricao: string | null;
+}
+
 export interface CentralExternalLinks {
   whatsapp: string | null;
   instagram: string | null;
@@ -115,6 +133,9 @@ export interface MemberCentralProfile extends BaseEntity {
   resumoProfissional: string | null;
 
   negocios: CentralBusinessEntry[];
+
+  /** "Histórico Profissional" — máx. 15 (`memberCentralProfileSchema`). */
+  historicoProfissional: CentralEmploymentEntry[];
 
   /** Tags curtas — máx. 10 cada (`memberCentralProfileSchema`). */
   competencias: string[];
