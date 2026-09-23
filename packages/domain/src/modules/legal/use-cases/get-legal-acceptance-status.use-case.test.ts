@@ -48,6 +48,7 @@ function buildAcceptance(
     ip: null,
     userAgent: null,
     hashVersao: 'hash',
+    origem: 'self_service',
     ...overrides,
   };
 }

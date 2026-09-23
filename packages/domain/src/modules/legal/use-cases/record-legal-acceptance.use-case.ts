@@ -1,6 +1,9 @@
 import type { IClock, IHasher, IIdGenerator } from '../../../shared/ports';
 import { NotFoundError, ok, err, type Result } from '../../../shared/result';
-import type { LegalDocumentAcceptance } from '../entities/legal-document-acceptance.entity';
+import type {
+  LegalDocumentAcceptance,
+  LegalDocumentAcceptanceOrigin,
+} from '../entities/legal-document-acceptance.entity';
 import type { LegalDocumentKey } from '../entities/legal-document-version.entity';
 import type { ILegalDocumentAcceptanceRepository } from '../repositories/legal-document-acceptance.repository';
 import type { ILegalDocumentVersionRepository } from '../repositories/legal-document-version.repository';
@@ -12,6 +15,8 @@ export interface RecordLegalAcceptanceInput {
   versao: string;
   ip: string | null;
   userAgent: string | null;
+  /** Default `self_service` — o único caso que passa outra coisa é a migração administrativa de contas pré-existentes (ver `LegalDocumentAcceptanceOrigin`). */
+  origem?: LegalDocumentAcceptanceOrigin;
 }
 
 export interface RecordLegalAcceptanceDeps {
@@ -57,6 +62,7 @@ export class RecordLegalAcceptanceUseCase {
       ip: input.ip,
       userAgent: input.userAgent,
       hashVersao: this.deps.hasher.sha256Hex(version.conteudoMarkdown),
+      origem: input.origem ?? 'self_service',
     };
 
     await this.deps.legalDocumentAcceptanceRepository.append(acceptance);
