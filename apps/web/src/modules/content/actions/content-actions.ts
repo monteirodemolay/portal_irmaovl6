@@ -13,7 +13,7 @@ import {
   type NewsFormValues,
 } from '@vl6/shared';
 import type { NotificationPriority } from '@vl6/shared';
-import type { AnnouncementPriority } from '@vl6/domain';
+import type { AnnouncementPriority, News } from '@vl6/domain';
 import { createServerContainer } from '@vl6/infra';
 import { requireSession } from '@/lib/auth/require-session';
 import { notifyAllActiveUsers } from '@/modules/notification/lib/notify-all-active-users';
@@ -263,6 +263,8 @@ export async function updateNewsAction(
       imagemCapaUrl: formData.get('imagemCapaUrl') || null,
       conteudoHtml: formData.get('conteudoHtml'),
       categoria: formData.get('categoria'),
+      destaque: formData.get('destaque') === 'on' || formData.get('destaquePrincipal') === 'on',
+      destaquePrincipal: formData.get('destaquePrincipal') === 'on',
       dataPublicacao: formData.get('dataPublicacao') || null,
     });
   } catch {
@@ -284,7 +286,7 @@ export async function updateNewsAction(
   return { error: null };
 }
 
-function newsToFormInput(news: import('@vl6/domain').News): NewsFormValues {
+function newsToFormInput(news: News): NewsFormValues {
   return {
     titulo: news.titulo,
     subtitulo: news.subtitulo,
