@@ -58,8 +58,9 @@ Objetivo: a Loja consegue operar o essencial no dia a dia.
   (nenhuma regra de busca nova) + novo `GetBusinessDirectoryEntryUseCase`
   (composição sobre o de busca, sem duplicar filtro de publicação/tenant).
   URLs antigas preservadas via redirecionamento
-  (`/irmaos/negocios` → `/irmaos?tipo=negocios`) ou mantidas como estão
-  (`/irmaos/meu-espaco`, `/irmaos/configuracoes`).
+  (`/irmaos/negocios` → `/irmaos?tipo=negocios`; `/irmaos/configuracoes` →
+  `/configuracoes`, movida pra fora do prefixo `/irmaos/*` pra não ativar o
+  item "Irmãos" da sidebar) ou mantidas como estão (`/irmaos/meu-espaco`).
 - **Comissões** completas (vínculo com gestão + permissões de escopo).
 - **Galeria** (álbuns, fotos, vídeos, categorias, busca).
 - **Pesquisa de Irmãos** avançada (filtros por grau, cargo, cidade, CIM,

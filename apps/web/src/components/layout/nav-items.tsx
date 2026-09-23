@@ -64,8 +64,10 @@ const PORTAL_ITEMS: Array<{
   // Rota pessoal, distinta de `/admin/configuracoes` (administração do
   // tenant) — Fase 4 da Central de Avisos (docs/architecture). Sem
   // `permission`: é autoatendimento de qualquer autenticado, mesmo padrão
-  // de "Meu Espaço".
-  { href: '/irmaos/configuracoes', label: 'Configurações', icon: Settings },
+  // de "Meu Espaço". Fora de `/irmaos/*` de propósito: se ficasse sob esse
+  // prefixo, clicar em "Configurações" também ativava/expandia o item
+  // "Irmãos" na sidebar (o match de rota ativa é por prefixo).
+  { href: '/configuracoes', label: 'Configurações', icon: Settings },
 ];
 
 // Entrada única do Acervo para o Irmão. Documentos, Biblioteca, Fotografias
@@ -176,6 +178,7 @@ export function buildNavSections(
       { href: '/irmaos/meu-espaco?tab=contatos', label: 'Privacidade e contatos' },
     ],
     full: { href: '/irmaos', label: 'Ver diretório completo' },
+    fullPosition: 'first',
   };
 
   const acervoFlyout: AppShellNavFlyout = {
