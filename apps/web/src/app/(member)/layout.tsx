@@ -7,6 +7,7 @@ import { AppShell } from '@/components/layout/app-shell';
 import { buildNavSections } from '@/components/layout/nav-items';
 import { SidebarBrand } from '@/components/layout/sidebar-brand';
 import { SidebarInstitutionalLink } from '@/components/layout/sidebar-institutional-link';
+import { SidebarLegalLinks } from '@/components/layout/sidebar-legal-links';
 import { TopbarUser } from '@/components/layout/topbar-user';
 import { getUpcomingEventsForPortal } from '@/lib/agenda/get-upcoming-events';
 import { getCurrentSession } from '@/lib/auth/get-current-session';
@@ -67,9 +68,12 @@ export default async function MemberLayout({ children }: { children: React.React
         }
         sections={buildNavSections(session.authContext, session.role, dictionary, unreadCount)}
         sidebarFooter={
-          current?.tenant.site && (
-            <SidebarInstitutionalLink siteUrl={current.tenant.site} tenantName={tenantName} />
-          )
+          <div className="flex flex-col">
+            {current?.tenant.site && (
+              <SidebarInstitutionalLink siteUrl={current.tenant.site} tenantName={tenantName} />
+            )}
+            <SidebarLegalLinks />
+          </div>
         }
         topbarLeft={
           <div className="hidden leading-tight sm:block">
