@@ -107,4 +107,22 @@ Ainda NÃO implementado (trabalho futuro, não confundir com o que está pronto)
 - **Detecção automática de impacto** ao alterar código (checklist de PR/cron) — item 5 continua sendo processo institucional, não automação.
 - **Comparação visual entre versões** (diff) na área "Termos e Privacidade" — a página mostra o histórico completo, mas não um diff lado a lado.
 - **Central de solicitações** (exportação/eliminação sob pedido) — continua manual, via Secretaria; não há formulário nem coleção `privacyRequests` implementada.
+
+## 8. Aceite de contas pré-existentes (migração institucional)
+
+Quando a v1.0.0 foi publicada, 6 contas já existiam e estavam em uso normal do Portal desde antes do sistema de aceite existir. Duas opções foram consideradas: (a) forçar cada uma a passar pelo gate de reaceite no próximo login, ou (b) reconhecer institucionalmente que essas contas já usam o Portal e conceder o aceite administrativamente. A Loja optou pela opção (b).
+
+Para isso, `LegalDocumentAcceptance` ganhou o campo `origem: 'self_service' | 'migracao_pre_existente'`:
+
+- `self_service` — o próprio usuário marcou os checkboxes e confirmou; `ip`/`userAgent` refletem a requisição real.
+- `migracao_pre_existente` — concedido administrativamente para uma conta que já existia antes da versão em questão ser publicada; `ip`/`userAgent` ficam sempre `null` (nunca fabrica uma ação que não aconteceu).
+
+**Importante:** isso não é o comportamento padrão para toda versão nova — só se aplica à migração pontual das contas que já existiam quando o sistema de aceite entrou no ar. A partir da v1.0.0 em diante, qualquer novo aceite (inclusive de reaceite de uma versão futura) segue `self_service`, gravado pelo próprio Use Case (`RecordLegalAcceptanceUseCase`) a partir de uma ação real do usuário.
+
+### Incidente relacionado (RBAC não sincronizado)
+
+A publicação também expôs um problema separado: `legalDocument:read`/`legalDocument:manage` foram adicionados ao vocabulário de permissões (`packages/shared/src/enums/rbac.ts`), mas os papéis (`roles`) e os Custom Claims de usuários **já existentes no tenant não recebem chaves de permissão novas automaticamente** — isso já era um comportamento documentado do sistema (`SyncSystemRolePermissionsUseCase`), mas ninguém rodou a sincronização depois do deploy, causando erro (`ForbiddenError`) ao carregar a área "Termos e Privacidade" para todo Irmão do tenant. Corrigido rodando `SyncSystemRolePermissionsUseCase` para os 4 papéis do sistema e `syncUserClaims` para os 6 usuários. **Lição para futuras permissões novas:** depois de adicionar uma chave ao RBAC, rodar a sincronização de papéis/claims do tenant faz parte do deploy, não é opcional.
+
+Adicionado também um error boundary dedicado (`apps/web/src/app/(member)/error.tsx`) para que um erro de permissão nesse estilo não resulte em página em branco, e sim numa mensagem com botão de "Tentar novamente".
+
 - Notificação automática em massa ao publicar uma nova versão (`notifyAllActiveUsers`) — o Use Case de publicação não dispara isso sozinho; quem publicar uma nova versão via script/futura UI precisa acionar a notificação separadamente.

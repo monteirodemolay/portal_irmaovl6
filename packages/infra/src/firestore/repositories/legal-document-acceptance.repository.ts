@@ -22,7 +22,15 @@ const legalDocumentAcceptanceConverter: FirestoreDataConverter<LegalDocumentAcce
     const data = snapshot.data() as Omit<LegalDocumentAcceptance, 'id' | 'aceitoEm'> & {
       aceitoEm: Timestamp;
     };
-    return { ...data, id: snapshot.id, aceitoEm: data.aceitoEm.toDate() };
+    return {
+      ...data,
+      id: snapshot.id,
+      aceitoEm: data.aceitoEm.toDate(),
+      // Registros gravados antes do campo `origem` existir eram todos
+      // aceites reais feitos pelo próprio usuário — nunca fabrica um
+      // `migracao_pre_existente` retroativo que não existiu.
+      origem: data.origem ?? 'self_service',
+    };
   },
 };
 
