@@ -94,12 +94,28 @@ export default async function LegalAcceptanceOverviewPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="font-display text-2xl font-semibold">Termos e Privacidade</h1>
-        <p className="text-muted text-sm">
-          {rows.length} conta{rows.length === 1 ? '' : 's'} de acesso · {pendentesCount} pendente
-          {pendentesCount === 1 ? '' : 's'} de aceite da versão vigente.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="font-display text-2xl font-semibold">Termos e Privacidade</h1>
+          <p className="text-muted text-sm">
+            {rows.length} conta{rows.length === 1 ? '' : 's'} de acesso · {pendentesCount} pendente
+            {pendentesCount === 1 ? '' : 's'} de aceite da versão vigente.
+          </p>
+        </div>
+        <div className="flex gap-4 text-sm">
+          <Link
+            href="/admin/configuracoes/termos-e-privacidade/editar/politica-privacidade"
+            className="text-accent font-medium hover:underline"
+          >
+            Editar Política de Privacidade
+          </Link>
+          <Link
+            href="/admin/configuracoes/termos-e-privacidade/editar/termos-uso"
+            className="text-accent font-medium hover:underline"
+          >
+            Editar Termos de Uso
+          </Link>
+        </div>
       </div>
 
       <DataTable

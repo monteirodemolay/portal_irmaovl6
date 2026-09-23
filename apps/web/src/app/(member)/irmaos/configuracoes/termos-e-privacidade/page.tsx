@@ -1,10 +1,12 @@
 import Link from 'next/link';
 import { createServerContainer } from '@vl6/infra';
 import type { LegalDocumentKey, LegalDocumentVersion } from '@vl6/domain';
+import { Drawer, DrawerBody, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from '@vl6/ui';
 import { requireSession } from '@/lib/auth/require-session';
 import { getLegalAcceptanceStatus } from '@/lib/legal/get-legal-acceptance-status';
-import { LEGAL_DOCUMENT_SLUGS, LEGAL_DOCUMENT_TITLES } from '@/lib/legal/document-slug';
+import { LEGAL_DOCUMENT_TITLES } from '@/lib/legal/document-slug';
 import { AcceptLegalDocumentCard } from '@/modules/legal/components/accept-legal-document-card';
+import { LegalDocumentText } from '@/modules/legal/components/legal-document-text';
 import { CLASSIFICATION_LABELS, IMPACT_LABELS } from '@/modules/legal/lib/labels';
 
 const DOCUMENTOS: LegalDocumentKey[] = ['politica_privacidade', 'termos_uso'];
@@ -52,13 +54,25 @@ export default async function TermosEPrivacidadePage() {
               <h2 className="font-display text-lg font-semibold">
                 {LEGAL_DOCUMENT_TITLES[documento]}
               </h2>
-              <Link
-                href={`/termos/${LEGAL_DOCUMENT_SLUGS[documento]}`}
-                target="_blank"
-                className="text-accent text-xs font-medium hover:underline"
-              >
-                Ler texto completo
-              </Link>
+              {vigente && (
+                <Drawer>
+                  <DrawerTrigger className="text-accent shrink-0 text-xs font-medium hover:underline">
+                    Ler texto completo
+                  </DrawerTrigger>
+                  <DrawerContent>
+                    <DrawerHeader>
+                      <DrawerTitle>{LEGAL_DOCUMENT_TITLES[documento]}</DrawerTitle>
+                      <p className="text-muted text-sm">
+                        Versão {vigente.versao} · vigente desde{' '}
+                        {vigente.publicadoEm.toLocaleDateString('pt-BR')}
+                      </p>
+                    </DrawerHeader>
+                    <DrawerBody>
+                      <LegalDocumentText markdown={vigente.conteudoMarkdown} />
+                    </DrawerBody>
+                  </DrawerContent>
+                </Drawer>
+              )}
             </div>
 
             {vigente ? (
