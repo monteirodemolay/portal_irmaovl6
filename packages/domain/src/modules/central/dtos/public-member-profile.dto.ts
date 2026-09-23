@@ -111,6 +111,14 @@ export interface PublicMemberProfileDTO {
   } | null;
   profissional: {
     profissao: string | null;
+    /**
+     * Empresa atual (`Member.empresa`) — cadastro administrativo/autoatendimento
+     * ("Empresa atual" em Meu Espaço), só pra contato entre colegas de
+     * trabalho. Nunca é a mesma coisa que `negocios` abaixo (divulgação
+     * pública de um negócio, com página própria) — até esta correção
+     * existia no cadastro mas nunca aparecia no perfil público.
+     */
+    empresa: string | null;
     areaAtuacao: string | null;
     areaAtuacaoKey: AreaAtuacaoKey | null;
     especializacao: string | null;
@@ -293,6 +301,7 @@ export function buildPublicMemberProfileDTO(
     profissional: blocks.profissional
       ? {
           profissao: member.profissao,
+          empresa: member.empresa,
           areaAtuacao: resolveAreaAtuacao(profile)?.label ?? null,
           areaAtuacaoKey: resolveAreaAtuacao(profile)?.key ?? null,
           especializacao: resolveEspecializacao(profile)?.label ?? null,
