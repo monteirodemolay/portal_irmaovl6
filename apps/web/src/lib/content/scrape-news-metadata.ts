@@ -47,11 +47,15 @@ function textToHtml(value: string): string {
     .join('\n');
 }
 
+function stripWixSizeParams(url: string): string {
+  return url.replace(/\/v1\/(?:fill|fit)\/[^/]+\//, '/');
+}
+
 function absoluteUrl(value: string, baseUrl: string): string | null {
   try {
     const url = new URL(decodeHtmlEntities(value), baseUrl);
     if (url.protocol !== 'https:' && url.protocol !== 'http:') return null;
-    return url.toString();
+    return stripWixSizeParams(url.toString());
   } catch {
     return null;
   }
@@ -213,7 +217,7 @@ function sanitizeImportedHtml(source: string, baseUrl: string): string {
 function extractAllImages(html: string, baseUrl: string): string[] {
   const urls = new Set<string>();
 
-  for (const match of html.matchAll(/<img\b[^>]*\bsrc\s*=\s*(["'])(.*?)\1/gi)) {
+  for (const match of html.matchAll(/<img\b[^>]*(?:src|data-src)\s*=\s*(["'])(.*?)\1/gi)) {
     const value = match[2];
     if (!value) continue;
     const normalized = absoluteUrl(value, baseUrl);
@@ -224,14 +228,37 @@ function extractAllImages(html: string, baseUrl: string): string[] {
       lower.includes('logo') ||
       lower.includes('favicon') ||
       lower.includes('icon') ||
-      lower.includes('avatar')
+      lower.includes('avatar') ||
+      lower.includes('placeholder') ||
+      lower.includes('sprite')
     ) {
       continue;
     }
     urls.add(normalized);
   }
 
-  return [...urls].slice(0, 30);
+  for (const match of html.matchAll(/background-image:\s*url\((?:"|')?([^"')]+)(?:"|')?\)/gi)) {
+    const value = match[1];
+    if (!value) continue;
+    const normalized = absoluteUrl(value, baseUrl);
+    if (!normalized) continue;
+    const lower = normalized.toLowerCase();
+    if (
+      lower.includes('logo') ||
+      lower.includes('favicon') ||
+      lower.includes('icon') ||
+      lower.includes('avatar') ||
+      lower.includes('placeholder') ||
+      lower.includes('sprite')
+    ) {
+      continue;
+    }
+    urls.add(normalized);
+  }
+
+  return [...urls]
+    .filter((url) => /\.(jpe?g|png|webp)(\?|$)/i.test(url) || url.includes('wixstatic.com'))
+    .slice(0, 40);
 }
 
 function appendMissingImages(contentHtml: string, images: string[]): string {
