@@ -9,6 +9,7 @@ import {
   Briefcase,
   Building2,
   Button,
+  GraduationCap,
   Input,
   Select,
   Share2,
@@ -19,6 +20,7 @@ import {
 import { FormField } from '@/components/forms/form-field';
 import { CollapsibleSection } from '@/components/forms/collapsible-section';
 import { EmploymentHistoryEditor } from '../employment-history-editor';
+import { EducationHistoryEditor } from '../education-history-editor';
 import { TagInput } from '../meu-espaco/tag-input';
 import {
   updateMemberCentralProfileAssistedAction,
@@ -65,9 +67,13 @@ function emptyNegocio(): CentralBusinessEntryValues {
 export function AssistedContentSections({
   memberId,
   profile,
+  knownCompanies = [],
+  knownInstitutions = [],
 }: {
   memberId: string;
   profile: MemberCentralProfile | null;
+  knownCompanies?: string[];
+  knownInstitutions?: string[];
 }) {
   const boundAction = updateMemberCentralProfileAssistedAction.bind(null, memberId);
   const [state, formAction] = useActionState<AdminCentralActionState, FormData>(boundAction, {
@@ -233,6 +239,20 @@ export function AssistedContentSections({
         <EmploymentHistoryEditor
           name="historicoProfissional"
           defaultValue={profile?.historicoProfissional ?? []}
+          knownCompanies={knownCompanies}
+        />
+      </CollapsibleSection>
+
+      <CollapsibleSection
+        icon={GraduationCap}
+        title="Formação Acadêmica"
+        description="Do Ensino Infantil ao Pós-Doutorado — útil quando a Administração já sabe desse dado, mesmo que o Irmão ainda não tenha preenchido."
+        summary={`${profile?.formacaoAcademica.length ?? 0}/20`}
+      >
+        <EducationHistoryEditor
+          name="formacaoAcademica"
+          defaultValue={profile?.formacaoAcademica ?? []}
+          knownInstitutions={knownInstitutions}
         />
       </CollapsibleSection>
 

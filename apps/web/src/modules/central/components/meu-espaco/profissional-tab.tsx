@@ -10,23 +10,29 @@ import {
   type AreaAtuacaoKey,
 } from '@vl6/shared';
 import type { Member, MemberCentralProfile } from '@vl6/domain';
-import { Briefcase, Button, Input, Select, Sparkles, Textarea } from '@vl6/ui';
+import { Briefcase, Button, GraduationCap, Input, Select, Sparkles, Textarea } from '@vl6/ui';
 import { FormField } from '@/components/forms/form-field';
 import { FormSectionCard } from '@/components/forms/section-card';
 import { updateCentralProfileAction, type CentralActionState } from '../../actions/central-actions';
 import { updateMyProfileAction } from '@/modules/membership/actions/self-profile-actions';
 import { ProfessionalCard } from '@/modules/membership/components/profile-fields/professional-card';
+import { CompanyCard } from '@/modules/membership/components/profile-fields/company-card';
 import { EmploymentHistoryEditor } from '../employment-history-editor';
+import { EducationHistoryEditor } from '../education-history-editor';
 import { TagInput } from './tag-input';
 
 export function ProfissionalTab({
   member,
   profile,
   customProfessions = [],
+  knownCompanies = [],
+  knownInstitutions = [],
 }: {
   member: Member;
   profile: MemberCentralProfile | null;
   customProfessions?: string[];
+  knownCompanies?: string[];
+  knownInstitutions?: string[];
 }) {
   const [contentState, contentAction] = useActionState<CentralActionState, FormData>(
     updateCentralProfileAction,
@@ -37,6 +43,10 @@ export function ProfissionalTab({
     { error: null },
   );
   const [historicoState, historicoAction] = useActionState<CentralActionState, FormData>(
+    updateCentralProfileAction,
+    { error: null },
+  );
+  const [formacaoState, formacaoAction] = useActionState<CentralActionState, FormData>(
     updateCentralProfileAction,
     { error: null },
   );
@@ -59,6 +69,8 @@ export function ProfissionalTab({
         action={updateMyProfileAction}
         customProfessions={customProfessions}
       />
+
+      <CompanyCard member={member} action={updateMyProfileAction} knownCompanies={knownCompanies} />
 
       <FormSectionCard
         icon={Sparkles}
@@ -143,8 +155,25 @@ export function ProfissionalTab({
           <EmploymentHistoryEditor
             name="historicoProfissional"
             defaultValue={profile?.historicoProfissional ?? []}
+            knownCompanies={knownCompanies}
           />
           {historicoState.error && <p className="text-sm text-red-600">{historicoState.error}</p>}
+          <SubmitButton />
+        </form>
+      </FormSectionCard>
+
+      <FormSectionCard
+        icon={GraduationCap}
+        title="Formação Acadêmica"
+        description="Do Ensino Infantil ao Pós-Doutorado — preencha só o que quiser, nada é obrigatório. Aparece no seu perfil junto com o resto do bloco Profissional. Você pode excluir uma formação a qualquer momento, ou deixar o histórico registrado se preferir."
+      >
+        <form action={formacaoAction} className="flex flex-col gap-4">
+          <EducationHistoryEditor
+            name="formacaoAcademica"
+            defaultValue={profile?.formacaoAcademica ?? []}
+            knownInstitutions={knownInstitutions}
+          />
+          {formacaoState.error && <p className="text-sm text-red-600">{formacaoState.error}</p>}
           <SubmitButton />
         </form>
       </FormSectionCard>

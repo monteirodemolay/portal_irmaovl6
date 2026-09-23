@@ -120,6 +120,7 @@ function buildProfile(overrides: Partial<MemberCentralProfile> = {}): MemberCent
     resumoProfissional: null,
     negocios: [],
     historicoProfissional: [],
+    formacaoAcademica: [],
     competencias: [],
     servicos: [],
     afiliacoes: [],

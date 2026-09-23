@@ -44,6 +44,40 @@ export const AREA_ATUACAO_LABELS: Record<AreaAtuacaoKey, string> = {
 };
 
 /**
+ * Taxonomia fechada de nível de ensino — "Formação Acadêmica" da Central
+ * dos Irmãos VL6 (currículo educacional). Cobre do início ao fim do
+ * sistema educacional brasileiro; nenhum nível é obrigatório, o Irmão
+ * preenche só o que quiser. Ordem crescente (usada como ordenação padrão
+ * quando não há data pra desempatar).
+ */
+export const EDUCATION_LEVEL_KEYS = [
+  'educacao_infantil',
+  'ensino_fundamental',
+  'ensino_medio',
+  'tecnico',
+  'graduacao',
+  'extensao',
+  'pos_graduacao',
+  'mestrado',
+  'doutorado',
+  'pos_doutorado',
+] as const;
+export type EducationLevelKey = (typeof EDUCATION_LEVEL_KEYS)[number];
+
+export const EDUCATION_LEVEL_LABELS: Record<EducationLevelKey, string> = {
+  educacao_infantil: 'Educação Infantil',
+  ensino_fundamental: 'Ensino Fundamental',
+  ensino_medio: 'Ensino Médio',
+  tecnico: 'Curso Técnico',
+  graduacao: 'Graduação',
+  extensao: 'Extensão / Curso Livre',
+  pos_graduacao: 'Pós-Graduação / Especialização',
+  mestrado: 'Mestrado',
+  doutorado: 'Doutorado',
+  pos_doutorado: 'Pós-Doutorado',
+};
+
+/**
  * Estado de publicação de cada negócio/atividade da Central (Comunidade
  * VL6 § Negócios & Serviços) — mapa de implantação exige revisão
  * administrativa antes de qualquer atividade aparecer publicamente.

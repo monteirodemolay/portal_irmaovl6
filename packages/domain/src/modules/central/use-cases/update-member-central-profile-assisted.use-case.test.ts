@@ -87,6 +87,7 @@ function buildInput(
     resumoProfissional: null,
     negocios: [],
     historicoProfissional: [],
+    formacaoAcademica: [],
     competencias: [],
     servicos: [],
     afiliacoes: [],

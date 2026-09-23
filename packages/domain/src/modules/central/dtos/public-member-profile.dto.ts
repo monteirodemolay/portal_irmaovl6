@@ -132,6 +132,13 @@ export interface PublicMemberProfileDTO {
     historicoProfissional: MemberCentralProfile['historicoProfissional'];
   } | null;
   negocios: MemberCentralProfile['negocios'] | null;
+  /**
+   * "Formação Acadêmica" — currículo educacional (Ensino Infantil ao
+   * Pós-Doutorado). Mesmo bloco `profissional` de visibilidade que
+   * profissão/histórico profissional — nunca uma seção de privacidade
+   * separada.
+   */
+  formacaoAcademica: MemberCentralProfile['formacaoAcademica'] | null;
   competencias: string[] | null;
   servicos: string[] | null;
   afiliacoes: MemberCentralProfile['afiliacoes'] | null;
@@ -322,6 +329,7 @@ export function buildPublicMemberProfileDTO(
     negocios: blocks.empresa
       ? (profile?.negocios.filter((n) => n.status === 'published') ?? [])
       : null,
+    formacaoAcademica: blocks.profissional ? (profile?.formacaoAcademica ?? []) : null,
     competencias: blocks.competencias ? (profile?.competencias ?? []) : null,
     servicos: blocks.servicos ? (profile?.servicos ?? []) : null,
     afiliacoes: blocks.afiliacoes ? (profile?.afiliacoes ?? []) : null,

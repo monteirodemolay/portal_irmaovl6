@@ -4,6 +4,8 @@ import { createServerContainer } from '@vl6/infra';
 import { ArrowLeft, Card, CardContent, Tabs, TabsContent, TabsList, TabsTrigger } from '@vl6/ui';
 import { requireSession } from '@/lib/auth/require-session';
 import { listUsedProfessions } from '@/modules/membership/lib/list-used-professions';
+import { listUsedCompanies } from '@/modules/membership/lib/list-used-companies';
+import { listUsedInstitutions } from '@/modules/membership/lib/list-used-institutions';
 import { listUsedBusinessNames } from '@/modules/central/lib/list-used-business-names';
 import { AfiliacoesTab } from '@/modules/central/components/meu-espaco/afiliacoes-tab';
 import { ContatosTab } from '@/modules/central/components/meu-espaco/contatos-tab';
@@ -42,11 +44,20 @@ export default async function MeuEspacoPage({
   // VL6) e pelo menu do usuário, pra abrir a seção certa deste editor.
   const initialTab = (VALID_TABS as readonly string[]).includes(tab ?? '') ? tab! : 'geral';
 
-  const [member, myCommittees, customProfessions, businessNames] = await Promise.all([
+  const [
+    member,
+    myCommittees,
+    customProfessions,
+    businessNames,
+    knownCompanies,
+    knownInstitutions,
+  ] = await Promise.all([
     container.repositories.member.findByUserId(session.authContext.tenantId, session.user.id),
     container.useCases.listMyCommittees.execute(session.authContext),
     listUsedProfessions(container, session.authContext),
     listUsedBusinessNames(container, session.authContext),
+    listUsedCompanies(container, session.authContext),
+    listUsedInstitutions(container, session.authContext),
   ]);
 
   if (!member) {
@@ -140,6 +151,8 @@ export default async function MeuEspacoPage({
             member={member}
             profile={centralProfile}
             customProfessions={customProfessions}
+            knownCompanies={knownCompanies}
+            knownInstitutions={knownInstitutions}
           />
         </TabsContent>
         <TabsContent value="empresa" className="pt-6">

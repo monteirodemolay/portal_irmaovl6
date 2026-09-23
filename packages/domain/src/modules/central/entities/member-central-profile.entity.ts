@@ -2,6 +2,7 @@ import type {
   AffiliationAbrangenciaKey,
   AreaAtuacaoKey,
   BusinessPublicationStatus,
+  EducationLevelKey,
   FormaAtendimentoKey,
 } from '@vl6/shared';
 import type { BaseEntity } from '../../../shared/base-entity';
@@ -92,6 +93,24 @@ export interface CentralEmploymentEntry {
   descricao: string | null;
 }
 
+/**
+ * Um período de formação acadêmica — "Formação Acadêmica" (currículo
+ * educacional) no perfil do Irmão. `atual: true` = ainda cursando
+ * (`dataFim` sempre `null` nesse caso). Sem moderação da Administração,
+ * mesmo espírito de `CentralEmploymentEntry` — o Irmão é responsável pelo
+ * que declara.
+ */
+export interface CentralEducationEntry {
+  id: string;
+  nivel: EducationLevelKey;
+  instituicao: string;
+  curso: string | null;
+  dataInicio: Date | null;
+  dataFim: Date | null;
+  atual: boolean;
+  descricao: string | null;
+}
+
 export interface CentralExternalLinks {
   whatsapp: string | null;
   instagram: string | null;
@@ -136,6 +155,9 @@ export interface MemberCentralProfile extends BaseEntity {
 
   /** "Histórico Profissional" — máx. 15 (`memberCentralProfileSchema`). */
   historicoProfissional: CentralEmploymentEntry[];
+
+  /** "Formação Acadêmica" — máx. 20 (`memberCentralProfileSchema`). */
+  formacaoAcademica: CentralEducationEntry[];
 
   /** Tags curtas — máx. 10 cada (`memberCentralProfileSchema`). */
   competencias: string[];
