@@ -11,6 +11,7 @@ export interface INewsRepository {
   listConcluded(tenantId: string, page: PageRequest): Promise<PageResult<News>>;
   create(news: News): Promise<void>;
   update(news: News): Promise<void>;
+  incrementViews(id: string): Promise<void>;
   /** Exclusão física — nunca chamado sem o item já ter passado por soft delete. */
   hardDelete(id: string): Promise<void>;
 }
