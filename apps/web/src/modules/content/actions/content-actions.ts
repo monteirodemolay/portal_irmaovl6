@@ -61,12 +61,10 @@ export interface ImportNewsResult {
 /**
  * Importa uma not\u00edcia do site institucional (vl6.com.br) como rascunho,
  * a partir do link de uma not\u00edcia j\u00e1 publicada l\u00e1 \u2014 busca a p\u00e1gina no
- * servidor e l\u00ea os metadados Open Graph que o Wix j\u00e1 emite pra
- * pr\u00e9-visualiza\u00e7\u00e3o em redes sociais (t\u00edtulo, resumo, imagem de capa), sem
- * precisar de um scraper espec\u00edfico pra estrutura do site. Sempre entra
- * como rascunho (`CreateNewsUseCase`): o Administrador revisa e completa o
- * conte\u00fado antes de publicar \u2014 o resumo importado nunca \u00e9 o texto
- * completo da not\u00edcia original, s\u00f3 o que o Open Graph exp\u00f5e.
+ * servidor e extrai os metadados editoriais, o corpo completo e as imagens
+ * da publicação. A rotina prioriza JSON-LD e usa o HTML renderizado como
+ * fallback. Sempre entra como rascunho (`CreateNewsUseCase`) para revisão
+ * antes da publicação no Portal.
  */
 export async function importNewsFromUrlAction(url: string): Promise<ImportNewsResult> {
   const session = await requireSession();
@@ -137,7 +135,7 @@ export async function importNewsFromUrlAction(url: string): Promise<ImportNewsRe
   };
 }
 
-const IMPORTED_FROM_URL_REGEX = /Importado de <a href="([^"]+)">/;
+const IMPORTED_FROM_URL_REGEX = /(?:Importado de|Fonte original:)\s*<a href="([^"]+)"/;
 
 export interface BackfillNewsPublishedDateResult {
   newsId: string;
