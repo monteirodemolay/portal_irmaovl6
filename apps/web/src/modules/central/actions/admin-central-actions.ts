@@ -96,6 +96,11 @@ export async function updateMemberCentralProfileAssistedAction(
   );
 
   const negocios = jsonArrayOrCurrent(formData, 'negocios', current?.negocios ?? []);
+  const historicoProfissional = jsonArrayOrCurrent(
+    formData,
+    'historicoProfissional',
+    current?.historicoProfissional ?? [],
+  );
   const competencias = jsonArrayOrCurrent(formData, 'competencias', current?.competencias ?? []);
   const servicos = jsonArrayOrCurrent(formData, 'servicos', current?.servicos ?? []);
 
@@ -171,8 +176,10 @@ export async function updateMemberCentralProfileAssistedAction(
         current?.resumoProfissional ?? null,
       ),
       negocios,
+      historicoProfissional,
       competencias,
       servicos,
+      afiliacoes: current?.afiliacoes ?? [],
       lojasVisitadas: textOrCurrent(formData, 'lojasVisitadas', current?.lojasVisitadas ?? null),
       interessesMaconicos: textOrCurrent(
         formData,

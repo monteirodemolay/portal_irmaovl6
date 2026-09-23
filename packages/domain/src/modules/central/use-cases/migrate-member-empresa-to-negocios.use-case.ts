@@ -129,6 +129,7 @@ export class MigrateMemberEmpresaToNegociosUseCase {
         formacao: null,
         resumoProfissional: null,
         negocios: [novoNegocio],
+        historicoProfissional: [],
         competencias: [],
         servicos: [],
         afiliacoes: [],

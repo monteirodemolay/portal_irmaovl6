@@ -124,6 +124,12 @@ export interface PublicMemberProfileDTO {
     especializacao: string | null;
     formacao: string | null;
     resumoProfissional: string | null;
+    /**
+     * "Histórico Profissional" — currículo simplificado (empresas/cargos/
+     * períodos). Mesmo bloco `profissional` de visibilidade — o titular
+     * decide se aparece junto com profissão/área/formação, nunca separado.
+     */
+    historicoProfissional: MemberCentralProfile['historicoProfissional'];
   } | null;
   negocios: MemberCentralProfile['negocios'] | null;
   competencias: string[] | null;
@@ -307,6 +313,7 @@ export function buildPublicMemberProfileDTO(
           especializacao: resolveEspecializacao(profile)?.label ?? null,
           formacao: profile?.formacao ?? null,
           resumoProfissional: profile?.resumoProfissional ?? null,
+          historicoProfissional: profile?.historicoProfissional ?? [],
         }
       : null,
     // Só negócios já aprovados pela Administração — rascunho/em revisão/
