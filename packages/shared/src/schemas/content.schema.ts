@@ -12,9 +12,9 @@ export const newsSchema = z.object({
   conteudoHtml: z.string().min(1),
   categoria: z.string().min(1),
   /** Pode aparecer em áreas editoriais de destaque sem necessariamente ser a manchete principal. */
-  destaque: z.boolean().default(false),
+  destaque: z.boolean().optional(),
   /** Manchete editorial principal. A camada de aplicação garante apenas uma por tenant. */
-  destaquePrincipal: z.boolean().default(false),
+  destaquePrincipal: z.boolean().optional(),
   /** Data em que a notícia foi (ou será) considerada publicada — editável para corrigir o caso de notícias importadas de outra fonte, cuja publicação original é anterior à importação. */
   dataPublicacao: z.coerce.date().nullable(),
 });
