@@ -322,6 +322,8 @@ import {
   ListLegalDocumentVersionsUseCase,
   GetLegalAcceptanceStatusUseCase,
   RecordLegalAcceptanceUseCase,
+  ListLegalAcceptanceOverviewUseCase,
+  ListLegalAcceptanceHistoryForUserUseCase,
 } from '@vl6/domain';
 import { withAudit } from './audit/with-audit';
 import { NodeDnsResolver } from './dns/node-dns-resolver';
@@ -2071,6 +2073,16 @@ export function createServerContainer() {
       hasher,
       clock,
       idGenerator,
+    }),
+    listLegalAcceptanceOverview: new ListLegalAcceptanceOverviewUseCase({
+      legalDocumentVersionRepository: repositories.legalDocumentVersion,
+      legalDocumentAcceptanceRepository: repositories.legalDocumentAcceptance,
+      userRepository: repositories.user,
+      memberRepository: repositories.member,
+    }),
+    listLegalAcceptanceHistoryForUser: new ListLegalAcceptanceHistoryForUserUseCase({
+      legalDocumentAcceptanceRepository: repositories.legalDocumentAcceptance,
+      userRepository: repositories.user,
     }),
   };
 

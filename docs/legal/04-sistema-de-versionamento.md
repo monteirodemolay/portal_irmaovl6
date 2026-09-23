@@ -100,6 +100,7 @@ Implementado, com código real no `apps/web`/`packages/*` (não é mais só espe
 - Gate de reaceite: `(member)/layout.tsx` redireciona qualquer Irmão com pendência para a área real "Termos e Privacidade" (`/irmaos/configuracoes/termos-e-privacidade`), que lê e grava dados de verdade (não é mais o mock-up isolado).
 - Leitura pública (pré-login) dos documentos vigentes em `/termos/politica-privacidade` e `/termos/termos-uso`.
 - Script de bootstrap `scripts/seed-legal-documents.ts` publica a v1.0.0 a partir de `02-politica-privacidade.md`/`03-termos-de-uso.md`.
+- **Painel administrativo** (`/admin/configuracoes/termos-e-privacidade`, permissão `legalDocument:manage`) — lista todo o quadro de Irmãos com o status de aceite de cada documento (em dia/pendente/versão/data), e uma tela de histórico completo por Irmão (`/admin/configuracoes/termos-e-privacidade/[userId]`) com todas as versões já aceitas, hash, IP/User-Agent e origem (`self_service` vs `migracao_pre_existente`, ver §8). Só a Administração enxerga o aceite de outros Irmãos — cada Irmão continua só vendo o próprio, em `/irmaos/configuracoes/termos-e-privacidade`.
 
 Ainda NÃO implementado (trabalho futuro, não confundir com o que está pronto):
 
