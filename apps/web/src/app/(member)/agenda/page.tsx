@@ -15,12 +15,20 @@ import type {
 
 const ROUTE = '/agenda';
 
-/** Janela carregada de uma vez (filtrada client-side pelas abas) — cobre navegação de mês para trás/frente sem refetch. */
+/**
+ * A Agenda trabalha com o ano civil fechado. De janeiro a novembro, carrega
+ * somente o ano vigente; em dezembro acrescenta janeiro do ano seguinte para
+ * que a virada do calendário já apareça sem abrir todo o próximo exercício.
+ */
 function buildRange(): { from: Date; to: Date } {
   const now = new Date();
+  const year = now.getFullYear();
+  const isDecember = now.getMonth() === 11;
   return {
-    from: new Date(now.getFullYear(), now.getMonth() - 2, 1),
-    to: new Date(now.getFullYear(), now.getMonth() + 6, 0),
+    from: new Date(year, 0, 1, 0, 0, 0, 0),
+    to: isDecember
+      ? new Date(year + 1, 0, 31, 23, 59, 59, 999)
+      : new Date(year, 11, 31, 23, 59, 59, 999),
   };
 }
 
