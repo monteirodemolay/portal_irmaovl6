@@ -50,6 +50,14 @@ function escapeHtml(value: string): string {
     .replace(/'/g, '&#39;');
 }
 
+function truncateText(value: string | null | undefined, maxLength: number): string | null {
+  if (!value) return null;
+  const normalized = value.trim();
+  if (!normalized) return null;
+  if (normalized.length <= maxLength) return normalized;
+  return `${normalized.slice(0, Math.max(0, maxLength - 1)).trimEnd()}…`;
+}
+
 export interface ImportNewsResult {
   ok: boolean;
   url: string;
@@ -196,27 +204,38 @@ export async function reimportImportedNewsAction(): Promise<ReimportImportedNews
     }
 
     const sourceNote = `<p><em>Fonte original: <a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(url)}</a>.</em></p>`;
-    const input = newsSchema.parse({
-      titulo: scraped.title,
-      subtitulo: scraped.description,
-      slug: news.slug,
-      imagemCapaUrl,
-      conteudoHtml: `${scraped.contentHtml}\n${sourceNote}`,
-      categoria: news.categoria,
-      destaque: Boolean(news.destaque),
-      destaquePrincipal: Boolean(news.destaquePrincipal),
-      dataPublicacao: scraped.publishedAt ?? news.dataPublicacao,
-    });
 
-    const result = await container.useCases.updateNews.execute(session.authContext, news.id, input);
+    try {
+      const input = newsSchema.parse({
+        titulo: scraped.title,
+        subtitulo: truncateText(scraped.description, 300),
+        slug: news.slug,
+        imagemCapaUrl,
+        conteudoHtml: `${scraped.contentHtml}\n${sourceNote}`,
+        categoria: news.categoria,
+        destaque: Boolean(news.destaque),
+        destaquePrincipal: Boolean(news.destaquePrincipal),
+        dataPublicacao: scraped.publishedAt ?? news.dataPublicacao,
+      });
 
-    results.push({
-      newsId: news.id,
-      titulo: result.ok ? result.value.titulo : news.titulo,
-      url,
-      ok: result.ok,
-      error: result.ok ? null : result.error.message,
-    });
+      const result = await container.useCases.updateNews.execute(session.authContext, news.id, input);
+
+      results.push({
+        newsId: news.id,
+        titulo: result.ok ? result.value.titulo : news.titulo,
+        url,
+        ok: result.ok,
+        error: result.ok ? null : result.error.message,
+      });
+    } catch (error) {
+      results.push({
+        newsId: news.id,
+        titulo: news.titulo,
+        url,
+        ok: false,
+        error: error instanceof Error ? error.message : 'Falha ao validar os dados importados.',
+      });
+    }
   }
 
   if (results.some((item) => item.ok)) {
