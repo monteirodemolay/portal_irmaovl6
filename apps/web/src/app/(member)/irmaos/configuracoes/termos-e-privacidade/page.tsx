@@ -1,7 +1,6 @@
 import Link from 'next/link';
 import { createServerContainer } from '@vl6/infra';
 import type { LegalDocumentKey, LegalDocumentVersion } from '@vl6/domain';
-import { Drawer, DrawerBody, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from '@vl6/ui';
 import { requireSession } from '@/lib/auth/require-session';
 import { getLegalAcceptanceStatus } from '@/lib/legal/get-legal-acceptance-status';
 import { LEGAL_DOCUMENT_SLUGS, LEGAL_DOCUMENT_TITLES } from '@/lib/legal/document-slug';
