@@ -6,6 +6,7 @@ export type AgendaCategory =
   | 'sessao'
   | 'evento'
   | 'aniversario'
+  | 'recesso'
   | 'paramaconica'
   | 'outra'
   | 'personal'
@@ -27,6 +28,7 @@ export const CATEGORY_LABELS: Record<AgendaCategory, string> = {
   sessao: 'Sessão',
   evento: 'Evento',
   aniversario: 'Aniversário',
+  recesso: 'Recesso Maçônico',
   paramaconica: 'Paramaçônica',
   outra: 'Outra data',
   personal: 'Pessoal',
@@ -37,6 +39,7 @@ export const CATEGORY_BADGE_CLASS: Record<AgendaCategory, string> = {
   sessao: 'bg-primary/10 text-primary',
   evento: 'bg-sky-100 text-sky-700',
   aniversario: 'bg-amber-100 text-amber-800',
+  recesso: 'bg-teal-100 text-teal-800',
   paramaconica: 'bg-violet-100 text-violet-700',
   outra: 'bg-slate-100 text-slate-700',
   personal: 'bg-emerald-100 text-emerald-700',
@@ -100,6 +103,7 @@ export interface CalendarItem {
 function eventCategory(event: Event): AgendaCategory {
   if (event.tipo === 'sessao') return 'sessao';
   if (event.tipo === 'aniversario') return 'aniversario';
+  if (event.tipo === 'recesso') return 'recesso';
   if (event.agendaContext === 'paramaconica') return 'paramaconica';
   if (event.agendaContext === 'outro') return 'outra';
   return 'evento';
