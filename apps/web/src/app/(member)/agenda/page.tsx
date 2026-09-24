@@ -8,7 +8,10 @@ import { requireSession } from '@/lib/auth/require-session';
 import { getCurrentTenant } from '@/lib/tenant/get-current-tenant';
 import { AgendaSidebar } from '@/modules/agenda/components/agenda-sidebar';
 import { MyAgendaView } from '@/modules/agenda/components/my-agenda-view';
-import type { GoogleCalendarEventSummary } from '@/modules/agenda/lib/calendar-item';
+import type {
+  AgendaAnniversarySummary,
+  GoogleCalendarEventSummary,
+} from '@/modules/agenda/lib/calendar-item';
 
 const ROUTE = '/agenda';
 
@@ -47,11 +50,24 @@ export default async function AgendaPage() {
   const { from, to } = buildRange();
 
   const canReadVl6 = hasPermission(session.authContext, 'event:read');
+  const canReadMembers = hasPermission(session.authContext, 'member:read');
   const canManageHeroPhoto = hasPermission(session.authContext, 'tenant:manage');
   const heroPhoto = resolveHeroPhoto(current.tenant, 'agenda');
 
-  const [vl6Events, personalEvents, googleConnection, personalTasks, personalNotes] =
-    await Promise.all([
+  const anniversaryWindowDays = Math.max(
+    1,
+    Math.ceil((to.getTime() - Date.now()) / (24 * 60 * 60 * 1000)) + 2,
+  );
+
+  const [
+    vl6Events,
+    personalEvents,
+    googleConnection,
+    personalTasks,
+    personalNotes,
+    anniversaryEntries,
+    paramasonicEntities,
+  ] = await Promise.all([
       canReadVl6
         ? safeFetch('eventos VL6', [], () =>
             container.useCases.listEventsInRange.execute(session.authContext, { from, to }),
@@ -72,7 +88,55 @@ export default async function AgendaPage() {
       safeFetch('minhas anotações', [], () =>
         container.useCases.listMyPersonalNotes.execute(session.authContext),
       ),
+      canReadMembers
+        ? safeFetch('datas comemorativas dos Irmãos', [], () =>
+            container.useCases.listUpcomingAnniversaries.execute(session.authContext, {
+              withinDays: anniversaryWindowDays,
+            }),
+          )
+        : Promise.resolve([]),
+      canReadVl6
+        ? safeFetch('entidades paramaçônicas', [], () =>
+            container.repositories.paramasonicEntity.listByTenant(session.authContext.tenantId),
+          )
+        : Promise.resolve([]),
     ]);
+
+  const agendaAnniversaries: AgendaAnniversarySummary[] = anniversaryEntries.map(
+    (entry, index) => {
+      const occurrence = new Date();
+      occurrence.setHours(12, 0, 0, 0);
+      occurrence.setDate(occurrence.getDate() + entry.diasAte);
+
+      const titulo =
+        entry.kind === 'nascimento'
+          ? `Aniversário de ${entry.nomeCompleto}`
+          : entry.kind === 'conjuge'
+            ? `Aniversário de ${entry.conjugeNome ?? 'cônjuge'} · família de ${entry.nomeCompleto}`
+            : entry.kind === 'filho'
+              ? `Aniversário de ${entry.filhoNome ?? 'filho(a)'} · família de ${entry.nomeCompleto}`
+              : entry.kind === 'iniciacao'
+                ? `Aniversário de Iniciação · ${entry.nomeCompleto}`
+                : entry.kind === 'elevacao'
+                  ? `Aniversário de Elevação · ${entry.nomeCompleto}`
+                  : `Aniversário de Exaltação · ${entry.nomeCompleto}`;
+
+      return {
+        id: `anniversary-${entry.kind}-${entry.memberId}-${occurrence.getFullYear()}-${index}`,
+        memberId: entry.memberId,
+        titulo,
+        inicio: occurrence,
+        kind: entry.kind,
+      };
+    },
+  );
+
+  const paramasonicEntityNames = Object.fromEntries(
+    paramasonicEntities.map((entity) => [
+      entity.id,
+      entity.unitNumber ? `${entity.shortName} nº ${entity.unitNumber}` : entity.shortName,
+    ]),
+  );
 
   // Cache local (nunca chama a Calendar API a cada render) — só populado
   // quando conectado e com a preferência "exibir eventos Google" ligada.
@@ -97,9 +161,9 @@ export default async function AgendaPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHero
-        kicker="Minha Agenda"
-        title="Loja, Google e compromissos pessoais"
-        description="Acompanhe sessões, eventos e seus próprios compromissos em um só lugar."
+        kicker="Agenda Central VL6"
+        title="Tudo que acontece na Loja, em um só lugar"
+        description="Sessões, eventos, aniversários, Paramaçônicas, compromissos pessoais e calendários conectados em uma visão única."
         photoUrl={heroPhoto?.url}
         photoPosicao={heroPhoto?.posicao}
         actions={
@@ -128,6 +192,8 @@ export default async function AgendaPage() {
           vl6Events={vl6Events}
           personalEvents={personalEvents}
           googleEvents={googleEvents}
+          anniversaries={agendaAnniversaries}
+          paramasonicEntityNames={paramasonicEntityNames}
           personalNotes={personalNotes}
         />
         <AgendaSidebar
