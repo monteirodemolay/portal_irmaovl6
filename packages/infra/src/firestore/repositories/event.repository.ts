@@ -23,6 +23,8 @@ function withDefaults(event: Event): Event {
     nivelAcesso: event.nivelAcesso ?? 'irmaos',
     exibirNaLinhaDoTempo: event.exibirNaLinhaDoTempo ?? true,
     grau: event.grau ?? null,
+    agendaContext: event.agendaContext ?? 'loja',
+    paramasonicEntityId: event.paramasonicEntityId ?? null,
   };
 }
 
