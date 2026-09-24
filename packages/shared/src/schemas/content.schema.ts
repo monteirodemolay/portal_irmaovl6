@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 export const newsSchema = z.object({
   titulo: z.string().min(3).max(200),
-  subtitulo: z.string().max(300).nullable(),
+  subtitulo: z.string().nullable(),
   slug: z
     .string()
     .min(3)
