@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import type { Event, PersonalEvent } from '@vl6/domain';
-import { detectOverlaps, toCalendarItems, type GoogleCalendarEventSummary } from './calendar-item';
+import {
+  detectOverlaps,
+  toCalendarItems,
+  type AgendaAnniversarySummary,
+  type GoogleCalendarEventSummary,
+} from './calendar-item';
 
 function buildEvent(overrides: Partial<Event> = {}): Event {
   return {
@@ -83,6 +88,55 @@ describe('toCalendarItems', () => {
     const items = toCalendarItems([buildEvent({ tipo: 'aniversario' })], [], []);
 
     expect(items[0]?.isBirthday).toBe(true);
+  });
+
+  it('classifica evento vinculado a Paramaçônica e resolve o nome da entidade', () => {
+    const items = toCalendarItems(
+      [
+        buildEvent({
+          tipo: 'evento',
+          agendaContext: 'paramaconica',
+          paramasonicEntityId: 'demolay-350',
+        }),
+      ],
+      [],
+      [],
+      [],
+      { 'demolay-350': 'Capítulo Rio Verde nº 350' },
+    );
+
+    expect(items[0]?.category).toBe('paramaconica');
+    expect(items[0]?.contextLabel).toBe('Capítulo Rio Verde nº 350');
+  });
+
+  it('projeta aniversário futuro sem duplicar o evento legado do cron', () => {
+    const inicio = new Date(2026, 8, 24, 12, 0, 0);
+    const anniversary: AgendaAnniversarySummary = {
+      id: 'virtual-birthday',
+      memberId: 'm1',
+      titulo: 'Aniversário de Irmão Teste',
+      inicio,
+      kind: 'nascimento',
+    };
+
+    const items = toCalendarItems(
+      [
+        buildEvent({
+          id: 'cron-birthday',
+          tipo: 'aniversario',
+          titulo: 'Aniversário de Irmão Teste',
+          dataInicio: new Date(2026, 8, 24, 0, 0, 0),
+          dataFim: new Date(2026, 8, 24, 23, 59, 59),
+        }),
+      ],
+      [],
+      [],
+      [anniversary],
+    );
+
+    expect(items.filter((item) => item.category === 'aniversario')).toHaveLength(1);
+    expect(items[0]?.id).toBe('virtual-birthday');
+    expect(items[0]?.isInformational).toBe(true);
   });
 });
 
