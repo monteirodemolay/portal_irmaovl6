@@ -9,11 +9,16 @@ const DEGREE_SHORT_LABELS: Record<MemberDegree, string> = {
   mestre: 'Mestre',
 };
 
-/** Prata (Aprendiz) → Bronze (Companheiro) → Ouro (Mestre) — a mesma progressão metálica do grau simbólico. */
+/**
+ * Prata (Aprendiz) → Bronze (Companheiro) → Ouro (Mestre) — mesma progressão
+ * metálica do grau simbólico, mas em tom plano e discreto (sem gradiente
+ * saturado): fundo claro, borda e texto na mesma matiz, só diferenciados
+ * pela cor de base. Selo de identificação, não um destaque visual chamativo.
+ */
 const DEGREE_STYLES: Record<MemberDegree, string> = {
-  aprendiz: 'border-slate-300 bg-gradient-to-br from-slate-200 to-slate-400 text-slate-900',
-  companheiro: 'border-orange-900/40 bg-gradient-to-br from-amber-700 to-orange-900 text-white',
-  mestre: 'border-amber-300/60 bg-gradient-to-br from-amber-300 to-yellow-500 text-amber-950',
+  aprendiz: 'border-slate-200 bg-slate-50 text-slate-700',
+  companheiro: 'border-orange-200 bg-orange-50 text-orange-800',
+  mestre: 'border-amber-200 bg-amber-50 text-amber-800',
 };
 
 const SIZE_STYLES = {

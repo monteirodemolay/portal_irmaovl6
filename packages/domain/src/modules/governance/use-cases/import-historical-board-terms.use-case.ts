@@ -171,12 +171,13 @@ export class ImportHistoricalBoardTermsUseCase {
     const report: ImportHistoricalBoardTermsRow[] = [];
     const historyWrites: Array<Promise<void>> = [];
     // Todo Irmão que foi Venerável Mestre vira Mestre Instalado um dia após
-    // o fim do cargo (convenção institucional) — um Set por execução evita
-    // conceder duas vezes quando o mesmo Irmão aparece como VM em mais de
-    // uma gestão/segmento aqui dentro (a checagem de idempotência real, contra
-    // o que já existe no banco, é feita dentro de `grantMestreInstaladoTitleIfNeeded`).
-    const grantedMestreInstaladoFor = new Set<string>();
-    const titleGrants: Array<Promise<void>> = [];
+    // o fim do cargo (convenção institucional) — um Irmão que aparece como VM
+    // em mais de uma gestão/segmento aqui dentro ganha um título por
+    // ocorrência (cada gestão concluída é um novo Mestre Instalado). A
+    // idempotência contra o que já existe no banco — inclusive reprocessar
+    // este mesmo import de novo — é feita dentro de
+    // `grantMestreInstaladoTitleIfNeeded`, por data de concessão.
+    const titleGrants: Array<Promise<boolean>> = [];
 
     interface CargoGroup {
       boardTerm: BoardTerm;
@@ -222,8 +223,7 @@ export class ImportHistoricalBoardTermsUseCase {
           const dataInicio = new Date(segment.dataInicio);
           const key = historyKey(member.id, cargo, boardTerm.id, dataInicio);
 
-          if (cargo === 'veneravel_mestre' && !grantedMestreInstaladoFor.has(member.id)) {
-            grantedMestreInstaladoFor.add(member.id);
+          if (cargo === 'veneravel_mestre') {
             titleGrants.push(
               grantMestreInstaladoTitleIfNeeded(this.deps, {
                 tenantId: ctx.tenantId,
