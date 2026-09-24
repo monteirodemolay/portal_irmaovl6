@@ -130,7 +130,10 @@ export async function loadArchiveSearchResults(
   // álbum público — busca nunca pode ser um caminho mais permissivo do
   // que abrir o item diretamente.
   const publishedArchiveItems = archiveItemsPage.items.filter(
-    (item) => item.publicacaoStatus === 'publicado' && isAccessLevelVisible(item.nivelAcesso, visibility),
+    (item) =>
+      item.publicacaoStatus === 'publicado' &&
+      !item.origemNewsId &&
+      isAccessLevelVisible(item.nivelAcesso, visibility),
   );
   const [archiveItemEvents, archiveItemMedias] = await Promise.all([
     Promise.all(publishedArchiveItems.map((item) => container.repositories.event.findById(item.eventId))),

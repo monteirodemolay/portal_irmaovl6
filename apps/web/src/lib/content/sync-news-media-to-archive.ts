@@ -1,7 +1,7 @@
 import 'server-only';
 
 import { createHash, randomUUID } from 'node:crypto';
-import type { AuthContext, News } from '@vl6/domain';
+import type { ArchiveItem, ArchiveMedia, AuthContext, News } from '@vl6/domain';
 import type { ServerContainer } from '@vl6/infra';
 import { VercelBlobStorageAdapter } from '@vl6/infra';
 import { logger, type ArchiveMediaTypeKey } from '@vl6/shared';
@@ -117,40 +117,150 @@ async function fetchMedia(url: string): Promise<{ buffer: Buffer; mimeType: stri
   }
 }
 
-async function findAutoItem(container: ServerContainer, eventId: string, newsId: string) {
+function chooseCanonicalEventItem(items: ArchiveItem[]): ArchiveItem | null {
+  const candidates = items.filter((item) => !item.deletedAt && !item.origemNewsId);
+  return (
+    candidates.find((item) => item.publicacaoStatus === 'publicado') ??
+    candidates.find((item) => item.publicacaoStatus === 'pronto_para_publicar') ??
+    candidates[0] ??
+    null
+  );
+}
+
+async function findTechnicalNewsItem(
+  container: ServerContainer,
+  eventId: string,
+  newsId: string,
+): Promise<ArchiveItem | null> {
   const items = await container.repositories.archiveItem.findByEventId(eventId);
   return items.find((item) => item.origemNewsId === newsId && !item.deletedAt) ?? null;
 }
 
-async function moveAutoItemToEvent(
+async function mediaForNewsInEvent(
+  container: ServerContainer,
+  eventId: string,
+  newsId: string,
+): Promise<ArchiveMedia[]> {
+  const items = await container.repositories.archiveItem.findByEventId(eventId);
+  const mediaByItem = await Promise.all(
+    items.filter((item) => !item.deletedAt).map((item) =>
+      container.repositories.archiveMedia.findByArchiveItemId(item.id),
+    ),
+  );
+  return mediaByItem.flat().filter((media) => !media.deletedAt && media.origemNewsId === newsId);
+}
+
+async function migrateLegacyTechnicalItem(
+  container: ServerContainer,
+  authContext: AuthContext,
+  eventId: string,
+  newsId: string,
+  targetItem: ArchiveItem,
+): Promise<void> {
+  const legacyItem = await findTechnicalNewsItem(container, eventId, newsId);
+  if (!legacyItem || legacyItem.id === targetItem.id) return;
+
+  const legacyMedia = await container.repositories.archiveMedia.findByArchiveItemId(legacyItem.id);
+  for (const media of legacyMedia) {
+    await container.repositories.archiveMedia.update({
+      ...media,
+      archiveItemId: targetItem.id,
+      eventId: targetItem.eventId,
+      boardTermId: targetItem.boardTermId,
+      origemNewsId: newsId,
+      isCover: false,
+      updatedAt: new Date(),
+      updatedBy: authContext.uid,
+    });
+  }
+  await container.repositories.archiveItem.softDelete(legacyItem.id, new Date(), authContext.uid);
+}
+
+async function resolveTargetItem(
+  container: ServerContainer,
+  authContext: AuthContext,
+  eventId: string,
+  news: News,
+): Promise<ArchiveItem | null> {
+  const items = await container.repositories.archiveItem.findByEventId(eventId);
+  const canonical = chooseCanonicalEventItem(items);
+
+  if (canonical) {
+    await migrateLegacyTechnicalItem(container, authContext, eventId, news.id, canonical);
+    return canonical;
+  }
+
+  // Compatibilidade estrutural: ArchiveMedia ainda exige ArchiveItem pai.
+  // Quando o Evento ainda não possui nenhum item canônico, criamos um
+  // contêiner técnico que NÃO entra nas listagens/pesquisas do Acervo.
+  // Assim, para o usuário a mídia pertence somente ao Evento.
+  const existingTechnical = items.find(
+    (item) => item.origemNewsId === news.id && !item.deletedAt,
+  );
+  if (existingTechnical) return existingTechnical;
+
+  const event = await container.repositories.event.findById(eventId);
+  if (!event || event.tenantId !== authContext.tenantId || event.deletedAt) return null;
+
+  const created = await container.useCases.createArchiveItem.execute(authContext, {
+    eventId: event.id,
+    boardTermId: event.boardTermId ?? null,
+    titulo: event.titulo,
+    tipo: 'outro',
+    descricao: 'Contêiner técnico de mídias importadas de notícia vinculada ao Evento.',
+    nivelAcesso: event.nivelAcesso,
+  });
+  if (!created.ok) return null;
+
+  const technical = { ...created.value, origemNewsId: news.id };
+  await container.repositories.archiveItem.update(technical);
+  return technical;
+}
+
+async function moveNewsMediaBetweenEvents(
   container: ServerContainer,
   authContext: AuthContext,
   newsId: string,
   previousEventId: string,
   nextEventId: string,
+  targetItem: ArchiveItem,
 ): Promise<void> {
-  const item = await findAutoItem(container, previousEventId, newsId);
-  if (!item) return;
-  const event = await container.repositories.event.findById(nextEventId);
-  if (!event || event.tenantId !== authContext.tenantId || event.deletedAt) return;
-
-  await container.repositories.archiveItem.update({
-    ...item,
-    eventId: event.id,
-    boardTermId: event.boardTermId ?? null,
-    updatedAt: new Date(),
-    updatedBy: authContext.uid,
-  });
-  const medias = await container.repositories.archiveMedia.findByArchiveItemId(item.id);
-  await Promise.all(medias.map((media) =>
-    container.repositories.archiveMedia.update({
+  const previousMedia = await mediaForNewsInEvent(container, previousEventId, newsId);
+  for (const media of previousMedia) {
+    await container.repositories.archiveMedia.update({
       ...media,
-      eventId: event.id,
-      boardTermId: event.boardTermId ?? null,
+      archiveItemId: targetItem.id,
+      eventId: nextEventId,
+      boardTermId: targetItem.boardTermId,
+      isCover: false,
       updatedAt: new Date(),
       updatedBy: authContext.uid,
-    }),
-  ));
+    });
+  }
+
+  const oldTechnical = await findTechnicalNewsItem(container, previousEventId, newsId);
+  if (oldTechnical) {
+    await container.repositories.archiveItem.softDelete(oldTechnical.id, new Date(), authContext.uid);
+  }
+}
+
+async function removeNewsMediaFromEvent(
+  container: ServerContainer,
+  authContext: AuthContext,
+  eventId: string,
+  newsId: string,
+): Promise<void> {
+  const media = await mediaForNewsInEvent(container, eventId, newsId);
+  await Promise.all(
+    media.map((entry) =>
+      container.repositories.archiveMedia.softDelete(entry.id, new Date(), authContext.uid),
+    ),
+  );
+
+  const technical = await findTechnicalNewsItem(container, eventId, newsId);
+  if (technical) {
+    await container.repositories.archiveItem.softDelete(technical.id, new Date(), authContext.uid);
+  }
 }
 
 export async function syncNewsMediaToArchive(input: {
@@ -167,8 +277,7 @@ export async function syncNewsMediaToArchive(input: {
   try {
     if (!news.eventId) {
       if (previousEventId) {
-        const oldItem = await findAutoItem(container, previousEventId, news.id);
-        if (oldItem) await container.useCases.softDeleteArchiveItem.execute(authContext, oldItem.id);
+        await removeNewsMediaFromEvent(container, authContext, previousEventId, news.id);
       }
       return result;
     }
@@ -179,8 +288,22 @@ export async function syncNewsMediaToArchive(input: {
       return result;
     }
 
+    const targetItem = await resolveTargetItem(container, authContext, event.id, news);
+    if (!targetItem) {
+      result.errors.push('Não foi possível localizar o contêiner do Evento no Acervo.');
+      return result;
+    }
+    result.archiveItemId = targetItem.id;
+
     if (previousEventId && previousEventId !== news.eventId) {
-      await moveAutoItemToEvent(container, authContext, news.id, previousEventId, news.eventId);
+      await moveNewsMediaBetweenEvents(
+        container,
+        authContext,
+        news.id,
+        previousEventId,
+        news.eventId,
+        targetItem,
+      );
     }
 
     let media = input.scrapedMedia ?? null;
@@ -194,26 +317,7 @@ export async function syncNewsMediaToArchive(input: {
       .slice(0, 60);
     if (unique.length === 0) return result;
 
-    let item = await findAutoItem(container, event.id, news.id);
-    if (!item) {
-      const created = await container.useCases.createArchiveItem.execute(authContext, {
-        eventId: event.id,
-        boardTermId: event.boardTermId ?? null,
-        titulo: `Mídias da notícia: ${news.titulo}`,
-        tipo: 'outro',
-        descricao: 'Conteúdo importado automaticamente de notícia institucional vinculada a este acontecimento.',
-        nivelAcesso: event.nivelAcesso,
-      });
-      if (!created.ok) {
-        result.errors.push(created.error.message);
-        return result;
-      }
-      item = { ...created.value, origemNewsId: news.id };
-      await container.repositories.archiveItem.update(item);
-    }
-    result.archiveItemId = item.id;
-
-    const existingMedia = await container.repositories.archiveMedia.findByArchiveItemId(item.id);
+    const existingMedia = await container.repositories.archiveMedia.findByArchiveItemId(targetItem.id);
     const existingAssets = await Promise.all(
       existingMedia.map((entry) => container.repositories.mediaAsset.findById(entry.mediaAssetId)),
     );
@@ -230,6 +334,7 @@ export async function syncNewsMediaToArchive(input: {
     for (const candidate of unique) {
       const downloaded = await fetchMedia(candidate.url);
       if (!downloaded) { result.skipped += 1; continue; }
+
       const mediaType = mediaTypeFromMime(downloaded.mimeType, candidate.url);
       if (!mediaType) { result.skipped += 1; continue; }
 
@@ -238,10 +343,14 @@ export async function syncNewsMediaToArchive(input: {
 
       const extension = extensionFrom(downloaded.mimeType, candidate.url);
       const originalName = `noticia-${news.id}-${nextOrder + 1}.${extension}`;
-      let mediaAsset = await container.repositories.mediaAsset.findBySha256(authContext.tenantId, sha256);
+      let mediaAsset = await container.repositories.mediaAsset.findBySha256(
+        authContext.tenantId,
+        sha256,
+      );
 
       if (!mediaAsset) {
-        const storageKey = `tenants/${authContext.tenantId}/archive/news/${news.id}/${randomUUID()}-${originalName}`;
+        const storageKey =
+          `tenants/${authContext.tenantId}/archive/news/${news.id}/${randomUUID()}-${originalName}`;
         const upload = await storage.upload({
           path: storageKey,
           buffer: downloaded.buffer,
@@ -269,7 +378,7 @@ export async function syncNewsMediaToArchive(input: {
       }
 
       const attached = await container.useCases.attachMediaToArchiveItem.execute(authContext, {
-        archiveItemId: item.id,
+        archiveItemId: targetItem.id,
         mediaAssetId: mediaAsset.id,
         mediaType,
         documentType: mediaType === 'documento' ? downloaded.mimeType : null,
@@ -285,25 +394,37 @@ export async function syncNewsMediaToArchive(input: {
         continue;
       }
 
-      if (item.publicacaoStatus === 'publicado') {
-        await container.repositories.archiveMedia.update({
-          ...attached.value,
-          publicacaoStatus: 'publicado',
-          updatedAt: new Date(),
-          updatedBy: authContext.uid,
-        });
+      const linkedMedia: ArchiveMedia = {
+        ...attached.value,
+        origemNewsId: news.id,
+        publicacaoStatus:
+          targetItem.publicacaoStatus === 'publicado' ? 'publicado' : attached.value.publicacaoStatus,
+        updatedAt: new Date(),
+        updatedBy: authContext.uid,
+      };
+      await container.repositories.archiveMedia.update(linkedMedia);
+
+      if (mediaType === 'foto' && !targetItem.capaMediaId && !firstNewPhotoId) {
+        firstNewPhotoId = linkedMedia.id;
       }
-      if (mediaType === 'foto' && !item.capaMediaId && !firstNewPhotoId) firstNewPhotoId = attached.value.id;
       existingHashes.add(sha256);
       nextOrder += 1;
       result.imported += 1;
     }
 
-    if (firstNewPhotoId && !item.capaMediaId) {
-      await container.useCases.setArchiveItemCover.execute(authContext, item.id, firstNewPhotoId);
+    if (firstNewPhotoId && !targetItem.capaMediaId) {
+      await container.useCases.setArchiveItemCover.execute(
+        authContext,
+        targetItem.id,
+        firstNewPhotoId,
+      );
     }
-    if (item.publicacaoStatus !== 'publicado') {
-      const published = await container.useCases.publishArchiveItem.execute(authContext, item.id);
+
+    if (targetItem.publicacaoStatus !== 'publicado') {
+      const published = await container.useCases.publishArchiveItem.execute(
+        authContext,
+        targetItem.id,
+      );
       if (!published.ok) result.errors.push(published.error.message);
     }
   } catch (error) {
@@ -312,7 +433,9 @@ export async function syncNewsMediaToArchive(input: {
       newsId: news.id,
       ...(error instanceof Error ? { message: error.message } : {}),
     });
-    result.errors.push(error instanceof Error ? error.message : 'Falha inesperada na sincronização.');
+    result.errors.push(
+      error instanceof Error ? error.message : 'Falha inesperada na sincronização.',
+    );
   }
 
   return result;
