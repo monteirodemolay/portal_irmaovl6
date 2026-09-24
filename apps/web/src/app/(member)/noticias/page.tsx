@@ -152,34 +152,43 @@ export default async function PublicNewsPage({
           <main className="min-w-0">
             <Link
               href={`/noticias/${primary.slug}`}
-              className="group relative block min-h-[360px] overflow-hidden rounded-2xl border border-white/10 bg-slate-950 sm:min-h-[430px]"
+              className="border-border bg-surface group block overflow-hidden rounded-2xl border shadow-sm transition-shadow hover:shadow-md md:relative md:min-h-[430px] md:border-white/10 md:bg-slate-950"
             >
-              {primary.imagemCapaUrl ? (
-                <img
-                  src={primary.imagemCapaUrl}
-                  alt=""
-                  className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
-                />
-              ) : (
-                <div className="from-primary absolute inset-0 bg-gradient-to-br to-slate-950" />
-              )}
-              <div className="absolute inset-0 bg-gradient-to-t from-black via-black/55 to-black/10" />
-              <div className="absolute inset-x-0 bottom-0 p-6 sm:p-8">
+              <div className="relative aspect-[16/10] overflow-hidden bg-slate-900 md:absolute md:inset-0 md:aspect-auto">
+                {primary.imagemCapaUrl ? (
+                  <img
+                    src={primary.imagemCapaUrl}
+                    alt=""
+                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
+                  />
+                ) : (
+                  <div className="from-primary h-full w-full bg-gradient-to-br to-slate-950" />
+                )}
+                <div className="absolute inset-0 hidden bg-gradient-to-t from-black via-black/55 to-black/10 md:block" />
+              </div>
+
+              <div className="relative p-5 sm:p-6 md:absolute md:inset-x-0 md:bottom-0 md:p-8">
                 <div className="mb-3 flex flex-wrap gap-2">
                   <Badge variant="default">
                     {primary.destaquePrincipal ? 'Destaque principal' : 'Destaque'}
                   </Badge>
-                  <Badge variant="outline" className="border-white/30 bg-black/20 text-white">
+                  <Badge
+                    variant="outline"
+                    className="md:border-white/30 md:bg-black/20 md:text-white"
+                  >
                     {primary.categoria}
                   </Badge>
                 </div>
-                <h1 className="font-display max-w-4xl text-balance text-3xl font-semibold leading-tight text-white sm:text-4xl">
+
+                <h1 className="font-display text-balance text-[1.7rem] font-semibold leading-[1.08] text-foreground sm:text-3xl md:max-w-4xl md:text-4xl md:text-white">
                   {primary.titulo}
                 </h1>
-                <p className="mt-3 max-w-3xl text-sm leading-relaxed text-white/80 sm:text-base">
+
+                <p className="text-muted mt-3 line-clamp-3 text-sm leading-relaxed sm:text-base md:max-w-3xl md:text-white/80">
                   {excerpt(primary, 220)}
                 </p>
-                <div className="mt-4 flex flex-wrap gap-x-4 gap-y-1 text-xs text-white/70">
+
+                <div className="text-muted mt-4 flex flex-wrap gap-x-4 gap-y-1 text-xs md:text-white/70">
                   <span>{formatDate(primary.dataPublicacao)}</span>
                   <span>{readingTime(primary)} min de leitura</span>
                   <span>{primary.contagemVisualizacoes} visualizações</span>
