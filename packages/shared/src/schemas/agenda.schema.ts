@@ -19,6 +19,8 @@ const jointLodgeReferenceSchema = z.object({
 export const eventSchema = z
   .object({
     tipo: z.enum(EVENT_KINDS),
+    agendaContext: z.enum(['loja', 'paramaconica', 'outro']).default('loja'),
+    paramasonicEntityId: z.string().min(1).nullable().default(null),
     titulo: z.string().min(1).max(200),
     descricao: z.string().max(2000).nullable(),
     local: z.string().min(1).max(200),
@@ -65,5 +67,9 @@ export const eventSchema = z
   .refine((data) => data.tipo !== 'sessao' || data.sessionType !== null, {
     message: 'Selecione o Tipo da Sessão.',
     path: ['sessionType'],
+  })
+  .refine((data) => data.agendaContext !== 'paramaconica' || data.paramasonicEntityId !== null, {
+    message: 'Selecione a entidade paramaçônica responsável pelo evento.',
+    path: ['paramasonicEntityId'],
   });
 export type EventFormValues = z.infer<typeof eventSchema>;
