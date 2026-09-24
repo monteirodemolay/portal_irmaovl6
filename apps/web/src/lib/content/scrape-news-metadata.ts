@@ -244,23 +244,71 @@ function isLikelyNonEditorialImage(url: string, attributes: string): boolean {
   return /\.(svg|gif)(\?|$)/i.test(url);
 }
 
+function canonicalWixImageUrl(value: string): string {
+  try {
+    const url = new URL(value);
+    const host = url.hostname.toLowerCase();
+    if (!host.endsWith('wixstatic.com')) return url.toString();
+
+    // Wix costuma servir a mesma foto em muitas variantes:
+    // /media/<asset>.jpg/v1/fill/w_320,h_240,... e /v1/fit/...
+    // O prefixo anterior a /v1/ aponta para o arquivo original em resolução máxima.
+    const v1Index = url.pathname.indexOf('/v1/');
+    if (v1Index > 0) {
+      url.pathname = url.pathname.slice(0, v1Index);
+      url.search = '';
+    }
+    return url.toString();
+  } catch {
+    return value;
+  }
+}
+
+function imageIdentity(value: string): string {
+  const canonical = canonicalWixImageUrl(value);
+  try {
+    const url = new URL(canonical);
+    return url.hostname.toLowerCase() + url.pathname;
+  } catch {
+    return canonical;
+  }
+}
+
+function extractSrcsetCandidates(attributes: string): string[] {
+  const raw =
+    attributes.match(/\b(?:srcset|data-srcset)\s*=\s*(["'])(.*?)\1/i)?.[2] ?? '';
+  if (!raw) return [];
+
+  return raw
+    .split(',')
+    .map((entry) => entry.trim().split(/\s+/)[0])
+    .filter((value): value is string => Boolean(value));
+}
+
 function extractAllImages(html: string, baseUrl: string): string[] {
-  const urls = new Set<string>();
+  const urls = new Map<string, string>();
 
   for (const match of html.matchAll(/<img\b([^>]*)>/gi)) {
     const attributes = match[1] ?? '';
-    const source = attributes.match(/\b(?:src|data-src)\s*=\s*(["'])(.*?)\1/i)?.[2];
-    if (!source) continue;
+    const candidates = [
+      attributes.match(/\b(?:src|data-src)\s*=\s*(["'])(.*?)\1/i)?.[2] ?? null,
+      ...extractSrcsetCandidates(attributes),
+    ].filter((value): value is string => Boolean(value));
 
-    const normalized = absoluteUrl(source, baseUrl);
-    if (!normalized || isLikelyNonEditorialImage(normalized, attributes)) continue;
+    for (const source of candidates) {
+      const normalized = absoluteUrl(source, baseUrl);
+      if (!normalized || isLikelyNonEditorialImage(normalized, attributes)) continue;
+      if (!(/\.(jpe?g|png|webp)(\?|$)/i.test(normalized) || normalized.includes('wixstatic.com'))) {
+        continue;
+      }
 
-    if (/\.(jpe?g|png|webp)(\?|$)/i.test(normalized) || normalized.includes('wixstatic.com')) {
-      urls.add(normalized);
+      const fullResolution = canonicalWixImageUrl(normalized);
+      const key = imageIdentity(fullResolution);
+      if (!urls.has(key)) urls.set(key, fullResolution);
     }
   }
 
-  return [...urls].slice(0, 30);
+  return [...urls.values()].slice(0, 30);
 }
 
 function stripImagesFromContent(contentHtml: string): string {
