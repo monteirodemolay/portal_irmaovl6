@@ -206,6 +206,12 @@ function parseEventForm(formData: FormData, capaUrl: string | null) {
   const dataFimRaw = formData.get('dataFim');
   const tipo = formData.get('tipo');
   const isSessao = tipo === 'sessao';
+  const agendaContextRaw = String(formData.get('agendaContext') || 'loja');
+  const agendaContext =
+    agendaContextRaw === 'paramaconica' || agendaContextRaw === 'outro'
+      ? agendaContextRaw
+      : 'loja';
+  const paramasonicEntityIdRaw = String(formData.get('paramasonicEntityId') || '').trim();
 
   // Campos de classificação da Sessão só existem no formulário quando
   // `tipo === 'sessao'` (ver `EventForm`) — fora disso ficam sempre `null`,
@@ -230,6 +236,11 @@ function parseEventForm(formData: FormData, capaUrl: string | null) {
 
   return eventSchema.parse({
     tipo,
+    agendaContext,
+    paramasonicEntityId:
+      agendaContext === 'paramaconica' && paramasonicEntityIdRaw
+        ? paramasonicEntityIdRaw
+        : null,
     titulo: formData.get('titulo'),
     descricao: formData.get('descricao') || null,
     local: formData.get('local'),
