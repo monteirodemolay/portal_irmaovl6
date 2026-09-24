@@ -1,4 +1,4 @@
-import type { Firestore, Query } from 'firebase-admin/firestore';
+import { FieldValue, type Firestore, type Query } from 'firebase-admin/firestore';
 import type { INewsRepository, News, PageRequest, PageResult } from '@vl6/domain';
 import { createEntityConverter } from '../converters/entity.converter';
 import { paginateInMemory } from '../paginate-in-memory';
@@ -90,6 +90,12 @@ export class FirestoreNewsRepository implements INewsRepository {
 
   async update(news: News): Promise<void> {
     await this.collection.doc(news.id).set(news);
+  }
+
+  async incrementViews(id: string): Promise<void> {
+    await this.db.collection(COLLECTION).doc(id).update({
+      contagemVisualizacoes: FieldValue.increment(1),
+    });
   }
 
   async hardDelete(id: string): Promise<void> {

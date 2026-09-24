@@ -21,8 +21,14 @@ function formatNewsDate(date: Date | null): string {
 export function NewsHighlights({ news }: { news: News[] }) {
   if (news.length === 0) return null;
 
-  const [main, ...rest] = news;
-  const secondary = rest.slice(0, 2);
+  const main =
+    news.find((item) => Boolean(item.destaquePrincipal)) ??
+    news.find((item) => Boolean(item.destaque)) ??
+    news[0];
+  const secondary = news
+    .filter((item) => item.id !== main?.id)
+    .sort((a, b) => Number(Boolean(b.destaque)) - Number(Boolean(a.destaque)))
+    .slice(0, 2);
 
   return (
     <Card className="flex flex-col gap-4 p-5 shadow-none">

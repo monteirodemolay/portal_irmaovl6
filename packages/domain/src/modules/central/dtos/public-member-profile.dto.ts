@@ -111,13 +111,34 @@ export interface PublicMemberProfileDTO {
   } | null;
   profissional: {
     profissao: string | null;
+    /**
+     * Empresa atual (`Member.empresa`) — cadastro administrativo/autoatendimento
+     * ("Empresa atual" em Meu Espaço), só pra contato entre colegas de
+     * trabalho. Nunca é a mesma coisa que `negocios` abaixo (divulgação
+     * pública de um negócio, com página própria) — até esta correção
+     * existia no cadastro mas nunca aparecia no perfil público.
+     */
+    empresa: string | null;
     areaAtuacao: string | null;
     areaAtuacaoKey: AreaAtuacaoKey | null;
     especializacao: string | null;
     formacao: string | null;
     resumoProfissional: string | null;
+    /**
+     * "Histórico Profissional" — currículo simplificado (empresas/cargos/
+     * períodos). Mesmo bloco `profissional` de visibilidade — o titular
+     * decide se aparece junto com profissão/área/formação, nunca separado.
+     */
+    historicoProfissional: MemberCentralProfile['historicoProfissional'];
   } | null;
   negocios: MemberCentralProfile['negocios'] | null;
+  /**
+   * "Formação Acadêmica" — currículo educacional (Ensino Infantil ao
+   * Pós-Doutorado). Mesmo bloco `profissional` de visibilidade que
+   * profissão/histórico profissional — nunca uma seção de privacidade
+   * separada.
+   */
+  formacaoAcademica: MemberCentralProfile['formacaoAcademica'] | null;
   competencias: string[] | null;
   servicos: string[] | null;
   afiliacoes: MemberCentralProfile['afiliacoes'] | null;
@@ -293,11 +314,13 @@ export function buildPublicMemberProfileDTO(
     profissional: blocks.profissional
       ? {
           profissao: member.profissao,
+          empresa: member.empresa,
           areaAtuacao: resolveAreaAtuacao(profile)?.label ?? null,
           areaAtuacaoKey: resolveAreaAtuacao(profile)?.key ?? null,
           especializacao: resolveEspecializacao(profile)?.label ?? null,
           formacao: profile?.formacao ?? null,
           resumoProfissional: profile?.resumoProfissional ?? null,
+          historicoProfissional: profile?.historicoProfissional ?? [],
         }
       : null,
     // Só negócios já aprovados pela Administração — rascunho/em revisão/
@@ -306,6 +329,7 @@ export function buildPublicMemberProfileDTO(
     negocios: blocks.empresa
       ? (profile?.negocios.filter((n) => n.status === 'published') ?? [])
       : null,
+    formacaoAcademica: blocks.profissional ? (profile?.formacaoAcademica ?? []) : null,
     competencias: blocks.competencias ? (profile?.competencias ?? []) : null,
     servicos: blocks.servicos ? (profile?.servicos ?? []) : null,
     afiliacoes: blocks.afiliacoes ? (profile?.afiliacoes ?? []) : null,

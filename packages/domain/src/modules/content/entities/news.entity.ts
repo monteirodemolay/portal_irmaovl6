@@ -8,6 +8,8 @@ export interface News extends BaseEntity {
   conteudoHtml: string;
   autorId: string;
   categoria: string;
+  destaque?: boolean;
+  destaquePrincipal?: boolean;
   publicado: boolean;
   dataPublicacao: Date | null;
   contagemVisualizacoes: number;

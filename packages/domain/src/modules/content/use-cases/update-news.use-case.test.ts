@@ -31,6 +31,8 @@ function buildNews(overrides: Partial<News> = {}): News {
     conteudoHtml: '<p>Conteúdo original</p>',
     autorId: 'admin-1',
     categoria: 'geral',
+    destaque: false,
+    destaquePrincipal: false,
     publicado: false,
     dataPublicacao: null,
     contagemVisualizacoes: 0,

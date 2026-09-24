@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 export const newsSchema = z.object({
   titulo: z.string().min(3).max(200),
-  subtitulo: z.string().max(300).nullable(),
+  subtitulo: z.string().nullable(),
   slug: z
     .string()
     .min(3)
@@ -11,6 +11,10 @@ export const newsSchema = z.object({
   imagemCapaUrl: z.string().url().nullable(),
   conteudoHtml: z.string().min(1),
   categoria: z.string().min(1),
+  /** Pode aparecer em áreas editoriais de destaque sem necessariamente ser a manchete principal. */
+  destaque: z.boolean().optional(),
+  /** Manchete editorial principal. A camada de aplicação garante apenas uma por tenant. */
+  destaquePrincipal: z.boolean().optional(),
   /** Data em que a notícia foi (ou será) considerada publicada — editável para corrigir o caso de notícias importadas de outra fonte, cuja publicação original é anterior à importação. */
   dataPublicacao: z.coerce.date().nullable(),
 });

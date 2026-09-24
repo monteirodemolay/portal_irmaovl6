@@ -70,7 +70,8 @@ export function ImportNewsPanel() {
           vl6.com.br/noticias
         </a>{' '}
         que você quer trazer pra cá — um link por linha. Cada uma entra como rascunho com título,
-        resumo e capa lidos da página; revise e complete o texto antes de publicar.
+        texto completo, imagens, capa e data de publicação quando a página disponibiliza esses dados.
+        Revise o resultado antes de publicar.
       </p>
       <Textarea
         rows={4}

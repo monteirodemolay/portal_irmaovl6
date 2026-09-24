@@ -49,6 +49,8 @@ function buildProfile(overrides: Partial<MemberCentralProfile> = {}): MemberCent
         updatedAt: new Date('2026-01-01'),
       },
     ],
+    historicoProfissional: [],
+    formacaoAcademica: [],
     competencias: [],
     servicos: [],
     afiliacoes: [],

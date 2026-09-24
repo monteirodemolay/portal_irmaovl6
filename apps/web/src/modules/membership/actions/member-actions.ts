@@ -467,7 +467,7 @@ export async function updateMemberProfileAction(
         ),
         dataCasamento: formData.has('dataCasamento')
           ? formData.get('dataCasamento') || null
-          : current.dataCasamento,
+          : (current.dataCasamento ?? null),
         filhos: jsonArrayOrCurrentAdmin(formData, 'filhos', current.filhos),
         biografia: current.biografia,
         redesSociais: current.redesSociais,

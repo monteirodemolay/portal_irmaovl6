@@ -134,13 +134,13 @@ export function AppShell({
 
   const itemLinkClass = (active: boolean) =>
     cn(
-      'focus-visible:ring-accent focus-visible:ring-offset-primary my-0.5 flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm text-white/90 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
+      'focus-visible:ring-accent focus-visible:ring-offset-primary my-0.5 flex min-h-10 w-full min-w-0 items-center gap-3 overflow-hidden rounded-lg px-3 py-2.5 text-left text-sm text-white/90 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
       active ? 'bg-accent text-primary-dark font-semibold' : 'hover:bg-white/10',
     );
 
   function renderNav() {
     return (
-      <nav className="flex flex-1 flex-col gap-0.5 overflow-y-auto px-3 py-2">
+      <nav className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-x-hidden overflow-y-auto px-4 py-2 [scrollbar-gutter:stable]">
         {sections.map((section, index) => (
           <div key={section.title ?? index} className="mb-1">
             {section.title && (
@@ -204,7 +204,7 @@ export function AppShell({
                           href={link.href}
                           className="focus-visible:ring-accent flex items-center justify-between gap-2 rounded-md px-2 py-2 text-sm text-white/80 hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2"
                         >
-                          <span>{link.label}</span>
+                          <span className="min-w-0 break-words">{link.label}</span>
                           {link.hint && <span className="text-xs text-white/45">{link.hint}</span>}
                         </Link>
                       ))}
@@ -222,13 +222,13 @@ export function AppShell({
 
   return (
     <div className="min-h-screen print:block">
-      <aside className="from-primary to-primary-dark fixed inset-y-0 left-0 z-10 hidden w-[260px] flex-col overflow-hidden border-r border-white/10 bg-gradient-to-b lg:flex print:hidden">
+      <aside className="from-primary to-primary-dark fixed inset-y-0 left-0 z-10 hidden w-[288px] flex-col overflow-hidden border-r border-white/10 bg-gradient-to-b lg:flex print:hidden">
         <div className="border-b border-white/10 px-5 py-5">{brand}</div>
         {renderNav()}
         {sidebarFooter && <div className="border-t border-white/10 px-5 py-4">{sidebarFooter}</div>}
       </aside>
 
-      <div className="min-w-0 lg:pl-[260px] print:pl-0">
+      <div className="min-w-0 lg:pl-[288px] print:pl-0">
         <header className="border-border bg-surface sticky top-0 z-20 flex h-[72px] items-center justify-between gap-4 border-b px-5 lg:px-7 print:hidden">
           <div className="flex items-center gap-3">
             <button
@@ -258,7 +258,7 @@ export function AppShell({
           />
           <div
             ref={mobilePanelRef}
-            className="from-primary to-primary-dark absolute inset-y-0 left-0 flex w-[270px] flex-col overflow-hidden bg-gradient-to-b shadow-md"
+            className="from-primary to-primary-dark absolute inset-y-0 left-0 flex w-[min(88vw,320px)] max-w-[calc(100vw-12px)] flex-col overflow-hidden bg-gradient-to-b shadow-md"
           >
             <div className="flex items-center justify-between gap-3 border-b border-white/10 px-5 py-5">
               {brand}

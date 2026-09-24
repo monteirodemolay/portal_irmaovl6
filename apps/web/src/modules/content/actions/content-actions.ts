@@ -13,7 +13,7 @@ import {
   type NewsFormValues,
 } from '@vl6/shared';
 import type { NotificationPriority } from '@vl6/shared';
-import type { AnnouncementPriority } from '@vl6/domain';
+import type { AnnouncementPriority, News } from '@vl6/domain';
 import { createServerContainer } from '@vl6/infra';
 import { requireSession } from '@/lib/auth/require-session';
 import { notifyAllActiveUsers } from '@/modules/notification/lib/notify-all-active-users';
@@ -61,12 +61,10 @@ export interface ImportNewsResult {
 /**
  * Importa uma not\u00edcia do site institucional (vl6.com.br) como rascunho,
  * a partir do link de uma not\u00edcia j\u00e1 publicada l\u00e1 \u2014 busca a p\u00e1gina no
- * servidor e l\u00ea os metadados Open Graph que o Wix j\u00e1 emite pra
- * pr\u00e9-visualiza\u00e7\u00e3o em redes sociais (t\u00edtulo, resumo, imagem de capa), sem
- * precisar de um scraper espec\u00edfico pra estrutura do site. Sempre entra
- * como rascunho (`CreateNewsUseCase`): o Administrador revisa e completa o
- * conte\u00fado antes de publicar \u2014 o resumo importado nunca \u00e9 o texto
- * completo da not\u00edcia original, s\u00f3 o que o Open Graph exp\u00f5e.
+ * servidor e extrai os metadados editoriais, o corpo completo e as imagens
+ * da publicação. A rotina prioriza JSON-LD e usa o HTML renderizado como
+ * fallback. Sempre entra como rascunho (`CreateNewsUseCase`) para revisão
+ * antes da publicação no Portal.
  */
 export async function importNewsFromUrlAction(url: string): Promise<ImportNewsResult> {
   const session = await requireSession();
@@ -78,10 +76,8 @@ export async function importNewsFromUrlAction(url: string): Promise<ImportNewsRe
 
   const container = createServerContainer();
   const baseSlug = slugify(scraped.title) || 'noticia';
-  const sourceNote = `<p><em>Importado de <a href="${escapeHtml(url)}">${escapeHtml(url)}</a>. Revise e complete o conte\u00fado antes de publicar.</em></p>`;
-  const conteudoHtml = scraped.description
-    ? `<p>${escapeHtml(scraped.description)}</p>\n${sourceNote}`
-    : sourceNote;
+  const sourceNote = `<p><em>Fonte original: <a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(url)}</a>.</em></p>`;
+  const conteudoHtml = `${scraped.contentHtml}\n${sourceNote}`;
 
   let imagemCapaUrl: string | null = null;
   if (scraped.image) {
@@ -106,6 +102,8 @@ export async function importNewsFromUrlAction(url: string): Promise<ImportNewsRe
         imagemCapaUrl,
         conteudoHtml,
         categoria: 'Not\u00edcias VL6',
+        destaque: false,
+        destaquePrincipal: false,
         dataPublicacao: scraped.publishedAt,
       });
     } catch {
@@ -137,7 +135,7 @@ export async function importNewsFromUrlAction(url: string): Promise<ImportNewsRe
   };
 }
 
-const IMPORTED_FROM_URL_REGEX = /Importado de <a href="([^"]+)">/;
+const IMPORTED_FROM_URL_REGEX = /(?:Importado de|Fonte original:)\s*<a href="([^"]+)"/;
 
 export interface BackfillNewsPublishedDateResult {
   newsId: string;
@@ -147,6 +145,100 @@ export interface BackfillNewsPublishedDateResult {
   dataNova: Date | null;
   error: string | null;
 }
+
+export interface ReimportImportedNewsResult {
+  newsId: string;
+  titulo: string;
+  url: string | null;
+  ok: boolean;
+  error: string | null;
+}
+
+/**
+ * Reimporta, em lote, todas as notícias que possuem vínculo com uma matéria
+ * original de vl6.com.br. Mantém o ID, slug, status de publicação, categoria
+ * e hierarquia editorial já existentes, mas atualiza título, subtítulo, capa,
+ * corpo completo, imagens e data original com o conteúdo atual da fonte.
+ *
+ * O link da fonte é sempre preservado de forma integral no rodapé da matéria.
+ */
+export async function reimportImportedNewsAction(): Promise<ReimportImportedNewsResult[]> {
+  const session = await requireSession();
+  const container = createServerContainer();
+  const page = await container.useCases.listAllNews.execute(session.authContext, { limit: 500 });
+  const results: ReimportImportedNewsResult[] = [];
+
+  for (const news of page.items) {
+    const match = news.conteudoHtml.match(IMPORTED_FROM_URL_REGEX);
+    if (!match?.[1]) continue;
+
+    const url = match[1].replace(/&amp;/g, '&');
+    const scraped = await scrapeNewsMetadata(url);
+
+    if (!scraped.ok) {
+      results.push({
+        newsId: news.id,
+        titulo: news.titulo,
+        url,
+        ok: false,
+        error: scraped.error,
+      });
+      continue;
+    }
+
+    let imagemCapaUrl: string | null = news.imagemCapaUrl;
+    if (scraped.image) {
+      try {
+        imagemCapaUrl = new URL(scraped.image).toString();
+      } catch {
+        imagemCapaUrl = news.imagemCapaUrl;
+      }
+    }
+
+    const sourceNote = `<p><em>Fonte original: <a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(url)}</a>.</em></p>`;
+
+    try {
+      const input = newsSchema.parse({
+        titulo: scraped.title,
+        subtitulo: scraped.description?.trim() || null,
+        slug: news.slug,
+        imagemCapaUrl,
+        conteudoHtml: `${scraped.contentHtml}\n${sourceNote}`,
+        categoria: news.categoria,
+        destaque: Boolean(news.destaque),
+        destaquePrincipal: Boolean(news.destaquePrincipal),
+        dataPublicacao: scraped.publishedAt ?? news.dataPublicacao,
+      });
+
+      const result = await container.useCases.updateNews.execute(session.authContext, news.id, input);
+
+      results.push({
+        newsId: news.id,
+        titulo: result.ok ? result.value.titulo : news.titulo,
+        url,
+        ok: result.ok,
+        error: result.ok ? null : result.error.message,
+      });
+    } catch (error) {
+      results.push({
+        newsId: news.id,
+        titulo: news.titulo,
+        url,
+        ok: false,
+        error: error instanceof Error ? error.message : 'Falha ao validar os dados importados.',
+      });
+    }
+  }
+
+  if (results.some((item) => item.ok)) {
+    revalidatePath('/admin/conteudo/noticias');
+    revalidatePath('/noticias');
+    revalidatePath('/dashboard');
+  }
+
+  return results;
+}
+
 
 /**
  * Corrige retroativamente a `dataPublicacao` de not\u00edcias importadas do site
@@ -189,6 +281,8 @@ export async function backfillNewsPublishedDatesAction(): Promise<
       imagemCapaUrl: news.imagemCapaUrl,
       conteudoHtml: news.conteudoHtml,
       categoria: news.categoria,
+      destaque: Boolean(news.destaque),
+      destaquePrincipal: Boolean(news.destaquePrincipal),
       dataPublicacao: scraped.publishedAt,
     });
     const result = await container.useCases.updateNews.execute(session.authContext, news.id, input);
@@ -225,6 +319,8 @@ export async function createNewsAction(
       imagemCapaUrl: formData.get('imagemCapaUrl') || null,
       conteudoHtml: formData.get('conteudoHtml'),
       categoria: formData.get('categoria'),
+      destaque: formData.get('destaque') === 'on' || formData.get('destaquePrincipal') === 'on',
+      destaquePrincipal: formData.get('destaquePrincipal') === 'on',
       dataPublicacao: formData.get('dataPublicacao') || null,
     });
   } catch {
@@ -235,7 +331,13 @@ export async function createNewsAction(
   const result = await container.useCases.createNews.execute(session.authContext, input);
   if (!result.ok) return { error: result.error.message };
 
+  if (result.value.destaquePrincipal) {
+    await enforceSinglePrimaryHighlight(container, session.authContext, result.value.id);
+  }
+
   revalidatePath('/admin/conteudo/noticias');
+  revalidatePath('/noticias');
+  revalidatePath('/dashboard');
   redirect(`/admin/conteudo/noticias/${result.value.id}`);
 }
 
@@ -255,6 +357,8 @@ export async function updateNewsAction(
       imagemCapaUrl: formData.get('imagemCapaUrl') || null,
       conteudoHtml: formData.get('conteudoHtml'),
       categoria: formData.get('categoria'),
+      destaque: formData.get('destaque') === 'on' || formData.get('destaquePrincipal') === 'on',
+      destaquePrincipal: formData.get('destaquePrincipal') === 'on',
       dataPublicacao: formData.get('dataPublicacao') || null,
     });
   } catch {
@@ -265,9 +369,85 @@ export async function updateNewsAction(
   const result = await container.useCases.updateNews.execute(session.authContext, newsId, input);
   if (!result.ok) return { error: result.error.message };
 
+  if (result.value.destaquePrincipal) {
+    await enforceSinglePrimaryHighlight(container, session.authContext, result.value.id);
+  }
+
   revalidatePath('/admin/conteudo/noticias');
   revalidatePath(`/admin/conteudo/noticias/${newsId}`);
+  revalidatePath('/noticias');
+  revalidatePath('/dashboard');
   return { error: null };
+}
+
+function newsToFormInput(news: News): NewsFormValues {
+  return {
+    titulo: news.titulo,
+    subtitulo: news.subtitulo,
+    slug: news.slug,
+    imagemCapaUrl: news.imagemCapaUrl,
+    conteudoHtml: news.conteudoHtml,
+    categoria: news.categoria,
+    destaque: Boolean(news.destaque),
+    destaquePrincipal: Boolean(news.destaquePrincipal),
+    dataPublicacao: news.dataPublicacao,
+  };
+}
+
+async function enforceSinglePrimaryHighlight(
+  container: ReturnType<typeof createServerContainer>,
+  authContext: Awaited<ReturnType<typeof requireSession>>['authContext'],
+  primaryId: string,
+): Promise<void> {
+  const page = await container.useCases.listAllNews.execute(authContext, { limit: 500 });
+  for (const item of page.items) {
+    if (item.id === primaryId || !item.destaquePrincipal) continue;
+    await container.useCases.updateNews.execute(authContext, item.id, {
+      ...newsToFormInput(item),
+      destaquePrincipal: false,
+    });
+  }
+}
+
+export async function toggleNewsFeaturedAction(newsId: string, destacar: boolean): Promise<void> {
+  const session = await requireSession();
+  const container = createServerContainer();
+  const current = await container.repositories.news.findById(newsId);
+  if (!current || current.tenantId !== session.authContext.tenantId) {
+    throw new Error('Notícia não encontrada.');
+  }
+
+  const result = await container.useCases.updateNews.execute(session.authContext, newsId, {
+    ...newsToFormInput(current),
+    destaque: destacar,
+    destaquePrincipal: destacar ? Boolean(current.destaquePrincipal) : false,
+  });
+  if (!result.ok) throw new Error(result.error.message);
+
+  revalidatePath('/admin/conteudo/noticias');
+  revalidatePath('/noticias');
+  revalidatePath('/dashboard');
+}
+
+export async function setNewsPrimaryHighlightAction(newsId: string): Promise<void> {
+  const session = await requireSession();
+  const container = createServerContainer();
+  const current = await container.repositories.news.findById(newsId);
+  if (!current || current.tenantId !== session.authContext.tenantId) {
+    throw new Error('Notícia não encontrada.');
+  }
+
+  const result = await container.useCases.updateNews.execute(session.authContext, newsId, {
+    ...newsToFormInput(current),
+    destaque: true,
+    destaquePrincipal: true,
+  });
+  if (!result.ok) throw new Error(result.error.message);
+
+  await enforceSinglePrimaryHighlight(container, session.authContext, newsId);
+  revalidatePath('/admin/conteudo/noticias');
+  revalidatePath('/noticias');
+  revalidatePath('/dashboard');
 }
 
 export async function toggleNewsPublishedAction(newsId: string, publicar: boolean): Promise<void> {

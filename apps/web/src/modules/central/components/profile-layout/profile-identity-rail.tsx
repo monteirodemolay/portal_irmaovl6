@@ -42,17 +42,35 @@ export function ProfileIdentityRail({
       : null,
   ].filter((fact): fact is { icon: typeof Compass; label: string; value: string } => fact !== null);
 
-  // "Perfil em resumo" (Cidade/Profissão/Área/Formação) — morava solto mais
-  // abaixo na coluna central, mas é a mesma natureza dos quickfacts acima
-  // (fatos rápidos sobre o Irmão), então passou a viver aqui, sem duplicar
-  // "Profissão" nos dois lugares.
-  const summaryRows: { label: string; value: string }[] = [
+  // "Perfil em resumo" (Cidade/Profissão/Empresa/Área/Formação) — morava
+  // solto mais abaixo na coluna central, mas é a mesma natureza dos
+  // quickfacts acima (fatos rápidos sobre o Irmão), então passou a viver
+  // aqui, sem duplicar "Profissão" nos dois lugares.
+  //
+  // "Empresa" prioriza o negócio publicado na Central (`negocios`, com
+  // página própria em `/irmaos/negocios/[id]`) quando existir — vira link.
+  // Sem negócio publicado, cai pro texto simples de `Member.empresa`
+  // ("Empresa atual", cadastro/autoatendimento, sem página própria).
+  const negocioPrincipal =
+    profile.negocios?.find((negocio) => negocio.principal) ?? profile.negocios?.[0] ?? null;
+  const empresaRow: { label: string; value: string; href?: string } | null = negocioPrincipal
+    ? {
+        label: 'Empresa',
+        value: negocioPrincipal.nomeEmpresa,
+        href: `/irmaos/negocios/${negocioPrincipal.id}`,
+      }
+    : profile.profissional?.empresa
+      ? { label: 'Empresa', value: profile.profissional.empresa }
+      : null;
+
+  const summaryRows: { label: string; value: string; href?: string }[] = [
     profile.informacoesPessoais?.cidadeExibicao
       ? { label: 'Cidade', value: profile.informacoesPessoais.cidadeExibicao }
       : null,
     profile.profissional?.profissao
       ? { label: 'Profissão', value: profile.profissional.profissao }
       : null,
+    empresaRow,
     profile.profissional?.areaAtuacao
       ? {
           label: 'Área',
@@ -64,7 +82,7 @@ export function ProfileIdentityRail({
     profile.profissional?.formacao
       ? { label: 'Formação', value: profile.profissional.formacao }
       : null,
-  ].filter((row): row is { label: string; value: string } => row !== null);
+  ].filter((row): row is { label: string; value: string; href?: string } => row !== null);
 
   return (
     <>
@@ -107,7 +125,12 @@ export function ProfileIdentityRail({
                 </p>
                 <dl className="flex flex-col gap-2.5">
                   {summaryRows.map((row) => (
-                    <SummaryRow key={row.label} label={row.label} value={row.value} />
+                    <SummaryRow
+                      key={row.label}
+                      label={row.label}
+                      value={row.value}
+                      href={row.href}
+                    />
                   ))}
                 </dl>
               </div>

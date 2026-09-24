@@ -32,6 +32,8 @@ export class UpdateNewsUseCase {
     const updated: News = {
       ...current,
       ...input,
+      destaque: input.destaque ?? Boolean(current.destaque),
+      destaquePrincipal: input.destaquePrincipal ?? Boolean(current.destaquePrincipal),
       updatedAt: this.deps.clock.now(),
       updatedBy: ctx.uid,
     };
