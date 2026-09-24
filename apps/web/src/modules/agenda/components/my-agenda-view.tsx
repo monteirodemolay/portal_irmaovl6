@@ -35,20 +35,25 @@ import { EventDetailPanel } from './event-detail-panel';
 import { MonthGrid } from './month-grid';
 import { WeekAgendaGrid } from './week-agenda-grid';
 import {
+  CATEGORY_BADGE_CLASS,
+  CATEGORY_LABELS,
   detectOverlaps,
   toCalendarItems,
-  SOURCE_BADGE_CLASS,
-  SOURCE_LABELS,
+  type AgendaAnniversarySummary,
+  type AgendaCategory,
   type CalendarItem,
-  type CalendarSource,
   type GoogleCalendarEventSummary,
 } from '../lib/calendar-item';
 
-const SOURCE_FILTERS: Array<{ value: CalendarSource | 'all'; label: string }> = [
+const CATEGORY_FILTERS: Array<{ value: AgendaCategory | 'all'; label: string }> = [
   { value: 'all', label: 'Tudo' },
-  { value: 'vl6', label: 'VL6' },
-  { value: 'google', label: 'Google' },
+  { value: 'sessao', label: 'Sessões' },
+  { value: 'evento', label: 'Eventos' },
+  { value: 'aniversario', label: 'Aniversários' },
+  { value: 'paramaconica', label: 'Paramaçônicas' },
+  { value: 'outra', label: 'Outras datas' },
   { value: 'personal', label: 'Pessoal' },
+  { value: 'google', label: 'Google' },
 ];
 
 function startOfDay(date: Date): Date {
@@ -72,6 +77,7 @@ function formatItemDate(date: Date): string {
 }
 
 function formatItemTime(item: CalendarItem): string {
+  if (item.isInformational) return 'Data comemorativa';
   const start = new Intl.DateTimeFormat('pt-BR', { timeStyle: 'short' }).format(item.inicio);
   if (!item.fim) return start;
   const end = new Intl.DateTimeFormat('pt-BR', { timeStyle: 'short' }).format(item.fim);
@@ -82,6 +88,8 @@ export interface MyAgendaViewProps {
   vl6Events: Event[];
   personalEvents: PersonalEvent[];
   googleEvents: GoogleCalendarEventSummary[];
+  anniversaries: AgendaAnniversarySummary[];
+  paramasonicEntityNames: Record<string, string>;
   personalNotes: PersonalNote[];
 }
 
@@ -89,12 +97,14 @@ export function MyAgendaView({
   vl6Events,
   personalEvents,
   googleEvents,
+  anniversaries,
+  paramasonicEntityNames,
   personalNotes,
 }: MyAgendaViewProps) {
   const agenda = useAgendaOptional();
   const router = useRouter();
-  const [view, setView] = useState('lista');
-  const [sourceFilter, setSourceFilter] = useState<CalendarSource | 'all'>('vl6');
+  const [view, setView] = useState('mes');
+  const [categoryFilter, setCategoryFilter] = useState<AgendaCategory | 'all'>('all');
   const [sessionFilter, setSessionFilter] =
     useState<SessionClassificationFilter>(EMPTY_SESSION_FILTER);
   const [selectedDay, setSelectedDay] = useState<Date>(() => new Date());
@@ -106,17 +116,34 @@ export function MyAgendaView({
   }>({ open: false, event: null, defaultStart: null });
 
   const allItems = useMemo(
-    () => toCalendarItems(vl6Events, personalEvents, googleEvents),
-    [vl6Events, personalEvents, googleEvents],
+    () =>
+      toCalendarItems(
+        vl6Events,
+        personalEvents,
+        googleEvents,
+        anniversaries,
+        paramasonicEntityNames,
+      ),
+    [vl6Events, personalEvents, googleEvents, anniversaries, paramasonicEntityNames],
   );
   const overlapping = useMemo(() => detectOverlaps(allItems), [allItems]);
 
   const filteredItems = useMemo(
     () =>
       allItems
-        .filter((item) => sourceFilter === 'all' || item.source === sourceFilter)
+        .filter((item) => categoryFilter === 'all' || item.category === categoryFilter)
         .filter((item) => matchesSessionFilter(item, sessionFilter)),
-    [allItems, sourceFilter, sessionFilter],
+    [allItems, categoryFilter, sessionFilter],
+  );
+
+  const overview = useMemo(
+    () => ({
+      sessoes: allItems.filter((item) => item.category === 'sessao').length,
+      eventos: allItems.filter((item) => item.category === 'evento').length,
+      aniversarios: allItems.filter((item) => item.category === 'aniversario').length,
+      paramaconicas: allItems.filter((item) => item.category === 'paramaconica').length,
+    }),
+    [allItems],
   );
 
   const now = new Date();
@@ -139,16 +166,9 @@ export function MyAgendaView({
     return agenda !== null && agenda.events.some((event) => event.id === item.id);
   }
 
-  /**
-   * Item da Loja: abre direto a gaveta institucional (a mesma usada em todo
-   * o resto do Portal) — nunca mais o painel simples só pra isso, sem passo
-   * intermediário de "Ver detalhes completos". Fora da janela carregada
-   * pela gaveta (evento muito distante/antigo — raro), cai na ficha
-   * completa em `/eventos/[eventId]`, que já tem confirmação de presença.
-   * Pessoal/Google continuam no painel simples (`EventDetailPanel`).
-   */
   function handleSelectItem(item: CalendarItem) {
-    if (item.source === 'vl6' && !item.isBirthday) {
+    if (item.isInformational) return;
+    if (item.source === 'vl6') {
       if (isVl6InDrawer(item)) {
         agenda?.openAgenda(item.id, {});
       } else {
@@ -159,51 +179,95 @@ export function MyAgendaView({
     setSelectedItem(item);
   }
 
+  const overviewCards: Array<{
+    label: string;
+    value: number;
+    category: AgendaCategory;
+    helper: string;
+  }> = [
+    { label: 'Sessões', value: overview.sessoes, category: 'sessao', helper: 'Agenda maçônica' },
+    { label: 'Eventos', value: overview.eventos, category: 'evento', helper: 'Atividades da Loja' },
+    {
+      label: 'Aniversariantes',
+      value: overview.aniversarios,
+      category: 'aniversario',
+      helper: 'Irmãos e família',
+    },
+    {
+      label: 'Paramaçônicas',
+      value: overview.paramaconicas,
+      category: 'paramaconica',
+      helper: 'Entidades vinculadas',
+    },
+  ];
+
   return (
     <div className="flex flex-col gap-5">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <Tabs value={view} onValueChange={setView}>
-          <TabsList className="border-none">
-            <TabsTrigger value="hoje">Hoje</TabsTrigger>
-            <TabsTrigger value="semana">Semana</TabsTrigger>
-            <TabsTrigger value="mes">Mês</TabsTrigger>
-            <TabsTrigger value="lista">Lista</TabsTrigger>
-          </TabsList>
-        </Tabs>
-
-        <div className="hidden items-center gap-2 sm:flex">
+      <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+        {overviewCards.map((card) => (
           <button
+            key={card.category}
             type="button"
-            onClick={() => openNewPersonal()}
-            className="bg-primary hover:bg-primary-dark flex h-9 items-center gap-1.5 rounded-lg px-3 text-xs font-semibold text-white transition-colors"
-          >
-            <Plus size={14} />
-            Novo compromisso
-          </button>
-        </div>
-      </div>
-
-      <div className="flex flex-wrap gap-2">
-        {SOURCE_FILTERS.map((filter) => (
-          <button
-            key={filter.value}
-            type="button"
-            onClick={() => setSourceFilter(filter.value)}
+            onClick={() => setCategoryFilter(card.category)}
             className={cn(
-              'h-8 rounded-full border px-3 text-xs font-semibold transition-colors',
-              sourceFilter === filter.value
-                ? 'bg-primary border-primary text-white'
-                : 'border-border text-muted hover:text-foreground bg-white',
+              'border-border bg-white hover:border-primary/40 flex min-h-24 flex-col rounded-xl border p-4 text-left transition-colors',
+              categoryFilter === card.category && 'border-primary ring-primary/10 ring-2',
             )}
           >
-            {filter.label}
+            <span className="text-muted text-[11px] font-semibold uppercase tracking-wide">
+              {card.label}
+            </span>
+            <span className="font-display mt-1 text-2xl font-semibold">{card.value}</span>
+            <span className="text-muted mt-auto text-xs">{card.helper}</span>
           </button>
         ))}
       </div>
 
-      {sourceFilter !== 'personal' && sourceFilter !== 'google' && (
-        <SessionClassificationFilters value={sessionFilter} onChange={setSessionFilter} />
-      )}
+      <div className="border-border flex flex-col gap-4 rounded-xl border bg-white p-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <Tabs value={view} onValueChange={setView}>
+            <TabsList className="border-none">
+              <TabsTrigger value="hoje">Hoje</TabsTrigger>
+              <TabsTrigger value="semana">Semana</TabsTrigger>
+              <TabsTrigger value="mes">Mês</TabsTrigger>
+              <TabsTrigger value="lista">Lista</TabsTrigger>
+            </TabsList>
+          </Tabs>
+
+          <div className="hidden items-center gap-2 sm:flex">
+            <button
+              type="button"
+              onClick={() => openNewPersonal()}
+              className="bg-primary hover:bg-primary-dark flex h-9 items-center gap-1.5 rounded-lg px-3 text-xs font-semibold text-white transition-colors"
+            >
+              <Plus size={14} />
+              Novo compromisso
+            </button>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          {CATEGORY_FILTERS.map((filter) => (
+            <button
+              key={filter.value}
+              type="button"
+              onClick={() => setCategoryFilter(filter.value)}
+              className={cn(
+                'h-8 rounded-full border px-3 text-xs font-semibold transition-colors',
+                categoryFilter === filter.value
+                  ? 'bg-primary border-primary text-white'
+                  : 'border-border text-muted hover:text-foreground bg-white',
+              )}
+            >
+              {filter.label}
+            </button>
+          ))}
+        </div>
+
+        {(categoryFilter === 'all' || categoryFilter === 'sessao') && (
+          <SessionClassificationFilters value={sessionFilter} onChange={setSessionFilter} />
+        )}
+      </div>
 
       <Tabs value={view} onValueChange={setView}>
         <TabsContent value="hoje">
@@ -226,7 +290,7 @@ export function MyAgendaView({
         </TabsContent>
 
         <TabsContent value="mes">
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-[320px_minmax(0,1fr)]">
+          <div className="grid grid-cols-1 gap-4 xl:grid-cols-[340px_minmax(0,1fr)]">
             <MonthGrid
               items={filteredItems}
               selectedDate={selectedDay}
@@ -295,7 +359,6 @@ export function MyAgendaView({
   );
 }
 
-/** `'all'` = sem filtro naquele campo — nunca aplicado a itens fora de `source: 'vl6'` ou sem classificação (não-Sessão, Sessão legada não migrada). */
 interface SessionClassificationFilter {
   sessionType: SessionType | 'all';
   sessionNature: string | 'all';
@@ -319,7 +382,7 @@ function matchesSessionFilter(item: CalendarItem, filter: SessionClassificationF
   ) {
     return true;
   }
-  if (!item.session) return item.source !== 'vl6';
+  if (!item.session) return item.category !== 'sessao';
   return (
     (filter.sessionType === 'all' || item.session.sessionType === filter.sessionType) &&
     (filter.sessionNature === 'all' || item.session.sessionNature === filter.sessionNature) &&
@@ -340,7 +403,7 @@ function SessionClassificationFilters({
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <span className="text-muted text-xs font-semibold">Sessões:</span>
+      <span className="text-muted text-xs font-semibold">Detalhar Sessões:</span>
       <Select
         value={value.sessionType}
         onChange={(e) =>
@@ -475,10 +538,10 @@ function CalendarItemRow({
           <span
             className={cn(
               'shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold',
-              SOURCE_BADGE_CLASS[item.source],
+              CATEGORY_BADGE_CLASS[item.category],
             )}
           >
-            {SOURCE_LABELS[item.source]}
+            {CATEGORY_LABELS[item.category]}
           </span>
         </div>
         <div className="text-muted mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs">
@@ -492,6 +555,7 @@ function CalendarItemRow({
               {item.local}
             </span>
           )}
+          {item.contextLabel && <span>{item.contextLabel}</span>}
         </div>
         {hasConflict && (
           <p className="mt-1 flex items-center gap-1 text-xs font-medium text-red-600">
@@ -505,7 +569,7 @@ function CalendarItemRow({
 
   const rowClassName = 'flex items-center gap-3 px-4 py-3 text-left transition-colors';
 
-  if (item.isBirthday) {
+  if (item.isInformational) {
     return <div className={cn(rowClassName, 'cursor-default')}>{content}</div>;
   }
 
