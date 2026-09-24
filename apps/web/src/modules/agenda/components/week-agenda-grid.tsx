@@ -10,6 +10,7 @@ const CATEGORY_DOT_CLASS: Record<AgendaCategory, string> = {
   sessao: 'bg-primary',
   evento: 'bg-sky-500',
   aniversario: 'bg-amber-500',
+  recesso: 'bg-teal-500',
   paramaconica: 'bg-violet-500',
   outra: 'bg-slate-500',
   personal: 'bg-emerald-500',
