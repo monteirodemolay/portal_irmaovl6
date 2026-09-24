@@ -18,7 +18,6 @@ export default async function EditEventPage({ params }: { params: Promise<{ even
   const paramasonicEntities = (
     await container.repositories.paramasonicEntity.listByTenant(session.authContext.tenantId)
   )
-    .filter((entity) => entity.situacao !== 'inativa')
     .sort((a, b) => a.shortName.localeCompare(b.shortName, 'pt-BR'))
     .map((entity) => ({
       id: entity.id,
