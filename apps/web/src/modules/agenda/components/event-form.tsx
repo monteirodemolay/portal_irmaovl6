@@ -51,18 +51,28 @@ function toDatetimeLocalValue(date: Date | null): string | undefined {
   )}:${pad(date.getMinutes())}`;
 }
 
+export interface AgendaParamasonicEntityOption {
+  id: string;
+  label: string;
+}
+
 export function EventForm({
   event,
   initialAttachments = [],
+  paramasonicEntities = [],
 }: {
   /** Presente = modo edição (pré-preenche e salva via `updateEventAction`); ausente = criação. */
   event?: Event;
   initialAttachments?: ResolvedArchiveItem[];
+  paramasonicEntities?: AgendaParamasonicEntityOption[];
 }) {
   const action = event ? updateEventAction.bind(null, event.id) : createEventAction;
   const [state, formAction] = useActionState<AgendaActionState, FormData>(action, EMPTY_STATE);
 
   const [tipo, setTipo] = useState(event?.tipo ?? '');
+  const [agendaContext, setAgendaContext] = useState<'loja' | 'paramaconica' | 'outro'>(
+    event?.agendaContext ?? 'loja',
+  );
   const isSessao = tipo === 'sessao';
 
   const [sessionType, setSessionType] = useState<SessionType | ''>(event?.sessionType ?? '');
@@ -154,6 +164,52 @@ export function EventForm({
           ))}
         </Select>
       </FormField>
+
+      <div className="border-border bg-surface flex flex-col gap-3 rounded-xl border p-4">
+        <div>
+          <p className="text-sm font-semibold">Origem na Agenda Central</p>
+          <p className="text-muted mt-0.5 text-xs">
+            Define em qual área institucional o compromisso será apresentado.
+          </p>
+        </div>
+        <FormField label="Contexto" htmlFor="agendaContext">
+          <Select
+            id="agendaContext"
+            name="agendaContext"
+            value={agendaContext}
+            onChange={(e) =>
+              setAgendaContext(e.target.value as 'loja' | 'paramaconica' | 'outro')
+            }
+          >
+            <option value="loja">Loja Verdadeira Luz nº 06</option>
+            <option value="paramaconica">Entidade Paramaçônica</option>
+            <option value="outro">Outra atividade</option>
+          </Select>
+        </FormField>
+        {agendaContext === 'paramaconica' && (
+          <FormField
+            label="Entidade Paramaçônica"
+            htmlFor="paramasonicEntityId"
+            description="O evento continuará sendo único; este vínculo apenas define sua origem e seus filtros na Agenda."
+          >
+            <Select
+              id="paramasonicEntityId"
+              name="paramasonicEntityId"
+              required
+              defaultValue={event?.paramasonicEntityId ?? ''}
+            >
+              <option value="" disabled>
+                Selecione…
+              </option>
+              {paramasonicEntities.map((entity) => (
+                <option key={entity.id} value={entity.id}>
+                  {entity.label}
+                </option>
+              ))}
+            </Select>
+          </FormField>
+        )}
+      </div>
 
       {isSessao && (
         <div className="border-border flex flex-col gap-4 rounded-lg border p-3">
