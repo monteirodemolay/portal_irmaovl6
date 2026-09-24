@@ -209,6 +209,9 @@ export default async function AgendaPage({
           <Button asChild variant="outline">
             <Link href={`${BASE_PATH}/classificacao-migracao`}>Classificar Sessões</Link>
           </Button>
+          <Button asChild variant="outline">
+            <Link href={`${BASE_PATH}/novo?tipo=recesso`}>Cadastrar Recesso</Link>
+          </Button>
           <Button asChild>
             <Link href={`${BASE_PATH}/novo`}>Novo Evento</Link>
           </Button>
