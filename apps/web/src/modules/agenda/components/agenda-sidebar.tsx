@@ -4,6 +4,7 @@ import { PersonalTasksWidget } from './personal-tasks-widget';
 import { QuickAccessQrCode } from './quick-access-qr-card';
 import { StoreAgendaQuickCard } from './store-agenda-quick-card';
 import { GoogleConnectionCard } from '@/modules/integrations/components/google-connection-card';
+import { CalendarSubscriptionCard } from './calendar-subscription-card';
 
 function SidebarSection({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -41,6 +42,7 @@ export function AgendaSidebar({
       <SidebarSection label="Integrações">
         <div className="flex flex-col gap-4">
           <GoogleConnectionCard connection={googleConnection} />
+          <CalendarSubscriptionCard />
           <QuickAccessQrCode />
         </div>
       </SidebarSection>

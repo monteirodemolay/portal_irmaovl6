@@ -2,14 +2,18 @@
 
 import { useMemo, useState } from 'react';
 import { ChevronLeft, ChevronRight, Plus, cn } from '@vl6/ui';
-import type { CalendarItem, CalendarSource } from '../lib/calendar-item';
+import type { AgendaCategory, CalendarItem } from '../lib/calendar-item';
 
 const WEEKDAY_LABELS = ['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SÁB'];
 
-const SOURCE_DOT_CLASS: Record<CalendarSource, string> = {
-  vl6: 'bg-primary',
-  google: 'bg-purple-500',
+const CATEGORY_DOT_CLASS: Record<AgendaCategory, string> = {
+  sessao: 'bg-primary',
+  evento: 'bg-sky-500',
+  aniversario: 'bg-amber-500',
+  paramaconica: 'bg-violet-500',
+  outra: 'bg-slate-500',
   personal: 'bg-emerald-500',
+  google: 'bg-purple-500',
 };
 
 function dateKey(date: Date): string {
@@ -168,8 +172,10 @@ function WeekItemChip({
 }) {
   const content = (
     <>
-      <span className={cn('h-1.5 w-1.5 shrink-0 rounded-full', SOURCE_DOT_CLASS[item.source])} />
-      <span className="text-muted shrink-0">{formatTime(item.inicio)}</span>
+      <span className={cn('h-1.5 w-1.5 shrink-0 rounded-full', CATEGORY_DOT_CLASS[item.category])} />
+      <span className="text-muted shrink-0">
+        {item.isInformational ? 'dia' : formatTime(item.inicio)}
+      </span>
       <span className="truncate">{item.titulo}</span>
     </>
   );
@@ -181,7 +187,7 @@ function WeekItemChip({
 
   const title = hasConflict ? `${item.titulo} — conflito de horário` : item.titulo;
 
-  if (item.isBirthday) {
+  if (item.isInformational) {
     return (
       <div className={cn(chipClass, 'cursor-default')} title={title}>
         {content}

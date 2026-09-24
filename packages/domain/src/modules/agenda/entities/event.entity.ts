@@ -11,6 +11,10 @@ import type { BaseEntity } from '../../../shared/base-entity';
 
 export interface Event extends BaseEntity {
   tipo: EventKind;
+  /** Contexto de exibição na Agenda Central. Eventos legados assumem `loja`. */
+  agendaContext?: 'loja' | 'paramaconica' | 'outro';
+  /** Entidade paramaçônica vinculada quando `agendaContext === 'paramaconica'`. */
+  paramasonicEntityId?: string | null;
   titulo: string;
   descricao: string | null;
   local: string;

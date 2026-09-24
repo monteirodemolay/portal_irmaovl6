@@ -2,9 +2,19 @@
 
 import { useMemo, useState } from 'react';
 import { ChevronLeft, ChevronRight, cn } from '@vl6/ui';
-import type { CalendarItem } from '../lib/calendar-item';
+import type { AgendaCategory, CalendarItem } from '../lib/calendar-item';
 
 const WEEKDAY_LABELS = ['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SÁB'];
+
+const CATEGORY_DOT_CLASS: Record<AgendaCategory, string> = {
+  sessao: 'bg-primary',
+  evento: 'bg-sky-500',
+  aniversario: 'bg-amber-500',
+  paramaconica: 'bg-violet-500',
+  outra: 'bg-slate-500',
+  personal: 'bg-emerald-500',
+  google: 'bg-purple-500',
+};
 
 function capitalize(text: string): string {
   return text.charAt(0).toUpperCase() + text.slice(1);
@@ -110,7 +120,16 @@ export function MonthGrid({ items, selectedDate, onSelectDate }: MonthGridProps)
             >
               {cell.day}
               {dayItems.length > 0 && !isSelected && (
-                <span className="bg-primary absolute bottom-1 h-1 w-1 rounded-full" />
+                <span className="absolute bottom-1 flex gap-0.5">
+                  {[...new Set(dayItems.map((item) => item.category))]
+                    .slice(0, 3)
+                    .map((category) => (
+                      <span
+                        key={category}
+                        className={cn('h-1 w-1 rounded-full', CATEGORY_DOT_CLASS[category])}
+                      />
+                    ))}
+                </span>
               )}
             </button>
           );

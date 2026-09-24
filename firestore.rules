@@ -248,6 +248,12 @@ service cloud.firestore {
       allow create: if isSignedIn() && isOwner(request.resource.data, 'userId') && sameTenant(request.resource.data);
     }
 
+    // Tokens-bearer da assinatura Apple/Outlook. Somente o backend Admin SDK
+    // acessa esta coleção; nunca há leitura ou escrita direta pelo cliente.
+    match /calendarFeedTokens/{id} {
+      allow read, write: if false;
+    }
+
     // ---------------------------------------------------------------
     // Content
     // ---------------------------------------------------------------
