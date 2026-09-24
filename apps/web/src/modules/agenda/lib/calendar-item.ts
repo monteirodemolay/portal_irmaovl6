@@ -150,7 +150,7 @@ export function toCalendarItems(
             : event.agendaContext === 'outro'
               ? 'Outra atividade'
               : 'Verdadeira Luz nº 06',
-        isInformational: event.tipo === 'aniversario',
+        isInformational: event.tipo === 'aniversario' || event.tipo === 'recesso',
         isBirthday: event.tipo === 'aniversario',
         session:
           event.tipo === 'sessao' && event.sessionType && event.sessionNature
