@@ -4,6 +4,7 @@ export const EVENT_KINDS = [
   'curso',
   'palestra',
   'confraternizacao',
+  'recesso',
   'aniversario',
 ] as const;
 export type EventKind = (typeof EVENT_KINDS)[number];
@@ -14,6 +15,7 @@ export const EVENT_KIND_LABELS: Record<EventKind, string> = {
   curso: 'Curso',
   palestra: 'Palestra',
   confraternizacao: 'Confraternização',
+  recesso: 'Recesso Maçônico',
   aniversario: 'Aniversário',
 };
 
