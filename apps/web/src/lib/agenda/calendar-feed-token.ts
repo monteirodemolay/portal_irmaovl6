@@ -79,14 +79,9 @@ export async function findCalendarFeedOwnerByToken(
   if (token.length < 32 || token.length > 128) return null;
 
   const db = getAdminFirestore();
-  const snap = await db
-    .collection(COLLECTION)
-    .where('token', '==', token)
-    .where('active', '==', true)
-    .limit(1)
-    .get();
+  const snap = await db.collection(COLLECTION).where('token', '==', token).limit(1).get();
 
   const data = snap.docs[0]?.data() as CalendarFeedTokenDocument | undefined;
-  if (!data?.tenantId || !data.userId) return null;
+  if (!data?.tenantId || !data.userId || data.active !== true) return null;
   return { tenantId: data.tenantId, userId: data.userId };
 }
