@@ -210,65 +210,75 @@ function sanitizeImportedHtml(source: string, baseUrl: string): string {
   return normalizeWhitespace(html);
 }
 
+function extractMainHtml(html: string): string {
+  return html.match(/<main\b[^>]*>([\s\S]*?)<\/main>/i)?.[1] ?? html;
+}
+
+function isLikelyNonEditorialImage(url: string, attributes: string): boolean {
+  const alt = attributes.match(/\balt\s*=\s*(["'])(.*?)\1/i)?.[2] ?? '';
+  const label = decodeHtmlEntities(url + ' ' + alt).toLocaleLowerCase('pt-BR');
+
+  const blockedTerms = [
+    'logo',
+    'favicon',
+    'icon',
+    'avatar',
+    'placeholder',
+    'sprite',
+    'brasao',
+    'brasão',
+    'portal do irmão',
+    'portal do irmao',
+    'portal vl6',
+    'grande loja',
+    'gleg',
+    'selo',
+    'assinatura',
+  ];
+  if (blockedTerms.some((term) => label.includes(term))) return true;
+
+  const width = Number(attributes.match(/\bwidth\s*=\s*(["'])?(\d+)\1?/i)?.[2] ?? 0);
+  const height = Number(attributes.match(/\bheight\s*=\s*(["'])?(\d+)\1?/i)?.[2] ?? 0);
+  if (width > 0 && height > 0 && (width < 320 || height < 180)) return true;
+
+  return /\.(svg|gif)(\?|$)/i.test(url);
+}
+
 function extractAllImages(html: string, baseUrl: string): string[] {
   const urls = new Set<string>();
 
-  for (const match of html.matchAll(/<img\b[^>]*(?:src|data-src)\s*=\s*(["'])(.*?)\1/gi)) {
-    const value = match[2];
-    if (!value) continue;
-    const normalized = absoluteUrl(value, baseUrl);
-    if (!normalized) continue;
+  for (const match of html.matchAll(/<img\b([^>]*)>/gi)) {
+    const attributes = match[1] ?? '';
+    const source = attributes.match(/\b(?:src|data-src)\s*=\s*(["'])(.*?)\1/i)?.[2];
+    if (!source) continue;
 
-    const lower = normalized.toLowerCase();
-    if (
-      lower.includes('logo') ||
-      lower.includes('favicon') ||
-      lower.includes('icon') ||
-      lower.includes('avatar') ||
-      lower.includes('placeholder') ||
-      lower.includes('sprite')
-    ) {
-      continue;
+    const normalized = absoluteUrl(source, baseUrl);
+    if (!normalized || isLikelyNonEditorialImage(normalized, attributes)) continue;
+
+    if (/\.(jpe?g|png|webp)(\?|$)/i.test(normalized) || normalized.includes('wixstatic.com')) {
+      urls.add(normalized);
     }
-    urls.add(normalized);
   }
 
-  for (const match of html.matchAll(/background-image:\s*url\((?:"|')?([^"')]+)(?:"|')?\)/gi)) {
-    const value = match[1];
-    if (!value) continue;
-    const normalized = absoluteUrl(value, baseUrl);
-    if (!normalized) continue;
-    const lower = normalized.toLowerCase();
-    if (
-      lower.includes('logo') ||
-      lower.includes('favicon') ||
-      lower.includes('icon') ||
-      lower.includes('avatar') ||
-      lower.includes('placeholder') ||
-      lower.includes('sprite')
-    ) {
-      continue;
-    }
-    urls.add(normalized);
-  }
-
-  return [...urls]
-    .filter((url) => /\.(jpe?g|png|webp)(\?|$)/i.test(url) || url.includes('wixstatic.com'))
-    .slice(0, 40);
+  return [...urls].slice(0, 30);
 }
 
-function appendMissingImages(contentHtml: string, images: string[]): string {
-  const missing = images.filter((url) => !contentHtml.includes(url));
-  if (missing.length === 0) return contentHtml;
+function stripImagesFromContent(contentHtml: string): string {
+  return normalizeWhitespace(
+    contentHtml
+      .replace(/<figure\b[^>]*>[\s\S]*?<img\b[\s\S]*?<\/figure>/gi, '')
+      .replace(/<img\b[^>]*>/gi, ''),
+  );
+}
 
-  const gallery = missing
-    .map(
-      (url) =>
-        `<figure><img src="${escapeHtml(url)}" alt="" loading="lazy" /></figure>`,
-    )
+function appendImageGallery(contentHtml: string, images: string[]): string {
+  if (images.length === 0) return contentHtml;
+
+  const gallery = images
+    .map((url) => '<figure><img src="' + escapeHtml(url) + '" alt="" loading="lazy" /></figure>')
     .join('\n');
 
-  return `${contentHtml}\n${gallery}`;
+  return contentHtml + '\n<div data-news-gallery="true">\n' + gallery + '\n</div>';
 }
 
 async function fetchWithTimeout(url: string): Promise<Response> {
@@ -307,8 +317,8 @@ export type ScrapeNewsMetadataResult =
  * A origem é deliberadamente restrita a vl6.com.br para evitar SSRF. Primeiro
  * tenta o JSON-LD de Article/NewsArticle/BlogPosting (que normalmente contém o
  * corpo completo do post no Wix); depois usa article/main renderizado como
- * fallback. Todas as imagens encontradas são normalizadas para URL absoluta e
- * anexadas ao HTML quando não estavam no corpo extraído.
+ * fallback. As imagens são coletadas apenas na região editorial (article/main),
+ * filtradas para remover logos/ícones e agrupadas em uma galeria própria.
  */
 export async function scrapeNewsMetadata(pageUrl: string): Promise<ScrapeNewsMetadataResult> {
   let parsedUrl: URL;
@@ -368,7 +378,9 @@ export async function scrapeNewsMetadata(pageUrl: string): Promise<ScrapeNewsMet
   const publishedAt = publishedRaw ? new Date(publishedRaw) : null;
 
   const articleBody = extractArticleBodyHtml(html, article);
-  const images = extractAllImages(html, parsedUrl.toString());
+  const imageSource =
+    articleBody && /<img\b/i.test(articleBody) ? articleBody : extractMainHtml(html);
+  const images = extractAllImages(imageSource, parsedUrl.toString());
   const cover =
     extractJsonLdImage(article, parsedUrl.toString()) ??
     (meta.image ? absoluteUrl(meta.image, parsedUrl.toString()) : null) ??
@@ -378,10 +390,14 @@ export async function scrapeNewsMetadata(pageUrl: string): Promise<ScrapeNewsMet
   let contentHtml = articleBody
     ? sanitizeImportedHtml(articleBody, parsedUrl.toString())
     : description
-      ? `<p>${escapeHtml(description)}</p>`
+      ? '<p>' + escapeHtml(description) + '</p>'
       : '';
 
-  contentHtml = appendMissingImages(contentHtml, images);
+  contentHtml = stripImagesFromContent(contentHtml);
+  contentHtml = appendImageGallery(
+    contentHtml,
+    images.filter((url) => url !== cover),
+  );
 
   if (!contentHtml.trim()) {
     return {

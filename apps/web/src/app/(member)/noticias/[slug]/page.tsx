@@ -21,6 +21,22 @@ function readingTime(html: string): number {
   return Math.max(1, Math.ceil(words / 220));
 }
 
+function splitNewsGallery(html: string): { bodyHtml: string; images: string[] } {
+  const galleryMatch = html.match(/<div data-news-gallery="true">([\s\S]*?)<\/div>/i);
+  if (!galleryMatch) return { bodyHtml: html, images: [] };
+
+  const images: string[] = [];
+  const galleryHtml = galleryMatch[1] ?? '';
+  for (const match of galleryHtml.matchAll(/<img\b[^>]*\bsrc\s*=\s*(["'])(.*?)\1/gi)) {
+    if (match[2]) images.push(match[2].replace(/&amp;/g, '&'));
+  }
+
+  return {
+    bodyHtml: html.replace(galleryMatch[0], '').trim(),
+    images: [...new Set(images)],
+  };
+}
+
 export default async function PublicNewsDetailPage({
   params,
 }: {
@@ -45,6 +61,7 @@ export default async function PublicNewsDetailPage({
   const related = relatedPage.items
     .filter((item) => item.id !== news.id && item.categoria === news.categoria)
     .slice(0, 3);
+  const { bodyHtml, images: galleryImages } = splitNewsGallery(news.conteudoHtml);
 
   return (
     <article className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
@@ -85,8 +102,41 @@ export default async function PublicNewsDetailPage({
 
           <div
             className="prose prose-slate mx-auto mt-8 max-w-3xl prose-headings:font-display prose-img:rounded-xl"
-            dangerouslySetInnerHTML={{ __html: news.conteudoHtml }}
+            dangerouslySetInnerHTML={{ __html: bodyHtml }}
           />
+
+          {galleryImages.length > 0 && (
+            <section className="mx-auto mt-10 max-w-5xl">
+              <div className="mb-4 flex items-end justify-between gap-4">
+                <div>
+                  <p className="text-accent text-xs font-semibold uppercase tracking-[0.18em]">
+                    Galeria
+                  </p>
+                  <h2 className="font-display mt-1 text-2xl font-semibold">Fotos da notícia</h2>
+                </div>
+                <span className="text-muted text-xs">
+                  {galleryImages.length} {galleryImages.length === 1 ? 'imagem' : 'imagens'}
+                </span>
+              </div>
+              <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-3">
+                {galleryImages.map((url, index) => (
+                  <a
+                    key={url}
+                    href={url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={index === 0 && galleryImages.length > 2 ? 'col-span-2 row-span-2' : ''}
+                  >
+                    <img
+                      src={url}
+                      alt={'Foto ' + (index + 1) + ' de ' + news.titulo}
+                      className="aspect-[4/3] h-full w-full rounded-xl object-cover transition-opacity hover:opacity-90"
+                    />
+                  </a>
+                ))}
+              </div>
+            </section>
+          )}
 
           <div className="border-border mx-auto mt-10 max-w-3xl border-t pt-7">
             <h2 className="font-display text-2xl font-semibold">Comentários</h2>
