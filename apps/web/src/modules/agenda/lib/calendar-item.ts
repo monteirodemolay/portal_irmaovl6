@@ -105,16 +105,11 @@ function eventCategory(event: Event): AgendaCategory {
   return 'evento';
 }
 
-function dayKey(date: Date): string {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
+function normalizeTitle(titulo: string): string {
+  return titulo.trim().toLocaleLowerCase('pt-BR');
 }
 
-function anniversaryKey(titulo: string, date: Date): string {
-  return `${dayKey(date)}|${titulo.trim().toLocaleLowerCase('pt-BR')}`;
-}
+const BIRTHDAY_DEDUP_TOLERANCE_MS = 36 * 60 * 60 * 1000;
 
 export function toCalendarItems(
   vl6: Event[],
@@ -123,17 +118,17 @@ export function toCalendarItems(
   anniversaries: AgendaAnniversarySummary[] = [],
   paramasonicEntityNames: Record<string, string> = {},
 ): CalendarItem[] {
-  const virtualAnniversaryKeys = new Set(
-    anniversaries
-      .filter((item) => item.kind === 'nascimento')
-      .map((item) => anniversaryKey(item.titulo, item.inicio)),
-  );
+  const virtualBirthdays = anniversaries.filter((item) => item.kind === 'nascimento');
 
-  const persistedVl6 = vl6.filter(
-    (event) =>
-      event.tipo !== 'aniversario' ||
-      !virtualAnniversaryKeys.has(anniversaryKey(event.titulo, event.dataInicio)),
-  );
+  const persistedVl6 = vl6.filter((event) => {
+    if (event.tipo !== 'aniversario') return true;
+    return !virtualBirthdays.some(
+      (virtual) =>
+        normalizeTitle(virtual.titulo) === normalizeTitle(event.titulo) &&
+        Math.abs(virtual.inicio.getTime() - event.dataInicio.getTime()) <=
+          BIRTHDAY_DEDUP_TOLERANCE_MS,
+    );
+  });
 
   const items: CalendarItem[] = [
     ...persistedVl6.map(
