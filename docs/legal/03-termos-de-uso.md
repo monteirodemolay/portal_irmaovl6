@@ -1,7 +1,7 @@
 # Termos de Uso — Portal do Irmão VL6
 
 > **Versão:** 1.0.0 · **Vigência a partir de:** 23/09/2026 · **Aprovada por:** Diretoria VL6
-> **Documento fonte:** redigido a partir de `docs/legal/01-inventario-dados-lgpd.md` (auditoria direta do código-fonte em 22/09/2026). Pontos que dependem de decisão institucional ou validação jurídica estão marcados **[A VALIDAR]**.
+> **Documento fonte:** redigido a partir de `docs/legal/01-inventario-dados-lgpd.md` (auditoria direta do código-fonte em 22/09/2026).
 > Este documento é independente da Política de Privacidade (`docs/legal/02-politica-privacidade.md`) e deve ser lido em conjunto com ela.
 
 ---
@@ -32,7 +32,7 @@ O cadastro do Irmão no Diretório é realizado pela Secretaria da Loja, manualm
 
 Um Irmão já cadastrado no Diretório, mas sem conta de acesso ativa, pode reivindicar seu próprio acesso informando seu nome (selecionado de uma lista pública que exibe **apenas nomes**, sem qualquer outro dado pessoal) e confirmando sua identidade por meio do número de sua Carteira de Identidade Maçônica (CIM). Após a confirmação, o Irmão define seu próprio e-mail e senha de acesso.
 
-**[A VALIDAR]** A concessão de acesso por essa via é imediata, sem fila de aprovação administrativa adicional, por decisão institucional de agilidade no acesso. A Loja recomenda que Irmãos mantenham seus dados de CIM em sigilo pessoal, já que esse número funciona como credencial de verificação de identidade nesse fluxo.
+A concessão de acesso por essa via é imediata, sem fila de aprovação administrativa adicional, por decisão institucional de agilidade no acesso. A Loja recomenda que Irmãos mantenham seus dados de CIM em sigilo pessoal, já que esse número funciona como credencial de verificação de identidade nesse fluxo.
 
 ### 3.3 Autenticidade das informações
 
@@ -159,4 +159,4 @@ Fica eleito o foro da comarca de Rio Verde, Estado de Goiás, sede da Loja Maç�
 
 ---
 
-_Esta é uma minuta técnica preparada a partir da auditoria de código-fonte do Portal. Antes da publicação oficial, deve ser revisada por advogado especialista em Direito Digital, que deverá se pronunciar em especial sobre os pontos marcados **[A VALIDAR]** ao longo do texto, incluindo a adequação ao Estatuto e ao Regimento Interno da Loja VL6._
+_Estes Termos de Uso foram redigidos a partir da auditoria direta do código-fonte do Portal e aprovados pela Diretoria da Loja VL6 como sua versão 1.0.0, vigente a partir da data indicada no topo deste documento._
