@@ -27,10 +27,13 @@ export interface BackfillMestreInstaladoTitlesResult {
  * existir no sistema (`grantMestreInstaladoTitleIfNeeded`, chamado
  * automaticamente dali em diante em `AssignBoardPositionUseCase`,
  * `RegisterMemberSituationUseCase` e `ImportHistoricalBoardTermsUseCase`).
- * Considera a data de fim MAIS ANTIGA em que o Irmão deixou o cargo (a
- * primeira vez que virou Mestre Instalado, mesmo que tenha voltado a ser
- * Venerável depois). Seguro rodar quantas vezes for preciso — idempotente
- * por Irmão.
+ * Um Irmão que exerceu o cargo em mais de uma gestão recebe um título por
+ * gestão concluída (cada mandato como Venerável Mestre vira um Mestre
+ * Instalado próprio) — por isso este backfill percorre TODO o histórico de
+ * mandatos como Venerável Mestre com data de fim, não só o mais antigo por
+ * Irmão. Seguro rodar quantas vezes for preciso: a idempotência por gestão
+ * (mesma data de concessão) é garantida dentro de
+ * `grantMestreInstaladoTitleIfNeeded`.
  */
 export class BackfillMestreInstaladoTitlesUseCase {
   constructor(private readonly deps: BackfillMestreInstaladoTitlesDeps) {}
@@ -43,37 +46,31 @@ export class BackfillMestreInstaladoTitlesUseCase {
       (entry) => entry.cargo === 'veneravel_mestre' && entry.dataFim !== null,
     );
 
-    const earliestEndByMember = new Map<string, Date>();
-    for (const entry of pastVeneraveis) {
-      const current = earliestEndByMember.get(entry.memberId);
-      if (!current || entry.dataFim!.getTime() < current.getTime()) {
-        earliestEndByMember.set(entry.memberId, entry.dataFim!);
-      }
-    }
-
+    const memberNameCache = new Map<string, string | null>();
     const membrosConcedidos: Array<{ memberId: string; nomeCompleto: string }> = [];
-    for (const [memberId, dataFim] of earliestEndByMember) {
-      const existingTitles = await this.deps.memberTitleRepository.listByMemberId(
-        ctx.tenantId,
-        memberId,
-      );
-      if (existingTitles.some((title) => title.titulo === 'mestre_instalado')) continue;
 
-      const member = await this.deps.memberRepository.findById(memberId);
-      if (!member) continue;
+    for (const entry of pastVeneraveis) {
+      if (!memberNameCache.has(entry.memberId)) {
+        const member = await this.deps.memberRepository.findById(entry.memberId);
+        memberNameCache.set(entry.memberId, member?.nomeCompleto ?? null);
+      }
+      const nomeCompleto = memberNameCache.get(entry.memberId);
+      if (!nomeCompleto) continue;
 
-      await grantMestreInstaladoTitleIfNeeded(this.deps, {
+      const granted = await grantMestreInstaladoTitleIfNeeded(this.deps, {
         tenantId: ctx.tenantId,
-        memberId,
-        dataFimCargo: dataFim,
+        memberId: entry.memberId,
+        dataFimCargo: entry.dataFim!,
         uid: ctx.uid,
         fundamento: 'Concedido automaticamente por ter exercido o cargo de Venerável Mestre.',
       });
-      membrosConcedidos.push({ memberId, nomeCompleto: member.nomeCompleto });
+      if (granted) {
+        membrosConcedidos.push({ memberId: entry.memberId, nomeCompleto });
+      }
     }
 
     return ok({
-      totalExVeneraveis: earliestEndByMember.size,
+      totalExVeneraveis: new Set(pastVeneraveis.map((entry) => entry.memberId)).size,
       titulosConcedidos: membrosConcedidos.length,
       membrosConcedidos,
     });

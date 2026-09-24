@@ -210,7 +210,10 @@ describe('AssignBoardPositionUseCase', () => {
     expect(await memberTitleRepository.listByMemberId('t1', 'm2')).toHaveLength(0);
   });
 
-  it('não duplica o título de Mestre Instalado se o Irmão já tiver', async () => {
+  it('concede um novo Mestre Instalado mesmo se o Irmão já tiver um de outra gestão', async () => {
+    // Correção de regra: um Irmão pode ser Venerável Mestre mais de uma vez, e cada
+    // gestão concluída gera seu próprio título de Mestre Instalado (antes, um Irmão
+    // nunca acumulava um segundo registro — regra institucional revista).
     const { useCase, boardTermRepository, memberRepository, memberTitleRepository } =
       buildUseCase();
     await boardTermRepository.create(term);
@@ -243,6 +246,46 @@ describe('AssignBoardPositionUseCase', () => {
       gestaoId: 'term-1',
       cargo: 'veneravel_mestre',
       memberId: 'm2',
+      ordem: 1,
+    });
+
+    const titles = await memberTitleRepository.listByMemberId('t1', 'm1');
+    expect(titles).toHaveLength(2);
+    expect(titles.map((t) => t.dataConcessao?.toISOString().slice(0, 10)).sort()).toEqual([
+      '2010-01-01',
+      '2026-06-02',
+    ]);
+  });
+
+  it('não duplica o título de Mestre Instalado para o mesmo encerramento de gestão', async () => {
+    const { useCase, boardTermRepository, memberRepository, memberTitleRepository } =
+      buildUseCase();
+    await boardTermRepository.create(term);
+    await memberRepository.create(buildMember('m1'));
+    // Concessão já registrada para o MESMO dia que este encerramento geraria
+    // (clock fixo em 2026-06-01 -> concessão em 2026-06-02) — simula reprocessamento
+    // do mesmo evento, que não deve duplicar.
+    await memberTitleRepository.create({
+      id: 'title-pre',
+      tenantId: 't1',
+      memberId: 'm1',
+      titulo: 'mestre_instalado',
+      tituloOutro: null,
+      dataConcessao: new Date('2026-06-02'),
+      fundamento: null,
+      createdAt: new Date('2026-06-02'),
+      updatedAt: new Date('2026-06-02'),
+      createdBy: 'admin-1',
+      updatedBy: 'admin-1',
+      deletedAt: null,
+      status: 'active',
+      ativo: true,
+    });
+
+    await useCase.execute(ctx, {
+      gestaoId: 'term-1',
+      cargo: 'veneravel_mestre',
+      memberId: 'm1',
       ordem: 1,
     });
 

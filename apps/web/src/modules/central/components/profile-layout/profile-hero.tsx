@@ -69,19 +69,6 @@ export function ProfileHero({
           )}
         </div>
       </div>
-
-      {/* A data de iniciação já aparece na coluna de identidade ("Ingresso
-          na Loja") e na linha do tempo — repeti-la aqui era redundante. A
-          passagem ao Oriente Eterno continua, é o único selo de estado que
-          só existe nesta faixa. */}
-      {isInMemoriam && profile.dataFalecimento && (
-        <div className="relative border-t border-white/10 px-6 py-3 text-center text-xs text-white/60 min-[620px]:text-left sm:px-8">
-          <span className="flex items-center justify-center gap-1.5 min-[620px]:justify-start">
-            <Cross size={12} strokeWidth={1.75} />
-            Passou ao Oriente Eterno em {formatDate(profile.dataFalecimento)}
-          </span>
-        </div>
-      )}
     </section>
   );
 }
@@ -89,10 +76,17 @@ export function ProfileHero({
 function StatusBadge({ profile }: { profile: PublicMemberProfileDTO }) {
   if (profile.situacao === 'falecido') {
     return (
-      <span className="flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-3.5 py-1.5 text-xs font-bold uppercase tracking-wide">
-        <Cross size={13} strokeWidth={2} />
-        In Memoriam
-      </span>
+      <div className="flex flex-col items-center gap-1 min-[620px]:items-end">
+        <span className="flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-3.5 py-1.5 text-xs font-bold uppercase tracking-wide">
+          <Cross size={13} strokeWidth={2} />
+          In Memoriam
+        </span>
+        {profile.dataFalecimento && (
+          <span className="text-[11px] text-white/55">
+            Passou ao Oriente Eterno em {formatDate(profile.dataFalecimento)}
+          </span>
+        )}
+      </div>
     );
   }
 
