@@ -12,7 +12,7 @@ export interface RelationNodeOption {
 }
 
 const ARCHIVE_ITEM_KIND_BY_SEARCH_KIND: Record<
-  Exclude<ArchiveSearchKind, 'evento'>,
+  Exclude<ArchiveSearchKind, 'evento' | 'noticia'>,
   ArchiveItemKind
 > = {
   documento: 'file',
@@ -63,13 +63,16 @@ export async function loadRelationNodeOptions(
     label: collection.titulo,
   }));
 
-  // Itens do Acervo novo (kind 'evento') já entram na Constelação como nó
-  // 'event' (mesmo Evento, ID canônico) — não têm mapeamento de ID
-  // composto legado, e criar um segundo nó pro mesmo evento duplicaria a
-  // Constelação sem necessidade.
+  // Eventos entram na Constelação pelo nó canônico 'event'. Notícias são
+  // resultados de memória editorial pesquisáveis, mas não são ArchiveItem
+  // formais e portanto não devem ser convertidas em nó archiveItem.
   const archiveItemOptions: RelationNodeOption[] = archiveItems
-    .filter((item): item is typeof item & { kind: Exclude<ArchiveSearchKind, 'evento'> } =>
-      item.kind !== 'evento',
+    .filter(
+      (
+        item,
+      ): item is typeof item & {
+        kind: Exclude<ArchiveSearchKind, 'evento' | 'noticia'>;
+      } => item.kind !== 'evento' && item.kind !== 'noticia',
     )
     .map((item) => ({
       tipo: 'archiveItem',
