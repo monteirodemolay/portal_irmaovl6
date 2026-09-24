@@ -50,14 +50,6 @@ function escapeHtml(value: string): string {
     .replace(/'/g, '&#39;');
 }
 
-function truncateText(value: string | null | undefined, maxLength: number): string | null {
-  if (!value) return null;
-  const normalized = value.trim();
-  if (!normalized) return null;
-  if (normalized.length <= maxLength) return normalized;
-  return `${normalized.slice(0, Math.max(0, maxLength - 1)).trimEnd()}…`;
-}
-
 export interface ImportNewsResult {
   ok: boolean;
   url: string;
@@ -208,7 +200,7 @@ export async function reimportImportedNewsAction(): Promise<ReimportImportedNews
     try {
       const input = newsSchema.parse({
         titulo: scraped.title,
-        subtitulo: truncateText(scraped.description, 300),
+        subtitulo: scraped.description?.trim() || null,
         slug: news.slug,
         imagemCapaUrl,
         conteudoHtml: `${scraped.contentHtml}\n${sourceNote}`,
