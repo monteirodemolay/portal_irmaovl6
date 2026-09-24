@@ -298,6 +298,43 @@ async function fetchWithTimeout(url: string): Promise<Response> {
   }
 }
 
+export interface ScrapedNewsMedia {
+  url: string;
+  kind: 'image' | 'video' | 'document';
+}
+
+function extractLinkedMedia(html: string, baseUrl: string): ScrapedNewsMedia[] {
+  const media = new Map<string, ScrapedNewsMedia>();
+
+  for (const url of extractAllImages(html, baseUrl)) {
+    media.set(url, { url, kind: 'image' });
+  }
+
+  for (const match of html.matchAll(/<(?:video|source)\b([^>]*)>/gi)) {
+    const attributes = match[1] ?? '';
+    const src = attributes.match(/\bsrc\s*=\s*(["'])(.*?)\1/i)?.[2];
+    if (!src) continue;
+    const normalized = absoluteUrl(src, baseUrl);
+    if (!normalized) continue;
+    const type = attributes.match(/\btype\s*=\s*(["'])(.*?)\1/i)?.[2]?.toLowerCase() ?? '';
+    if (type.startsWith('video/') || /\.(mp4|webm|mov|m4v)(?:\?|$)/i.test(normalized)) {
+      media.set(normalized, { url: normalized, kind: 'video' });
+    }
+  }
+
+  for (const match of html.matchAll(/<a\b[^>]*\bhref\s*=\s*(["'])(.*?)\1/gi)) {
+    const normalized = absoluteUrl(match[2] ?? '', baseUrl);
+    if (!normalized) continue;
+    if (/\.(pdf|docx?|xlsx?|pptx?)(?:\?|$)/i.test(normalized)) {
+      media.set(normalized, { url: normalized, kind: 'document' });
+    } else if (/\.(mp4|webm|mov|m4v)(?:\?|$)/i.test(normalized)) {
+      media.set(normalized, { url: normalized, kind: 'video' });
+    }
+  }
+
+  return [...media.values()].slice(0, 60);
+}
+
 export type ScrapeNewsMetadataResult =
   | {
       ok: true;
@@ -306,6 +343,7 @@ export type ScrapeNewsMetadataResult =
       image: string | null;
       contentHtml: string;
       images: string[];
+      media: ScrapedNewsMedia[];
       /** Data de publicação original, priorizando JSON-LD e depois Open Graph. */
       publishedAt: Date | null;
     }
@@ -381,6 +419,7 @@ export async function scrapeNewsMetadata(pageUrl: string): Promise<ScrapeNewsMet
   const imageSource =
     articleBody && /<img\b/i.test(articleBody) ? articleBody : extractMainHtml(html);
   const images = extractAllImages(imageSource, parsedUrl.toString());
+  const media = extractLinkedMedia(imageSource, parsedUrl.toString());
   const cover =
     extractJsonLdImage(article, parsedUrl.toString()) ??
     (meta.image ? absoluteUrl(meta.image, parsedUrl.toString()) : null) ??
@@ -414,6 +453,7 @@ export async function scrapeNewsMetadata(pageUrl: string): Promise<ScrapeNewsMet
     image: cover,
     contentHtml,
     images,
+    media,
     publishedAt: publishedAt && !Number.isNaN(publishedAt.getTime()) ? publishedAt : null,
   };
 }

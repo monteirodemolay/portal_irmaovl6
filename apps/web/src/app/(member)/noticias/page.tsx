@@ -170,7 +170,7 @@ export default async function PublicNewsPage({
 
         <button
           type="submit"
-          className="bg-primary text-primary-foreground h-11 rounded-xl px-5 text-sm font-semibold"
+          className="bg-primary text-white h-11 rounded-xl px-5 text-sm font-semibold"
         >
           Filtrar
         </button>
@@ -180,7 +180,7 @@ export default async function PublicNewsPage({
         <Link
           href={buildHref({ category: null, query, year: selectedYear })}
           className={`whitespace-nowrap rounded-full border px-4 py-2 text-sm transition-colors ${
-            !selectedCategory ? 'bg-primary text-primary-foreground border-primary' : 'border-border bg-surface'
+            !selectedCategory ? 'bg-primary text-white border-primary' : 'border-border bg-surface'
           }`}
         >
           Todas
@@ -191,7 +191,7 @@ export default async function PublicNewsPage({
             href={buildHref({ category, query, year: selectedYear })}
             className={`whitespace-nowrap rounded-full border px-4 py-2 text-sm transition-colors ${
               selectedCategory === category
-                ? 'bg-primary text-primary-foreground border-primary'
+                ? 'bg-primary text-white border-primary'
                 : 'border-border bg-surface'
             }`}
           >

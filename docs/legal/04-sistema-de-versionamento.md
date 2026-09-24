@@ -128,3 +128,16 @@ A publicação também expôs um problema separado: `legalDocument:read`/`legalD
 Adicionado também um error boundary dedicado (`apps/web/src/app/(member)/error.tsx`) para que um erro de permissão nesse estilo não resulte em página em branco, e sim numa mensagem com botão de "Tentar novamente".
 
 **Nota (superada por §7):** o `PublishLegalDocumentVersionUseCase` continua sem disparar `notifyAllActiveUsers` sozinho — isso é responsabilidade de quem chama o Use Case. A UI de administração (`/admin/configuracoes/termos-e-privacidade/editar/[documento]`) já aciona a notificação quando "exigir novo aceite" está marcado; só publicar via script/Use Case direto ainda exige disparar a notificação manualmente.
+
+
+## 9. Registro de alteração — 24/09/2026
+
+### 1.1.0 — Integração automática Notícias ↔ Acervo
+
+- **Classificação:** `nova_funcionalidade` / `mudanca_operacional`
+- **Impacto:** baixo
+- **Motivo:** permitir que notícias institucionais vinculadas a Eventos/Sessões preservem automaticamente no Acervo VL6 suas fotos, vídeos diretos e documentos, sem confundir a data editorial da matéria com a data histórica do acontecimento.
+- **Itens alterados:** Inventário LGPD §3.7; Política de Privacidade §17.2; Termos de Uso §8.2-A.
+- **Novo terceiro/subprocessador:** não. O armazenamento continua no Vercel Blob já declarado.
+- **Nova finalidade:** não; trata-se de extensão operacional da finalidade já declarada de preservação da memória histórica institucional.
+- **Exige novo aceite:** **não**. A mudança não amplia a finalidade, não cria novo compartilhamento externo e não altera direitos/obrigações dos usuários; documenta uma nova forma técnica de incorporar ao Acervo conteúdo institucional já publicado pela própria Loja.

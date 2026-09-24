@@ -18,6 +18,7 @@ import { createServerContainer } from '@vl6/infra';
 import { requireSession } from '@/lib/auth/require-session';
 import { notifyAllActiveUsers } from '@/modules/notification/lib/notify-all-active-users';
 import { scrapeNewsMetadata } from '@/lib/content/scrape-news-metadata';
+import { syncNewsMediaToArchive } from '@/lib/content/sync-news-media-to-archive';
 
 const ANNOUNCEMENT_PRIORITY_TO_NOTIFICATION_PRIORITY: Record<
   AnnouncementPriority,
@@ -214,6 +215,17 @@ export async function reimportImportedNewsAction(): Promise<ReimportImportedNews
 
       const result = await container.useCases.updateNews.execute(session.authContext, news.id, input);
 
+      if (result.ok && result.value.eventId) {
+        await syncNewsMediaToArchive({
+          container,
+          authContext: session.authContext,
+          news: result.value,
+          previousEventId: news.eventId ?? null,
+          sourceUrl: url,
+          scrapedMedia: scraped.media,
+        });
+      }
+
       results.push({
         newsId: news.id,
         titulo: result.ok ? result.value.titulo : news.titulo,
@@ -355,6 +367,16 @@ export async function createNewsAction(
     await enforceSinglePrimaryHighlight(container, session.authContext, result.value.id);
   }
 
+  if (result.value.eventId) {
+    const sourceMatch = result.value.conteudoHtml.match(IMPORTED_FROM_URL_REGEX);
+    await syncNewsMediaToArchive({
+      container,
+      authContext: session.authContext,
+      news: result.value,
+      sourceUrl: sourceMatch?.[1]?.replace(/&amp;/g, '&') ?? null,
+    });
+  }
+
   revalidatePath('/admin/conteudo/noticias');
   revalidatePath('/noticias');
   revalidatePath('/dashboard');
@@ -390,6 +412,7 @@ export async function updateNewsAction(
   }
 
   const container = createServerContainer();
+  const previousNews = await container.repositories.news.findById(newsId);
   const eventLinkError = await validateNewsEventLink(container, session.authContext.tenantId, input.eventId);
   if (eventLinkError) return { error: eventLinkError };
 
@@ -399,6 +422,15 @@ export async function updateNewsAction(
   if (result.value.destaquePrincipal) {
     await enforceSinglePrimaryHighlight(container, session.authContext, result.value.id);
   }
+
+  const sourceMatch = result.value.conteudoHtml.match(IMPORTED_FROM_URL_REGEX);
+  await syncNewsMediaToArchive({
+    container,
+    authContext: session.authContext,
+    news: result.value,
+    previousEventId: previousNews?.eventId ?? null,
+    sourceUrl: sourceMatch?.[1]?.replace(/&amp;/g, '&') ?? null,
+  });
 
   revalidatePath('/admin/conteudo/noticias');
   revalidatePath(`/admin/conteudo/noticias/${newsId}`);

@@ -210,7 +210,7 @@ export default async function AllNewsPage({
 
           <button
             type="submit"
-            className="bg-primary text-primary-foreground h-11 rounded-xl px-5 text-sm font-semibold"
+            className="bg-primary text-white h-11 rounded-xl px-5 text-sm font-semibold"
           >
             Aplicar filtros
           </button>
@@ -346,7 +346,7 @@ export default async function AllNewsPage({
                           aria-current={pageNumber === currentPage ? 'page' : undefined}
                           className={
                             pageNumber === currentPage
-                              ? 'bg-primary text-primary-foreground flex h-9 min-w-9 items-center justify-center rounded-lg px-2 text-sm font-semibold'
+                              ? 'bg-primary text-white flex h-9 min-w-9 items-center justify-center rounded-lg px-2 text-sm font-semibold'
                               : 'border-border bg-surface hover:border-primary flex h-9 min-w-9 items-center justify-center rounded-lg border px-2 text-sm font-medium'
                           }
                         >
@@ -421,7 +421,7 @@ export default async function AllNewsPage({
                   })}
                   className={
                     selectedYear === String(year)
-                      ? 'bg-primary text-primary-foreground rounded-full px-3 py-1.5 text-xs font-semibold'
+                      ? 'bg-primary text-white rounded-full px-3 py-1.5 text-xs font-semibold'
                       : 'border-border hover:border-primary rounded-full border px-3 py-1.5 text-xs'
                   }
                 >

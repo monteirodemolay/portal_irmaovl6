@@ -97,6 +97,10 @@ O Acervo Histórico da Loja VL6 constitui patrimônio institucional. Fotografias
 
 Qualquer Irmão pode submeter fotografias, documentos ou relatos históricos para avaliação e inclusão no Acervo, sujeitos à moderação administrativa. **Ao enviar uma contribuição, o Irmão declara possuir os direitos necessários sobre o material enviado (ou autorização de quem os detém) e concede à Loja VL6 licença não exclusiva, gratuita e por prazo indeterminado, para reprodução, exibição e divulgação institucional desse material, dentro do Portal e em materiais oficiais da Loja, preservados os créditos de autoria quando identificáveis.**
 
+### 8.2-A Conteúdo institucional já publicado
+
+Materiais que já integrem notícias e publicações oficiais da própria Loja podem ser incorporados automaticamente ao Acervo Histórico quando a notícia for vinculada administrativamente ao Evento ou Sessão correspondente. Essa incorporação pode abranger fotografias, vídeos diretos e documentos da publicação original e tem por finalidade preservar a memória institucional, mantendo a proveniência da notícia e o contexto histórico do Evento. A automação não autoriza a importação irrestrita de conteúdo de terceiros nem substitui a revisão administrativa das relações históricas.
+
 ### 8.3 Biblioteca
 
 Obras digitais e físicas disponibilizadas na Biblioteca seguem as regras de circulação (prazo de empréstimo, disponibilidade) definidas pela administração. A autoria de cada obra é preservada e exibida quando informada.

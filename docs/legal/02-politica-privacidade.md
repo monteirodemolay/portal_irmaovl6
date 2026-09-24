@@ -186,6 +186,8 @@ São de responsabilidade de quem as envia (o próprio Irmão, no caso de sua fot
 
 Fotografias, documentos e demais materiais do Acervo Histórico constituem patrimônio da Loja VL6. A identificação de pessoas em fotografias históricas é feita manualmente por administradores autorizados — o Portal não utiliza reconhecimento facial automatizado.
 
+Quando uma notícia institucional do site oficial da Loja (`vl6.com.br`) é vinculada por um administrador a um Evento ou Sessão do Acervo, o Portal pode importar automaticamente para o Acervo as fotografias, vídeos diretos e documentos que integrem a área editorial dessa notícia. Essa cópia tem finalidade exclusiva de preservação da memória institucional e não altera a data editorial da matéria: o contexto histórico permanece determinado pela data do Evento relacionado. Os arquivos incorporados seguem os mesmos controles de acesso, armazenamento, retenção e auditoria aplicáveis ao restante do Acervo.
+
 ### 17.3 Conteúdo enviado pelos Irmãos (contribuições ao Acervo e à Biblioteca)
 
 Ao enviar fotografias, documentos ou textos para o Acervo Histórico ou a Biblioteca, o Irmão concede à Loja VL6 uma **licença não exclusiva de uso institucional** desse material (exibição, reprodução e divulgação dentro do Portal e em materiais institucionais da Loja), preservando os direitos autorais do autor original — ver também Termos de Uso, Seção 8.2. Esta cláusula formaliza, no âmbito contratual, um consentimento que hoje não possui um mecanismo técnico dedicado (como uma caixa de confirmação) no fluxo de envio; a implementação futura desse controle técnico é recomendada, mas não é condição para a validade desta cláusula.
