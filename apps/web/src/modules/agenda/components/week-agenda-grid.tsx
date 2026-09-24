@@ -182,7 +182,7 @@ function WeekItemChip({
     <>
       <span className={cn('h-1.5 w-1.5 shrink-0 rounded-full', CATEGORY_DOT_CLASS[item.category])} />
       <span className="text-muted shrink-0">
-        {item.isInformational ? 'dia' : formatTime(item.inicio)}
+        {item.category === 'recesso' ? 'recesso' : item.isInformational ? 'dia' : formatTime(item.inicio)}
       </span>
       <span className="truncate">{item.titulo}</span>
     </>
@@ -195,7 +195,7 @@ function WeekItemChip({
 
   const title = hasConflict ? `${item.titulo} — conflito de horário` : item.titulo;
 
-  if (item.isInformational) {
+  if (item.isInformational && item.category !== 'recesso') {
     return (
       <div className={cn(chipClass, 'cursor-default')} title={title}>
         {content}
