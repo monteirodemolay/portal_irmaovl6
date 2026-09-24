@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import * as Sentry from '@sentry/nextjs';
+import { ErrorDetails } from '@/components/error-details';
 
 /**
  * Captura erros de renderização que escapam de todo error boundary da árvore
@@ -11,8 +12,10 @@ import * as Sentry from '@sentry/nextjs';
  * do CSS do app (que pode não ter carregado nesse ponto).
  */
 export default function GlobalError({ error }: { error: Error & { digest?: string } }) {
+  const [eventId, setEventId] = useState<string | undefined>(undefined);
+
   useEffect(() => {
-    Sentry.captureException(error);
+    setEventId(Sentry.captureException(error));
   }, [error]);
 
   return (
@@ -35,6 +38,7 @@ export default function GlobalError({ error }: { error: Error & { digest?: strin
           <p style={{ color: '#6b7280' }}>
             Nossa equipe já foi notificada. Tente recarregar a página.
           </p>
+          <ErrorDetails digest={error.digest} eventId={eventId} plain />
         </div>
       </body>
     </html>

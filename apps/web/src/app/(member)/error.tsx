@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import * as Sentry from '@sentry/nextjs';
 import { AlertTriangle, Button, RefreshCw } from '@vl6/ui';
+import { ErrorDetails } from '@/components/error-details';
 
 /**
  * Error boundary da área do Irmão — antes desta tela, uma exceção não
@@ -21,8 +22,10 @@ export default function MemberAreaError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const [eventId, setEventId] = useState<string | undefined>(undefined);
+
   useEffect(() => {
-    Sentry.captureException(error, { tags: { boundary: 'member' } });
+    setEventId(Sentry.captureException(error, { tags: { boundary: 'member' } }));
   }, [error]);
 
   return (
@@ -37,6 +40,7 @@ export default function MemberAreaError({
         <RefreshCw size={14} />
         Tentar novamente
       </Button>
+      <ErrorDetails digest={error.digest} eventId={eventId} />
     </div>
   );
 }

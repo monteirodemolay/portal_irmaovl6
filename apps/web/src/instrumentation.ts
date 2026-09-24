@@ -23,7 +23,11 @@ export async function register(): Promise<void> {
   const dsn = process.env.SENTRY_DSN;
   if (!dsn) return;
 
-  Sentry.init({ dsn, tracesSampleRate: 0.1 });
+  // `release` = SHA do commit (mesmo valor de `NEXT_PUBLIC_DEPLOY_SHA`,
+  // ver `src/lib/observability/deploy-info.ts`) — associa cada exceção
+  // capturada ao deploy exato que a gerou, pra comparar no Sentry qual foi
+  // o último release sem esse erro.
+  Sentry.init({ dsn, tracesSampleRate: 0.1, release: process.env.VERCEL_GIT_COMMIT_SHA });
 }
 
 export const onRequestError = Sentry.captureRequestError;
