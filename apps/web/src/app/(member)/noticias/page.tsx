@@ -283,13 +283,21 @@ export default async function PublicNewsPage({
             )}
 
             <section className="mt-8">
-              <div className="mb-3 flex items-center justify-between">
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
                 <h2 className="font-display text-2xl font-semibold">Últimas notícias</h2>
-                {(selectedCategory || query || selectedYear) && (
-                  <Link href="/noticias" className="text-primary text-sm hover:underline">
-                    Limpar filtros
+                <div className="flex flex-wrap items-center gap-3">
+                  {(selectedCategory || query || selectedYear) && (
+                    <Link href="/noticias" className="text-primary text-sm hover:underline">
+                      Limpar filtros
+                    </Link>
+                  )}
+                  <Link
+                    href="/noticias/todas"
+                    className="border-primary text-primary hover:bg-primary hover:text-white rounded-lg border px-4 py-2 text-sm font-semibold transition-colors"
+                  >
+                    Todas as notícias
                   </Link>
-                )}
+                </div>
               </div>
               <div className="flex flex-col gap-3">
                 {latest.map((item) => (
@@ -411,6 +419,28 @@ export default async function PublicNewsPage({
                     {category}
                   </Link>
                 ))}
+              </div>
+            </section>
+
+            <section className="border-border bg-surface rounded-xl border p-4">
+              <h2 className="font-display text-lg font-semibold">Memória da Loja</h2>
+              <p className="text-muted mt-2 text-sm leading-relaxed">
+                As notícias registram o presente; o Acervo VL6 conecta esses acontecimentos à
+                história, às gestões, aos eventos, às fotografias e aos documentos da Loja.
+              </p>
+              <div className="mt-4 flex flex-col gap-2">
+                <Link
+                  href="/acervo/linha-do-tempo"
+                  className="text-primary text-sm font-semibold hover:underline"
+                >
+                  Explorar a linha do tempo →
+                </Link>
+                <Link
+                  href="/acervo/pesquisar"
+                  className="text-primary text-sm font-semibold hover:underline"
+                >
+                  Pesquisar no Acervo VL6 →
+                </Link>
               </div>
             </section>
 
