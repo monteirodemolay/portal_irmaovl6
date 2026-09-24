@@ -77,10 +77,17 @@ export function WeekAgendaGrid({
   const itemsByDay = useMemo(() => {
     const map = new Map<string, CalendarItem[]>();
     for (const item of items) {
-      const key = dateKey(item.inicio);
-      const list = map.get(key) ?? [];
-      list.push(item);
-      map.set(key, list);
+      const firstDay = new Date(item.inicio);
+      firstDay.setHours(0, 0, 0, 0);
+      const lastDay = item.category === 'recesso' && item.fim ? new Date(item.fim) : firstDay;
+      lastDay.setHours(0, 0, 0, 0);
+
+      for (let day = new Date(firstDay); day <= lastDay; day.setDate(day.getDate() + 1)) {
+        const key = dateKey(day);
+        const list = map.get(key) ?? [];
+        list.push(item);
+        map.set(key, list);
+      }
     }
     for (const list of map.values()) list.sort((a, b) => a.inicio.getTime() - b.inicio.getTime());
     return map;
