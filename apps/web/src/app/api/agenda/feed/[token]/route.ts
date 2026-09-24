@@ -88,6 +88,17 @@ export async function GET(
   }
 
   const container = createServerContainer();
+  const user = await container.repositories.user.findById(owner.userId);
+  if (
+    !user ||
+    user.tenantId !== owner.tenantId ||
+    user.statusConta !== 'active' ||
+    user.deletedAt !== null ||
+    user.ativo === false
+  ) {
+    return NextResponse.json({ error: 'not_found' }, { status: 404 });
+  }
+
   const now = new Date();
   const from = new Date(now.getFullYear(), now.getMonth() - 1, 1);
   const to = new Date(now.getFullYear() + 1, now.getMonth() + 2, 0);
