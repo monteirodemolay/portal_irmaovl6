@@ -50,6 +50,7 @@ const CATEGORY_FILTERS: Array<{ value: AgendaCategory | 'all'; label: string }> 
   { value: 'sessao', label: 'Sessões' },
   { value: 'evento', label: 'Eventos' },
   { value: 'aniversario', label: 'Aniversários' },
+  { value: 'recesso', label: 'Recessos' },
   { value: 'paramaconica', label: 'Paramaçônicas' },
   { value: 'outra', label: 'Outras datas' },
   { value: 'personal', label: 'Pessoal' },
@@ -70,6 +71,26 @@ function isSameDay(a: Date, b: Date): boolean {
   );
 }
 
+function itemOccursOnDay(item: CalendarItem, date: Date): boolean {
+  if (item.category !== 'recesso' || !item.fim) return isSameDay(item.inicio, date);
+  const day = startOfDay(date).getTime();
+  const start = startOfDay(item.inicio).getTime();
+  const end = startOfDay(item.fim).getTime();
+  return day >= start && day <= end;
+}
+
+function getOverviewEnd(now: Date): Date {
+  const year = now.getFullYear();
+  return now.getMonth() === 11
+    ? new Date(year + 1, 0, 31, 23, 59, 59, 999)
+    : new Date(year, 11, 31, 23, 59, 59, 999);
+}
+
+function getOverviewPeriodLabel(now: Date): string {
+  const year = now.getFullYear();
+  return now.getMonth() === 11 ? `Dez/${year} + jan/${year + 1}` : `Até 31/12/${year}`;
+}
+
 function formatItemDate(date: Date): string {
   return new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: 'short' })
     .format(date)
@@ -77,6 +98,7 @@ function formatItemDate(date: Date): string {
 }
 
 function formatItemTime(item: CalendarItem): string {
+  if (item.category === 'recesso') return 'Período de recesso';
   if (item.isInformational) return 'Data comemorativa';
   const start = new Intl.DateTimeFormat('pt-BR', { timeStyle: 'short' }).format(item.inicio);
   if (!item.fim) return start;
@@ -136,19 +158,26 @@ export function MyAgendaView({
     [allItems, categoryFilter, sessionFilter],
   );
 
-  const overview = useMemo(
-    () => ({
-      sessoes: allItems.filter((item) => item.category === 'sessao').length,
-      eventos: allItems.filter((item) => item.category === 'evento').length,
-      aniversarios: allItems.filter((item) => item.category === 'aniversario').length,
-      paramaconicas: allItems.filter((item) => item.category === 'paramaconica').length,
-    }),
-    [allItems],
-  );
-
   const now = new Date();
-  const todayItems = filteredItems.filter((item) => isSameDay(item.inicio, now));
-  const dayItems = filteredItems.filter((item) => isSameDay(item.inicio, selectedDay));
+  const overview = useMemo(() => {
+    const current = new Date();
+    const from = startOfDay(current);
+    const to = getOverviewEnd(current);
+    const upcoming = allItems.filter((item) => {
+      const relevantDate = item.category === 'recesso' && item.fim ? item.fim : item.inicio;
+      return relevantDate >= from && item.inicio <= to;
+    });
+    return {
+      sessoes: upcoming.filter((item) => item.category === 'sessao').length,
+      eventos: upcoming.filter((item) => item.category === 'evento').length,
+      aniversarios: upcoming.filter((item) => item.category === 'aniversario').length,
+      paramaconicas: upcoming.filter((item) => item.category === 'paramaconica').length,
+      periodLabel: getOverviewPeriodLabel(current),
+    };
+  }, [allItems]);
+
+  const todayItems = filteredItems.filter((item) => itemOccursOnDay(item, now));
+  const dayItems = filteredItems.filter((item) => itemOccursOnDay(item, selectedDay));
   const upcomingItems = filteredItems
     .filter((item) => (item.fim ?? item.inicio) >= startOfDay(now))
     .sort((a, b) => a.inicio.getTime() - b.inicio.getTime());
@@ -167,7 +196,7 @@ export function MyAgendaView({
   }
 
   function handleSelectItem(item: CalendarItem) {
-    if (item.isInformational) return;
+    if (item.isInformational && item.category !== 'recesso') return;
     if (item.source === 'vl6') {
       if (isVl6InDrawer(item)) {
         agenda?.openAgenda(item.id, {});
@@ -185,24 +214,31 @@ export function MyAgendaView({
     category: AgendaCategory;
     helper: string;
   }> = [
-    { label: 'Sessões', value: overview.sessoes, category: 'sessao', helper: 'Agenda maçônica' },
-    { label: 'Eventos', value: overview.eventos, category: 'evento', helper: 'Atividades da Loja' },
+    { label: 'Sessões', value: overview.sessoes, category: 'sessao', helper: overview.periodLabel },
+    { label: 'Eventos', value: overview.eventos, category: 'evento', helper: overview.periodLabel },
     {
       label: 'Aniversariantes',
       value: overview.aniversarios,
       category: 'aniversario',
-      helper: 'Irmãos e família',
+      helper: overview.periodLabel,
     },
     {
       label: 'Paramaçônicas',
       value: overview.paramaconicas,
       category: 'paramaconica',
-      helper: 'Entidades vinculadas',
+      helper: overview.periodLabel,
     },
   ];
 
   return (
     <div className="flex flex-col gap-5">
+      <div className="flex flex-wrap items-end justify-between gap-2">
+        <div>
+          <p className="text-sm font-semibold">Próximos compromissos</p>
+          <p className="text-muted text-xs">Contagem limitada ao ano civil da Agenda.</p>
+        </div>
+        <span className="text-muted text-xs font-semibold">{overview.periodLabel}</span>
+      </div>
       <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
         {overviewCards.map((card) => (
           <button

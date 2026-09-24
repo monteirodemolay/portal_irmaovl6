@@ -10,6 +10,7 @@ const CATEGORY_DOT_CLASS: Record<AgendaCategory, string> = {
   sessao: 'bg-primary',
   evento: 'bg-sky-500',
   aniversario: 'bg-amber-500',
+  recesso: 'bg-teal-500',
   paramaconica: 'bg-violet-500',
   outra: 'bg-slate-500',
   personal: 'bg-emerald-500',
@@ -43,10 +44,17 @@ export function MonthGrid({ items, selectedDate, onSelectDate }: MonthGridProps)
   const itemsByDay = useMemo(() => {
     const map = new Map<string, CalendarItem[]>();
     for (const item of items) {
-      const key = dateKey(item.inicio);
-      const list = map.get(key) ?? [];
-      list.push(item);
-      map.set(key, list);
+      const firstDay = new Date(item.inicio);
+      firstDay.setHours(0, 0, 0, 0);
+      const lastDay = item.category === 'recesso' && item.fim ? new Date(item.fim) : firstDay;
+      lastDay.setHours(0, 0, 0, 0);
+
+      for (let day = new Date(firstDay); day <= lastDay; day.setDate(day.getDate() + 1)) {
+        const key = dateKey(day);
+        const list = map.get(key) ?? [];
+        list.push(item);
+        map.set(key, list);
+      }
     }
     return map;
   }, [items]);

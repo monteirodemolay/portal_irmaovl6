@@ -10,6 +10,7 @@ const CATEGORY_DOT_CLASS: Record<AgendaCategory, string> = {
   sessao: 'bg-primary',
   evento: 'bg-sky-500',
   aniversario: 'bg-amber-500',
+  recesso: 'bg-teal-500',
   paramaconica: 'bg-violet-500',
   outra: 'bg-slate-500',
   personal: 'bg-emerald-500',
@@ -76,10 +77,17 @@ export function WeekAgendaGrid({
   const itemsByDay = useMemo(() => {
     const map = new Map<string, CalendarItem[]>();
     for (const item of items) {
-      const key = dateKey(item.inicio);
-      const list = map.get(key) ?? [];
-      list.push(item);
-      map.set(key, list);
+      const firstDay = new Date(item.inicio);
+      firstDay.setHours(0, 0, 0, 0);
+      const lastDay = item.category === 'recesso' && item.fim ? new Date(item.fim) : firstDay;
+      lastDay.setHours(0, 0, 0, 0);
+
+      for (let day = new Date(firstDay); day <= lastDay; day.setDate(day.getDate() + 1)) {
+        const key = dateKey(day);
+        const list = map.get(key) ?? [];
+        list.push(item);
+        map.set(key, list);
+      }
     }
     for (const list of map.values()) list.sort((a, b) => a.inicio.getTime() - b.inicio.getTime());
     return map;
@@ -174,7 +182,7 @@ function WeekItemChip({
     <>
       <span className={cn('h-1.5 w-1.5 shrink-0 rounded-full', CATEGORY_DOT_CLASS[item.category])} />
       <span className="text-muted shrink-0">
-        {item.isInformational ? 'dia' : formatTime(item.inicio)}
+        {item.category === 'recesso' ? 'recesso' : item.isInformational ? 'dia' : formatTime(item.inicio)}
       </span>
       <span className="truncate">{item.titulo}</span>
     </>
@@ -187,7 +195,7 @@ function WeekItemChip({
 
   const title = hasConflict ? `${item.titulo} — conflito de horário` : item.titulo;
 
-  if (item.isInformational) {
+  if (item.isInformational && item.category !== 'recesso') {
     return (
       <div className={cn(chipClass, 'cursor-default')} title={title}>
         {content}

@@ -16,15 +16,12 @@ export interface LoadGoogleEventsDeps {
 }
 
 /**
- * `loadGoogleEvents()` — disparado só pelo botão "Sincronizar agora" (sem
- * cron/webhook). Por isso sempre pede uma listagem completa ao Google (nunca
- * passa `syncToken`, mesmo que a conexão tenha um salvo): sem sincronização
- * em segundo plano pra justificar o delta incremental, o custo extra é
- * irrelevante e o ganho é reconciliar o cache local a cada clique — inclui
- * remover eventos apagados no Google que a API não teria como sinalizar de
- * outra forma (ex.: aniversário de contato excluído). Atualiza o cache local
- * (`googleCalendarEvents`) que "Minha Agenda" lê; nunca chama a Calendar API
- * a cada render da página.
+ * `loadGoogleEvents()` atualiza o cache local usando o `syncToken` salvo pela
+ * Calendar API. A primeira sincronização é completa; as seguintes recebem
+ * apenas inclusões, alterações e exclusões desde o último token. Se o token
+ * expirar (HTTP 410), o próprio serviço refaz uma sincronização completa e
+ * entrega um token novo. Isso permite atualizar ao abrir a Agenda sem cron e
+ * sem baixar novamente todos os compromissos a cada acesso.
  */
 export class LoadGoogleEventsUseCase {
   constructor(private readonly deps: LoadGoogleEventsDeps) {}
@@ -46,7 +43,7 @@ export class LoadGoogleEventsUseCase {
       const result = await this.deps.googleCalendarService.loadEvents(
         accessToken,
         connection.calendarId,
-        null,
+        connection.syncToken,
       );
 
       const confirmedIds = new Set<string>();

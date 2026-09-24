@@ -109,6 +109,25 @@ describe('toCalendarItems', () => {
     expect(items[0]?.contextLabel).toBe('Capítulo Rio Verde nº 350');
   });
 
+  it('classifica Recesso Maçônico como período informativo sem conflito', () => {
+    const items = toCalendarItems(
+      [
+        buildEvent({
+          tipo: 'recesso',
+          titulo: 'Recesso Maçônico',
+          dataInicio: new Date('2026-12-20T00:00:00Z'),
+          dataFim: new Date('2027-01-10T23:59:00Z'),
+        }),
+      ],
+      [],
+      [],
+    );
+
+    expect(items[0]?.category).toBe('recesso');
+    expect(items[0]?.isInformational).toBe(true);
+    expect(detectOverlaps(items).size).toBe(0);
+  });
+
   it('projeta aniversário futuro sem duplicar o evento legado do cron', () => {
     const inicio = new Date(2026, 8, 24, 12, 0, 0);
     const anniversary: AgendaAnniversarySummary = {
