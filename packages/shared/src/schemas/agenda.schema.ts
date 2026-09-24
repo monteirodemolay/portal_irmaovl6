@@ -64,6 +64,10 @@ export const eventSchema = z
     message: 'A data final deve ser posterior à data inicial.',
     path: ['dataFim'],
   })
+  .refine((data) => data.tipo !== 'recesso' || data.dataFim !== null, {
+    message: 'Informe a data final do Recesso Maçônico.',
+    path: ['dataFim'],
+  })
   .refine((data) => data.tipo !== 'sessao' || data.sessionType !== null, {
     message: 'Selecione o Tipo da Sessão.',
     path: ['sessionType'],
