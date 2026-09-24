@@ -53,10 +53,15 @@ export default async function PublicNewsDetailPage({
 
   await container.repositories.news.incrementViews(news.id).catch(() => undefined);
 
-  const [comments, session, relatedPage] = await Promise.all([
+  const [comments, session, relatedPage, linkedEvent] = await Promise.all([
     container.repositories.newsComment.listApprovedByNews(news.id),
     getCurrentSession(),
     container.useCases.listPublishedNews.execute(current.tenant.id, { limit: 12 }),
+    news.eventId
+      ? container.repositories.event.findById(news.eventId).then((event) =>
+          event && event.tenantId === current.tenant.id && !event.deletedAt ? event : null,
+        )
+      : Promise.resolve(null),
   ]);
 
   const related = relatedPage.items
@@ -87,7 +92,8 @@ export default async function PublicNewsDetailPage({
             )}
 
             <div className="text-muted mt-5 flex flex-wrap gap-x-4 gap-y-1 text-sm">
-              <span>{formatDate(news.dataPublicacao)}</span>
+              <span>Publicado em {formatDate(news.dataPublicacao)}</span>
+              {linkedEvent && <span>Acontecimento em {formatDate(linkedEvent.dataInicio)}</span>}
               <span>{readingTime(news.conteudoHtml)} min de leitura</span>
               <span>{news.contagemVisualizacoes + 1} visualizações</span>
             </div>
@@ -107,6 +113,45 @@ export default async function PublicNewsDetailPage({
           />
 
           <NewsImageGallery images={galleryImages} title={news.titulo} />
+
+          <section className="border-border bg-surface mx-auto mt-10 max-w-3xl rounded-2xl border p-5">
+            <p className="text-accent text-[11px] font-semibold uppercase tracking-widest">
+              Memória da Loja
+            </p>
+            {linkedEvent ? (
+              <>
+                <h2 className="font-display mt-2 text-xl font-semibold">
+                  Esta notícia documenta um acontecimento do Acervo VL6
+                </h2>
+                <p className="text-muted mt-2 text-sm leading-6">
+                  A matéria foi publicada em {formatDate(news.dataPublicacao)}, mas está
+                  historicamente vinculada a “{linkedEvent.titulo}”, realizado em{' '}
+                  {formatDate(linkedEvent.dataInicio)}.
+                </p>
+                <Link
+                  href={`/acervo/eventos/${linkedEvent.id}`}
+                  className="text-primary mt-4 inline-flex text-sm font-semibold hover:underline"
+                >
+                  Explorar o acontecimento no Acervo VL6 →
+                </Link>
+              </>
+            ) : (
+              <>
+                <h2 className="font-display mt-2 text-xl font-semibold">Memória editorial</h2>
+                <p className="text-muted mt-2 text-sm leading-6">
+                  Esta notícia ainda não está vinculada a um Evento específico. Ela permanece
+                  preservada e pesquisável no Acervo VL6 pela sua data editorial, título, categoria
+                  e conteúdo.
+                </p>
+                <Link
+                  href={`/acervo/pesquisar?q=${encodeURIComponent(news.titulo)}`}
+                  className="text-primary mt-4 inline-flex text-sm font-semibold hover:underline"
+                >
+                  Localizar esta memória no Acervo →
+                </Link>
+              </>
+            )}
+          </section>
 
           <div className="border-border mx-auto mt-10 max-w-3xl border-t pt-7">
             <h2 className="font-display text-2xl font-semibold">Comentários</h2>

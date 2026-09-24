@@ -104,6 +104,7 @@ export async function importNewsFromUrlAction(url: string): Promise<ImportNewsRe
         categoria: 'Not\u00edcias VL6',
         destaque: false,
         destaquePrincipal: false,
+        eventId: null,
         dataPublicacao: scraped.publishedAt,
       });
     } catch {
@@ -207,6 +208,7 @@ export async function reimportImportedNewsAction(): Promise<ReimportImportedNews
         categoria: news.categoria,
         destaque: Boolean(news.destaque),
         destaquePrincipal: Boolean(news.destaquePrincipal),
+        eventId: news.eventId ?? null,
         dataPublicacao: scraped.publishedAt ?? news.dataPublicacao,
       });
 
@@ -283,6 +285,7 @@ export async function backfillNewsPublishedDatesAction(): Promise<
       categoria: news.categoria,
       destaque: Boolean(news.destaque),
       destaquePrincipal: Boolean(news.destaquePrincipal),
+      eventId: news.eventId ?? null,
       dataPublicacao: scraped.publishedAt,
     });
     const result = await container.useCases.updateNews.execute(session.authContext, news.id, input);
@@ -304,6 +307,19 @@ export async function backfillNewsPublishedDatesAction(): Promise<
   return results;
 }
 
+async function validateNewsEventLink(
+  container: ReturnType<typeof createServerContainer>,
+  tenantId: string,
+  eventId: string | null | undefined,
+): Promise<string | null> {
+  if (!eventId) return null;
+  const event = await container.repositories.event.findById(eventId);
+  if (!event || event.tenantId !== tenantId || event.deletedAt) {
+    return 'O Evento selecionado não existe mais ou não pertence a esta Loja.';
+  }
+  return null;
+}
+
 export async function createNewsAction(
   _prevState: ContentActionState,
   formData: FormData,
@@ -321,6 +337,7 @@ export async function createNewsAction(
       categoria: formData.get('categoria'),
       destaque: formData.get('destaque') === 'on' || formData.get('destaquePrincipal') === 'on',
       destaquePrincipal: formData.get('destaquePrincipal') === 'on',
+      eventId: formData.get('eventId') || null,
       dataPublicacao: formData.get('dataPublicacao') || null,
     });
   } catch {
@@ -328,6 +345,9 @@ export async function createNewsAction(
   }
 
   const container = createServerContainer();
+  const eventLinkError = await validateNewsEventLink(container, session.authContext.tenantId, input.eventId);
+  if (eventLinkError) return { error: eventLinkError };
+
   const result = await container.useCases.createNews.execute(session.authContext, input);
   if (!result.ok) return { error: result.error.message };
 
@@ -338,6 +358,9 @@ export async function createNewsAction(
   revalidatePath('/admin/conteudo/noticias');
   revalidatePath('/noticias');
   revalidatePath('/dashboard');
+  revalidatePath('/acervo');
+  revalidatePath('/acervo/pesquisar');
+  revalidatePath('/acervo/linha-do-tempo');
   redirect(`/admin/conteudo/noticias/${result.value.id}`);
 }
 
@@ -359,6 +382,7 @@ export async function updateNewsAction(
       categoria: formData.get('categoria'),
       destaque: formData.get('destaque') === 'on' || formData.get('destaquePrincipal') === 'on',
       destaquePrincipal: formData.get('destaquePrincipal') === 'on',
+      eventId: formData.get('eventId') || null,
       dataPublicacao: formData.get('dataPublicacao') || null,
     });
   } catch {
@@ -366,6 +390,9 @@ export async function updateNewsAction(
   }
 
   const container = createServerContainer();
+  const eventLinkError = await validateNewsEventLink(container, session.authContext.tenantId, input.eventId);
+  if (eventLinkError) return { error: eventLinkError };
+
   const result = await container.useCases.updateNews.execute(session.authContext, newsId, input);
   if (!result.ok) return { error: result.error.message };
 
@@ -377,6 +404,10 @@ export async function updateNewsAction(
   revalidatePath(`/admin/conteudo/noticias/${newsId}`);
   revalidatePath('/noticias');
   revalidatePath('/dashboard');
+  revalidatePath('/acervo');
+  revalidatePath('/acervo/pesquisar');
+  revalidatePath('/acervo/linha-do-tempo');
+  if (result.value.eventId) revalidatePath(`/acervo/eventos/${result.value.eventId}`);
   return { error: null };
 }
 
@@ -390,6 +421,7 @@ function newsToFormInput(news: News): NewsFormValues {
     categoria: news.categoria,
     destaque: Boolean(news.destaque),
     destaquePrincipal: Boolean(news.destaquePrincipal),
+    eventId: news.eventId ?? null,
     dataPublicacao: news.dataPublicacao,
   };
 }

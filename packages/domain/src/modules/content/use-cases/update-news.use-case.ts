@@ -34,6 +34,7 @@ export class UpdateNewsUseCase {
       ...input,
       destaque: input.destaque ?? Boolean(current.destaque),
       destaquePrincipal: input.destaquePrincipal ?? Boolean(current.destaquePrincipal),
+      eventId: input.eventId === undefined ? (current.eventId ?? null) : input.eventId,
       updatedAt: this.deps.clock.now(),
       updatedBy: ctx.uid,
     };

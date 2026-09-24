@@ -50,6 +50,7 @@ function resultIcon(kind: ArchiveSearchKind) {
   if (kind === 'documento') return FileText;
   if (kind === 'biblioteca') return BookOpen;
   if (kind === 'fotografia') return GalleryIcon;
+  if (kind === 'noticia') return FileText;
   return CalendarDays;
 }
 

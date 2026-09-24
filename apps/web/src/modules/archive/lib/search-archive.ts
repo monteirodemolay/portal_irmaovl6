@@ -45,7 +45,7 @@ export async function loadArchiveSearchResults(
   const canReadCatalog = hasPermission(authContext, 'archiveCatalog:read');
   const canReadArchiveItem = hasPermission(authContext, 'archiveItem:read');
 
-  const [filesPage, libraryItems, albums, catalogEntries, archiveItemsPage] = await Promise.all([
+  const [filesPage, libraryItems, albums, catalogEntries, archiveItemsPage, newsPage] = await Promise.all([
     canReadFiles || canReadLibrary
       ? container.useCases.listAllFileAssets.execute(authContext, { limit: 200 })
       : Promise.resolve({ items: [], nextCursor: null, hasMore: false }),
@@ -59,6 +59,7 @@ export async function loadArchiveSearchResults(
     canReadArchiveItem
       ? container.repositories.archiveItem.findByTenant(authContext.tenantId, { limit: 200 })
       : Promise.resolve({ items: [], nextCursor: null, hasMore: false }),
+    container.useCases.listPublishedNews.execute(authContext.tenantId, { limit: 500 }),
   ]);
 
   // Só fichas publicadas entram na busca — rascunho não deve vazar conteúdo
@@ -164,5 +165,25 @@ export async function loadArchiveSearchResults(
     ];
   });
 
-  return [...documentResults, ...libraryResults, ...galleryResults, ...eventResults];
+  const newsResults: ArchiveSearchResult[] = newsPage.items.map((news) => ({
+    id: news.id,
+    kind: 'noticia',
+    title: news.titulo,
+    description: [
+      'Memória editorial',
+      news.dataPublicacao ? formatEventResultDate(news.dataPublicacao) : null,
+      news.categoria,
+    ]
+      .filter(Boolean)
+      .join(' · '),
+    href: `/noticias/${news.slug}`,
+    compositeId: `news_${news.id}`,
+    createdAt: news.dataPublicacao ?? news.createdAt,
+    catalogText: [news.subtitulo, news.conteudoHtml.replace(/<[^>]*>/g, ' ')]
+      .filter(Boolean)
+      .join(' '),
+    imageUrl: news.imagemCapaUrl,
+  }));
+
+  return [...documentResults, ...libraryResults, ...galleryResults, ...eventResults, ...newsResults];
 }

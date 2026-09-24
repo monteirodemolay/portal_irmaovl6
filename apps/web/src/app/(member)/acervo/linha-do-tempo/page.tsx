@@ -15,6 +15,7 @@ interface TimelineEntry {
   descricao: string;
   href: string;
   archiveSummaryLabel: string | null;
+  relatedNews: { slug: string; titulo: string; dataPublicacao: Date | null }[];
 }
 
 function formatDate(date: Date): string {
@@ -34,13 +35,14 @@ export default async function ArchiveTimelinePage() {
   const canReadBoardTerms = hasPermission(authContext, 'boardTerm:read');
   const canReadEvents = hasPermission(authContext, 'event:read');
 
-  const [terms, eventsPage] = await Promise.all([
+  const [terms, eventsPage, newsPage] = await Promise.all([
     canReadBoardTerms
       ? container.repositories.boardTerm.listByTenant(authContext.tenantId)
       : Promise.resolve([]),
     canReadEvents
       ? container.useCases.listAllEvents.execute(authContext, { limit: 200 })
       : Promise.resolve({ items: [], nextCursor: null, hasMore: false }),
+    container.useCases.listPublishedNews.execute(authContext.tenantId, { limit: 500 }),
   ]);
 
   const now = new Date();
@@ -52,6 +54,7 @@ export default async function ArchiveTimelinePage() {
     descricao: formatPeriod(term.periodoInicio, term.periodoFim),
     href: `/acervo/gestoes/${term.id}`,
     archiveSummaryLabel: null,
+    relatedNews: [],
   }));
 
   const pastEvents = eventsPage.items.filter(
@@ -75,10 +78,31 @@ export default async function ArchiveTimelinePage() {
       descricao: event.local,
       href: summary ? `/acervo/eventos/${event.id}` : `/eventos/${event.id}`,
       archiveSummaryLabel: summary ? formatArchiveSummaryLabel(summary) : null,
+      relatedNews: newsPage.items
+        .filter((news) => news.eventId === event.id)
+        .map((news) => ({
+          slug: news.slug,
+          titulo: news.titulo,
+          dataPublicacao: news.dataPublicacao,
+        })),
     };
   });
 
-  const entries = [...termEntries, ...eventEntries].sort(
+  const editorialEntries: TimelineEntry[] = newsPage.items
+    .filter((news) => !news.eventId)
+    .map((news) => ({
+      date: news.dataPublicacao ?? news.createdAt,
+      kindLabel: 'Memória editorial',
+      titulo: news.titulo,
+      descricao: news.dataPublicacao
+        ? `Notícia publicada em ${formatDate(news.dataPublicacao)} · ${news.categoria}`
+        : news.categoria,
+      href: `/noticias/${news.slug}`,
+      archiveSummaryLabel: null,
+      relatedNews: [],
+    }));
+
+  const entries = [...termEntries, ...eventEntries, ...editorialEntries].sort(
     (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
   );
 
@@ -131,6 +155,31 @@ export default async function ArchiveTimelinePage() {
                         </p>
                       )}
                     </Link>
+                    {entry.relatedNews.length > 0 && (
+                      <div className="border-border mt-3 ml-1 border-l pl-4">
+                        <p className="text-muted mb-2 text-[10px] font-semibold uppercase tracking-wider">
+                          Notícias relacionadas a este acontecimento
+                        </p>
+                        <div className="flex flex-col gap-2">
+                          {entry.relatedNews.map((news) => (
+                            <Link
+                              key={news.slug}
+                              href={`/noticias/${news.slug}`}
+                              className="group block"
+                            >
+                              <span className="font-display text-sm font-semibold group-hover:text-accent">
+                                {news.titulo}
+                              </span>
+                              {news.dataPublicacao && (
+                                <span className="text-muted mt-0.5 block text-[11px]">
+                                  Publicada em {formatDate(news.dataPublicacao)}
+                                </span>
+                              )}
+                            </Link>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </li>
                 ))}
               </ol>

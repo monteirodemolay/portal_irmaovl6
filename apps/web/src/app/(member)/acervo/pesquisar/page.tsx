@@ -26,6 +26,7 @@ const KIND_ICONS: Record<ArchiveSearchKind, ReactNode> = {
   biblioteca: <BookOpen size={14} />,
   fotografia: <GalleryIcon size={14} />,
   evento: <CalendarDays size={14} />,
+  noticia: <FileText size={14} />,
 };
 
 function buildHref(query: string, kind?: ArchiveSearchKind): string {

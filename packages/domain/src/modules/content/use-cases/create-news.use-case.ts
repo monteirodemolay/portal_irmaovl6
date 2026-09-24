@@ -31,6 +31,7 @@ export class CreateNewsUseCase {
       ...input,
       destaque: Boolean(input.destaque),
       destaquePrincipal: Boolean(input.destaquePrincipal),
+      eventId: input.eventId ?? null,
       autorId: ctx.uid,
       publicado: false,
       // Normalmente fica `null` até a publicação (`PublishNewsUseCase`

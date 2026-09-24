@@ -21,6 +21,17 @@ export default async function EditNewsPage({ params }: { params: Promise<{ newsI
   const news = await container.repositories.news.findById(newsId);
   if (!news || news.tenantId !== session.authContext.tenantId) notFound();
 
+  const eventsPage = await container.useCases.listAllEvents.execute(session.authContext, {
+    limit: 500,
+  });
+  const eventOptions = eventsPage.items.map((event) => ({
+    id: event.id,
+    titulo: event.titulo,
+    dataInicio: event.dataInicio.toISOString(),
+    local: event.local,
+    tipo: event.tipo,
+  }));
+
   const canModerate = hasPermission(session.authContext, 'news:manage');
   const pendingComments = canModerate
     ? (await container.useCases.listPendingNewsComments.execute(session.authContext)).filter(
@@ -44,7 +55,7 @@ export default async function EditNewsPage({ params }: { params: Promise<{ newsI
           />
         </div>
       </div>
-      <NewsForm action={updateNewsAction.bind(null, newsId)} news={news} />
+      <NewsForm action={updateNewsAction.bind(null, newsId)} news={news} events={eventOptions} />
 
       {canModerate && (
         <Card>

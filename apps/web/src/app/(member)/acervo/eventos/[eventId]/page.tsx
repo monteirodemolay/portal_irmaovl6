@@ -45,7 +45,11 @@ export default async function EventAlbumPage({ params }: { params: Promise<{ eve
     notFound();
   }
 
-  const album = await loadEventAlbum(container, session.authContext, session.role, eventId);
+  const [album, newsPage] = await Promise.all([
+    loadEventAlbum(container, session.authContext, session.role, eventId),
+    container.useCases.listPublishedNews.execute(session.authContext.tenantId, { limit: 500 }),
+  ]);
+  const relatedNews = newsPage.items.filter((news) => news.eventId === eventId);
   const hasDownloadableMedia = Boolean(album?.media.some((item) => item.allowDownload));
   const canAdjustCover = hasPermission(session.authContext, 'archiveMedia:update');
 
@@ -154,6 +158,37 @@ export default async function EventAlbumPage({ params }: { params: Promise<{ eve
 
       {event.descricao && (
         <p className="max-w-2xl whitespace-pre-line text-sm leading-relaxed">{event.descricao}</p>
+      )}
+
+      {relatedNews.length > 0 && (
+        <section className="border-border bg-surface rounded-2xl border p-5 sm:p-6">
+          <p className="text-accent text-[11px] font-semibold uppercase tracking-widest">
+            Memória editorial
+          </p>
+          <h2 className="font-display mt-1 text-xl font-semibold">
+            Notícias sobre este acontecimento
+          </h2>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            {relatedNews.map((news) => (
+              <Link
+                key={news.id}
+                href={`/noticias/${news.slug}`}
+                className="border-border hover:border-accent group rounded-xl border p-4 transition-colors"
+              >
+                <p className="text-muted text-xs">
+                  Publicada em{' '}
+                  {news.dataPublicacao ? formatDate(news.dataPublicacao) : 'data não informada'}
+                </p>
+                <h3 className="font-display group-hover:text-accent mt-1 font-semibold leading-snug">
+                  {news.titulo}
+                </h3>
+                {news.subtitulo && (
+                  <p className="text-muted mt-2 line-clamp-2 text-xs leading-5">{news.subtitulo}</p>
+                )}
+              </Link>
+            ))}
+          </div>
+        </section>
       )}
 
       {ceremonyGroups.length > 0 && (

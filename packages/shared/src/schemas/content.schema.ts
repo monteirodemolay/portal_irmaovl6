@@ -15,6 +15,8 @@ export const newsSchema = z.object({
   destaque: z.boolean().optional(),
   /** Manchete editorial principal. A camada de aplicação garante apenas uma por tenant. */
   destaquePrincipal: z.boolean().optional(),
+  /** Vínculo histórico opcional com um Evento/Sessão. */
+  eventId: z.string().min(1).nullable().optional(),
   /** Data em que a notícia foi (ou será) considerada publicada — editável para corrigir o caso de notícias importadas de outra fonte, cuja publicação original é anterior à importação. */
   dataPublicacao: z.coerce.date().nullable(),
 });
