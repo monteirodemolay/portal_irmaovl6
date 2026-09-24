@@ -47,15 +47,11 @@ function textToHtml(value: string): string {
     .join('\n');
 }
 
-function stripWixSizeParams(url: string): string {
-  return url.replace(/\/v1\/(?:fill|fit)\/[^/]+\//, '/');
-}
-
 function absoluteUrl(value: string, baseUrl: string): string | null {
   try {
     const url = new URL(decodeHtmlEntities(value), baseUrl);
     if (url.protocol !== 'https:' && url.protocol !== 'http:') return null;
-    return stripWixSizeParams(url.toString());
+    return url.toString();
   } catch {
     return null;
   }
