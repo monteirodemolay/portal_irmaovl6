@@ -13,6 +13,7 @@ import {
 } from '@vl6/ui';
 import type { ArchiveItemSummaryMedia } from '../../actions/publish-hub-actions';
 import { PeoplePicker } from './people-picker';
+import { PhotoPeopleReviewModal } from './photo-people-review-modal';
 import { EventContextBar, StepTitle } from './wizard-chrome';
 import type { ArchiveItemWorkspace } from './use-archive-item-workspace';
 
@@ -75,6 +76,7 @@ export function OrganizeStep({
   onContinue,
 }: OrganizeStepProps) {
   const [activeTab, setActiveTab] = useState<OrganizeTab>('foto');
+  const [reviewIndex, setReviewIndex] = useState<number | null>(null);
   const {
     summary,
     isLoading,
@@ -121,9 +123,14 @@ export function OrganizeStep({
               <EmptyState title="Nenhuma fotografia enviada." />
             ) : (
               <>
-                <p className="text-muted mb-3 text-xs">
-                  ☷ Arraste para reordenar · clique numa foto pra defini-la como capa
-                </p>
+                <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+                  <p className="text-muted text-xs">
+                    ☷ Arraste para reordenar · clique numa foto pra defini-la como capa
+                  </p>
+                  <Button type="button" variant="outline" onClick={() => setReviewIndex(0)}>
+                    Revisar pessoas em tela grande
+                  </Button>
+                </div>
                 <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
                   {byType('foto').map((media) => (
                     <button
@@ -282,23 +289,32 @@ export function OrganizeStep({
         {activeTab === 'foto' && byType('foto').length > 0 && (
           <div className="mt-4 flex flex-col gap-3">
             <p className="text-sm font-medium">Legendas e pessoas nas fotografias</p>
-            {byType('foto').map((media) => (
+            {byType('foto').map((media, index) => (
               <div
                 key={media.id}
-                className="border-border flex flex-col gap-3 rounded-lg border p-3 sm:flex-row"
+                className="border-border grid gap-4 rounded-xl border p-3 md:grid-cols-[220px_minmax(0,1fr)]"
               >
-                {/* Miniatura ao lado do nome do arquivo — sem ela, "Legenda…"
-                    e "Marcar pessoa…" ficavam soltos numa lista só de nomes
-                    de arquivo (ex.: "WhatsApp Image 2026-08-29 at
-                    19.44.08.jpeg"), impossível de saber qual foto era qual
-                    sem abrir uma a uma. */}
-                <img
-                  src={mediaThumb(media)}
-                  alt={media.altText ?? media.originalName}
-                  className="h-20 w-20 shrink-0 rounded-md object-cover sm:h-16 sm:w-16"
-                />
+                <button
+                  type="button"
+                  onClick={() => setReviewIndex(index)}
+                  className="group relative overflow-hidden rounded-lg bg-black"
+                >
+                  <img
+                    src={mediaThumb(media)}
+                    alt={media.altText ?? media.originalName}
+                    className="aspect-[4/3] h-full w-full object-contain"
+                  />
+                  <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/75 to-transparent px-3 pb-2 pt-8 text-left text-xs font-semibold text-white opacity-0 transition-opacity group-hover:opacity-100">
+                    Abrir em tamanho grande
+                  </span>
+                </button>
                 <div className="flex min-w-0 flex-1 flex-col gap-2">
-                  <span className="truncate text-sm font-medium">{media.originalName}</span>
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <span className="truncate text-sm font-medium">{media.originalName}</span>
+                    <Button type="button" variant="outline" onClick={() => setReviewIndex(index)}>
+                      Revisar pessoas
+                    </Button>
+                  </div>
                   <Input
                     defaultValue={media.caption ?? ''}
                     placeholder="Legenda…"
@@ -331,6 +347,19 @@ export function OrganizeStep({
           </Button>
         </div>
       </div>
+
+      {reviewIndex !== null && (
+        <PhotoPeopleReviewModal
+          photos={byType('foto')}
+          activeIndex={reviewIndex}
+          memberOptions={memberOptions}
+          onIndexChange={setReviewIndex}
+          onPeopleChange={async (media, ids) => {
+            await updateField(media, { pessoasIdentificadas: ids });
+          }}
+          onClose={() => setReviewIndex(null)}
+        />
+      )}
     </>
   );
 }
