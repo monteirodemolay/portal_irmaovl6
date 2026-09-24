@@ -5,6 +5,7 @@ import { requireSession } from '@/lib/auth/require-session';
 import { getLegalAcceptanceStatus } from '@/lib/legal/get-legal-acceptance-status';
 import { LEGAL_DOCUMENT_SLUGS, LEGAL_DOCUMENT_TITLES } from '@/lib/legal/document-slug';
 import { AcceptLegalDocumentCard } from '@/modules/legal/components/accept-legal-document-card';
+import { LegalDocumentPreviewSheet } from '@/modules/legal/components/legal-document-preview-sheet';
 import { CLASSIFICATION_LABELS, IMPACT_LABELS } from '@/modules/legal/lib/labels';
 
 const DOCUMENTOS: LegalDocumentKey[] = ['politica_privacidade', 'termos_uso'];
@@ -52,13 +53,15 @@ export default async function TermosEPrivacidadePage() {
               <h2 className="font-display text-lg font-semibold">
                 {LEGAL_DOCUMENT_TITLES[documento]}
               </h2>
-              <Link
-                href={`/termos/${LEGAL_DOCUMENT_SLUGS[documento]}`}
-                target="_blank"
-                className="text-accent text-xs font-medium hover:underline"
-              >
-                Ler texto completo
-              </Link>
+              {vigente && (
+                <LegalDocumentPreviewSheet
+                  titulo={LEGAL_DOCUMENT_TITLES[documento]}
+                  versao={vigente.versao}
+                  publicadoEm={vigente.publicadoEm}
+                  markdown={vigente.conteudoMarkdown}
+                  slug={LEGAL_DOCUMENT_SLUGS[documento]}
+                />
+              )}
             </div>
 
             {vigente ? (

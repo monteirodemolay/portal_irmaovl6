@@ -18,6 +18,7 @@ export * from './components/tabs';
 export * from './components/switch';
 export * from './components/pagination';
 export * from './components/drawer';
+export * from './components/responsive-preview-sheet';
 export * from './components/archive-item-card';
 export * from './components/archive-item-header';
 export * from './components/page-hero';
