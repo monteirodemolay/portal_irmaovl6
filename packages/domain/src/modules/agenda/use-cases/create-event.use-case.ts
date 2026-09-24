@@ -17,6 +17,8 @@ import type { IEventRepository } from '../repositories/event.repository';
 
 export interface CreateEventInput {
   tipo: EventKind;
+  agendaContext?: 'loja' | 'paramaconica' | 'outro';
+  paramasonicEntityId?: string | null;
   titulo: string;
   descricao: string | null;
   local: string;
