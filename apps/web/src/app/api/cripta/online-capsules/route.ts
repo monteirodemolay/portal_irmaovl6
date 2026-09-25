@@ -11,8 +11,8 @@ const collection = () => getAdminFirestore().collection('criptaOnlineCapsulesV1'
 export async function GET() {
   const session = await activeCriptaSession();
   if (!session) return NextResponse.json({ error: 'Acesso negado.' }, { status: 403 });
-  const docs = await collection().where('tenantId', '==', session.authContext.tenantId).where('uid', '==', session.user.id).get();
-  return NextResponse.json({ items: docs.docs.filter((doc) => doc.data().status === 'ready').map((doc) => ({
+  const docs = await collection().where('uid', '==', session.user.id).get();
+  return NextResponse.json({ items: docs.docs.filter((doc) => doc.data().tenantId === session.authContext.tenantId && doc.data().status === 'ready').map((doc) => ({
     id: doc.id, createdAt: doc.data().createdAt,
   })) }, { headers: { 'Cache-Control': 'no-store' } });
 }
@@ -37,8 +37,8 @@ export async function POST(request: Request) {
       !['salt', 'nonce', 'ciphertext'].every((field) => typeof envelope[field] === 'string')) {
     return NextResponse.json({ error: 'Pacote cifrado inválido.' }, { status: 400 });
   }
-  const existing = await collection().where('tenantId', '==', session.authContext.tenantId).where('uid', '==', session.user.id).get();
-  if (existing.docs.filter((doc) => doc.data().status === 'ready').length >= 5) {
+  const existing = await collection().where('uid', '==', session.user.id).get();
+  if (existing.docs.filter((doc) => doc.data().tenantId === session.authContext.tenantId && doc.data().status === 'ready').length >= 5) {
     return NextResponse.json({ error: 'Limite de cinco cartas. Exclua ou substitua uma carta antes de continuar.' }, { status: 409 });
   }
   let fileId: string | undefined;
