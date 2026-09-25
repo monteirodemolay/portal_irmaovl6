@@ -2,6 +2,8 @@
 
 Estado em 25/09/2026: **bloqueada para dados reais**. O ensaio Wix utiliza somente 1 KiB aleatório. A flag `CRIPTA_REAL_CONTENT_ENABLED` deve permanecer ausente até a aprovação de todos os critérios abaixo. O mero login do operador não libera conteúdo.
 
+O módulo `sealed-capsule.ts` implementa um primeiro envelope portátil de cartas pequenas com Web Crypto, AES-256-GCM e PBKDF2. O ensaio local comprovou ida e volta e rejeição de alteração do ciphertext. Ele ainda **não** possui custódia de chave, destinatários com chaves públicas, anexos nem conexão ao armazenamento. Frases de baixa entropia podem ser atacadas offline se o pacote cifrado vazar; a escolha final deve passar por revisão externa antes de receber cartas reais.
+
 ## Decisões de segurança
 
 1. A unidade é uma cápsula por destinatário: carta, até dez fotografias, áudio e vídeo dentro de cotas verificadas no navegador **e no servidor**. A identidade do destinatário fica dentro da cápsula cifrada; o índice externo contém apenas IDs opacos e tamanho aproximado.
