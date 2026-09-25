@@ -9,7 +9,7 @@ type Letter = { id: string; title: string; recipient: string; body: string; atta
 type Step = 'inicio' | 'escrever' | 'revisar';
 
 const LIMIT = { foto: 5 * 1024 * 1024, audio: 10 * 1024 * 1024, video: 60 * 1024 * 1024 };
-const MAX_TOTAL = 150 * 1024 * 1024;
+const MAX_TOTAL = 650_000;
 const size = (bytes: number) => `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 const ONLINE_BYTES = 650_000;
 
@@ -100,7 +100,7 @@ export function CriptaExperience() {
       setMessage('Escolha uma foto, um áudio ou um vídeo compatível.'); return;
     }
     if (file.size > LIMIT[kind] || current.reduce((sum, item) => sum + item.file.size, 0) + file.size > MAX_TOTAL) {
-      setMessage(`Arquivo acima do limite. ${kind}: ${size(LIMIT[kind])}; total: 150 MB.`); return;
+      setMessage('Os anexos desta carta devem somar no máximo 650 KB. Escolha um arquivo menor.'); return;
     }
     const accept = () => {
       const latest = attachmentsRef.current;
@@ -144,7 +144,7 @@ export function CriptaExperience() {
       capture.onstop = () => {
         media.getTracks().forEach((track) => track.stop()); setRecording(null);
         const blob = new Blob(chunks.current, { type: capture.mimeType });
-        if (blob.size && blob.size <= LIMIT[kind]) {
+        if (blob.size && blob.size <= LIMIT[kind] && blob.size + attachmentsRef.current.reduce((sum, item) => sum + item.file.size, 0) <= MAX_TOTAL) {
           const file = new File([blob], `mensagem-${kind}.webm`, { type: capture.mimeType });
           const next = [...attachmentsRef.current, { id: crypto.randomUUID(), file, kind, url: URL.createObjectURL(file) }];
           attachmentsRef.current = next; setAttachments(next);
@@ -279,7 +279,7 @@ export function CriptaExperience() {
       {picker('foto', 'Fotografias', 'image/*', 'Até 10 fotos; o envio atual aceita 650 KB de anexos juntos.')}
       {picker('audio', 'Mensagem de voz', 'audio/*', 'Até 2 áudios; 650 KB de anexos juntos nesta fase.')}
       {picker('video', 'Vídeo', 'video/*', 'Até 1 minuto; o envio atual aceita 650 KB de anexos juntos.')}
-      <p className="text-sm text-[#536074]">Arquivos nesta carta: {size(total)} de 150 MB.</p>
+      <p className="text-sm text-[#536074]">Arquivos nesta carta: {Math.round(total / 1024)} KB de 650 KB.</p>
       <div className="flex flex-wrap gap-3"><button type="button" disabled={recording !== null} onClick={review} className="rounded-xl bg-[#123c69] px-6 py-4 font-semibold text-white disabled:opacity-50">Revisar minha carta</button><button type="button" onClick={() => { attachments.forEach((item) => URL.revokeObjectURL(item.url)); setAttachments([]); setStep('inicio'); }} className="rounded-xl border px-5 py-4">Voltar às cartas</button></div>
     </main>}
     {step === 'revisar' && <main className="rounded-[2rem] border border-[#ddd0b7] bg-[#fbf8f1] p-6 sm:p-9">
