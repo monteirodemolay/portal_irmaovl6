@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, type ChangeEvent, type DragEvent } from 'react';
+import { decodeLetter, encodeLetter, openCapsule, sealCapsule } from '@/modules/cripta/lib/sealed-capsule';
 
 type Section = 'visao' | 'cartas' | 'arquivos' | 'video' | 'audios' | 'destinatarios';
 type DraftFile = { id: string; file: File; kind: 'foto' | 'video' | 'audio'; url: string; letterId: string };
@@ -31,6 +32,9 @@ export function CriptaExperience() {
   const [clearPhrase, setClearPhrase] = useState('');
   const [files, setFiles] = useState<DraftFile[]>([]);
   const [message, setMessage] = useState('');
+  const [exportPassphrase, setExportPassphrase] = useState('');
+  const [importPassphrase, setImportPassphrase] = useState('');
+  const [working, setWorking] = useState(false);
   const [recording, setRecording] = useState<'video' | 'audio' | null>(null);
   const recorder = useRef<MediaRecorder | null>(null);
   const stream = useRef<MediaStream | null>(null);
@@ -51,6 +55,48 @@ export function CriptaExperience() {
   const used = files.reduce((sum, entry) => sum + entry.file.size, 0);
   const ofKind = (kind: DraftFile['kind']) => files.filter((entry) => entry.kind === kind);
   const selectedLetter = letters.find((entry) => entry.id === selectedLetterId);
+
+  async function exportSealedLetter(letter: Letter) {
+    if (exportPassphrase.length < 16 || working) { setMessage('Informe uma frase secreta com pelo menos 16 caracteres.'); return; }
+    setWorking(true);
+    try {
+      const envelope = await sealCapsule(encodeLetter(letter), exportPassphrase);
+      const url = URL.createObjectURL(new Blob([JSON.stringify(envelope)], { type: 'application/json' }));
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `cripta-carta-ensaio-${letter.id}.json`;
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(url), 30_000);
+      setMessage('Carta fictícia exportada cifrada. Guarde a frase separadamente e teste a restauração em outro dispositivo. Anexos não estão incluídos.');
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Não foi possível cifrar a carta.');
+    } finally { setExportPassphrase(''); setWorking(false); }
+  }
+
+  async function importSealedLetter(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file || working) return;
+    if (file.size > 1_500_000 || importPassphrase.length < 16) {
+      setMessage('Selecione um pacote de até 1,5 MB e informe a frase secreta de pelo menos 16 caracteres.'); return;
+    }
+    setWorking(true);
+    try {
+      const value: unknown = JSON.parse(await file.text());
+      const letter = decodeLetter(await openCapsule(value, importPassphrase));
+      if (!letter.title.trim() || letter.title.length > 80 || !letter.body.trim() || letter.body.length > 20_000 ||
+          !letter.recipient.trim() || letter.recipient.length > 100 || letters.length >= 5) {
+        throw new Error('Carta inválida ou limite de cinco cartas atingido.');
+      }
+      const id = crypto.randomUUID();
+      setLetters((items) => [...items, { ...letter, id }]);
+      setSelectedLetterId(id);
+      setSection('cartas');
+      setMessage('Carta fictícia restaurada nesta aba. Nenhum dado foi enviado ao servidor.');
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Não foi possível restaurar o pacote.');
+    } finally { setImportPassphrase(''); setWorking(false); }
+  }
 
   function clearLocalPreview() {
     if (clearPhrase !== 'APAGAR') return;
@@ -237,7 +283,7 @@ export function CriptaExperience() {
       <h1 className="mt-5 font-serif text-4xl leading-tight sm:text-5xl">Há memórias que merecem atravessar o tempo.</h1>
       <div className="mt-5 h-px w-24 bg-[#c9a449]" /><p className="mt-5 text-sm leading-7 text-slate-200">Escreva suas cartas. Reúna imagens e mensagens em sua própria voz. Escolha quem deverá recebê-las no futuro.</p></div>
     </header>
-    <div role="alert" className="rounded-xl border border-amber-400 bg-amber-50 p-4 text-sm leading-6 text-amber-950"><strong>Protótipo: use somente conteúdo inventado.</strong> Cartas e arquivos desta tela permanecem temporariamente nesta aba. Não há envio, salvamento, criptografia destas prévias nem recuperação após fechar ou recarregar a página. A Cripta real ainda não está habilitada.</div>
+    <div role="alert" className="rounded-xl border border-amber-400 bg-amber-50 p-4 text-sm leading-6 text-amber-950"><strong>Protótipo: use somente conteúdo inventado.</strong> As cartas e mídias desta aba não são salvas no servidor. É possível exportar uma carta cifrada para testar restauração offline; os anexos continuam fora desse arquivo. A Cripta real ainda não está habilitada.</div>
     {message && <p role="status" aria-live="polite" className="rounded-xl border border-[#c9a449] bg-card p-3 text-sm">{message}</p>}
     <div className="grid gap-6 lg:grid-cols-[250px_1fr]">
       <nav aria-label="Áreas da Cripta" className="flex gap-2 overflow-x-auto lg:flex-col">
@@ -259,9 +305,10 @@ export function CriptaExperience() {
             <p className="mt-2 text-right text-xs text-muted">{body.length}/20.000 caracteres</p>
             <button type="button" onClick={saveLetter} className="mt-3 rounded-lg bg-[#123c69] px-5 py-3 text-sm font-semibold text-white">{editingId ? 'Atualizar carta' : 'Concluir carta e visualizar'}</button>
           </div>
+          <div className="mt-6 rounded-2xl border border-[#dbcda9] bg-[#f5eedf] p-5"><h3 className="font-serif text-xl text-[#142a43]">Ensaio de recuperação de carta</h3><p className="mt-2 text-sm leading-6 text-[#536074]">Crie uma carta fictícia, escolha uma frase longa, baixe o pacote cifrado e abra-o neste ou em outro aparelho. A frase não é enviada ao portal. Fotos, áudio e vídeo não fazem parte deste ensaio.</p><div className="mt-4 grid gap-4 sm:grid-cols-2"><label className="text-sm font-semibold">Frase para exportar<input type="password" autoComplete="new-password" value={exportPassphrase} onChange={(event) => setExportPassphrase(event.target.value)} className="mt-2 w-full rounded-lg border bg-white p-3" /></label><label className="text-sm font-semibold">Frase para restaurar<input type="password" autoComplete="off" value={importPassphrase} onChange={(event) => setImportPassphrase(event.target.value)} className="mt-2 w-full rounded-lg border bg-white p-3" /></label></div><label className="mt-4 inline-block cursor-pointer rounded-lg border border-[#b99552] bg-white px-4 py-2 text-sm font-semibold">Abrir pacote cifrado<input type="file" accept=".json,application/json" onChange={importSealedLetter} disabled={working} className="sr-only" /></label></div>
           <div className="mt-8 space-y-3">{letters.map((letter) => <div key={letter.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[#dbcda9] bg-white p-4">
             <button type="button" onClick={() => setSelectedLetterId(letter.id)} className="min-w-0 text-left font-serif text-lg text-[#142a43] hover:underline">✉ &nbsp;{letter.title}<span className="block pl-8 font-sans text-xs text-muted">Para {letter.recipient} · {files.filter((entry) => entry.letterId === letter.id).length} anexo(s)</span></button>
-            <div className="flex gap-3 text-sm"><button type="button" onClick={() => { setEditingId(letter.id); setTitle(letter.title); setBody(letter.body); setLetterRecipient(letter.recipient); setSelectedLetterId(letter.id); }}>Editar</button><button type="button" onClick={() => {
+            <div className="flex gap-3 text-sm"><button type="button" disabled={working} onClick={() => exportSealedLetter(letter)} className="font-semibold text-[#123c69] disabled:opacity-50">Baixar cifrada</button><button type="button" onClick={() => { setEditingId(letter.id); setTitle(letter.title); setBody(letter.body); setLetterRecipient(letter.recipient); setSelectedLetterId(letter.id); }}>Editar</button><button type="button" onClick={() => {
               files.filter((entry) => entry.letterId === letter.id).forEach((entry) => URL.revokeObjectURL(entry.url));
               setFiles((items) => items.filter((entry) => entry.letterId !== letter.id));
               setLetters((items) => items.filter((item) => item.id !== letter.id));
