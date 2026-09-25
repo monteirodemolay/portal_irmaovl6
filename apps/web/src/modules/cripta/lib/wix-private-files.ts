@@ -25,6 +25,18 @@ function signedUrl(value: string | undefined): string {
   return url.toString();
 }
 
+/** generate-file-download-url may answer with a single downloadUrl or a downloadUrls[] (one per assetKey). */
+function extractDownloadUrl(data: {
+  downloadUrl?: unknown;
+  downloadUrls?: Array<{ downloadUrl?: unknown; url?: unknown }>;
+}): string | undefined {
+  if (typeof data.downloadUrl === 'string') return data.downloadUrl;
+  const first = data.downloadUrls?.[0];
+  if (typeof first?.downloadUrl === 'string') return first.downloadUrl;
+  if (typeof first?.url === 'string') return first.url;
+  return undefined;
+}
+
 async function ensureTemporaryFolder(): Promise<string> {
   const key = process.env.WIX_CRIPTA_API_KEY;
   if (!key) throw new Error('Integração Wix não configurada.');
@@ -85,10 +97,10 @@ export async function downloadPrivateCiphertext(fileId: string, sha256: string):
   let lastError: unknown;
   for (let attempt = 0; attempt < 6; attempt++) {
     try {
-      const ticket = await wix<{ downloadUrl: string }>(
+      const ticket = await wix<{ downloadUrl?: string; downloadUrls?: Array<{ downloadUrl?: string; url?: string }> }>(
         '/site-media/v1/files/generate-file-download-url', { fileId },
       );
-      const response = await fetch(signedUrl(ticket.downloadUrl), { cache: 'no-store', signal: AbortSignal.timeout(20_000) });
+      const response = await fetch(signedUrl(extractDownloadUrl(ticket)), { cache: 'no-store', signal: AbortSignal.timeout(20_000) });
       const declaredSize = Number(response.headers.get('content-length') ?? 0);
       if (!response.ok) throw new Error(`Download Wix: HTTP ${response.status}.`);
       if (declaredSize > 1_500_000) throw new Error('Arquivo Wix acima do limite.');

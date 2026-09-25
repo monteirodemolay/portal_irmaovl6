@@ -21,6 +21,18 @@ async function wix<T>(path: string, body: object): Promise<T> {
   return response.json() as Promise<T>;
 }
 
+/** generate-file-download-url may answer with a single downloadUrl or a downloadUrls[] (one per assetKey). */
+function extractDownloadUrl(data: {
+  downloadUrl?: unknown;
+  downloadUrls?: Array<{ downloadUrl?: unknown; url?: unknown }>;
+}): string | undefined {
+  if (typeof data.downloadUrl === 'string') return data.downloadUrl;
+  const first = data.downloadUrls?.[0];
+  if (typeof first?.downloadUrl === 'string') return first.downloadUrl;
+  if (typeof first?.url === 'string') return first.url;
+  return undefined;
+}
+
 export type WixTestResult = {
   encrypted: boolean;
   privateFile: boolean;
@@ -72,11 +84,12 @@ export async function runWixTestCycle(): Promise<WixTestResult> {
     // Wix may take time to process an uploaded file before it is downloadable.
     for (let attempt = 0; attempt < 6; attempt++) {
       try {
-        const urlResult = await wix<{ downloadUrl: string }>(
+        const urlResult = await wix<{ downloadUrl?: string; downloadUrls?: Array<{ downloadUrl?: string; url?: string }> }>(
           '/site-media/v1/files/generate-file-download-url', { fileId },
         );
-        if (!urlResult.downloadUrl || new URL(urlResult.downloadUrl).protocol !== 'https:') throw new Error('Download inválido.');
-        const download = await fetch(urlResult.downloadUrl, { cache: 'no-store', signal: AbortSignal.timeout(15_000) });
+        const downloadUrl = extractDownloadUrl(urlResult);
+        if (!downloadUrl || new URL(downloadUrl).protocol !== 'https:') throw new Error('Download inválido.');
+        const download = await fetch(downloadUrl, { cache: 'no-store', signal: AbortSignal.timeout(15_000) });
         if (!download.ok) throw new Error(`Download Wix: HTTP ${download.status}.`);
         const downloaded = Buffer.from(await download.arrayBuffer());
         integrity = createHash('sha256').update(downloaded).digest('hex') === digest;
