@@ -35,6 +35,8 @@ export function CriptaExperience() {
   const [exportPassphrase, setExportPassphrase] = useState('');
   const [importPassphrase, setImportPassphrase] = useState('');
   const [working, setWorking] = useState(false);
+  const [remoteItems, setRemoteItems] = useState<Array<{ id: string; createdAt: string; bytes: number }>>([]);
+  const [canDeposit, setCanDeposit] = useState(false);
   const [recording, setRecording] = useState<'video' | 'audio' | null>(null);
   const recorder = useRef<MediaRecorder | null>(null);
   const stream = useRef<MediaStream | null>(null);
@@ -44,6 +46,16 @@ export function CriptaExperience() {
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const filesRef = useRef(files);
   filesRef.current = files;
+
+  useEffect(() => {
+    let active = true;
+    fetch('/api/cripta/capsules', { cache: 'no-store' }).then(async (response) => {
+      if (!response.ok) return;
+      const data = await response.json() as { items: typeof remoteItems; canDeposit: boolean };
+      if (active) { setRemoteItems(data.items); setCanDeposit(data.canDeposit); }
+    }).catch(() => { /* offline preview remains available */ });
+    return () => { active = false; };
+  }, []);
 
   useEffect(() => () => {
     if (timer.current) clearTimeout(timer.current);
@@ -96,6 +108,25 @@ export function CriptaExperience() {
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Não foi possível restaurar o pacote.');
     } finally { setImportPassphrase(''); setWorking(false); }
+  }
+
+  async function storeSealedLetter(letter: Letter) {
+    if (!canDeposit || working || exportPassphrase.length < 16) {
+      setMessage('Depósitos fechados ou frase secreta insuficiente.'); return;
+    }
+    setWorking(true);
+    try {
+      const sealed = await sealCapsule(encodeLetter(letter), exportPassphrase);
+      const response = await fetch('/api/cripta/capsules', {
+        method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(sealed),
+      });
+      const result = await response.json() as { id?: string; error?: string };
+      if (!response.ok || !result.id) throw new Error(result.error || 'Depósito não confirmado.');
+      setRemoteItems((items) => [...items, { id: result.id!, createdAt: new Date().toISOString(), bytes: JSON.stringify(sealed).length }]);
+      setMessage('Pacote cifrado registrado. Baixe uma cópia de verificação e teste a restauração antes de depender dele. Anexos não foram incluídos.');
+    } catch (error) { setMessage(error instanceof Error ? error.message : 'Falha no depósito.'); }
+    finally { setExportPassphrase(''); setWorking(false); }
   }
 
   function clearLocalPreview() {
@@ -306,9 +337,10 @@ export function CriptaExperience() {
             <button type="button" onClick={saveLetter} className="mt-3 rounded-lg bg-[#123c69] px-5 py-3 text-sm font-semibold text-white">{editingId ? 'Atualizar carta' : 'Concluir carta e visualizar'}</button>
           </div>
           <div className="mt-6 rounded-2xl border border-[#dbcda9] bg-[#f5eedf] p-5"><h3 className="font-serif text-xl text-[#142a43]">Ensaio de recuperação de carta</h3><p className="mt-2 text-sm leading-6 text-[#536074]">Crie uma carta fictícia, escolha uma frase longa, baixe o pacote cifrado e abra-o neste ou em outro aparelho. A frase não é enviada ao portal. Fotos, áudio e vídeo não fazem parte deste ensaio.</p><div className="mt-4 grid gap-4 sm:grid-cols-2"><label className="text-sm font-semibold">Frase para exportar<input type="password" autoComplete="new-password" value={exportPassphrase} onChange={(event) => setExportPassphrase(event.target.value)} className="mt-2 w-full rounded-lg border bg-white p-3" /></label><label className="text-sm font-semibold">Frase para restaurar<input type="password" autoComplete="off" value={importPassphrase} onChange={(event) => setImportPassphrase(event.target.value)} className="mt-2 w-full rounded-lg border bg-white p-3" /></label></div><label className="mt-4 inline-block cursor-pointer rounded-lg border border-[#b99552] bg-white px-4 py-2 text-sm font-semibold">Abrir pacote cifrado<input type="file" accept=".json,application/json" onChange={importSealedLetter} disabled={working} className="sr-only" /></label></div>
+          {remoteItems.length > 0 && <div className="mt-5 rounded-xl border border-[#dbcda9] bg-white p-4"><h3 className="font-serif text-lg">Pacotes cifrados registrados</h3><p className="mt-1 text-xs text-muted">O inventário não mostra título nem destinatário. O download só estará disponível durante uma janela autorizada.</p>{remoteItems.map((item) => <div key={item.id} className="mt-3 flex items-center justify-between gap-3 border-t pt-3 text-xs"><span>{new Date(item.createdAt).toLocaleDateString('pt-BR')} · {formatSize(item.bytes)}</span><a className="font-semibold text-[#123c69] underline" href={`/api/cripta/capsules/${item.id}`}>Baixar cifrado</a></div>)}</div>}
           <div className="mt-8 space-y-3">{letters.map((letter) => <div key={letter.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[#dbcda9] bg-white p-4">
             <button type="button" onClick={() => setSelectedLetterId(letter.id)} className="min-w-0 text-left font-serif text-lg text-[#142a43] hover:underline">✉ &nbsp;{letter.title}<span className="block pl-8 font-sans text-xs text-muted">Para {letter.recipient} · {files.filter((entry) => entry.letterId === letter.id).length} anexo(s)</span></button>
-            <div className="flex gap-3 text-sm"><button type="button" disabled={working} onClick={() => exportSealedLetter(letter)} className="font-semibold text-[#123c69] disabled:opacity-50">Baixar cifrada</button><button type="button" onClick={() => { setEditingId(letter.id); setTitle(letter.title); setBody(letter.body); setLetterRecipient(letter.recipient); setSelectedLetterId(letter.id); }}>Editar</button><button type="button" onClick={() => {
+            <div className="flex gap-3 text-sm">{canDeposit && <button type="button" disabled={working} onClick={() => storeSealedLetter(letter)} className="font-semibold text-[#123c69] disabled:opacity-50">Guardar cifrada</button>}<button type="button" disabled={working} onClick={() => exportSealedLetter(letter)} className="font-semibold text-[#123c69] disabled:opacity-50">Baixar cifrada</button><button type="button" onClick={() => { setEditingId(letter.id); setTitle(letter.title); setBody(letter.body); setLetterRecipient(letter.recipient); setSelectedLetterId(letter.id); }}>Editar</button><button type="button" onClick={() => {
               files.filter((entry) => entry.letterId === letter.id).forEach((entry) => URL.revokeObjectURL(entry.url));
               setFiles((items) => items.filter((entry) => entry.letterId !== letter.id));
               setLetters((items) => items.filter((item) => item.id !== letter.id));
