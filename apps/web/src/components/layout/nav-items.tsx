@@ -262,7 +262,10 @@ export function buildNavSections(
             flyout: adminAreaFlyouts[item.href],
           })),
           ...(hasPermission(authContext, 'tenant:manage')
-            ? [{ href: '/cripta-demonstracao', content: navContent(Lock, 'Cripta · demonstração') }]
+            ? [
+                { href: '/cripta-demonstracao', content: navContent(Lock, 'Cripta · demonstração') },
+                { href: '/cripta-laboratorio', content: navContent(Lock, 'Cripta · laboratório V1') },
+              ]
             : []),
         ],
       });
