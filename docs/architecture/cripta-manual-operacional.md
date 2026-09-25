@@ -10,6 +10,14 @@ O período anual será de **dez dias consecutivos**. Registrar hora e fuso de ab
 
 **Reserva da Loja:** acrescentar uma terceira cópia cifrada completa, identificada como C, guardada em armário/cofre sob controle da Loja, com registro de acesso. A e B ficam sob custódias e em locais separados; não concentrar as três no mesmo prédio. “Ativo” significa inventariado e verificado periodicamente, **não permanentemente conectado** a um computador ou rede. Se A ou B falhar, verificar C e a outra unidade contra o inventário aprovado, substituir a unidade danificada e testar a restauração. A reserva C também deve ser renovada sempre que o acervo autorizado mudar. As chaves de abertura não ficam junto das mídias.
 
+### Regra de extravio, furto ou falha de uma unidade
+
+1. O administrador do Portal registra ocorrência, unidade A/B/C, número de série/inventário, data, última verificação e motivo (extravio, furto ou falha). Um segundo responsável confere o registro e acompanha a reposição. O desaparecimento de uma mídia cifrada não expõe automaticamente as cartas, mas exige análise de incidente e de possível comprometimento das chaves mantidas separadas.
+2. Identificar **uma cópia íntegra** pela leitura completa contra o inventário aprovado fora das mídias. A unidade de origem permanece sob leitura; separar uma unidade nova, identificada e vazia. Em estação autorizada, executar `python3 scripts/cripta/replace_copy.py inventario.json /caminho/origem /caminho/nova --manifest-sha256 HASH_APROVADO`. O programa se recusa a sobrescrever destino não vazio, compara a origem, copia somente bytes já cifrados e confere novamente o destino. Nenhuma chave é necessária para esta reposição.
+3. Ejetar, reconectar e executar `verify_copies.py` com as três unidades atuais, inclusive a nova; fazer teste de restauração autorizado em equipamento distinto. Registrar o novo número de série, hash, operador, conferente e resultado antes de voltar à custódia regular. Manter a unidade perdida como extraviada no histórico, mesmo após reposição.
+
+O script de cópia é uma ferramenta **local**, não uma ação do navegador. O login de administrador **ainda não gera registro digital de ocorrência nem controla o dispositivo USB**; essas telas e a dupla aprovação continuam pendentes. A ferramenta foi testada somente com pacotes artificiais. Se a origem não corresponder ao inventário, não copiá-la para transformar corrupção em nova “cópia de segurança”.
+
 ### Double-check de integridade
 
 1. Na exportação futura, o sistema produzirá um inventário `vl6-export-v1` com caminhos **opacos**, tamanhos e SHA-256 de cada pacote **já cifrado**. Conferir o hash dos objetos baixados do Wix contra o inventário antes de gravar. Registrar o SHA-256 do **próprio inventário** em ata por dois responsáveis, por canal separado das mídias; futuramente assinar digitalmente esse inventário. Sem referência independente, uma pessoa poderia trocar arquivo e hash ao mesmo tempo.
