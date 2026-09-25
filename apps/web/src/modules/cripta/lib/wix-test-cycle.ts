@@ -1,5 +1,6 @@
 import 'server-only';
 import { createCipheriv, createHash, randomBytes } from 'node:crypto';
+import { wixError } from './wix-error';
 
 const API = 'https://www.wixapis.com';
 // Identificador do projeto Wix observado no editor da VL6. Nunca é uma credencial.
@@ -16,7 +17,7 @@ async function wix<T>(path: string, body: object): Promise<T> {
     signal: AbortSignal.timeout(15_000),
   });
   // Nunca registre corpo ou cabeçalhos: podem conter URLs assinadas e credenciais.
-  if (!response.ok) throw new Error(`Wix Media: HTTP ${response.status}.`);
+  if (!response.ok) throw await wixError(response, path.split('/').pop() ?? 'api');
   return response.json() as Promise<T>;
 }
 
