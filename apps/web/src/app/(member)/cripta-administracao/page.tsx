@@ -19,7 +19,7 @@ export default async function Page() {
   const members = result.items;
   const eligible = members.filter((member) => !!member.userId);
   const records = await Promise.all(eligible.map(async (member) => {
-    const inventory = await db.collection('criptaPilotV1').doc(member.userId!).collection('capsules').get();
+    const inventory = await db.collection('criptaOnlineCapsulesV1').where('tenantId', '==', tenantId).where('uid', '==', member.userId!).get();
     return { member, count: inventory.docs.filter((item) => item.data().status === 'ready').length };
   }));
   const control = governance.data();
