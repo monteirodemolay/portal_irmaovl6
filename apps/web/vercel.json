@@ -9,6 +9,10 @@
       "schedule": "0 6 * * *"
     },
     {
+      "path": "/api/cron/cripta-test-cleanup",
+      "schedule": "0 8 * * *"
+    },
+    {
       "path": "/api/cron/publish-scheduled-archive-items",
       "schedule": "0 7 * * *"
     },

@@ -2,7 +2,7 @@
 
 ## Estado e alcance
 
-Documento de preparo. O Portal **ainda não recebe nem conserva conteúdo real**. A tela pessoal reúne carta, destinatário e anexos opcionais em uma prévia temporária; fechar a aba apaga a prévia. Os ensaios Wix e Wix + Firestore passaram em produção com bytes artificiais, mas não validam a custódia de cartas. Não usar esses recursos como arquivo definitivo.
+Documento de preparo. O Portal **ainda não recebe nem conserva conteúdo real**. A tela pessoal reúne carta, destinatário e anexos opcionais em uma prévia temporária; fechar a aba apaga a prévia. Há também um ensaio conectado restrito à conta piloto: cifra uma carta **fictícia** no navegador, envia o pacote privado ao Wix, registra índice opaco no Firestore, permite reabertura e exclusão. O acesso expira em 48 horas e uma rotina diária tenta excluir objetos expirados; falha na rotina exige reconciliação manual. Não usar como arquivo definitivo.
 
 O período anual será de **dez dias consecutivos**. Registrar hora e fuso de abertura e encerramento como instantes com offset explícito; por exemplo, `2026-10-09T00:00:00-03:00` até `2026-10-19T00:00:00-03:00` (fim exclusivo). Se houver mudança de fuso, decidir formalmente se contam dez dias civis ou 240 horas antes de aprovar a janela. A política inicial de código exige 240 horas. Uma data escolhida em reunião não libera sozinha o acervo: aprovação, presença dos guardiões e estado das cópias são condições adicionais.
 
@@ -51,7 +51,8 @@ O arquivo do ensaio atual `vl6-capsule-v1` inclui apenas carta e campos `title`,
 2. Inclua uma foto, áudio ou vídeo artificiais, se desejar. Use também uma carta sem anexo. Confira o tamanho e os limites exibidos.
 3. Clique em **Revisar minha carta**, volte para alterar algo e confirme que o destinatário, o texto e os anexos permanecem reunidos na mesma carta.
 4. Clique em **Manter prévia nesta aba**, abra novamente em **Ver ou alterar carta**, e confira o conjunto. Feche a página e confirme que a prévia desaparece. **Nenhum dado é enviado ao Wix neste exercício pessoal.**
-5. Na área administrativa, execute **Testar Wix + Firestore** e o ensaio fictício separadamente. Exija integridade confirmada e solicitação de limpeza, sem introduzir conteúdo pessoal.
+5. Na tela de revisão, informe frase fictícia longa e clique em **Enviar carta fictícia cifrada**. O ensaio conectado aceita apenas anexos somando até 650 KB. Volte a **Minhas cartas**, informe a mesma frase em **Ensaios cifrados no Wix**, clique em **Reabrir e conferir** e revise texto, destinatário e anexo. Feche e reabra o navegador para demonstrar persistência do objeto remoto. Clique em **Excluir teste** e confirme o desaparecimento do índice. Teste frase errada e arquivo adulterado em ambiente isolado.
+6. Na área administrativa, execute **Testar Wix + Firestore** separadamente. Exija integridade confirmada e solicitação de limpeza, sem introduzir conteúdo pessoal.
 
 ## Ciclo anual pretendido
 
