@@ -2,6 +2,8 @@
 
 Estado em 25/09/2026: **bloqueada para dados reais**. O ensaio Wix utiliza somente 1 KiB aleatório. A flag `CRIPTA_REAL_CONTENT_ENABLED` deve permanecer ausente até a aprovação de todos os critérios abaixo. O mero login do operador não libera conteúdo.
 
+Ligação técnica em elaboração: `POST /api/cripta/capsules` aceita somente pacote JSON já cifrado de até 1,5 MB, reserva vaga no inventário Firestore do próprio titular, envia bytes ao Wix como arquivo privado e grava hash SHA-256. `GET /api/cripta/capsules/[id]` confere o hash ao baixar e só responde durante janela habilitada. O ensaio `POST /api/cripta/integration-check` usa 1 KB aleatório, percorre Wix e Firestore e solicita exclusão. **Ainda não se comprovou o ensaio ao vivo com a chave Wix configurada**, nem foi implementada cerimônia de duas aprovações para criar/abrir a janela, exclusão real de cápsulas, mídias grandes, exportação SSD e partilha de recuperação. Não definir a flag como `true` manualmente.
+
 O módulo `sealed-capsule.ts` implementa um primeiro envelope portátil de cartas pequenas com Web Crypto, AES-256-GCM e PBKDF2. O ensaio local comprovou ida e volta e rejeição de alteração do ciphertext. Ele ainda **não** possui custódia de chave, destinatários com chaves públicas, anexos nem conexão ao armazenamento. Frases de baixa entropia podem ser atacadas offline se o pacote cifrado vazar; a escolha final deve passar por revisão externa antes de receber cartas reais.
 
 ## Decisões de segurança
