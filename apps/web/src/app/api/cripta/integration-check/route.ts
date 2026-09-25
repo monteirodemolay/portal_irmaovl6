@@ -48,7 +48,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ stored: true, restored: true, bytes: restored.length,
       cleanup: 'delete-requested-and-inventory-removed' }, { headers: { 'Cache-Control': 'no-store' } });
   } catch (error) {
-    const detail = error instanceof Error && /^(Wix Media: HTTP \d{3}|Listagem de pastas Wix: HTTP \d{3}|Upload Wix: HTTP \d{3})\.$/.test(error.message)
+    const detail = error instanceof Error && /^(Wix Media \[[a-z-]+\]: HTTP \d{3}( \([a-zA-Z0-9_.-]{1,90}\))?|Upload Wix: HTTP \d{3})\.$/.test(error.message)
       ? error.message : undefined;
     return NextResponse.json({ error: 'Ensaio integrado falhou.', stage, detail }, { status: 502 });
   } finally {
