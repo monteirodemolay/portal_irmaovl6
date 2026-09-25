@@ -229,6 +229,16 @@ export function buildNavSections(
     });
   }
 
+  if (hasPermission(authContext, 'tenant:manage') && canAccessCriptaPilot(userEmail)) {
+    sections.push({
+      title: 'Cripta',
+      items: [
+        { href: '/cripta', content: navContent(Lock, 'Minhas cartas') },
+        { href: '/cripta-administracao', content: navContent(Lock, 'Administração') },
+      ],
+    });
+  }
+
   if (isAdminTier(role)) {
     const visibleAdminItems = ADMIN_ITEMS.filter(
       (item) =>
@@ -263,13 +273,6 @@ export function buildNavSections(
             content: navContent(item.icon, dictionary.nav[item.labelKey]),
             flyout: adminAreaFlyouts[item.href],
           })),
-          ...(hasPermission(authContext, 'tenant:manage') && canAccessCriptaPilot(userEmail)
-            ? [
-                { href: '/cripta', content: navContent(Lock, 'Cripta · experiência') },
-                { href: '/cripta-administracao', content: navContent(Lock, 'Cripta · administração') },
-                { href: '/cripta-laboratorio', content: navContent(Lock, 'Cripta · laboratório V1') },
-              ]
-            : []),
         ],
       });
     }
