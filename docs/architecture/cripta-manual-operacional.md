@@ -1,8 +1,8 @@
-# Cripta VL6 — manual de operação e ensaios (pré-Wix)
+# Cripta VL6 — manual de operação e ensaios
 
 ## Estado e alcance
 
-Documento de preparo. O Portal **ainda não recebe nem conserva conteúdo real**. A tela pessoal permite testar a exportação cifrada de uma **carta fictícia**, sem anexos, e a restauração local. O laboratório Wix anterior recebe apenas bytes aleatórios. Não usar esses recursos como arquivo definitivo.
+Documento de preparo. O Portal **ainda não recebe nem conserva conteúdo real**. A tela pessoal reúne carta, destinatário e anexos opcionais em uma prévia temporária; fechar a aba apaga a prévia. Os ensaios Wix e Wix + Firestore passaram em produção com bytes artificiais, mas não validam a custódia de cartas. Não usar esses recursos como arquivo definitivo.
 
 O período anual será de **dez dias consecutivos**. Registrar hora e fuso de abertura e encerramento como instantes com offset explícito; por exemplo, `2026-10-09T00:00:00-03:00` até `2026-10-19T00:00:00-03:00` (fim exclusivo). Se houver mudança de fuso, decidir formalmente se contam dez dias civis ou 240 horas antes de aprovar a janela. A política inicial de código exige 240 horas. Uma data escolhida em reunião não libera sozinha o acervo: aprovação, presença dos guardiões e estado das cópias são condições adicionais.
 
@@ -26,11 +26,11 @@ O arquivo do ensaio atual `vl6-capsule-v1` inclui apenas carta e campos `title`,
 
 ### Exercício imediato com conteúdo inventado
 
-1. Entre na área **Minha Cripta** com a conta piloto. Escreva uma carta fictícia e indique um destinatário fictício.
-2. Informe uma frase secreta longa na área **Ensaio de recuperação de carta**; clique em **Baixar cifrada** na carta escolhida.
-3. Copie o JSON para um pendrive de teste e abra a mesma página em outro navegador ou computador autorizado. Informe a frase em **Frase para restaurar** e escolha **Abrir pacote cifrado**.
-4. Confirme título, texto e destinatário. Altere um caractere de `ciphertext` numa cópia do JSON e confirme que a abertura falha. Repita com frase incorreta. Nunca use cartas pessoais neste exercício.
-5. Teste após limpar a aba original. Conservar duas cópias do pacote em mídias diferentes; perda simultânea do pacote e da frase implica perda do conteúdo de ensaio.
+1. Entre em **Minha Cripta**, clique em **Escrever uma carta** e indique destinatário e texto fictícios.
+2. Inclua uma foto, áudio ou vídeo artificiais, se desejar. Use também uma carta sem anexo. Confira o tamanho e os limites exibidos.
+3. Clique em **Revisar minha carta**, volte para alterar algo e confirme que o destinatário, o texto e os anexos permanecem reunidos na mesma carta.
+4. Clique em **Manter prévia nesta aba**, abra novamente em **Ver ou alterar carta**, e confira o conjunto. Feche a página e confirme que a prévia desaparece. **Nenhum dado é enviado ao Wix neste exercício pessoal.**
+5. Na área administrativa, execute **Testar Wix + Firestore** e o ensaio fictício separadamente. Exija integridade confirmada e solicitação de limpeza, sem introduzir conteúdo pessoal.
 
 ## Ciclo anual pretendido
 
