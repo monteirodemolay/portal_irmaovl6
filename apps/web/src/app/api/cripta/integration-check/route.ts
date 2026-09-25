@@ -21,27 +21,36 @@ export async function POST(request: Request) {
   let fileId: string | undefined;
   let reserved = false;
   let finalized = false;
+  let stage = 'inventario-reserva';
   try {
     await reserveCapsule(session.user.id, id);
     reserved = true;
+    stage = 'wix-pasta-e-upload';
     const uploaded = await uploadPrivateCiphertext(synthetic);
     fileId = uploaded.fileId;
+    stage = 'inventario-confirmacao';
     await finalizeCapsule(session.user.id, id, fileId, uploaded.sha256, synthetic.length);
     finalized = true;
+    stage = 'inventario-leitura';
     const record = await getCapsule(session.user.id, id);
     if (!record?.fileId || record.sha256 !== createHash('sha256').update(synthetic).digest('hex')) {
       throw new Error('Inventário inconsistente.');
     }
+    stage = 'wix-download-e-integridade';
     const restored = await downloadPrivateCiphertext(record.fileId, record.sha256);
     if (!restored.equals(synthetic)) throw new Error('Conteúdo cifrado não íntegro.');
+    stage = 'wix-exclusao';
     await deletePrivateCiphertext(fileId);
+    stage = 'inventario-limpeza';
     await removeCapsuleRecord(session.user.id, id, fileId);
     fileId = undefined;
     finalized = false;
     return NextResponse.json({ stored: true, restored: true, bytes: restored.length,
       cleanup: 'delete-requested-and-inventory-removed' }, { headers: { 'Cache-Control': 'no-store' } });
-  } catch {
-    return NextResponse.json({ error: 'Ensaio integrado falhou. Confira Wix, Firestore e integridade.' }, { status: 502 });
+  } catch (error) {
+    const detail = error instanceof Error && /^(Wix Media: HTTP \d{3}|Listagem de pastas Wix: HTTP \d{3}|Upload Wix: HTTP \d{3})\.$/.test(error.message)
+      ? error.message : undefined;
+    return NextResponse.json({ error: 'Ensaio integrado falhou.', stage, detail }, { status: 502 });
   } finally {
     if (fileId) {
       try {
