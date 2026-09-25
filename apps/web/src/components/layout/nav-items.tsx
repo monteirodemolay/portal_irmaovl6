@@ -10,6 +10,7 @@ import {
   LayoutDashboard,
   Megaphone,
   Newspaper,
+  Lock,
   Send,
   Settings,
   Users,
@@ -254,11 +255,16 @@ export function buildNavSections(
       };
       sections.push({
         title: 'Administração',
-        items: visibleAdminItems.map((item) => ({
-          href: item.href,
-          content: navContent(item.icon, dictionary.nav[item.labelKey]),
-          flyout: adminAreaFlyouts[item.href],
-        })),
+        items: [
+          ...visibleAdminItems.map((item) => ({
+            href: item.href,
+            content: navContent(item.icon, dictionary.nav[item.labelKey]),
+            flyout: adminAreaFlyouts[item.href],
+          })),
+          ...(hasPermission(authContext, 'tenant:manage')
+            ? [{ href: '/cripta-demonstracao', content: navContent(Lock, 'Cripta · demonstração') }]
+            : []),
+        ],
       });
     }
   }
