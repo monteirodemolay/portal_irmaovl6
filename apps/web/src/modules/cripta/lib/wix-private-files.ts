@@ -7,6 +7,10 @@ const SITE_ID = '5ffa01ac-42b4-48e6-aacc-31adb6fe3dac';
 async function wix<T>(path: string, body: object): Promise<T> {
   const key = process.env.WIX_CRIPTA_API_KEY;
   if (!key) throw new Error('Integração Wix não configurada.');
+  // Avoid sending a Stripe live secret or an obvious placeholder to Wix.
+  if (/^(sk_live_|sk_test_|pk_live_|pk_test_)/.test(key) || key.includes('...')) {
+    throw new Error('Credencial configurada não parece uma chave Wix.');
+  }
   const response = await fetch(`${API}${path}`, {
     method: 'POST',
     headers: { Authorization: key, 'wix-site-id': SITE_ID, 'Content-Type': 'application/json' },
