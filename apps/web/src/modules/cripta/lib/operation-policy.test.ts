@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { canAcceptRealContent } from './operation-policy';
+import { canAcceptRealContent, isTenDayWindow } from './operation-policy';
 
 const window = { opensAt: '2026-10-09T00:00:00Z', closesAt: '2026-10-19T00:00:00Z', status: 'open' as const };
 
@@ -15,5 +15,6 @@ describe('real vault opening policy', () => {
   it('rejects invalid and inverted intervals', () => {
     expect(canAcceptRealContent('true', { ...window, opensAt: 'invalid' }, new Date())).toBe(false);
     expect(canAcceptRealContent('true', { ...window, closesAt: window.opensAt }, new Date())).toBe(false);
+    expect(isTenDayWindow({ ...window, closesAt: '2026-10-18T00:00:00Z' })).toBe(false);
   });
 });
