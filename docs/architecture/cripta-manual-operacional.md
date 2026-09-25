@@ -6,6 +6,8 @@ Documento de preparo. O Portal **ainda não recebe nem conserva conteúdo real**
 
 O período anual será de **dez dias consecutivos**. Registrar hora e fuso de abertura e encerramento como instantes com offset explícito; por exemplo, `2026-10-09T00:00:00-03:00` até `2026-10-19T00:00:00-03:00` (fim exclusivo). Se houver mudança de fuso, decidir formalmente se contam dez dias civis ou 240 horas antes de aprovar a janela. A política inicial de código exige 240 horas. Uma data escolhida em reunião não libera sozinha o acervo: aprovação, presença dos guardiões e estado das cópias são condições adicionais.
 
+**Unidades de guarda:** a exigência é de duas unidades externas independentes; podem ser dois SSDs, dois pen drives ou um de cada. Identificar A e B por número de série ou inventário, manter em locais e custódias separados, protegê-las com criptografia e registrar capacidade, data de gravação, hash do inventário e resultado de leitura/restauração. Não escolher pen drive apenas pela aparência ou capacidade anunciada: gravar, ejetar, reconectar, ler integralmente e restaurar em outro computador. Substituir a unidade que falhar e refazer a segunda cópia antes de apagar os arquivos temporários do Wix. Programar inspeções periódicas e migração para novas unidades, inclusive a revisão a cada cinco anos; esse prazo não dispensa as verificações intermediárias.
+
 ## Papéis e poderes
 
 | Papel | Pode fazer | Não pode fazer sozinho |
@@ -37,17 +39,17 @@ O arquivo do ensaio atual `vl6-capsule-v1` inclui apenas carta e campos `title`,
 | Fase | Evidência para avançar | Conduta se falhar |
 | --- | --- | --- |
 | Planejamento | Deliberação interna, datas e guardiões confirmados, teste recente das duas mídias. | Adiar sem abrir. |
-| Preparação | Inventário e hashes dos dois SSDs conferidos; restauração amostral em equipamento isolado. | Isolar mídia defeituosa e restaurar da íntegra antes de abrir. |
+| Preparação | Inventário e hashes das duas unidades externas conferidos; restauração amostral em equipamento isolado. | Isolar mídia defeituosa e restaurar da íntegra antes de abrir. |
 | Abertura | Registro de abertura, hora autenticada, versão implantada e controles de acesso testados. | Bloquear gravações; não confiar apenas no relógio do navegador. |
 | Dez dias | Titular ativo altera apenas o próprio conteúdo, com limites aplicados também no servidor; cópias temporárias cifradas. | Suspender depósitos em caso de incidente; preservar evidências sem expor cartas. |
-| Fechamento | Bloquear uploads, aguardar transações, exportar inventário final e gravar/verificar dois SSDs independentes. | Manter janela fechada para usuários, mas não apagar a cópia temporária até garantir restauração. |
+| Fechamento | Bloquear uploads, aguardar transações, exportar inventário final e gravar/verificar duas unidades externas independentes. | Manter janela fechada para usuários, mas não apagar a cópia temporária até garantir restauração. |
 | Limpeza temporária | Recibos por objeto removido, verificação posterior da listagem e política de retenção do provedor. | Registrar pendência; não declarar eliminação total. |
 
 Em uma hecatombe ou ausência dos responsáveis, a data passa sem abertura. Nova data exige decisão documentada; não existe desbloqueio automático. Se um irmão falecer fora da janela, abrir somente a cápsula elegível em procedimento excepcional, com verificação documental, destinatário e aprovação por duas pessoas; a janela geral continua fechada.
 
 ## Ensaios de falha e corrupção
 
-- **Um SSD ilegível:** restaurar do segundo e criar nova segunda cópia antes de concluir a cerimônia. Inspecionar conectores e realizar leitura completa, não confiar apenas na visualização da lista de arquivos.
+- **Uma unidade externa ilegível:** restaurar da segunda e criar nova cópia independente antes de concluir a cerimônia. Inspecionar conectores e realizar leitura completa, não confiar apenas na visualização da lista de arquivos.
 - **Ambos ilegíveis:** não apagar a cópia temporária; registrar incidente e buscar outros backups autorizados. Sem cópia íntegra e chave, o conteúdo pode ser perdido.
 - **Arquivo alterado:** autenticação AES-GCM deve recusar a abertura; hash do manifesto acusa diferença. Nunca corrigir o arquivo por edição manual.
 - **Pessoa mal-intencionada:** duas aprovações, parcelas sob custódias distintas, histórico imutável fora do servidor da aplicação e reconciliação independente reduzem risco; não eliminam conluio.
