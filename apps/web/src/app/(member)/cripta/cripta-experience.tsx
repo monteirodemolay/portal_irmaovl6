@@ -9,9 +9,9 @@ type Letter = { id: string; title: string; recipient: string; body: string; atta
 type Step = 'inicio' | 'escrever' | 'revisar';
 
 const LIMIT = { foto: 5 * 1024 * 1024, audio: 10 * 1024 * 1024, video: 60 * 1024 * 1024 };
-const MAX_TOTAL = 150 * 1024 * 1024;
+const MAX_TOTAL = 650_000;
 const size = (bytes: number) => `${(bytes / 1024 / 1024).toFixed(1)} MB`;
-const TEST_BYTES = 650_000;
+const ONLINE_BYTES = 650_000;
 
 function toBase64(bytes: Uint8Array): string {
   let result = '';
@@ -19,17 +19,17 @@ function toBase64(bytes: Uint8Array): string {
   return btoa(result);
 }
 
-async function testPayload(letter: { title: string; recipient: string; body: string; attachments: Attachment[] }): Promise<Uint8Array> {
-  if (letter.attachments.reduce((sum, item) => sum + item.file.size, 0) > TEST_BYTES) {
-    throw new Error('Neste primeiro ensaio conectado, os anexos juntos devem ter até 650 KB. Use uma imagem pequena ou teste apenas o texto.');
+async function onlinePayload(letter: { title: string; recipient: string; body: string; attachments: Attachment[] }): Promise<Uint8Array> {
+  if (letter.attachments.reduce((sum, item) => sum + item.file.size, 0) > ONLINE_BYTES) {
+    throw new Error('O envio atual aceita até 650 KB de anexos juntos. Escolha imagens pequenas ou envie apenas a carta.');
   }
   const items = await Promise.all(letter.attachments.map(async (item) => ({
     kind: item.kind, name: item.file.name.slice(0, 120), type: item.file.type,
     data: toBase64(new Uint8Array(await item.file.arrayBuffer())),
   })));
-  const bytes = new TextEncoder().encode(JSON.stringify({ format: 'vl6-fictional-test-v1',
+  const bytes = new TextEncoder().encode(JSON.stringify({ format: 'vl6-online-letter-v1',
     title: letter.title, recipient: letter.recipient, body: letter.body, attachments: items }));
-  if (bytes.length > 1_000_000) throw new Error('Pacote de ensaio acima de 1 MB.');
+  if (bytes.length > 1_000_000) throw new Error('Carta acima de 1 MB antes da cifragem.');
   return bytes;
 }
 
@@ -43,7 +43,7 @@ export function CriptaExperience() {
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [message, setMessage] = useState('');
   const [passphrase, setPassphrase] = useState('');
-  const [remote, setRemote] = useState<Array<{ id: string; createdAt: string; expiresAt: string }>>([]);
+  const [remote, setRemote] = useState<Array<{ id: string; createdAt: string; expiresAt?: string }>>([]);
   const [busy, setBusy] = useState(false);
   const [recording, setRecording] = useState<Kind | null>(null);
   const recorder = useRef<MediaRecorder | null>(null);
@@ -56,7 +56,7 @@ export function CriptaExperience() {
   lettersRef.current = letters;
 
   useEffect(() => {
-    fetch('/api/cripta/test-capsules', { cache: 'no-store' }).then(async (response) => {
+    fetch('/api/cripta/online-capsules', { cache: 'no-store' }).then(async (response) => {
       if (response.ok) setRemote((await response.json() as { items: typeof remote }).items);
     }).catch(() => { /* UI can still be explored without the service */ });
   }, []);
@@ -73,7 +73,7 @@ export function CriptaExperience() {
   const total = attachments.reduce((sum, item) => sum + item.file.size, 0);
 
   function startNew() {
-    if (letters.length >= 5) { setMessage('Limite de cinco cartas neste ensaio.'); return; }
+    if (letters.length >= 5) { setMessage('Limite de cinco cartas. Exclua uma para escrever outra.'); return; }
     setEditingId(null); setTitle(''); setRecipient(''); setBody(''); setAttachments([]); setMessage(''); setStep('escrever');
   }
 
@@ -100,7 +100,7 @@ export function CriptaExperience() {
       setMessage('Escolha uma foto, um áudio ou um vídeo compatível.'); return;
     }
     if (file.size > LIMIT[kind] || current.reduce((sum, item) => sum + item.file.size, 0) + file.size > MAX_TOTAL) {
-      setMessage(`Arquivo acima do limite. ${kind}: ${size(LIMIT[kind])}; total: 150 MB.`); return;
+      setMessage('Os anexos desta carta devem somar no máximo 650 KB. Escolha um arquivo menor.'); return;
     }
     const accept = () => {
       const latest = attachmentsRef.current;
@@ -144,7 +144,7 @@ export function CriptaExperience() {
       capture.onstop = () => {
         media.getTracks().forEach((track) => track.stop()); setRecording(null);
         const blob = new Blob(chunks.current, { type: capture.mimeType });
-        if (blob.size && blob.size <= LIMIT[kind]) {
+        if (blob.size && blob.size <= LIMIT[kind] && blob.size + attachmentsRef.current.reduce((sum, item) => sum + item.file.size, 0) <= MAX_TOTAL) {
           const file = new File([blob], `mensagem-${kind}.webm`, { type: capture.mimeType });
           const next = [...attachmentsRef.current, { id: crypto.randomUUID(), file, kind, url: URL.createObjectURL(file) }];
           attachmentsRef.current = next; setAttachments(next);
@@ -179,33 +179,33 @@ export function CriptaExperience() {
   }
 
   async function depositTest() {
-    if (busy || passphrase.length < 16) { setMessage('Use uma frase secreta de pelo menos 16 caracteres para este ensaio.'); return; }
+    if (busy || passphrase.length < 16) { setMessage('Use uma frase secreta de pelo menos 16 caracteres e guarde-a fora do Portal.'); return; }
     setBusy(true);
     try {
-      const payload = await testPayload({ title: title.trim() || 'Minha carta', recipient: recipient.trim(), body: body.trim(), attachments });
+      const payload = await onlinePayload({ title: title.trim() || 'Minha carta', recipient: recipient.trim(), body: body.trim(), attachments });
       const sealed = await sealCapsule(payload, passphrase);
-      const response = await fetch('/api/cripta/test-capsules', { method: 'POST',
+      const response = await fetch('/api/cripta/online-capsules', { method: 'POST',
         headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(sealed) });
       const result = await response.json() as { id?: string; createdAt?: string; expiresAt?: string; error?: string };
-      if (!response.ok || !result.id || !result.createdAt || !result.expiresAt) throw new Error(result.error || 'Depósito de ensaio não confirmado.');
-      setRemote((items) => [...items, { id: result.id!, createdAt: result.createdAt!, expiresAt: result.expiresAt! }]);
-      setMessage('Carta fictícia cifrada no aparelho e enviada ao Wix. Reabra abaixo para conferir. O acesso expira em 48 horas; uma rotina diária tenta excluir o objeto após esse prazo.');
+      if (!response.ok || !result.id || !result.createdAt) throw new Error(result.error || 'Envio não confirmado.');
+      setRemote((items) => [...items, { id: result.id!, createdAt: result.createdAt!, expiresAt: result.expiresAt }]);
+      setMessage('Carta cifrada e enviada ao Wix. Reabra abaixo para conferir. Guarde sua frase secreta: sem ela, a carta não poderá ser aberta.');
       setStep('inicio');
-    } catch (error) { setMessage(error instanceof Error ? error.message : 'Ensaio falhou.'); }
+    } catch (error) { setMessage(error instanceof Error ? error.message : 'Envio falhou.'); }
     finally { setBusy(false); setPassphrase(''); }
   }
 
   async function openTest(id: string) {
-    if (busy || passphrase.length < 16) { setMessage('Informe a frase secreta usada nesta carta fictícia.'); return; }
+    if (busy || passphrase.length < 16) { setMessage('Informe a frase secreta usada nesta carta.'); return; }
     setBusy(true);
     try {
-      const response = await fetch(`/api/cripta/test-capsules/${id}`, { cache: 'no-store' });
+      const response = await fetch(`/api/cripta/online-capsules/${id}`, { cache: 'no-store' });
       if (!response.ok) throw new Error('Não foi possível recuperar o pacote cifrado.');
       const clear = await openCapsule(await response.json(), passphrase);
       const value = JSON.parse(new TextDecoder().decode(clear)) as { format: string; title: string; recipient: string; body: string;
         attachments: Array<{ kind: Kind; name: string; type: string; data: string }> };
-      if (value.format !== 'vl6-fictional-test-v1' || !Array.isArray(value.attachments) || value.attachments.length > 13 ||
-          typeof value.title !== 'string' || typeof value.recipient !== 'string' || typeof value.body !== 'string') throw new Error('Formato de teste inválido.');
+      if (value.format !== 'vl6-online-letter-v1' || !Array.isArray(value.attachments) || value.attachments.length > 13 ||
+          typeof value.title !== 'string' || typeof value.recipient !== 'string' || typeof value.body !== 'string') throw new Error('Formato de carta inválido.');
       const restored = value.attachments.map((entry) => {
         if (!['foto', 'audio', 'video'].includes(entry.kind) || typeof entry.data !== 'string' || entry.data.length > 1_000_000) throw new Error('Anexo inválido.');
         const file = new File([Uint8Array.from(atob(entry.data), (char) => char.charCodeAt(0))], entry.name, { type: entry.type });
@@ -213,19 +213,19 @@ export function CriptaExperience() {
       });
       setEditingId(null); setTitle(value.title); setRecipient(value.recipient); setBody(value.body);
       setAttachments(restored); setStep('revisar');
-      setMessage('Pacote recuperado do Wix, conferido pelo hash e aberto pela sua frase secreta no navegador. Esta é uma carta fictícia de ensaio.');
+      setMessage('Carta recuperada do Wix e aberta no navegador com sua frase secreta.');
     } catch (error) { setMessage(error instanceof Error ? error.message : 'Não foi possível abrir o ensaio.'); }
     finally { setBusy(false); setPassphrase(''); }
   }
 
   async function deleteTest(id: string) {
-    if (!window.confirm('Excluir este pacote fictício do Wix agora?')) return;
+    if (!window.confirm('Excluir esta carta do Wix? Esta ação não poderá ser desfeita.')) return;
     setBusy(true);
     try {
-      const response = await fetch(`/api/cripta/test-capsules/${id}`, { method: 'DELETE' });
+      const response = await fetch(`/api/cripta/online-capsules/${id}`, { method: 'DELETE' });
       if (!response.ok) throw new Error('A exclusão no Wix não foi confirmada.');
       setRemote((items) => items.filter((item) => item.id !== id));
-      setMessage('Exclusão solicitada ao Wix e registro de teste removido.');
+      setMessage('Carta excluída do Wix e retirada da lista.');
     } catch (error) { setMessage(error instanceof Error ? error.message : 'Exclusão falhou.'); }
     finally { setBusy(false); }
   }
@@ -254,7 +254,7 @@ export function CriptaExperience() {
       <h1 className="mt-4 font-serif text-4xl">Uma carta para quem você ama.</h1>
       <p className="mt-4 max-w-2xl leading-7 text-slate-200">Escreva com calma. Se quiser, acrescente fotos, sua voz ou um vídeo. Cada carta e seus arquivos formam uma lembrança para a pessoa indicada.</p>
     </header>
-    <div role="alert" className="rounded-2xl border border-amber-400 bg-amber-50 p-5 text-sm leading-6 text-amber-950"><strong>Ensaio funcional: use apenas nomes e conteúdo fictícios.</strong> Prévia local desaparece ao fechar a aba. O acesso ao pacote de teste expira em 48 horas; a exclusão no Wix é tentada pela rotina diária e pode levar mais tempo. Você também pode solicitar a exclusão pelo botão abaixo. O armazenamento anual e a guarda em unidades externas ainda não estão habilitados.</div>
+    <div role="alert" className="rounded-2xl border border-amber-400 bg-amber-50 p-5 text-sm leading-6 text-amber-950"><strong>Guarda online no Wix.</strong> A prévia local desaparece ao fechar a aba; confirme o envio e reabra a carta para conferir. Guarde sua frase secreta fora do Portal. As cópias em pen drives ainda não foram vinculadas.</div>
     {message && <p role="status" aria-live="polite" className="rounded-xl border border-[#c9a449] bg-white p-4 text-sm">{message}</p>}
     {step === 'inicio' && <main className="rounded-[2rem] border border-[#ddd0b7] bg-[#fbf8f1] p-6 sm:p-9">
       <p className="text-xs font-semibold uppercase tracking-widest text-[#96763c]">Meu espaço</p>
@@ -266,36 +266,36 @@ export function CriptaExperience() {
         <p className="mt-1 text-sm text-[#536074]">Para {letter.recipient} · {letter.attachments.length} arquivo(s) · apenas nesta aba</p>
         <div className="mt-4 flex flex-wrap gap-3"><button type="button" onClick={() => edit(letter)} className="rounded-xl bg-[#123c69] px-4 py-3 text-sm font-semibold text-white">Ver ou alterar carta</button><button type="button" onClick={() => removeLetter(letter)} className="rounded-xl border px-4 py-3 text-sm">Remover prévia</button></div>
       </article>)}{!letters.length && <p className="rounded-xl border border-dashed border-[#c9a449] p-5 text-sm text-[#536074]">Nenhuma carta criada nesta aba.</p>}</div>
-      {remote.length > 0 && <section className="mt-8 rounded-2xl border border-[#d7c9a9] bg-white p-5"><h3 className="font-serif text-xl">Ensaios cifrados no Wix</h3><p className="mt-2 text-sm text-[#536074]">Somente datas aparecem no inventário. Para abrir, informe a frase secreta usada ao enviar.</p><label className="mt-4 block text-sm font-semibold">Frase secreta do ensaio<input type="password" autoComplete="off" value={passphrase} onChange={(event) => setPassphrase(event.target.value)} className="mt-2 block w-full rounded-xl border p-3" /></label>{remote.map((item) => <div key={item.id} className="mt-4 flex flex-wrap items-center gap-3 border-t pt-4 text-sm"><span className="flex-1">Enviado em {new Date(item.createdAt).toLocaleString('pt-BR')} · expira em {new Date(item.expiresAt).toLocaleString('pt-BR')}</span><button type="button" disabled={busy} onClick={() => openTest(item.id)} className="rounded-xl bg-[#123c69] px-4 py-3 font-semibold text-white disabled:opacity-50">Reabrir e conferir</button><button type="button" disabled={busy} onClick={() => deleteTest(item.id)} className="rounded-xl border px-4 py-3 disabled:opacity-50">Excluir teste</button></div>)}</section>}
+      {remote.length > 0 && <section className="mt-8 rounded-2xl border border-[#d7c9a9] bg-white p-5"><h3 className="font-serif text-xl">Cartas enviadas ao Wix</h3><p className="mt-2 text-sm text-[#536074]">Somente datas aparecem no inventário. Para abrir, informe a frase secreta usada ao enviar.</p><label className="mt-4 block text-sm font-semibold">Frase secreta da carta<input type="password" autoComplete="off" value={passphrase} onChange={(event) => setPassphrase(event.target.value)} className="mt-2 block w-full rounded-xl border p-3" /></label>{remote.map((item) => <div key={item.id} className="mt-4 flex flex-wrap items-center gap-3 border-t pt-4 text-sm"><span className="flex-1">Enviado em {new Date(item.createdAt).toLocaleString('pt-BR')}</span><button type="button" disabled={busy} onClick={() => openTest(item.id)} className="rounded-xl bg-[#123c69] px-4 py-3 font-semibold text-white disabled:opacity-50">Reabrir e conferir</button><button type="button" disabled={busy} onClick={() => deleteTest(item.id)} className="rounded-xl border px-4 py-3 disabled:opacity-50">Excluir carta</button></div>)}</section>}
     </main>}
     {step === 'escrever' && <main className="space-y-6 rounded-[2rem] border border-[#ddd0b7] bg-[#fbf8f1] p-6 sm:p-9">
       <div><p className="text-xs font-semibold uppercase tracking-widest text-[#96763c]">1 de 2 · Prepare sua carta</p><h2 className="mt-2 font-serif text-3xl text-[#142a43]">{editingId ? 'Alterar minha carta' : 'Escrever minha carta'}</h2><p className="mt-2 text-sm text-[#536074]">Só a pessoa que você indicar deverá receber esta carta. Os arquivos abaixo acompanharão a mesma carta.</p></div>
       <div className="space-y-5 rounded-2xl border border-[#ddd0b7] bg-white p-5">
-        <label className="block font-semibold text-[#142a43]">Para quem é esta carta?<input value={recipient} maxLength={100} onChange={(event) => setRecipient(event.target.value)} placeholder="Use um nome fictício neste ensaio" className="mt-2 block w-full rounded-xl border p-4 font-normal" /></label>
+        <label className="block font-semibold text-[#142a43]">Para quem é esta carta?<input value={recipient} maxLength={100} onChange={(event) => setRecipient(event.target.value)} placeholder="Nome de quem deverá receber" className="mt-2 block w-full rounded-xl border p-4 font-normal" /></label>
         <label className="block font-semibold text-[#142a43]">Título <span className="font-normal text-[#607084]">(opcional)</span><input value={title} maxLength={80} onChange={(event) => setTitle(event.target.value)} placeholder="Minha mensagem" className="mt-2 block w-full rounded-xl border p-4 font-normal" /></label>
         <label className="block font-semibold text-[#142a43]">Escreva sua carta<textarea value={body} maxLength={20_000} onChange={(event) => setBody(event.target.value)} rows={10} placeholder="Escreva com suas próprias palavras..." className="mt-2 block w-full rounded-xl border p-4 font-serif font-normal leading-8" /></label>
       </div>
       <div><h3 className="font-serif text-2xl text-[#142a43]">Quer acrescentar alguma lembrança?</h3><p className="mt-1 text-sm text-[#536074]">Você pode seguir sem anexar nada.</p></div>
-      {picker('foto', 'Fotografias', 'image/*', 'Até 10 fotos, de 5 MB cada.')}
-      {picker('audio', 'Mensagem de voz', 'audio/*', 'Até 2 áudios, de 3 minutos e 10 MB cada.')}
-      {picker('video', 'Vídeo', 'video/*', 'Um vídeo de até 1 minuto e 60 MB.')}
-      <p className="text-sm text-[#536074]">Arquivos nesta carta: {size(total)} de 150 MB.</p>
+      {picker('foto', 'Fotografias', 'image/*', 'Até 10 fotos; o envio atual aceita 650 KB de anexos juntos.')}
+      {picker('audio', 'Mensagem de voz', 'audio/*', 'Até 2 áudios; 650 KB de anexos juntos nesta fase.')}
+      {picker('video', 'Vídeo', 'video/*', 'Até 1 minuto; o envio atual aceita 650 KB de anexos juntos.')}
+      <p className="text-sm text-[#536074]">Arquivos nesta carta: {Math.round(total / 1024)} KB de 650 KB.</p>
       <div className="flex flex-wrap gap-3"><button type="button" disabled={recording !== null} onClick={review} className="rounded-xl bg-[#123c69] px-6 py-4 font-semibold text-white disabled:opacity-50">Revisar minha carta</button><button type="button" onClick={() => { attachments.forEach((item) => URL.revokeObjectURL(item.url)); setAttachments([]); setStep('inicio'); }} className="rounded-xl border px-5 py-4">Voltar às cartas</button></div>
     </main>}
     {step === 'revisar' && <main className="rounded-[2rem] border border-[#ddd0b7] bg-[#fbf8f1] p-6 sm:p-9">
       <p className="text-xs font-semibold uppercase tracking-widest text-[#96763c]">2 de 2 · Confira a prévia</p>
       <h2 className="mt-2 font-serif text-3xl text-[#142a43]">Sua carta está pronta para revisão</h2>
       <article className="mx-auto mt-7 max-w-2xl border border-[#ccb682] bg-[#f8f1e4] p-7 text-[#26344a] shadow-lg sm:p-12">
-        <p className="text-center text-xs uppercase tracking-widest text-[#94733c]">Cripta do Irmão · prévia fictícia</p>
+        <p className="text-center text-xs uppercase tracking-widest text-[#94733c]">Cripta do Irmão · minha carta</p>
         <h3 className="mt-8 text-center font-serif text-3xl">{title.trim() || 'Minha carta'}</h3>
         <p className="mt-5 text-[#927035]">Para {recipient.trim()}</p>
         <p className="mt-8 whitespace-pre-wrap break-words font-serif leading-8">{body.trim()}</p>
         {attachments.filter((item) => item.kind === 'foto').length > 0 && <div className="mt-8 grid grid-cols-2 gap-3 border-t pt-6 sm:grid-cols-3">{attachments.filter((item) => item.kind === 'foto').map((item) => <img key={item.id} src={item.url} alt="Foto anexa" className="aspect-square w-full rounded object-cover" />)}</div>}
       </article>
       <div className="mt-6 rounded-xl border bg-white p-5 text-sm"><strong>Arquivos desta carta:</strong> {attachments.length || 'nenhum'}{attachments.map((item) => <p key={item.id} className="mt-2 break-all">{item.kind}: {item.file.name}</p>)}</div>
-      <p className="mt-5 text-sm text-[#795521]">Use apenas uma carta fictícia. O envio conectado aceita até 650 KB de anexos no total e expira em 48 horas. Guarde a frase de ensaio separadamente para poder reabrir; ela não é enviada ao servidor.</p>
-      <label className="mt-5 block text-sm font-semibold">Frase secreta para o ensaio conectado<input type="password" autoComplete="new-password" value={passphrase} onChange={(event) => setPassphrase(event.target.value)} className="mt-2 block w-full rounded-xl border bg-white p-3" /></label>
-      <div className="mt-6 flex flex-wrap gap-3"><button type="button" disabled={busy} onClick={depositTest} className="rounded-xl bg-[#123c69] px-6 py-4 font-semibold text-white disabled:opacity-50">Enviar carta fictícia cifrada</button><button type="button" onClick={keepPreview} className="rounded-xl border px-6 py-4">Manter só nesta aba</button><button type="button" onClick={() => setStep('escrever')} className="rounded-xl border px-5 py-4">Voltar e alterar</button></div>
+      <p className="mt-5 text-sm text-[#795521]">O envio atual aceita até 650 KB de anexos juntos. Guarde a frase secreta separadamente: ela não é enviada ao servidor e não pode ser recuperada pelo Portal.</p>
+      <label className="mt-5 block text-sm font-semibold">Frase secreta desta carta<input type="password" autoComplete="new-password" value={passphrase} onChange={(event) => setPassphrase(event.target.value)} className="mt-2 block w-full rounded-xl border bg-white p-3" /></label>
+      <div className="mt-6 flex flex-wrap gap-3"><button type="button" disabled={busy} onClick={depositTest} className="rounded-xl bg-[#123c69] px-6 py-4 font-semibold text-white disabled:opacity-50">Enviar minha carta</button><button type="button" onClick={keepPreview} className="rounded-xl border px-6 py-4">Manter só nesta aba</button><button type="button" onClick={() => setStep('escrever')} className="rounded-xl border px-5 py-4">Voltar e alterar</button></div>
     </main>}
   </div>;
 }

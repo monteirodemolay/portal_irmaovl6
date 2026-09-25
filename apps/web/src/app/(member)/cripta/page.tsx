@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
-import { requirePagePermission } from '@/lib/auth/require-permission';
-import { canAccessCriptaPilot } from '@/modules/cripta/lib/early-access';
+import { requireSession } from '@/lib/auth/require-session';
+import { createServerContainer } from '@vl6/infra';
 import { CriptaExperience } from './cripta-experience';
 
 export const metadata = {
@@ -9,7 +9,8 @@ export const metadata = {
 };
 
 export default async function Page() {
-  const session = await requirePagePermission('tenant:manage');
-  if (!canAccessCriptaPilot(session.user.email)) notFound();
+  const session = await requireSession();
+  const member = await createServerContainer().repositories.member.findByUserId(session.authContext.tenantId, session.user.id);
+  if (member?.situacao !== 'ativo') notFound();
   return <CriptaExperience />;
 }
