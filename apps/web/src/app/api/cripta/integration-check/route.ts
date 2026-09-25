@@ -3,8 +3,18 @@ import { hasPermission } from '@vl6/domain';
 import { NextResponse } from 'next/server';
 import { getCurrentSession } from '@/lib/auth/get-current-session';
 import { canAccessCriptaPilot } from '@/modules/cripta/lib/early-access';
-import { cancelReservation, finalizeCapsule, getCapsule, removeCapsuleRecord, reserveCapsule } from '@/modules/cripta/lib/vault-inventory';
-import { deletePrivateCiphertext, downloadPrivateCiphertext, uploadPrivateCiphertext } from '@/modules/cripta/lib/wix-private-files';
+import {
+  cancelReservation,
+  finalizeCapsule,
+  getCapsule,
+  removeCapsuleRecord,
+  reserveCapsule,
+} from '@/modules/cripta/lib/vault-inventory';
+import {
+  deletePrivateCiphertext,
+  downloadPrivateCiphertext,
+  uploadPrivateCiphertext,
+} from '@/modules/cripta/lib/wix-private-files';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
@@ -12,8 +22,12 @@ export const maxDuration = 60;
 /** Synthetic-only Wix + Firestore roundtrip. No user's text, files or keys. */
 export async function POST(request: Request) {
   const session = await getCurrentSession();
-  if (!session || !hasPermission(session.authContext, 'tenant:manage') || !canAccessCriptaPilot(session.user.email) ||
-      request.headers.get('origin') !== new URL(request.url).origin) {
+  if (
+    !session ||
+    !hasPermission(session.authContext, 'tenant:manage') ||
+    !canAccessCriptaPilot(session.user.email) ||
+    request.headers.get('origin') !== new URL(request.url).origin
+  ) {
     return NextResponse.json({ error: 'Acesso negado.' }, { status: 403 });
   }
   const id = randomUUID();
@@ -45,21 +59,39 @@ export async function POST(request: Request) {
     await removeCapsuleRecord(session.user.id, id, fileId);
     fileId = undefined;
     finalized = false;
-    return NextResponse.json({ stored: true, restored: true, bytes: restored.length,
-      cleanup: 'delete-requested-and-inventory-removed' }, { headers: { 'Cache-Control': 'no-store' } });
+    return NextResponse.json(
+      {
+        stored: true,
+        restored: true,
+        bytes: restored.length,
+        cleanup: 'delete-requested-and-inventory-removed',
+      },
+      { headers: { 'Cache-Control': 'no-store' } },
+    );
   } catch (error) {
-    const detail = error instanceof Error && /^(Wix Media \[[a-z-]+\]: HTTP \d{3}( \([a-zA-Z0-9_.-]{1,90}\))?|Upload Wix: HTTP \d{3})\.$/.test(error.message)
-      ? error.message : undefined;
+    const detail =
+      error instanceof Error &&
+      /^(Wix Media \[[a-z-]+\]: HTTP \d{3}( \([a-zA-Z0-9_.-]{1,90}\))?( — [^\n]{1,200})?|Upload Wix: HTTP \d{3})\.$/.test(
+        error.message,
+      )
+        ? error.message
+        : undefined;
     return NextResponse.json({ error: 'Ensaio integrado falhou.', stage, detail }, { status: 502 });
   } finally {
     if (fileId) {
       try {
         await deletePrivateCiphertext(fileId);
         if (finalized) await removeCapsuleRecord(session.user.id, id, fileId);
-      } catch { /* retain inventory for manual reconciliation */ }
+      } catch {
+        /* retain inventory for manual reconciliation */
+      }
     }
     if (reserved && !finalized) {
-      try { await cancelReservation(session.user.id, id); } catch { /* requires reconciliation */ }
+      try {
+        await cancelReservation(session.user.id, id);
+      } catch {
+        /* requires reconciliation */
+      }
     }
   }
 }

@@ -48,10 +48,10 @@ export async function uploadPrivateCiphertext(ciphertext: Buffer): Promise<{ fil
   const sha256 = createHash('sha256').update(ciphertext).digest('hex');
   const parentFolderId = await ensureTemporaryFolder();
   const ticket = await wix<{ uploadUrl: string }>('/site-media/v1/files/generate-upload-url', {
-    mimeType: 'application/octet-stream', fileName: `${randomUUID()}.bin`, parentFolderId, private: true,
+    mimeType: 'application/zip', fileName: `${randomUUID()}.zip`, parentFolderId, private: true,
   });
   const response = await fetch(signedUrl(ticket.uploadUrl), {
-    method: 'PUT', headers: { 'Content-Type': 'application/octet-stream' },
+    method: 'PUT', headers: { 'Content-Type': 'application/zip' },
     body: new Uint8Array(ciphertext), signal: AbortSignal.timeout(30_000),
   });
   if (!response.ok) throw new Error(`Upload Wix: HTTP ${response.status}.`);
