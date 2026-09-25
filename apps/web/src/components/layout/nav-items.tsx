@@ -19,6 +19,7 @@ import { isAdminPathAllowed, isAdminTier } from '@/lib/auth/is-admin-tier';
 import type { Dictionary } from '@/lib/i18n/get-dictionary';
 import { ADMIN_AREA_TABS, type AdminAreaKey } from './area-tabs';
 import type { AppShellNavFlyout, AppShellNavSection } from './app-shell';
+import { canAccessCriptaPilot } from '@/modules/cripta/lib/early-access';
 
 const ICON_SIZE = 18;
 const ICON_STROKE = 1.75;
@@ -168,6 +169,7 @@ export function buildNavSections(
   role: Role | null,
   dictionary: Dictionary,
   unreadNotificationsCount = 0,
+  userEmail?: string | null,
 ): AppShellNavSection[] {
   const irmaosFlyout: AppShellNavFlyout = {
     title: 'Irmãos',
@@ -261,9 +263,9 @@ export function buildNavSections(
             content: navContent(item.icon, dictionary.nav[item.labelKey]),
             flyout: adminAreaFlyouts[item.href],
           })),
-          ...(hasPermission(authContext, 'tenant:manage')
+          ...(hasPermission(authContext, 'tenant:manage') && canAccessCriptaPilot(userEmail)
             ? [
-                { href: '/cripta-demonstracao', content: navContent(Lock, 'Cripta · demonstração') },
+                { href: '/cripta', content: navContent(Lock, 'Cripta · experiência') },
                 { href: '/cripta-laboratorio', content: navContent(Lock, 'Cripta · laboratório V1') },
               ]
             : []),
