@@ -229,14 +229,12 @@ export function buildNavSections(
     });
   }
 
-  if (hasPermission(authContext, 'memberDirectory:read')) {
+  if (hasPermission(authContext, 'tenant:manage') && canAccessCriptaPilot(userEmail)) {
     sections.push({
       title: 'Cripta',
       items: [
         { href: '/cripta', content: navContent(Lock, 'Minhas cartas') },
-        ...(hasPermission(authContext, 'tenant:manage') && canAccessCriptaPilot(userEmail)
-          ? [{ href: '/cripta-administracao', content: navContent(Lock, 'Administração') }]
-          : []),
+        { href: '/cripta-administracao', content: navContent(Lock, 'Administração') },
       ],
     });
   }
