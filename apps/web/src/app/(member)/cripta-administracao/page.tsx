@@ -3,6 +3,7 @@ import { createServerContainer, getAdminFirestore } from '@vl6/infra';
 import { requirePagePermission } from '@/lib/auth/require-permission';
 import { canAccessCriptaPilot } from '@/modules/cripta/lib/early-access';
 import { appointCustodians } from './appoint-custodians';
+import { UnitCheck } from './unit-check';
 
 export const metadata = { title: 'Administração da Cripta | Portal VL6', robots: { index: false, follow: false } };
 
@@ -51,6 +52,7 @@ export default async function Page() {
       <div className="mt-5 divide-y">{records.map(({ member, count }) => <div key={member.id} className="flex items-center justify-between gap-4 py-3 text-sm"><span>{member.nomeCompleto}</span><strong>{count ? `${count} pacote(s) confirmado(s)` : 'Ainda não enviou'}</strong></div>)}</div>
       {members.length > eligible.length && <p className="mt-3 text-sm text-amber-800">Irmãos sem conta vinculada não podem enviar; regularize os acessos antes da abertura.</p>}
     </section>
+    <UnitCheck />
     <section className="rounded-2xl border border-[#dbcda9] bg-[#fbf8f1] p-6">
       <h2 className="font-serif text-2xl text-[#142a43]">Unidades de guarda</h2>
       <p className="mt-2 text-sm leading-6 text-[#536074]">O vínculo de pen drive ou SSD exige exportação, leitura de volta, comparação criptográfica e registro dos custodiantes. Ainda não há unidade conferida. Não retire o conteúdo do Wix antes dessas etapas.</p>
