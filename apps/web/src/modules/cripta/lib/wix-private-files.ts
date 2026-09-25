@@ -25,6 +25,18 @@ function signedUrl(value: string | undefined): string {
   return url.toString();
 }
 
+/** generate-file-download-url may answer with a single downloadUrl or a downloadUrls[] (one per assetKey). */
+function extractDownloadUrl(data: {
+  downloadUrl?: unknown;
+  downloadUrls?: Array<{ downloadUrl?: unknown; url?: unknown }>;
+}): string | undefined {
+  if (typeof data.downloadUrl === 'string') return data.downloadUrl;
+  const first = data.downloadUrls?.[0];
+  if (typeof first?.downloadUrl === 'string') return first.downloadUrl;
+  if (typeof first?.url === 'string') return first.url;
+  return undefined;
+}
+
 async function ensureTemporaryFolder(): Promise<string> {
   const key = process.env.WIX_CRIPTA_API_KEY;
   if (!key) throw new Error('Integração Wix não configurada.');
@@ -48,10 +60,10 @@ export async function uploadPrivateCiphertext(ciphertext: Buffer): Promise<{ fil
   const sha256 = createHash('sha256').update(ciphertext).digest('hex');
   const parentFolderId = await ensureTemporaryFolder();
   const ticket = await wix<{ uploadUrl: string }>('/site-media/v1/files/generate-upload-url', {
-    mimeType: 'application/octet-stream', fileName: `${randomUUID()}.bin`, parentFolderId, private: true,
+    mimeType: 'application/zip', fileName: `${randomUUID()}.zip`, parentFolderId, private: true,
   });
   const response = await fetch(signedUrl(ticket.uploadUrl), {
-    method: 'PUT', headers: { 'Content-Type': 'application/octet-stream' },
+    method: 'PUT', headers: { 'Content-Type': 'application/zip' },
     body: new Uint8Array(ciphertext), signal: AbortSignal.timeout(30_000),
   });
   if (!response.ok) throw new Error(`Upload Wix: HTTP ${response.status}.`);
@@ -79,19 +91,31 @@ export async function uploadPrivateCiphertext(ciphertext: Buffer): Promise<{ fil
   }
 }
 
+/** Wix may take a few seconds to make a just-uploaded private file downloadable. */
 export async function downloadPrivateCiphertext(fileId: string, sha256: string): Promise<Buffer> {
   if (!fileId || !/^[a-f0-9]{64}$/.test(sha256)) throw new Error('Referência inválida.');
-  const ticket = await wix<{ downloadUrl: string }>(
-    '/site-media/v1/files/generate-file-download-url', { fileId },
-  );
-  const response = await fetch(signedUrl(ticket.downloadUrl), { cache: 'no-store', signal: AbortSignal.timeout(20_000) });
-  const declaredSize = Number(response.headers.get('content-length') ?? 0);
-  if (!response.ok || declaredSize > 1_500_000) throw new Error('Arquivo Wix indisponível ou acima do limite.');
-  const bytes = Buffer.from(await response.arrayBuffer());
-  if (bytes.length > 1_500_000 || createHash('sha256').update(bytes).digest('hex') !== sha256) {
-    throw new Error('Falha de integridade do pacote cifrado.');
+  let lastError: unknown;
+  for (let attempt = 0; attempt < 6; attempt++) {
+    try {
+      const ticket = await wix<{ downloadUrl?: string; downloadUrls?: Array<{ downloadUrl?: string; url?: string }> }>(
+        '/site-media/v1/files/generate-file-download-url', { fileId },
+      );
+      const response = await fetch(signedUrl(extractDownloadUrl(ticket)), { cache: 'no-store', signal: AbortSignal.timeout(20_000) });
+      const declaredSize = Number(response.headers.get('content-length') ?? 0);
+      if (!response.ok) throw new Error(`Download Wix: HTTP ${response.status}.`);
+      if (declaredSize > 1_500_000) throw new Error('Arquivo Wix acima do limite.');
+      const bytes = Buffer.from(await response.arrayBuffer());
+      if (bytes.length > 1_500_000 || createHash('sha256').update(bytes).digest('hex') !== sha256) {
+        throw new Error('Falha de integridade do pacote cifrado.');
+      }
+      return bytes;
+    } catch (error) {
+      lastError = error;
+      if (attempt === 5) break;
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+    }
   }
-  return bytes;
+  throw lastError instanceof Error ? lastError : new Error('Arquivo Wix indisponível.');
 }
 
 export async function deletePrivateCiphertext(fileId: string): Promise<void> {

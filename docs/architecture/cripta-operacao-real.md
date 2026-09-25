@@ -2,7 +2,9 @@
 
 Estado em 25/09/2026: **bloqueada para dados reais**. O ensaio Wix utiliza somente 1 KiB aleatório. A flag `CRIPTA_REAL_CONTENT_ENABLED` deve permanecer ausente até a aprovação de todos os critérios abaixo. O mero login do operador não libera conteúdo.
 
-Ligação técnica em elaboração: `POST /api/cripta/capsules` aceita somente pacote JSON já cifrado de até 1,5 MB, reserva vaga no inventário Firestore do próprio titular, envia bytes ao Wix como arquivo privado e grava hash SHA-256. `GET /api/cripta/capsules/[id]` confere o hash ao baixar e só responde durante janela habilitada. O ensaio `POST /api/cripta/integration-check` usa 1 KB aleatório, percorre Wix e Firestore e solicita exclusão. **Ainda não se comprovou o ensaio ao vivo com a chave Wix configurada**, nem foi implementada cerimônia de duas aprovações para criar/abrir a janela, exclusão real de cápsulas, mídias grandes, exportação SSD e partilha de recuperação. Não definir a flag como `true` manualmente.
+Ligação técnica em elaboração: `POST /api/cripta/capsules` aceita somente pacote JSON já cifrado de até 1,5 MB, reserva vaga no inventário Firestore do próprio titular, envia bytes ao Wix como arquivo privado e grava hash SHA-256. `GET /api/cripta/capsules/[id]` confere o hash ao baixar e só responde durante janela habilitada. O ensaio `POST /api/cripta/integration-check` usa 1 KB aleatório, percorre Wix e Firestore e solicita exclusão.
+
+**Ensaio ao vivo comprovado em 25/09/2026**: upload privado, download com verificação de integridade e exclusão passaram com a chave Wix configurada em produção (`/api/cripta/ensaio-wix` e `/api/cripta/integration-check`, ambos com dado sintético de 1 KiB). Três bugs foram corrigidos no caminho: `mimeType` do upload trocado de `application/octet-stream` para `application/zip` (o Media Manager do Wix rejeita formato genérico com HTTP 400), retry com backoff adicionado ao download (o Wix pode levar alguns segundos para liberar um arquivo privado recém-enviado) e leitura corrigida da resposta de `generate-file-download-url`, que devolve `downloadUrls[]` (array, um item por `assetKey`) e não uma string `downloadUrl` única. Isso comprova o mecanismo técnico de armazenamento — **não** comprova nem libera os demais critérios da tabela abaixo (cerimônia de duas aprovações, exclusão real de cápsulas, mídias grandes, exportação SSD, partilha de recuperação). Não definir a flag como `true` manualmente.
 
 O módulo `sealed-capsule.ts` implementa um primeiro envelope portátil de cartas pequenas com Web Crypto, AES-256-GCM e PBKDF2. O ensaio local comprovou ida e volta e rejeição de alteração do ciphertext. Ele ainda **não** possui custódia de chave, destinatários com chaves públicas, anexos nem conexão ao armazenamento. Frases de baixa entropia podem ser atacadas offline se o pacote cifrado vazar; a escolha final deve passar por revisão externa antes de receber cartas reais.
 
@@ -21,16 +23,16 @@ Decisão do proponente em 25/09/2026: **recuperação por custódia conjunta**. 
 
 ## Ensaios obrigatórios antes da flag
 
-| Ensaio | Aceitação |
-| --- | --- |
-| Chave Wix e permissões | Upload real privado, download autenticado e exclusão verificada sem URL pública. |
-| Carta e anexos | Cifrar antes do envio, reabrir no dispositivo do titular, rejeitar adulteração de um byte. |
-| Acesso | Outro usuário, janela fechada, conta inativa e URL antiga não obtêm conteúdo; testar no servidor. |
-| Limites | Dez fotos por carta, cinco cartas, vídeo até 60 s/60 MB, dois áudios até 3 min/10 MB cada, total de 150 MB por irmão; testar concorrência e tamanho após cifragem. |
-| Resiliência | Interromper upload, perder conexão, repetir requisição, faltar espaço e restaurar os dois SSDs em computador diferente. |
-| Recuperação | Simular perda de chave, troca de operador, falha de um SSD, indisponibilidade Wix e adiamento da janela. |
-| Desligamento | Exportar inventário cifrado, comparar SHA-256, restaurar amostras sob autorização, retirar objetos temporários Wix, verificar exclusão. |
-| Entrega excepcional | Validar autorização dupla e destinatário; testar que pacote de outro irmão não é entregue. |
+| Ensaio                 | Aceitação                                                                                                                                                          |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Chave Wix e permissões | Upload real privado, download autenticado e exclusão verificada sem URL pública.                                                                                   |
+| Carta e anexos         | Cifrar antes do envio, reabrir no dispositivo do titular, rejeitar adulteração de um byte.                                                                         |
+| Acesso                 | Outro usuário, janela fechada, conta inativa e URL antiga não obtêm conteúdo; testar no servidor.                                                                  |
+| Limites                | Dez fotos por carta, cinco cartas, vídeo até 60 s/60 MB, dois áudios até 3 min/10 MB cada, total de 150 MB por irmão; testar concorrência e tamanho após cifragem. |
+| Resiliência            | Interromper upload, perder conexão, repetir requisição, faltar espaço e restaurar os dois SSDs em computador diferente.                                            |
+| Recuperação            | Simular perda de chave, troca de operador, falha de um SSD, indisponibilidade Wix e adiamento da janela.                                                           |
+| Desligamento           | Exportar inventário cifrado, comparar SHA-256, restaurar amostras sob autorização, retirar objetos temporários Wix, verificar exclusão.                            |
+| Entrega excepcional    | Validar autorização dupla e destinatário; testar que pacote de outro irmão não é entregue.                                                                         |
 
 ## Ordem de implementação
 
