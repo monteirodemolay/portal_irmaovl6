@@ -8,6 +8,15 @@ O período anual será de **dez dias consecutivos**. Registrar hora e fuso de ab
 
 **Unidades de guarda:** a exigência é de duas unidades externas independentes; podem ser dois SSDs, dois pen drives ou um de cada. Identificar A e B por número de série ou inventário, manter em locais e custódias separados, protegê-las com criptografia e registrar capacidade, data de gravação, hash do inventário e resultado de leitura/restauração. Não escolher pen drive apenas pela aparência ou capacidade anunciada: gravar, ejetar, reconectar, ler integralmente e restaurar em outro computador. Substituir a unidade que falhar e refazer a segunda cópia antes de apagar os arquivos temporários do Wix. Programar inspeções periódicas e migração para novas unidades, inclusive a revisão a cada cinco anos; esse prazo não dispensa as verificações intermediárias.
 
+### Double-check de integridade
+
+1. Na exportação futura, o sistema produzirá um inventário `vl6-export-v1` com caminhos **opacos**, tamanhos e SHA-256 de cada pacote **já cifrado**. Conferir o hash dos objetos baixados do Wix contra o inventário antes de gravar. Registrar o SHA-256 do **próprio inventário** em ata por dois responsáveis, por canal separado das mídias; futuramente assinar digitalmente esse inventário. Sem referência independente, uma pessoa poderia trocar arquivo e hash ao mesmo tempo.
+2. Gravar A e B. Ejetar e reconectar cada uma. Com ambas conectadas somente a computador de verificação autorizado, executar `python3 scripts/cripta/verify_copies.py inventario.json /caminho/A /caminho/B --manifest-sha256 HASH_APROVADO`. A ferramenta lê integralmente cada pacote, recusa ausências, extras, links simbólicos e divergências de tamanho/hash, e informa separadamente A e B. É **somente leitura**; não copia, corrige, apaga nem abre cartas. Os caminhos `/caminho/A` e `/caminho/B` devem conter apenas os pacotes listados; o inventário fica fora dessas pastas.
+3. Repetir a verificação em um segundo computador autorizado e realizar restauração de amostras de **cada unidade separadamente**, incluindo abertura autenticada AES-GCM com as chaves de ensaio e pacote adulterado que deve falhar. Para conteúdo real, qualquer abertura de amostra precisa respeitar a custódia e a privacidade; hashes bastam para a leitura integral sem revelar teor.
+4. Se A falhar e B passar, isolar A, reconstruir uma nova segunda unidade a partir de B e verificar ambas novamente. Se ambas falharem ou o inventário aprovado não corresponder, suspender limpeza no Wix e investigar. Registrar data, versão do verificador, identificadores das unidades e resultado. Repetir a leitura integral periodicamente, não só na abertura anual.
+
+O verificador já existe para ensaios com dados artificiais, mas **a exportação automática e a assinatura do inventário ainda não existem**. Seu resultado `OK` prova correspondência de bytes com aquele inventário; não prova que o conteúdo pode ser decifrado nem que a origem do inventário é legítima.
+
 ## Papéis e poderes
 
 | Papel | Pode fazer | Não pode fazer sozinho |
