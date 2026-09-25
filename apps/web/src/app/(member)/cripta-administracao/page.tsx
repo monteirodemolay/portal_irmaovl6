@@ -53,10 +53,5 @@ export default async function Page() {
       {members.length > eligible.length && <p className="mt-3 text-sm text-amber-800">Irmãos sem conta vinculada não podem enviar; regularize os acessos antes da abertura.</p>}
     </section>
     <UnitCheck />
-    <section className="rounded-2xl border border-[#dbcda9] bg-[#fbf8f1] p-6">
-      <h2 className="font-serif text-2xl text-[#142a43]">Unidades de guarda</h2>
-      <p className="mt-2 text-sm leading-6 text-[#536074]">O vínculo de pen drive ou SSD exige exportação, leitura de volta, comparação criptográfica e registro dos custodiantes. Ainda não há unidade conferida. Não retire o conteúdo do Wix antes dessas etapas.</p>
-      <button type="button" disabled className="mt-4 rounded-xl border border-[#a78648] px-5 py-3 text-sm font-semibold opacity-60">Vincular unidades · aguardando conferência local</button>
-    </section>
   </div>;
 }
