@@ -266,6 +266,7 @@ export function buildNavSections(
           ...(hasPermission(authContext, 'tenant:manage') && canAccessCriptaPilot(userEmail)
             ? [
                 { href: '/cripta', content: navContent(Lock, 'Cripta · experiência') },
+                { href: '/cripta-administracao', content: navContent(Lock, 'Cripta · administração') },
                 { href: '/cripta-laboratorio', content: navContent(Lock, 'Cripta · laboratório V1') },
               ]
             : []),
