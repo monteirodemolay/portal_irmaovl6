@@ -1,5 +1,6 @@
 import 'server-only';
 import { createHash, randomUUID } from 'node:crypto';
+import { wixError } from './wix-error';
 
 const API = 'https://www.wixapis.com';
 const SITE_ID = '5ffa01ac-42b4-48e6-aacc-31adb6fe3dac';
@@ -13,7 +14,7 @@ async function wix<T>(path: string, body: object): Promise<T> {
     headers: { Authorization: key, 'wix-site-id': SITE_ID, 'Content-Type': 'application/json' },
     body: JSON.stringify(body), cache: 'no-store', signal: AbortSignal.timeout(15_000),
   });
-  if (!response.ok) throw new Error(`Wix Media: HTTP ${response.status}.`);
+  if (!response.ok) throw await wixError(response, path.split('/').pop() ?? 'api');
   return response.json() as Promise<T>;
 }
 
@@ -31,7 +32,7 @@ async function ensureTemporaryFolder(): Promise<string> {
     headers: { Authorization: key, 'wix-site-id': SITE_ID },
     cache: 'no-store', signal: AbortSignal.timeout(15_000),
   });
-  if (!response.ok) throw new Error(`Listagem de pastas Wix: HTTP ${response.status}.`);
+  if (!response.ok) throw await wixError(response, 'listar-pastas');
   const listing = await response.json() as { folders?: Array<{ id?: string; displayName?: string }> };
   const existing = listing.folders?.find((folder) => folder.displayName === FOLDER_NAME && folder.id);
   if (existing?.id) return existing.id;
