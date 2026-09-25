@@ -28,8 +28,8 @@ export function WixTestButton() {
     setMessage('Conferindo Wix e inventário Firestore com 1 KB fictício…');
     try {
       const response = await fetch('/api/cripta/integration-check', { method: 'POST', credentials: 'same-origin' });
-      const data = await response.json() as { stored?: boolean; restored?: boolean; cleanup?: string; error?: string };
-      if (!response.ok) throw new Error(data.error || 'Falha no ensaio integrado.');
+      const data = await response.json() as { stored?: boolean; restored?: boolean; cleanup?: string; error?: string; stage?: string; detail?: string };
+      if (!response.ok) throw new Error(`${data.error || 'Falha no ensaio integrado.'} Etapa: ${data.stage || 'não identificada'}${data.detail ? ` · ${data.detail}` : ''}`);
       setMessage(`Arquivo privado e inventário: ${data.stored ? 'OK' : 'falhou'} · Recuperação: ${data.restored ? 'OK' : 'falhou'} · Exclusão solicitada e inventário removido: ${data.cleanup ? 'OK' : 'falhou'}.`);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Não foi possível concluir o ensaio integrado.');
