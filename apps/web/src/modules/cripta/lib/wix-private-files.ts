@@ -3,6 +3,7 @@ import { createHash, randomUUID } from 'node:crypto';
 
 const API = 'https://www.wixapis.com';
 const SITE_ID = '5ffa01ac-42b4-48e6-aacc-31adb6fe3dac';
+const FOLDER_NAME = 'Cripta — Temporário';
 
 async function wix<T>(path: string, body: object): Promise<T> {
   const key = process.env.WIX_CRIPTA_API_KEY;
@@ -23,21 +24,41 @@ function signedUrl(value: string | undefined): string {
   return url.toString();
 }
 
+async function ensureTemporaryFolder(): Promise<string> {
+  const key = process.env.WIX_CRIPTA_API_KEY;
+  if (!key) throw new Error('Integração Wix não configurada.');
+  const response = await fetch(`${API}/site-media/v1/folders`, {
+    headers: { Authorization: key, 'wix-site-id': SITE_ID },
+    cache: 'no-store', signal: AbortSignal.timeout(15_000),
+  });
+  if (!response.ok) throw new Error(`Listagem de pastas Wix: HTTP ${response.status}.`);
+  const listing = await response.json() as { folders?: Array<{ id?: string; displayName?: string }> };
+  const existing = listing.folders?.find((folder) => folder.displayName === FOLDER_NAME && folder.id);
+  if (existing?.id) return existing.id;
+  const created = await wix<{ folder?: { id?: string } }>('/site-media/v1/folders', {
+    displayName: FOLDER_NAME, parentFolderId: 'media-root',
+  });
+  if (!created.folder?.id) throw new Error('Wix não confirmou a pasta temporária.');
+  return created.folder.id;
+}
+
 export async function uploadPrivateCiphertext(ciphertext: Buffer): Promise<{ fileId: string; sha256: string }> {
   if (ciphertext.length < 30 || ciphertext.length > 1_500_000) throw new Error('Pacote acima do limite da carta.');
   const sha256 = createHash('sha256').update(ciphertext).digest('hex');
+  const parentFolderId = await ensureTemporaryFolder();
   const ticket = await wix<{ uploadUrl: string }>('/site-media/v1/files/generate-upload-url', {
-    mimeType: 'application/octet-stream', fileName: `${randomUUID()}.bin`, filePath: '/cripta-piloto', private: true,
+    mimeType: 'application/octet-stream', fileName: `${randomUUID()}.bin`, parentFolderId, private: true,
   });
   const response = await fetch(signedUrl(ticket.uploadUrl), {
     method: 'PUT', headers: { 'Content-Type': 'application/octet-stream' },
     body: new Uint8Array(ciphertext), signal: AbortSignal.timeout(30_000),
   });
   if (!response.ok) throw new Error(`Upload Wix: HTTP ${response.status}.`);
-  const uploaded = await response.json() as { file?: { id?: string } };
+  const uploaded = await response.json() as { file?: { id?: string; parentFolderId?: string } };
   const fileId = uploaded.file?.id;
   if (!fileId) throw new Error('Wix não identificou o arquivo enviado.');
   try {
+    if (uploaded.file?.parentFolderId !== parentFolderId) throw new Error('Arquivo fora da pasta temporária.');
     let privateFile = false;
     for (let attempt = 0; attempt < 4; attempt++) {
       const descriptor = await wix<{ files?: Array<{ id?: string; private?: boolean }> }>(
