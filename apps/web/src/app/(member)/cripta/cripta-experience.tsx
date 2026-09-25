@@ -48,7 +48,9 @@ export function CriptaExperience() {
 
   function edit(letter: Letter) {
     setEditingId(letter.id); setTitle(letter.title); setRecipient(letter.recipient);
-    setBody(letter.body); setAttachments(letter.attachments); setMessage(''); setStep('escrever');
+    setBody(letter.body);
+    setAttachments(letter.attachments.map((item) => ({ ...item, url: URL.createObjectURL(item.file) })));
+    setMessage(''); setStep('escrever');
   }
 
   function removeAttachment(id: string) {
@@ -134,6 +136,7 @@ export function CriptaExperience() {
   function keepPreview() {
     const letter: Letter = { id: editingId ?? crypto.randomUUID(), title: title.trim() || 'Minha carta',
       recipient: recipient.trim(), body: body.trim(), attachments };
+    if (editingId) letters.find((item) => item.id === editingId)?.attachments.forEach((item) => URL.revokeObjectURL(item.url));
     setLetters((items) => editingId ? items.map((item) => item.id === editingId ? letter : item) : [...items, letter]);
     setAttachments([]); setEditingId(null); setMessage('Prévia guardada somente nesta aba. Fechar a página apaga esta versão. Nenhum arquivo foi enviado ao servidor.'); setStep('inicio');
   }
@@ -193,7 +196,7 @@ export function CriptaExperience() {
       {picker('audio', 'Mensagem de voz', 'audio/*', 'Até 2 áudios, de 3 minutos e 10 MB cada.')}
       {picker('video', 'Vídeo', 'video/*', 'Um vídeo de até 1 minuto e 60 MB.')}
       <p className="text-sm text-[#536074]">Arquivos nesta carta: {size(total)} de 150 MB.</p>
-      <div className="flex flex-wrap gap-3"><button type="button" disabled={recording !== null} onClick={review} className="rounded-xl bg-[#123c69] px-6 py-4 font-semibold text-white disabled:opacity-50">Revisar minha carta</button><button type="button" onClick={() => { setAttachments([]); setStep('inicio'); }} className="rounded-xl border px-5 py-4">Voltar às cartas</button></div>
+      <div className="flex flex-wrap gap-3"><button type="button" disabled={recording !== null} onClick={review} className="rounded-xl bg-[#123c69] px-6 py-4 font-semibold text-white disabled:opacity-50">Revisar minha carta</button><button type="button" onClick={() => { attachments.forEach((item) => URL.revokeObjectURL(item.url)); setAttachments([]); setStep('inicio'); }} className="rounded-xl border px-5 py-4">Voltar às cartas</button></div>
     </main>}
     {step === 'revisar' && <main className="rounded-[2rem] border border-[#ddd0b7] bg-[#fbf8f1] p-6 sm:p-9">
       <p className="text-xs font-semibold uppercase tracking-widest text-[#96763c]">2 de 2 · Confira a prévia</p>
