@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import { requirePagePermission } from '@/lib/auth/require-permission';
 import { canAccessCriptaPilot } from '@/modules/cripta/lib/early-access';
+import { WixTestButton } from './wix-test-button';
 
 export const metadata = {
   title: 'Administração da Cripta | Portal VL6',
@@ -17,7 +18,8 @@ export default async function Page() {
       <h1 className="mt-4 font-serif text-4xl">Administração da Cripta</h1>
       <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-200">Área institucional distinta da experiência pessoal do Irmão. Aqui estarão os fluxos de abertura, guarda, quite-placet e entrega excepcional.</p>
     </header>
-    <p role="alert" className="rounded-xl border border-amber-400 bg-amber-50 p-4 text-sm text-amber-950"><strong>Anteprojeto sem ações operacionais.</strong> Esta tela não consulta acervos, não valida óbitos, não exporta pacotes e não apaga dados.</p>
+    <p role="alert" className="rounded-xl border border-amber-400 bg-amber-50 p-4 text-sm text-amber-950"><strong>Anteprojeto sem armazenamento de conteúdo pessoal.</strong> Esta tela não consulta acervos, não valida óbitos, não exporta pacotes de irmãos e não apaga seus dados. O ensaio Wix abaixo trabalha apenas com bytes aleatórios.</p>
+    <WixTestButton />
     <div className="grid gap-4 md:grid-cols-2">
       {[
         ['01 · Abertura anual', 'Registrar autorização interna, período de acesso, integridade das cópias e encerramento. A data, sozinha, não libera conteúdos.'],
