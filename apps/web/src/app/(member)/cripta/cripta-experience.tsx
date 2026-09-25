@@ -214,7 +214,7 @@ export function CriptaExperience() {
       setEditingId(null); setTitle(value.title); setRecipient(value.recipient); setBody(value.body);
       setAttachments(restored); setStep('revisar');
       setMessage('Carta recuperada do Wix e aberta no navegador com sua frase secreta.');
-    } catch (error) { setMessage(error instanceof Error ? error.message : 'Não foi possível abrir o ensaio.'); }
+    } catch (error) { setMessage(error instanceof Error ? error.message : 'Não foi possível abrir a carta.'); }
     finally { setBusy(false); setPassphrase(''); }
   }
 
