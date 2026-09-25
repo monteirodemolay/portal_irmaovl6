@@ -114,8 +114,12 @@ export function CriptaExperience() {
         media.getTracks().forEach((track) => track.stop());
         setRecording(null);
         const blob = new Blob(chunks.current, { type: capture.mimeType });
-        if (blob.size && Date.now() - startedAt.current <= (kind === 'video' ? 61_000 : 181_000)) {
-          acceptFile(new File([blob], `ensaio-${kind}.${kind === 'video' ? 'webm' : 'webm'}`, { type: capture.mimeType }), kind);
+        if (blob.size && blob.size <= LIMIT[kind] && Date.now() - startedAt.current <= (kind === 'video' ? 61_000 : 181_000)) {
+          // O próprio temporizador limitou a gravação; alguns WebM gravados
+          // pelo navegador apresentam duração indefinida nos metadados.
+          addLocal(new File([blob], `ensaio-${kind}.webm`, { type: capture.mimeType }), kind);
+        } else if (blob.size) {
+          setMessage('A gravação ultrapassou o limite de tempo ou tamanho. Grave novamente.');
         }
       };
       startedAt.current = Date.now();
