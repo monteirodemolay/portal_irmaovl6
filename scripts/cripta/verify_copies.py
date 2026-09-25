@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Read-only comparison of two offline Cripta exports against a separately trusted manifest digest.
+"""Read-only comparison of two or three offline Cripta exports against a trusted manifest digest.
 
 The manifest is public metadata containing only opaque paths, sizes and SHA-256 digests.
 This checks bit-level integrity, not decryption, recipient authorization or media lifetime.
@@ -64,16 +64,20 @@ def verify(root: Path, items: list[dict]) -> list[str]:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Confere integralmente duas unidades externas da Cripta")
+    parser = argparse.ArgumentParser(description="Confere integralmente duas unidades externas e a reserva opcional")
     parser.add_argument("manifest", type=Path, help="inventário JSON obtido por canal separado")
     parser.add_argument("unit_a", type=Path)
     parser.add_argument("unit_b", type=Path)
+    parser.add_argument("--reserve", type=Path, help="terceira cópia cifrada sob guarda da Loja")
     parser.add_argument("--manifest-sha256", required=True, help="SHA-256 conferido em ata/canal independente")
     args = parser.parse_args()
     if not DIGEST.fullmatch(args.manifest_sha256):
         parser.error("SHA-256 do inventário inválido")
-    if args.unit_a.resolve() == args.unit_b.resolve():
-        parser.error("A e B precisam ser caminhos distintos")
+    units = [("A", args.unit_a), ("B", args.unit_b)]
+    if args.reserve is not None:
+        units.append(("Reserva", args.reserve))
+    if len({root.resolve() for _, root in units}) != len(units):
+        parser.error("Todas as unidades precisam ser caminhos distintos")
     try:
         if args.manifest.stat().st_size > MAX_MANIFEST:
             raise ValueError("Inventário acima do limite")
@@ -96,7 +100,7 @@ def main() -> int:
             names.add(name)
             item["path"] = name
         failures = False
-        for label, root in (("A", args.unit_a), ("B", args.unit_b)):
+        for label, root in units:
             errors = verify(root, items)
             print(f"Unidade {label}: {'OK' if not errors else 'FALHA'} ({len(items)} arquivos esperados)")
             for error in errors[:20]:
@@ -104,7 +108,7 @@ def main() -> int:
             failures = failures or bool(errors)
         if failures:
             return 1
-        print("As duas unidades correspondem ao inventário aprovado. Teste de restauração e autenticação ainda é necessário.")
+        print("Todas as unidades correspondem ao inventário aprovado. Teste de restauração e autenticação ainda é necessário.")
         return 0
     except (OSError, ValueError, json.JSONDecodeError) as error:
         print(f"Falha: {error}", file=sys.stderr)
