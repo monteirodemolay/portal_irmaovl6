@@ -71,7 +71,7 @@ export async function POST(request: Request) {
   } catch (error) {
     const detail =
       error instanceof Error &&
-      /^(Wix Media \[[a-z-]+\]: HTTP \d{3}( \([a-zA-Z0-9_.-]{1,90}\))?( — [^\n]{1,200})?|Upload Wix: HTTP \d{3})\.$/.test(
+      /^(Wix Media \[[a-z-]+\]: HTTP \d{3}( \([a-zA-Z0-9_.-]{1,90}\))?( — [^\n]{1,200})?|Upload Wix: HTTP \d{3}|Download Wix: HTTP \d{3}|Arquivo Wix acima do limite|Falha de integridade do pacote cifrado)\.$/.test(
         error.message,
       )
         ? error.message

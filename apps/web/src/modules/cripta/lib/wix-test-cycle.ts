@@ -27,6 +27,7 @@ export type WixTestResult = {
   integrity: boolean;
   deleted: boolean;
   fileId?: string;
+  downloadIssue?: string;
 };
 
 /** Only an artificial 1 KiB sample is accepted; no user file enters this workflow. */
@@ -55,6 +56,7 @@ export async function runWixTestCycle(): Promise<WixTestResult> {
   let integrity = false;
   let deleted = false;
   let privateFile = false;
+  let downloadIssue: string | undefined;
   try {
     for (let attempt = 0; attempt < 4; attempt++) {
       const descriptor = await wix<{ files?: Array<{ private?: boolean }> }>(
@@ -68,25 +70,27 @@ export async function runWixTestCycle(): Promise<WixTestResult> {
     }
     if (!privateFile) throw new Error('Não foi possível confirmar que o arquivo está privado.');
     // Wix may take time to process an uploaded file before it is downloadable.
-    for (let attempt = 0; attempt < 4; attempt++) {
+    for (let attempt = 0; attempt < 6; attempt++) {
       try {
         const urlResult = await wix<{ downloadUrl: string }>(
           '/site-media/v1/files/generate-file-download-url', { fileId },
         );
         if (!urlResult.downloadUrl || new URL(urlResult.downloadUrl).protocol !== 'https:') throw new Error('Download inválido.');
         const download = await fetch(urlResult.downloadUrl, { cache: 'no-store', signal: AbortSignal.timeout(15_000) });
-        if (!download.ok) throw new Error('Arquivo ainda indisponível.');
+        if (!download.ok) throw new Error(`Download Wix: HTTP ${download.status}.`);
         const downloaded = Buffer.from(await download.arrayBuffer());
         integrity = createHash('sha256').update(downloaded).digest('hex') === digest;
+        downloadIssue = integrity ? undefined : 'Bytes recuperados não batem com o hash original.';
         break;
-      } catch {
-        if (attempt === 3) break;
-        await new Promise((resolve) => setTimeout(resolve, 1500));
+      } catch (error) {
+        downloadIssue = error instanceof Error ? error.message : 'Falha desconhecida no download.';
+        if (attempt === 5) break;
+        await new Promise((resolve) => setTimeout(resolve, 2000));
       }
     }
   } finally {
     await wix('/site-media/v1/bulk/files/delete', { fileIds: [fileId], permanent: true });
     deleted = true;
   }
-  return { encrypted: true, privateFile, integrity, deleted, fileId };
+  return { encrypted: true, privateFile, integrity, deleted, fileId, downloadIssue: integrity ? undefined : downloadIssue };
 }
