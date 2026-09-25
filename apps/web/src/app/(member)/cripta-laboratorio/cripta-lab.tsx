@@ -30,6 +30,7 @@ export function CriptaLab() {
   const [approvedB, setApprovedB] = useState(false);
   const [nextDate, setNextDate] = useState('');
   const [preview, setPreview] = useState<{ title: string; letter: string } | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [status, setStatus] = useState('Cripta de teste fechada. Nenhuma carta foi enviada ao servidor.');
   const [busy, setBusy] = useState(false);
 
@@ -56,6 +57,7 @@ export function CriptaLab() {
     setKeyText('');
     setKeyInput('');
     setPreview(null);
+    setEditingId(null);
     setLetter('');
     setApprovedA(false);
     setApprovedB(false);
@@ -73,6 +75,7 @@ export function CriptaLab() {
       setKey(null);
       setKeyText('');
       setPreview(null);
+      setEditingId(null);
       setOpened(false);
       setStatus(`Pacote cifrado importado (${bundle.items.length} cápsula(s)). Informe a chave de teste para abrir.`);
     });
@@ -125,13 +128,13 @@ export function CriptaLab() {
           <input id="lab-title" maxLength={80} value={title} onChange={(e) => setTitle(e.target.value)} className="mt-1 w-full rounded border bg-background p-2 text-sm" />
           <label htmlFor="lab-letter" className="mt-3 block text-sm font-semibold">Texto fictício</label>
           <textarea id="lab-letter" maxLength={2000} rows={5} value={letter} onChange={(e) => setLetter(e.target.value)} className="mt-1 w-full rounded border bg-background p-2 text-sm" />
-          <button type="button" disabled={busy || !opened || !key || !title.trim() || !letter.trim() || items.length >= 5} onClick={() => guarded(async () => {
+          <button type="button" disabled={busy || !opened || !key || !title.trim() || !letter.trim() || (items.length >= 5 && !editingId)} onClick={() => guarded(async () => {
             if (!key) return;
             const item = await encryptLabCapsule(key, title.trim(), letter.trim());
-            setItems((current) => [...current, item]);
-            setLetter(''); setPreview(null);
-            setStatus('Carta fictícia cifrada no navegador. Exporte o pacote antes de sair.');
-          })} className="mt-3 rounded-lg bg-[#c9a449] px-4 py-2 text-sm font-semibold text-[#06172e] disabled:opacity-50">Cifrar e incluir</button>
+            setItems((current) => editingId ? current.map((entry) => entry.id === editingId ? item : entry) : [...current, item]);
+            setEditingId(null); setLetter(''); setPreview(null);
+            setStatus('Carta fictícia cifrada no navegador. Exporte o pacote atualizado antes de sair.');
+          })} className="mt-3 rounded-lg bg-[#c9a449] px-4 py-2 text-sm font-semibold text-[#06172e] disabled:opacity-50">{editingId ? 'Cifrar alteração' : 'Cifrar e incluir'}</button>
         </section>
       </div>
       <section className="rounded-2xl border border-border bg-card p-6">
@@ -144,9 +147,20 @@ export function CriptaLab() {
               const result = await decryptLabCapsule(key, item);
               setPreview(result); setStatus('Autenticidade conferida: a chave abriu esta cápsula.');
             })} className="mt-3 rounded border px-3 py-1.5 disabled:opacity-50">Ler com chave</button>
+            <button type="button" disabled={busy || !opened || !key} onClick={() => guarded(async () => {
+              if (!key) return;
+              const result = await decryptLabCapsule(key, item);
+              setTitle(result.title); setLetter(result.letter); setEditingId(item.id);
+              setPreview(null); setStatus('Cápsula aberta para alteração. Cifre novamente para confirmar.');
+            })} className="ml-2 mt-3 rounded border px-3 py-1.5 disabled:opacity-50">Editar</button>
+            <button type="button" disabled={!opened} onClick={() => {
+              setItems((current) => current.filter((entry) => entry.id !== item.id));
+              if (editingId === item.id) setEditingId(null);
+              setPreview(null); setStatus('Cápsula excluída desta sessão. Exporte um novo pacote para registrar a exclusão.');
+            }} className="ml-2 mt-3 rounded border px-3 py-1.5 disabled:opacity-50">Excluir</button>
             <button type="button" disabled={!opened} onClick={() => {
               setItems((current) => current.map((entry) => entry.id !== item.id ? entry :
-                { ...entry, ciphertext: entry.ciphertext.slice(0, -4) + 'AAAA' }));
+                { ...entry, ciphertext: entry.ciphertext.slice(0, -4) + (entry.ciphertext.endsWith('AAAA') ? 'BBBB' : 'AAAA') }));
               setPreview(null); setStatus('Um ciphertext foi alterado. Tente lê-lo: a cifra autenticada deverá recusar.');
             }} className="ml-2 mt-3 rounded border border-red-400 px-3 py-1.5 text-red-700 disabled:opacity-50">Simular corrupção</button>
           </div>)}
