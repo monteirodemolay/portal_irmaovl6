@@ -61,7 +61,7 @@ export function CriptaLab() {
     setLetter('');
     setApprovedA(false);
     setApprovedB(false);
-    setStatus(`Janela fechada${nextDate ? `; próxima data proposta: ${nextDate}` : ''}. A chave foi retirada da memória desta tela. Exporte o pacote cifrado para preservá-lo.`);
+    setStatus(`Janela fechada${nextDate ? `; próxima data proposta: ${nextDate}` : ''}. A interface descartou sua referência à chave; isso não garante limpeza da memória do navegador. Exporte o pacote cifrado para preservá-lo.`);
   }
 
   async function importFile(event: ChangeEvent<HTMLInputElement>) {
@@ -89,7 +89,7 @@ export function CriptaLab() {
       <section className="rounded-3xl bg-gradient-to-br from-[#06172e] to-[#123c69] p-7 text-[#f3ead7] sm:p-10">
         <p className="text-xs uppercase tracking-[.22em] text-[#e3bd62]">Cripta VL6 · laboratório funcional</p>
         <h1 className="mt-3 font-serif text-4xl sm:text-5xl">Ensaio de abertura e guarda</h1>
-        <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-200">Crie uma cápsula fictícia, cifre no seu navegador, baixe o pacote, feche a janela e teste a recuperação pela chave separada. Todos os dados da sessão desaparecem ao recarregar esta página.</p>
+        <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-200">Crie uma cápsula fictícia, cifre no seu navegador, baixe o pacote, feche a janela e teste a recuperação pela chave separada. O laboratório não restaura a sessão após recarregar a página.</p>
       </section>
       <div role="status" aria-live="polite" className="rounded-xl border border-[#c9a449]/40 bg-[#0a2547] p-4 text-sm text-[#f3ead7]">{status}</div>
       <div className="grid gap-5 lg:grid-cols-2">
