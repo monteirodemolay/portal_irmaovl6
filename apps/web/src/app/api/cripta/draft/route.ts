@@ -47,7 +47,7 @@ export async function PUT(request: Request) {
   const uid = session.user.id;
   if (!await isOnlineOpen(tenantId)) return NextResponse.json({ error: 'Recebimento fechado.' }, { status: 403 });
   const declaredSize = Number(request.headers.get('content-length') ?? 0);
-  if (declaredSize > 1_100_000) return NextResponse.json({ error: 'Rascunho acima do limite atual.' }, { status: 413 });
+  if (declaredSize > 3_700_000) return NextResponse.json({ error: 'Rascunho acima do limite atual.' }, { status: 413 });
   let payload: { revision: number; letter: unknown };
   try {
     payload = await request.json() as { revision: number; letter: unknown };

@@ -1,15 +1,22 @@
 # Cripta do Irmão VL6 — especificação funcional e prompt de implementação
 
-**Estado:** especificação de destino, registrada em 26/09/2026. Este documento não declara que as funções descritas já foram implantadas. Sua execução requer validação no ambiente real, inicialmente restrita à conta piloto.
+**Estado:** especificação de destino, registrada em 26/09/2026. As primeiras etapas foram implementadas; a guarda anual em duas unidades, recuperação de chaves e uploads de mídias grandes ainda dependem de implementação e ensaios. A conta piloto permanece restrita.
+
+## Evolução implementada na segunda fase
+
+- A carta usa pergaminho legível na revisão e no HTML offline, com fotos, áudio e vídeo ao final.
+- Fotos podem ser reduzidas no aparelho; áudios e vídeos compatíveis podem ser regravados pelo codificador do navegador. A gravação feita no portal escolhe taxa de bits e duração a partir do espaço disponível. O arquivo convertido é exibido para conferência. A conversão com perda não preserva qualidade exatamente igual ao original.
+- Cota efetiva de anexos por carta: **2,5 MB**; requisição JSON máxima: **3,6 MB**. Os limites foram definidos abaixo do teto de 4,5 MB das funções Vercel. Vídeos de um minuto só caberão se o conteúdo e o codificador alcançarem tamanho adequado sem cair abaixo do limite de qualidade configurado; em outros casos, a interface pede trecho menor. Para vídeo maior e qualidade superior, implementar upload privado direto/resumível no Wix, manifesto por anexo, conferência e restauração antes de alterar a promessa de capacidade.
+- Testes automatizados cobrem limites do servidor, rejeição de compressão excessiva e integridade/sanitização do pacote HTML. Ainda é preciso ensaio autenticado em produção com aparelhos reais e Wix para confirmar compatibilidade do codificador e a transferência de 2,5 MB.
 
 ## Diagnóstico confirmado no código atual
 
 - Há duas páginas principais, `/cripta` e `/cripta-administracao`, com autenticação e envio de cartas pequenas ao Wix.
-- O rascunho pessoal atual vive apenas na memória da aba; fechá-la apaga o texto e as referências locais ainda não enviadas.
-- O envio atual limita os anexos somados a 650 KB, apesar de a interface citar fotos, áudios e vídeo. Não representa o limite desejado para uso real.
+- O rascunho pessoal é persistido no Wix com revisão no Firestore e confirmação de leitura.
+- O envio atual limita os anexos somados a 2,5 MB. Áudios e vídeos longos continuam dependentes de upload separado.
 - A interface afirma que se faz uma carta, enquanto a API permite cinco cartas concluídas. A regra de produto ainda precisa ser unificada.
 - Novas cartas usam cifra do servidor e chave vinculada à conta armazenada no Firestore. Uma cópia dos objetos Wix, sozinha, não garante restauração se essa chave ou o inventário se perderem. Cartas legadas podem exigir a frase original.
-- Não há rascunho persistente, importação Word, exportação integral verificável para duas unidades, restauração anual nem pacote HTML offline para entrega familiar.
+- Há importação de texto Word e pacote HTML offline por carta. Ainda não há exportação integral verificável para duas unidades nem restauração anual.
 
 ## Prompt corrigido
 

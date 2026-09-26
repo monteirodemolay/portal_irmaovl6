@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState, type ChangeEvent, type DragEvent } from 'react';
 import { openCapsule } from '@/modules/cripta/lib/sealed-capsule';
+import { convertedName, optimizePhoto, optimizeRecording, recorderOptions } from '@/modules/cripta/lib/media-optimizer';
+import letterStyles from './cripta-letter.module.css';
 
 type Kind = 'foto' | 'audio' | 'video';
 type Attachment = { id: string; file: File; kind: Kind; url: string };
@@ -9,10 +11,10 @@ type StoredDraft = { title: string; recipient: string; body: string;
   attachments: Array<{ kind: Kind; name: string; type: string; data: string }> };
 type Step = 'inicio' | 'escrever' | 'revisar';
 
-const LIMIT = { foto: 5 * 1024 * 1024, audio: 10 * 1024 * 1024, video: 60 * 1024 * 1024 };
-const MAX_TOTAL = 650_000;
+const LIMIT = { foto: 25 * 1024 * 1024, audio: 10 * 1024 * 1024, video: 60 * 1024 * 1024 };
+const MAX_TOTAL = 2_500_000;
 const size = (bytes: number) => `${(bytes / 1024 / 1024).toFixed(1)} MB`;
-const ONLINE_BYTES = 650_000;
+const ONLINE_BYTES = MAX_TOTAL;
 
 function toBase64(bytes: Uint8Array): string {
   let result = '';
@@ -22,7 +24,7 @@ function toBase64(bytes: Uint8Array): string {
 
 async function onlinePayload(letter: { title: string; recipient: string; body: string; attachments: Attachment[] }): Promise<Uint8Array> {
   if (letter.attachments.reduce((sum, item) => sum + item.file.size, 0) > ONLINE_BYTES) {
-    throw new Error('O envio atual aceita até 650 KB de anexos juntos. Escolha imagens pequenas ou envie apenas a carta.');
+    throw new Error('Os anexos desta carta devem somar até 2,5 MB depois da conversão.');
   }
   const items = await Promise.all(letter.attachments.map(async (item) => ({
     kind: item.kind, name: item.file.name.slice(0, 120), type: item.file.type,
@@ -30,7 +32,7 @@ async function onlinePayload(letter: { title: string; recipient: string; body: s
   })));
   const bytes = new TextEncoder().encode(JSON.stringify({ format: 'vl6-online-letter-v1',
     title: letter.title, recipient: letter.recipient, body: letter.body, attachments: items }));
-  if (bytes.length > 1_000_000) throw new Error('Carta acima de 1 MB antes da cifragem.');
+  if (bytes.length > 3_600_000) throw new Error('Carta acima do limite de envio.');
   return bytes;
 }
 
@@ -58,6 +60,7 @@ export function CriptaExperience() {
   const draftPending = useRef(false);
   const draftSaving = useRef<Promise<void> | null>(null);
   const [recording, setRecording] = useState<Kind | null>(null);
+  const [optimizing, setOptimizing] = useState(false);
   const recorder = useRef<MediaRecorder | null>(null);
   const stream = useRef<MediaStream | null>(null);
   const chunks = useRef<Blob[]>([]);
@@ -163,7 +166,7 @@ export function CriptaExperience() {
     setDraftStatus('Alterações ainda não salvas');
   }
 
-  function addFile(file: File, kind: Kind) {
+  async function addFile(file: File, kind: Kind) {
     const current = attachmentsRef.current;
     const n = current.filter((item) => item.kind === kind).length;
     if (n >= (kind === 'foto' ? 10 : kind === 'audio' ? 2 : 1)) {
@@ -172,33 +175,58 @@ export function CriptaExperience() {
     if (!file.type.startsWith(`${kind === 'foto' ? 'image' : kind}/`)) {
       setMessage('Escolha uma foto, um áudio ou um vídeo compatível.'); return;
     }
-    if (file.size > LIMIT[kind] || current.reduce((sum, item) => sum + item.file.size, 0) + file.size > MAX_TOTAL) {
-      setMessage('Os anexos desta carta devem somar no máximo 650 KB. Escolha um arquivo menor.'); return;
+    if (file.size > LIMIT[kind]) {
+      setMessage(`O arquivo original excede ${size(LIMIT[kind])}. Escolha um arquivo menor.`); return;
     }
-    const accept = () => {
+    const accept = (prepared: File) => {
       const latest = attachmentsRef.current;
       if (latest.filter((item) => item.kind === kind).length >= (kind === 'foto' ? 10 : kind === 'audio' ? 2 : 1)) return;
-      const next = [...latest, { id: crypto.randomUUID(), file, kind, url: URL.createObjectURL(file) }];
-      attachmentsRef.current = next; setAttachments(next); setMessage('Arquivo incluído na prévia da carta. Ainda não foi enviado.');
+      if (latest.reduce((sum, item) => sum + item.file.size, 0) + prepared.size > MAX_TOTAL) {
+        setMessage('O arquivo convertido ainda excede o espaço disponível. Remova outro anexo ou escolha uma mensagem menor.'); return;
+      }
+      const next = [...latest, { id: crypto.randomUUID(), file: prepared, kind, url: URL.createObjectURL(prepared) }];
+      attachmentsRef.current = next; setAttachments(next);
+      setMessage(prepared.size < file.size ? `Arquivo preparado: ${size(file.size)} → ${size(prepared.size)}. Confira a qualidade antes de guardar.` : 'Arquivo incluído. Ainda não foi enviado.');
       setDraftStatus('Alterações ainda não salvas');
     };
-    if (kind === 'foto') { accept(); return; }
+    if (kind === 'foto') {
+      setOptimizing(true);
+      try { accept(await optimizePhoto(file, Math.min(900_000, MAX_TOTAL - current.reduce((sum, item) => sum + item.file.size, 0)))); }
+      catch (error) { setMessage(error instanceof Error ? error.message : 'Foto não convertida.'); }
+      finally { setOptimizing(false); }
+      return;
+    }
     const preview = document.createElement(kind);
     const url = URL.createObjectURL(file);
     preview.preload = 'metadata';
-    preview.onloadedmetadata = () => {
-      URL.revokeObjectURL(url);
-      if (!Number.isFinite(preview.duration) || preview.duration > (kind === 'video' ? 60 : 180)) {
-        setMessage(kind === 'video' ? 'Vídeo: no máximo 1 minuto.' : 'Áudio: no máximo 3 minutos.'); return;
-      }
-      accept();
-    };
-    preview.onerror = () => { URL.revokeObjectURL(url); setMessage('Não foi possível conferir a duração. Escolha outro arquivo.'); };
-    preview.src = url;
+    setOptimizing(true);
+    await new Promise<void>((resolve) => {
+      const timeout = setTimeout(() => { cleanup(); setMessage('A mídia demorou para abrir. Escolha outro arquivo.'); resolve(); }, 15_000);
+      const cleanup = () => {
+        clearTimeout(timeout); preview.onloadedmetadata = null; preview.onerror = null;
+        preview.removeAttribute('src'); preview.load(); URL.revokeObjectURL(url);
+      };
+      preview.onloadedmetadata = async () => {
+        const duration = preview.duration;
+        cleanup();
+        if (!Number.isFinite(duration) || duration > (kind === 'video' ? 60 : 180)) {
+          setMessage(kind === 'video' ? 'Vídeo: no máximo 1 minuto.' : 'Áudio: no máximo 3 minutos.'); resolve(); return;
+        }
+        setMessage('Preparando sua lembrança no aparelho. Mantenha esta página aberta…');
+        try {
+          const remaining = MAX_TOTAL - attachmentsRef.current.reduce((sum, item) => sum + item.file.size, 0);
+          accept(await optimizeRecording(file, kind, remaining, duration));
+        } catch (error) { setMessage(error instanceof Error ? error.message : 'Não foi possível preparar a mídia.'); }
+        resolve();
+      };
+      preview.onerror = () => { cleanup(); setMessage('Não foi possível conferir a duração. Escolha outro arquivo.'); resolve(); };
+      preview.src = url;
+    });
+    setOptimizing(false);
   }
 
-  function choose(event: ChangeEvent<HTMLInputElement>, kind: Kind) {
-    Array.from(event.target.files ?? []).forEach((file) => addFile(file, kind));
+  async function choose(event: ChangeEvent<HTMLInputElement>, kind: Kind) {
+    for (const file of Array.from(event.target.files ?? [])) await addFile(file, kind);
     event.target.value = '';
   }
 
@@ -229,9 +257,9 @@ export function CriptaExperience() {
       setMessage('Texto do Word importado. Revise antes de guardar sua carta.');
     } catch (error) { setMessage(error instanceof Error ? error.message : 'Não foi possível importar o Word.'); }
   }
-  function drop(event: DragEvent<HTMLDivElement>, kind: Kind) {
+  async function drop(event: DragEvent<HTMLDivElement>, kind: Kind) {
     event.preventDefault();
-    Array.from(event.dataTransfer.files).forEach((file) => addFile(file, kind));
+    for (const file of Array.from(event.dataTransfer.files)) await addFile(file, kind);
   }
 
   async function record(kind: 'audio' | 'video') {
@@ -239,22 +267,34 @@ export function CriptaExperience() {
       setMessage('Este navegador não permite gravar aqui. Escolha um arquivo do aparelho.'); return;
     }
     try {
-      const media = await navigator.mediaDevices.getUserMedia(kind === 'video' ? { video: true, audio: true } : { audio: true });
-      const capture = new MediaRecorder(media);
+      const remaining = MAX_TOTAL - attachmentsRef.current.reduce((sum, item) => sum + item.file.size, 0);
+      if (remaining < 50_000) throw new Error('Espaço insuficiente. Remova um anexo antes de gravar.');
+      const media = await navigator.mediaDevices.getUserMedia(kind === 'video'
+        ? { video: { width: { ideal: 640 }, height: { ideal: 360 }, frameRate: { ideal: 24, max: 30 } }, audio: true }
+        : { audio: true });
+      const maxSeconds = kind === 'video'
+        ? Math.min(60, Math.floor((remaining * 8 * 0.82) / 300_000))
+        : Math.min(180, Math.floor((remaining * 8 * 0.82) / 24_000));
+      let capture: MediaRecorder;
+      try { capture = new MediaRecorder(media, recorderOptions(kind, remaining, maxSeconds)); }
+      catch (error) { media.getTracks().forEach((track) => track.stop()); throw error; }
       stream.current = media; recorder.current = capture; chunks.current = [];
       capture.ondataavailable = (event) => { if (event.data.size) chunks.current.push(event.data); };
       capture.onstop = () => {
         media.getTracks().forEach((track) => track.stop()); setRecording(null);
         const blob = new Blob(chunks.current, { type: capture.mimeType });
         if (blob.size && blob.size <= LIMIT[kind] && blob.size + attachmentsRef.current.reduce((sum, item) => sum + item.file.size, 0) <= MAX_TOTAL) {
-          const file = new File([blob], `mensagem-${kind}.webm`, { type: capture.mimeType });
+          const mime = capture.mimeType.split(';')[0] || (kind === 'video' ? 'video/webm' : 'audio/webm');
+          const file = new File([blob], convertedName(`mensagem-${kind}`, mime), { type: mime });
           const next = [...attachmentsRef.current, { id: crypto.randomUUID(), file, kind, url: URL.createObjectURL(file) }];
           attachmentsRef.current = next; setAttachments(next);
-        } else setMessage('A gravação excedeu o limite. Tente novamente.');
+          setDraftStatus('Alterações ainda não salvas');
+        } else setMessage('A gravação excedeu o espaço atual da carta. Grave uma mensagem mais curta.');
       };
       capture.start(1000); setRecording(kind);
-      timer.current = setTimeout(() => { if (capture.state === 'recording') capture.stop(); }, kind === 'video' ? 60_000 : 180_000);
-    } catch { setMessage('Não foi possível acessar câmera ou microfone. Você pode escolher um arquivo.'); }
+      setMessage(`Gravação iniciada. Ela terminará em até ${maxSeconds} segundos; você pode parar antes.`);
+      timer.current = setTimeout(() => { if (capture.state === 'recording') capture.stop(); }, maxSeconds * 1000);
+    } catch (error) { setMessage(error instanceof Error ? error.message : 'Não foi possível acessar câmera ou microfone.'); }
   }
   function stopRecording() {
     if (timer.current) clearTimeout(timer.current);
@@ -262,6 +302,7 @@ export function CriptaExperience() {
   }
 
   async function review() {
+    if (optimizing) { setMessage('Aguarde a conversão do arquivo terminar.'); return; }
     if (!recipient.trim() || !body.trim()) { setMessage('Informe para quem é a carta e escreva sua mensagem.'); return; }
     if (body.length > 20_000 || title.length > 80 || recipient.length > 100) { setMessage('O texto ultrapassa o limite permitido.'); return; }
     await persistDraft();
@@ -283,7 +324,7 @@ export function CriptaExperience() {
 
   async function depositTest() {
     if (!receivingOpen || !openingChecked) { setMessage('O recebimento está fechado. Aguarde a abertura pela Administração.'); return; }
-    if (busy) return;
+    if (busy || optimizing) return;
     setBusy(true);
     try {
       if (draftSaving.current) await draftSaving.current;
@@ -329,7 +370,7 @@ export function CriptaExperience() {
       if (value.format !== 'vl6-online-letter-v1' || !Array.isArray(value.attachments) || value.attachments.length > 13 ||
           typeof value.title !== 'string' || typeof value.recipient !== 'string' || typeof value.body !== 'string') throw new Error('Formato de carta inválido.');
       const restored = value.attachments.map((entry) => {
-        if (!['foto', 'audio', 'video'].includes(entry.kind) || typeof entry.data !== 'string' || entry.data.length > 1_000_000) throw new Error('Anexo inválido.');
+        if (!['foto', 'audio', 'video'].includes(entry.kind) || typeof entry.data !== 'string' || entry.data.length > 3_400_000) throw new Error('Anexo inválido.');
         const file = new File([Uint8Array.from(atob(entry.data), (char) => char.charCodeAt(0))], entry.name, { type: entry.type });
         return { id: crypto.randomUUID(), file, kind: entry.kind, url: URL.createObjectURL(file) };
       });
@@ -430,25 +471,38 @@ export function CriptaExperience() {
         <label className="inline-flex cursor-pointer items-center rounded-xl border border-[#a78648] px-4 py-3 font-semibold text-[#142a43]">Importar texto do Word (.docx)<input type="file" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" onChange={(event) => { void importWord(event); }} className="sr-only" /></label>
         <p className="text-sm text-[#536074]">O texto será colocado no editor para você conferir. Fotos e outros arquivos são adicionados abaixo.</p>
       </div>
-      <div><h3 className="font-serif text-2xl text-[#142a43]">Quer acrescentar alguma lembrança?</h3><p className="mt-1 text-sm text-[#536074]">Você pode seguir sem anexar nada.</p></div>
-      {picker('foto', 'Fotografias', 'image/*', 'Até 10 fotos; o envio atual aceita 650 KB de anexos juntos.')}
-      {picker('audio', 'Mensagem de voz', 'audio/*', 'Até 2 áudios; 650 KB de anexos juntos nesta fase.')}
-      {picker('video', 'Vídeo', 'video/*', 'Até 1 minuto; o envio atual aceita 650 KB de anexos juntos.')}
-      <p className="text-sm text-[#536074]">Arquivos nesta carta: {Math.round(total / 1024)} KB de 650 KB.</p>
-      <div className="flex flex-wrap gap-3"><button type="button" disabled={recording !== null} onClick={review} className="rounded-xl bg-[#123c69] px-6 py-4 font-semibold text-white disabled:opacity-50">Revisar minha carta</button><button type="button" onClick={() => { void keepPreview(); }} className="rounded-xl border px-5 py-4">Guardar rascunho e voltar</button></div>
+      <div><h3 className="font-serif text-2xl text-[#142a43]">Quer acrescentar alguma lembrança?</h3><p className="mt-1 text-sm text-[#536074]">Você pode seguir sem anexar nada. Se enviar pelo celular, toque no tipo de lembrança abaixo.</p></div>
+      {picker('foto', 'Fotografias', 'image/*', 'Até 10 fotos. Fotos grandes são reduzidas no aparelho antes do envio.')}
+      {picker('audio', 'Mensagem de voz', 'audio/*', 'Até 2 áudios. A conversão pode levar o tempo da gravação.')}
+      {picker('video', 'Vídeo', 'video/*', 'Até 1 minuto. Vídeos grandes podem não caber no espaço atual, mesmo convertidos.')}
+      <p role="status" className="text-sm text-[#536074]">{optimizing ? 'Convertendo o arquivo no aparelho. Mantenha esta tela aberta.' : `Arquivos nesta carta: ${size(total)} de 2,5 MB.`} A redução de tamanho pode alterar a qualidade. Confira cada arquivo antes de enviar.</p>
+      <div className="flex flex-wrap gap-3"><button type="button" disabled={recording !== null || optimizing} onClick={review} className="rounded-xl bg-[#123c69] px-6 py-4 font-semibold text-white disabled:opacity-50">Revisar minha carta</button><button type="button" disabled={optimizing} onClick={() => { void keepPreview(); }} className="rounded-xl border px-5 py-4 disabled:opacity-50">Guardar rascunho e voltar</button></div>
     </main>}
     {step === 'revisar' && <main className="rounded-[2rem] border border-[#ddd0b7] bg-[#fbf8f1] p-6 sm:p-9">
       <p className="text-xs font-semibold uppercase tracking-widest text-[#96763c]">2 de 2 · Confira a prévia</p>
       <h2 className="mt-2 font-serif text-3xl text-[#142a43]">Sua carta está pronta para revisão</h2>
-      <article className="mx-auto mt-7 max-w-2xl border border-[#ccb682] bg-[#f8f1e4] p-7 text-[#26344a] shadow-lg sm:p-12">
-        <p className="text-center text-xs uppercase tracking-widest text-[#94733c]">Cripta do Irmão · minha carta</p>
-        <h3 className="mt-8 text-center font-serif text-3xl">{title.trim() || 'Minha carta'}</h3>
-        <p className="mt-5 text-[#927035]">Para {recipient.trim()}</p>
-        <p className="mt-8 whitespace-pre-wrap break-words font-serif leading-8">{body.trim()}</p>
-        {attachments.filter((item) => item.kind === 'foto').length > 0 && <div className="mt-8 grid grid-cols-2 gap-3 border-t pt-6 sm:grid-cols-3">{attachments.filter((item) => item.kind === 'foto').map((item) => <img key={item.id} src={item.url} alt="Foto anexa" className="aspect-square w-full rounded object-cover" />)}</div>}
+      <article className={`${letterStyles.paper} mx-auto mt-7 max-w-2xl`}>
+        <header className={letterStyles.header}>
+          <p className={letterStyles.eyebrow}>Verdadeira Luz nº 06 · Cripta do Irmão</p>
+          <p className={letterStyles.ornament} aria-hidden="true">❧ ✦ ❧</p>
+          <h3 className={letterStyles.title}>{title.trim() || 'Minha carta'}</h3>
+          <p className={letterStyles.recipient}>Para {recipient.trim()}</p>
+        </header>
+        <div className={letterStyles.rule} aria-hidden="true" />
+        <div className={letterStyles.body}>{body.trim()}</div>
+        {attachments.length > 0 && <section className={letterStyles.section}>
+          <h4 className={letterStyles.sectionTitle}>Lembranças que acompanham esta carta</h4>
+          {attachments.map((item) => <figure key={item.id} className={letterStyles.media}>
+            {item.kind === 'foto' ? <img src={item.url} alt={item.file.name} /> :
+              item.kind === 'audio' ? <audio controls preload="metadata" src={item.url} /> :
+                <video controls preload="metadata" src={item.url} />}
+            <figcaption className={letterStyles.caption}>{item.file.name}</figcaption>
+          </figure>)}
+        </section>}
+        <footer className={letterStyles.footer}>Uma mensagem para guardar através do tempo</footer>
       </article>
       <div className="mt-6 rounded-xl border bg-white p-5 text-sm"><strong>Arquivos desta carta:</strong> {attachments.length || 'nenhum'}{attachments.map((item) => <p key={item.id} className="mt-2 break-all">{item.kind}: {item.file.name}</p>)}</div>
-      <p className="mt-5 text-sm text-[#795521]">O envio atual aceita até 650 KB de anexos juntos. Depois do envio, sua conta do Portal permite reabrir esta carta.</p>
+      <p className="mt-5 text-sm text-[#795521]">O envio atual aceita até 2,5 MB de anexos juntos. Depois do envio, sua conta do Portal permite reabrir esta carta.</p>
       <div className="mt-6 flex flex-wrap gap-3"><button type="button" disabled={busy || !receivingOpen || !openingChecked} onClick={depositTest} className="rounded-xl bg-[#123c69] px-6 py-4 font-semibold text-white disabled:opacity-50">Guardar minha carta</button><button type="button" onClick={() => { void keepPreview(); }} className="rounded-xl border px-6 py-4">Guardar rascunho</button><button type="button" onClick={() => { draftEnabled.current = true; setStep('escrever'); }} className="rounded-xl border px-5 py-4">Voltar e alterar</button></div>
     </main>}
   </div>;

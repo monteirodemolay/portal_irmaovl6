@@ -11,9 +11,14 @@ describe('validação do pacote online', () => {
     expect(() => parseOnlineLetter(letter(), true)).toThrow('Carta inválida');
   });
 
-  it('recusa anexos acima da cota efetiva de 650 KB mesmo se a interface falhar', () => {
-    const photo = { kind: 'foto', name: 'a.jpg', type: 'image/jpeg', data: Buffer.alloc(650_001).toString('base64') };
+  it('recusa anexos acima da cota efetiva de 2,5 MB mesmo se a interface falhar', () => {
+    const photo = { kind: 'foto', name: 'a.jpg', type: 'image/jpeg', data: Buffer.alloc(2_500_001).toString('base64') };
     expect(() => parseOnlineLetter(letter({ recipient: 'Família', body: 'Olá', attachments: [photo] }), true))
       .toThrow('Anexos acima');
+  });
+
+  it('aceita o tamanho máximo anunciado quando o JSON permanece abaixo do teto da função', () => {
+    const photo = { kind: 'foto', name: 'a.jpg', type: 'image/jpeg', data: Buffer.alloc(2_500_000).toString('base64') };
+    expect(parseOnlineLetter(letter({ recipient: 'Família', body: 'Olá', attachments: [photo] }), true).attachments).toHaveLength(1);
   });
 });
