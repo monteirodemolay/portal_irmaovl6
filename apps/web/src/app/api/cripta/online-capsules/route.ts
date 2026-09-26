@@ -3,6 +3,7 @@ import { getAdminFirestore } from '@vl6/infra';
 import { NextResponse } from 'next/server';
 import { activeCriptaSession } from '@/modules/cripta/lib/active-member';
 import { deletePrivateCiphertext, uploadPrivateCiphertext } from '@/modules/cripta/lib/wix-private-files';
+import { isOnlineOpen } from '@/modules/cripta/lib/online-opening';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
@@ -21,6 +22,9 @@ export async function POST(request: Request) {
   const session = await activeCriptaSession();
   if (!session || request.headers.get('origin') !== new URL(request.url).origin) {
     return NextResponse.json({ error: 'Acesso negado.' }, { status: 403 });
+  }
+  if (!await isOnlineOpen(session.authContext.tenantId)) {
+    return NextResponse.json({ error: 'O recebimento de cartas está fechado. Aguarde a abertura pela Administração.' }, { status: 403 });
   }
   if (Number(request.headers.get('content-length') ?? 0) > 1_500_000) {
     return NextResponse.json({ error: 'Carta acima do limite atual de 1,5 MB cifrados.' }, { status: 413 });

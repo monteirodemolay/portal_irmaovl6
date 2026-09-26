@@ -4,6 +4,8 @@ import { requirePagePermission } from '@/lib/auth/require-permission';
 import { canAccessCriptaPilot } from '@/modules/cripta/lib/early-access';
 import { appointCustodians } from './appoint-custodians';
 import { UnitCheck } from './unit-check';
+import { OnlineOpeningControl } from './online-opening-control';
+import { isOnlineOpen } from '@/modules/cripta/lib/online-opening';
 
 export const metadata = { title: 'Administração da Cripta | Portal VL6', robots: { index: false, follow: false } };
 
@@ -13,9 +15,10 @@ export default async function Page() {
   const tenantId = session.authContext.tenantId;
   const container = createServerContainer();
   const db = getAdminFirestore();
-  const [result, governance] = await Promise.all([
+  const [result, governance, onlineOpen] = await Promise.all([
     container.repositories.member.search({ tenantId, situacao: 'ativo' }, { limit: 100 }),
     db.collection('criptaGovernanceV1').doc(tenantId).get(),
+    isOnlineOpen(tenantId),
   ]);
   const members = result.items;
   const eligible = members.filter((member) => !!member.userId);
@@ -33,6 +36,7 @@ export default async function Page() {
       <h1 className="mt-4 font-serif text-4xl">Administração da Cripta</h1>
       <p className="mt-3 max-w-2xl leading-7 text-slate-200">Responsáveis, participação e guarda em um único lugar. Esta área registra metadados; não exibe cartas ou anexos.</p>
     </header>
+    <OnlineOpeningControl initiallyOpen={onlineOpen} />
     <section className="rounded-2xl border border-[#dbcda9] bg-[#fbf8f1] p-6">
       <h2 className="font-serif text-2xl text-[#142a43]">Responsáveis pela abertura</h2>
       <p className="mt-2 text-sm text-[#536074]">Venerável Mestre: {name(control?.masterId)} · Segundo responsável: {name(control?.secondId)}</p>
