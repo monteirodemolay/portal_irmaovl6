@@ -11,7 +11,7 @@ export async function GET() {
   const session = await getCurrentSession();
   if (!session || !canAccessCriptaPilot(session.user.email)) return NextResponse.json({ error: 'Acesso negado.' }, { status: 403 });
   const snapshot = await openingRef(session.authContext.tenantId).get();
-  return NextResponse.json({ open: snapshot.data()?.open === true }, { headers: { 'Cache-Control': 'no-store' } });
+  return NextResponse.json({ open: snapshot.exists ? snapshot.data()?.open === true : true }, { headers: { 'Cache-Control': 'no-store' } });
 }
 
 export async function POST(request: Request) {

@@ -7,5 +7,5 @@ export function openingRef(tenantId: string) {
 
 export async function isOnlineOpen(tenantId: string): Promise<boolean> {
   const snapshot = await openingRef(tenantId).get();
-  return snapshot.data()?.open === true;
+  return snapshot.exists ? snapshot.data()?.open === true : true;
 }
