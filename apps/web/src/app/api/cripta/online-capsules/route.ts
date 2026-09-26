@@ -28,11 +28,11 @@ export async function POST(request: Request) {
   if (!await isOnlineOpen(session.authContext.tenantId)) {
     return NextResponse.json({ error: 'O recebimento de cartas está fechado. Aguarde a abertura pela Administração.' }, { status: 403 });
   }
-  if (Number(request.headers.get('content-length') ?? 0) > 1_000_000) {
-    return NextResponse.json({ error: 'Carta acima do limite atual de 1 MB.' }, { status: 413 });
+  if (Number(request.headers.get('content-length') ?? 0) > 3_600_000) {
+    return NextResponse.json({ error: 'Carta acima do limite atual de 3,6 MB.' }, { status: 413 });
   }
   const body = await request.text();
-  if (Buffer.byteLength(body) > 1_000_000 || body.length < 20) {
+  if (Buffer.byteLength(body) > 3_600_000 || body.length < 20) {
     return NextResponse.json({ error: 'Pacote inválido.' }, { status: 413 });
   }
   try { parseOnlineLetter(body, true); }

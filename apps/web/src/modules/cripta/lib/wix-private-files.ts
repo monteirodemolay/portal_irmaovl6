@@ -56,7 +56,7 @@ async function ensureTemporaryFolder(): Promise<string> {
 }
 
 export async function uploadPrivateCiphertext(ciphertext: Buffer): Promise<{ fileId: string; sha256: string }> {
-  if (ciphertext.length < 30 || ciphertext.length > 1_500_000) throw new Error('Pacote acima do limite da carta.');
+  if (ciphertext.length < 30 || ciphertext.length > 4_000_000) throw new Error('Pacote acima do limite da carta.');
   const sha256 = createHash('sha256').update(ciphertext).digest('hex');
   const parentFolderId = await ensureTemporaryFolder();
   const ticket = await wix<{ uploadUrl: string }>('/site-media/v1/files/generate-upload-url', {
@@ -103,9 +103,9 @@ export async function downloadPrivateCiphertext(fileId: string, sha256: string):
       const response = await fetch(signedUrl(extractDownloadUrl(ticket)), { cache: 'no-store', signal: AbortSignal.timeout(20_000) });
       const declaredSize = Number(response.headers.get('content-length') ?? 0);
       if (!response.ok) throw new Error(`Download Wix: HTTP ${response.status}.`);
-      if (declaredSize > 1_500_000) throw new Error('Arquivo Wix acima do limite.');
+      if (declaredSize > 4_000_000) throw new Error('Arquivo Wix acima do limite.');
       const bytes = Buffer.from(await response.arrayBuffer());
-      if (bytes.length > 1_500_000 || createHash('sha256').update(bytes).digest('hex') !== sha256) {
+      if (bytes.length > 4_000_000 || createHash('sha256').update(bytes).digest('hex') !== sha256) {
         throw new Error('Falha de integridade do pacote cifrado.');
       }
       return bytes;

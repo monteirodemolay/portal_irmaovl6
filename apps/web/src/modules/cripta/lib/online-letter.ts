@@ -7,7 +7,7 @@ export type OnlineLetter = {
 };
 
 export function parseOnlineLetter(body: string, requireComplete: boolean): OnlineLetter {
-  if (Buffer.byteLength(body) > 1_000_000) throw new Error('Carta acima do limite atual.');
+  if (Buffer.byteLength(body) > 3_600_000) throw new Error('Carta acima do limite atual.');
   const value = JSON.parse(body) as OnlineLetter;
   if (value?.format !== 'vl6-online-letter-v1' || typeof value.title !== 'string' ||
       typeof value.recipient !== 'string' || typeof value.body !== 'string' ||
@@ -20,7 +20,7 @@ export function parseOnlineLetter(body: string, requireComplete: boolean): Onlin
     if (!item || !['foto', 'audio', 'video'].includes(item.kind) ||
         typeof item.name !== 'string' || item.name.length > 120 ||
       typeof item.type !== 'string' || item.type.length > 100 ||
-      typeof item.data !== 'string' || item.data.length > 900_000 ||
+      typeof item.data !== 'string' || item.data.length > 3_400_000 ||
       !/^[A-Za-z0-9+/]*={0,2}$/.test(item.data) ||
       Buffer.from(item.data, 'base64').toString('base64') !== item.data ||
       !item.type.startsWith(item.kind === 'foto' ? 'image/' : `${item.kind}/`)) {
@@ -29,7 +29,7 @@ export function parseOnlineLetter(body: string, requireComplete: boolean): Onlin
     count[item.kind]++;
     attachmentBytes += Buffer.byteLength(item.data, 'base64');
   }
-  if (count.foto > 10 || count.audio > 2 || count.video > 1 || attachmentBytes > 650_000) {
+  if (count.foto > 10 || count.audio > 2 || count.video > 1 || attachmentBytes > 2_500_000) {
     throw new Error('Anexos acima do limite atual.');
   }
   return value;
