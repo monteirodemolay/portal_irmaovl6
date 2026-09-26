@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server';
 import { activeCriptaSession } from '@/modules/cripta/lib/active-member';
 import { deletePrivateCiphertext, uploadPrivateCiphertext } from '@/modules/cripta/lib/wix-private-files';
 import { isOnlineOpen } from '@/modules/cripta/lib/online-opening';
+import { sealForAccount } from '@/modules/cripta/lib/account-envelope';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
@@ -14,7 +15,7 @@ export async function GET() {
   if (!session) return NextResponse.json({ error: 'Acesso negado.' }, { status: 403 });
   const docs = await collection().where('uid', '==', session.user.id).get();
   return NextResponse.json({ items: docs.docs.filter((doc) => doc.data().tenantId === session.authContext.tenantId && doc.data().status === 'ready').map((doc) => ({
-    id: doc.id, createdAt: doc.data().createdAt,
+    id: doc.id, createdAt: doc.data().createdAt, legacy: doc.data().format !== 'vl6-account-letter-v1',
   })) }, { headers: { 'Cache-Control': 'no-store' } });
 }
 
@@ -26,20 +27,31 @@ export async function POST(request: Request) {
   if (!await isOnlineOpen(session.authContext.tenantId)) {
     return NextResponse.json({ error: 'O recebimento de cartas está fechado. Aguarde a abertura pela Administração.' }, { status: 403 });
   }
-  if (Number(request.headers.get('content-length') ?? 0) > 1_500_000) {
-    return NextResponse.json({ error: 'Carta acima do limite atual de 1,5 MB cifrados.' }, { status: 413 });
+  if (Number(request.headers.get('content-length') ?? 0) > 1_000_000) {
+    return NextResponse.json({ error: 'Carta acima do limite atual de 1 MB.' }, { status: 413 });
   }
   const body = await request.text();
-  if (Buffer.byteLength(body) > 1_500_000 || body.length < 100) {
+  if (Buffer.byteLength(body) > 1_000_000 || body.length < 20) {
     return NextResponse.json({ error: 'Pacote inválido.' }, { status: 413 });
   }
-  let envelope: Record<string, unknown>;
-  try { envelope = JSON.parse(body) as Record<string, unknown>; }
+  let letter: Record<string, unknown>;
+  try { letter = JSON.parse(body) as Record<string, unknown>; }
   catch { return NextResponse.json({ error: 'Pacote inválido.' }, { status: 400 }); }
-  if (envelope.format !== 'vl6-capsule-v1' || envelope.cipher !== 'AES-256-GCM' ||
-      envelope.kdf !== 'PBKDF2-SHA256' || envelope.iterations !== 600_000 ||
-      !['salt', 'nonce', 'ciphertext'].every((field) => typeof envelope[field] === 'string')) {
-    return NextResponse.json({ error: 'Pacote cifrado inválido.' }, { status: 400 });
+  if (letter.format !== 'vl6-online-letter-v1' || typeof letter.title !== 'string' ||
+      typeof letter.recipient !== 'string' || typeof letter.body !== 'string' ||
+      !Array.isArray(letter.attachments) || letter.attachments.length > 13 ||
+      letter.title.length > 80 || letter.recipient.length > 100 || letter.body.length > 20_000 ||
+      !letter.recipient.trim() || !letter.body.trim() ||
+      !letter.attachments.every((entry: unknown) => {
+        if (!entry || typeof entry !== 'object') return false;
+        const item = entry as Record<string, unknown>;
+        return ['foto', 'audio', 'video'].includes(String(item.kind)) &&
+          typeof item.name === 'string' && item.name.length <= 120 &&
+          typeof item.type === 'string' && item.type.length <= 100 &&
+          typeof item.data === 'string' && item.data.length <= 900_000 &&
+          /^[A-Za-z0-9+/]*={0,2}$/.test(item.data);
+      })) {
+    return NextResponse.json({ error: 'Carta inválida.' }, { status: 400 });
   }
   const existing = await collection().where('uid', '==', session.user.id).get();
   if (existing.docs.filter((doc) => doc.data().tenantId === session.authContext.tenantId && doc.data().status === 'ready').length >= 5) {
@@ -47,12 +59,13 @@ export async function POST(request: Request) {
   }
   let fileId: string | undefined;
   try {
-    const uploaded = await uploadPrivateCiphertext(Buffer.from(body, 'utf8'));
-    fileId = uploaded.fileId;
     const id = randomUUID();
+    const encrypted = await sealForAccount(Buffer.from(body, 'utf8'), session.authContext.tenantId, session.user.id, id);
+    const uploaded = await uploadPrivateCiphertext(encrypted);
+    fileId = uploaded.fileId;
     const createdAt = new Date().toISOString();
     await collection().doc(id).create({ tenantId: session.authContext.tenantId, uid: session.user.id,
-      fileId, sha256: uploaded.sha256, createdAt, status: 'ready' });
+      fileId, sha256: uploaded.sha256, createdAt, status: 'ready', format: 'vl6-account-letter-v1' });
     return NextResponse.json({ id, createdAt }, { status: 201, headers: { 'Cache-Control': 'no-store' } });
   } catch {
     if (fileId) { try { await deletePrivateCiphertext(fileId); } catch { /* reconcile orphan */ } }
