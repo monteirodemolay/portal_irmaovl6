@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, type ChangeEvent, type DragEvent } from 'react';
-import { openCapsule, sealCapsule } from '@/modules/cripta/lib/sealed-capsule';
+import { openCapsule } from '@/modules/cripta/lib/sealed-capsule';
 
 type Kind = 'foto' | 'audio' | 'video';
 type Attachment = { id: string; file: File; kind: Kind; url: string };
@@ -43,7 +43,8 @@ export function CriptaExperience() {
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [message, setMessage] = useState('');
   const [passphrase, setPassphrase] = useState('');
-  const [remote, setRemote] = useState<Array<{ id: string; createdAt: string; expiresAt?: string }>>([]);
+  const [remote, setRemote] = useState<Array<{ id: string; createdAt: string; legacy: boolean }>>([]);
+  const [legacyId, setLegacyId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [receivingOpen, setReceivingOpen] = useState(false);
   const [openingChecked, setOpeningChecked] = useState(false);
@@ -187,30 +188,36 @@ export function CriptaExperience() {
 
   async function depositTest() {
     if (!receivingOpen || !openingChecked) { setMessage('O recebimento está fechado. Aguarde a abertura pela Administração.'); return; }
-    if (busy || passphrase.length < 16) { setMessage('Use uma frase secreta de pelo menos 16 caracteres e guarde-a fora do Portal.'); return; }
+    if (busy) return;
     setBusy(true);
     try {
       const payload = await onlinePayload({ title: title.trim() || 'Minha carta', recipient: recipient.trim(), body: body.trim(), attachments });
-      const sealed = await sealCapsule(payload, passphrase);
       const response = await fetch('/api/cripta/online-capsules', { method: 'POST',
-        headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(sealed) });
-      const result = await response.json() as { id?: string; createdAt?: string; expiresAt?: string; error?: string };
+        headers: { 'Content-Type': 'application/json' }, body: new TextDecoder().decode(payload) });
+      const result = await response.json() as { id?: string; createdAt?: string; error?: string };
       if (!response.ok || !result.id || !result.createdAt) throw new Error(result.error || 'Envio não confirmado.');
-      setRemote((items) => [...items, { id: result.id!, createdAt: result.createdAt!, expiresAt: result.expiresAt }]);
-      setMessage('Carta cifrada e enviada ao Wix. Reabra abaixo para conferir. Guarde sua frase secreta: sem ela, a carta não poderá ser aberta.');
+      setRemote((items) => [...items, { id: result.id!, createdAt: result.createdAt!, legacy: false }]);
+      setMessage('Carta cifrada e enviada ao Wix. Reabra abaixo com sua conta para conferir.');
       setStep('inicio');
     } catch (error) { setMessage(error instanceof Error ? error.message : 'Envio falhou.'); }
-    finally { setBusy(false); setPassphrase(''); }
+    finally { setBusy(false); }
   }
 
   async function openTest(id: string) {
-    if (busy || passphrase.length < 16) { setMessage('Informe a frase secreta usada nesta carta.'); return; }
+    if (busy) return;
     setBusy(true);
     try {
       const response = await fetch(`/api/cripta/online-capsules/${id}`, { cache: 'no-store' });
       if (!response.ok) throw new Error('Não foi possível recuperar o pacote cifrado.');
-      const clear = await openCapsule(await response.json(), passphrase);
-      const value = JSON.parse(new TextDecoder().decode(clear)) as { format: string; title: string; recipient: string; body: string;
+      const delivered = await response.json() as { format?: string };
+      if (delivered.format === 'vl6-capsule-v1' && passphrase.length < 16) {
+        setLegacyId(id);
+        setMessage('Esta carta foi enviada no formato antigo. Informe a frase usada naquela ocasião apenas para abri-la. As próximas cartas dispensam frase.');
+        return;
+      }
+      const value = (delivered.format === 'vl6-capsule-v1'
+        ? JSON.parse(new TextDecoder().decode(await openCapsule(delivered, passphrase)))
+        : delivered) as { format: string; title: string; recipient: string; body: string;
         attachments: Array<{ kind: Kind; name: string; type: string; data: string }> };
       if (value.format !== 'vl6-online-letter-v1' || !Array.isArray(value.attachments) || value.attachments.length > 13 ||
           typeof value.title !== 'string' || typeof value.recipient !== 'string' || typeof value.body !== 'string') throw new Error('Formato de carta inválido.');
@@ -221,9 +228,13 @@ export function CriptaExperience() {
       });
       setEditingId(null); setTitle(value.title); setRecipient(value.recipient); setBody(value.body);
       setAttachments(restored); setStep('revisar');
-      setMessage('Carta recuperada do Wix e aberta no navegador com sua frase secreta.');
+      setLegacyId(null);
+      setPassphrase('');
+      setMessage(delivered.format === 'vl6-capsule-v1'
+        ? 'Carta antiga aberta. Se quiser dispensar a frase, envie esta carta novamente e depois exclua a versão antiga.'
+        : 'Carta recuperada do Wix e aberta pela sua conta do Portal.');
     } catch (error) { setMessage(error instanceof Error ? error.message : 'Não foi possível abrir a carta.'); }
-    finally { setBusy(false); setPassphrase(''); }
+    finally { setBusy(false); }
   }
 
   async function deleteTest(id: string) {
@@ -262,7 +273,7 @@ export function CriptaExperience() {
       <h1 className="mt-4 font-serif text-4xl">Uma carta para quem você ama.</h1>
       <p className="mt-4 max-w-2xl leading-7 text-slate-200">Escreva com calma. Se quiser, acrescente fotos, sua voz ou um vídeo. Cada carta e seus arquivos formam uma lembrança para a pessoa indicada.</p>
     </header>
-    <div role="status" className="rounded-2xl border border-amber-400 bg-amber-50 p-5 text-sm leading-6 text-amber-950"><strong>Guarda online no Wix · {openingChecked ? receivingOpen ? 'recebimento aberto' : 'recebimento fechado' : 'conferindo abertura…'}.</strong> A prévia local desaparece ao fechar a aba; confirme o envio e reabra a carta para conferir. Guarde sua frase secreta fora do Portal. As cópias em pen drives ainda não foram vinculadas.</div>
+    <div role="status" className="rounded-2xl border border-amber-400 bg-amber-50 p-5 text-sm leading-6 text-amber-950"><strong>Guarda online no Wix · {openingChecked ? receivingOpen ? 'recebimento aberto' : 'recebimento fechado' : 'conferindo abertura…'}.</strong> A prévia local desaparece ao fechar a aba; confirme o envio e reabra a carta para conferir. As novas cartas são vinculadas à sua conta do Portal. As cópias em pen drives ainda não foram vinculadas.</div>
     {message && <p role="status" aria-live="polite" className="rounded-xl border border-[#c9a449] bg-white p-4 text-sm">{message}</p>}
     {step === 'inicio' && <main className="rounded-[2rem] border border-[#ddd0b7] bg-[#fbf8f1] p-6 sm:p-9">
       <p className="text-xs font-semibold uppercase tracking-widest text-[#96763c]">Meu espaço</p>
@@ -274,7 +285,7 @@ export function CriptaExperience() {
         <p className="mt-1 text-sm text-[#536074]">Para {letter.recipient} · {letter.attachments.length} arquivo(s) · apenas nesta aba</p>
         <div className="mt-4 flex flex-wrap gap-3"><button type="button" onClick={() => edit(letter)} className="rounded-xl bg-[#123c69] px-4 py-3 text-sm font-semibold text-white">Ver ou alterar carta</button><button type="button" onClick={() => removeLetter(letter)} className="rounded-xl border px-4 py-3 text-sm">Remover prévia</button></div>
       </article>)}{!letters.length && <p className="rounded-xl border border-dashed border-[#c9a449] p-5 text-sm text-[#536074]">Nenhuma carta criada nesta aba.</p>}</div>
-      {remote.length > 0 && <section className="mt-8 rounded-2xl border border-[#d7c9a9] bg-white p-5"><h3 className="font-serif text-xl">Cartas enviadas ao Wix</h3><p className="mt-2 text-sm text-[#536074]">Somente datas aparecem no inventário. Para abrir, informe a frase secreta usada ao enviar.</p><label className="mt-4 block text-sm font-semibold">Frase secreta da carta<input type="password" autoComplete="off" value={passphrase} onChange={(event) => setPassphrase(event.target.value)} className="mt-2 block w-full rounded-xl border p-3" /></label>{remote.map((item) => <div key={item.id} className="mt-4 flex flex-wrap items-center gap-3 border-t pt-4 text-sm"><span className="flex-1">Enviado em {new Date(item.createdAt).toLocaleString('pt-BR')}</span><button type="button" disabled={busy} onClick={() => openTest(item.id)} className="rounded-xl bg-[#123c69] px-4 py-3 font-semibold text-white disabled:opacity-50">Reabrir e conferir</button><button type="button" disabled={busy} onClick={() => deleteTest(item.id)} className="rounded-xl border px-4 py-3 disabled:opacity-50">Excluir carta</button></div>)}</section>}
+      {remote.length > 0 && <section className="mt-8 rounded-2xl border border-[#d7c9a9] bg-white p-5"><h3 className="font-serif text-xl">Cartas enviadas ao Wix</h3><p className="mt-2 text-sm text-[#536074]">Abra suas cartas com a conta do Portal. As cartas antigas continuam protegidas pela frase usada no envio.</p>{remote.map((item) => <div key={item.id} className="mt-4 border-t pt-4 text-sm"><div className="flex flex-wrap items-center gap-3"><span className="flex-1">Enviado em {new Date(item.createdAt).toLocaleString('pt-BR')}{item.legacy ? ' · formato antigo' : ''}</span><button type="button" disabled={busy} onClick={() => openTest(item.id)} className="rounded-xl bg-[#123c69] px-4 py-3 font-semibold text-white disabled:opacity-50">Reabrir e conferir</button><button type="button" disabled={busy} onClick={() => deleteTest(item.id)} className="rounded-xl border px-4 py-3 disabled:opacity-50">Excluir carta</button></div>{legacyId === item.id && <label className="mt-4 block font-semibold">Frase usada nesta carta antiga<input type="password" autoComplete="off" value={passphrase} onChange={(event) => setPassphrase(event.target.value)} className="mt-2 block w-full rounded-xl border p-3" /><span className="mt-2 block font-normal text-[#536074]">Digite a frase e clique em “Reabrir e conferir”.</span></label>}</div>)}</section>}
     </main>}
     {step === 'escrever' && <main className="space-y-6 rounded-[2rem] border border-[#ddd0b7] bg-[#fbf8f1] p-6 sm:p-9">
       <div><p className="text-xs font-semibold uppercase tracking-widest text-[#96763c]">1 de 2 · Prepare sua carta</p><h2 className="mt-2 font-serif text-3xl text-[#142a43]">{editingId ? 'Alterar minha carta' : 'Escrever minha carta'}</h2><p className="mt-2 text-sm text-[#536074]">Só a pessoa que você indicar deverá receber esta carta. Os arquivos abaixo acompanharão a mesma carta.</p></div>
@@ -301,8 +312,7 @@ export function CriptaExperience() {
         {attachments.filter((item) => item.kind === 'foto').length > 0 && <div className="mt-8 grid grid-cols-2 gap-3 border-t pt-6 sm:grid-cols-3">{attachments.filter((item) => item.kind === 'foto').map((item) => <img key={item.id} src={item.url} alt="Foto anexa" className="aspect-square w-full rounded object-cover" />)}</div>}
       </article>
       <div className="mt-6 rounded-xl border bg-white p-5 text-sm"><strong>Arquivos desta carta:</strong> {attachments.length || 'nenhum'}{attachments.map((item) => <p key={item.id} className="mt-2 break-all">{item.kind}: {item.file.name}</p>)}</div>
-      <p className="mt-5 text-sm text-[#795521]">O envio atual aceita até 650 KB de anexos juntos. Guarde a frase secreta separadamente: ela não é enviada ao servidor e não pode ser recuperada pelo Portal.</p>
-      <label className="mt-5 block text-sm font-semibold">Frase secreta desta carta<input type="password" autoComplete="new-password" value={passphrase} onChange={(event) => setPassphrase(event.target.value)} className="mt-2 block w-full rounded-xl border bg-white p-3" /></label>
+      <p className="mt-5 text-sm text-[#795521]">O envio atual aceita até 650 KB de anexos juntos. Depois do envio, sua conta do Portal permite reabrir esta carta.</p>
       <div className="mt-6 flex flex-wrap gap-3"><button type="button" disabled={busy || !receivingOpen || !openingChecked} onClick={depositTest} className="rounded-xl bg-[#123c69] px-6 py-4 font-semibold text-white disabled:opacity-50">Enviar minha carta</button><button type="button" onClick={keepPreview} className="rounded-xl border px-6 py-4">Manter só nesta aba</button><button type="button" onClick={() => setStep('escrever')} className="rounded-xl border px-5 py-4">Voltar e alterar</button></div>
     </main>}
   </div>;
