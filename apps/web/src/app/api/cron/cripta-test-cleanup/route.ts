@@ -20,6 +20,20 @@ export async function GET(request: NextRequest) {
       deleted++;
     } catch { failed++; }
   }
+  const orphaned = await getAdminFirestore().collection('criptaCleanupPendingV1').limit(40).get();
+  for (const doc of orphaned.docs) {
+    const { fileId, tenantId, uid } = doc.data() as { fileId: string; tenantId: string; uid: string };
+    try {
+      const [draft, completed] = await Promise.all([
+        getAdminFirestore().collection('criptaOnlineDraftsV1').doc(tenantId).collection('users').doc(uid).get(),
+        getAdminFirestore().collection('criptaOnlineCapsulesV1').where('fileId', '==', fileId).limit(1).get(),
+      ]);
+      if (draft.data()?.fileId === fileId || !completed.empty) { failed++; continue; }
+      await deletePrivateCiphertext(fileId);
+      await doc.ref.delete();
+      deleted++;
+    } catch { failed++; }
+  }
   return NextResponse.json({ deleted, failed }, { status: failed ? 503 : 200,
     headers: { 'Cache-Control': 'no-store' } });
 }
