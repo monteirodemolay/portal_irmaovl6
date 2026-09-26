@@ -2,9 +2,10 @@ import { randomUUID } from 'node:crypto';
 import { getAdminFirestore } from '@vl6/infra';
 import { NextResponse } from 'next/server';
 import { activeCriptaSession } from '@/modules/cripta/lib/active-member';
-import { deletePrivateCiphertext, uploadPrivateCiphertext } from '@/modules/cripta/lib/wix-private-files';
+import { deletePrivateCiphertext, downloadPrivateCiphertext, uploadPrivateCiphertext } from '@/modules/cripta/lib/wix-private-files';
 import { isOnlineOpen } from '@/modules/cripta/lib/online-opening';
 import { sealForAccount } from '@/modules/cripta/lib/account-envelope';
+import { parseOnlineLetter } from '@/modules/cripta/lib/online-letter';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
@@ -34,25 +35,8 @@ export async function POST(request: Request) {
   if (Buffer.byteLength(body) > 1_000_000 || body.length < 20) {
     return NextResponse.json({ error: 'Pacote inválido.' }, { status: 413 });
   }
-  let letter: Record<string, unknown>;
-  try { letter = JSON.parse(body) as Record<string, unknown>; }
+  try { parseOnlineLetter(body, true); }
   catch { return NextResponse.json({ error: 'Pacote inválido.' }, { status: 400 }); }
-  if (letter.format !== 'vl6-online-letter-v1' || typeof letter.title !== 'string' ||
-      typeof letter.recipient !== 'string' || typeof letter.body !== 'string' ||
-      !Array.isArray(letter.attachments) || letter.attachments.length > 13 ||
-      letter.title.length > 80 || letter.recipient.length > 100 || letter.body.length > 20_000 ||
-      !letter.recipient.trim() || !letter.body.trim() ||
-      !letter.attachments.every((entry: unknown) => {
-        if (!entry || typeof entry !== 'object') return false;
-        const item = entry as Record<string, unknown>;
-        return ['foto', 'audio', 'video'].includes(String(item.kind)) &&
-          typeof item.name === 'string' && item.name.length <= 120 &&
-          typeof item.type === 'string' && item.type.length <= 100 &&
-          typeof item.data === 'string' && item.data.length <= 900_000 &&
-          /^[A-Za-z0-9+/]*={0,2}$/.test(item.data);
-      })) {
-    return NextResponse.json({ error: 'Carta inválida.' }, { status: 400 });
-  }
   const existing = await collection().where('uid', '==', session.user.id).get();
   if (existing.docs.filter((doc) => doc.data().tenantId === session.authContext.tenantId && doc.data().status === 'ready').length >= 5) {
     return NextResponse.json({ error: 'Limite de cinco cartas. Exclua ou substitua uma carta antes de continuar.' }, { status: 409 });
@@ -63,6 +47,7 @@ export async function POST(request: Request) {
     const encrypted = await sealForAccount(Buffer.from(body, 'utf8'), session.authContext.tenantId, session.user.id, id);
     const uploaded = await uploadPrivateCiphertext(encrypted);
     fileId = uploaded.fileId;
+    await downloadPrivateCiphertext(uploaded.fileId, uploaded.sha256);
     const createdAt = new Date().toISOString();
     await collection().doc(id).create({ tenantId: session.authContext.tenantId, uid: session.user.id,
       fileId, sha256: uploaded.sha256, createdAt, status: 'ready', format: 'vl6-account-letter-v1' });
