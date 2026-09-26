@@ -2,6 +2,7 @@ import { getAdminFirestore } from '@vl6/infra';
 import { NextResponse } from 'next/server';
 import { activeCriptaSession } from '@/modules/cripta/lib/active-member';
 import { deletePrivateCiphertext, downloadPrivateCiphertext } from '@/modules/cripta/lib/wix-private-files';
+import { openForAccount } from '@/modules/cripta/lib/account-envelope';
 
 export const runtime = 'nodejs';
 const collection = () => getAdminFirestore().collection('criptaOnlineCapsulesV1');
@@ -14,7 +15,7 @@ async function find(request: Request, id: string) {
   const snap = await reference.get();
   const data = snap.data();
   if (!data || data.uid !== session.user.id || data.tenantId !== session.authContext.tenantId || data.status !== 'ready') return null;
-  return { reference, data };
+  return { reference, data, session };
 }
 
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -22,8 +23,11 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   if (!found) return NextResponse.json({ error: 'Carta não encontrada.' }, { status: 404 });
   try {
     const bytes = await downloadPrivateCiphertext(found.data.fileId as string, found.data.sha256 as string);
-    return new Response(new Uint8Array(bytes), { headers: {
-      'Content-Type': 'application/json', 'Content-Disposition': 'attachment; filename="cripta-carta-cifrada.json"',
+    const content = found.data.format === 'vl6-account-letter-v1'
+      ? await openForAccount(bytes, found.session.authContext.tenantId, found.session.user.id, (await params).id)
+      : bytes;
+    return new Response(new Uint8Array(content), { headers: {
+      'Content-Type': 'application/json',
       'Cache-Control': 'no-store, private', 'X-Content-Type-Options': 'nosniff',
     } });
   } catch { return NextResponse.json({ error: 'Não foi possível conferir e recuperar a carta.' }, { status: 502 }); }
