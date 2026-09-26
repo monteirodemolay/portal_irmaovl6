@@ -45,6 +45,8 @@ export function CriptaExperience() {
   const [passphrase, setPassphrase] = useState('');
   const [remote, setRemote] = useState<Array<{ id: string; createdAt: string; expiresAt?: string }>>([]);
   const [busy, setBusy] = useState(false);
+  const [receivingOpen, setReceivingOpen] = useState(false);
+  const [openingChecked, setOpeningChecked] = useState(false);
   const [recording, setRecording] = useState<Kind | null>(null);
   const recorder = useRef<MediaRecorder | null>(null);
   const stream = useRef<MediaStream | null>(null);
@@ -56,6 +58,11 @@ export function CriptaExperience() {
   lettersRef.current = letters;
 
   useEffect(() => {
+    fetch('/api/cripta/online-opening', { cache: 'no-store' }).then(async (response) => {
+      if (!response.ok) throw new Error('Estado indisponível.');
+      setReceivingOpen((await response.json() as { open: boolean }).open === true);
+    }).catch(() => setMessage('Não foi possível conferir se o recebimento está aberto. Tente atualizar a página.'))
+      .finally(() => setOpeningChecked(true));
     fetch('/api/cripta/online-capsules', { cache: 'no-store' }).then(async (response) => {
       if (response.ok) setRemote((await response.json() as { items: typeof remote }).items);
     }).catch(() => { /* UI can still be explored without the service */ });
@@ -179,6 +186,7 @@ export function CriptaExperience() {
   }
 
   async function depositTest() {
+    if (!receivingOpen || !openingChecked) { setMessage('O recebimento está fechado. Aguarde a abertura pela Administração.'); return; }
     if (busy || passphrase.length < 16) { setMessage('Use uma frase secreta de pelo menos 16 caracteres e guarde-a fora do Portal.'); return; }
     setBusy(true);
     try {
@@ -254,7 +262,7 @@ export function CriptaExperience() {
       <h1 className="mt-4 font-serif text-4xl">Uma carta para quem você ama.</h1>
       <p className="mt-4 max-w-2xl leading-7 text-slate-200">Escreva com calma. Se quiser, acrescente fotos, sua voz ou um vídeo. Cada carta e seus arquivos formam uma lembrança para a pessoa indicada.</p>
     </header>
-    <div role="alert" className="rounded-2xl border border-amber-400 bg-amber-50 p-5 text-sm leading-6 text-amber-950"><strong>Guarda online no Wix.</strong> A prévia local desaparece ao fechar a aba; confirme o envio e reabra a carta para conferir. Guarde sua frase secreta fora do Portal. As cópias em pen drives ainda não foram vinculadas.</div>
+    <div role="status" className="rounded-2xl border border-amber-400 bg-amber-50 p-5 text-sm leading-6 text-amber-950"><strong>Guarda online no Wix · {openingChecked ? receivingOpen ? 'recebimento aberto' : 'recebimento fechado' : 'conferindo abertura…'}.</strong> A prévia local desaparece ao fechar a aba; confirme o envio e reabra a carta para conferir. Guarde sua frase secreta fora do Portal. As cópias em pen drives ainda não foram vinculadas.</div>
     {message && <p role="status" aria-live="polite" className="rounded-xl border border-[#c9a449] bg-white p-4 text-sm">{message}</p>}
     {step === 'inicio' && <main className="rounded-[2rem] border border-[#ddd0b7] bg-[#fbf8f1] p-6 sm:p-9">
       <p className="text-xs font-semibold uppercase tracking-widest text-[#96763c]">Meu espaço</p>
@@ -295,7 +303,7 @@ export function CriptaExperience() {
       <div className="mt-6 rounded-xl border bg-white p-5 text-sm"><strong>Arquivos desta carta:</strong> {attachments.length || 'nenhum'}{attachments.map((item) => <p key={item.id} className="mt-2 break-all">{item.kind}: {item.file.name}</p>)}</div>
       <p className="mt-5 text-sm text-[#795521]">O envio atual aceita até 650 KB de anexos juntos. Guarde a frase secreta separadamente: ela não é enviada ao servidor e não pode ser recuperada pelo Portal.</p>
       <label className="mt-5 block text-sm font-semibold">Frase secreta desta carta<input type="password" autoComplete="new-password" value={passphrase} onChange={(event) => setPassphrase(event.target.value)} className="mt-2 block w-full rounded-xl border bg-white p-3" /></label>
-      <div className="mt-6 flex flex-wrap gap-3"><button type="button" disabled={busy} onClick={depositTest} className="rounded-xl bg-[#123c69] px-6 py-4 font-semibold text-white disabled:opacity-50">Enviar minha carta</button><button type="button" onClick={keepPreview} className="rounded-xl border px-6 py-4">Manter só nesta aba</button><button type="button" onClick={() => setStep('escrever')} className="rounded-xl border px-5 py-4">Voltar e alterar</button></div>
+      <div className="mt-6 flex flex-wrap gap-3"><button type="button" disabled={busy || !receivingOpen || !openingChecked} onClick={depositTest} className="rounded-xl bg-[#123c69] px-6 py-4 font-semibold text-white disabled:opacity-50">Enviar minha carta</button><button type="button" onClick={keepPreview} className="rounded-xl border px-6 py-4">Manter só nesta aba</button><button type="button" onClick={() => setStep('escrever')} className="rounded-xl border px-5 py-4">Voltar e alterar</button></div>
     </main>}
   </div>;
 }
