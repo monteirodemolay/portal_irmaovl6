@@ -44,9 +44,9 @@ export async function POST(request: Request) {
   const db = getAdminFirestore();
   const master = await currentCriptaMaster(tenantId);
   const governance = (await db.collection('criptaGovernanceV1').doc(tenantId).get()).data();
-  const closingSecondId = governance?.closingSecondId as string | undefined;
-  if (!master || !closingSecondId || !governance?.openingSecondId) {
-    return NextResponse.json({ error: 'Registre primeiro o Venerável e os segundos responsáveis deste ciclo.' }, { status: 409 });
+  const commissionMemberIds = Array.isArray(governance?.commissionMemberIds) ? governance.commissionMemberIds as string[] : [];
+  if (!master || !commissionMemberIds.length || !governance?.nextOpeningDate) {
+    return NextResponse.json({ error: 'Nomeie a Comissão de Guarda e indique a próxima data antes da lacração.' }, { status: 409 });
   }
   try {
     const inventory = await currentInventory(tenantId);
@@ -65,10 +65,11 @@ export async function POST(request: Request) {
       .format(new Date()).replaceAll('-', '');
     const code = `VL6-${localDay}-${randomBytes(6).toString('hex').toUpperCase()}`;
     const canonical = { code, sealedAt, inventoryDigest: inventory.digest, previousCode, minutes,
-      closingMasterId: master.member.id, closingSecondId };
+      closingMasterId: master.member.id, closingSecondId: commissionMemberIds[0]!,
+      commissionMemberIds, nextOpeningDate: governance.nextOpeningDate as string };
     const receipt = { ...canonical, receiptDigest: receiptDigest(canonical), count: inventory.count,
       letters: inventory.letters, drafts: inventory.drafts, status: 'sealed', version: 1,
-      openingSecondId: governance.openingSecondId, alternateIds: governance.alternateIds ?? [],
+      commissionMemberIds, nextOpeningDate: governance.nextOpeningDate,
       createdBy: session.user.id, note: 'Recibo do inventário registrado; cópias externas exigem conferência separada.' };
     await db.runTransaction(async (transaction) => {
       const [state, previous] = await Promise.all([transaction.get(openingRef(tenantId)), transaction.get(ref)]);

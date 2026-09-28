@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react';
 
 type Receipt = { code: string; sealedAt: string; inventoryDigest: string; receiptDigest: string;
-  count: number; letters: number; drafts: number; minutes: string; status: string; previousCode: string | null };
+  count: number; letters: number; drafts: number; minutes: string; status: string; previousCode: string | null;
+  commissionMemberIds?: string[]; nextOpeningDate?: string };
 type Result = { receipt: Receipt | null; check?: { inventoryMatches: boolean; receiptMatches?: boolean; currentDigest?: string; error?: string }; error?: string };
 
 export function SealPanel({ initiallyOpen }: { initiallyOpen: boolean }) {
@@ -51,6 +52,7 @@ export function SealPanel({ initiallyOpen }: { initiallyOpen: boolean }) {
       <p className="text-xs font-semibold uppercase tracking-widest text-[#8a682d]">{receipt.status === 'sealed' ? 'Lacre vigente' : 'Último lacre aberto'}</p>
       <p className="mt-2 break-all font-mono text-lg font-bold text-[#123c69]">{receipt.code}</p>
       <p className="mt-2 text-sm">{new Date(receipt.sealedAt).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })} · Ata {receipt.minutes} · {receipt.letters} carta(s) · {receipt.drafts} rascunho(s)</p>
+      {receipt.nextOpeningDate && <p className="mt-2 text-sm">Na lacração, a abertura estava prevista para {new Date(receipt.nextOpeningDate + 'T12:00:00Z').toLocaleDateString('pt-BR', { timeZone: 'UTC' })}. Remarcações constam do histórico da Comissão.</p>}
       <p className="mt-3 break-all text-xs"><strong>SHA-256 do inventário:</strong> {receipt.inventoryDigest}</p>
       <p className="mt-2 break-all text-xs"><strong>SHA-256 do recibo:</strong> {receipt.receiptDigest}</p>
       {receipt.previousCode && <p className="mt-2 text-xs">Lacre anterior: {receipt.previousCode}</p>}

@@ -14,9 +14,12 @@ export function digestInventory(entries: SealEntry[]) {
 }
 
 export function receiptDigest(receipt: { code: string; sealedAt: string; inventoryDigest: string;
-  previousCode: string | null; minutes: string; closingMasterId: string; closingSecondId: string }) {
+  previousCode: string | null; minutes: string; closingMasterId: string; closingSecondId: string;
+  commissionMemberIds?: string[]; nextOpeningDate?: string }) {
   const canonical = { code: receipt.code, sealedAt: receipt.sealedAt, inventoryDigest: receipt.inventoryDigest,
     previousCode: receipt.previousCode, minutes: receipt.minutes,
-    closingMasterId: receipt.closingMasterId, closingSecondId: receipt.closingSecondId };
+    closingMasterId: receipt.closingMasterId, closingSecondId: receipt.closingSecondId,
+    ...(receipt.commissionMemberIds ? { commissionMemberIds: receipt.commissionMemberIds } : {}),
+    ...(receipt.nextOpeningDate ? { nextOpeningDate: receipt.nextOpeningDate } : {}) };
   return createHash('sha256').update(JSON.stringify(canonical)).digest('hex');
 }
