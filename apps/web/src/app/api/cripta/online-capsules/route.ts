@@ -3,7 +3,7 @@ import { getAdminFirestore } from '@vl6/infra';
 import { NextResponse } from 'next/server';
 import { activeCriptaSession } from '@/modules/cripta/lib/active-member';
 import { deletePrivateCiphertext, downloadPrivateCiphertext, uploadPrivateCiphertext } from '@/modules/cripta/lib/wix-private-files';
-import { isOnlineOpen } from '@/modules/cripta/lib/online-opening';
+import { isOnlineOpen, openingRef } from '@/modules/cripta/lib/online-opening';
 import { sealForAccount } from '@/modules/cripta/lib/account-envelope';
 import { parseOnlineLetter } from '@/modules/cripta/lib/online-letter';
 
@@ -49,8 +49,12 @@ export async function POST(request: Request) {
     fileId = uploaded.fileId;
     await downloadPrivateCiphertext(uploaded.fileId, uploaded.sha256);
     const createdAt = new Date().toISOString();
-    await collection().doc(id).create({ tenantId: session.authContext.tenantId, uid: session.user.id,
-      fileId, sha256: uploaded.sha256, createdAt, status: 'ready', format: 'vl6-account-letter-v1' });
+    await getAdminFirestore().runTransaction(async (transaction) => {
+      const opening = await transaction.get(openingRef(session.authContext.tenantId));
+      if (opening.exists && opening.data()?.open !== true) throw new Error('Recebimento fechado durante o envio.');
+      transaction.create(collection().doc(id), { tenantId: session.authContext.tenantId, uid: session.user.id,
+        fileId, sha256: uploaded.sha256, createdAt, status: 'ready', format: 'vl6-account-letter-v1' });
+    });
     return NextResponse.json({ id, createdAt }, { status: 201, headers: { 'Cache-Control': 'no-store' } });
   } catch {
     if (fileId) { try { await deletePrivateCiphertext(fileId); } catch { /* reconcile orphan */ } }

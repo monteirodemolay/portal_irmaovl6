@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { activeCriptaSession } from '@/modules/cripta/lib/active-member';
 import { deletePrivateCiphertext, downloadPrivateCiphertext } from '@/modules/cripta/lib/wix-private-files';
 import { openForAccount } from '@/modules/cripta/lib/account-envelope';
+import { isOnlineOpen } from '@/modules/cripta/lib/online-opening';
 
 export const runtime = 'nodejs';
 const collection = () => getAdminFirestore().collection('criptaOnlineCapsulesV1');
@@ -36,6 +37,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
 export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const found = await find(request, (await params).id);
   if (!found) return NextResponse.json({ error: 'Carta não encontrada.' }, { status: 404 });
+  if (!await isOnlineOpen(found.session.authContext.tenantId)) return NextResponse.json({ error: 'A Cripta está lacrada. Registre a abertura antes de excluir.' }, { status: 403 });
   try {
     await deletePrivateCiphertext(found.data.fileId as string);
     await found.reference.delete();

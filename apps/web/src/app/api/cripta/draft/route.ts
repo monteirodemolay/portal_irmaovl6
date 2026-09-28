@@ -3,7 +3,7 @@ import { getAdminFirestore } from '@vl6/infra';
 import { NextResponse } from 'next/server';
 import { activeCriptaSession } from '@/modules/cripta/lib/active-member';
 import { openForAccount, sealForAccount } from '@/modules/cripta/lib/account-envelope';
-import { isOnlineOpen } from '@/modules/cripta/lib/online-opening';
+import { isOnlineOpen, openingRef } from '@/modules/cripta/lib/online-opening';
 import { parseOnlineLetter } from '@/modules/cripta/lib/online-letter';
 import { deletePrivateCiphertext, downloadPrivateCiphertext, uploadPrivateCiphertext } from '@/modules/cripta/lib/wix-private-files';
 
@@ -66,7 +66,8 @@ export async function PUT(request: Request) {
     await downloadPrivateCiphertext(uploaded.fileId, uploaded.sha256);
     const updatedAt = new Date().toISOString();
     await getAdminFirestore().runTransaction(async (transaction) => {
-      const current = await transaction.get(ref);
+      const [current, opening] = await Promise.all([transaction.get(ref), transaction.get(openingRef(tenantId))]);
+      if (opening.exists && opening.data()?.open !== true) throw new Error('Recebimento fechado durante o salvamento.');
       const data = current.data();
       if ((data?.revision ?? 0) !== payload.revision) throw new Error('REVISION_CONFLICT');
       previousFileId = data?.fileId as string | undefined;
@@ -95,6 +96,7 @@ export async function DELETE(request: Request) {
   if (!session || request.headers.get('origin') !== new URL(request.url).origin) {
     return NextResponse.json({ error: 'Acesso negado.' }, { status: 403 });
   }
+  if (!await isOnlineOpen(session.authContext.tenantId)) return NextResponse.json({ error: 'Recebimento fechado.' }, { status: 403 });
   const ref = reference(session.authContext.tenantId, session.user.id);
   const snap = await ref.get();
   if (!snap.exists) return NextResponse.json({ deleted: true }, options);

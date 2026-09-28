@@ -41,7 +41,8 @@ export async function openForAccount(encrypted: Buffer, tenantId: string, uid: s
       ![envelope.nonce, envelope.tag, envelope.ciphertext].every((value) => typeof value === 'string')) throw new Error('Formato inválido.');
   const nonce = Buffer.from(envelope.nonce, 'base64');
   const tag = Buffer.from(envelope.tag, 'base64');
-  if (nonce.length !== 12 || tag.length !== 16 || envelope.ciphertext.length > 2_000_000) throw new Error('Pacote inválido.');
+  // The online letter accepts 2.5 MB of attachments, encoded as base64 inside this envelope.
+  if (nonce.length !== 12 || tag.length !== 16 || envelope.ciphertext.length > 4_900_000) throw new Error('Pacote inválido.');
   const decipher = createDecipheriv('aes-256-gcm', await accountKey(tenantId, uid, false), nonce);
   decipher.setAAD(aad(tenantId, uid, id));
   decipher.setAuthTag(tag);
