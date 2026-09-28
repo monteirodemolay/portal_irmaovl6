@@ -133,3 +133,12 @@ request.auth.token.tenantId` como última linha de defesa.
 3. Nenhuma cor, texto, logotipo ou nome de Loja é hardcoded em nenhum
    componente — tudo vem de `TenantBranding`/`TenantSettings` carregado no
    layout raiz (ver doc 09).
+
+
+## 1.8 Atualização de implementação — 28/09/2026
+
+Este capítulo preserva os princípios e a visão de fundação. Desde sua elaboração, o Portal recebeu Acervo VL6 estruturado, Biblioteca e circulação, Notícias editoriais integradas a Eventos, Agenda unificada com integração Google opcional, Comunidade Paramaçônica, gestão de versões de Termos/Privacidade, Constelação automática e uma Cripta em **piloto restrito**. Consulte [13-estado-atual-e-operacao.md](./13-estado-atual-e-operacao.md) para o mapa de módulos, rotas e respectivos limites; não leia as intenções de escala, integrações e roadmap deste capítulo como capacidades integralmente testadas.
+
+**Infraestrutura:** Firebase Authentication e Firestore continuam centrais; arquivos do Acervo usam Vercel Blob; Cripta piloto possui integração separada com Wix privado. Agendamentos em `apps/web/vercel.json` utilizam Vercel Cron, não Cloud Functions. A indicação histórica de economia por ausência de Blaze não representa o faturamento real do projeto: `portalvl6` foi identificado com plano Blaze em 28/09/2026.
+
+**Novos contextos e proteção de dados:** os módulos `archive`, `integrations`, `communication`, `legal`, `family-legacy`, `honors` e a experiência `cripta` ampliam a lista de contextos de §1.5. Cada rota deve manter verificação de identidade, tenant e RBAC; canais experimentais da Cripta não equivalem a operação anual institucional.
