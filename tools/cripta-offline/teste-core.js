@@ -15,10 +15,12 @@ const assert = require('assert');
       obterBytes: async () => enc.encode('{"titulo":"Família","texto":"..."}') },
   ];
   const k = 2, n = 3;
-  const pac = await C.criarPacote({ codigoLacracao: codigo, loja: 'Teste', itens, k, nPenDrives: n });
+  const inventoryDigest = 'a'.repeat(64);
+  const pac = await C.criarPacote({ codigoLacracao: codigo, loja: 'Teste', itens, k, nPenDrives: n, inventoryDigest });
   const arquivo = C.concat(pac.partes);
   assert.strictEqual(arquivo.length, pac.tamanho);
   const ler = C.leitorDeBytes(arquivo);
+  assert.strictEqual((await C.lerCabecalho(ler, arquivo.length)).cabecalho.inventoryDigest, inventoryDigest);
 
   // impressão digital estável
   const h1 = await C.impressaoDigital(ler, arquivo.length);

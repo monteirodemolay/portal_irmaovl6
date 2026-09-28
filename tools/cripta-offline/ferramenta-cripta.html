@@ -56,16 +56,16 @@ progress{width:100%;height:12px}
 <!-- =================== LACRAR =================== -->
 <section class="aba ativa" id="aba-lacrar">
 <h2>Lacração das cartas</h2>
-<p class="ajuda">Carregue o arquivo de exportação gerado na página administrativa do site (etapa 4). A ferramenta cifra tudo com uma chave nova, gera o arquivo único lacrado, um manifesto por pen drive e a parte da chave que vai no envelope do Termo. A chave completa nunca é salva.</p>
+<p class="ajuda">Esta ferramenta usa um JSON de exportação compatível. O Portal atual ainda não emite esse JSON: use dados de ensaio até a integração da exportação e da recuperação. A ferramenta cifra o pacote, gera um manifesto por unidade e uma parte da chave para o envelope do Termo.</p>
 <div class="grade">
 <label>Arquivo de exportação (.json)<input type="file" id="l-export" accept=".json,application/json"></label>
 <label>Pasta com os anexos (opcional)<input type="file" id="l-pasta" webkitdirectory multiple></label>
 <label>Nome da Loja<input type="text" id="l-loja" value="Loja Verdadeira Luz nº 6"></label>
 </div>
 <div class="grade">
-<label>Quantidade de pen drives<input type="number" id="l-n" min="1" max="9" value="3"></label>
+<label>Quantidade de pen drives<input type="number" id="l-n" min="2" max="9" value="2"></label>
 <label>Partes necessárias para abrir (k)<input type="number" id="l-k" min="2" max="9" value="2"></label>
-<label>Código da lacração (vazio = gerar)<input type="text" id="l-codigo" placeholder="LAC-2026-XXXX" class="mono"></label>
+<label>Código do recibo do Portal (para ensaio, vazio = gerar)<input type="text" id="l-codigo" placeholder="VL6-AAAAMMDD-XXXXXXXXXXXX" class="mono"></label>
 </div>
 <p class="ajuda">Com k = 2: dois pen drives abrem a Cripta; em caso excepcional, um pen drive mais o envelope do Termo. Os anexos são buscados pelos links da exportação; se o navegador bloquear, selecione a pasta onde eles foram baixados (nomes iguais aos da exportação).</p>
 <div class="linha"><button class="btn" id="l-go">Lacrar agora</button><progress id="l-prog" value="0" max="1" hidden></progress></div>
@@ -90,12 +90,12 @@ progress{width:100%;height:12px}
 <div id="a-resumo"></div>
 <div id="a-acoes" hidden>
 <h3>Reabertura geral (Tela 02): liberar no site</h3>
-<p class="ajuda">Envia cada carta para a Área do Irmão do próprio depositante. Gere o token de integração na página administrativa de Reabertura.</p>
+<p class="ajuda">A importação das cartas recuperadas nas contas do Portal ainda não está integrada. Guarde a cópia restaurada em ambiente autorizado e não informe credenciais nesta tela.</p>
 <div class="grade">
 <label>Endereço do site<input type="url" id="a-site" placeholder="https://www.suasite.com.br"></label>
 <label>Token de integração<input type="password" id="a-token"></label>
 </div>
-<div class="linha"><button class="btn" id="a-liberar">Liberar todas no site</button><button class="btn sec" id="a-pasta">Salvar tudo em uma pasta (cópia de segurança)</button></div>
+<div class="linha"><button class="btn" id="a-liberar" disabled title="Integração ao Portal pendente">Liberação no Portal indisponível</button><button class="btn sec" id="a-pasta">Salvar tudo em uma pasta (cópia de segurança)</button></div>
 <h3>Abertura individual (Tela 03): falecimento ou desligamento</h3>
 <div class="grade"><label>Código pessoal do irmão<input type="text" id="a-irmao" class="mono" placeholder="CRP-26-0417-K7Q3"></label></div>
 <div class="linha"><button class="btn" id="a-ind-salvar">Salvar só as cartas deste irmão</button><button class="btn sec" id="a-ind-relacrar">Relacrar sem as cartas deste irmão</button></div>
@@ -149,6 +149,7 @@ async function gerarSaidasDaLacracao({ pac, codigo, loja, n, k, arquivoBlob, sai
   const nomeArq = `cripta-${codigo}.lacre`;
   const base = {
     formato: C.FORMATO, codigoLacracao: codigo, loja, arquivo: nomeArq, tamanho: arquivoBlob.size, impressaoDigital: impressao,
+    ...(pac.cabecalho.inventoryDigest ? { inventoryDigest: pac.cabecalho.inventoryDigest } : {}),
     criadoEm: pac.cabecalho.criadoEm, totalCartas: pac.cabecalho.totalCartas, totalIrmaos: pac.cabecalho.totalIrmaos, totalItens: pac.cabecalho.totalItens,
     partesNecessarias: k, verificadorChave: pac.cabecalho.chave.verificador, origem: origem || null,
   };
@@ -187,9 +188,9 @@ function gerarTermo(base, pds) {
 <button onclick="print()">Imprimir</button>
 <h1>Termo de Lacração da Cripta</h1>
 <p class="c">${esc(base.loja)}<br>Código ${esc(base.codigoLacracao)}<br>Impressão digital Cripta (SHA-256 por blocos) ${esc(base.impressaoDigital)}</p>
-<p>Aos ${d.getDate()} dias do mês de ${d.toLocaleString('pt-BR', { month: 'long' })} de ${d.getFullYear()}, reunida a Comissão nomeada pelo Venerável Mestre, procedeu-se à conferência e lacração de ${base.totalCartas} cartas de ${base.totalIrmaos} irmãos, gravadas no arquivo único <em>${esc(base.arquivo)}</em> (${fmtBytes(base.tamanho)}), cifrado com AES-256, e copiado nos pen drives abaixo, cada um com seu manifesto e sua parte da chave. São necessárias ${base.partesNecessarias} partes para a abertura. Uma parte adicional foi impressa, lacrada em envelope rubricado pelos presentes e recolhida ao cofre da Loja.</p>
+<p>Aos ${d.getDate()} dias do mês de ${d.toLocaleString('pt-BR', { month: 'long' })} de ${d.getFullYear()}, a ferramenta gerou o arquivo único <em>${esc(base.arquivo)}</em> (${fmtBytes(base.tamanho)}), cifrado com AES-256, para ${base.totalCartas} cartas de ${base.totalIrmaos} irmãos. São necessárias ${base.partesNecessarias} partes para a abertura. O registro da gravação, conferência independente das unidades, guarda do envelope e assinaturas deve ser completado pelos responsáveis depois dos respectivos atos.</p>
 <table><tr><th>Pen drive</th><th>Guardião</th><th>Conferido</th></tr>${pds.map((p) => `<tr><td style="font-family:monospace">${esc(p.codigoPenDrive)}</td><td>&nbsp;</td><td>&nbsp;</td></tr>`).join('')}</table>
-<p>Em seguida, foi determinada a exclusão dos dados temporários do site, permanecendo apenas os códigos e a impressão digital acima.</p>
+<p>A exclusão dos dados temporários depende da recuperação efetiva de amostra autorizada, da conferência das unidades e de decisão registrada separadamente. Este termo não atesta exclusão.</p>
 <div class="ass">${linhas.map((l) => `<div>${esc(l)}</div>`).join('')}</div>
 </body></html>`;
 }
@@ -226,6 +227,7 @@ $('#l-go').addEventListener('click', async () => {
   try {
     log(`Lacrando ${itens.length} itens com código ${codigo}...`);
     const pac = await C.criarPacote({ codigoLacracao: codigo, loja: $('#l-loja').value, itens, k, nPenDrives: n,
+      inventoryDigest: /^[a-f0-9]{64}$/.test(exp.inventoryDigest) ? exp.inventoryDigest : undefined,
       aoProgredir: (i, t, m) => { prog.value = i / t; log(`cifrado ${i}/${t}: ${m.codigoCarta} ${m.tipo}`); } });
     const blob = new Blob(pac.partes, { type: 'application/octet-stream' });
     await gerarSaidasDaLacracao({ pac, codigo, loja: $('#l-loja').value, n, k, arquivoBlob: blob, saida });
