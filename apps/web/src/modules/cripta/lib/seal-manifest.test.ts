@@ -17,8 +17,10 @@ describe('recibo de lacração', () => {
   it('vincula código, data, ata, responsáveis e inventário ao hash do recibo', () => {
     const receipt = { code: 'VL6-20260928-ABCDEF123456', sealedAt: '2026-09-28T12:00:00.000Z',
       inventoryDigest: digestInventory(items).digest, previousCode: null, minutes: 'Ata 25/2026',
-      closingMasterId: 'm1', closingSecondId: 'm2' };
+      closingMasterId: 'm1', closingSecondId: 'm2', commissionMemberIds: ['m2', 'm3'], nextOpeningDate: '2027-10-12' };
     expect(receiptDigest(receipt)).toMatch(/^[a-f0-9]{64}$/);
     expect(receiptDigest(receipt)).not.toBe(receiptDigest({ ...receipt, minutes: 'Ata alterada' }));
+    expect(receiptDigest(receipt)).not.toBe(receiptDigest({ ...receipt, commissionMemberIds: ['m2', 'm4'] }));
+    expect(receiptDigest(receipt)).not.toBe(receiptDigest({ ...receipt, nextOpeningDate: '2027-10-13' }));
   });
 });
