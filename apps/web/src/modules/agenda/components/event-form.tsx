@@ -3,7 +3,7 @@
 import { useActionState, useMemo, useState, useTransition } from 'react';
 import { useFormStatus } from 'react-dom';
 import type { Event } from '@vl6/domain';
-import {
+import { normalizeEventLocation, VL6_TEMPLE_LOCATION,
   EVENT_KINDS,
   EVENT_KIND_LABELS,
   formatSessionName,
@@ -423,7 +423,7 @@ export function EventForm({
         htmlFor="local"
         description={isRecesso ? 'Se ficar em branco, será identificado como Loja Maçônica Verdadeira Luz nº 06.' : undefined}
       >
-        <Input id="local" name="local" required={!isRecesso} defaultValue={event?.local} />
+        <Input id="local" name="local" required={!isRecesso} defaultValue={event?.local ? normalizeEventLocation(event.local) : VL6_TEMPLE_LOCATION} />
       </FormField>
       <FormField label={isRecesso ? 'Início do recesso' : 'Início'} htmlFor="dataInicio">
         <Input
