@@ -7,6 +7,7 @@ import { OnlineOpeningControl } from '../online-opening-control';
 import { isOnlineOpen } from '@/modules/cripta/lib/online-opening';
 import { currentCriptaMaster } from '@/modules/cripta/lib/current-master';
 import { SealPanel } from '../seal-panel';
+import { PhysicalUnitCheck } from '../physical-unit-check';
 import Link from 'next/link';
 
 export const metadata = { title: 'Lacração | Cripta VL6', robots: { index: false, follow: false } };
@@ -17,11 +18,12 @@ export default async function Page() {
   const tenantId = session.authContext.tenantId;
   const container = createServerContainer();
   const db = getAdminFirestore();
-  const [result, governance, onlineOpen, currentMaster] = await Promise.all([
+  const [result, governance, onlineOpen, currentMaster, seal] = await Promise.all([
     container.repositories.member.search({ tenantId, situacao: 'ativo' }, { limit: 100 }),
     db.collection('criptaGovernanceV1').doc(tenantId).get(),
     isOnlineOpen(tenantId),
     currentCriptaMaster(tenantId),
+    db.collection('criptaSealsV1').doc(tenantId).get(),
   ]);
   const members = result.items;
   const eligible = members.filter((member) => !!member.userId);
@@ -70,6 +72,10 @@ export default async function Page() {
       commissionMemberIds={control?.commissionMemberIds ?? []} nextOpeningDate={control?.nextOpeningDate ?? ''}
       choices={eligible.filter((member) => member.id !== currentMaster?.member.id).map((member) => ({ id: member.id, name: member.nomeCompleto }))} />}
     <SealPanel initiallyOpen={onlineOpen} />
+    {seal.data()?.status === 'sealed' && <PhysicalUnitCheck receiptCode={seal.data()!.code as string}
+      totalLetters={seal.data()!.letters as number}
+      inventoryDigest={seal.data()!.inventoryDigest as string}
+      recorded={seal.data()!.physicalCheck?.receiptDigest === seal.data()!.receiptDigest ? seal.data()!.physicalCheck : null} />}
     <section className="rounded-2xl border border-[#dbcda9] bg-white p-6">
       <h2 className="font-serif text-2xl text-[#142a43]">Participação dos irmãos Ativos</h2>
       <p className="mt-2 text-sm text-[#536074]">{members.length} Ativos cadastrados · {eligible.length} com conta vinculada · {records.filter((record) => record.count > 0).length} com carta enviada · {records.filter((record) => record.hasDraft).length} com rascunho</p>
@@ -79,7 +85,7 @@ export default async function Page() {
     </section>
     <section className="rounded-2xl border border-[#dbcda9] bg-white p-6">
       <h2 className="font-serif text-2xl">Gravação nas unidades e exclusão do Wix</h2>
-      <p className="mt-2 text-sm leading-6 text-[#536074]">O recibo acima confere o inventário do Portal. O pacote único em pen drives, o termo assinado e a exclusão permanente exigem a exportação e a conferência da ferramenta offline. Esta etapa ainda não está vinculada ao ciclo do Portal; não exclua cartas do Wix com base somente neste recibo.</p>
+      <p className="mt-2 text-sm leading-6 text-[#536074]">O recibo acima confere o inventário do Portal. A leitura de duas unidades registra a integridade das cópias selecionadas. A exportação completa das cartas, a recuperação por chave e a exclusão permanente ainda não estão vinculadas ao ciclo do Portal. Não exclua cartas do Wix com base somente nesses registros.</p>
       <details className="mt-3 text-sm"><summary className="cursor-pointer font-semibold">? Como sei que a cópia física está íntegra?</summary><p className="mt-2">É preciso ler o arquivo diretamente de cada unidade e comparar sua impressão digital com o termo guardado fora do Portal.</p></details>
     </section>
   </div>;

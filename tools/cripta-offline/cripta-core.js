@@ -202,11 +202,12 @@
    *           obterBytes: async () => Uint8Array }]
    * Retorna { partes: Uint8Array[], tamanho, cabecalho, chave, resumo }.
    */
-  async function criarPacote({ codigoLacracao, loja, itens, k, nPenDrives, aoProgredir }) {
+  async function criarPacote({ codigoLacracao, loja, itens, k, nPenDrives, inventoryDigest, aoProgredir }) {
     const chave = aleatorio(32);
     const ck = await importarChave(chave);
     const cabecalho = {
       formato: FORMATO, codigoLacracao, loja: loja || '', criadoEm: new Date().toISOString(),
+      ...(inventoryDigest ? { inventoryDigest } : {}),
       totalItens: itens.length,
       totalCartas: itens.filter((i) => i.meta.tipo === 'carta').length,
       totalIrmaos: new Set(itens.map((i) => i.meta.codigoIrmao)).size,
