@@ -1,5 +1,6 @@
 import { Timestamp, type Firestore, type Query } from 'firebase-admin/firestore';
 import type { Event, IEventRepository, PageRequest, PageResult } from '@vl6/domain';
+import { normalizeEventLocation } from '@vl6/shared';
 import { createEntityConverter } from '../converters/entity.converter';
 import { paginateInMemory } from '../paginate-in-memory';
 
@@ -19,6 +20,7 @@ const DATE_FIELDS = ['dataInicio', 'dataFim'] as const;
 function withDefaults(event: Event): Event {
   return {
     ...event,
+    local: normalizeEventLocation(event.local),
     boardTermId: event.boardTermId ?? null,
     nivelAcesso: event.nivelAcesso ?? 'irmaos',
     exibirNaLinhaDoTempo: event.exibirNaLinhaDoTempo ?? true,
@@ -126,7 +128,7 @@ export class FirestoreEventRepository implements IEventRepository {
   }
 
   async create(event: Event): Promise<void> {
-    await this.collection.doc(event.id).set(event);
+    await this.collection.doc(event.id).set({ ...event, local: normalizeEventLocation(event.local) });
   }
 
   async update(event: Event): Promise<void> {

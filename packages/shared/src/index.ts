@@ -41,3 +41,4 @@ export * from './text/format-person-name';
 export * from './text/find-similar-name';
 export * from './agenda/format-session-name';
 export * from './observability/logger';
+export * from './agenda/normalize-event-location';
