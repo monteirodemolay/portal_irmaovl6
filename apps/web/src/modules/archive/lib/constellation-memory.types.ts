@@ -1,6 +1,8 @@
 export interface ConstellationMemoryMedia {
   id: string;
   url: string;
+  mediaType: 'foto' | 'video';
+  posterUrl: string | null;
   caption: string | null;
   altText: string | null;
 }
@@ -25,11 +27,13 @@ export interface ConstellationMemory {
   itemCount: number;
   mediaCount: number;
   photoCount: number;
+  videoCount: number;
 }
 
 export interface MemoryConstellationStats {
   totalMemories: number;
   totalPhotos: number;
+  totalVideos: number;
   totalYears: number;
 }
 

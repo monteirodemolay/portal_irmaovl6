@@ -67,7 +67,9 @@ function ArchiveResultImage({
       src={result.imageUrl}
       alt=""
       loading="lazy"
-      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+      className={featured
+        ? 'absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105'
+        : 'h-full w-full object-cover transition-transform duration-500 group-hover:scale-105'}
     />
   ) : (
     <div className="from-primary to-primary-dark flex h-full w-full flex-col justify-between bg-gradient-to-br p-4 text-white">
@@ -333,19 +335,19 @@ export default async function AcervoPage({
           {featuredResult ? (
             <Link
               href={featuredResult.href}
-              className="border-border bg-surface hover:border-accent group grid overflow-hidden rounded-[18px] border shadow-sm transition-colors sm:grid-cols-[0.9fr_1.1fr]"
+              className="border-border bg-surface hover:border-accent group grid min-w-0 overflow-hidden rounded-[18px] border shadow-sm transition-colors sm:h-[23rem] sm:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:h-[25rem]"
             >
-              <div className="min-h-52 overflow-hidden sm:min-h-72">
+              <div className="relative h-56 min-w-0 overflow-hidden sm:h-full">
                 <ArchiveResultImage result={featuredResult} featured />
               </div>
-              <div className="flex flex-col justify-center p-6 sm:p-7">
+              <div className="flex min-h-0 min-w-0 flex-col justify-center overflow-hidden p-6 sm:p-7">
                 <p className="text-accent text-[10px] font-semibold uppercase tracking-wider">
                   {ARCHIVE_SEARCH_KIND_LABELS[featuredResult.kind]}
                 </p>
-                <h3 className="font-display mt-2 text-2xl font-semibold leading-tight">
+                <h3 className="font-display mt-2 line-clamp-3 break-words text-2xl font-semibold leading-tight">
                   {featuredResult.title}
                 </h3>
-                <p className="text-muted mt-3 line-clamp-3 text-sm leading-6">
+                <p className="text-muted mt-3 line-clamp-2 break-words text-sm leading-6 sm:line-clamp-3">
                   {featuredResult.description}
                 </p>
                 <span className="text-primary mt-5 inline-flex items-center gap-1.5 text-xs font-semibold">
