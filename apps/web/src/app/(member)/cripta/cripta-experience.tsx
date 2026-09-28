@@ -2,13 +2,23 @@
 
 import { useEffect, useRef, useState, type ChangeEvent, type DragEvent } from 'react';
 import { openCapsule } from '@/modules/cripta/lib/sealed-capsule';
-import { convertedName, optimizePhoto, optimizeRecording, recorderOptions } from '@/modules/cripta/lib/media-optimizer';
+import { openOnlineCapsule, sealOnlineCapsule } from '@/modules/cripta/lib/online-capsule';
+import {
+  convertedName,
+  optimizePhoto,
+  optimizeRecording,
+  recorderOptions,
+} from '@/modules/cripta/lib/media-optimizer';
 import letterStyles from './cripta-letter.module.css';
 
 type Kind = 'foto' | 'audio' | 'video';
 type Attachment = { id: string; file: File; kind: Kind; url: string };
-type StoredDraft = { title: string; recipient: string; body: string;
-  attachments: Array<{ kind: Kind; name: string; type: string; data: string }> };
+type StoredDraft = {
+  title: string;
+  recipient: string;
+  body: string;
+  attachments: Array<{ kind: Kind; name: string; type: string; data: string }>;
+};
 type Step = 'inicio' | 'escrever' | 'revisar';
 
 const LIMIT = { foto: 25 * 1024 * 1024, audio: 10 * 1024 * 1024, video: 60 * 1024 * 1024 };
@@ -18,20 +28,37 @@ const ONLINE_BYTES = MAX_TOTAL;
 
 function toBase64(bytes: Uint8Array): string {
   let result = '';
-  for (let i = 0; i < bytes.length; i += 8192) result += String.fromCharCode(...bytes.subarray(i, i + 8192));
+  for (let i = 0; i < bytes.length; i += 8192)
+    result += String.fromCharCode(...bytes.subarray(i, i + 8192));
   return btoa(result);
 }
 
-async function onlinePayload(letter: { title: string; recipient: string; body: string; attachments: Attachment[] }): Promise<Uint8Array> {
+async function onlinePayload(letter: {
+  title: string;
+  recipient: string;
+  body: string;
+  attachments: Attachment[];
+}): Promise<Uint8Array> {
   if (letter.attachments.reduce((sum, item) => sum + item.file.size, 0) > ONLINE_BYTES) {
     throw new Error('Os anexos desta carta devem somar até 2,5 MB depois da conversão.');
   }
-  const items = await Promise.all(letter.attachments.map(async (item) => ({
-    kind: item.kind, name: item.file.name.slice(0, 120), type: item.file.type,
-    data: toBase64(new Uint8Array(await item.file.arrayBuffer())),
-  })));
-  const bytes = new TextEncoder().encode(JSON.stringify({ format: 'vl6-online-letter-v1',
-    title: letter.title, recipient: letter.recipient, body: letter.body, attachments: items }));
+  const items = await Promise.all(
+    letter.attachments.map(async (item) => ({
+      kind: item.kind,
+      name: item.file.name.slice(0, 120),
+      type: item.file.type,
+      data: toBase64(new Uint8Array(await item.file.arrayBuffer())),
+    })),
+  );
+  const bytes = new TextEncoder().encode(
+    JSON.stringify({
+      format: 'vl6-online-letter-v1',
+      title: letter.title,
+      recipient: letter.recipient,
+      body: letter.body,
+      attachments: items,
+    }),
+  );
   if (bytes.length > 3_600_000) throw new Error('Carta acima do limite de envio.');
   return bytes;
 }
@@ -44,8 +71,12 @@ export function CriptaExperience() {
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [message, setMessage] = useState('');
   const [passphrase, setPassphrase] = useState('');
-  const [remote, setRemote] = useState<Array<{ id: string; createdAt: string; legacy: boolean }>>([]);
-  const [legacyId, setLegacyId] = useState<string | null>(null);
+  const [depositPassphrase, setDepositPassphrase] = useState('');
+  const [remote, setRemote] = useState<
+    Array<{ id: string; createdAt: string; requiresPassphrase: boolean }>
+  >([]);
+  const [openingId, setOpeningId] = useState<string | null>(null);
+  const [opened, setOpened] = useState<{ id: string; format: string } | null>(null);
   const [busy, setBusy] = useState(false);
   const [receivingOpen, setReceivingOpen] = useState(false);
   const [openingChecked, setOpeningChecked] = useState(false);
@@ -69,29 +100,50 @@ export function CriptaExperience() {
   attachmentsRef.current = attachments;
 
   useEffect(() => {
-    fetch('/api/cripta/online-opening', { cache: 'no-store' }).then(async (response) => {
-      if (!response.ok) throw new Error('Estado indisponível.');
-      setReceivingOpen((await response.json() as { open: boolean }).open === true);
-    }).catch(() => setMessage('Não foi possível conferir se o recebimento está aberto. Tente atualizar a página.'))
+    fetch('/api/cripta/online-opening', { cache: 'no-store' })
+      .then(async (response) => {
+        if (!response.ok) throw new Error('Estado indisponível.');
+        setReceivingOpen(((await response.json()) as { open: boolean }).open === true);
+      })
+      .catch(() =>
+        setMessage(
+          'Não foi possível conferir se o recebimento está aberto. Tente atualizar a página.',
+        ),
+      )
       .finally(() => setOpeningChecked(true));
-    fetch('/api/cripta/online-capsules', { cache: 'no-store' }).then(async (response) => {
-      if (response.ok) setRemote((await response.json() as { items: typeof remote }).items);
-    }).catch(() => { /* UI can still be explored without the service */ });
-    fetch('/api/cripta/draft', { cache: 'no-store' }).then(async (response) => {
-      const result = await response.json() as { draft?: StoredDraft | null; revision?: number; error?: string };
-      if (!response.ok) throw new Error(result.error || 'Não foi possível recuperar o rascunho.');
-      if (result.draft) {
-        setDraft(result.draft);
-        draftSaved.current = JSON.stringify(result.draft);
-      }
-      draftRevision.current = result.revision ?? 0;
-    }).catch((error) => setDraftStatus(error instanceof Error ? error.message : 'Rascunho indisponível.'))
+    fetch('/api/cripta/online-capsules', { cache: 'no-store' })
+      .then(async (response) => {
+        if (response.ok) setRemote(((await response.json()) as { items: typeof remote }).items);
+      })
+      .catch(() => {
+        /* UI can still be explored without the service */
+      });
+    fetch('/api/cripta/draft', { cache: 'no-store' })
+      .then(async (response) => {
+        const result = (await response.json()) as {
+          draft?: StoredDraft | null;
+          revision?: number;
+          error?: string;
+        };
+        if (!response.ok) throw new Error(result.error || 'Não foi possível recuperar o rascunho.');
+        if (result.draft) {
+          setDraft(result.draft);
+          draftSaved.current = JSON.stringify(result.draft);
+        }
+        draftRevision.current = result.revision ?? 0;
+      })
+      .catch((error) =>
+        setDraftStatus(error instanceof Error ? error.message : 'Rascunho indisponível.'),
+      )
       .finally(() => setDraftChecked(true));
   }, []);
 
   async function persistDraft() {
     if (!draftEnabled.current || !receivingOpen) return;
-    if (draftSaving.current) { draftPending.current = true; return draftSaving.current; }
+    if (draftSaving.current) {
+      draftPending.current = true;
+      return draftSaving.current;
+    }
     const task = (async () => {
       do {
         draftPending.current = false;
@@ -101,41 +153,64 @@ export function CriptaExperience() {
         if (content === draftSaved.current) continue;
         setDraftStatus('Salvando…');
         const response = await fetch('/api/cripta/draft', {
-          method: 'PUT', headers: { 'Content-Type': 'application/json' },
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ revision: draftRevision.current, letter: JSON.parse(content) }),
         });
-        const result = await response.json() as { revision?: number; updatedAt?: string; error?: string };
-        if (!response.ok || !result.revision) throw new Error(result.error || 'Rascunho não salvo.');
+        const result = (await response.json()) as {
+          revision?: number;
+          updatedAt?: string;
+          error?: string;
+        };
+        if (!response.ok || !result.revision)
+          throw new Error(result.error || 'Rascunho não salvo.');
         draftRevision.current = result.revision;
         draftSaved.current = content;
         setDraft(JSON.parse(content) as StoredDraft);
-        setDraftStatus(`Salvo às ${new Date(result.updatedAt || Date.now()).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`);
+        setDraftStatus(
+          `Salvo às ${new Date(result.updatedAt || Date.now()).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`,
+        );
         if (draftEnabled.current) {
           const latest = await onlinePayload(draftValues.current);
           if (new TextDecoder().decode(latest) !== draftSaved.current) draftPending.current = true;
         }
       } while (draftPending.current && draftEnabled.current);
     })();
-    const settled = task.catch((error) => {
-      setDraftStatus(error instanceof Error ? error.message : 'Rascunho não salvo.');
-    }).finally(() => { draftSaving.current = null; });
+    const settled = task
+      .catch((error) => {
+        setDraftStatus(error instanceof Error ? error.message : 'Rascunho não salvo.');
+      })
+      .finally(() => {
+        draftSaving.current = null;
+      });
     draftSaving.current = settled;
     await settled;
   }
 
   useEffect(() => {
-    if (step !== 'escrever' || !draftChecked || !receivingOpen || !draftEnabled.current ||
-        (!recipient.trim() && !body.trim() && attachments.length === 0)) return;
-    const timer = setTimeout(() => { void persistDraft(); }, 1500);
+    if (
+      step !== 'escrever' ||
+      !draftChecked ||
+      !receivingOpen ||
+      !draftEnabled.current ||
+      (!recipient.trim() && !body.trim() && attachments.length === 0)
+    )
+      return;
+    const timer = setTimeout(() => {
+      void persistDraft();
+    }, 1500);
     return () => clearTimeout(timer);
   }, [step, title, recipient, body, attachments, draftChecked, receivingOpen]);
 
-  useEffect(() => () => {
-    if (timer.current) clearTimeout(timer.current);
-    if (recorder.current?.state === 'recording') recorder.current.stop();
-    stream.current?.getTracks().forEach((track) => track.stop());
-    attachmentsRef.current.forEach((item) => URL.revokeObjectURL(item.url));
-  }, []);
+  useEffect(
+    () => () => {
+      if (timer.current) clearTimeout(timer.current);
+      if (recorder.current?.state === 'recording') recorder.current.stop();
+      stream.current?.getTracks().forEach((track) => track.stop());
+      attachmentsRef.current.forEach((item) => URL.revokeObjectURL(item.url));
+    },
+    [],
+  );
 
   const count = (kind: Kind) => attachments.filter((item) => item.kind === kind).length;
   const total = attachments.reduce((sum, item) => sum + item.file.size, 0);
@@ -144,19 +219,36 @@ export function CriptaExperience() {
     if (!draftChecked) return;
     draftEnabled.current = true;
     attachmentsRef.current.forEach((item) => URL.revokeObjectURL(item.url));
-    setTitle(''); setRecipient(''); setBody(''); setAttachments([]); setMessage(''); setStep('escrever');
+    setTitle('');
+    setRecipient('');
+    setBody('');
+    setAttachments([]);
+    setMessage('');
+    setOpened(null);
+    setDepositPassphrase('');
+    setStep('escrever');
   }
 
   function continueDraft() {
     if (!draft) return;
     attachmentsRef.current.forEach((item) => URL.revokeObjectURL(item.url));
     const restored = draft.attachments.map((entry) => {
-      const file = new File([Uint8Array.from(atob(entry.data), (char) => char.charCodeAt(0))], entry.name, { type: entry.type });
+      const file = new File(
+        [Uint8Array.from(atob(entry.data), (char) => char.charCodeAt(0))],
+        entry.name,
+        { type: entry.type },
+      );
       return { id: crypto.randomUUID(), file, kind: entry.kind, url: URL.createObjectURL(file) };
     });
     draftEnabled.current = true;
-    setTitle(draft.title); setRecipient(draft.recipient); setBody(draft.body);
-    setAttachments(restored); setMessage(''); setStep('escrever');
+    setTitle(draft.title);
+    setRecipient(draft.recipient);
+    setBody(draft.body);
+    setAttachments(restored);
+    setMessage('');
+    setOpened(null);
+    setDepositPassphrase('');
+    setStep('escrever');
   }
 
   function removeAttachment(id: string) {
@@ -170,30 +262,57 @@ export function CriptaExperience() {
     const current = attachmentsRef.current;
     const n = current.filter((item) => item.kind === kind).length;
     if (n >= (kind === 'foto' ? 10 : kind === 'audio' ? 2 : 1)) {
-      setMessage('Limite desta mídia atingido. Remova um arquivo antes de incluir outro.'); return;
+      setMessage('Limite desta mídia atingido. Remova um arquivo antes de incluir outro.');
+      return;
     }
     if (!file.type.startsWith(`${kind === 'foto' ? 'image' : kind}/`)) {
-      setMessage('Escolha uma foto, um áudio ou um vídeo compatível.'); return;
+      setMessage('Escolha uma foto, um áudio ou um vídeo compatível.');
+      return;
     }
     if (file.size > LIMIT[kind]) {
-      setMessage(`O arquivo original excede ${size(LIMIT[kind])}. Escolha um arquivo menor.`); return;
+      setMessage(`O arquivo original excede ${size(LIMIT[kind])}. Escolha um arquivo menor.`);
+      return;
     }
     const accept = (prepared: File) => {
       const latest = attachmentsRef.current;
-      if (latest.filter((item) => item.kind === kind).length >= (kind === 'foto' ? 10 : kind === 'audio' ? 2 : 1)) return;
+      if (
+        latest.filter((item) => item.kind === kind).length >=
+        (kind === 'foto' ? 10 : kind === 'audio' ? 2 : 1)
+      )
+        return;
       if (latest.reduce((sum, item) => sum + item.file.size, 0) + prepared.size > MAX_TOTAL) {
-        setMessage('O arquivo convertido ainda excede o espaço disponível. Remova outro anexo ou escolha uma mensagem menor.'); return;
+        setMessage(
+          'O arquivo convertido ainda excede o espaço disponível. Remova outro anexo ou escolha uma mensagem menor.',
+        );
+        return;
       }
-      const next = [...latest, { id: crypto.randomUUID(), file: prepared, kind, url: URL.createObjectURL(prepared) }];
-      attachmentsRef.current = next; setAttachments(next);
-      setMessage(prepared.size < file.size ? `Arquivo preparado: ${size(file.size)} → ${size(prepared.size)}. Confira a qualidade antes de guardar.` : 'Arquivo incluído. Ainda não foi enviado.');
+      const next = [
+        ...latest,
+        { id: crypto.randomUUID(), file: prepared, kind, url: URL.createObjectURL(prepared) },
+      ];
+      attachmentsRef.current = next;
+      setAttachments(next);
+      setMessage(
+        prepared.size < file.size
+          ? `Arquivo preparado: ${size(file.size)} → ${size(prepared.size)}. Confira a qualidade antes de guardar.`
+          : 'Arquivo incluído. Ainda não foi enviado.',
+      );
       setDraftStatus('Alterações ainda não salvas');
     };
     if (kind === 'foto') {
       setOptimizing(true);
-      try { accept(await optimizePhoto(file, Math.min(900_000, MAX_TOTAL - current.reduce((sum, item) => sum + item.file.size, 0)))); }
-      catch (error) { setMessage(error instanceof Error ? error.message : 'Foto não convertida.'); }
-      finally { setOptimizing(false); }
+      try {
+        accept(
+          await optimizePhoto(
+            file,
+            Math.min(900_000, MAX_TOTAL - current.reduce((sum, item) => sum + item.file.size, 0)),
+          ),
+        );
+      } catch (error) {
+        setMessage(error instanceof Error ? error.message : 'Foto não convertida.');
+      } finally {
+        setOptimizing(false);
+      }
       return;
     }
     const preview = document.createElement(kind);
@@ -201,25 +320,44 @@ export function CriptaExperience() {
     preview.preload = 'metadata';
     setOptimizing(true);
     await new Promise<void>((resolve) => {
-      const timeout = setTimeout(() => { cleanup(); setMessage('A mídia demorou para abrir. Escolha outro arquivo.'); resolve(); }, 15_000);
+      const timeout = setTimeout(() => {
+        cleanup();
+        setMessage('A mídia demorou para abrir. Escolha outro arquivo.');
+        resolve();
+      }, 15_000);
       const cleanup = () => {
-        clearTimeout(timeout); preview.onloadedmetadata = null; preview.onerror = null;
-        preview.removeAttribute('src'); preview.load(); URL.revokeObjectURL(url);
+        clearTimeout(timeout);
+        preview.onloadedmetadata = null;
+        preview.onerror = null;
+        preview.removeAttribute('src');
+        preview.load();
+        URL.revokeObjectURL(url);
       };
       preview.onloadedmetadata = async () => {
         const duration = preview.duration;
         cleanup();
         if (!Number.isFinite(duration) || duration > (kind === 'video' ? 60 : 180)) {
-          setMessage(kind === 'video' ? 'Vídeo: no máximo 1 minuto.' : 'Áudio: no máximo 3 minutos.'); resolve(); return;
+          setMessage(
+            kind === 'video' ? 'Vídeo: no máximo 1 minuto.' : 'Áudio: no máximo 3 minutos.',
+          );
+          resolve();
+          return;
         }
         setMessage('Preparando sua lembrança no aparelho. Mantenha esta página aberta…');
         try {
-          const remaining = MAX_TOTAL - attachmentsRef.current.reduce((sum, item) => sum + item.file.size, 0);
+          const remaining =
+            MAX_TOTAL - attachmentsRef.current.reduce((sum, item) => sum + item.file.size, 0);
           accept(await optimizeRecording(file, kind, remaining, duration));
-        } catch (error) { setMessage(error instanceof Error ? error.message : 'Não foi possível preparar a mídia.'); }
+        } catch (error) {
+          setMessage(error instanceof Error ? error.message : 'Não foi possível preparar a mídia.');
+        }
         resolve();
       };
-      preview.onerror = () => { cleanup(); setMessage('Não foi possível conferir a duração. Escolha outro arquivo.'); resolve(); };
+      preview.onerror = () => {
+        cleanup();
+        setMessage('Não foi possível conferir a duração. Escolha outro arquivo.');
+        resolve();
+      };
       preview.src = url;
     });
     setOptimizing(false);
@@ -235,7 +373,8 @@ export function CriptaExperience() {
     event.target.value = '';
     if (!file) return;
     if (!/\.docx$/i.test(file.name) || file.size > 5_000_000) {
-      setMessage('Escolha um documento Word .docx de até 5 MB.'); return;
+      setMessage('Escolha um documento Word .docx de até 5 MB.');
+      return;
     }
     try {
       const JSZip = (await import('jszip')).default;
@@ -245,17 +384,29 @@ export function CriptaExperience() {
       const xml = await entry.async('string');
       if (xml.length > 1_000_000) throw new Error('O documento possui texto acima do limite.');
       const document = new DOMParser().parseFromString(xml, 'application/xml');
-      if (document.querySelector('parsererror')) throw new Error('Não foi possível ler o documento.');
+      if (document.querySelector('parsererror'))
+        throw new Error('Não foi possível ler o documento.');
       const paragraphs = Array.from(document.getElementsByTagName('w:p')).map((paragraph) =>
-        Array.from(paragraph.getElementsByTagName('w:t')).map((node) => node.textContent ?? '').join(''),
+        Array.from(paragraph.getElementsByTagName('w:t'))
+          .map((node) => node.textContent ?? '')
+          .join(''),
       );
       const imported = paragraphs.join('\n').trim();
-      if (!imported || imported.length > 20_000) throw new Error('O texto importado está vazio ou ultrapassa o limite da carta.');
-      if (body.trim() && !window.confirm('Substituir o texto atual pelo conteúdo do Word? Confira antes de continuar.')) return;
+      if (!imported || imported.length > 20_000)
+        throw new Error('O texto importado está vazio ou ultrapassa o limite da carta.');
+      if (
+        body.trim() &&
+        !window.confirm(
+          'Substituir o texto atual pelo conteúdo do Word? Confira antes de continuar.',
+        )
+      )
+        return;
       setBody(imported);
       setDraftStatus('Alterações ainda não salvas');
       setMessage('Texto do Word importado. Revise antes de guardar sua carta.');
-    } catch (error) { setMessage(error instanceof Error ? error.message : 'Não foi possível importar o Word.'); }
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Não foi possível importar o Word.');
+    }
   }
   async function drop(event: DragEvent<HTMLDivElement>, kind: Kind) {
     event.preventDefault();
@@ -264,37 +415,79 @@ export function CriptaExperience() {
 
   async function record(kind: 'audio' | 'video') {
     if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') {
-      setMessage('Este navegador não permite gravar aqui. Escolha um arquivo do aparelho.'); return;
+      setMessage('Este navegador não permite gravar aqui. Escolha um arquivo do aparelho.');
+      return;
     }
     try {
-      const remaining = MAX_TOTAL - attachmentsRef.current.reduce((sum, item) => sum + item.file.size, 0);
-      if (remaining < 50_000) throw new Error('Espaço insuficiente. Remova um anexo antes de gravar.');
-      const media = await navigator.mediaDevices.getUserMedia(kind === 'video'
-        ? { video: { width: { ideal: 640 }, height: { ideal: 360 }, frameRate: { ideal: 24, max: 30 } }, audio: true }
-        : { audio: true });
-      const maxSeconds = kind === 'video'
-        ? Math.min(60, Math.floor((remaining * 8 * 0.82) / 300_000))
-        : Math.min(180, Math.floor((remaining * 8 * 0.82) / 24_000));
+      const remaining =
+        MAX_TOTAL - attachmentsRef.current.reduce((sum, item) => sum + item.file.size, 0);
+      if (remaining < 50_000)
+        throw new Error('Espaço insuficiente. Remova um anexo antes de gravar.');
+      const media = await navigator.mediaDevices.getUserMedia(
+        kind === 'video'
+          ? {
+              video: {
+                width: { ideal: 640 },
+                height: { ideal: 360 },
+                frameRate: { ideal: 24, max: 30 },
+              },
+              audio: true,
+            }
+          : { audio: true },
+      );
+      const maxSeconds =
+        kind === 'video'
+          ? Math.min(60, Math.floor((remaining * 8 * 0.82) / 300_000))
+          : Math.min(180, Math.floor((remaining * 8 * 0.82) / 24_000));
       let capture: MediaRecorder;
-      try { capture = new MediaRecorder(media, recorderOptions(kind, remaining, maxSeconds)); }
-      catch (error) { media.getTracks().forEach((track) => track.stop()); throw error; }
-      stream.current = media; recorder.current = capture; chunks.current = [];
-      capture.ondataavailable = (event) => { if (event.data.size) chunks.current.push(event.data); };
-      capture.onstop = () => {
-        media.getTracks().forEach((track) => track.stop()); setRecording(null);
-        const blob = new Blob(chunks.current, { type: capture.mimeType });
-        if (blob.size && blob.size <= LIMIT[kind] && blob.size + attachmentsRef.current.reduce((sum, item) => sum + item.file.size, 0) <= MAX_TOTAL) {
-          const mime = capture.mimeType.split(';')[0] || (kind === 'video' ? 'video/webm' : 'audio/webm');
-          const file = new File([blob], convertedName(`mensagem-${kind}`, mime), { type: mime });
-          const next = [...attachmentsRef.current, { id: crypto.randomUUID(), file, kind, url: URL.createObjectURL(file) }];
-          attachmentsRef.current = next; setAttachments(next);
-          setDraftStatus('Alterações ainda não salvas');
-        } else setMessage('A gravação excedeu o espaço atual da carta. Grave uma mensagem mais curta.');
+      try {
+        capture = new MediaRecorder(media, recorderOptions(kind, remaining, maxSeconds));
+      } catch (error) {
+        media.getTracks().forEach((track) => track.stop());
+        throw error;
+      }
+      stream.current = media;
+      recorder.current = capture;
+      chunks.current = [];
+      capture.ondataavailable = (event) => {
+        if (event.data.size) chunks.current.push(event.data);
       };
-      capture.start(1000); setRecording(kind);
-      setMessage(`Gravação iniciada. Ela terminará em até ${maxSeconds} segundos; você pode parar antes.`);
-      timer.current = setTimeout(() => { if (capture.state === 'recording') capture.stop(); }, maxSeconds * 1000);
-    } catch (error) { setMessage(error instanceof Error ? error.message : 'Não foi possível acessar câmera ou microfone.'); }
+      capture.onstop = () => {
+        media.getTracks().forEach((track) => track.stop());
+        setRecording(null);
+        const blob = new Blob(chunks.current, { type: capture.mimeType });
+        if (
+          blob.size &&
+          blob.size <= LIMIT[kind] &&
+          blob.size + attachmentsRef.current.reduce((sum, item) => sum + item.file.size, 0) <=
+            MAX_TOTAL
+        ) {
+          const mime =
+            capture.mimeType.split(';')[0] || (kind === 'video' ? 'video/webm' : 'audio/webm');
+          const file = new File([blob], convertedName(`mensagem-${kind}`, mime), { type: mime });
+          const next = [
+            ...attachmentsRef.current,
+            { id: crypto.randomUUID(), file, kind, url: URL.createObjectURL(file) },
+          ];
+          attachmentsRef.current = next;
+          setAttachments(next);
+          setDraftStatus('Alterações ainda não salvas');
+        } else
+          setMessage('A gravação excedeu o espaço atual da carta. Grave uma mensagem mais curta.');
+      };
+      capture.start(1000);
+      setRecording(kind);
+      setMessage(
+        `Gravação iniciada. Ela terminará em até ${maxSeconds} segundos; você pode parar antes.`,
+      );
+      timer.current = setTimeout(() => {
+        if (capture.state === 'recording') capture.stop();
+      }, maxSeconds * 1000);
+    } catch (error) {
+      setMessage(
+        error instanceof Error ? error.message : 'Não foi possível acessar câmera ou microfone.',
+      );
+    }
   }
   function stopRecording() {
     if (timer.current) clearTimeout(timer.current);
@@ -302,89 +495,185 @@ export function CriptaExperience() {
   }
 
   async function review() {
-    if (optimizing) { setMessage('Aguarde a conversão do arquivo terminar.'); return; }
-    if (!recipient.trim() || !body.trim()) { setMessage('Informe para quem é a carta e escreva sua mensagem.'); return; }
-    if (body.length > 20_000 || title.length > 80 || recipient.length > 100) { setMessage('O texto ultrapassa o limite permitido.'); return; }
+    if (optimizing) {
+      setMessage('Aguarde a conversão do arquivo terminar.');
+      return;
+    }
+    if (!recipient.trim() || !body.trim()) {
+      setMessage('Informe para quem é a carta e escreva sua mensagem.');
+      return;
+    }
+    if (body.length > 20_000 || title.length > 80 || recipient.length > 100) {
+      setMessage('O texto ultrapassa o limite permitido.');
+      return;
+    }
     await persistDraft();
     try {
       const current = new TextDecoder().decode(await onlinePayload(draftValues.current));
-      if (current !== draftSaved.current) { setMessage('Aguarde o rascunho ser salvo antes de continuar.'); return; }
-    } catch (error) { setMessage(error instanceof Error ? error.message : 'Rascunho não salvo.'); return; }
-    setMessage(''); setStep('revisar');
+      if (current !== draftSaved.current) {
+        setMessage('Aguarde o rascunho ser salvo antes de continuar.');
+        return;
+      }
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Rascunho não salvo.');
+      return;
+    }
+    setMessage('');
+    setStep('revisar');
   }
   async function keepPreview() {
     await persistDraft();
     try {
       const current = new TextDecoder().decode(await onlinePayload(draftValues.current));
-      if (draftSaved.current !== current) throw new Error('O rascunho ainda não foi salvo. Tente novamente.');
-    } catch (error) { setMessage(error instanceof Error ? error.message : 'Rascunho não salvo.'); return; }
-    setMessage('Rascunho guardado. Você poderá continuar em outro aparelho enquanto a Cripta estiver aberta.');
+      if (draftSaved.current !== current)
+        throw new Error('O rascunho ainda não foi salvo. Tente novamente.');
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Rascunho não salvo.');
+      return;
+    }
+    setMessage(
+      'Rascunho guardado. Você poderá continuar em outro aparelho enquanto a Cripta estiver aberta.',
+    );
     setStep('inicio');
   }
 
   async function depositTest() {
-    if (!receivingOpen || !openingChecked) { setMessage('O recebimento está fechado. Aguarde a abertura pela Administração.'); return; }
+    if (!receivingOpen || !openingChecked) {
+      setMessage('O recebimento está fechado. Aguarde a abertura pela Administração.');
+      return;
+    }
+    if (depositPassphrase.length < 16) {
+      setMessage(
+        'Escolha uma frase secreta de pelo menos 16 caracteres para guardar esta carta. Sem ela, ninguém — nem o Portal — conseguirá reabri-la.',
+      );
+      return;
+    }
     if (busy || optimizing) return;
     setBusy(true);
     try {
       if (draftSaving.current) await draftSaving.current;
-      const payload = await onlinePayload({ title: title.trim() || 'Minha carta', recipient: recipient.trim(), body: body.trim(), attachments });
-      const response = await fetch('/api/cripta/online-capsules', { method: 'POST',
-        headers: { 'Content-Type': 'application/json' }, body: new TextDecoder().decode(payload) });
-      const result = await response.json() as { id?: string; createdAt?: string; error?: string };
-      if (!response.ok || !result.id || !result.createdAt) throw new Error(result.error || 'Envio não confirmado.');
+      const payload = await onlinePayload({
+        title: title.trim() || 'Minha carta',
+        recipient: recipient.trim(),
+        body: body.trim(),
+        attachments,
+      });
+      // Sealed in this browser: the passphrase and the plaintext letter never leave this device.
+      const envelope = await sealOnlineCapsule(payload, depositPassphrase);
+      const wire = JSON.stringify(envelope);
+      const response = await fetch('/api/cripta/online-capsules', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: wire,
+      });
+      const result = (await response.json()) as { id?: string; createdAt?: string; error?: string };
+      if (!response.ok || !result.id || !result.createdAt)
+        throw new Error(result.error || 'Envio não confirmado.');
       const check = await fetch(`/api/cripta/online-capsules/${result.id}`, { cache: 'no-store' });
-      if (!check.ok || await check.text() !== new TextDecoder().decode(payload)) {
-        throw new Error('A carta foi enviada, mas a leitura de conferência falhou. Atualize a página e confira antes de reenviar.');
+      if (!check.ok || (await check.text()) !== wire) {
+        throw new Error(
+          'A carta foi enviada, mas a leitura de conferência falhou. Atualize a página e confira antes de reenviar.',
+        );
       }
-      setRemote((items) => [...items, { id: result.id!, createdAt: result.createdAt!, legacy: false }]);
+      setRemote((items) => [
+        ...items,
+        { id: result.id!, createdAt: result.createdAt!, requiresPassphrase: true },
+      ]);
       draftEnabled.current = false;
       const clear = await fetch('/api/cripta/draft', { method: 'DELETE' });
-      if (clear.ok) { setDraft(null); draftSaved.current = ''; draftRevision.current = 0; setDraftStatus(''); }
+      if (clear.ok) {
+        setDraft(null);
+        draftSaved.current = '';
+        draftRevision.current = 0;
+        setDraftStatus('');
+      }
       attachmentsRef.current.forEach((item) => URL.revokeObjectURL(item.url));
       setAttachments([]);
-      setMessage(clear.ok
-        ? 'Carta enviada ao Wix. Reabra abaixo para conferir os arquivos e o texto.'
-        : 'Carta enviada. O rascunho antigo ainda aparece; reabra a carta antes de removê-lo.');
+      setDepositPassphrase('');
+      setMessage(
+        clear.ok
+          ? 'Carta enviada ao Wix, cifrada com sua frase secreta. Guarde-a fora do Portal: sem ela, nem você nem a Loja conseguirão reabrir esta carta.'
+          : 'Carta enviada. O rascunho antigo ainda aparece; reabra a carta antes de removê-lo.',
+      );
       setStep('inicio');
-    } catch (error) { setMessage(error instanceof Error ? error.message : 'Envio falhou.'); }
-    finally { setBusy(false); }
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Envio falhou.');
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function openTest(id: string) {
     if (busy) return;
+    const item = remote.find((entry) => entry.id === id);
+    if (item?.requiresPassphrase && passphrase.length < 16) {
+      setOpeningId(id);
+      setMessage('Informe a frase secreta usada ao guardar esta carta.');
+      return;
+    }
     setBusy(true);
     try {
       const response = await fetch(`/api/cripta/online-capsules/${id}`, { cache: 'no-store' });
       if (!response.ok) throw new Error('Não foi possível recuperar o pacote cifrado.');
-      const delivered = await response.json() as { format?: string };
-      if (delivered.format === 'vl6-capsule-v1' && passphrase.length < 16) {
-        setLegacyId(id);
-        setMessage('Esta carta foi enviada no formato antigo. Informe a frase usada naquela ocasião apenas para abri-la. As próximas cartas dispensam frase.');
-        return;
-      }
-      const value = (delivered.format === 'vl6-capsule-v1'
-        ? JSON.parse(new TextDecoder().decode(await openCapsule(delivered, passphrase)))
-        : delivered) as { format: string; title: string; recipient: string; body: string;
-        attachments: Array<{ kind: Kind; name: string; type: string; data: string }> };
-      if (value.format !== 'vl6-online-letter-v1' || !Array.isArray(value.attachments) || value.attachments.length > 13 ||
-          typeof value.title !== 'string' || typeof value.recipient !== 'string' || typeof value.body !== 'string') throw new Error('Formato de carta inválido.');
+      const delivered = (await response.json()) as { format?: string };
+      const value = (
+        delivered.format === 'vl6-online-capsule-v1'
+          ? JSON.parse(new TextDecoder().decode(await openOnlineCapsule(delivered, passphrase)))
+          : delivered.format === 'vl6-capsule-v1'
+            ? JSON.parse(new TextDecoder().decode(await openCapsule(delivered, passphrase)))
+            : delivered
+      ) as {
+        format: string;
+        title: string;
+        recipient: string;
+        body: string;
+        attachments: Array<{ kind: Kind; name: string; type: string; data: string }>;
+      };
+      if (
+        value.format !== 'vl6-online-letter-v1' ||
+        !Array.isArray(value.attachments) ||
+        value.attachments.length > 13 ||
+        typeof value.title !== 'string' ||
+        typeof value.recipient !== 'string' ||
+        typeof value.body !== 'string'
+      )
+        throw new Error('Formato de carta inválido.');
       const restored = value.attachments.map((entry) => {
-        if (!['foto', 'audio', 'video'].includes(entry.kind) || typeof entry.data !== 'string' || entry.data.length > 3_400_000) throw new Error('Anexo inválido.');
-        const file = new File([Uint8Array.from(atob(entry.data), (char) => char.charCodeAt(0))], entry.name, { type: entry.type });
+        if (
+          !['foto', 'audio', 'video'].includes(entry.kind) ||
+          typeof entry.data !== 'string' ||
+          entry.data.length > 3_400_000
+        )
+          throw new Error('Anexo inválido.');
+        const file = new File(
+          [Uint8Array.from(atob(entry.data), (char) => char.charCodeAt(0))],
+          entry.name,
+          { type: entry.type },
+        );
         return { id: crypto.randomUUID(), file, kind: entry.kind, url: URL.createObjectURL(file) };
       });
       attachmentsRef.current.forEach((item) => URL.revokeObjectURL(item.url));
-      setTitle(value.title); setRecipient(value.recipient); setBody(value.body);
-      setAttachments(restored); setStep('revisar');
+      setTitle(value.title);
+      setRecipient(value.recipient);
+      setBody(value.body);
+      setAttachments(restored);
+      setStep('revisar');
       draftEnabled.current = false;
-      setLegacyId(null);
+      setOpened({ id, format: delivered.format ?? '' });
+      setOpeningId(null);
       setPassphrase('');
-      setMessage(delivered.format === 'vl6-capsule-v1'
-        ? 'Carta antiga aberta. Se quiser dispensar a frase, envie esta carta novamente e depois exclua a versão antiga.'
-        : 'Carta recuperada do Wix e aberta pela sua conta do Portal.');
-    } catch (error) { setMessage(error instanceof Error ? error.message : 'Não foi possível abrir a carta.'); }
-    finally { setBusy(false); }
+      setMessage(
+        delivered.format === 'vl6-capsule-v1'
+          ? 'Carta antiga aberta. Se quiser dispensar a frase, envie esta carta novamente e depois exclua a versão antiga.'
+          : delivered.format === 'vl6-account-letter-v1'
+            ? 'Carta recuperada do Wix e aberta pela sua conta do Portal. Cartas enviadas a partir de agora usarão sua própria frase secreta.'
+            : 'Carta reaberta com sua frase secreta.',
+      );
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Não foi possível abrir a carta.');
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function deleteTest(id: string) {
@@ -395,115 +684,529 @@ export function CriptaExperience() {
       if (!response.ok) throw new Error('A exclusão no Wix não foi confirmada.');
       setRemote((items) => items.filter((item) => item.id !== id));
       setMessage('Carta excluída do Wix e retirada da lista.');
-    } catch (error) { setMessage(error instanceof Error ? error.message : 'Exclusão falhou.'); }
-    finally { setBusy(false); }
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Exclusão falhou.');
+    } finally {
+      setBusy(false);
+    }
   }
 
-  async function downloadOffline(id: string) {
+  async function downloadOffline() {
     if (busy) return;
     setBusy(true);
     try {
-      const response = await fetch(`/api/cripta/online-capsules/${id}`, { cache: 'no-store' });
-      if (!response.ok) throw new Error('Não foi possível reabrir a carta para exportação.');
-      const letter = await response.json() as { format: string; title: string; recipient: string; body: string;
-        attachments: Array<{ kind: Kind; name: string; type: string; data: string }> };
-      if (letter.format !== 'vl6-online-letter-v1') throw new Error('Abra e migre esta carta antiga antes de gerar o arquivo HTML.');
+      // Works from what is already decrypted in this tab — the server only ever sees ciphertext.
+      const items = await Promise.all(
+        attachments.map(async (item) => ({
+          kind: item.kind,
+          name: item.file.name,
+          type: item.file.type,
+          data: toBase64(new Uint8Array(await item.file.arrayBuffer())),
+        })),
+      );
+      const letter = {
+        format: 'vl6-online-letter-v1' as const,
+        title: title.trim() || 'Minha carta',
+        recipient: recipient.trim(),
+        body: body.trim(),
+        attachments: items,
+      };
       const { makeOfflinePackage } = await import('@/modules/cripta/lib/offline-package');
       const blob = await makeOfflinePackage(letter);
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
-      link.href = url; link.download = 'CARTA_CRIPTA_VL6.zip';
-      document.body.append(link); link.click(); link.remove();
+      link.href = url;
+      link.download = 'CARTA_CRIPTA_VL6.zip';
+      document.body.append(link);
+      link.click();
+      link.remove();
       setTimeout(() => URL.revokeObjectURL(url), 60_000);
-      setMessage('Arquivo da carta preparado. Abra o ZIP e confira ABRA_AQUI_A_CARTA.html com os anexos.');
-    } catch (error) { setMessage(error instanceof Error ? error.message : 'Exportação indisponível.'); }
-    finally { setBusy(false); }
+      setMessage(
+        'Arquivo da carta preparado. Abra o ZIP e confira ABRA_AQUI_A_CARTA.html com os anexos.',
+      );
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Exportação indisponível.');
+    } finally {
+      setBusy(false);
+    }
   }
 
   function picker(kind: Kind, label: string, accept: string, description: string) {
-    return <section className="rounded-2xl border border-[#ddd0b7] bg-white p-5">
-      <h3 className="font-serif text-xl text-[#142a43]">{label} <span className="font-sans text-sm font-normal text-[#607084]">(opcional)</span></h3>
-      <p className="mt-1 text-sm text-[#536074]">{description}</p>
-      <div onDragOver={(event) => event.preventDefault()} onDrop={(event) => drop(event, kind)} className="mt-4 rounded-xl border-2 border-dashed border-[#c9a449] bg-[#faf7ef] p-5 text-center">
-        <label className="inline-block cursor-pointer rounded-xl bg-[#123c69] px-5 py-3 font-semibold text-white">Escolher {kind === 'foto' ? 'fotos' : kind === 'audio' ? 'áudio' : 'vídeo'}<input type="file" accept={accept} multiple={kind === 'foto'} onChange={(event) => choose(event, kind)} className="sr-only" /></label>
-        {kind === 'foto' && <label className="ml-2 inline-block cursor-pointer rounded-xl border border-[#a78648] bg-white px-5 py-3 font-semibold text-[#142a43]">Tirar foto<input type="file" accept="image/*" capture="environment" onChange={(event) => choose(event, 'foto')} className="sr-only" /></label>}
-        <p className="mt-2 text-xs text-[#536074]">Também pode arrastar arquivos para esta área.</p>
-      </div>
-      {kind !== 'foto' && <button type="button" disabled={recording !== null || count(kind) >= (kind === 'audio' ? 2 : 1)} onClick={() => record(kind)} className="mt-3 rounded-xl border border-[#a78648] px-4 py-3 text-sm font-semibold disabled:opacity-50">Gravar {kind === 'audio' ? 'minha voz' : 'um vídeo'}</button>}
-      {recording === kind && <button type="button" onClick={stopRecording} className="ml-3 rounded-xl bg-red-800 px-4 py-3 text-sm text-white">Parar gravação</button>}
-      {attachments.filter((item) => item.kind === kind).map((item) => <div key={item.id} className="mt-3 flex flex-wrap items-center gap-3 rounded-xl border p-3 text-sm">
-        {kind === 'foto' ? <img src={item.url} alt="Foto incluída" className="h-16 w-16 rounded object-cover" /> : kind === 'video' ? <video controls src={item.url} className="h-24 max-w-48" /> : <audio controls src={item.url} className="max-w-56" />}
-        <span className="min-w-0 flex-1 truncate">{item.file.name} · {size(item.file.size)}</span>
-        <button type="button" onClick={() => removeAttachment(item.id)} className="rounded-lg border px-3 py-2">Remover</button>
-      </div>)}
-    </section>;
+    return (
+      <section className="rounded-2xl border border-[#ddd0b7] bg-white p-5">
+        <h3 className="font-serif text-xl text-[#142a43]">
+          {label} <span className="font-sans text-sm font-normal text-[#607084]">(opcional)</span>
+        </h3>
+        <p className="mt-1 text-sm text-[#536074]">{description}</p>
+        <div
+          onDragOver={(event) => event.preventDefault()}
+          onDrop={(event) => drop(event, kind)}
+          className="mt-4 rounded-xl border-2 border-dashed border-[#c9a449] bg-[#faf7ef] p-5 text-center"
+        >
+          <label className="inline-block cursor-pointer rounded-xl bg-[#123c69] px-5 py-3 font-semibold text-white">
+            Escolher {kind === 'foto' ? 'fotos' : kind === 'audio' ? 'áudio' : 'vídeo'}
+            <input
+              type="file"
+              accept={accept}
+              multiple={kind === 'foto'}
+              onChange={(event) => choose(event, kind)}
+              className="sr-only"
+            />
+          </label>
+          {kind === 'foto' && (
+            <label className="ml-2 inline-block cursor-pointer rounded-xl border border-[#a78648] bg-white px-5 py-3 font-semibold text-[#142a43]">
+              Tirar foto
+              <input
+                type="file"
+                accept="image/*"
+                capture="environment"
+                onChange={(event) => choose(event, 'foto')}
+                className="sr-only"
+              />
+            </label>
+          )}
+          <p className="mt-2 text-xs text-[#536074]">
+            Também pode arrastar arquivos para esta área.
+          </p>
+        </div>
+        {kind !== 'foto' && (
+          <button
+            type="button"
+            disabled={recording !== null || count(kind) >= (kind === 'audio' ? 2 : 1)}
+            onClick={() => record(kind)}
+            className="mt-3 rounded-xl border border-[#a78648] px-4 py-3 text-sm font-semibold disabled:opacity-50"
+          >
+            Gravar {kind === 'audio' ? 'minha voz' : 'um vídeo'}
+          </button>
+        )}
+        {recording === kind && (
+          <button
+            type="button"
+            onClick={stopRecording}
+            className="ml-3 rounded-xl bg-red-800 px-4 py-3 text-sm text-white"
+          >
+            Parar gravação
+          </button>
+        )}
+        {attachments
+          .filter((item) => item.kind === kind)
+          .map((item) => (
+            <div
+              key={item.id}
+              className="mt-3 flex flex-wrap items-center gap-3 rounded-xl border p-3 text-sm"
+            >
+              {kind === 'foto' ? (
+                <img
+                  src={item.url}
+                  alt="Foto incluída"
+                  className="h-16 w-16 rounded object-cover"
+                />
+              ) : kind === 'video' ? (
+                <video controls src={item.url} className="h-24 max-w-48" />
+              ) : (
+                <audio controls src={item.url} className="max-w-56" />
+              )}
+              <span className="min-w-0 flex-1 truncate">
+                {item.file.name} · {size(item.file.size)}
+              </span>
+              <button
+                type="button"
+                onClick={() => removeAttachment(item.id)}
+                className="rounded-lg border px-3 py-2"
+              >
+                Remover
+              </button>
+            </div>
+          ))}
+      </section>
+    );
   }
 
-  return <div className="mx-auto max-w-4xl space-y-6 pb-16">
-    <header className="rounded-[2rem] bg-[radial-gradient(ellipse_at_top_right,#344d67,#112640_55%,#06172e)] p-8 text-white sm:p-12">
-      <p className="text-xs font-semibold uppercase tracking-[.25em] text-[#e3bd62]">Cripta do Irmão</p>
-      <h1 className="mt-4 font-serif text-4xl">Uma carta para quem você ama.</h1>
-      <p className="mt-4 max-w-2xl leading-7 text-slate-200">Escreva com calma. Se quiser, acrescente fotos, sua voz ou um vídeo. Cada carta e seus arquivos formam uma lembrança para a pessoa indicada.</p>
-    </header>
-    <div role="status" className="rounded-2xl border border-amber-400 bg-amber-50 p-5 text-sm leading-6 text-amber-950"><strong>Guarda online no Wix · {openingChecked ? receivingOpen ? 'recebimento aberto' : 'recebimento fechado' : 'conferindo abertura…'}.</strong> O rascunho fica guardado quando aparecer “Salvo”. As cópias em unidades externas ainda não foram vinculadas.</div>
-    {message && <p role="status" aria-live="polite" className="rounded-xl border border-[#c9a449] bg-white p-4 text-sm">{message}</p>}
-    {step === 'inicio' && <main className="rounded-[2rem] border border-[#ddd0b7] bg-[#fbf8f1] p-6 sm:p-9">
-      <p className="text-xs font-semibold uppercase tracking-widest text-[#96763c]">Meu espaço</p>
-      <h2 className="mt-2 font-serif text-3xl text-[#142a43]">Minhas cartas</h2>
-      <p className="mt-3 text-[#536074]">Escreva no seu tempo. Você pode continuar um rascunho salvo, conferir as cartas enviadas e anexar lembranças se desejar.</p>
-      {draft && <article className="mt-7 rounded-2xl border border-[#d7c9a9] bg-white p-5">
-        <h3 className="font-serif text-xl text-[#142a43]">Rascunho guardado</h3>
-        <p className="mt-1 text-sm text-[#536074]">{draft.recipient ? `Para ${draft.recipient}` : 'Escolha o destinatário quando quiser'} · {draft.attachments.length} anexo(s)</p>
-        <button type="button" disabled={!receivingOpen} onClick={continueDraft} className="mt-4 rounded-xl bg-[#123c69] px-6 py-4 font-semibold text-white disabled:opacity-50">Continuar minha carta</button>
-      </article>}
-      {!draft && <button type="button" disabled={!draftChecked || !receivingOpen} onClick={startNew} className="mt-7 rounded-xl bg-[#123c69] px-6 py-4 text-base font-semibold text-white disabled:opacity-50">Escrever minha carta</button>}
-      {draftStatus && <p role="status" className="mt-3 text-sm text-[#536074]">{draftStatus}</p>}
-      {remote.length > 0 && <section className="mt-8 rounded-2xl border border-[#d7c9a9] bg-white p-5"><h3 className="font-serif text-xl">Cartas enviadas ao Wix</h3><p className="mt-2 text-sm text-[#536074]">Abra suas cartas com a conta do Portal. As cartas antigas continuam protegidas pela frase usada no envio.</p>{remote.map((item) => <div key={item.id} className="mt-4 border-t pt-4 text-sm"><div className="flex flex-wrap items-center gap-3"><span className="flex-1">Enviado em {new Date(item.createdAt).toLocaleString('pt-BR')}{item.legacy ? ' · formato antigo' : ''}</span><button type="button" disabled={busy} onClick={() => openTest(item.id)} className="rounded-xl bg-[#123c69] px-4 py-3 font-semibold text-white disabled:opacity-50">Reabrir e conferir</button>{!item.legacy && <button type="button" disabled={busy} onClick={() => { void downloadOffline(item.id); }} className="rounded-xl border border-[#a78648] px-4 py-3 font-semibold disabled:opacity-50">Baixar carta para abrir sem internet</button>}<button type="button" disabled={busy} onClick={() => deleteTest(item.id)} className="rounded-xl border px-4 py-3 disabled:opacity-50">Excluir carta</button></div>{legacyId === item.id && <label className="mt-4 block font-semibold">Frase usada nesta carta antiga<input type="password" autoComplete="off" value={passphrase} onChange={(event) => setPassphrase(event.target.value)} className="mt-2 block w-full rounded-xl border p-3" /><span className="mt-2 block font-normal text-[#536074]">Digite a frase e clique em “Reabrir e conferir”.</span></label>}</div>)}</section>}
-    </main>}
-    {step === 'escrever' && <main className="space-y-6 rounded-[2rem] border border-[#ddd0b7] bg-[#fbf8f1] p-6 sm:p-9">
-      <div><p className="text-xs font-semibold uppercase tracking-widest text-[#96763c]">1 de 2 · Prepare sua carta</p><h2 className="mt-2 font-serif text-3xl text-[#142a43]">Escrever minha carta</h2><p className="mt-2 text-sm text-[#536074]">Indique a pessoa que deverá receber esta carta. Os arquivos abaixo acompanharão a mesma mensagem.</p></div>
-      <p role="status" className="rounded-xl border border-[#ddd0b7] bg-white p-3 text-sm">{draftStatus || 'Escreva no seu tempo. O rascunho será salvo automaticamente.'}</p>
-      <div className="space-y-5 rounded-2xl border border-[#ddd0b7] bg-white p-5">
-        <label className="block font-semibold text-[#142a43]">Para quem é esta carta?<input value={recipient} maxLength={100} onChange={(event) => { setRecipient(event.target.value); setDraftStatus('Alterações ainda não salvas'); }} placeholder="Nome de quem deverá receber" className="mt-2 block w-full rounded-xl border p-4 font-normal" /></label>
-        <details className="text-sm text-[#536074]"><summary className="cursor-pointer font-semibold">? Por que indicar uma pessoa?</summary><p>O nome orientará a futura entrega desta carta. Você poderá revisar antes de guardar.</p></details>
-        <label className="block font-semibold text-[#142a43]">Título <span className="font-normal text-[#607084]">(opcional)</span><input value={title} maxLength={80} onChange={(event) => { setTitle(event.target.value); setDraftStatus('Alterações ainda não salvas'); }} placeholder="Minha mensagem" className="mt-2 block w-full rounded-xl border p-4 font-normal" /></label>
-        <label className="block font-semibold text-[#142a43]">Escreva sua carta<textarea value={body} maxLength={20_000} onChange={(event) => { setBody(event.target.value); setDraftStatus('Alterações ainda não salvas'); }} rows={10} placeholder="Escreva com suas próprias palavras..." className="mt-2 block w-full rounded-xl border p-4 font-serif font-normal leading-8" /></label>
-        <label className="inline-flex cursor-pointer items-center rounded-xl border border-[#a78648] px-4 py-3 font-semibold text-[#142a43]">Importar texto do Word (.docx)<input type="file" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" onChange={(event) => { void importWord(event); }} className="sr-only" /></label>
-        <p className="text-sm text-[#536074]">O texto será colocado no editor para você conferir. Fotos e outros arquivos são adicionados abaixo.</p>
+  return (
+    <div className="mx-auto max-w-4xl space-y-6 pb-16">
+      <header className="rounded-[2rem] bg-[radial-gradient(ellipse_at_top_right,#344d67,#112640_55%,#06172e)] p-8 text-white sm:p-12">
+        <p className="text-xs font-semibold uppercase tracking-[.25em] text-[#e3bd62]">
+          Cripta do Irmão
+        </p>
+        <h1 className="mt-4 font-serif text-4xl">Uma carta para quem você ama.</h1>
+        <p className="mt-4 max-w-2xl leading-7 text-slate-200">
+          Escreva com calma. Se quiser, acrescente fotos, sua voz ou um vídeo. Cada carta e seus
+          arquivos formam uma lembrança para a pessoa indicada.
+        </p>
+      </header>
+      <div
+        role="status"
+        className="rounded-2xl border border-amber-400 bg-amber-50 p-5 text-sm leading-6 text-amber-950"
+      >
+        <strong>
+          Guarda online no Wix ·{' '}
+          {openingChecked
+            ? receivingOpen
+              ? 'recebimento aberto'
+              : 'recebimento fechado'
+            : 'conferindo abertura…'}
+          .
+        </strong>{' '}
+        O rascunho fica guardado quando aparecer “Salvo”. As cópias em unidades externas ainda não
+        foram vinculadas.
       </div>
-      <div><h3 className="font-serif text-2xl text-[#142a43]">Quer acrescentar alguma lembrança?</h3><p className="mt-1 text-sm text-[#536074]">Você pode seguir sem anexar nada. Se enviar pelo celular, toque no tipo de lembrança abaixo.</p></div>
-      {picker('foto', 'Fotografias', 'image/*', 'Até 10 fotos. Fotos grandes são reduzidas no aparelho antes do envio.')}
-      {picker('audio', 'Mensagem de voz', 'audio/*', 'Até 2 áudios. A conversão pode levar o tempo da gravação.')}
-      {picker('video', 'Vídeo', 'video/*', 'Até 1 minuto. Vídeos grandes podem não caber no espaço atual, mesmo convertidos.')}
-      <p role="status" className="text-sm text-[#536074]">{optimizing ? 'Convertendo o arquivo no aparelho. Mantenha esta tela aberta.' : `Arquivos nesta carta: ${size(total)} de 2,5 MB.`} A redução de tamanho pode alterar a qualidade. Confira cada arquivo antes de enviar.</p>
-      <div className="flex flex-wrap gap-3"><button type="button" disabled={recording !== null || optimizing} onClick={review} className="rounded-xl bg-[#123c69] px-6 py-4 font-semibold text-white disabled:opacity-50">Revisar minha carta</button><button type="button" disabled={optimizing} onClick={() => { void keepPreview(); }} className="rounded-xl border px-5 py-4 disabled:opacity-50">Guardar rascunho e voltar</button></div>
-    </main>}
-    {step === 'revisar' && <main className="rounded-[2rem] border border-[#ddd0b7] bg-[#fbf8f1] p-6 sm:p-9">
-      <p className="text-xs font-semibold uppercase tracking-widest text-[#96763c]">2 de 2 · Confira a prévia</p>
-      <h2 className="mt-2 font-serif text-3xl text-[#142a43]">Sua carta está pronta para revisão</h2>
-      <article className={`${letterStyles.paper} mx-auto mt-7 max-w-2xl`}>
-        <header className={letterStyles.header}>
-          <p className={letterStyles.eyebrow}>Verdadeira Luz nº 06 · Cripta do Irmão</p>
-          <p className={letterStyles.ornament} aria-hidden="true">❧ ✦ ❧</p>
-          <h3 className={letterStyles.title}>{title.trim() || 'Minha carta'}</h3>
-          <p className={letterStyles.recipient}>Para {recipient.trim()}</p>
-        </header>
-        <div className={letterStyles.rule} aria-hidden="true" />
-        <div className={letterStyles.body}>{body.trim()}</div>
-        {attachments.length > 0 && <section className={letterStyles.section}>
-          <h4 className={letterStyles.sectionTitle}>Lembranças que acompanham esta carta</h4>
-          {attachments.map((item) => <figure key={item.id} className={letterStyles.media}>
-            {item.kind === 'foto' ? <img src={item.url} alt={item.file.name} /> :
-              item.kind === 'audio' ? <audio controls preload="metadata" src={item.url} /> :
-                <video controls preload="metadata" src={item.url} />}
-            <figcaption className={letterStyles.caption}>{item.file.name}</figcaption>
-          </figure>)}
-        </section>}
-        <footer className={letterStyles.footer}>Uma mensagem para guardar através do tempo</footer>
-      </article>
-      <div className="mt-6 rounded-xl border bg-white p-5 text-sm"><strong>Arquivos desta carta:</strong> {attachments.length || 'nenhum'}{attachments.map((item) => <p key={item.id} className="mt-2 break-all">{item.kind}: {item.file.name}</p>)}</div>
-      <p className="mt-5 text-sm text-[#795521]">O envio atual aceita até 2,5 MB de anexos juntos. Depois do envio, sua conta do Portal permite reabrir esta carta.</p>
-      <div className="mt-6 flex flex-wrap gap-3"><button type="button" disabled={busy || !receivingOpen || !openingChecked} onClick={depositTest} className="rounded-xl bg-[#123c69] px-6 py-4 font-semibold text-white disabled:opacity-50">Guardar minha carta</button><button type="button" onClick={() => { void keepPreview(); }} className="rounded-xl border px-6 py-4">Guardar rascunho</button><button type="button" onClick={() => { draftEnabled.current = true; setStep('escrever'); }} className="rounded-xl border px-5 py-4">Voltar e alterar</button></div>
-    </main>}
-  </div>;
+      {message && (
+        <p
+          role="status"
+          aria-live="polite"
+          className="rounded-xl border border-[#c9a449] bg-white p-4 text-sm"
+        >
+          {message}
+        </p>
+      )}
+      {step === 'inicio' && (
+        <main className="rounded-[2rem] border border-[#ddd0b7] bg-[#fbf8f1] p-6 sm:p-9">
+          <p className="text-xs font-semibold uppercase tracking-widest text-[#96763c]">
+            Meu espaço
+          </p>
+          <h2 className="mt-2 font-serif text-3xl text-[#142a43]">Minhas cartas</h2>
+          <p className="mt-3 text-[#536074]">
+            Escreva no seu tempo. Você pode continuar um rascunho salvo, conferir as cartas enviadas
+            e anexar lembranças se desejar.
+          </p>
+          {draft && (
+            <article className="mt-7 rounded-2xl border border-[#d7c9a9] bg-white p-5">
+              <h3 className="font-serif text-xl text-[#142a43]">Rascunho guardado</h3>
+              <p className="mt-1 text-sm text-[#536074]">
+                {draft.recipient
+                  ? `Para ${draft.recipient}`
+                  : 'Escolha o destinatário quando quiser'}{' '}
+                · {draft.attachments.length} anexo(s)
+              </p>
+              <button
+                type="button"
+                disabled={!receivingOpen}
+                onClick={continueDraft}
+                className="mt-4 rounded-xl bg-[#123c69] px-6 py-4 font-semibold text-white disabled:opacity-50"
+              >
+                Continuar minha carta
+              </button>
+            </article>
+          )}
+          {!draft && (
+            <button
+              type="button"
+              disabled={!draftChecked || !receivingOpen}
+              onClick={startNew}
+              className="mt-7 rounded-xl bg-[#123c69] px-6 py-4 text-base font-semibold text-white disabled:opacity-50"
+            >
+              Escrever minha carta
+            </button>
+          )}
+          {draftStatus && (
+            <p role="status" className="mt-3 text-sm text-[#536074]">
+              {draftStatus}
+            </p>
+          )}
+          {remote.length > 0 && (
+            <section className="mt-8 rounded-2xl border border-[#d7c9a9] bg-white p-5">
+              <h3 className="font-serif text-xl">Cartas enviadas ao Wix</h3>
+              <p className="mt-2 text-sm text-[#536074]">
+                Cada carta é protegida pela frase secreta que você escolheu ao guardá-la. Nem o
+                Portal consegue reabri-la sem essa frase — informe-a abaixo.
+              </p>
+              {remote.map((item) => (
+                <div key={item.id} className="mt-4 border-t pt-4 text-sm">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <span className="flex-1">
+                      Enviado em {new Date(item.createdAt).toLocaleString('pt-BR')}
+                      {!item.requiresPassphrase ? ' · formato antigo (sem frase)' : ''}
+                    </span>
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onClick={() => openTest(item.id)}
+                      className="rounded-xl bg-[#123c69] px-4 py-3 font-semibold text-white disabled:opacity-50"
+                    >
+                      Reabrir e conferir
+                    </button>
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onClick={() => deleteTest(item.id)}
+                      className="rounded-xl border px-4 py-3 disabled:opacity-50"
+                    >
+                      Excluir carta
+                    </button>
+                  </div>
+                  {openingId === item.id && (
+                    <label className="mt-4 block font-semibold">
+                      Frase secreta desta carta
+                      <input
+                        type="password"
+                        autoComplete="off"
+                        value={passphrase}
+                        onChange={(event) => setPassphrase(event.target.value)}
+                        className="mt-2 block w-full rounded-xl border p-3"
+                      />
+                      <span className="mt-2 block font-normal text-[#536074]">
+                        Digite a frase e clique em “Reabrir e conferir” de novo.
+                      </span>
+                    </label>
+                  )}
+                </div>
+              ))}
+            </section>
+          )}
+        </main>
+      )}
+      {step === 'escrever' && (
+        <main className="space-y-6 rounded-[2rem] border border-[#ddd0b7] bg-[#fbf8f1] p-6 sm:p-9">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-widest text-[#96763c]">
+              1 de 2 · Prepare sua carta
+            </p>
+            <h2 className="mt-2 font-serif text-3xl text-[#142a43]">Escrever minha carta</h2>
+            <p className="mt-2 text-sm text-[#536074]">
+              Indique a pessoa que deverá receber esta carta. Os arquivos abaixo acompanharão a
+              mesma mensagem.
+            </p>
+          </div>
+          <p role="status" className="rounded-xl border border-[#ddd0b7] bg-white p-3 text-sm">
+            {draftStatus || 'Escreva no seu tempo. O rascunho será salvo automaticamente.'}
+          </p>
+          <div className="space-y-5 rounded-2xl border border-[#ddd0b7] bg-white p-5">
+            <label className="block font-semibold text-[#142a43]">
+              Para quem é esta carta?
+              <input
+                value={recipient}
+                maxLength={100}
+                onChange={(event) => {
+                  setRecipient(event.target.value);
+                  setDraftStatus('Alterações ainda não salvas');
+                }}
+                placeholder="Nome de quem deverá receber"
+                className="mt-2 block w-full rounded-xl border p-4 font-normal"
+              />
+            </label>
+            <details className="text-sm text-[#536074]">
+              <summary className="cursor-pointer font-semibold">
+                ? Por que indicar uma pessoa?
+              </summary>
+              <p>
+                O nome orientará a futura entrega desta carta. Você poderá revisar antes de guardar.
+              </p>
+            </details>
+            <label className="block font-semibold text-[#142a43]">
+              Título <span className="font-normal text-[#607084]">(opcional)</span>
+              <input
+                value={title}
+                maxLength={80}
+                onChange={(event) => {
+                  setTitle(event.target.value);
+                  setDraftStatus('Alterações ainda não salvas');
+                }}
+                placeholder="Minha mensagem"
+                className="mt-2 block w-full rounded-xl border p-4 font-normal"
+              />
+            </label>
+            <label className="block font-semibold text-[#142a43]">
+              Escreva sua carta
+              <textarea
+                value={body}
+                maxLength={20_000}
+                onChange={(event) => {
+                  setBody(event.target.value);
+                  setDraftStatus('Alterações ainda não salvas');
+                }}
+                rows={10}
+                placeholder="Escreva com suas próprias palavras..."
+                className="mt-2 block w-full rounded-xl border p-4 font-serif font-normal leading-8"
+              />
+            </label>
+            <label className="inline-flex cursor-pointer items-center rounded-xl border border-[#a78648] px-4 py-3 font-semibold text-[#142a43]">
+              Importar texto do Word (.docx)
+              <input
+                type="file"
+                accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                onChange={(event) => {
+                  void importWord(event);
+                }}
+                className="sr-only"
+              />
+            </label>
+            <p className="text-sm text-[#536074]">
+              O texto será colocado no editor para você conferir. Fotos e outros arquivos são
+              adicionados abaixo.
+            </p>
+          </div>
+          <div>
+            <h3 className="font-serif text-2xl text-[#142a43]">
+              Quer acrescentar alguma lembrança?
+            </h3>
+            <p className="mt-1 text-sm text-[#536074]">
+              Você pode seguir sem anexar nada. Se enviar pelo celular, toque no tipo de lembrança
+              abaixo.
+            </p>
+          </div>
+          {picker(
+            'foto',
+            'Fotografias',
+            'image/*',
+            'Até 10 fotos. Fotos grandes são reduzidas no aparelho antes do envio.',
+          )}
+          {picker(
+            'audio',
+            'Mensagem de voz',
+            'audio/*',
+            'Até 2 áudios. A conversão pode levar o tempo da gravação.',
+          )}
+          {picker(
+            'video',
+            'Vídeo',
+            'video/*',
+            'Até 1 minuto. Vídeos grandes podem não caber no espaço atual, mesmo convertidos.',
+          )}
+          <p role="status" className="text-sm text-[#536074]">
+            {optimizing
+              ? 'Convertendo o arquivo no aparelho. Mantenha esta tela aberta.'
+              : `Arquivos nesta carta: ${size(total)} de 2,5 MB.`}{' '}
+            A redução de tamanho pode alterar a qualidade. Confira cada arquivo antes de enviar.
+          </p>
+          <div className="flex flex-wrap gap-3">
+            <button
+              type="button"
+              disabled={recording !== null || optimizing}
+              onClick={review}
+              className="rounded-xl bg-[#123c69] px-6 py-4 font-semibold text-white disabled:opacity-50"
+            >
+              Revisar minha carta
+            </button>
+            <button
+              type="button"
+              disabled={optimizing}
+              onClick={() => {
+                void keepPreview();
+              }}
+              className="rounded-xl border px-5 py-4 disabled:opacity-50"
+            >
+              Guardar rascunho e voltar
+            </button>
+          </div>
+        </main>
+      )}
+      {step === 'revisar' && (
+        <main className="rounded-[2rem] border border-[#ddd0b7] bg-[#fbf8f1] p-6 sm:p-9">
+          <p className="text-xs font-semibold uppercase tracking-widest text-[#96763c]">
+            2 de 2 · Confira a prévia
+          </p>
+          <h2 className="mt-2 font-serif text-3xl text-[#142a43]">
+            Sua carta está pronta para revisão
+          </h2>
+          <article className={`${letterStyles.paper} mx-auto mt-7 max-w-2xl`}>
+            <header className={letterStyles.header}>
+              <p className={letterStyles.eyebrow}>Verdadeira Luz nº 06 · Cripta do Irmão</p>
+              <p className={letterStyles.ornament} aria-hidden="true">
+                ❧ ✦ ❧
+              </p>
+              <h3 className={letterStyles.title}>{title.trim() || 'Minha carta'}</h3>
+              <p className={letterStyles.recipient}>Para {recipient.trim()}</p>
+            </header>
+            <div className={letterStyles.rule} aria-hidden="true" />
+            <div className={letterStyles.body}>{body.trim()}</div>
+            {attachments.length > 0 && (
+              <section className={letterStyles.section}>
+                <h4 className={letterStyles.sectionTitle}>Lembranças que acompanham esta carta</h4>
+                {attachments.map((item) => (
+                  <figure key={item.id} className={letterStyles.media}>
+                    {item.kind === 'foto' ? (
+                      <img src={item.url} alt={item.file.name} />
+                    ) : item.kind === 'audio' ? (
+                      <audio controls preload="metadata" src={item.url} />
+                    ) : (
+                      <video controls preload="metadata" src={item.url} />
+                    )}
+                    <figcaption className={letterStyles.caption}>{item.file.name}</figcaption>
+                  </figure>
+                ))}
+              </section>
+            )}
+            <footer className={letterStyles.footer}>
+              Uma mensagem para guardar através do tempo
+            </footer>
+          </article>
+          <div className="mt-6 rounded-xl border bg-white p-5 text-sm">
+            <strong>Arquivos desta carta:</strong> {attachments.length || 'nenhum'}
+            {attachments.map((item) => (
+              <p key={item.id} className="mt-2 break-all">
+                {item.kind}: {item.file.name}
+              </p>
+            ))}
+          </div>
+          <p className="mt-5 text-sm text-[#795521]">
+            O envio atual aceita até 2,5 MB de anexos juntos.
+          </p>
+          {!opened && (
+            <div className="mt-5 rounded-xl border border-[#c9a449] bg-white p-5">
+              <label className="block font-semibold text-[#142a43]">
+                Escolha uma frase secreta para esta carta
+                <input
+                  type="password"
+                  autoComplete="new-password"
+                  value={depositPassphrase}
+                  onChange={(event) => setDepositPassphrase(event.target.value)}
+                  placeholder="Pelo menos 16 caracteres"
+                  className="mt-2 block w-full rounded-xl border p-4 font-normal"
+                />
+              </label>
+              <p className="mt-2 text-sm text-[#795521]">
+                <strong>Guarde essa frase fora do Portal.</strong> Ela cifra a carta no seu próprio
+                navegador antes do envio — nem o Portal, nem a Loja conseguem reabri-la sem ela. Se
+                você a esquecer, esta carta ficará irrecuperável.
+              </p>
+            </div>
+          )}
+          <div className="mt-6 flex flex-wrap gap-3">
+            {!opened && (
+              <button
+                type="button"
+                disabled={
+                  busy || !receivingOpen || !openingChecked || depositPassphrase.length < 16
+                }
+                onClick={depositTest}
+                className="rounded-xl bg-[#123c69] px-6 py-4 font-semibold text-white disabled:opacity-50"
+              >
+                Guardar minha carta
+              </button>
+            )}
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => {
+                void downloadOffline();
+              }}
+              className="rounded-xl border border-[#a78648] px-6 py-4 font-semibold disabled:opacity-50"
+            >
+              Baixar carta para abrir sem internet
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                void keepPreview();
+              }}
+              className="rounded-xl border px-6 py-4"
+            >
+              Guardar rascunho
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                draftEnabled.current = true;
+                setOpened(null);
+                setStep('escrever');
+              }}
+              className="rounded-xl border px-5 py-4"
+            >
+              Voltar e alterar
+            </button>
+          </div>
+        </main>
+      )}
+    </div>
+  );
 }

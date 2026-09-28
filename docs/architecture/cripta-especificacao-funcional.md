@@ -15,7 +15,7 @@
 - O rascunho pessoal é persistido no Wix com revisão no Firestore e confirmação de leitura.
 - O envio atual limita os anexos somados a 2,5 MB. Áudios e vídeos longos continuam dependentes de upload separado.
 - A interface afirma que se faz uma carta, enquanto a API permite cinco cartas concluídas. A regra de produto ainda precisa ser unificada.
-- Novas cartas usam cifra do servidor e chave vinculada à conta armazenada no Firestore. Uma cópia dos objetos Wix, sozinha, não garante restauração se essa chave ou o inventário se perderem. Cartas legadas podem exigir a frase original.
+- **Corrigido em 28/09/2026:** cartas novas voltaram a ser cifradas no navegador do próprio Irmão, com frase secreta escolhida por ele (`online-capsule.ts`, formato `vl6-online-capsule-v1`), e não mais no servidor com uma chave guardada no Firestore. O servidor só valida o formato do envelope já cifrado e o repassa ao Wix; ele não guarda nem consegue reconstruir a chave dessas cartas. O modelo anterior (`vl6-account-letter-v1`, chave por conta no Firestore) permanece só para abrir cartas já depositadas por ele antes da correção — nenhuma carta nova volta a usá-lo. Se a frase se perder, a carta cifrada por este formato é irrecuperável; essa é uma troca deliberada pela promessa original de que a Loja não consegue ler o conteúdo.
 - Há importação de texto Word e pacote HTML offline por carta. Ainda não há exportação integral verificável para duas unidades nem restauração anual.
 
 ## Prompt corrigido
