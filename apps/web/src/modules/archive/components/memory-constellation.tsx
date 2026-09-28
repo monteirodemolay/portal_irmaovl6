@@ -10,6 +10,7 @@ import {
   Compass,
   History,
   Image as ImageIcon,
+  Video,
   Play,
   RotateCcw,
   Sparkles,
@@ -38,7 +39,11 @@ function pickDifferentIndex(length: number, current: number): number {
 
 function memoryImage(memory: ConstellationMemory | undefined): string | null {
   if (!memory) return null;
-  return memory.media[0]?.url ?? memory.fallbackImageUrl;
+  return (
+    memory.media.find((entry) => entry.mediaType === 'foto')?.url ??
+    memory.media.find((entry) => entry.posterUrl)?.posterUrl ??
+    memory.fallbackImageUrl
+  );
 }
 
 export function MemoryConstellation({ initial }: MemoryConstellationProps) {
@@ -46,16 +51,20 @@ export function MemoryConstellation({ initial }: MemoryConstellationProps) {
   const [memories, setMemories] = React.useState(initial.memories);
   const [stats, setStats] = React.useState(initial.stats);
   const [index, setIndex] = React.useState(0);
-  const [photoIndex, setPhotoIndex] = React.useState(0);
+  const [mediaIndex, setMediaIndex] = React.useState(0);
   const [automatic, setAutomatic] = React.useState(true);
   const [loading, setLoading] = React.useState(false);
 
   const current = memories[index];
-  const currentPhoto = current?.media[photoIndex];
-  const currentImage = currentPhoto?.url ?? current?.fallbackImageUrl ?? null;
+  const currentMedia = current?.media[mediaIndex];
+  const isVideo = currentMedia?.mediaType === 'video';
+  const currentImage =
+    currentMedia?.mediaType === 'foto'
+      ? currentMedia.url
+      : currentMedia?.posterUrl ?? current?.fallbackImageUrl ?? null;
 
   React.useEffect(() => {
-    setPhotoIndex(0);
+    setMediaIndex(0);
   }, [current?.id]);
 
   React.useEffect(() => {
@@ -69,7 +78,7 @@ export function MemoryConstellation({ initial }: MemoryConstellationProps) {
   React.useEffect(() => {
     if (!automatic || !current || current.media.length <= 1) return;
     const timer = window.setInterval(() => {
-      setPhotoIndex((value) => (value + 1) % current.media.length);
+      setMediaIndex((value) => (value + 1) % current.media.length);
     }, PHOTO_INTERVAL_MS);
     return () => window.clearInterval(timer);
   }, [automatic, current]);
@@ -87,7 +96,7 @@ export function MemoryConstellation({ initial }: MemoryConstellationProps) {
       setMemories(initial.memories);
       setStats(initial.stats);
       setIndex(0);
-      setPhotoIndex(0);
+      setMediaIndex(0);
       return;
     }
 
@@ -105,7 +114,7 @@ export function MemoryConstellation({ initial }: MemoryConstellationProps) {
       setMemories(bundle.memories);
       setStats(bundle.stats);
       setIndex(0);
-      setPhotoIndex(0);
+      setMediaIndex(0);
     } finally {
       setLoading(false);
     }
@@ -116,7 +125,7 @@ export function MemoryConstellation({ initial }: MemoryConstellationProps) {
 
     if (selectedYear !== null) {
       setIndex((value) => pickDifferentIndex(memories.length, value));
-      setPhotoIndex(0);
+      setMediaIndex(0);
       return;
     }
 
@@ -133,7 +142,7 @@ export function MemoryConstellation({ initial }: MemoryConstellationProps) {
     const chosen = candidates[Math.floor(Math.random() * candidates.length)];
     if (chosen !== undefined) {
       setIndex(chosen);
-      setPhotoIndex(0);
+      setMediaIndex(0);
     }
   }
 
@@ -149,13 +158,30 @@ export function MemoryConstellation({ initial }: MemoryConstellationProps) {
 
   if (!current) {
     return (
-      <section className="border-border bg-surface rounded-[22px] border p-8 text-center shadow-sm">
-        <Compass className="text-accent mx-auto" size={28} />
-        <h2 className="font-display mt-4 text-2xl font-semibold">A Constelação está pronta para receber memórias</h2>
+      <section className="border-border bg-surface flex min-h-72 flex-col items-center justify-center rounded-[22px] border p-8 text-center shadow-sm">
+        <Compass className="text-accent" size={28} />
+        <h2 className="font-display mt-4 text-2xl font-semibold">
+          {selectedYear ? `Sem fotos ou vídeos publicados em ${selectedYear}` : 'A Constelação está pronta para receber memórias'}
+        </h2>
         <p className="text-muted mx-auto mt-2 max-w-xl text-sm leading-6">
-          Assim que Eventos tiverem itens publicados no Acervo VL6, as lembranças serão
-          conectadas e exibidas aqui automaticamente.
+          Aqui aparecem somente eventos com fotografias ou vídeos publicados e disponíveis ao seu acesso.
         </p>
+        {selectedYear !== null && (
+          <Button
+            type="button"
+            variant="outline"
+            className="mt-5"
+            onClick={() => {
+              setSelectedYear(null);
+              setMemories(initial.memories);
+              setStats(initial.stats);
+              setIndex(0);
+              setMediaIndex(0);
+            }}
+          >
+            Voltar para toda a história
+          </Button>
+        )}
       </section>
     );
   }
@@ -168,7 +194,7 @@ export function MemoryConstellation({ initial }: MemoryConstellationProps) {
             Escolha apenas o período. A Constelação faz o restante.
           </p>
           <p className="text-muted mt-1 text-xs">
-            {stats.totalMemories} lembranças · {stats.totalPhotos} fotografias · {stats.totalYears} anos com registros
+            {stats.totalMemories} lembranças · {stats.totalPhotos} fotos · {stats.totalVideos} vídeos · {stats.totalYears} anos com registros
           </p>
         </div>
 
@@ -211,21 +237,43 @@ export function MemoryConstellation({ initial }: MemoryConstellationProps) {
         <div className="border-accent/15 pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full border" />
         <div className="border-accent/10 pointer-events-none absolute -right-10 -top-10 h-72 w-72 rounded-full border" />
 
-        <div className="relative grid min-h-[34rem] lg:grid-cols-[minmax(0,1.55fr)_minmax(19rem,0.75fr)]">
-          <div className="relative min-h-[28rem] overflow-hidden bg-black/25 lg:min-h-[34rem]">
-            {currentImage ? (
-              <div
-                role="img"
-                aria-label={currentPhoto?.altText || currentPhoto?.caption || current.title}
-                className="absolute inset-0 bg-cover bg-center transition-[background-image] duration-700"
-                style={{ backgroundImage: `url(${JSON.stringify(currentImage)})` }}
+        <div className="relative grid min-w-0 lg:h-[35rem] lg:grid-cols-[minmax(0,1.55fr)_minmax(0,0.75fr)]">
+          <div className="relative h-[25rem] min-w-0 overflow-hidden bg-black/25 sm:h-[30rem] lg:h-full">
+            {currentMedia?.mediaType === 'video' ? (
+              <video
+                key={currentMedia.id}
+                src={currentMedia.url}
+                poster={currentImage ?? undefined}
+                controls
+                playsInline
+                preload="metadata"
+                onPlay={() => setAutomatic(false)}
+                aria-label={currentMedia.altText || currentMedia.caption || current.title}
+                className="absolute inset-0 h-full w-full bg-black object-contain"
               />
+            ) : currentImage ? (
+              <>
+                <img
+                  src={currentImage}
+                  alt=""
+                  aria-hidden="true"
+                  className="absolute inset-0 h-full w-full scale-110 object-cover opacity-35 blur-2xl"
+                />
+                <img
+                  src={currentImage}
+                  alt={currentMedia?.altText || currentMedia?.caption || current.title}
+                  className="absolute inset-0 h-full w-full object-contain"
+                />
+              </>
             ) : (
               <div className="from-primary-dark via-primary to-primary absolute inset-0 bg-gradient-to-br" />
             )}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-black/15" />
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-black/15" />
 
-            <div className="absolute inset-x-0 bottom-0 p-5 text-white sm:p-7">
+            <div className={cn(
+              'pointer-events-none absolute inset-x-0 p-5 text-white sm:p-7',
+              isVideo ? 'bottom-[4rem]' : 'bottom-0',
+            )}>
               <div className="mb-3 flex flex-wrap gap-2">
                 <span className="bg-accent text-primary-dark rounded-full px-3 py-1 text-[11px] font-bold tracking-wide">
                   {current.year}
@@ -237,7 +285,7 @@ export function MemoryConstellation({ initial }: MemoryConstellationProps) {
                 )}
               </div>
               <p className="text-sm font-medium text-white/75">{current.dateLabel}</p>
-              <h2 aria-live="polite" className="font-display mt-1 max-w-3xl text-3xl font-semibold leading-tight sm:text-4xl">
+              <h2 aria-live="polite" className="font-display mt-1 line-clamp-3 max-w-3xl break-words text-2xl font-semibold leading-tight sm:text-4xl">
                 {current.title}
               </h2>
               {current.archiveTitle && (
@@ -266,13 +314,13 @@ export function MemoryConstellation({ initial }: MemoryConstellationProps) {
 
             {current.media.length > 1 && (
               <div className="absolute right-4 top-4 rounded-full border border-white/20 bg-black/30 px-3 py-1 text-xs text-white/80 backdrop-blur-sm">
-                {photoIndex + 1} / {current.media.length} fotos
+                {mediaIndex + 1} / {current.media.length} mídias
               </div>
             )}
           </div>
 
-          <aside className="relative flex flex-col justify-between p-6 text-white sm:p-7">
-            <div>
+          <aside className="relative flex min-h-0 min-w-0 flex-col justify-between gap-5 overflow-hidden p-6 text-white sm:p-7 lg:h-full">
+            <div className="min-h-0 overflow-y-auto">
               <p className="text-accent flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.2em]">
                 <Sparkles size={14} />
                 Esta memória se conecta a
@@ -300,16 +348,20 @@ export function MemoryConstellation({ initial }: MemoryConstellationProps) {
               </div>
 
               {current.description && (
-                <p className="mt-6 line-clamp-5 text-sm leading-6 text-white/72">
+                <p className="mt-6 line-clamp-4 break-words text-sm leading-6 text-white/72">
                   {current.description}
                 </p>
               )}
 
               <div className="mt-6 grid grid-cols-2 gap-3">
                 <div className="rounded-xl border border-white/10 bg-white/5 p-3">
-                  <ImageIcon className="text-accent" size={16} />
-                  <strong className="mt-2 block text-lg">{current.photoCount}</strong>
-                  <span className="text-[10px] uppercase tracking-wider text-white/50">fotografias</span>
+                  {current.videoCount > 0
+                    ? <Video className="text-accent" size={16} />
+                    : <ImageIcon className="text-accent" size={16} />}
+                  <strong className="mt-2 block text-lg">{current.photoCount + current.videoCount}</strong>
+                  <span className="text-[10px] uppercase tracking-wider text-white/50">
+                    {current.photoCount} fotos · {current.videoCount} vídeos
+                  </span>
                 </div>
                 <div className="rounded-xl border border-white/10 bg-white/5 p-3">
                   <Users className="text-accent" size={16} />
@@ -319,7 +371,7 @@ export function MemoryConstellation({ initial }: MemoryConstellationProps) {
               </div>
             </div>
 
-            <div className="mt-7">
+            <div className="mt-auto shrink-0">
               <div className="text-xs text-white/55">
                 {current.location && (
                   <p className="flex items-center gap-2">
@@ -351,7 +403,7 @@ export function MemoryConstellation({ initial }: MemoryConstellationProps) {
               type="button"
               onClick={() => {
                 setIndex(0);
-                setPhotoIndex(0);
+                setMediaIndex(0);
               }}
               className="text-muted hover:text-primary flex items-center gap-1.5 text-xs font-medium"
             >
@@ -370,7 +422,7 @@ export function MemoryConstellation({ initial }: MemoryConstellationProps) {
                   type="button"
                   onClick={() => {
                     if (memoryIndex >= 0) setIndex(memoryIndex);
-                    setPhotoIndex(0);
+                    setMediaIndex(0);
                   }}
                   className="border-border group relative min-h-28 overflow-hidden rounded-xl border text-left"
                 >
@@ -380,7 +432,9 @@ export function MemoryConstellation({ initial }: MemoryConstellationProps) {
                       style={{ backgroundImage: `url(${JSON.stringify(preview)})` }}
                     />
                   ) : (
-                    <div className="from-primary to-primary-dark absolute inset-0 bg-gradient-to-br" />
+                    <div className="from-primary to-primary-dark absolute inset-0 flex items-center justify-center bg-gradient-to-br">
+                      <Video size={30} className="text-accent/60" />
+                    </div>
                   )}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/15 to-transparent" />
                   <div className="relative flex min-h-28 flex-col justify-end p-4 text-white">
@@ -400,7 +454,7 @@ export function MemoryConstellation({ initial }: MemoryConstellationProps) {
 
       <div className="text-muted flex items-center justify-center gap-2 text-center text-xs">
         <History size={13} />
-        A Constelação usa somente registros reais e publicados do Acervo VL6.
+        A Constelação exibe somente eventos com fotografias e vídeos publicados no Acervo VL6.
       </div>
     </section>
   );

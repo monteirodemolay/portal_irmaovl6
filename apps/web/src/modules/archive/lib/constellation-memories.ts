@@ -10,6 +10,7 @@ import type {
 import type { ServerContainer } from '@vl6/infra';
 import { ARCHIVE_ITEM_TYPE_LABELS, BRAZIL_TIME_ZONE } from '@vl6/shared';
 import { isAccessLevelVisible } from './access-level-visibility';
+import { isConstellationVisualMedia } from './constellation-media-eligibility';
 import type {
   ConstellationMemory,
   MemoryConstellationBundle,
@@ -20,7 +21,7 @@ const MAX_EVENTS = 3000;
 const MAX_ITEMS = 5000;
 const MAX_MEDIA = 10000;
 const MAX_MEMORIES_RETURNED = 160;
-const MAX_PHOTOS_PER_MEMORY = 18;
+const MAX_VISUAL_MEDIA_PER_MEMORY = 18;
 
 function formatMemoryDate(date: Date): string {
   return new Intl.DateTimeFormat('pt-BR', {
@@ -156,14 +157,15 @@ export async function loadConstellationMemories(
     loadArchiveMedia(container, authContext.tenantId),
   ]);
 
-  const visibleEvents = events.filter((event) =>
-    isAccessLevelVisible(event.nivelAcesso, visibility),
+  const visibleEvents = events.filter(
+    (event) => !event.deletedAt && isAccessLevelVisible(event.nivelAcesso, visibility),
   );
   const eventById = new Map(visibleEvents.map((event) => [event.id, event]));
   const termById = new Map(boardTerms.map((term) => [term.id, term]));
 
   const visibleItems = items.filter(
     (item) =>
+      !item.deletedAt &&
       item.publicacaoStatus === 'publicado' &&
       eventById.has(item.eventId) &&
       isAccessLevelVisible(item.nivelAcesso, visibility),
@@ -181,7 +183,7 @@ export async function loadConstellationMemories(
   const mediaByItem = new Map<string, ArchiveMedia[]>();
   for (const media of allMedia) {
     if (
-      media.publicacaoStatus !== 'publicado' ||
+      !isConstellationVisualMedia(media) ||
       !itemById.has(media.archiveItemId) ||
       !isAccessLevelVisible(media.accessLevel, visibility)
     ) {
@@ -198,10 +200,13 @@ export async function loadConstellationMemories(
     const linkedItems = itemsByEvent.get(event.id) ?? [];
     if (linkedItems.length === 0) continue;
 
-    const linkedMedia = linkedItems.flatMap((item) => mediaByItem.get(item.id) ?? []);
-    const photos = linkedMedia
-      .filter((media) => media.mediaType === 'foto')
+    const linkedMedia = linkedItems
+      .flatMap((item) => mediaByItem.get(item.id) ?? [])
       .sort((a, b) => a.order - b.order);
+    // Eventos sem foto/vídeo publicado e acessível nunca geram slides vazios.
+    if (linkedMedia.length === 0) continue;
+    const photoCount = linkedMedia.filter((media) => media.mediaType === 'foto').length;
+    const videoCount = linkedMedia.filter((media) => media.mediaType === 'video').length;
     const peopleIds = new Set(
       linkedMedia.flatMap((media) => media.pessoasIdentificadas ?? []),
     );
@@ -243,9 +248,14 @@ export async function loadConstellationMemories(
       boardTermId,
       boardTermName: boardTerm?.nome ?? null,
       kindLabels,
-      media: photos.slice(0, MAX_PHOTOS_PER_MEMORY).map((media) => ({
+      media: linkedMedia.slice(0, MAX_VISUAL_MEDIA_PER_MEMORY).map((media) => ({
         id: media.id,
         url: `/api/archive-media/${media.id}?track=0`,
+        mediaType: media.mediaType as 'foto' | 'video',
+        posterUrl:
+          media.mediaType === 'video' && media.posterMediaAssetId
+            ? `/api/archive-media/${media.id}?variant=poster&track=0`
+            : null,
         caption: media.caption,
         altText: media.altText,
       })),
@@ -253,7 +263,8 @@ export async function loadConstellationMemories(
       peopleCount: peopleIds.size,
       itemCount: linkedItems.length,
       mediaCount: linkedMedia.length,
-      photoCount: photos.length,
+      photoCount,
+      videoCount,
     });
   }
 
@@ -262,6 +273,7 @@ export async function loadConstellationMemories(
   const years = [...new Set(memories.map((memory) => memory.year))].sort((a, b) => b - a);
   const ordered = options.year ? memories : interleaveByYear(memories);
   const totalPhotos = memories.reduce((total, memory) => total + memory.photoCount, 0);
+  const totalVideos = memories.reduce((total, memory) => total + memory.videoCount, 0);
 
   return {
     memories: ordered.slice(0, MAX_MEMORIES_RETURNED),
@@ -269,6 +281,7 @@ export async function loadConstellationMemories(
     stats: {
       totalMemories: memories.length,
       totalPhotos,
+      totalVideos,
       totalYears: years.length,
     },
   };
