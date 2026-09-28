@@ -1,8 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, type ChangeEvent, type DragEvent } from 'react';
-import { openCapsule } from '@/modules/cripta/lib/sealed-capsule';
-import { openOnlineCapsule, sealOnlineCapsule } from '@/modules/cripta/lib/online-capsule';
+import { sealForCripta, type CriptaPublicKey } from '@/modules/cripta/lib/cripta-key';
 import {
   convertedName,
   optimizePhoto,
@@ -70,13 +69,9 @@ export function CriptaExperience() {
   const [body, setBody] = useState('');
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [message, setMessage] = useState('');
-  const [passphrase, setPassphrase] = useState('');
-  const [depositPassphrase, setDepositPassphrase] = useState('');
-  const [remote, setRemote] = useState<
-    Array<{ id: string; createdAt: string; requiresPassphrase: boolean }>
-  >([]);
-  const [openingId, setOpeningId] = useState<string | null>(null);
-  const [opened, setOpened] = useState<{ id: string; format: string } | null>(null);
+  const [remote, setRemote] = useState<Array<{ id: string; createdAt: string }>>([]);
+  const [publicKey, setPublicKey] = useState<CriptaPublicKey | null>(null);
+  const [publicKeyChecked, setPublicKeyChecked] = useState(false);
   const [busy, setBusy] = useState(false);
   const [receivingOpen, setReceivingOpen] = useState(false);
   const [openingChecked, setOpeningChecked] = useState(false);
@@ -118,6 +113,15 @@ export function CriptaExperience() {
       .catch(() => {
         /* UI can still be explored without the service */
       });
+    fetch('/api/cripta/public-key', { cache: 'no-store' })
+      .then(async (response) => {
+        if (response.ok)
+          setPublicKey(((await response.json()) as { publicKey: CriptaPublicKey }).publicKey);
+      })
+      .catch(() => {
+        /* treated as "not yet inaugurated" below */
+      })
+      .finally(() => setPublicKeyChecked(true));
     fetch('/api/cripta/draft', { cache: 'no-store' })
       .then(async (response) => {
         const result = (await response.json()) as {
@@ -224,8 +228,6 @@ export function CriptaExperience() {
     setBody('');
     setAttachments([]);
     setMessage('');
-    setOpened(null);
-    setDepositPassphrase('');
     setStep('escrever');
   }
 
@@ -246,8 +248,6 @@ export function CriptaExperience() {
     setBody(draft.body);
     setAttachments(restored);
     setMessage('');
-    setOpened(null);
-    setDepositPassphrase('');
     setStep('escrever');
   }
 
@@ -542,9 +542,9 @@ export function CriptaExperience() {
       setMessage('O recebimento está fechado. Aguarde a abertura pela Administração.');
       return;
     }
-    if (depositPassphrase.length < 16) {
+    if (!publicKey) {
       setMessage(
-        'Escolha uma frase secreta de pelo menos 16 caracteres para guardar esta carta. Sem ela, ninguém — nem o Portal — conseguirá reabri-la.',
+        'A Cripta ainda não foi inaugurada pela Administração. Aguarde antes de guardar cartas.',
       );
       return;
     }
@@ -558,8 +558,9 @@ export function CriptaExperience() {
         body: body.trim(),
         attachments,
       });
-      // Sealed in this browser: the passphrase and the plaintext letter never leave this device.
-      const envelope = await sealOnlineCapsule(payload, depositPassphrase);
+      // Sealed in this browser with the Cripta's public key — no passphrase, nothing to forget.
+      // Only a quorum of Guardiões, offline, can ever open this envelope.
+      const envelope = await sealForCripta(payload, publicKey);
       const wire = JSON.stringify(envelope);
       const response = await fetch('/api/cripta/online-capsules', {
         method: 'POST',
@@ -575,10 +576,7 @@ export function CriptaExperience() {
           'A carta foi enviada, mas a leitura de conferência falhou. Atualize a página e confira antes de reenviar.',
         );
       }
-      setRemote((items) => [
-        ...items,
-        { id: result.id!, createdAt: result.createdAt!, requiresPassphrase: true },
-      ]);
+      setRemote((items) => [...items, { id: result.id!, createdAt: result.createdAt! }]);
       draftEnabled.current = false;
       const clear = await fetch('/api/cripta/draft', { method: 'DELETE' });
       if (clear.ok) {
@@ -589,88 +587,14 @@ export function CriptaExperience() {
       }
       attachmentsRef.current.forEach((item) => URL.revokeObjectURL(item.url));
       setAttachments([]);
-      setDepositPassphrase('');
       setMessage(
         clear.ok
-          ? 'Carta enviada ao Wix, cifrada com sua frase secreta. Guarde-a fora do Portal: sem ela, nem você nem a Loja conseguirão reabrir esta carta.'
-          : 'Carta enviada. O rascunho antigo ainda aparece; reabra a carta antes de removê-lo.',
+          ? 'Carta enviada e selada. A partir de agora, só os Guardiões da Cripta, reunidos, conseguem abri-la. Para mudar algo, escreva uma carta nova.'
+          : 'Carta enviada. O rascunho antigo ainda aparece; abra "Escrever minha carta" para começar um novo.',
       );
       setStep('inicio');
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Envio falhou.');
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function openTest(id: string) {
-    if (busy) return;
-    const item = remote.find((entry) => entry.id === id);
-    if (item?.requiresPassphrase && passphrase.length < 16) {
-      setOpeningId(id);
-      setMessage('Informe a frase secreta usada ao guardar esta carta.');
-      return;
-    }
-    setBusy(true);
-    try {
-      const response = await fetch(`/api/cripta/online-capsules/${id}`, { cache: 'no-store' });
-      if (!response.ok) throw new Error('Não foi possível recuperar o pacote cifrado.');
-      const delivered = (await response.json()) as { format?: string };
-      const value = (
-        delivered.format === 'vl6-online-capsule-v1'
-          ? JSON.parse(new TextDecoder().decode(await openOnlineCapsule(delivered, passphrase)))
-          : delivered.format === 'vl6-capsule-v1'
-            ? JSON.parse(new TextDecoder().decode(await openCapsule(delivered, passphrase)))
-            : delivered
-      ) as {
-        format: string;
-        title: string;
-        recipient: string;
-        body: string;
-        attachments: Array<{ kind: Kind; name: string; type: string; data: string }>;
-      };
-      if (
-        value.format !== 'vl6-online-letter-v1' ||
-        !Array.isArray(value.attachments) ||
-        value.attachments.length > 13 ||
-        typeof value.title !== 'string' ||
-        typeof value.recipient !== 'string' ||
-        typeof value.body !== 'string'
-      )
-        throw new Error('Formato de carta inválido.');
-      const restored = value.attachments.map((entry) => {
-        if (
-          !['foto', 'audio', 'video'].includes(entry.kind) ||
-          typeof entry.data !== 'string' ||
-          entry.data.length > 3_400_000
-        )
-          throw new Error('Anexo inválido.');
-        const file = new File(
-          [Uint8Array.from(atob(entry.data), (char) => char.charCodeAt(0))],
-          entry.name,
-          { type: entry.type },
-        );
-        return { id: crypto.randomUUID(), file, kind: entry.kind, url: URL.createObjectURL(file) };
-      });
-      attachmentsRef.current.forEach((item) => URL.revokeObjectURL(item.url));
-      setTitle(value.title);
-      setRecipient(value.recipient);
-      setBody(value.body);
-      setAttachments(restored);
-      setStep('revisar');
-      draftEnabled.current = false;
-      setOpened({ id, format: delivered.format ?? '' });
-      setOpeningId(null);
-      setPassphrase('');
-      setMessage(
-        delivered.format === 'vl6-capsule-v1'
-          ? 'Carta antiga aberta. Se quiser dispensar a frase, envie esta carta novamente e depois exclua a versão antiga.'
-          : delivered.format === 'vl6-account-letter-v1'
-            ? 'Carta recuperada do Wix e aberta pela sua conta do Portal. Cartas enviadas a partir de agora usarão sua própria frase secreta.'
-            : 'Carta reaberta com sua frase secreta.',
-      );
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Não foi possível abrir a carta.');
     } finally {
       setBusy(false);
     }
@@ -695,7 +619,7 @@ export function CriptaExperience() {
     if (busy) return;
     setBusy(true);
     try {
-      // Works from what is already decrypted in this tab — the server only ever sees ciphertext.
+      // Works from what is still in this tab's memory, before sealing — the server only ever sees ciphertext.
       const items = await Promise.all(
         attachments.map(async (item) => ({
           kind: item.kind,
@@ -847,9 +771,19 @@ export function CriptaExperience() {
             : 'conferindo abertura…'}
           .
         </strong>{' '}
-        O rascunho fica guardado quando aparecer “Salvo”. As cópias em unidades externas ainda não
-        foram vinculadas.
+        A carta é cifrada no seu navegador com a chave da própria Cripta — sem senha pessoal. Uma
+        vez guardada, ninguém a reabre sozinho: são necessários os Guardiões da Cripta reunidos.
       </div>
+      {publicKeyChecked && !publicKey && (
+        <p
+          role="alert"
+          className="rounded-2xl border border-red-300 bg-red-50 p-5 text-sm text-red-900"
+        >
+          A Cripta ainda não foi inaugurada pela Administração — a chave que protege as cartas ainda
+          não existe. Você pode escrever e guardar um rascunho, mas o envio final só ficará
+          disponível depois da inauguração.
+        </p>
+      )}
       {message && (
         <p
           role="status"
@@ -905,50 +839,28 @@ export function CriptaExperience() {
           )}
           {remote.length > 0 && (
             <section className="mt-8 rounded-2xl border border-[#d7c9a9] bg-white p-5">
-              <h3 className="font-serif text-xl">Cartas enviadas ao Wix</h3>
+              <h3 className="font-serif text-xl">Cartas guardadas</h3>
               <p className="mt-2 text-sm text-[#536074]">
-                Cada carta é protegida pela frase secreta que você escolheu ao guardá-la. Nem o
-                Portal consegue reabri-la sem essa frase — informe-a abaixo.
+                Cada carta abaixo já está selada com a chave da Cripta. Nem você, nem o Portal
+                conseguem reabri-la — só os Guardiões da Cripta, reunidos, em cerimônia. Se quiser
+                mudar algo, escreva uma carta nova.
               </p>
               {remote.map((item) => (
-                <div key={item.id} className="mt-4 border-t pt-4 text-sm">
-                  <div className="flex flex-wrap items-center gap-3">
-                    <span className="flex-1">
-                      Enviado em {new Date(item.createdAt).toLocaleString('pt-BR')}
-                      {!item.requiresPassphrase ? ' · formato antigo (sem frase)' : ''}
-                    </span>
-                    <button
-                      type="button"
-                      disabled={busy}
-                      onClick={() => openTest(item.id)}
-                      className="rounded-xl bg-[#123c69] px-4 py-3 font-semibold text-white disabled:opacity-50"
-                    >
-                      Reabrir e conferir
-                    </button>
-                    <button
-                      type="button"
-                      disabled={busy}
-                      onClick={() => deleteTest(item.id)}
-                      className="rounded-xl border px-4 py-3 disabled:opacity-50"
-                    >
-                      Excluir carta
-                    </button>
-                  </div>
-                  {openingId === item.id && (
-                    <label className="mt-4 block font-semibold">
-                      Frase secreta desta carta
-                      <input
-                        type="password"
-                        autoComplete="off"
-                        value={passphrase}
-                        onChange={(event) => setPassphrase(event.target.value)}
-                        className="mt-2 block w-full rounded-xl border p-3"
-                      />
-                      <span className="mt-2 block font-normal text-[#536074]">
-                        Digite a frase e clique em “Reabrir e conferir” de novo.
-                      </span>
-                    </label>
-                  )}
+                <div
+                  key={item.id}
+                  className="mt-4 flex flex-wrap items-center gap-3 border-t pt-4 text-sm"
+                >
+                  <span className="flex-1">
+                    Guardada em {new Date(item.createdAt).toLocaleString('pt-BR')} · selada
+                  </span>
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => deleteTest(item.id)}
+                    className="rounded-xl border px-4 py-3 disabled:opacity-50"
+                  >
+                    Excluir carta
+                  </button>
                 </div>
               ))}
             </section>
@@ -981,7 +893,7 @@ export function CriptaExperience() {
                   setDraftStatus('Alterações ainda não salvas');
                 }}
                 placeholder="Nome de quem deverá receber"
-                className="mt-2 block w-full rounded-xl border p-4 font-normal"
+                className="mt-2 w-full rounded-xl border p-4 font-normal"
               />
             </label>
             <details className="text-sm text-[#536074]">
@@ -1002,7 +914,7 @@ export function CriptaExperience() {
                   setDraftStatus('Alterações ainda não salvas');
                 }}
                 placeholder="Minha mensagem"
-                className="mt-2 block w-full rounded-xl border p-4 font-normal"
+                className="mt-2 w-full rounded-xl border p-4 font-normal"
               />
             </label>
             <label className="block font-semibold text-[#142a43]">
@@ -1016,7 +928,7 @@ export function CriptaExperience() {
                 }}
                 rows={10}
                 placeholder="Escreva com suas próprias palavras..."
-                className="mt-2 block w-full rounded-xl border p-4 font-serif font-normal leading-8"
+                className="mt-2 w-full rounded-xl border p-4 font-serif font-normal leading-8"
               />
             </label>
             <label className="inline-flex cursor-pointer items-center rounded-xl border border-[#a78648] px-4 py-3 font-semibold text-[#142a43]">
@@ -1141,39 +1053,21 @@ export function CriptaExperience() {
           <p className="mt-5 text-sm text-[#795521]">
             O envio atual aceita até 2,5 MB de anexos juntos.
           </p>
-          {!opened && (
-            <div className="mt-5 rounded-xl border border-[#c9a449] bg-white p-5">
-              <label className="block font-semibold text-[#142a43]">
-                Escolha uma frase secreta para esta carta
-                <input
-                  type="password"
-                  autoComplete="new-password"
-                  value={depositPassphrase}
-                  onChange={(event) => setDepositPassphrase(event.target.value)}
-                  placeholder="Pelo menos 16 caracteres"
-                  className="mt-2 block w-full rounded-xl border p-4 font-normal"
-                />
-              </label>
-              <p className="mt-2 text-sm text-[#795521]">
-                <strong>Guarde essa frase fora do Portal.</strong> Ela cifra a carta no seu próprio
-                navegador antes do envio — nem o Portal, nem a Loja conseguem reabri-la sem ela. Se
-                você a esquecer, esta carta ficará irrecuperável.
-              </p>
-            </div>
-          )}
+          <div className="mt-5 rounded-xl border border-[#c9a449] bg-white p-5 text-sm leading-6 text-[#536074]">
+            <strong className="text-[#142a43]">Ao guardar, esta carta é selada.</strong> Ela é
+            cifrada no seu navegador com a chave da Cripta — sem senha para você lembrar. A partir
+            daí, só os Guardiões da Cripta, reunidos em cerimônia, conseguem abri-la. Se quiser
+            mudar algo depois, escreva uma carta nova.
+          </div>
           <div className="mt-6 flex flex-wrap gap-3">
-            {!opened && (
-              <button
-                type="button"
-                disabled={
-                  busy || !receivingOpen || !openingChecked || depositPassphrase.length < 16
-                }
-                onClick={depositTest}
-                className="rounded-xl bg-[#123c69] px-6 py-4 font-semibold text-white disabled:opacity-50"
-              >
-                Guardar minha carta
-              </button>
-            )}
+            <button
+              type="button"
+              disabled={busy || !receivingOpen || !openingChecked || !publicKey}
+              onClick={depositTest}
+              className="rounded-xl bg-[#123c69] px-6 py-4 font-semibold text-white disabled:opacity-50"
+            >
+              Guardar minha carta
+            </button>
             <button
               type="button"
               disabled={busy}
@@ -1197,7 +1091,6 @@ export function CriptaExperience() {
               type="button"
               onClick={() => {
                 draftEnabled.current = true;
-                setOpened(null);
                 setStep('escrever');
               }}
               className="rounded-xl border px-5 py-4"

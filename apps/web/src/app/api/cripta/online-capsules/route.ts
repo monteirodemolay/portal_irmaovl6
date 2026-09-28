@@ -9,28 +9,25 @@ import {
 } from '@/modules/cripta/lib/wix-private-files';
 import { isOnlineOpen, openingRef } from '@/modules/cripta/lib/online-opening';
 
-/** The member's browser seals the letter with a passphrase before it ever reaches this route
- * (see online-capsule.ts); the server only validates the envelope shape and stores the bytes
- * it is given. It never holds a key that could decrypt this letter. */
+/** The member's browser seals the letter with the Cripta's public key before it ever reaches
+ * this route (see cripta-key.ts) — no passphrase involved, nothing for the member to lose. The
+ * server only validates the envelope shape and stores the bytes it is given; it never holds a
+ * key that could decrypt this letter. Only a quorum of Guardiões, offline, can open it. */
 function isSealedEnvelope(
   value: unknown,
-): value is {
-  format: string;
-  kdf: string;
-  iterations: number;
-  cipher: string;
-  salt: string;
-  nonce: string;
-  ciphertext: string;
-} {
+): value is { format: string; ephemeralPublicKey: unknown; nonce: string; ciphertext: string } {
   if (!value || typeof value !== 'object') return false;
   const envelope = value as Record<string, unknown>;
+  const ephemeral = envelope.ephemeralPublicKey as Record<string, unknown> | undefined;
   return (
-    envelope.format === 'vl6-online-capsule-v1' &&
-    envelope.cipher === 'AES-256-GCM' &&
-    envelope.kdf === 'PBKDF2-SHA256' &&
-    envelope.iterations === 600_000 &&
-    ['salt', 'nonce', 'ciphertext'].every((field) => typeof envelope[field] === 'string')
+    envelope.format === 'vl6-cripta-seal-v1' &&
+    typeof envelope.nonce === 'string' &&
+    typeof envelope.ciphertext === 'string' &&
+    !!ephemeral &&
+    ephemeral.kty === 'EC' &&
+    ephemeral.crv === 'P-256' &&
+    typeof ephemeral.x === 'string' &&
+    typeof ephemeral.y === 'string'
   );
 }
 
@@ -52,8 +49,7 @@ export async function GET() {
         .map((doc) => ({
           id: doc.id,
           createdAt: doc.data().createdAt,
-          // vl6-account-letter-v1 is server-decryptable (being phased out); every other format needs the member's own passphrase.
-          requiresPassphrase: doc.data().format !== 'vl6-account-letter-v1',
+          format: doc.data().format as string,
         })),
     },
     { headers: { 'Cache-Control': 'no-store' } },
@@ -117,7 +113,7 @@ export async function POST(request: Request) {
         sha256: uploaded.sha256,
         createdAt,
         status: 'ready',
-        format: 'vl6-online-capsule-v1',
+        format: 'vl6-cripta-seal-v1',
       });
     });
     return NextResponse.json(
