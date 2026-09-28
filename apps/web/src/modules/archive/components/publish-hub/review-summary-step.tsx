@@ -1,10 +1,10 @@
 'use client';
 
 import Link from 'next/link';
-import { Button, EmptyState } from '@vl6/ui';
+import { Button } from '@vl6/ui';
 import { updateArchiveMediaFieldsAction } from '../../actions/publish-hub-actions';
 import { CoverPositionPicker } from '../cover-position-picker';
-import { EventContextBar, StepTitle } from './wizard-chrome';
+import { EventContextBar, StepTitle, WorkspaceLoadErrorState } from './wizard-chrome';
 import type { ArchiveItemWorkspace } from './use-archive-item-workspace';
 
 export interface ReviewSummaryStepProps {
@@ -15,6 +15,7 @@ export interface ReviewSummaryStepProps {
   eventLocal: string;
   onBack: () => void;
   onContinue: () => void;
+  onRestart: () => void;
 }
 
 /**
@@ -32,11 +33,12 @@ export function ReviewSummaryStep({
   eventLocal,
   onBack,
   onContinue,
+  onRestart,
 }: ReviewSummaryStepProps) {
   const { summary, checklist, isLoading, byType } = workspace;
 
   if (isLoading) return <p className="text-muted text-sm">Carregando…</p>;
-  if (!summary) return <EmptyState title="Não foi possível carregar este item." />;
+  if (!summary) return <WorkspaceLoadErrorState onRestart={onRestart} />;
 
   const cover = summary.medias.find((m) => m.isCover) ?? byType('foto')[0] ?? null;
 

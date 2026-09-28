@@ -90,12 +90,23 @@ export function UploadStep({ event, initialArchiveItemId, onBack, onContinue }: 
   const archiveItemIdRef = useRef<string | null>(initialArchiveItemId);
   const [items, setItems] = useState<QueueItem[]>([]);
   const [isLoadingExisting, setIsLoadingExisting] = useState(Boolean(initialArchiveItemId));
+  // Sem isso, uma falha ao carregar um rascunho retomado deixava o
+  // dropzone bloqueado (`disabled={isLoadingExisting}`) pra sempre, mas o
+  // botão "Continuar" seguia liberado — o Administrador avançava pra
+  // Classificação/Organização sem nenhum arquivo, só pra bater no erro sem
+  // saída alguns passos depois.
+  const [loadError, setLoadError] = useState(false);
 
   useEffect(() => {
     if (!initialArchiveItemId) return;
     let cancelled = false;
     loadArchiveItemSummaryAction(initialArchiveItemId).then((summary) => {
-      if (cancelled || !summary) return;
+      if (cancelled) return;
+      if (!summary) {
+        setLoadError(true);
+        setIsLoadingExisting(false);
+        return;
+      }
       setItems(
         summary.medias.map((media) => ({
           id: media.id,
@@ -323,6 +334,17 @@ export function UploadStep({ event, initialArchiveItemId, onBack, onContinue }: 
           Permitir baixar os arquivos deste envio (padrão: só visualizável no site)
         </label>
 
+        {loadError && (
+          <p className="border-border mb-3 rounded-lg border bg-red-50 px-3 py-2 text-sm text-red-600">
+            Não foi possível carregar os arquivos já enviados deste rascunho. Ele pode ter sido
+            excluído ou unificado com outro nesse meio-tempo —{' '}
+            <button type="button" onClick={onBack} className="underline">
+              volte e escolha o Evento novamente
+            </button>
+            .
+          </p>
+        )}
+
         <UnifiedDropzone onFilesSelected={handleFilesSelected} disabled={isLoadingExisting} />
 
         <ImportFromUrlPanel onImportUrls={handleUrlsSelected} />
@@ -382,7 +404,7 @@ export function UploadStep({ event, initialArchiveItemId, onBack, onContinue }: 
         <div className="mt-5">
           <Button
             type="button"
-            disabled={!archiveItemId || hasInFlight}
+            disabled={!archiveItemId || hasInFlight || (loadError && items.length === 0)}
             onClick={() => archiveItemId && onContinue(archiveItemId)}
           >
             Continuar →

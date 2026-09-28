@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { Button, Check, Copy, EmptyState, Input, Instagram } from '@vl6/ui';
+import { Button, Check, Copy, Input, Instagram } from '@vl6/ui';
 import { setArchiveItemInstagramLinkAction } from '../../actions/publish-hub-actions';
-import { EventContextBar, StepTitle } from './wizard-chrome';
+import { EventContextBar, StepTitle, WorkspaceLoadErrorState } from './wizard-chrome';
 import { InstagramPreviewCard, PortalPreviewCard } from './publication-preview-cards';
 import type { ArchiveItemWorkspace } from './use-archive-item-workspace';
 import type { ArchiveItemSummaryMedia } from '../../actions/publish-hub-actions';
@@ -15,6 +15,7 @@ export interface PublishStepProps {
   eventLocal: string;
   onBack: () => void;
   onDone: () => void;
+  onRestart: () => void;
 }
 
 /**
@@ -147,6 +148,7 @@ export function PublishStep({
   eventLocal,
   onBack,
   onDone,
+  onRestart,
 }: PublishStepProps) {
   const {
     summary,
@@ -164,7 +166,7 @@ export function PublishStep({
   } = workspace;
 
   if (isLoading) return <p className="text-muted text-sm">Carregando…</p>;
-  if (!summary) return <EmptyState title="Não foi possível carregar este item." />;
+  if (!summary) return <WorkspaceLoadErrorState onRestart={onRestart} />;
 
   const isPublished =
     summary.medias.length > 0 && summary.medias.every((m) => m.publicacaoStatus === 'publicado');

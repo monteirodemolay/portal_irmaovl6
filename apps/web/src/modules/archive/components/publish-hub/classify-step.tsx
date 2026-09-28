@@ -55,6 +55,11 @@ export function ClassifyStep({
 }: ClassifyStepProps) {
   const [medias, setMedias] = useState<ArchiveItemSummaryMedia[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  // Sem isso, uma falha ao carregar (rascunho excluído/unificado nesse
+  // meio-tempo) deixava o spinner girando pra sempre em silêncio — e o
+  // botão "Continuar" seguia liberado, levando o Administrador direto pro
+  // erro sem saída do passo "Organização".
+  const [loadError, setLoadError] = useState(false);
   const [selections, setSelections] = useState<Record<ArchiveMediaTypeKey, string>>({
     foto: TYPE_SUGGESTIONS.foto[0]!,
     video: TYPE_SUGGESTIONS.video[0]!,
@@ -73,7 +78,12 @@ export function ClassifyStep({
   useEffect(() => {
     let cancelled = false;
     loadArchiveItemSummaryAction(archiveItemId).then((summary) => {
-      if (cancelled || !summary) return;
+      if (cancelled) return;
+      if (!summary) {
+        setLoadError(true);
+        setIsLoading(false);
+        return;
+      }
       setMedias(summary.medias);
       setIsLoading(false);
     });
@@ -129,6 +139,16 @@ export function ClassifyStep({
 
         {isLoading ? (
           <p className="text-muted text-sm">Carregando…</p>
+        ) : loadError ? (
+          <div className="flex flex-col items-center gap-3 py-6 text-center">
+            <p className="text-sm text-red-600">
+              Não foi possível carregar os arquivos deste rascunho. Ele pode ter sido excluído ou
+              unificado com outro nesse meio-tempo.
+            </p>
+            <Button type="button" variant="outline" onClick={onBack}>
+              ← Voltar
+            </Button>
+          </div>
         ) : (
           <div className="flex flex-col gap-5">
             <MediaStatsRow counts={counts} />
@@ -208,11 +228,13 @@ export function ClassifyStep({
           </div>
         )}
 
-        <div className="mt-5">
-          <Button type="button" onClick={onContinue}>
-            Continuar →
-          </Button>
-        </div>
+        {!loadError && (
+          <div className="mt-5">
+            <Button type="button" onClick={onContinue} disabled={isLoading}>
+              Continuar →
+            </Button>
+          </div>
+        )}
       </div>
     </>
   );
