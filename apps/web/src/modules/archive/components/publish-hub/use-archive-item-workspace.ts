@@ -29,6 +29,10 @@ export function useArchiveItemWorkspace(archiveItemId: string) {
   const [checklist, setChecklist] = useState<PublicationChecklistResult | null>(null);
   const [memberOptions, setMemberOptions] = useState<MemberPickerOption[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  // Distingue "ainda carregando" de "carregou e não achou o item" — sem
+  // isso, os passos que dependem do `summary` não sabiam se deviam esperar
+  // ou mostrar um caminho de volta pro Administrador.
+  const [loadError, setLoadError] = useState(false);
   const [message, setMessage] = useState<{ text: string; error: boolean } | null>(null);
   const [isPublishing, startPublishing] = useTransition();
   const [dragId, setDragId] = useState<string | null>(null);
@@ -42,6 +46,7 @@ export function useArchiveItemWorkspace(archiveItemId: string) {
     ]);
     setSummary(nextSummary);
     setChecklist(nextChecklist);
+    setLoadError(nextSummary === null);
   }, [archiveItemId]);
 
   useEffect(() => {
@@ -163,6 +168,7 @@ export function useArchiveItemWorkspace(archiveItemId: string) {
     checklist,
     memberOptions,
     isLoading,
+    loadError,
     message,
     setMessage,
     byType,

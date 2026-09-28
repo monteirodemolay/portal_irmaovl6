@@ -14,7 +14,7 @@ import {
 import type { ArchiveItemSummaryMedia } from '../../actions/publish-hub-actions';
 import { PeoplePicker } from './people-picker';
 import { PhotoPeopleReviewModal } from './photo-people-review-modal';
-import { EventContextBar, StepTitle } from './wizard-chrome';
+import { EventContextBar, StepTitle, WorkspaceLoadErrorState } from './wizard-chrome';
 import type { ArchiveItemWorkspace } from './use-archive-item-workspace';
 
 function mediaThumb(media: ArchiveItemSummaryMedia) {
@@ -59,6 +59,7 @@ export interface OrganizeStepProps {
   eventLocal: string;
   onBack: () => void;
   onContinue: () => void;
+  onRestart: () => void;
 }
 
 /**
@@ -74,6 +75,7 @@ export function OrganizeStep({
   eventLocal,
   onBack,
   onContinue,
+  onRestart,
 }: OrganizeStepProps) {
   const [activeTab, setActiveTab] = useState<OrganizeTab>('foto');
   const [reviewIndex, setReviewIndex] = useState<number | null>(null);
@@ -91,7 +93,7 @@ export function OrganizeStep({
   } = workspace;
 
   if (isLoading) return <p className="text-muted text-sm">Carregando…</p>;
-  if (!summary) return <EmptyState title="Não foi possível carregar este item." />;
+  if (!summary) return <WorkspaceLoadErrorState onRestart={onRestart} />;
 
   return (
     <>

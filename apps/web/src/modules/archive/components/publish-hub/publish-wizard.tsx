@@ -127,6 +127,11 @@ export function PublishWizard({
               setArchiveItemId(null);
               setStep('evento');
             }}
+            onRestart={() => {
+              setSelectedEvent(null);
+              setArchiveItemId(null);
+              setStep('evento');
+            }}
           />
         )}
     </div>
@@ -150,6 +155,7 @@ function WorkspaceSteps({
   onContinueToPublish,
   onBackToReview,
   onDone,
+  onRestart,
 }: {
   archiveItemId: string;
   event: Event;
@@ -160,6 +166,7 @@ function WorkspaceSteps({
   onContinueToPublish: () => void;
   onBackToReview: () => void;
   onDone: () => void;
+  onRestart: () => void;
 }) {
   const workspace = useArchiveItemWorkspace(archiveItemId);
 
@@ -172,6 +179,7 @@ function WorkspaceSteps({
         eventLocal={event.local}
         onBack={onBackToClassify}
         onContinue={onContinueToReview}
+        onRestart={onRestart}
       />
     );
   }
@@ -186,6 +194,7 @@ function WorkspaceSteps({
         eventLocal={event.local}
         onBack={onBackToOrganize}
         onContinue={onContinueToPublish}
+        onRestart={onRestart}
       />
     );
   }
@@ -198,6 +207,7 @@ function WorkspaceSteps({
       eventLocal={event.local}
       onBack={onBackToReview}
       onDone={onDone}
+      onRestart={onRestart}
     />
   );
 }
