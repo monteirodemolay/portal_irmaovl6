@@ -37,6 +37,15 @@ export interface AssignBoardPositionDeps {
  * encerrando o histórico do titular anterior. Sempre grava uma entrada em
  * `memberPositionHistory` e atualiza `Member.cargoAtualId` do novo titular
  * — docs/architecture/06-regras-negocio.md §6.2.
+ *
+ * O período gravado no histórico é o da própria Gestão
+ * (`term.periodoInicio`/`term.periodoFim`), nunca o momento em que o
+ * Administrador clicou em "Atribuir" no Portal (que normalmente acontece
+ * dias ou semanas depois da posse de verdade, e nunca deveria aparecer
+ * como a data de início do cargo). A única exceção é uma substituição no
+ * meio do mandato (Irmão diferente assumindo por afastamento, renúncia ou
+ * falecimento) — aí sim o início do novo titular é o momento real da
+ * troca (`clock.now()`).
  */
 export class AssignBoardPositionUseCase {
   constructor(private readonly deps: AssignBoardPositionDeps) {}
@@ -66,6 +75,10 @@ export class AssignBoardPositionUseCase {
     // (reenvio do formulário, correção de `ordem` etc.) — nada realmente
     // mudou de titular, então não é um novo capítulo da trajetória dele.
     let isSameHolderReassignment = false;
+    // Um Irmão DIFERENTE assumindo no meio do mandato (afastamento,
+    // renúncia, falecimento) — evento real acontecendo agora, diferente do
+    // caso comum de "atribuir no começo da Gestão".
+    let isMidTermSubstitution = false;
 
     if (isSingleOccurrence) {
       const existing = await this.deps.assignmentRepository.findByGestaoAndCargo(
@@ -73,6 +86,7 @@ export class AssignBoardPositionUseCase {
         input.cargo,
       );
       if (existing && existing.memberId !== input.memberId) {
+        isMidTermSubstitution = true;
         await this.closeActivePosition(existing.memberId, ctx);
       }
       if (existing) {
@@ -95,14 +109,26 @@ export class AssignBoardPositionUseCase {
     // real em dois pedaços (o que aparecia como "Venerável Mestre"
     // repetido duas vezes no card "Registros maçônicos" do Perfil).
     if (!isSameHolderReassignment) {
+      // Um Irmão é titular de um cargo durante TODA a Gestão em que está
+      // inserido — o período real é o da própria Gestão, nunca o
+      // momento em que o Administrador clicou em "Atribuir" no Portal
+      // (que pode acontecer dias/semanas depois da posse de verdade).
+      // Só numa substituição no meio do mandato o início realmente é
+      // "agora" — a pessoa nova não estava no cargo desde o começo da
+      // Gestão. `dataFim` só é preenchida quando a própria Gestão já
+      // terminou (Gestão futura/em curso fica "em curso", nunca com uma
+      // data de término inventada).
+      const dataInicio = isMidTermSubstitution ? now : term.periodoInicio;
+      const dataFim = term.periodoFim <= now ? term.periodoFim : null;
+
       const historyEntry: MemberPositionHistory = {
         id: this.deps.idGenerator.next(),
         tenantId: ctx.tenantId,
         memberId: input.memberId,
         cargo: input.cargo,
         gestaoId: input.gestaoId,
-        dataInicio: now,
-        dataFim: null,
+        dataInicio,
+        dataFim,
         observacoes: null,
         createdAt: now,
         updatedAt: now,

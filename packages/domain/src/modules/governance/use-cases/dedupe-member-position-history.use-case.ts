@@ -1,11 +1,15 @@
 import type { AuthContext } from '../../../shared/auth-context';
 import { requirePermission } from '../../../shared/auth-context';
+import type { IClock } from '../../../shared/ports';
 import { ok, type Result } from '../../../shared/result';
 import type { MemberPositionHistory } from '../../membership/entities/member-position-history.entity';
 import type { IMemberPositionHistoryRepository } from '../../membership/repositories/member-position-history.repository';
+import type { IBoardTermRepository } from '../repositories/board-term.repository';
 
 export interface DedupeMemberPositionHistoryDeps {
   positionHistoryRepository: IMemberPositionHistoryRepository;
+  boardTermRepository: IBoardTermRepository;
+  clock: IClock;
 }
 
 export interface DedupeMemberPositionHistoryResult {
@@ -29,10 +33,14 @@ export interface DedupeMemberPositionHistoryResult {
  *    tivesse de fato mudado (reenvio do formulário, correção de `ordem`
  *    etc.) fragmentava o período real em dois pedaços, exibidos como
  *    "Venerável Mestre" (ou outro cargo) duplicado no Perfil do Irmão.
- *    Mescla num único registro contínuo: mantém a data de início mais
- *    antiga; a data de fim vira `null` se QUALQUER pedaço ainda estava em
- *    curso (nunca perde o "em curso" por causa de um pedaço já fechado),
- *    senão a data de fim mais recente entre os pedaços.
+ *    Mescla num único registro contínuo alinhado ao período da própria
+ *    Gestão (`BoardTerm.periodoInicio`/`periodoFim`) — um Irmão é titular
+ *    de um cargo durante toda a Gestão em que está inserido, nunca só a
+ *    partir do dia em que o Administrador registrou isso no Portal. Fica
+ *    "em curso" (`dataFim: null`) enquanto a Gestão não tiver terminado;
+ *    quando a Gestão não é encontrada (excluída), cai pro comportamento
+ *    anterior — mantém a data de início mais antiga entre os pedaços e a
+ *    data de fim mais recente, sem nunca perder um "em curso".
  *
  * Seguro rodar de novo: sem duplicados, não muda nada.
  */
@@ -78,22 +86,38 @@ export class DedupeMemberPositionHistoryUseCase {
       linkGroups.set(key, list);
     }
 
+    const groupsToMerge = [...linkGroups.values()].filter((entries) => entries.length > 1);
+    const termIds = new Set(groupsToMerge.map((entries) => entries[0]!.gestaoId));
+    const terms = await Promise.all(
+      [...termIds].map((id) => this.deps.boardTermRepository.findById(id)),
+    );
+    const termById = new Map(
+      terms.filter((t): t is NonNullable<typeof t> => t !== null).map((t) => [t.id, t]),
+    );
+    const now = this.deps.clock.now();
+
     let gruposMesclados = 0;
     const updates: MemberPositionHistory[] = [];
-    for (const entries of linkGroups.values()) {
-      if (entries.length <= 1) continue;
+    for (const entries of groupsToMerge) {
       gruposMesclados += 1;
       const ordered = [...entries].sort((a, b) => a.dataInicio.getTime() - b.dataInicio.getTime());
       const [canonical, ...extras] = ordered;
+      const term = termById.get(canonical!.gestaoId);
       const aindaEmCurso = ordered.some((e) => e.dataFim === null);
-      const dataFim = aindaEmCurso
-        ? null
-        : ordered.reduce<Date | null>((latest, e) => {
-            if (!e.dataFim) return latest;
-            return !latest || e.dataFim.getTime() > latest.getTime() ? e.dataFim : latest;
-          }, null);
 
-      updates.push({ ...canonical!, dataFim });
+      const dataInicio = term ? term.periodoInicio : canonical!.dataInicio;
+      const dataFim = term
+        ? term.periodoFim <= now
+          ? term.periodoFim
+          : null
+        : aindaEmCurso
+          ? null
+          : ordered.reduce<Date | null>((latest, e) => {
+              if (!e.dataFim) return latest;
+              return !latest || e.dataFim.getTime() > latest.getTime() ? e.dataFim : latest;
+            }, null);
+
+      updates.push({ ...canonical!, dataInicio, dataFim });
       for (const extra of extras) {
         idsToDelete.push(extra.id);
       }

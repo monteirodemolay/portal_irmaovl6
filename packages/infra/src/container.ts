@@ -792,6 +792,8 @@ export function createServerContainer() {
     }),
     dedupeMemberPositionHistory: new DedupeMemberPositionHistoryUseCase({
       positionHistoryRepository: repositories.memberPositionHistory,
+      boardTermRepository: repositories.boardTerm,
+      clock,
     }),
     backfillMestreInstaladoTitles: new BackfillMestreInstaladoTitlesUseCase({
       positionHistoryRepository: repositories.memberPositionHistory,
