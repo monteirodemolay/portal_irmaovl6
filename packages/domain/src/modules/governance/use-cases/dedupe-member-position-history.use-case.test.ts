@@ -63,6 +63,7 @@ describe('DedupeMemberPositionHistoryUseCase', () => {
       totalRegistros: 4,
       gruposDuplicados: 1,
       registrosRemovidos: 2,
+      gruposMesclados: 0,
     });
 
     const remaining = await positionHistoryRepository.listByTenant('t1');
@@ -84,6 +85,78 @@ describe('DedupeMemberPositionHistoryUseCase', () => {
 
     const remaining = await positionHistoryRepository.listByTenant('t1');
     expect(remaining).toHaveLength(2);
+  });
+
+  it('mescla o mesmo vínculo (Irmão+cargo+Gestão) com datas de início diferentes num só registro contínuo', async () => {
+    const positionHistoryRepository = new InMemoryMemberPositionHistoryRepository();
+    // Reproduz o achado do Administrador: "Venerável Mestre" duplicado na
+    // mesma Gestão — um pedaço já fechado (reenvio do formulário) e o
+    // pedaço "em curso" mais recente.
+    await positionHistoryRepository.create(
+      buildHistory({
+        id: 'h1',
+        dataInicio: new Date('2026-08-14'),
+        dataFim: new Date('2026-09-22'),
+      }),
+    );
+    await positionHistoryRepository.create(
+      buildHistory({
+        id: 'h2',
+        dataInicio: new Date('2026-09-22'),
+        dataFim: null,
+      }),
+    );
+
+    const useCase = new DedupeMemberPositionHistoryUseCase({ positionHistoryRepository });
+    const result = await useCase.execute(ctx);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value).toEqual({
+      totalRegistros: 2,
+      gruposDuplicados: 0,
+      registrosRemovidos: 1,
+      gruposMesclados: 1,
+    });
+
+    const remaining = await positionHistoryRepository.listByTenant('t1');
+    expect(remaining).toHaveLength(1);
+    expect(remaining[0]?.id).toBe('h1');
+    expect(remaining[0]?.dataInicio.toISOString().slice(0, 10)).toBe('2026-08-14');
+    // "Em curso" nunca se perde — mesmo o pedaço mais antigo mantido tendo
+    // uma `dataFim` própria, o resultado mesclado reflete que ainda está
+    // ativo (algum pedaço do grupo tinha `dataFim: null`).
+    expect(remaining[0]?.dataFim).toBeNull();
+  });
+
+  it('mescla mantendo a data de fim mais recente quando nenhum pedaço está em curso', async () => {
+    const positionHistoryRepository = new InMemoryMemberPositionHistoryRepository();
+    await positionHistoryRepository.create(
+      buildHistory({
+        id: 'h1',
+        dataInicio: new Date('2018-06-01'),
+        dataFim: new Date('2018-12-01'),
+      }),
+    );
+    await positionHistoryRepository.create(
+      buildHistory({
+        id: 'h2',
+        dataInicio: new Date('2018-12-01'),
+        dataFim: new Date('2019-05-31'),
+      }),
+    );
+
+    const useCase = new DedupeMemberPositionHistoryUseCase({ positionHistoryRepository });
+    const result = await useCase.execute(ctx);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value.gruposMesclados).toBe(1);
+
+    const remaining = await positionHistoryRepository.listByTenant('t1');
+    expect(remaining).toHaveLength(1);
+    expect(remaining[0]?.dataInicio.toISOString().slice(0, 10)).toBe('2018-06-01');
+    expect(remaining[0]?.dataFim?.toISOString().slice(0, 10)).toBe('2019-05-31');
   });
 
   it('recusa sem permissão', async () => {

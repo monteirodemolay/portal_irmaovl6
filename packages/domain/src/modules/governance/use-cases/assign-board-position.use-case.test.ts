@@ -164,6 +164,38 @@ describe('AssignBoardPositionUseCase', () => {
     expect(newMember?.cargoAtualId).toBe(result.value.id);
   });
 
+  it('reatribuir o MESMO Irmão ao MESMO cargo na mesma Gestão não duplica o histórico', async () => {
+    const { useCase, boardTermRepository, memberRepository, positionHistoryRepository } =
+      buildUseCase();
+    await boardTermRepository.create(term);
+    await memberRepository.create(buildMember('m1'));
+
+    const first = await useCase.execute(ctx, {
+      gestaoId: 'term-1',
+      cargo: 'veneravel_mestre',
+      memberId: 'm1',
+      ordem: 1,
+    });
+    // Reenvio do formulário (ex.: correção de `ordem`) — mesmo Irmão, mesmo
+    // cargo, mesma Gestão. Achado do Administrador: isso fragmentava o
+    // "Venerável Mestre" em dois registros de histórico no Perfil.
+    const second = await useCase.execute(ctx, {
+      gestaoId: 'term-1',
+      cargo: 'veneravel_mestre',
+      memberId: 'm1',
+      ordem: 1,
+    });
+
+    expect(first.ok).toBe(true);
+    expect(second.ok).toBe(true);
+    if (!first.ok || !second.ok) return;
+    expect(second.value.id).toBe(first.value.id);
+
+    const history = await positionHistoryRepository.listByMemberId('m1');
+    expect(history).toHaveLength(1);
+    expect(history[0]?.dataFim).toBeNull();
+  });
+
   it('permite múltiplos titulares para Diácono', async () => {
     const { useCase, boardTermRepository, memberRepository, assignmentRepository } = buildUseCase();
     await boardTermRepository.create(term);

@@ -18,10 +18,20 @@ export function DedupeMemberPositionHistoryButton() {
         setError(state.error);
         return;
       }
-      const { totalRegistros, gruposDuplicados, registrosRemovidos } = state.result!;
+      const { totalRegistros, gruposDuplicados, registrosRemovidos, gruposMesclados } =
+        state.result!;
+      const partes: string[] = [];
+      if (gruposDuplicados > 0) {
+        partes.push(`${gruposDuplicados} vínculo(s) com registro repetido`);
+      }
+      if (gruposMesclados > 0) {
+        partes.push(
+          `${gruposMesclados} vínculo(s) fragmentado(s) (mesmo cargo, datas diferentes) mesclado(s) num só`,
+        );
+      }
       setMessage(
         registrosRemovidos > 0
-          ? `${registrosRemovidos} registro(s) duplicado(s) removido(s) em ${gruposDuplicados} vínculo(s) — de ${totalRegistros} registros de histórico no total.`
+          ? `${registrosRemovidos} registro(s) removido(s) — ${partes.join(', ')} — de ${totalRegistros} registros de histórico no total.`
           : `Nenhum registro duplicado encontrado — ${totalRegistros} registros de histórico no total.`,
       );
     });

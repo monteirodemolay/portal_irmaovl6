@@ -62,6 +62,10 @@ export class AssignBoardPositionUseCase {
     const isSingleOccurrence = input.cargo !== 'diacono' && input.cargo !== 'experto';
 
     let assignment: BoardPositionAssignment;
+    // Mesmo Irmão já ocupando este cargo nesta Gestão, reatribuído de novo
+    // (reenvio do formulário, correção de `ordem` etc.) — nada realmente
+    // mudou de titular, então não é um novo capítulo da trajetória dele.
+    let isSameHolderReassignment = false;
 
     if (isSingleOccurrence) {
       const existing = await this.deps.assignmentRepository.findByGestaoAndCargo(
@@ -72,6 +76,7 @@ export class AssignBoardPositionUseCase {
         await this.closeActivePosition(existing.memberId, ctx);
       }
       if (existing) {
+        isSameHolderReassignment = existing.memberId === input.memberId;
         assignment = { ...existing, memberId: input.memberId, updatedAt: now, updatedBy: ctx.uid };
         await this.deps.assignmentRepository.update(assignment);
       } else {
@@ -83,24 +88,32 @@ export class AssignBoardPositionUseCase {
       await this.deps.assignmentRepository.create(assignment);
     }
 
-    const historyEntry: MemberPositionHistory = {
-      id: this.deps.idGenerator.next(),
-      tenantId: ctx.tenantId,
-      memberId: input.memberId,
-      cargo: input.cargo,
-      gestaoId: input.gestaoId,
-      dataInicio: now,
-      dataFim: null,
-      observacoes: null,
-      createdAt: now,
-      updatedAt: now,
-      createdBy: ctx.uid,
-      updatedBy: ctx.uid,
-      deletedAt: null,
-      status: 'active',
-      ativo: true,
-    };
-    await this.deps.positionHistoryRepository.create(historyEntry);
+    // Só abre um novo capítulo do histórico quando o titular de fato mudou
+    // (ou é a primeira vez que alguém ocupa este cargo nesta Gestão) — sem
+    // esta checagem, reatribuir o MESMO Irmão ao MESMO cargo/Gestão criava
+    // um segundo registro de histórico duplicado, fragmentando o período
+    // real em dois pedaços (o que aparecia como "Venerável Mestre"
+    // repetido duas vezes no card "Registros maçônicos" do Perfil).
+    if (!isSameHolderReassignment) {
+      const historyEntry: MemberPositionHistory = {
+        id: this.deps.idGenerator.next(),
+        tenantId: ctx.tenantId,
+        memberId: input.memberId,
+        cargo: input.cargo,
+        gestaoId: input.gestaoId,
+        dataInicio: now,
+        dataFim: null,
+        observacoes: null,
+        createdAt: now,
+        updatedAt: now,
+        createdBy: ctx.uid,
+        updatedBy: ctx.uid,
+        deletedAt: null,
+        status: 'active',
+        ativo: true,
+      };
+      await this.deps.positionHistoryRepository.create(historyEntry);
+    }
 
     await this.deps.memberRepository.update({
       ...member,
