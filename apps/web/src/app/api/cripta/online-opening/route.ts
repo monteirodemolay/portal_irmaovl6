@@ -7,6 +7,7 @@ import { openingRef } from '@/modules/cripta/lib/online-opening';
 import { sealRef, currentInventory } from '@/modules/cripta/lib/seal-state';
 import { currentCriptaMaster } from '@/modules/cripta/lib/current-master';
 import { receiptDigest } from '@/modules/cripta/lib/seal-manifest';
+import { resolveExpectedInventory } from '@/modules/cripta/lib/reopen-check';
 import { createServerContainer } from '@vl6/infra';
 
 export const runtime = 'nodejs';
@@ -95,17 +96,25 @@ export async function POST(request: Request) {
       if (isOpen === payload.open) throw new Error('O estado já foi alterado. Atualize a tela.');
       if (payload.open) {
         const data = receipt.data();
+        const expected = resolveExpectedInventory(
+          data as Parameters<typeof resolveExpectedInventory>[0],
+        );
+        const cleaned =
+          data?.cleanup?.receiptCode === data?.code && data?.cleanup?.complete === true;
         if (
           !data ||
           data.status !== 'sealed' ||
           typeof payload.code !== 'string' ||
           payload.code.trim().toUpperCase() !== data.code ||
-          data.inventoryDigest !== inventory?.digest ||
-          data.count !== inventory?.count ||
+          !expected ||
+          expected.digest !== inventory?.digest ||
+          expected.count !== inventory?.count ||
           receiptDigest(data as Parameters<typeof receiptDigest>[0]) !== data.receiptDigest
         ) {
           throw new Error(
-            'Lacre ausente, código incorreto ou inventário divergente. Suspenda a abertura e confira as unidades.',
+            cleaned
+              ? 'Restaure o arquivo .lacre da unidade física antes de reabrir a escrita.'
+              : 'Lacre ausente, código incorreto ou inventário divergente. Suspenda a abertura e confira as unidades.',
           );
         }
         transaction.update(seal, {

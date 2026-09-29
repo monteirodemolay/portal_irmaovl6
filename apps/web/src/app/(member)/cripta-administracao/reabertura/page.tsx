@@ -7,6 +7,7 @@ import { isOnlineOpen } from '@/modules/cripta/lib/online-opening';
 import { currentCriptaMaster } from '@/modules/cripta/lib/current-master';
 import { OnlineOpeningControl } from '../online-opening-control';
 import { SealPanel } from '../seal-panel';
+import { RestorePanel } from '../restore-panel';
 
 export const metadata = {
   title: 'Reabertura | Cripta VL6',
@@ -17,7 +18,7 @@ export default async function Page() {
   const session = await requirePagePermission('tenant:manage');
   if (!canAccessCriptaPilot(session.user.email)) notFound();
   const tenantId = session.authContext.tenantId;
-  const [members, governance, open, master] = await Promise.all([
+  const [members, governance, open, master, seal] = await Promise.all([
     createServerContainer().repositories.member.search(
       { tenantId, situacao: 'ativo' },
       { limit: 100 },
@@ -25,8 +26,16 @@ export default async function Page() {
     getAdminFirestore().collection('criptaGovernanceV1').doc(tenantId).get(),
     isOnlineOpen(tenantId),
     currentCriptaMaster(tenantId),
+    getAdminFirestore().collection('criptaSealsV1').doc(tenantId).get(),
   ]);
   const control = governance.data();
+  const record = seal.data();
+  const cleanupComplete =
+    record?.status === 'sealed' &&
+    record.cleanup?.receiptCode === record.code &&
+    record.cleanup?.complete === true;
+  const restoration =
+    record?.restoration?.receiptCode === record?.code ? record?.restoration : null;
   const eligible = members.items.filter(
     (member) => member.userId && member.id !== master?.member.id,
   );
@@ -73,21 +82,29 @@ export default async function Page() {
       <section className="rounded-2xl border border-[#d8c8a4] bg-[#fffdf8] p-6">
         <h2 className="font-serif text-2xl">2 · Ler e verificar as unidades</h2>
         <p className="mt-2 text-sm leading-6 text-[#5e584c]">
-          Leia cada pen drive na ferramenta offline e compare o arquivo com o manifesto. Se apenas
-          uma cópia estiver íntegra, guarde-a e providencie outra antes de substituir a unidade
-          perdida. O Portal ainda não recebe o resultado dessa conferência.
+          Antes de restaurar, leia pelo menos duas das três unidades na tela de Lacração (“Ler as
+          cópias gravadas”) e confira se batem com o manifesto e o recibo. Só prossiga para o passo
+          3 depois disso.
         </p>
-        <details className="mt-4 text-sm">
-          <summary className="cursor-pointer font-semibold">
-            ? Um pen drive basta para abrir?
-          </summary>
-          <p className="mt-2">
-            No formato do pacote offline são necessárias duas partes da chave. Uma unidade íntegra
-            pode ser combinada com o envelope guardado no cofre mediante o procedimento excepcional
-            da Comissão.
-          </p>
-        </details>
+        <Link
+          href="/cripta-administracao/lacracao"
+          className="mt-3 inline-block text-sm font-semibold text-[#123c69]"
+        >
+          Conferir as unidades →
+        </Link>
       </section>
+      {record?.status === 'sealed' &&
+        (cleanupComplete ? (
+          <RestorePanel receiptCode={record.code as string} recorded={restoration ?? null} />
+        ) : (
+          <section className="rounded-2xl border border-[#d8c8a4] bg-[#fffdf8] p-6">
+            <h2 className="font-serif text-2xl">3 · Restaurar rascunhos</h2>
+            <p className="mt-2 text-sm leading-6 text-[#5e584c]">
+              Fica disponível depois que a limpeza do Wix deste lacre for confirmada na tela de
+              Lacração.
+            </p>
+          </section>
+        ))}
       {!open ? (
         <OnlineOpeningControl
           initiallyOpen={false}
@@ -101,14 +118,6 @@ export default async function Page() {
           A escrita já está aberta. Os irmãos autorizados podem acessar suas cartas.
         </p>
       )}
-      <section className="rounded-2xl border border-[#d8c8a4] bg-white p-6">
-        <h2 className="font-serif text-2xl">3 · Acesso individual</h2>
-        <p className="mt-2 text-sm leading-6 text-[#5e584c]">
-          As cartas atualmente guardadas no Wix continuam vinculadas à conta de cada irmão. A
-          distribuição do arquivo único dos pen drives para as contas depende da integração do novo
-          ciclo e ainda não deve ser declarada concluída.
-        </p>
-      </section>
     </div>
   );
 }
