@@ -532,3 +532,5 @@ export * from './modules/honors/repositories/philosophical-journey.repository';
 export * from './modules/honors/use-cases/register-philosophical-journey.use-case';
 export * from './modules/honors/use-cases/list-philosophical-journeys.use-case';
 export * from './modules/honors/use-cases/remove-philosophical-journey.use-case';
+
+export * from './modules/archive/lib/get-event-ceremony-members';
