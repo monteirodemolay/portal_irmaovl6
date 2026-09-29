@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cripta VL6 · Ferramenta offline de abertura</title>
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;background:#0b1a2e;color:#e9e2cf;font:16px/1.6 system-ui,sans-serif;padding:0 1rem 4rem}
+  main{max-width:760px;margin:0 auto}
+  h1{font-weight:normal;font-size:1.7rem;margin:2rem 0 .25rem;color:#f3e6bf}
+  h2{font-weight:normal;font-size:1.25rem;margin-top:0;color:#f3e6bf;border-bottom:1px solid #4a3f26;padding-bottom:.5rem}
+  .subtitle{color:#b9ad8c;margin-top:0}
+  .warning{background:#3a2412;border:1px solid #a1712c;padding:1rem 1.25rem;border-radius:6px;margin:1.5rem 0;color:#f5d9a8}
+  .warning strong{color:#ffdd8a}
+  section.step{background:#12233c;border:1px solid #26395a;border-radius:8px;padding:1.5rem;margin:1.5rem 0}
+  section.step[data-locked="true"]{opacity:.45;pointer-events:none}
+  label{display:block;margin:.75rem 0 .25rem;color:#cfc6a8;font-size:.9rem}
+  input[type=file]{display:block;width:100%;padding:.5rem;background:#0b1a2e;border:1px solid #3a4f77;border-radius:4px;color:#e9e2cf}
+  button{background:#8a6a2b;color:#fff8e6;border:none;padding:.65rem 1.25rem;border-radius:4px;cursor:pointer;font-size:.95rem;margin-top:1rem}
+  button:hover{background:#a17f36}
+  button:disabled{background:#4a4636;cursor:not-allowed}
+  button.secondary{background:#2c3f61}
+  button.secondary:hover{background:#38507a}
+  .status{margin-top:1rem;padding:.75rem 1rem;border-radius:4px;font-size:.9rem;white-space:pre-wrap;overflow-wrap:anywhere}
+  .status.ok{background:#173a24;border:1px solid #2c6b41;color:#b9edc4}
+  .status.err{background:#3a1717;border:1px solid #6b2c2c;color:#f0b9b9}
+  .status.info{background:#1b2c46;border:1px solid #2c4a6b;color:#b9d4f0}
+  table{width:100%;border-collapse:collapse;margin-top:1rem;font-size:.9rem}
+  th,td{text-align:left;padding:.4rem .5rem;border-bottom:1px solid #26395a}
+  th{color:#cfc6a8;font-weight:normal}
+  tr.selectable{cursor:pointer}
+  tr.selectable:hover{background:#1b2c46}
+  tr.selected{background:#2c4a6b}
+  .muted{color:#8a8267;font-size:.85rem}
+  code{background:#0b1a2e;padding:.1rem .35rem;border-radius:3px}
+</style>
+</head>
+<body>
+<main>
+  <h1>Cripta do Irmão · Ferramenta offline de abertura</h1>
+  <p class="subtitle">Verdadeira Luz nº 06 — uso exclusivo dos Guardiões da Cripta</p>
+
+  <div class="warning">
+    <strong>Use este arquivo desconectado da internet.</strong> Ele não envia nada a nenhum
+    servidor — todo o processamento acontece no seu navegador. Depois de usá-lo, feche a aba e,
+    se possível, use um computador que não guarde histórico. As partes de chave dos Guardiões e
+    o conteúdo das cartas nunca devem ser fotografados, enviados por WhatsApp/e-mail ou salvos em
+    nuvem.
+  </div>
+
+  <section class="step" id="step-shares">
+    <h2>1. Reunir os Guardiões e reconstituir a chave</h2>
+    <p class="muted">Selecione os arquivos <code>.json</code> baixados por pelo menos 3 dos 5
+    Guardiões no dia da inauguração. Cada Guardião deve trazer o seu próprio arquivo — nunca
+    envie sua parte a outra pessoa antes desta etapa.</p>
+    <label for="share-files">Arquivos de partes dos Guardiões (selecione vários)</label>
+    <input type="file" id="share-files" accept=".json,application/json" multiple>
+    <button id="btn-combine">Reconstituir a chave da Cripta</button>
+    <div id="status-shares"></div>
+  </section>
+
+  <section class="step" id="step-lacre" data-locked="true">
+    <h2>2. Abrir o arquivo .lacre do pen drive</h2>
+    <p class="muted">Selecione o arquivo <code>.lacre</code> copiado da unidade física. Esta etapa
+    apenas lista os registros (sem decifrar nada ainda).</p>
+    <label for="lacre-file">Arquivo .lacre</label>
+    <input type="file" id="lacre-file" accept=".lacre,application/octet-stream">
+    <button id="btn-parse">Ler o arquivo .lacre</button>
+    <div id="status-lacre"></div>
+    <div id="entries-wrap"></div>
+  </section>
+
+  <section class="step" id="step-open" data-locked="true">
+    <h2>3. Abrir e entregar uma carta</h2>
+    <p class="muted">Selecione, na tabela acima, exatamente uma carta (registros do tipo
+    <code>letter</code>). Rascunhos (<code>draft</code>) não podem ser abertos por esta
+    ferramenta — dependem do Portal.</p>
+    <button id="btn-open">Abrir a carta selecionada</button>
+    <div id="status-open"></div>
+    <div id="delivery-wrap"></div>
+  </section>
+
+  <p class="muted" style="margin-top:3rem">
+    Esta ferramenta reutiliza, sem reimplementar, os mesmos módulos de criptografia usados pelo
+    Portal para selar as cartas e dividir a chave da Cripta entre os Guardiões.
+  </p>
+</main>
+
+<script>
+/*__CRIPTA_OFFLINE_BUNDLE__*/
+</script>
+<script>
+(function () {
+  'use strict';
+  var state = { privateScalar: null, publicKey: null, entries: [], selectedEntry: null };
+
+  function setStatus(id, kind, text) {
+    var el = document.getElementById(id);
+    el.className = 'status ' + kind;
+    el.textContent = text;
+  }
+  function clearStatus(id) {
+    var el = document.getElementById(id);
+    el.className = '';
+    el.textContent = '';
+  }
+  function unlock(id) {
+    document.getElementById(id).dataset.locked = 'false';
+  }
+
+  function readFilesAsJson(fileList) {
+    var files = Array.from(fileList);
+    return Promise.all(files.map(function (file) {
+      return file.text().then(function (text) { return JSON.parse(text); });
+    }));
+  }
+
+  document.getElementById('btn-combine').addEventListener('click', function () {
+    var input = document.getElementById('share-files');
+    if (!input.files || input.files.length < 2) {
+      setStatus('status-shares', 'err', 'Selecione ao menos duas partes de Guardiões (o mínimo definido na inauguração é 3).');
+      return;
+    }
+    clearStatus('status-shares');
+    readFilesAsJson(input.files).then(function (files) {
+      var result = window.CriptaOffline.combineGuardianShares(files);
+      state.privateScalar = result.privateScalar;
+      state.publicKey = result.publicKey;
+      setStatus('status-shares', 'ok', 'Chave da Cripta reconstituída com sucesso a partir de ' + files.length + ' parte(s). Ata: ' + (files[0] && files[0].ata ? files[0].ata : '—'));
+      unlock('step-lacre');
+    }).catch(function (error) {
+      setStatus('status-shares', 'err', 'Não foi possível reconstituir a chave: ' + (error && error.message ? error.message : String(error)));
+    });
+  });
+
+  document.getElementById('btn-parse').addEventListener('click', function () {
+    var input = document.getElementById('lacre-file');
+    if (!input.files || input.files.length !== 1) {
+      setStatus('status-lacre', 'err', 'Selecione um único arquivo .lacre.');
+      return;
+    }
+    clearStatus('status-lacre');
+    input.files[0].arrayBuffer().then(function (buffer) {
+      return window.CriptaOffline.parseLacre(new Uint8Array(buffer));
+    }).then(function (parsed) {
+      state.entries = parsed.entries;
+      state.selectedEntry = null;
+      setStatus('status-lacre', 'ok', 'Lacre lido: ' + parsed.header.codigoLacracao + ' — ' + parsed.entries.length + ' registro(s), ' + parsed.header.totalCartas + ' carta(s) seladas.');
+      renderEntries();
+      unlock('step-open');
+    }).catch(function (error) {
+      setStatus('status-lacre', 'err', 'Não foi possível ler o arquivo: ' + (error && error.message ? error.message : String(error)));
+    });
+  });
+
+  function renderEntries() {
+    var wrap = document.getElementById('entries-wrap');
+    if (!state.entries.length) { wrap.innerHTML = ''; return; }
+    var rows = state.entries.map(function (entry, index) {
+      return '<tr class="selectable" data-index="' + index + '"><td>' + entry.kind + '</td><td>' + entry.id + '</td><td>' + entry.uid + '</td></tr>';
+    }).join('');
+    wrap.innerHTML = '<table><thead><tr><th>Tipo</th><th>Id</th><th>Irmão (uid)</th></tr></thead><tbody>' + rows + '</tbody></table>';
+    Array.from(wrap.querySelectorAll('tr.selectable')).forEach(function (row) {
+      row.addEventListener('click', function () {
+        Array.from(wrap.querySelectorAll('tr.selectable')).forEach(function (r) { r.classList.remove('selected'); });
+        row.classList.add('selected');
+        state.selectedEntry = state.entries[Number(row.dataset.index)];
+      });
+    });
+  }
+
+  document.getElementById('btn-open').addEventListener('click', function () {
+    if (!state.selectedEntry) {
+      setStatus('status-open', 'err', 'Selecione uma carta na tabela acima.');
+      return;
+    }
+    if (!state.privateScalar || !state.publicKey) {
+      setStatus('status-open', 'err', 'Reconstitua a chave da Cripta primeiro (etapa 1).');
+      return;
+    }
+    clearStatus('status-open');
+    document.getElementById('delivery-wrap').innerHTML = '';
+    window.CriptaOffline.openLetterEntry(state.selectedEntry, state.privateScalar, state.publicKey).then(function (letter) {
+      setStatus('status-open', 'ok', 'Carta aberta: "' + letter.title + '" — para ' + letter.recipient + '. Gerando o pacote de entrega...');
+      return window.CriptaOffline.makeOfflinePackage(letter);
+    }).then(function (blob) {
+      var url = URL.createObjectURL(blob);
+      var wrap = document.getElementById('delivery-wrap');
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = 'carta-' + state.selectedEntry.id + '.zip';
+      a.textContent = 'Baixar pacote de entrega (.zip)';
+      a.style.display = 'inline-block';
+      a.style.marginTop = '.5rem';
+      wrap.appendChild(a);
+      var note = document.createElement('p');
+      note.className = 'muted';
+      note.textContent = 'O pacote contém a carta em HTML e os anexos. Entregue este arquivo ao destinatário por um meio seguro (pen drive, e-mail direto). Depois de baixar, você pode fechar esta aba.';
+      wrap.appendChild(note);
+      setStatus('status-open', 'ok', 'Pacote de entrega pronto.');
+    }).catch(function (error) {
+      setStatus('status-open', 'err', 'Não foi possível abrir esta carta: ' + (error && error.message ? error.message : String(error)));
+    });
+  });
+})();
+</script>
+</body>
+</html>
