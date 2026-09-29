@@ -1,5 +1,7 @@
 # Cripta do Irmão VL6 — especificação funcional e prompt de implementação
 
+> **Atualização de preparação para liberação — 29/09/2026:** consulte [revisão consolidada](cripta-revisao-liberacao-2026-09-29.md). Os trechos anteriores sobre duas mídias, limites de 2,5 MB, ausência de exportação e limpeza automática são históricos. O acesso permanece piloto e a limpeza geral está bloqueada até comprovar recuperação integral.
+
 **Estado:** especificação de destino, registrada em 26/09/2026. As primeiras etapas foram implementadas; a guarda anual em duas unidades, recuperação de chaves e uploads de mídias grandes ainda dependem de implementação e ensaios. A conta piloto permanece restrita.
 
 ## Evolução implementada na segunda fase

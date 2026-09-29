@@ -21,7 +21,7 @@ type StoredDraft = {
 type Step = 'inicio' | 'escrever' | 'revisar';
 
 const LIMIT = { foto: 25 * 1024 * 1024, audio: 10 * 1024 * 1024, video: 60 * 1024 * 1024 };
-const MAX_TOTAL = 2_500_000;
+const MAX_TOTAL = 2_300_000;
 const size = (bytes: number) => `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 const ONLINE_BYTES = MAX_TOTAL;
 
@@ -39,7 +39,7 @@ async function onlinePayload(letter: {
   attachments: Attachment[];
 }): Promise<Uint8Array> {
   if (letter.attachments.reduce((sum, item) => sum + item.file.size, 0) > ONLINE_BYTES) {
-    throw new Error('Os anexos desta carta devem somar até 2,5 MB depois da conversão.');
+    throw new Error('Os anexos desta carta devem somar até 2,3 MB depois da conversão.');
   }
   const items = await Promise.all(
     letter.attachments.map(async (item) => ({
@@ -58,7 +58,7 @@ async function onlinePayload(letter: {
       attachments: items,
     }),
   );
-  if (bytes.length > 3_600_000) throw new Error('Carta acima do limite de envio.');
+  if (bytes.length > 3_200_000) throw new Error('Carta acima do limite de envio.');
   return bytes;
 }
 
@@ -78,6 +78,7 @@ export function CriptaExperience() {
   const [draft, setDraft] = useState<StoredDraft | null>(null);
   const [draftChecked, setDraftChecked] = useState(false);
   const [draftStatus, setDraftStatus] = useState('');
+  const pendingDeposit = useRef<{ digest: string; wire: string } | null>(null);
   const draftRevision = useRef(0);
   const draftSaved = useRef('');
   const draftValues = useRef({ title, recipient, body, attachments });
@@ -560,11 +561,28 @@ export function CriptaExperience() {
       });
       // Sealed in this browser with the Cripta's public key — no passphrase, nothing to forget.
       // Only a quorum of Guardiões, offline, can ever open this envelope.
-      const envelope = await sealForCripta(payload, publicKey);
-      const wire = JSON.stringify(envelope);
+      const digest =
+        Array.from(
+          new Uint8Array(await crypto.subtle.digest('SHA-256', payload as BufferSource)),
+          (byte) => byte.toString(16).padStart(2, '0'),
+        ).join('') +
+        publicKey.x +
+        publicKey.y;
+      if (pendingDeposit.current?.digest !== digest) {
+        pendingDeposit.current = {
+          digest,
+          wire: JSON.stringify(await sealForCripta(payload, publicKey)),
+        };
+      }
+      const wire = pendingDeposit.current.wire;
+      if (new TextEncoder().encode(wire).length > 4_400_000)
+        throw new Error('Carta acima do limite de envio. Reduza os anexos.');
       const response = await fetch('/api/cripta/online-capsules', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Cripta-Key': `${publicKey.x}.${publicKey.y}`,
+        },
         body: wire,
       });
       const result = (await response.json()) as { id?: string; createdAt?: string; error?: string };
@@ -576,13 +594,20 @@ export function CriptaExperience() {
           'A carta foi enviada, mas a leitura de conferência falhou. Atualize a página e confira antes de reenviar.',
         );
       }
-      setRemote((items) => [...items, { id: result.id!, createdAt: result.createdAt! }]);
+      setRemote((items) => [
+        ...items.filter((item) => item.id !== result.id),
+        { id: result.id!, createdAt: result.createdAt! },
+      ]);
       draftEnabled.current = false;
-      const clear = await fetch('/api/cripta/draft', { method: 'DELETE' });
+      const clear = await fetch('/api/cripta/draft', {
+        method: 'DELETE',
+        headers: { 'X-Draft-Revision': String(draftRevision.current) },
+      });
       if (clear.ok) {
+        const cleared = (await clear.json()) as { revision: number };
         setDraft(null);
         draftSaved.current = '';
-        draftRevision.current = 0;
+        draftRevision.current = cleared.revision;
         setDraftStatus('');
       }
       attachmentsRef.current.forEach((item) => URL.revokeObjectURL(item.url));
@@ -607,7 +632,12 @@ export function CriptaExperience() {
       const response = await fetch(`/api/cripta/online-capsules/${id}`, { method: 'DELETE' });
       if (!response.ok) throw new Error('A exclusão no Wix não foi confirmada.');
       setRemote((items) => items.filter((item) => item.id !== id));
-      setMessage('Carta excluída do Wix e retirada da lista.');
+      const result = (await response.json()) as { providerCleanupPending?: boolean };
+      setMessage(
+        result.providerCleanupPending
+          ? 'Carta retirada da lista. A remoção no armazenamento ainda está pendente.'
+          : 'Carta retirada da lista e remoção solicitada ao armazenamento. Cópias externas não são apagadas por esta ação.',
+      );
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Exclusão falhou.');
     } finally {
@@ -784,6 +814,10 @@ export function CriptaExperience() {
           disponível depois da inauguração.
         </p>
       )}
+      <p className="mt-4 text-sm text-[#536074]">
+        Rascunhos permitem continuar a edição e são protegidos pela infraestrutura do Portal.
+        Somente a carta selada usa a chave dos Guardiões, sem chave de leitura no servidor.
+      </p>
       {message && (
         <p
           role="status"
@@ -977,7 +1011,7 @@ export function CriptaExperience() {
           <p role="status" className="text-sm text-[#536074]">
             {optimizing
               ? 'Convertendo o arquivo no aparelho. Mantenha esta tela aberta.'
-              : `Arquivos nesta carta: ${size(total)} de 2,5 MB.`}{' '}
+              : `Arquivos nesta carta: ${size(total)} de 2,3 MB.`}{' '}
             A redução de tamanho pode alterar a qualidade. Confira cada arquivo antes de enviar.
           </p>
           <div className="flex flex-wrap gap-3">
@@ -1051,7 +1085,7 @@ export function CriptaExperience() {
             ))}
           </div>
           <p className="mt-5 text-sm text-[#795521]">
-            O envio atual aceita até 2,5 MB de anexos juntos.
+            Você pode guardar até cinco cartas. O envio atual aceita até 2,3 MB de anexos juntos.
           </p>
           <div className="mt-5 rounded-xl border border-[#c9a449] bg-white p-5 text-sm leading-6 text-[#536074]">
             <strong className="text-[#142a43]">Ao guardar, esta carta é selada.</strong> Ela é

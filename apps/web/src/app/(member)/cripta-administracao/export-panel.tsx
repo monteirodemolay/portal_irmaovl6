@@ -17,7 +17,6 @@ export function ExportPanel({
   receiptCode,
   totalLetters,
   inventoryDigest,
-  physicalCheckOk,
   cleanupComplete,
 }: Props) {
   const [blob, setBlob] = useState<Blob | null>(null);
@@ -76,47 +75,13 @@ export function ExportPanel({
     );
   }
 
-  async function cleanup() {
-    if (
-      !window.confirm(
-        'Solicitar exclusão de todos os objetos do Wix agora? Só confirme depois que as unidades já estiverem gravadas e conferidas.',
-      )
-    )
-      return;
-    setBusy(true);
-    setMessage('');
-    try {
-      const response = await fetch('/api/cripta/export/cleanup', { method: 'POST' });
-      const data = (await response.json()) as {
-        cleanup?: {
-          complete: boolean;
-          deletedLetters: number;
-          deletedDrafts: number;
-          failed: unknown[];
-        };
-        error?: string;
-      };
-      if (!data.cleanup) throw new Error(data.error ?? 'Limpeza não confirmada.');
-      setMessage(
-        data.cleanup.complete
-          ? `Limpeza concluída: ${data.cleanup.deletedLetters} carta(s) e ${data.cleanup.deletedDrafts} rascunho(s) removidos do Wix.`
-          : `Limpeza parcial: ${data.cleanup.failed.length} falha(s). Não declare a Cripta fechada até resolver — veja o histórico.`,
-      );
-      window.location.reload();
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Limpeza não confirmada.');
-    } finally {
-      setBusy(false);
-    }
-  }
-
   return (
     <section className="rounded-2xl border border-[#dbcda9] bg-white p-6">
       <h2 className="font-serif text-2xl text-[#142a43]">Exportação e limpeza do Wix</h2>
       <p className="mt-2 text-sm leading-6 text-[#536074]">
         Gera um único arquivo com todas as cartas e rascunhos já cifrados deste lacre — o mesmo
-        arquivo vai para cada unidade externa (A, B e a reserva C). Depois de gravar e conferir pelo
-        menos duas delas abaixo, a limpeza do Wix fica liberada.
+        arquivo vai para cada unidade externa (A, B e a reserva C). A limpeza do Wix permanece
+        bloqueada até validar a recuperação integral, incluindo rascunhos e cartas antigas.
       </p>
       <ol className="mt-4 list-inside list-decimal space-y-2 text-sm text-[#536074]">
         <li>
@@ -124,8 +89,11 @@ export function ExportPanel({
         </li>
         <li>Copiar o mesmo arquivo para as unidades A, B e C.</li>
         <li>Baixar o manifesto de cada unidade e guardá-lo junto dela.</li>
-        <li>Usar "Ler as cópias gravadas" abaixo para conferir A e B.</li>
-        <li>Só então solicitar a limpeza do Wix.</li>
+        <li>Usar "Ler as cópias gravadas" abaixo para conferir A, B e C.</li>
+        <li>
+          Ensaiar a abertura offline e preservar os arquivos no Wix enquanto a restauração integral
+          estiver pendente.
+        </li>
       </ol>
       {cleanupComplete && (
         <p className="mt-4 rounded-lg bg-green-50 p-3 text-sm text-green-900">
@@ -156,21 +124,9 @@ export function ExportPanel({
               ))}
             </div>
           )}
-          <div className="mt-5 border-t pt-5">
-            <button
-              type="button"
-              disabled={busy || !physicalCheckOk}
-              onClick={cleanup}
-              className="rounded-xl border border-red-700 px-5 py-3 font-semibold text-red-800 disabled:opacity-40"
-            >
-              Solicitar limpeza do Wix
-            </button>
-            {!physicalCheckOk && (
-              <p className="mt-2 text-xs text-[#795521]">
-                Conferir as duas unidades gravadas (abaixo) antes de liberar este botão.
-              </p>
-            )}
-          </div>
+          <p className="mt-5 border-t pt-5 text-sm text-[#795521]">
+            Limpeza suspensa: mantenha os arquivos no Wix até comprovar a restauração integral.
+          </p>
         </>
       )}
       {message && (
@@ -185,7 +141,7 @@ export function ExportPanel({
         <p className="mt-2">
           Não. Ela confirma que o Portal solicitou e o Wix aceitou a exclusão dos objetos listados —
           não prova ausência de backups internos do provedor. Trate como o passo final de um
-          processo que já validou duas cópias físicas restauráveis antes.
+          processo que já validou três cópias físicas restauráveis antes.
         </p>
       </details>
     </section>

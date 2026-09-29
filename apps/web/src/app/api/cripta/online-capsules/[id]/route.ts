@@ -1,3 +1,5 @@
+import { randomUUID } from 'node:crypto';
+import { isReceivingWindowOpen } from '@/modules/cripta/lib/receiving-window';
 import { getAdminFirestore } from '@vl6/infra';
 import { NextResponse } from 'next/server';
 import { activeCriptaSession } from '@/modules/cripta/lib/active-member';
@@ -6,7 +8,7 @@ import {
   downloadPrivateCiphertext,
 } from '@/modules/cripta/lib/wix-private-files';
 import { openForAccount } from '@/modules/cripta/lib/account-envelope';
-import { isOnlineOpen } from '@/modules/cripta/lib/online-opening';
+import { isOnlineOpen, openingRef } from '@/modules/cripta/lib/online-opening';
 
 export const runtime = 'nodejs';
 const collection = () => getAdminFirestore().collection('criptaOnlineCapsulesV1');
@@ -73,9 +75,37 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
       { status: 403 },
     );
   try {
-    await deletePrivateCiphertext(found.data.fileId as string);
-    await found.reference.delete();
-    return NextResponse.json({ deleted: true }, { headers: { 'Cache-Control': 'no-store' } });
+    const db = getAdminFirestore();
+    const pending = db.collection('criptaCleanupPendingV1').doc(randomUUID());
+    await db.runTransaction(async (transaction) => {
+      const [current, opening] = await Promise.all([
+        transaction.get(found.reference),
+        transaction.get(openingRef(found.session.authContext.tenantId)),
+      ]);
+      if (!isReceivingWindowOpen(opening.data()) || current.data()?.status !== 'ready')
+        throw new Error('Estado alterado durante a exclusão.');
+      transaction.update(found.reference, {
+        status: 'deleted',
+        deletedAt: new Date().toISOString(),
+      });
+      transaction.create(pending, {
+        fileId: found.data.fileId,
+        tenantId: found.session.authContext.tenantId,
+        uid: found.session.user.id,
+        createdAt: new Date().toISOString(),
+        reason: 'deleted-letter',
+      });
+    });
+    try {
+      await deletePrivateCiphertext(found.data.fileId as string);
+      await pending.delete();
+    } catch {
+      /* Preserved queue documents the provider cleanup still pending. */
+    }
+    return NextResponse.json(
+      { deleted: true, providerCleanupPending: (await pending.get()).exists },
+      { headers: { 'Cache-Control': 'no-store' } },
+    );
   } catch {
     return NextResponse.json(
       { error: 'Exclusão não confirmada. Verifique novamente.' },

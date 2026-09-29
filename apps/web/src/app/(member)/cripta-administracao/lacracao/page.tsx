@@ -41,7 +41,7 @@ export default async function Page() {
       ]);
       return {
         member,
-        hasDraft: draft.exists,
+        hasDraft: draft.exists && draft.data()?.status !== 'deleted',
         count: inventory.docs.filter(
           (item) => item.data().tenantId === tenantId && item.data().status === 'ready',
         ).length,

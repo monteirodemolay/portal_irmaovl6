@@ -66,6 +66,7 @@ export async function GET() {
     const draftEntries: LacreEntry[] = [];
     for (const doc of drafts.docs) {
       const data = doc.data();
+      if (data.status === 'deleted') continue;
       const bytes = await downloadPrivateCiphertext(data.fileId as string, data.sha256 as string);
       draftEntries.push({
         kind: 'draft',

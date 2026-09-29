@@ -93,3 +93,14 @@ export function comparePhysicalUnits(first: UnitEvidence, second: UnitEvidence, 
   return { code: receiptCode, fingerprint: first.fingerprint, size: first.size,
     totalLetters: first.totalLetters, inventoryDigest: expectedInventoryDigest, units: [first.unitCode, second.unitCode] };
 }
+
+/** Current custody policy: all three complete copies must match, including the reserve. */
+export function compareThreePhysicalUnits(units: UnitEvidence[], code: string, letters: number, digest: string) {
+  if (units.length !== 3 || new Set(units.map((unit) => unit.unitCode)).size !== 3)
+    throw new Error('Selecione três unidades distintas: A, B e C.');
+  const expected = ['A', 'B', 'C'].map((unit) => buildPenDriveCode(code, unit));
+  if (units.some((unit) => !expected.includes(unit.unitCode))) throw new Error('Confira as unidades A, B e C deste lacre.');
+  const compared = comparePhysicalUnits(units[0]!, units[1]!, code, letters, digest);
+  comparePhysicalUnits(units[0]!, units[2]!, code, letters, digest);
+  return { ...compared, units: units.map((unit) => unit.unitCode) };
+}

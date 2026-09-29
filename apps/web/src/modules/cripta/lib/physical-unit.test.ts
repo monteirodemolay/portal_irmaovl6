@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { comparePhysicalUnits, inspectPhysicalUnit } from './physical-unit';
+import { comparePhysicalUnits, compareThreePhysicalUnits, inspectPhysicalUnit } from './physical-unit';
 
 const code = 'VL6-20260928-ABCDEF123456';
 const inventoryDigest = 'a'.repeat(64);
@@ -21,6 +21,11 @@ describe('conferência física CRIPTA/2', () => {
       codigoPenDrive: unit, impressaoDigital: print, tamanho: file.size, totalCartas: 3, inventoryDigest });
     const a = await inspectPhysicalUnit(file, manifest('PD-A-ABCDEF123456-01'));
     const b = await inspectPhysicalUnit(file, manifest('PD-B-ABCDEF123456-02'));
+    const c = await inspectPhysicalUnit(file, manifest('PD-C-ABCDEF123456-03'));
+    expect(compareThreePhysicalUnits([a, b, c], code, 3, inventoryDigest).units).toHaveLength(3);
+    expect(() => compareThreePhysicalUnits([a, b], code, 3, inventoryDigest)).toThrow(/três/);
+    expect(() => compareThreePhysicalUnits([a, b, b], code, 3, inventoryDigest)).toThrow(/distintas/);
+    expect(() => compareThreePhysicalUnits([a, b, { ...c, fingerprint: '0'.repeat(64) }], code, 3, inventoryDigest)).toThrow(/divergem/);
     expect(comparePhysicalUnits(a, b, code, 3, inventoryDigest).units).toEqual(['PD-A-ABCDEF123456-01', 'PD-B-ABCDEF123456-02']);
     expect(() => comparePhysicalUnits(a, a, code, 3, inventoryDigest)).toThrow(/distintas/);
     expect(() => comparePhysicalUnits(a, b, code, 4, inventoryDigest)).toThrow(/divergem/);

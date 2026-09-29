@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import {
-  comparePhysicalUnits,
+  compareThreePhysicalUnits,
   inspectPhysicalUnit,
   type UnitEvidence,
 } from '@/modules/cripta/lib/physical-unit';
@@ -33,6 +33,7 @@ export function PhysicalUnitCheck({
   const [files, setFiles] = useState<Array<{ lacre: File | null; manifest: File | null }>>([
     { lacre: null, manifest: null },
     { lacre: null, manifest: null },
+    { lacre: null, manifest: null },
   ]);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
@@ -49,7 +50,7 @@ export function PhysicalUnitCheck({
 
   async function verify() {
     setBusy(true);
-    setMessage('Lendo as duas unidades. Mantenha ambas conectadas até terminar…');
+    setMessage('Lendo as três unidades. Mantenha as três conectadas até terminar…');
     try {
       const results: UnitEvidence[] = [];
       for (const [index, entry] of files.entries()) {
@@ -57,9 +58,8 @@ export function PhysicalUnitCheck({
           throw new Error(`Selecione o lacre e o manifesto da unidade ${index + 1}.`);
         results.push(await inspectPhysicalUnit(entry.lacre, await entry.manifest.text()));
       }
-      const evidence = comparePhysicalUnits(
-        results[0]!,
-        results[1]!,
+      const evidence = compareThreePhysicalUnits(
+        results,
         receiptCode,
         totalLetters,
         inventoryDigest,
@@ -84,11 +84,11 @@ export function PhysicalUnitCheck({
   return (
     <section className="rounded-2xl border border-[#dbcda9] bg-white p-6 text-[#142a43]">
       <p className="text-xs font-semibold uppercase tracking-widest text-[#8a682d]">
-        Conferência física · duas unidades
+        Conferência física · três unidades
       </p>
       <h2 className="mt-2 font-serif text-2xl">Ler as cópias gravadas</h2>
       <p className="mt-2 text-sm leading-6 text-[#536074]">
-        Depois de copiar o mesmo arquivo CRIPTA/2 para duas unidades externas, selecione diretamente
+        Depois de copiar o mesmo arquivo CRIPTA/2 para três unidades externas, selecione diretamente
         de cada uma o arquivo .lacre e seu próprio manifesto. O navegador lê os arquivos e compara a
         impressão digital, o código e o inventário emitido pelo Portal. Os arquivos não são enviados
         ao Portal.
@@ -133,7 +133,7 @@ export function PhysicalUnitCheck({
         }}
         className="mt-5 rounded-xl bg-[#123c69] px-5 py-3 font-semibold text-white disabled:opacity-50"
       >
-        {busy ? 'Conferindo…' : 'Conferir e registrar as duas cópias'}
+        {busy ? 'Conferindo…' : 'Conferir e registrar as três cópias'}
       </button>
       {message && (
         <p
@@ -156,7 +156,7 @@ export function PhysicalUnitCheck({
       <details className="mt-4 text-sm text-[#725624]">
         <summary className="cursor-pointer font-semibold">? O que a conferência prova?</summary>
         <p className="mt-2">
-          Ela detecta corrupção nas duas cópias selecionadas e confere seus manifestos com o código
+          Ela detecta corrupção nas três cópias selecionadas e confere seus manifestos com o código
           do recibo. O servidor registra o resultado declarado pelo navegador; não consegue observar
           fisicamente os pen drives. Antes de excluir dados do Wix, ainda será preciso testar a
           abertura e a recuperação de cartas com as partes da chave.

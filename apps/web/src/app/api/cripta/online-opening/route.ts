@@ -3,6 +3,8 @@ import { NextResponse } from 'next/server';
 import { getCurrentSession } from '@/lib/auth/get-current-session';
 import { requirePagePermission } from '@/lib/auth/require-permission';
 import { canAccessCriptaPilot } from '@/modules/cripta/lib/early-access';
+import { isReceivingWindowOpen } from '@/modules/cripta/lib/receiving-window';
+import { criptaCryptoRef } from '@/modules/cripta/lib/cripta-crypto-state';
 import { openingRef } from '@/modules/cripta/lib/online-opening';
 import { sealRef, currentInventory } from '@/modules/cripta/lib/seal-state';
 import { currentCriptaMaster } from '@/modules/cripta/lib/current-master';
@@ -17,7 +19,7 @@ export async function GET() {
     return NextResponse.json({ error: 'Acesso negado.' }, { status: 403 });
   const snapshot = await openingRef(session.authContext.tenantId).get();
   return NextResponse.json(
-    { open: snapshot.exists ? snapshot.data()?.open === true : true },
+    { open: isReceivingWindowOpen(snapshot.data()), closesAt: snapshot.data()?.closesAt ?? null },
     { headers: { 'Cache-Control': 'no-store' } },
   );
 }
@@ -32,6 +34,7 @@ export async function POST(request: Request) {
   }
   const payload = (await request.json().catch(() => null)) as {
     open?: unknown;
+    durationDays?: unknown;
     code?: unknown;
     minutes?: unknown;
     presentMemberId?: unknown;
@@ -39,6 +42,12 @@ export async function POST(request: Request) {
   } | null;
   if (typeof payload?.open !== 'boolean')
     return NextResponse.json({ error: 'Estado inválido.' }, { status: 400 });
+  const durationDays = payload.durationDays ?? 10;
+  if (
+    payload.open &&
+    (!Number.isInteger(durationDays) || Number(durationDays) < 1 || Number(durationDays) > 30)
+  )
+    return NextResponse.json({ error: 'Informe um período entre 1 e 30 dias.' }, { status: 400 });
   const minutes = typeof payload.minutes === 'string' ? payload.minutes.trim() : '';
   const presentMemberId =
     typeof payload.presentMemberId === 'string' ? payload.presentMemberId : '';
@@ -91,35 +100,41 @@ export async function POST(request: Request) {
   try {
     await db.runTransaction(async (transaction) => {
       const [previous, receipt] = await Promise.all([transaction.get(ref), transaction.get(seal)]);
-      const isOpen = previous.exists ? previous.data()?.open === true : true;
-      if (isOpen === payload.open) throw new Error('O estado já foi alterado. Atualize a tela.');
+      const isOpen = isReceivingWindowOpen(previous.data());
+      if (isOpen && payload.open) throw new Error('O estado já foi alterado. Atualize a tela.');
       if (payload.open) {
         const data = receipt.data();
+        const cryptoState = await transaction.get(criptaCryptoRef(tenantId));
+        if (!cryptoState.data()?.publicKey)
+          throw new Error('Inaugure a Cripta antes de abrir o recebimento.');
+        const firstOpening = !receipt.exists && inventory?.count === 0;
         if (
-          !data ||
-          data.status !== 'sealed' ||
-          typeof payload.code !== 'string' ||
-          payload.code.trim().toUpperCase() !== data.code ||
-          data.inventoryDigest !== inventory?.digest ||
-          data.count !== inventory?.count ||
-          receiptDigest(data as Parameters<typeof receiptDigest>[0]) !== data.receiptDigest
+          !firstOpening &&
+          (!data ||
+            data.status !== 'sealed' ||
+            typeof payload.code !== 'string' ||
+            payload.code.trim().toUpperCase() !== data.code ||
+            data.inventoryDigest !== inventory?.digest ||
+            data.count !== inventory?.count ||
+            receiptDigest(data as Parameters<typeof receiptDigest>[0]) !== data.receiptDigest)
         ) {
           throw new Error(
             'Lacre ausente, código incorreto ou inventário divergente. Suspenda a abertura e confira as unidades.',
           );
         }
-        transaction.update(seal, {
-          status: 'opened',
-          openedAt: at,
-          openedBy: session.user.id,
-          openingMasterId: master.member.id,
-          openingMemberId: presentMemberId,
-          openingMinutes: minutes,
-          actualOpeningDate: at.slice(0, 10),
-        });
+        if (!firstOpening)
+          transaction.update(seal, {
+            status: 'opened',
+            openedAt: at,
+            openedBy: session.user.id,
+            openingMasterId: master.member.id,
+            openingMemberId: presentMemberId,
+            openingMinutes: minutes,
+            actualOpeningDate: at.slice(0, 10),
+          });
         transaction.create(seal.collection('events').doc(), {
           type: 'unsealed',
-          code: data.code,
+          code: data?.code ?? null,
           inventoryDigest: inventory!.digest,
           at,
           minutes,
@@ -131,9 +146,18 @@ export async function POST(request: Request) {
           actorId: session.user.id,
         });
       }
-      transaction.set(ref, { open: payload.open, updatedAt: at, updatedBy: session.user.id });
+      transaction.set(ref, {
+        open: payload.open,
+        openedAt: payload.open ? at : (previous.data()?.openedAt ?? null),
+        closesAt: payload.open
+          ? new Date(Date.parse(at) + Number(durationDays) * 86400000).toISOString()
+          : (previous.data()?.closesAt ?? null),
+        updatedAt: at,
+        updatedBy: session.user.id,
+      });
       transaction.create(ref.collection('events').doc(), {
         type: payload.open ? 'opened' : 'closed',
+        durationDays: payload.open ? durationDays : null,
         at,
         minutes,
         masterId: master.member.id,

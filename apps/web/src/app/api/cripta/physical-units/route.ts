@@ -1,3 +1,4 @@
+import { buildPenDriveCode } from '@/modules/cripta/lib/physical-unit';
 import { randomUUID } from 'node:crypto';
 import { getAdminFirestore } from '@vl6/infra';
 import { NextResponse } from 'next/server';
@@ -21,6 +22,7 @@ export async function POST(request: Request) {
   if (
     !body ||
     typeof body.code !== 'string' ||
+    !/^(?:LAC-[A-Z0-9-]{5,48}|VL6-[A-Z0-9-]{8,48})$/.test(body.code) ||
     typeof body.fingerprint !== 'string' ||
     !/^[a-f0-9]{64}$/.test(body.fingerprint) ||
     !Number.isSafeInteger(body.size) ||
@@ -30,9 +32,12 @@ export async function POST(request: Request) {
     !Number.isSafeInteger(body.totalLetters) ||
     (body.totalLetters as number) < 0 ||
     !Array.isArray(body.units) ||
-    body.units.length !== 2 ||
+    body.units.length !== 3 ||
     body.units.some((unit) => typeof unit !== 'string' || !/^[A-Z0-9-]{6,80}$/.test(unit)) ||
-    body.units[0] === body.units[1]
+    new Set(body.units).size !== 3 ||
+    !['A', 'B', 'C'].every((unit) =>
+      (body.units as string[]).includes(buildPenDriveCode(body.code as string, unit)),
+    )
   ) {
     return NextResponse.json({ error: 'Resultado da conferência inválido.' }, { status: 400 });
   }

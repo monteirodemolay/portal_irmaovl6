@@ -1,5 +1,7 @@
 # Cripta VL6 — manual de operação e ensaios
 
+> **Atualização de preparação para liberação — 29/09/2026:** consulte [revisão consolidada](cripta-revisao-liberacao-2026-09-29.md). Os trechos anteriores sobre duas mídias, limites de 2,5 MB, ausência de exportação e limpeza automática são históricos. O acesso permanece piloto e a limpeza geral está bloqueada até comprovar recuperação integral.
+
 ## Estado e alcance
 
 Documento de preparo. O Portal **ainda não recebe nem conserva conteúdo real**. A tela pessoal reúne carta, destinatário e anexos opcionais em uma prévia temporária; fechar a aba apaga a prévia. Há também um ensaio conectado restrito à conta piloto: cifra uma carta **fictícia** no navegador, envia o pacote privado ao Wix, registra índice opaco no Firestore, permite reabertura e exclusão. O acesso expira em 48 horas e uma rotina diária tenta excluir objetos expirados; falha na rotina exige reconciliação manual. Não usar como arquivo definitivo.

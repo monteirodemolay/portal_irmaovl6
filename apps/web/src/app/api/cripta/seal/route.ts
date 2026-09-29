@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server';
 import { requirePagePermission } from '@/lib/auth/require-permission';
 import { canAccessCriptaPilot } from '@/modules/cripta/lib/early-access';
 import { currentCriptaMaster } from '@/modules/cripta/lib/current-master';
+import { isReceivingWindowOpen } from '@/modules/cripta/lib/receiving-window';
 import { openingRef } from '@/modules/cripta/lib/online-opening';
 import { currentInventory, sealRef } from '@/modules/cripta/lib/seal-state';
 import { receiptDigest } from '@/modules/cripta/lib/seal-manifest';
@@ -75,7 +76,7 @@ export async function POST(request: Request) {
   try {
     const inventory = await currentInventory(tenantId);
     const opening = await openingRef(tenantId).get();
-    if (!opening.exists || opening.data()?.open !== false) {
+    if (isReceivingWindowOpen(opening.data())) {
       return NextResponse.json(
         { error: 'Feche o recebimento antes de gerar o recibo.' },
         { status: 409 },
@@ -131,7 +132,7 @@ export async function POST(request: Request) {
         transaction.get(ref),
       ]);
       if (
-        state.data()?.open !== false ||
+        isReceivingWindowOpen(state.data()) ||
         previous.data()?.status === 'sealed' ||
         (previous.exists && previous.data()?.code !== previousCode)
       )

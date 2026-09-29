@@ -57,7 +57,7 @@ export default async function Page() {
         <div className="rounded-2xl border border-[#d8c8a4] bg-[#fffdf8] p-6">
           <span className="text-sm text-[#5e584c]">Rascunho</span>
           <strong className="mt-2 block font-serif text-2xl">
-            {draft.exists ? 'Em andamento' : 'Nenhum'}
+            {draft.exists && draft.data()?.status !== 'deleted' ? 'Em andamento' : 'Nenhum'}
           </strong>
         </div>
         <div className="rounded-2xl border border-[#d8c8a4] bg-[#fffdf8] p-6">

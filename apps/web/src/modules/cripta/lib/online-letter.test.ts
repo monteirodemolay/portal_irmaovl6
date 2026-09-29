@@ -11,14 +11,21 @@ describe('validação do pacote online', () => {
     expect(() => parseOnlineLetter(letter(), true)).toThrow('Carta inválida');
   });
 
-  it('recusa anexos acima da cota efetiva de 2,5 MB mesmo se a interface falhar', () => {
-    const photo = { kind: 'foto', name: 'a.jpg', type: 'image/jpeg', data: Buffer.alloc(2_500_001).toString('base64') };
-    expect(() => parseOnlineLetter(letter({ recipient: 'Família', body: 'Olá', attachments: [photo] }), true))
+  it('recusa anexos acima da cota efetiva de 2,3 MB mesmo se a interface falhar', () => {
+    const photo = { kind: 'foto', name: 'a.jpg', type: 'image/jpeg', data: Buffer.alloc(2_300_001).toString('base64') };
+    expect(() => parseOnlineLetter(letter({ recipient: 'Família', body: 'Olá', attachments: [photo] }), true, true))
       .toThrow('Anexos acima');
   });
 
-  it('aceita o tamanho máximo anunciado quando o JSON permanece abaixo do teto da função', () => {
+  it('preserva a leitura de carta legada com 2,5 MB sem aceitar essa cota em gravação nova', () => {
     const photo = { kind: 'foto', name: 'a.jpg', type: 'image/jpeg', data: Buffer.alloc(2_500_000).toString('base64') };
-    expect(parseOnlineLetter(letter({ recipient: 'Família', body: 'Olá', attachments: [photo] }), true).attachments).toHaveLength(1);
+    const legacy = letter({ recipient: 'Família', body: 'Olá', attachments: [photo] });
+    expect(parseOnlineLetter(legacy, true).attachments).toHaveLength(1);
+    expect(() => parseOnlineLetter(legacy, true, true)).toThrow();
+  });
+
+  it('aceita o tamanho máximo anunciado quando o JSON permanece abaixo do teto da função', () => {
+    const photo = { kind: 'foto', name: 'a.jpg', type: 'image/jpeg', data: Buffer.alloc(2_300_000).toString('base64') };
+    expect(parseOnlineLetter(letter({ recipient: 'Família', body: 'Olá', attachments: [photo] }), true, true).attachments).toHaveLength(1);
   });
 });

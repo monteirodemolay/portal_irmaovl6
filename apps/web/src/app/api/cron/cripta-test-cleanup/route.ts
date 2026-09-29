@@ -43,10 +43,12 @@ export async function GET(request: NextRequest) {
         getAdminFirestore()
           .collection('criptaOnlineCapsulesV1')
           .where('fileId', '==', fileId)
-          .limit(1)
           .get(),
       ]);
-      if (draft.data()?.fileId === fileId || !completed.empty) {
+      if (
+        draft.data()?.fileId === fileId ||
+        completed.docs.some((item) => item.data().status !== 'deleted')
+      ) {
         failed++;
         continue;
       }

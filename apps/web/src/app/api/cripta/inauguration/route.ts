@@ -1,3 +1,4 @@
+import { webcrypto } from 'node:crypto';
 import { createServerContainer, getAdminFirestore } from '@vl6/infra';
 import { NextResponse } from 'next/server';
 import { requirePagePermission } from '@/lib/auth/require-permission';
@@ -14,6 +15,7 @@ function isPublicKey(value: unknown): value is CriptaPublicKey {
   if (!value || typeof value !== 'object') return false;
   const key = value as Record<string, unknown>;
   return (
+    Object.keys(key).sort().join(',') === 'crv,kty,x,y' &&
     key.kty === 'EC' &&
     key.crv === 'P-256' &&
     typeof key.x === 'string' &&
@@ -63,11 +65,9 @@ export async function POST(request: Request) {
   if (
     !isPublicKey(body?.publicKey) ||
     !Number.isInteger(totalGuardians) ||
-    (totalGuardians as number) < 2 ||
-    (totalGuardians as number) > 15 ||
+    totalGuardians !== 5 ||
     !Number.isInteger(threshold) ||
-    (threshold as number) < 2 ||
-    (threshold as number) > (totalGuardians as number) ||
+    threshold !== 3 ||
     guardianMemberIds.length !== totalGuardians ||
     !guardianMemberIds.every((id): id is string => typeof id === 'string' && id.length > 0) ||
     new Set(guardianMemberIds).size !== guardianMemberIds.length ||
@@ -82,6 +82,17 @@ export async function POST(request: Request) {
       },
       { status: 400 },
     );
+  }
+  try {
+    await webcrypto.subtle.importKey(
+      'jwk',
+      body!.publicKey as CriptaPublicKey,
+      { name: 'ECDH', namedCurve: 'P-256' },
+      false,
+      [],
+    );
+  } catch {
+    return NextResponse.json({ error: 'Chave pública inválida.' }, { status: 400 });
   }
   const container = createServerContainer();
   const members = await Promise.all(

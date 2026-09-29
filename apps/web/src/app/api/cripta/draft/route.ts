@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { getAdminFirestore } from '@vl6/infra';
 import { NextResponse } from 'next/server';
+import { isReceivingWindowOpen } from '@/modules/cripta/lib/receiving-window';
 import { activeCriptaSession } from '@/modules/cripta/lib/active-member';
 import { openForAccount, sealForAccount } from '@/modules/cripta/lib/account-envelope';
 import { isOnlineOpen, openingRef } from '@/modules/cripta/lib/online-opening';
@@ -35,7 +36,8 @@ export async function GET() {
   const uid = session.user.id;
   const snap = await reference(tenantId, uid).get();
   const data = snap.data();
-  if (!data) return NextResponse.json({ draft: null, revision: 0 }, options);
+  if (!data || !data.fileId)
+    return NextResponse.json({ draft: null, revision: data?.revision ?? 0 }, options);
   try {
     const encrypted = await downloadPrivateCiphertext(data.fileId as string, data.sha256 as string);
     const plaintext = await openForAccount(encrypted, tenantId, uid, `draft:${uid}`);
@@ -69,13 +71,14 @@ export async function PUT(request: Request) {
     payload = (await request.json()) as { revision: number; letter: unknown };
     if (!Number.isSafeInteger(payload.revision) || payload.revision < 0)
       throw new Error('Revisão inválida.');
-    parseOnlineLetter(JSON.stringify(payload.letter), false);
+    parseOnlineLetter(JSON.stringify(payload.letter), false, true);
   } catch {
     return NextResponse.json({ error: 'Rascunho inválido.' }, { status: 400 });
   }
   const ref = reference(tenantId, uid);
   let uploaded: { fileId: string; sha256: string } | undefined;
   let previousFileId: string | undefined;
+  let committed = false;
   try {
     const bytes = Buffer.from(JSON.stringify(payload.letter), 'utf8');
     uploaded = await uploadPrivateCiphertext(
@@ -89,7 +92,7 @@ export async function PUT(request: Request) {
         transaction.get(ref),
         transaction.get(openingRef(tenantId)),
       ]);
-      if (opening.exists && opening.data()?.open !== true)
+      if (!isReceivingWindowOpen(opening.data()))
         throw new Error('Recebimento fechado durante o salvamento.');
       const data = current.data();
       if ((data?.revision ?? 0) !== payload.revision) throw new Error('REVISION_CONFLICT');
@@ -103,6 +106,7 @@ export async function PUT(request: Request) {
         uid,
       });
     });
+    committed = true;
     if (previousFileId) {
       try {
         await deletePrivateCiphertext(previousFileId);
@@ -116,7 +120,15 @@ export async function PUT(request: Request) {
     }
     return NextResponse.json({ revision: payload.revision + 1, updatedAt }, options);
   } catch (error) {
-    if (uploaded) {
+    if (uploaded && !committed) {
+      // Preserve the upload if Firestore may have committed despite a lost response.
+      try {
+        committed = (await ref.get()).data()?.fileId === uploaded.fileId;
+      } catch {
+        committed = true;
+      }
+    }
+    if (uploaded && !committed) {
       try {
         await deletePrivateCiphertext(uploaded.fileId);
       } catch {
@@ -148,13 +160,45 @@ export async function DELETE(request: Request) {
   if (!(await isOnlineOpen(session.authContext.tenantId)))
     return NextResponse.json({ error: 'Recebimento fechado.' }, { status: 403 });
   const ref = reference(session.authContext.tenantId, session.user.id);
-  const snap = await ref.get();
-  if (!snap.exists) return NextResponse.json({ deleted: true }, options);
+  const expected = Number(request.headers.get('x-draft-revision'));
+  if (!request.headers.has('x-draft-revision') || !Number.isSafeInteger(expected) || expected < 0)
+    return NextResponse.json({ error: 'Informe a revisão do rascunho.' }, { status: 400 });
   try {
-    await deletePrivateCiphertext(snap.data()!.fileId as string);
-    await ref.delete({ lastUpdateTime: snap.updateTime! });
-    return NextResponse.json({ deleted: true }, options);
-  } catch {
-    return NextResponse.json({ error: 'Não foi possível remover o rascunho.' }, { status: 502 });
+    const revision = await getAdminFirestore().runTransaction(async (transaction) => {
+      const [snap, opening] = await Promise.all([
+        transaction.get(ref),
+        transaction.get(openingRef(session.authContext.tenantId)),
+      ]);
+      if (!isReceivingWindowOpen(opening.data())) throw new Error('Recebimento fechado.');
+      if ((snap.data()?.revision ?? 0) !== expected)
+        throw new Error('O rascunho mudou em outra aba. Ele foi preservado.');
+      const fileId = snap.data()?.fileId as string | undefined;
+      // Detach atomically before cleanup: no stale DELETE can erase the file of a newer draft.
+      transaction.set(ref, {
+        status: 'deleted',
+        revision: expected + 1,
+        tenantId: session.authContext.tenantId,
+        uid: session.user.id,
+        updatedAt: new Date().toISOString(),
+      });
+      if (fileId)
+        transaction.create(
+          getAdminFirestore().collection('criptaCleanupPendingV1').doc(randomUUID()),
+          {
+            fileId,
+            tenantId: session.authContext.tenantId,
+            uid: session.user.id,
+            createdAt: new Date().toISOString(),
+            reason: 'deleted-draft',
+          },
+        );
+      return expected + 1;
+    });
+    return NextResponse.json({ deleted: true, revision }, options);
+  } catch (error) {
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : 'Não foi possível remover o rascunho.' },
+      { status: 409 },
+    );
   }
 }

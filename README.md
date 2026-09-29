@@ -109,3 +109,7 @@ pnpm --filter @vl6/scripts exec tsx normalize-temple-location.ts
 ## Documentação
 
 Comece pelo [índice arquitetural](./docs/architecture/00-README.md). A [visão geral](./docs/architecture/01-visao-geral.md) explica as decisões de fundação; [modelo de dados](./docs/architecture/03-modelo-dados.md), [RBAC](./docs/architecture/08-permissoes-rbac.md), [Acervo](./docs/architecture/11-acervo-vl6.md), [biblioteca](./docs/architecture/12-biblioteca-e-circulacao.md), [comunidade paramaçônica](./docs/architecture/12-comunidade-paramaconica.md), [Cripta](./docs/architecture/cripta-operacao-real.md) e [estado atual](./docs/architecture/13-estado-atual-e-operacao.md) complementam a referência.
+
+### Cripta — preparação para cartas reais
+
+Veja a [revisão de liberação de 29/09/2026](docs/architecture/cripta-revisao-liberacao-2026-09-29.md), com correções, evidências e pendências. O recebimento institucional ainda não está liberado; o acesso continua restrito ao piloto.

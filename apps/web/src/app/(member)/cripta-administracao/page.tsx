@@ -60,6 +60,17 @@ export default async function Page() {
           {open ? 'Recebimento aberto' : 'Recebimento fechado'}
         </p>
       </header>
+      <section
+        className="rounded-2xl border border-amber-300 bg-amber-50 p-6"
+        aria-label="Preparação para liberação"
+      >
+        <h2 className="font-serif text-2xl">Preparação para cartas reais</h2>
+        <p className="mt-2 text-sm leading-6">
+          O acesso permanece restrito ao ensaio. Antes da liberação, registre a recuperação offline
+          com os arquivos dos Guardiões, confira as três unidades e valide rascunhos, cartas antigas
+          e entrega individual. A limpeza geral do Wix está suspensa para preservar os arquivos.
+        </p>
+      </section>
       <nav aria-label="Fases da administração" className="grid gap-4 md:grid-cols-3">
         {stages.map((stage) => (
           <Link

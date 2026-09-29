@@ -14,6 +14,7 @@ const result = await build({
   bundle: true,
   format: 'iife',
   platform: 'browser',
+  preserveSymlinks: true, // Keep dependency paths stable across worktrees and pnpm stores.
   target: 'es2022',
   write: false,
   logLevel: 'info',
@@ -27,4 +28,8 @@ const bundle = result.outputFiles[0].text;
 const template = readFileSync(path.join(here, 'template.html'), 'utf8');
 const output = template.replace('/*__CRIPTA_OFFLINE_BUNDLE__*/', bundle);
 writeFileSync(path.join(here, 'index.html'), output);
-console.log('Escrito scripts/cripta/abertura-offline/index.html —', (output.length / 1024).toFixed(0), 'KB');
+console.log(
+  'Escrito scripts/cripta/abertura-offline/index.html —',
+  (output.length / 1024).toFixed(0),
+  'KB',
+);

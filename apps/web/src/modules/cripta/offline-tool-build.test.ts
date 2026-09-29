@@ -17,6 +17,7 @@ describe('offline opening tool (scripts/cripta/abertura-offline)', () => {
       bundle: true,
       format: 'iife',
       platform: 'browser',
+      preserveSymlinks: true, // Keep dependency paths stable across worktrees and pnpm stores.
       target: 'es2022',
       write: false,
       logLevel: 'silent',

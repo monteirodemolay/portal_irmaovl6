@@ -1,5 +1,7 @@
 # Cripta VL6 — implantação real e critérios de abertura
 
+> **Atualização de preparação para liberação — 29/09/2026:** consulte [revisão consolidada](cripta-revisao-liberacao-2026-09-29.md). Os trechos anteriores sobre duas mídias, limites de 2,5 MB, ausência de exportação e limpeza automática são históricos. O acesso permanece piloto e a limpeza geral está bloqueada até comprovar recuperação integral.
+
 Estado em 25/09/2026: **bloqueada para dados reais**. O ensaio Wix utiliza somente 1 KiB aleatório. O ensaio integrado Wix + Firestore concluiu o ciclo com retorno HTTP 200 em produção, inclusive leitura, conferência e solicitação de limpeza. Isso não ensaia mídias reais, recuperação de chaves nem três cópias offline. A flag `CRIPTA_REAL_CONTENT_ENABLED` deve permanecer ausente até a aprovação de todos os critérios abaixo. O mero login do operador não libera conteúdo.
 
 Ligação técnica em elaboração: `POST /api/cripta/capsules` aceita somente pacote JSON já cifrado de até 1,5 MB, reserva vaga no inventário Firestore do próprio titular, envia bytes ao Wix como arquivo privado e grava hash SHA-256. `GET /api/cripta/capsules/[id]` confere o hash ao baixar e só responde durante janela habilitada. O ensaio `POST /api/cripta/integration-check` usa 1 KB aleatório, percorre Wix e Firestore e solicita exclusão. Ainda não foram implementadas cerimônia de duas aprovações para criar/abrir a janela, exclusão real de cápsulas, mídias grandes, exportação para unidades externas e partilha de recuperação. Não definir a flag como `true` manualmente.

@@ -6,8 +6,8 @@ export type OnlineLetter = {
   attachments: Array<{ kind: 'foto' | 'audio' | 'video'; name: string; type: string; data: string }>;
 };
 
-export function parseOnlineLetter(body: string, requireComplete: boolean): OnlineLetter {
-  if (Buffer.byteLength(body) > 3_600_000) throw new Error('Carta acima do limite atual.');
+export function parseOnlineLetter(body: string, requireComplete: boolean, forNewWrite = false): OnlineLetter {
+  if (Buffer.byteLength(body) > (forNewWrite ? 3_200_000 : 3_600_000)) throw new Error('Carta acima do limite atual.');
   const value = JSON.parse(body) as OnlineLetter;
   if (value?.format !== 'vl6-online-letter-v1' || typeof value.title !== 'string' ||
       typeof value.recipient !== 'string' || typeof value.body !== 'string' ||
@@ -29,7 +29,7 @@ export function parseOnlineLetter(body: string, requireComplete: boolean): Onlin
     count[item.kind]++;
     attachmentBytes += Buffer.byteLength(item.data, 'base64');
   }
-  if (count.foto > 10 || count.audio > 2 || count.video > 1 || attachmentBytes > 2_500_000) {
+  if (count.foto > 10 || count.audio > 2 || count.video > 1 || attachmentBytes > (forNewWrite ? 2_300_000 : 2_500_000)) {
     throw new Error('Anexos acima do limite atual.');
   }
   return value;

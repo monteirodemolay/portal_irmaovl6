@@ -24,6 +24,7 @@ export function OnlineOpeningControl({
   const [presentMemberId, setPresentMemberId] = useState(
     initiallyOpen ? (commissionMemberIds[0] ?? '') : '',
   );
+  const [durationDays, setDurationDays] = useState(10);
   const [reason, setReason] = useState('');
   const opening = !initiallyOpen;
   const outsideCommission =
@@ -39,7 +40,14 @@ export function OnlineOpeningControl({
       const response = await fetch('/api/cripta/online-opening', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ open: opening, minutes, code, presentMemberId, reason }),
+        body: JSON.stringify({
+          open: opening,
+          minutes,
+          code,
+          presentMemberId,
+          reason,
+          durationDays,
+        }),
       });
       const data = (await response.json()) as { open?: boolean; error?: string };
       if (!response.ok || data.open !== opening)
@@ -107,8 +115,21 @@ export function OnlineOpeningControl({
           </select>
         </label>
         {opening && (
+          <label className="text-sm font-semibold">
+            Prazo de recebimento (dias)
+            <input
+              type="number"
+              min={1}
+              max={30}
+              value={durationDays}
+              onChange={(event) => setDurationDays(Number(event.target.value))}
+              className="mt-2 w-full rounded-xl border p-3"
+            />
+          </label>
+        )}
+        {opening && (
           <label className="text-sm font-semibold sm:col-span-2">
-            Código do recibo da última lacração
+            Código da última lacração (deixe vazio na primeira abertura)
             <input
               value={code}
               onChange={(event) => setCode(event.target.value.toUpperCase())}
@@ -139,7 +160,7 @@ export function OnlineOpeningControl({
           !commissionMemberIds.length ||
           !presentMemberId ||
           minutes.trim().length < 5 ||
-          (opening && !code.trim()) ||
+          (opening && (!Number.isInteger(durationDays) || durationDays < 1 || durationDays > 30)) ||
           (outsideCommission && reason.trim().length < 8)
         }
         onClick={change}

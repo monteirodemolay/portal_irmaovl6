@@ -22,6 +22,7 @@ export async function currentInventory(tenantId: string) {
   }
   for (const doc of drafts.docs) {
     const data = doc.data();
+      if (data.status === 'deleted') continue;
     if (typeof data.sha256 !== 'string' || typeof data.fileId !== 'string') {
       throw new Error('Inventário de rascunhos incompleto. Corrija antes de lacrar.');
     }
