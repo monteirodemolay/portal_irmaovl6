@@ -49,16 +49,16 @@ export default async function Page() {
       </Link>
       <header className="rounded-[2rem] border border-[#c9a55a] bg-[#17263f] p-8 text-white sm:p-10">
         <p className="text-xs font-semibold uppercase tracking-[.22em] text-[#e3bd62]">
-          Cripta · fase 02
+          Cripta · continuação do ciclo (etapas 6, 8 e 2)
         </p>
         <h1 className="mt-4 font-serif text-4xl sm:text-5xl">Reabertura da Cripta</h1>
         <p className="mt-4 max-w-2xl leading-7 text-slate-200">
-          Na sessão, confira o recibo guardado, registre quem compareceu e libere a escrita quando a
-          abertura for aprovada.
+          Use esta tela depois de lacrar, exportar e limpar o Wix na tela de Lacração. A ordem aqui
+          é: confirme a conferência das unidades, restaure os rascunhos e só então reabra a escrita.
         </p>
       </header>
       <section className="rounded-2xl border border-[#d8c8a4] bg-[#fffdf8] p-6">
-        <h2 className="font-serif text-2xl">1 · Data e Comissão</h2>
+        <h2 className="font-serif text-2xl">Antes de continuar: data e Comissão</h2>
         <p className="mt-2 text-sm leading-6 text-[#5e584c]">
           A data é uma previsão. Se ela mudou, registre a ata e o motivo na tela de lacração antes
           da abertura. Os participantes efetivos são identificados no ato abaixo.
@@ -80,11 +80,11 @@ export default async function Page() {
       </section>
       <SealPanel initiallyOpen={open} />
       <section className="rounded-2xl border border-[#d8c8a4] bg-[#fffdf8] p-6">
-        <h2 className="font-serif text-2xl">2 · Ler e verificar as unidades</h2>
+        <h2 className="font-serif text-2xl">6 · Confirme a conferência das unidades</h2>
         <p className="mt-2 text-sm leading-6 text-[#5e584c]">
           Antes de restaurar, leia pelo menos duas das três unidades na tela de Lacração (“Ler as
-          cópias gravadas”) e confira se batem com o manifesto e o recibo. Só prossiga para o passo
-          3 depois disso.
+          cópias gravadas”) e confira se batem com o manifesto e o recibo. Só prossiga para a etapa
+          8, abaixo, depois disso.
         </p>
         <Link
           href="/cripta-administracao/lacracao"
@@ -98,15 +98,16 @@ export default async function Page() {
           <RestorePanel receiptCode={record.code as string} recorded={restoration ?? null} />
         ) : (
           <section className="rounded-2xl border border-[#d8c8a4] bg-[#fffdf8] p-6">
-            <h2 className="font-serif text-2xl">3 · Restaurar rascunhos</h2>
+            <h2 className="font-serif text-2xl">8 · Restaurar rascunhos</h2>
             <p className="mt-2 text-sm leading-6 text-[#5e584c]">
-              Fica disponível depois que a limpeza do Wix deste lacre for confirmada na tela de
-              Lacração.
+              Fica disponível depois que a limpeza do Wix deste lacre (etapa 7) for confirmada na
+              tela de Lacração.
             </p>
           </section>
         ))}
       {!open ? (
         <OnlineOpeningControl
+          step="2"
           initiallyOpen={false}
           masterName={master?.member.nomeCompleto ?? ''}
           commissionMemberIds={control?.commissionMemberIds ?? []}

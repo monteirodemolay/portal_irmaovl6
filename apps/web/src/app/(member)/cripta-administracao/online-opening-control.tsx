@@ -8,6 +8,7 @@ type Props = {
   commissionMemberIds: string[];
   nextOpeningDate: string;
   choices: Array<{ id: string; name: string }>;
+  step: string;
 };
 
 export function OnlineOpeningControl({
@@ -16,6 +17,7 @@ export function OnlineOpeningControl({
   commissionMemberIds,
   nextOpeningDate,
   choices,
+  step,
 }: Props) {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
@@ -54,7 +56,7 @@ export function OnlineOpeningControl({
   return (
     <section className="rounded-2xl border border-[#dbcda9] bg-[#fbf8f1] p-6">
       <p className="text-xs font-semibold uppercase tracking-widest text-[#8a682d]">
-        Etapa {opening ? '3' : '2'} · ato em sessão
+        {step} · ato em sessão
       </p>
       <h2 className="mt-2 font-serif text-2xl text-[#142a43]">
         {opening ? 'Registrar abertura' : 'Registrar fechamento'}

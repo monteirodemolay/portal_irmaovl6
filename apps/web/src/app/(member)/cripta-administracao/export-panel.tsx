@@ -112,7 +112,10 @@ export function ExportPanel({
 
   return (
     <section className="rounded-2xl border border-[#dbcda9] bg-white p-6">
-      <h2 className="font-serif text-2xl text-[#142a43]">Exportação e limpeza do Wix</h2>
+      <p className="text-xs font-semibold uppercase tracking-widest text-[#8a682d]">
+        5 · exportar, depois 7 · limpar
+      </p>
+      <h2 className="mt-2 font-serif text-2xl text-[#142a43]">Exportação e limpeza do Wix</h2>
       <p className="mt-2 text-sm leading-6 text-[#536074]">
         Gera um único arquivo com todas as cartas e rascunhos já cifrados deste lacre — o mesmo
         arquivo vai para cada unidade externa (A, B e a reserva C). Depois de gravar e conferir pelo
@@ -124,7 +127,7 @@ export function ExportPanel({
         </li>
         <li>Copiar o mesmo arquivo para as unidades A, B e C.</li>
         <li>Baixar o manifesto de cada unidade e guardá-lo junto dela.</li>
-        <li>Usar "Ler as cópias gravadas" abaixo para conferir A e B.</li>
+        <li>Usar "6 · Conferência física", mais adiante nesta página, para conferir A e B.</li>
         <li>Só então solicitar a limpeza do Wix.</li>
       </ol>
       {cleanupComplete && (

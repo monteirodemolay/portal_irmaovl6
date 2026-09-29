@@ -45,7 +45,7 @@ export function RestorePanel({ receiptCode, recorded }: Props) {
   return (
     <section className="rounded-2xl border border-[#dbcda9] bg-white p-6 text-[#142a43]">
       <p className="text-xs font-semibold uppercase tracking-widest text-[#8a682d]">
-        Preparação · mesmo pen drive
+        8 · preparação · mesmo pen drive
       </p>
       <h2 className="mt-2 font-serif text-2xl">Restaurar rascunhos para o novo ciclo</h2>
       <p className="mt-2 text-sm leading-6 text-[#536074]">
