@@ -17,6 +17,16 @@ function hex(bytes: ArrayBuffer) {
   return Array.from(new Uint8Array(bytes), (value) => value.toString(16).padStart(2, '0')).join('');
 }
 
+const UNIT_LETTERS = 'ABCDEFGHI';
+
+/** e.g. buildPenDriveCode('VL6-20260928-ABCDEF123456', 'A') -> 'PD-A-ABCDEF123456-01' */
+export function buildPenDriveCode(codigoLacracao: string, unitLetter: string): string {
+  const suffix = codigoLacracao.split('-').at(-1);
+  const index = UNIT_LETTERS.indexOf(unitLetter);
+  if (!suffix || index === -1) throw new Error('Letra de unidade inválida (use A a I) ou código de lacração inválido.');
+  return `PD-${unitLetter}-${suffix}-0${index + 1}`;
+}
+
 /** This is CRIPTA-HASH, not the ordinary SHA-256 of the whole file. */
 export async function fingerprintLacre(file: Blob): Promise<string> {
   if (!file.size) throw new Error('Arquivo da unidade vazio.');
