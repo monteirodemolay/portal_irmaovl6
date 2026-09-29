@@ -2724,7 +2724,8 @@
   function combineGuardianShares(files) {
     if (files.length < 2) throw new Error("Selecione ao menos duas partes de Guardi\xF5es.");
     const shares = files.map((file, index) => {
-      if (!isGuardianShareFile(file)) throw new Error(`O arquivo ${index + 1} n\xE3o \xE9 uma parte de Guardi\xE3o reconhec\xEDvel.`);
+      if (!isGuardianShareFile(file))
+        throw new Error(`O arquivo ${index + 1} n\xE3o \xE9 uma parte de Guardi\xE3o reconhec\xEDvel.`);
       return file;
     });
     const first = shares[0];
@@ -2734,7 +2735,9 @@
       }
     }
     if (shares.length < first.limiar) {
-      throw new Error(`S\xE3o necess\xE1rias pelo menos ${first.limiar} partes; apenas ${shares.length} selecionada(s).`);
+      throw new Error(
+        `S\xE3o necess\xE1rias pelo menos ${first.limiar} partes; apenas ${shares.length} selecionada(s).`
+      );
     }
     const points = shares.map((share) => ({ x: share.parte, y: fromBase642(share.valor) }));
     const privateScalar = combineShares(points);
@@ -2745,12 +2748,15 @@
   }
   async function openLetterEntry(entry, privateScalar, publicKey) {
     if (entry.kind !== "letter") {
-      throw new Error("Este registro \xE9 um rascunho, n\xE3o uma carta selada. Rascunhos dependem do Portal e n\xE3o abrem por esta ferramenta.");
+      throw new Error(
+        "Este registro \xE9 um rascunho, n\xE3o uma carta selada. Rascunhos dependem do Portal e n\xE3o abrem por esta ferramenta."
+      );
     }
     const envelope = JSON.parse(new TextDecoder().decode(entry.bytes));
     const plaintext = await openWithCriptaPrivateKey(envelope, privateScalar, publicKey);
     const letter = JSON.parse(new TextDecoder().decode(plaintext));
-    if (letter.format !== "vl6-online-letter-v1") throw new Error("Formato de carta n\xE3o reconhecido.");
+    if (letter.format !== "vl6-online-letter-v1")
+      throw new Error("Formato de carta n\xE3o reconhecido.");
     return letter;
   }
   window.CriptaOffline = { combineGuardianShares, parseLacre, openLetterEntry, makeOfflinePackage };
