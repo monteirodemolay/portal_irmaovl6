@@ -601,5 +601,7 @@ export async function moderateNewsCommentAction(
   if (!result.ok) throw new Error(result.error.message);
 
   revalidatePath(`/admin/conteudo/noticias/${newsId}`);
+  revalidatePath('/admin/conteudo/noticias/comentarios');
+  revalidatePath('/admin');
   revalidatePath(`/noticias`);
 }

@@ -10,6 +10,7 @@ import {
 } from '@/modules/content/actions/content-actions';
 import { NewsForm } from '@/modules/content/components/news-form';
 import { ModerateCommentsPanel } from '@/modules/content/components/moderate-comments-panel';
+import { resolveCommentAuthorNames } from '@/modules/content/lib/resolve-comment-authors';
 import { PublishToggleButton } from '@/components/admin/publish-toggle-button';
 import { DeleteButton } from '@/components/admin/delete-button';
 
@@ -27,6 +28,11 @@ export default async function EditNewsPage({ params }: { params: Promise<{ newsI
         (comment) => comment.newsId === newsId,
       )
     : [];
+  const commentAuthorNames = await resolveCommentAuthorNames(
+    container,
+    session.authContext.tenantId,
+    pendingComments,
+  );
 
   return (
     <div className="flex flex-col gap-6">
@@ -52,7 +58,7 @@ export default async function EditNewsPage({ params }: { params: Promise<{ newsI
             <CardTitle>Comentários pendentes de moderação</CardTitle>
           </CardHeader>
           <CardContent>
-            <ModerateCommentsPanel newsId={newsId} comments={pendingComments} />
+            <ModerateCommentsPanel comments={pendingComments} authorNames={commentAuthorNames} />
           </CardContent>
         </Card>
       )}

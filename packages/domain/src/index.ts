@@ -292,6 +292,7 @@ export * from './modules/notification/repositories/link-favorite.repository';
 export * from './modules/notification/repositories/link-suggestion.repository';
 export * from './modules/notification/services/notification-gateway';
 export * from './modules/notification/use-cases/notify-recipient.use-case';
+export * from './modules/notification/use-cases/notify-users-with-permission.use-case';
 export * from './modules/notification/use-cases/list-my-notifications.use-case';
 export * from './modules/identity-access/use-cases/delete-my-account.use-case';
 export * from './modules/notification/use-cases/mark-notification-as-read.use-case';

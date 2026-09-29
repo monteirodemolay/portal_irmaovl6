@@ -119,6 +119,8 @@ export default async function AdminDashboardPage() {
   const canCentralManage = can('memberCentral:manage');
   const canContributionManage = can('archiveContribution:manage');
   const canAuditRead = can('auditLog:read');
+  const canNewsManage = can('news:manage');
+  const canLinkManage = can('link:manage');
 
   const [
     totalMembers,
@@ -128,6 +130,8 @@ export default async function AdminDashboardPage() {
     unclaimedMembers,
     duplicateResult,
     pendingContributions,
+    pendingComments,
+    pendingLinkSuggestions,
     situacaoCounts,
     auditPage,
     announcementsCount,
@@ -151,6 +155,10 @@ export default async function AdminDashboardPage() {
     canMemberManage ? container.useCases.listDuplicateMembers.execute(ctx) : Promise.resolve(null),
     canContributionManage
       ? container.repositories.archiveContribution.countPendingByTenant(tenantId)
+      : Promise.resolve(null),
+    canNewsManage ? container.useCases.listPendingNewsComments.execute(ctx) : Promise.resolve(null),
+    canLinkManage
+      ? container.useCases.listPendingLinkSuggestions.execute(ctx)
       : Promise.resolve(null),
     canMemberRead
       ? Promise.all(
@@ -192,8 +200,14 @@ export default async function AdminDashboardPage() {
       )
     : null;
 
-  const pendingCount = duplicateGroups.length + (pendingContributions ?? 0);
-  const showPendingKpi = canMemberManage || canContributionManage;
+  const pendingCommentsCount = pendingComments?.length ?? 0;
+  const pendingLinkSuggestionsCount = pendingLinkSuggestions?.length ?? 0;
+  const pendingCount =
+    duplicateGroups.length +
+    (pendingContributions ?? 0) +
+    pendingCommentsCount +
+    pendingLinkSuggestionsCount;
+  const showPendingKpi = canMemberManage || canContributionManage || canNewsManage || canLinkManage;
 
   const actionItems = [
     canMemberManage && duplicateGroups.length > 0
@@ -208,6 +222,20 @@ export default async function AdminDashboardPage() {
           label: `Revisar ${pendingContributions} contribuição${pendingContributions === 1 ? '' : 'ões'} do Acervo`,
           detail: 'Enviadas por Irmãos, aguardando moderação.',
           href: '/admin/acervo/contribuicoes',
+        }
+      : null,
+    canNewsManage && pendingCommentsCount > 0
+      ? {
+          label: `Moderar ${pendingCommentsCount} comentário${pendingCommentsCount === 1 ? '' : 's'} de Notícias`,
+          detail: 'Escritos por Irmãos, ficam invisíveis até você aprovar.',
+          href: '/admin/conteudo/noticias/comentarios',
+        }
+      : null,
+    canLinkManage && pendingLinkSuggestionsCount > 0
+      ? {
+          label: `Avaliar ${pendingLinkSuggestionsCount} link${pendingLinkSuggestionsCount === 1 ? '' : 's'} sugerido${pendingLinkSuggestionsCount === 1 ? '' : 's'}`,
+          detail: 'Sugeridos por Irmãos para "Links úteis".',
+          href: '/admin/conteudo/links',
         }
       : null,
     canMemberRead && unclaimedMembers.length > 0
