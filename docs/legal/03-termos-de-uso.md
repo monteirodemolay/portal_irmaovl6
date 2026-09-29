@@ -73,7 +73,8 @@ A Loja VL6, como instituição responsável pelo Portal, compromete-se a manter 
 - Consulta ao Acervo Histórico e à Constelação VL6;
 - Divulgação voluntária de negócios e serviços profissionais no módulo Negócios, respeitados os critérios de moderação institucional;
 - Participação em Comunidades Paramaçônicas vinculadas, conforme perfil de acesso;
-- Uso das ferramentas de agenda, notificações e comunicação institucional.
+- Uso das ferramentas de agenda, notificações e comunicação institucional;
+- Comentar notícias institucionais publicadas no Portal, ciente de que o comentário só fica visível aos demais Irmãos depois de aprovado pela moderação, e que seu nome completo é exibido junto ao texto aprovado.
 
 ## 7. Uso proibido
 

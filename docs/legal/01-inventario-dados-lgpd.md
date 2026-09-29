@@ -108,6 +108,10 @@ Camada de visualização/navegação sobre dados já existentes (Acervo, Members
 - `Notification`: canal interno sempre persistido; e-mail/WhatsApp/Telegram/push usam contato já cadastrado em `Member`. **Única coleção do sistema com retenção automática codificada**: arquivada ao expirar e **excluída fisicamente** 7 dias depois (`PurgeExpiredNotificationsUseCase`).
 - Cron `birthday-reminder` varre todos os tenants e cria eventos com o **nome do Irmão aniversariante no título**, visíveis a todo `event:read` da Loja (não só ao próprio Irmão).
 
+### 3.6-A Comentários em Notícias institucionais (`newsComment`)
+
+Qualquer Irmão autenticado (`news:read`) pode comentar uma notícia publicada — texto livre + `autorId`. O comentário nasce `moderado: false` e só fica visível aos demais Irmãos depois que um Administrador com `news:manage` aprova; reprovar é soft delete (nunca aparece). **O nome completo do autor é exibido junto do comentário aprovado**, tanto na página pública da notícia (para todo Irmão autenticado) quanto no painel de moderação do Administrador. Assim que o comentário é criado, todo usuário com `news:manage` recebe uma notificação interna automática contendo o nome do autor e um trecho do texto (até 140 caracteres), para acelerar a moderação — antes o Administrador só via o conteúdo abrindo a notícia manualmente. Não há hard delete do texto do comentário reprovado nem retenção diferenciada da usada pelo restante do conteúdo institucional.
+
 ### 3.7 Storage, Acervo, Biblioteca, Galeria, Downloads, QR Codes
 
 - **Infra real:** Vercel Blob (`access: public`), não Firebase Storage — migração documentada no próprio código. Todo blob fica em URL pública; a única proteção é o UUID do path não ser adivinhável.

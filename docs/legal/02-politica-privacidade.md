@@ -74,7 +74,7 @@ Nome e data de aniversário (dia/mês) do cônjuge e dos filhos do Irmão, para 
 
 ### 8.5 Dados de uso e participação institucional
 
-Confirmação de presença em sessões e eventos, empréstimos e devoluções na Biblioteca, itens do Acervo Histórico visualizados/baixados (de forma agregada, sem identificar individualmente quem acessou cada item — Seção 10), notificações recebidas e seu status de leitura.
+Confirmação de presença em sessões e eventos, empréstimos e devoluções na Biblioteca, itens do Acervo Histórico visualizados/baixados (de forma agregada, sem identificar individualmente quem acessou cada item — Seção 10), notificações recebidas e seu status de leitura, e comentários feitos em notícias institucionais (texto e nome do autor, exibidos aos demais Irmãos autenticados somente após aprovação da moderação).
 
 ### 8.6 Dados de publicação voluntária (perfil da Central VL6)
 
@@ -102,16 +102,17 @@ O Portal não coleta, no seu funcionamento atual: geolocalização precisa, dado
 
 ## 10. Finalidades específicas por dado
 
-| Dado                            | Finalidade                                                                                   |
-| ------------------------------- | -------------------------------------------------------------------------------------------- |
-| Identificação e contato         | Gestão do quadro de Irmãos, comunicação institucional, Diretório interno                     |
-| Trajetória maçônica             | Registro histórico, controle de regularidade, elegibilidade a cargos                         |
-| Dados profissionais/negócios    | Rede de apoio profissional entre Irmãos (módulo Negócios), sempre voluntário                 |
-| Dados de familiares             | Lembretes de datas comemorativas; preservação de memória familiar (Família e Legado)         |
-| Dados de uso/participação       | Organização de eventos, gestão da Biblioteca, estatísticas agregadas de uso do Acervo        |
-| Perfil voluntário (Central VL6) | Divulgação voluntária do Irmão a outros membros, conforme blocos que ele mesmo autorizar     |
-| Dados técnicos/segurança        | Prevenção a fraude, investigação de incidentes, auditoria de ações administrativas           |
-| Arquivos e imagens              | Preservação do patrimônio histórico da Loja, gestão da Biblioteca, comunicação institucional |
+| Dado                            | Finalidade                                                                                    |
+| ------------------------------- | --------------------------------------------------------------------------------------------- |
+| Identificação e contato         | Gestão do quadro de Irmãos, comunicação institucional, Diretório interno                      |
+| Trajetória maçônica             | Registro histórico, controle de regularidade, elegibilidade a cargos                          |
+| Dados profissionais/negócios    | Rede de apoio profissional entre Irmãos (módulo Negócios), sempre voluntário                  |
+| Dados de familiares             | Lembretes de datas comemorativas; preservação de memória familiar (Família e Legado)          |
+| Dados de uso/participação       | Organização de eventos, gestão da Biblioteca, estatísticas agregadas de uso do Acervo         |
+| Comentários em notícias         | Interação institucional entre Irmãos em conteúdo editorial, sempre moderada antes de publicar |
+| Perfil voluntário (Central VL6) | Divulgação voluntária do Irmão a outros membros, conforme blocos que ele mesmo autorizar      |
+| Dados técnicos/segurança        | Prevenção a fraude, investigação de incidentes, auditoria de ações administrativas            |
+| Arquivos e imagens              | Preservação do patrimônio histórico da Loja, gestão da Biblioteca, comunicação institucional  |
 
 O Portal não trata nenhum dado pessoal para finalidade diversa da institucional/fraterna descrita nesta política, e não realiza tomada de decisão automatizada que produza efeitos jurídicos ou de impacto significativo aos titulares.
 
