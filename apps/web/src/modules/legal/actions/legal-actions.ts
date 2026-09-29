@@ -58,3 +58,43 @@ export async function acceptLegalDocumentAction(
   revalidatePath('/irmaos/configuracoes/termos-e-privacidade');
   return { error: null, ok: true };
 }
+
+export interface AcceptAllLegalDocumentsState {
+  error: string | null;
+  ok: boolean;
+}
+
+/**
+ * Registra, em uma única chamada, o aceite de todos os documentos pendentes
+ * (Termos de Uso + Política de Privacidade) — usada pela tela de boas-vindas
+ * de primeiro acesso/reaceite (`FirstAccessWelcomeOverlay`), que substitui o
+ * antigo redirect obrigatório para `/irmaos/configuracoes/termos-e-privacidade`
+ * por um overlay sobre a própria página inicial do Irmão.
+ */
+export async function acceptAllPendingLegalDocumentsAction(
+  items: { documento: LegalDocumentKey; versao: string }[],
+): Promise<AcceptAllLegalDocumentsState> {
+  const session = await requireSession();
+  const headerList = await headers();
+  const container = createServerContainer();
+  const ip = getClientIp({ headers: headerList });
+  const userAgent = headerList.get('user-agent');
+
+  for (const item of items) {
+    const result = await container.useCases.recordLegalAcceptance.execute({
+      tenantId: session.authContext.tenantId,
+      userId: session.authContext.uid,
+      documento: item.documento,
+      versao: item.versao,
+      ip,
+      userAgent,
+    });
+
+    if (!result.ok) {
+      return { error: result.error.message, ok: false };
+    }
+  }
+
+  revalidatePath('/', 'layout');
+  return { error: null, ok: true };
+}
