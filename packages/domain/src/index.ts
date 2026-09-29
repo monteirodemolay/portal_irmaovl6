@@ -407,6 +407,7 @@ export * from './modules/archive/use-cases/list-constellation-view-revisions.use
 export * from './modules/archive/use-cases/restore-constellation-view-revision.use-case';
 export * from './modules/archive/use-cases/create-elevation-archive-item.use-case';
 export * from './modules/archive/use-cases/create-exaltation-archive-item.use-case';
+export * from './modules/archive/use-cases/remove-member-from-ceremony-archive-item.use-case';
 export * from './modules/archive/use-cases/register-media-asset.use-case';
 export * from './modules/archive/use-cases/attach-media-to-archive-item.use-case';
 export * from './modules/archive/use-cases/set-archive-item-cover.use-case';

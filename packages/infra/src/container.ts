@@ -74,6 +74,7 @@ import {
   CreateInitiationArchiveItemUseCase,
   CreateElevationArchiveItemUseCase,
   CreateExaltationArchiveItemUseCase,
+  RemoveMemberFromCeremonyArchiveItemUseCase,
   RegisterMediaAssetUseCase,
   AttachMediaToArchiveItemUseCase,
   SetArchiveItemCoverUseCase,
@@ -1787,6 +1788,11 @@ export function createServerContainer() {
       tenantRepository: repositories.tenant,
       clock,
       idGenerator,
+    }),
+    removeMemberFromCeremonyArchiveItem: new RemoveMemberFromCeremonyArchiveItemUseCase({
+      archiveItemRepository: repositories.archiveItem,
+      eventRepository: repositories.event,
+      clock,
     }),
     registerMediaAsset: new RegisterMediaAssetUseCase({
       mediaAssetRepository: repositories.mediaAsset,
