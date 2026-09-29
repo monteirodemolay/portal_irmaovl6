@@ -2,11 +2,11 @@ import { TERMINAL_MEMBER_SITUATION_STATUSES } from '@vl6/shared';
 import type { AuthContext } from '../../../shared/auth-context';
 import { requirePermission } from '../../../shared/auth-context';
 import { ok, type Result } from '../../../shared/result';
-import { isCentralProfileVisible } from '../entities/publication-settings.entity';
 import {
   buildPublicMemberProfileDTO,
   type PublicMemberProfileDTO,
 } from '../dtos/public-member-profile.dto';
+import { resolveEffectivePublication } from '../lib/resolve-effective-publication';
 import type { IMemberCentralProfileRepository } from '../repositories/member-central-profile.repository';
 import type { IPublicationSettingsRepository } from '../repositories/publication-settings.repository';
 import type { IMemberRepository } from '../../membership/repositories/member.repository';
@@ -77,18 +77,20 @@ export class GetPublicMemberProfileUseCase {
       ctx.tenantId,
       targetMemberId,
     );
-    // `null` aqui cobre igualmente "nunca publicou" e "suspenso" — os dois
-    // casos devolvem a mesma ficha institucional com blocos voluntários
-    // fechados (`buildPublicMemberProfileDTO` trata `settings: null` como
-    // "tudo fechado"), nunca `ok(null)`: só um Irmão que não existe neste
-    // tenant (não encontrado/outro tenant/excluído) devolve null.
-    const visibleSettings = isCentralProfileVisible(settings) ? settings : null;
+    // `settings` passa direto pro DTO builder, sem colapsar pra `null` aqui
+    // — `resolveEffectivePublication` (usada dentro de
+    // `buildPublicMemberProfileDTO`) já trata `null` (nunca configurou) como
+    // ABERTO por padrão e suspenso/despublicado explicitamente como
+    // FECHADO; colapsar os dois pra `null` misturaria os dois casos.
+    // `ok(null)` continua reservado só pra um Irmão que não existe neste
+    // tenant (não encontrado/outro tenant/excluído).
+    const effective = resolveEffectivePublication(settings);
 
     const profile = await this.deps.memberCentralProfileRepository.findByMemberId(
       ctx.tenantId,
       targetMemberId,
     );
-    const dto = buildPublicMemberProfileDTO(member, profile, visibleSettings);
+    const dto = buildPublicMemberProfileDTO(member, profile, settings);
 
     // Trajetória institucional — mesmo recorte do Acervo VL6 (registro da
     // Loja, não preferência pessoal), por isso não passa pelos blocos de
@@ -144,7 +146,7 @@ export class GetPublicMemberProfileUseCase {
     // quem vê o Diretório com sessão de Administrador — o Acervo VL6 é a
     // superfície certa para mídia restrita, não o perfil público.
     let memoriaFotografica: PublicMemberProfileDTO['memoriaFotografica'] = null;
-    if (visibleSettings?.blocks.memoriaFotografica) {
+    if (effective.blocks.memoriaFotografica) {
       const taggedMedia = await this.deps.archiveMediaRepository.findByPessoaIdentificada(
         ctx.tenantId,
         targetMemberId,

@@ -5,6 +5,15 @@ const nextConfig: NextConfig = {
   // Os pacotes do monorepo são consumidos como TypeScript-fonte (não
   // pré-compilados) — ver docs/architecture/02-estrutura-diretorios.md.
   transpilePackages: ['@vl6/ui', '@vl6/domain', '@vl6/infra', '@vl6/shared'],
+  // Inlina o SHA do commit (variável de sistema da Vercel, vazia fora dela)
+  // e o horário do build no bundle do cliente — usado pelas telas de erro
+  // (`error.tsx`/`global-error.tsx`) e pelo `release` do Sentry pra saber
+  // exatamente qual deploy está no ar quando "Algo deu errado" aparece. Ver
+  // `src/lib/observability/deploy-info.ts`.
+  env: {
+    NEXT_PUBLIC_DEPLOY_SHA: process.env.VERCEL_GIT_COMMIT_SHA ?? '',
+    NEXT_PUBLIC_DEPLOY_BUILT_AT: new Date().toISOString(),
+  },
   // `pdf-parse` carrega `pdfjs-dist` (build "legacy"), que mexe em globals
   // assumindo Node "puro" ou browser real — o bundle webpack do runtime de
   // Server Actions (`action-browser`) não é nem um nem outro, e quebra com
@@ -150,6 +159,11 @@ export default withSentryConfig(nextConfig, {
   org: process.env.SENTRY_ORG,
   project: process.env.SENTRY_PROJECT,
   authToken: process.env.SENTRY_AUTH_TOKEN,
+  // Mesmo SHA usado em `Sentry.init({ release })` (server e client) — sem
+  // isso o plugin geraria um nome de release próprio na hora do upload de
+  // sourcemap, que não bateria com o release setado em runtime, e os stack
+  // traces no Sentry voltariam a aparecer minificados.
+  release: { name: process.env.VERCEL_GIT_COMMIT_SHA },
   silent: true,
   widenClientFileUpload: false,
   webpack: { treeshake: { removeDebugLogging: true } },

@@ -17,6 +17,16 @@ export interface UpcomingAnniversaryEntry {
   kind: AnniversaryKind;
   data: Date;
   /**
+   * Dia/mês da ocorrência como números — usados pela UI pra exibir a data
+   * (`anniversaryHeadline`), nunca `data` diretamente. Ver o comentário de
+   * `NextOccurrence.dia`/`mes` em `anniversary-date.ts`: um `Date` que
+   * atravessa a fronteira servidor/cliente do React (este painel é um
+   * Client Component) é reconstruído no fuso do navegador do Irmão, o que
+   * pode deslocar o dia exibido (bug relatado pelo Administrador).
+   */
+  dia: number;
+  mes: number;
+  /**
    * Nunca exibido pra `nascimento`/`conjuge`/`filho` (convenção da UI, ver
    * `anniversaryHeadline`) — pra `conjuge`/`filho` sem ano conhecido
    * (`conjugeAniversarioDia/Mes`, `MemberChild`), este número não representa
@@ -91,7 +101,7 @@ export class ListUpcomingAnniversariesUseCase {
         const data = member[field];
         if (!(data instanceof Date)) continue;
 
-        const { diasAte, anosCompletos } = computeNextOccurrence(hoje, data);
+        const { diasAte, anosCompletos, dia, mes } = computeNextOccurrence(hoje, data);
         if (diasAte > withinDays) continue;
 
         entries.push({
@@ -101,6 +111,8 @@ export class ListUpcomingAnniversariesUseCase {
           grau: member.grau,
           kind,
           data,
+          dia,
+          mes,
           anosCompletos,
           diasAte,
           conjugeNome: kind === 'conjuge' ? member.conjugeNome : null,
@@ -118,7 +130,12 @@ export class ListUpcomingAnniversariesUseCase {
           member.aniversarioMes - 1,
           member.aniversarioDia,
         );
-        const { diasAte, anosCompletos } = computeNextOccurrence(hoje, data);
+        const {
+          diasAte,
+          anosCompletos,
+          dia: diaOcorrencia,
+          mes: mesOcorrencia,
+        } = computeNextOccurrence(hoje, data);
         if (diasAte <= withinDays) {
           entries.push({
             memberId: member.id,
@@ -127,6 +144,8 @@ export class ListUpcomingAnniversariesUseCase {
             grau: member.grau,
             kind: 'nascimento',
             data,
+            dia: diaOcorrencia,
+            mes: mesOcorrencia,
             anosCompletos,
             diasAte,
             conjugeNome: null,
@@ -149,7 +168,12 @@ export class ListUpcomingAnniversariesUseCase {
           member.conjugeAniversarioMes - 1,
           member.conjugeAniversarioDia,
         );
-        const { diasAte, anosCompletos } = computeNextOccurrence(hoje, data);
+        const {
+          diasAte,
+          anosCompletos,
+          dia: diaOcorrencia,
+          mes: mesOcorrencia,
+        } = computeNextOccurrence(hoje, data);
         if (diasAte <= withinDays) {
           entries.push({
             memberId: member.id,
@@ -158,6 +182,8 @@ export class ListUpcomingAnniversariesUseCase {
             grau: member.grau,
             kind: 'conjuge',
             data,
+            dia: diaOcorrencia,
+            mes: mesOcorrencia,
             anosCompletos,
             diasAte,
             conjugeNome: member.conjugeNome,
@@ -172,7 +198,7 @@ export class ListUpcomingAnniversariesUseCase {
           filho.aniversarioMes - 1,
           filho.aniversarioDia,
         );
-        const { diasAte, anosCompletos } = computeNextOccurrence(hoje, data);
+        const { diasAte, anosCompletos, dia, mes } = computeNextOccurrence(hoje, data);
         if (diasAte > withinDays) continue;
 
         entries.push({
@@ -182,6 +208,8 @@ export class ListUpcomingAnniversariesUseCase {
           grau: member.grau,
           kind: 'filho',
           data,
+          dia,
+          mes,
           anosCompletos,
           diasAte,
           conjugeNome: null,

@@ -220,3 +220,19 @@ prática, que a arquitetura não degrade com o tempo.
 | Interfaces de repositório | prefixo `I`                 | `IMemberRepository.ts`  |
 | Coleções Firestore        | camelCase plural            | `memberPositionHistory` |
 | Rotas de API              | kebab-case, versionadas     | `/api/v1/members`       |
+
+## 2.x Índice das áreas adicionadas até 28/09/2026
+
+A árvore acima documenta o desenho de fundação e algumas rotas antigas. Para localizar o estado atual, verificar diretamente:
+
+- `apps/web/src/app/(member)/acervo/` — páginas de Acervo, Biblioteca, Constelação, pesquisa, mídia, gestões, pessoas e linha do tempo.
+- `apps/web/src/modules/archive/` — renderização, catalogação, divulgação, mídia, integração e loader da Constelação.
+- `apps/web/src/app/(member)/agenda/` e `apps/web/src/modules/agenda/` — Agenda unificada e seus filtros.
+- `apps/web/src/app/(member)/noticias/` e `apps/web/src/modules/content/` — Notícias, importação/reimportação, destaques e vínculo a eventos.
+- `apps/web/src/app/(member)/paramaconicas/` — interface da comunidade com permissões específicas.
+- `apps/web/src/app/(member)/cripta*/` e `apps/web/src/modules/cripta/` — experiências e APIs do **piloto**, não liberação da custódia anual.
+- `apps/web/src/modules/legal/`, `docs/legal/` — versões e aceite dos termos.
+- `packages/domain/src/modules/` e `packages/infra/src/firestore/repositories/` — domínio e persistência que acompanharam as novas áreas.
+- `scripts/normalize-temple-location.ts` — migração manual de nomes antigos do local do Templo, executada e revalidada em 28/09/2026.
+
+A relação de funcionalidades e limitações está em [13-estado-atual-e-operacao.md](./13-estado-atual-e-operacao.md). Não usar a árvore histórica desta página como lista exaustiva de rotas atuais.

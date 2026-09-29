@@ -4,6 +4,8 @@ import { useActionState, useMemo, useState, useTransition } from 'react';
 import { useFormStatus } from 'react-dom';
 import type { Event } from '@vl6/domain';
 import {
+  normalizeEventLocation,
+  VL6_TEMPLE_LOCATION,
   EVENT_KINDS,
   EVENT_KIND_LABELS,
   formatSessionName,
@@ -17,6 +19,7 @@ import {
   SESSION_TYPES,
   SESSION_WORK_DEGREE_LABELS,
   SESSION_WORK_DEGREES,
+  type EventKind,
   type JointLodgeReference,
   type SessionAccessKind,
   type SessionType,
@@ -51,19 +54,32 @@ function toDatetimeLocalValue(date: Date | null): string | undefined {
   )}:${pad(date.getMinutes())}`;
 }
 
+export interface AgendaParamasonicEntityOption {
+  id: string;
+  label: string;
+}
+
 export function EventForm({
   event,
   initialAttachments = [],
+  paramasonicEntities = [],
+  initialType,
 }: {
   /** Presente = modo edição (pré-preenche e salva via `updateEventAction`); ausente = criação. */
   event?: Event;
   initialAttachments?: ResolvedArchiveItem[];
+  paramasonicEntities?: AgendaParamasonicEntityOption[];
+  initialType?: EventKind;
 }) {
   const action = event ? updateEventAction.bind(null, event.id) : createEventAction;
   const [state, formAction] = useActionState<AgendaActionState, FormData>(action, EMPTY_STATE);
 
-  const [tipo, setTipo] = useState(event?.tipo ?? '');
+  const [tipo, setTipo] = useState(event?.tipo ?? initialType ?? '');
+  const [agendaContext, setAgendaContext] = useState<'loja' | 'paramaconica' | 'outro'>(
+    event?.agendaContext ?? 'loja',
+  );
   const isSessao = tipo === 'sessao';
+  const isRecesso = tipo === 'recesso';
 
   const [sessionType, setSessionType] = useState<SessionType | ''>(event?.sessionType ?? '');
   const [sessionNature, setSessionNature] = useState(event?.sessionNature ?? '');
@@ -74,7 +90,9 @@ export function EventForm({
     event?.participatingLodges?.length ? event.participatingLodges : [EMPTY_LODGE],
   );
   const [tituloTocado, setTituloTocado] = useState(Boolean(event));
-  const [titulo, setTitulo] = useState(event?.titulo ?? '');
+  const [titulo, setTitulo] = useState(
+    event?.titulo ?? (initialType === 'recesso' ? 'Recesso Maçônico' : ''),
+  );
   const [descricao, setDescricao] = useState(event?.descricao ?? '');
   const [capaUrlExterna, setCapaUrlExterna] = useState<string | null>(null);
 
@@ -134,7 +152,7 @@ export function EventForm({
 
   return (
     <form action={formAction} className="flex max-w-lg flex-col gap-4">
-      <ImportFromVl6Field onImported={handleImportedFromVl6} />
+      {!isRecesso && <ImportFromVl6Field onImported={handleImportedFromVl6} />}
 
       <FormField label="Tipo" htmlFor="tipo">
         <Select
@@ -142,7 +160,13 @@ export function EventForm({
           name="tipo"
           required
           value={tipo}
-          onChange={(e) => setTipo(e.target.value)}
+          onChange={(e) => {
+            const nextType = e.target.value;
+            setTipo(nextType);
+            if (nextType === 'recesso' && !tituloTocado && !titulo.trim()) {
+              setTitulo('Recesso Maçônico');
+            }
+          }}
         >
           <option value="" disabled>
             Selecione…
@@ -154,6 +178,60 @@ export function EventForm({
           ))}
         </Select>
       </FormField>
+
+      <div className="border-border bg-surface flex flex-col gap-3 rounded-xl border p-4">
+        <div>
+          <p className="text-sm font-semibold">Origem na Agenda Central</p>
+          <p className="text-muted mt-0.5 text-xs">
+            Define em qual área institucional o compromisso será apresentado.
+          </p>
+        </div>
+        <FormField label="Contexto" htmlFor="agendaContext">
+          <Select
+            id="agendaContext"
+            name="agendaContext"
+            value={agendaContext}
+            onChange={(e) => setAgendaContext(e.target.value as 'loja' | 'paramaconica' | 'outro')}
+          >
+            <option value="loja">Loja Verdadeira Luz nº 06</option>
+            <option value="paramaconica">Entidade Paramaçônica</option>
+            <option value="outro">Outra atividade</option>
+          </Select>
+        </FormField>
+        {agendaContext === 'paramaconica' && (
+          <FormField
+            label="Entidade Paramaçônica"
+            htmlFor="paramasonicEntityId"
+            description="O evento continuará sendo único; este vínculo apenas define sua origem e seus filtros na Agenda."
+          >
+            <Select
+              id="paramasonicEntityId"
+              name="paramasonicEntityId"
+              required
+              defaultValue={event?.paramasonicEntityId ?? ''}
+            >
+              <option value="" disabled>
+                Selecione…
+              </option>
+              {paramasonicEntities.map((entity) => (
+                <option key={entity.id} value={entity.id}>
+                  {entity.label}
+                </option>
+              ))}
+            </Select>
+          </FormField>
+        )}
+      </div>
+
+      {isRecesso && (
+        <div className="border-accent/30 bg-accent/5 flex flex-col gap-1 rounded-lg border p-3">
+          <p className="text-sm font-semibold">Período de Recesso Maçônico</p>
+          <p className="text-muted text-xs">
+            Informe o primeiro e o último dia do recesso. O período aparecerá na Agenda Central e
+            pode ser cadastrado novamente para o segundo recesso do ano.
+          </p>
+        </div>
+      )}
 
       {isSessao && (
         <div className="border-border flex flex-col gap-4 rounded-lg border p-3">
@@ -341,10 +419,23 @@ export function EventForm({
         <input type="hidden" name="capaUrlExterna" value={capaUrlExterna ?? ''} />
         <EventCoverField capaUrl={event?.capaUrl} importedPreviewUrl={capaUrlExterna} />
       </FormField>
-      <FormField label="Local" htmlFor="local">
-        <Input id="local" name="local" required defaultValue={event?.local} />
+      <FormField
+        label={isRecesso ? 'Referência/local (opcional)' : 'Local'}
+        htmlFor="local"
+        description={
+          isRecesso
+            ? 'Se ficar em branco, será identificado como Loja Maçônica Verdadeira Luz nº 06.'
+            : undefined
+        }
+      >
+        <Input
+          id="local"
+          name="local"
+          required={!isRecesso}
+          defaultValue={event?.local ? normalizeEventLocation(event.local) : VL6_TEMPLE_LOCATION}
+        />
       </FormField>
-      <FormField label="Início" htmlFor="dataInicio">
+      <FormField label={isRecesso ? 'Início do recesso' : 'Início'} htmlFor="dataInicio">
         <Input
           id="dataInicio"
           name="dataInicio"
@@ -354,14 +445,19 @@ export function EventForm({
         />
       </FormField>
       <FormField
-        label="Fim (opcional)"
+        label={isRecesso ? 'Fim do recesso' : 'Fim (opcional)'}
         htmlFor="dataFim"
-        description="Deixe em branco quando não houver horário de encerramento definido (comum em sessões)."
+        description={
+          isRecesso
+            ? 'Obrigatório. Use a data em que o recesso termina.'
+            : 'Deixe em branco quando não houver horário de encerramento definido (comum em sessões).'
+        }
       >
         <Input
           id="dataFim"
           name="dataFim"
           type="datetime-local"
+          required={isRecesso}
           defaultValue={event ? toDatetimeLocalValue(event.dataFim) : undefined}
         />
       </FormField>

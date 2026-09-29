@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { centralAffiliationEntrySchema, memberCentralProfileSchema } from './central.schema';
+import {
+  centralAffiliationEntrySchema,
+  centralEducationEntrySchema,
+  centralEmploymentEntrySchema,
+  memberCentralProfileSchema,
+} from './central.schema';
 
 function baseInput() {
   return {
@@ -13,6 +18,8 @@ function baseInput() {
     formacao: null,
     resumoProfissional: null,
     negocios: [],
+    historicoProfissional: [],
+    formacaoAcademica: [],
     competencias: [],
     servicos: [],
     afiliacoes: [],
@@ -113,6 +120,98 @@ describe('memberCentralProfileSchema', () => {
     });
     expect(ok.success).toBe(true);
   });
+
+  it('limita histórico profissional a 15 entradas', () => {
+    const entry = {
+      id: 'h1',
+      empresa: 'Empresa X',
+      cargo: null,
+      dataInicio: null,
+      dataFim: null,
+      atual: false,
+      descricao: null,
+    };
+    const excesso = Array.from({ length: 16 }, (_, i) => ({ ...entry, id: `h${i}` }));
+    const result = memberCentralProfileSchema.safeParse({
+      ...baseInput(),
+      historicoProfissional: excesso,
+    });
+    expect(result.success).toBe(false);
+
+    const ok = memberCentralProfileSchema.safeParse({
+      ...baseInput(),
+      historicoProfissional: excesso.slice(0, 15),
+    });
+    expect(ok.success).toBe(true);
+  });
+
+  it('limita formação acadêmica a 20 entradas', () => {
+    const entry = {
+      id: 'f1',
+      nivel: 'graduacao',
+      instituicao: 'Universidade X',
+      curso: null,
+      dataInicio: null,
+      dataFim: null,
+      atual: false,
+      descricao: null,
+    };
+    const excesso = Array.from({ length: 21 }, (_, i) => ({ ...entry, id: `f${i}` }));
+    const result = memberCentralProfileSchema.safeParse({
+      ...baseInput(),
+      formacaoAcademica: excesso,
+    });
+    expect(result.success).toBe(false);
+
+    const ok = memberCentralProfileSchema.safeParse({
+      ...baseInput(),
+      formacaoAcademica: excesso.slice(0, 20),
+    });
+    expect(ok.success).toBe(true);
+  });
+});
+
+describe('centralEmploymentEntrySchema', () => {
+  const base = {
+    id: 'h1',
+    empresa: 'Prefeitura de Rio Verde',
+    cargo: 'Servidor(a) Público(a)',
+    dataInicio: new Date('2023-06-01'),
+    dataFim: null,
+    atual: true,
+    descricao: null,
+  };
+
+  it('exige empresa preenchida', () => {
+    const result = centralEmploymentEntrySchema.safeParse({ ...base, empresa: '' });
+    expect(result.success).toBe(false);
+  });
+
+  it('aceita datas em string ISO (vindas do JSON do formulário) via coerção', () => {
+    const result = centralEmploymentEntrySchema.safeParse({
+      ...base,
+      dataInicio: '2023-06-01T00:00:00.000Z',
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('rejeita um período marcado como atual com data de término preenchida', () => {
+    const result = centralEmploymentEntrySchema.safeParse({
+      ...base,
+      atual: true,
+      dataFim: new Date('2024-01-01'),
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('aceita um período encerrado (atual: false) com data de término', () => {
+    const result = centralEmploymentEntrySchema.safeParse({
+      ...base,
+      atual: false,
+      dataFim: new Date('2024-01-01'),
+    });
+    expect(result.success).toBe(true);
+  });
 });
 
 describe('centralAffiliationEntrySchema', () => {
@@ -155,5 +254,54 @@ describe('centralAffiliationEntrySchema', () => {
       abrangencia: 'global',
     });
     expect(invalido.success).toBe(false);
+  });
+});
+
+describe('centralEducationEntrySchema', () => {
+  const base = {
+    id: 'f1',
+    nivel: 'graduacao' as const,
+    instituicao: 'Universidade Federal de Goiás',
+    curso: 'Direito',
+    dataInicio: new Date('2018-02-01'),
+    dataFim: new Date('2022-12-01'),
+    atual: false,
+    descricao: null,
+  };
+
+  it('exige instituição preenchida', () => {
+    const result = centralEducationEntrySchema.safeParse({ ...base, instituicao: '' });
+    expect(result.success).toBe(false);
+  });
+
+  it('só aceita uma chave válida da taxonomia de nível de ensino', () => {
+    const valido = centralEducationEntrySchema.safeParse({ ...base, nivel: 'pos_doutorado' });
+    expect(valido.success).toBe(true);
+
+    const invalido = centralEducationEntrySchema.safeParse({ ...base, nivel: 'mba' });
+    expect(invalido.success).toBe(false);
+  });
+
+  it('rejeita um período marcado como atual com data de término preenchida', () => {
+    const result = centralEducationEntrySchema.safeParse({
+      ...base,
+      atual: true,
+      dataFim: new Date('2024-01-01'),
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('aceita nível sem curso/período informado (nada é obrigatório além de nível e instituição)', () => {
+    const result = centralEducationEntrySchema.safeParse({
+      id: 'f2',
+      nivel: 'ensino_fundamental',
+      instituicao: 'Escola Municipal X',
+      curso: null,
+      dataInicio: null,
+      dataFim: null,
+      atual: false,
+      descricao: null,
+    });
+    expect(result.success).toBe(true);
   });
 });

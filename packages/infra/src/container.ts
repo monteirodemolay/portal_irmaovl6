@@ -2,6 +2,8 @@ import {
   AddGalleryMediaUseCase,
   AddLibraryItemUseCase,
   AssignBoardPositionUseCase,
+  RemoveBoardPositionUseCase,
+  RenameBoardPositionCargoUseCase,
   ImportHistoricalBoardTermsUseCase,
   DedupeMemberPositionHistoryUseCase,
   BackfillMestreInstaladoTitlesUseCase,
@@ -249,6 +251,7 @@ import {
   EditMemberSituationRecordUseCase,
   SeedMemberSituationHistoryUseCase,
   BackfillDataFalecimentoUseCase,
+  BackfillArchiveBoardTermLinksUseCase,
   BackfillConjugeEstadoCivilUseCase,
   DedupeMemberChildrenUseCase,
   SeedInitiationArchiveItemsUseCase,
@@ -289,7 +292,7 @@ import {
   UpdateNotificationPreferenceUseCase,
   UpdatePublicationSettingsUseCase,
   UpdateTenantBrandingUseCase,
-  UpdateComunidadeHeroFotoUseCase,
+  UpdateHeroPhotoUseCase,
   UpdateTenantSettingsUseCase,
   VerifyDomainUseCase,
   WithdrawFromDirectoryUseCase,
@@ -316,6 +319,12 @@ import {
   ArchivePublicationUseCase,
   ListPublicationsUseCase,
   UpdatePublicationUseCase,
+  PublishLegalDocumentVersionUseCase,
+  ListLegalDocumentVersionsUseCase,
+  GetLegalAcceptanceStatusUseCase,
+  RecordLegalAcceptanceUseCase,
+  ListLegalAcceptanceOverviewUseCase,
+  ListLegalAcceptanceHistoryForUserUseCase,
 } from '@vl6/domain';
 import { withAudit } from './audit/with-audit';
 import { NodeDnsResolver } from './dns/node-dns-resolver';
@@ -384,8 +393,11 @@ import { FirestoreTenantBrandingRepository } from './firestore/repositories/tena
 import { FirestoreTenantDomainVerificationRepository } from './firestore/repositories/tenant-domain-verification.repository';
 import { FirestoreTenantSettingsRepository } from './firestore/repositories/tenant-settings.repository';
 import { FirestoreUserRepository } from './firestore/repositories/user.repository';
+import { FirestoreLegalDocumentVersionRepository } from './firestore/repositories/legal-document-version.repository';
+import { FirestoreLegalDocumentAcceptanceRepository } from './firestore/repositories/legal-document-acceptance.repository';
 import { SystemClock } from './adapters/system-clock';
 import { FirestoreIdGenerator } from './adapters/firestore-id-generator';
+import { NodeHasher } from './adapters/node-hasher';
 import { NoopNotificationGateway } from './adapters/noop-notification-gateway';
 import { AesGcmCipher } from './security/aes-gcm-cipher';
 import { HmacOAuthStateSigner } from './security/hmac-oauth-state-signer';
@@ -405,6 +417,7 @@ export function createServerContainer() {
   const idGenerator = new FirestoreIdGenerator(db);
   const auditLogRepository = new FirestoreAuditLogRepository(db);
   const auditDeps = { auditLogRepository, clock, idGenerator };
+  const hasher = new NodeHasher();
 
   // Integração Google Calendar — cada método lança `IntegrationNotConfiguredError`
   // (capturado pelos use cases) quando as env vars `GOOGLE_*` não existem
@@ -536,6 +549,8 @@ export function createServerContainer() {
     ),
     paramasonicEntityMember: new FirestoreParamasonicEntityMemberRepository(db),
     paramasonicEntityPosition: new FirestoreParamasonicEntityPositionRepository(db),
+    legalDocumentVersion: new FirestoreLegalDocumentVersionRepository(db),
+    legalDocumentAcceptance: new FirestoreLegalDocumentAcceptanceRepository(db),
   };
 
   const notificationGateway = new NoopNotificationGateway();
@@ -572,7 +587,7 @@ export function createServerContainer() {
       brandingRepository: repositories.tenantBranding,
       clock,
     }),
-    updateComunidadeHeroFoto: new UpdateComunidadeHeroFotoUseCase({
+    updateHeroPhoto: new UpdateHeroPhotoUseCase({
       tenantRepository: repositories.tenant,
       clock,
     }),
@@ -682,6 +697,12 @@ export function createServerContainer() {
       situationRecordRepository: repositories.memberSituationRecord,
       clock,
     }),
+    backfillArchiveBoardTermLinks: new BackfillArchiveBoardTermLinksUseCase({
+      eventRepository: repositories.event,
+      archiveItemRepository: repositories.archiveItem,
+      boardTermRepository: repositories.boardTerm,
+      clock,
+    }),
     backfillConjugeEstadoCivil: new BackfillConjugeEstadoCivilUseCase({
       memberRepository: repositories.member,
       clock,
@@ -760,11 +781,15 @@ export function createServerContainer() {
 
     createBoardTerm: new CreateBoardTermUseCase({
       boardTermRepository: repositories.boardTerm,
+      eventRepository: repositories.event,
+      archiveItemRepository: repositories.archiveItem,
       clock,
       idGenerator,
     }),
     updateBoardTerm: new UpdateBoardTermUseCase({
       boardTermRepository: repositories.boardTerm,
+      eventRepository: repositories.event,
+      archiveItemRepository: repositories.archiveItem,
       clock,
     }),
     normalizeBoardTermNames: new NormalizeBoardTermNamesUseCase({
@@ -779,6 +804,19 @@ export function createServerContainer() {
       memberTitleRepository: repositories.memberTitle,
       clock,
       idGenerator,
+    }),
+    removeBoardPosition: new RemoveBoardPositionUseCase({
+      assignmentRepository: repositories.boardPositionAssignment,
+      memberRepository: repositories.member,
+      positionHistoryRepository: repositories.memberPositionHistory,
+      memberTitleRepository: repositories.memberTitle,
+      clock,
+      idGenerator,
+    }),
+    renameBoardPositionCargo: new RenameBoardPositionCargoUseCase({
+      assignmentRepository: repositories.boardPositionAssignment,
+      positionHistoryRepository: repositories.memberPositionHistory,
+      clock,
     }),
     importHistoricalBoardTerms: new ImportHistoricalBoardTermsUseCase({
       memberRepository: repositories.member,
@@ -934,7 +972,9 @@ export function createServerContainer() {
     }),
     suspendCentralProfile: new SuspendCentralProfileUseCase({
       publicationSettingsRepository: repositories.publicationSettings,
+      memberRepository: repositories.member,
       clock,
+      idGenerator,
     }),
     reactivateCentralProfile: new ReactivateCentralProfileUseCase({
       publicationSettingsRepository: repositories.publicationSettings,
@@ -2026,6 +2066,37 @@ export function createServerContainer() {
       memberRepository: repositories.member,
       clock,
       idGenerator,
+    }),
+
+    publishLegalDocumentVersion: new PublishLegalDocumentVersionUseCase({
+      legalDocumentVersionRepository: repositories.legalDocumentVersion,
+      auditLogRepository,
+      clock,
+      idGenerator,
+    }),
+    listLegalDocumentVersions: new ListLegalDocumentVersionsUseCase({
+      legalDocumentVersionRepository: repositories.legalDocumentVersion,
+    }),
+    getLegalAcceptanceStatus: new GetLegalAcceptanceStatusUseCase({
+      legalDocumentVersionRepository: repositories.legalDocumentVersion,
+      legalDocumentAcceptanceRepository: repositories.legalDocumentAcceptance,
+    }),
+    recordLegalAcceptance: new RecordLegalAcceptanceUseCase({
+      legalDocumentVersionRepository: repositories.legalDocumentVersion,
+      legalDocumentAcceptanceRepository: repositories.legalDocumentAcceptance,
+      hasher,
+      clock,
+      idGenerator,
+    }),
+    listLegalAcceptanceOverview: new ListLegalAcceptanceOverviewUseCase({
+      legalDocumentVersionRepository: repositories.legalDocumentVersion,
+      legalDocumentAcceptanceRepository: repositories.legalDocumentAcceptance,
+      userRepository: repositories.user,
+      memberRepository: repositories.member,
+    }),
+    listLegalAcceptanceHistoryForUser: new ListLegalAcceptanceHistoryForUserUseCase({
+      legalDocumentAcceptanceRepository: repositories.legalDocumentAcceptance,
+      userRepository: repositories.user,
     }),
   };
 

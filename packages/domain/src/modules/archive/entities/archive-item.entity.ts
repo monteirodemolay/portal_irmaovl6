@@ -57,6 +57,13 @@ export interface ArchiveItem extends BaseEntity {
    */
   origemLibraryItemId?: string | null;
   /**
+   * News.id de origem quando o item foi criado automaticamente a partir de
+   * fotos, vídeos ou documentos de uma notícia vinculada a um Evento.
+   * Serve como proveniência e chave de idempotência: reimportar a notícia
+   * não cria outro item nem duplica mídias já incorporadas.
+   */
+  origemNewsId?: string | null;
+  /**
    * `Member.id` de todo Irmão cuja iniciação corresponde a esta sessão —
    * um único `ArchiveItem` cobre TODOS os Irmãos iniciados juntos na mesma
    * data (`CreateInitiationArchiveItemUseCase`, chamado tanto no cadastro/

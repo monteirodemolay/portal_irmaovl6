@@ -1,12 +1,11 @@
 import Link from 'next/link';
-import { hasPermission, type DirectoryMemberDTO } from '@vl6/domain';
+import { hasPermission } from '@vl6/domain';
 import { createServerContainer } from '@vl6/infra';
 import { normalizeNameForSearch, type FamilyVisibilityLevel } from '@vl6/shared';
 import { ArrowLeft, Card, CardContent, EmptyState, Lock } from '@vl6/ui';
 import { requireSession } from '@/lib/auth/require-session';
 import { PublicMemberProfileView } from '@/modules/central/components/public-member-profile-view';
 import type { ParamasonicAffiliationDisplay } from '@/modules/central/components/profile-trajectory-tab';
-import { SeeAlsoSection } from '@/modules/central/components/directorio/see-also-section';
 import { RelationsSection } from '@/modules/archive/components/relations-section';
 import { isAccessLevelVisible } from '@/modules/archive/lib/access-level-visibility';
 import type { PersonPhoto } from '@/modules/archive/components/person-photo-grid';
@@ -47,21 +46,6 @@ export default async function IrmaoProfilePage({
     session.user.id,
   );
   const isOwnProfile = ownMember?.id === memberId;
-
-  // "Ver também" — Fase F, mesma área de atuação é o elo mais direto entre
-  // dois Irmãos que ainda não se conhecem (docs/architecture).
-  let seeAlsoMembers: DirectoryMemberDTO[] = [];
-  const areaAtuacaoKey = profile?.profissional?.areaAtuacaoKey;
-  if (areaAtuacaoKey) {
-    const searchResult = await container.useCases.searchDirectory.execute(session.authContext, {
-      areaAtuacao: areaAtuacaoKey,
-    });
-    if (searchResult.ok) {
-      seeAlsoMembers = searchResult.value.items
-        .filter((item) => item.memberId !== memberId)
-        .slice(0, 4);
-    }
-  }
 
   // Títulos e Condições Maçônicas (Fase 1 de Honrarias) — institucional,
   // sempre exibido na seção Trajetória, mesmo motivo de `trajetoria` (não
@@ -195,13 +179,6 @@ export default async function IrmaoProfilePage({
             Não encontramos este Irmão no Diretório.
           </CardContent>
         </Card>
-      )}
-
-      {profile && seeAlsoMembers.length > 0 && (
-        <SeeAlsoSection
-          areaLabel={profile.profissional?.areaAtuacao ?? ''}
-          members={seeAlsoMembers}
-        />
       )}
     </div>
   );

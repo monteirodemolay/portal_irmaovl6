@@ -169,7 +169,7 @@ export default async function ComunidadeVL6Page({
         <PersonalSummaryCard
           member={member}
           profile={centralProfile}
-          profilePublished={publicationSettings?.profilePublished ?? false}
+          profilePublished={publicationSettings?.profilePublished ?? true}
         />
       ) : (
         <EmptyState

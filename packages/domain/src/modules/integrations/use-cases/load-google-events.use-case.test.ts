@@ -213,13 +213,13 @@ describe('LoadGoogleEventsUseCase', () => {
     expect(connection?.lastError).toBe('Token expirado');
   });
 
-  it('sempre pede uma listagem completa ao Google, mesmo com syncToken salvo (só há sincronização manual, sem cron/webhook)', async () => {
+  it('reutiliza o syncToken salvo para buscar apenas alterações incrementais', async () => {
     const { useCase, connectionRepository, googleCalendarService } = buildUseCase();
     await connectionRepository.create(buildConnection({ syncToken: 'token-salvo-anteriormente' }));
 
     await useCase.execute(ctx);
 
-    expect(googleCalendarService.lastLoadEventsSyncToken).toBeNull();
+    expect(googleCalendarService.lastLoadEventsSyncToken).toBe('token-salvo-anteriormente');
   });
 
   it('retorna NotFoundError sem conexão', async () => {

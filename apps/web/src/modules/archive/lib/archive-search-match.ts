@@ -1,4 +1,4 @@
-export const ARCHIVE_SEARCH_KINDS = ['documento', 'biblioteca', 'fotografia', 'evento'] as const;
+export const ARCHIVE_SEARCH_KINDS = ['documento', 'biblioteca', 'fotografia', 'evento', 'noticia'] as const;
 export type ArchiveSearchKind = (typeof ARCHIVE_SEARCH_KINDS)[number];
 
 export const ARCHIVE_SEARCH_KIND_LABELS: Record<ArchiveSearchKind, string> = {
@@ -7,6 +7,7 @@ export const ARCHIVE_SEARCH_KIND_LABELS: Record<ArchiveSearchKind, string> = {
   fotografia: 'Foto/Vídeo',
   /** `ArchiveItem` do Acervo novo (Fases 1-5) — álbum publicado de um Evento, distinto do `GalleryAlbum` legado (kind `fotografia`). */
   evento: 'Evento',
+  noticia: 'Notícia / memória editorial',
 };
 
 export interface ArchiveSearchResult {
@@ -16,6 +17,8 @@ export interface ArchiveSearchResult {
   description: string;
   href: string;
   /**
+   * Identificador estável do resultado. Para Notícia, o namespace `news_`
+   * serve apenas à busca e não transforma a matéria em ArchiveItem.
    * ID composto do "Item do Acervo" (`archive-item-id.ts`) para este
    * resultado — usado pelo seletor de itens de Coleções/Exposições (Fase
    * D) para montar `itemIds` sem adivinhar o kind a partir de `href` (que,

@@ -30,6 +30,7 @@ import { ContactsCard } from '@/modules/membership/components/profile-fields/con
 import { SituacaoMaconicaCard } from '@/modules/membership/components/situacao/situacao-maconica-card';
 import { listUsedProfessions } from '@/modules/membership/lib/list-used-professions';
 import { listUsedCompanies } from '@/modules/membership/lib/list-used-companies';
+import { listUsedInstitutions } from '@/modules/membership/lib/list-used-institutions';
 import { MemberAvatar } from '@/components/membership/member-avatar';
 import { MemberDegreeBadge } from '@/components/membership/member-degree-badge';
 import { CollapsibleSection } from '@/components/forms/collapsible-section';
@@ -68,6 +69,7 @@ export async function AssistedMemberEditor({ memberId }: { memberId: string }) {
     accessUser,
     customProfessions,
     customCompanies,
+    customInstitutions,
     situacaoVigente,
     situacaoHistorico,
     profile,
@@ -79,6 +81,7 @@ export async function AssistedMemberEditor({ memberId }: { memberId: string }) {
     member.userId ? container.repositories.user.findById(member.userId) : Promise.resolve(null),
     listUsedProfessions(container, session.authContext),
     listUsedCompanies(container, session.authContext),
+    listUsedInstitutions(container, session.authContext),
     container.repositories.memberSituationRecord.findVigenteByMemberId(memberId),
     container.repositories.memberSituationRecord.listByMemberId(memberId),
     container.repositories.memberCentralProfile.findByMemberId(
@@ -271,7 +274,12 @@ export async function AssistedMemberEditor({ memberId }: { memberId: string }) {
           Diretório depois de consentimento registrado e publicação explícita (seção
           &ldquo;Privacidade e consentimento&rdquo;, abaixo).
         </p>
-        <AssistedContentSections memberId={memberId} profile={profile} />
+        <AssistedContentSections
+          memberId={memberId}
+          profile={profile}
+          knownCompanies={customCompanies}
+          knownInstitutions={customInstitutions}
+        />
       </div>
 
       <CollapsibleSection

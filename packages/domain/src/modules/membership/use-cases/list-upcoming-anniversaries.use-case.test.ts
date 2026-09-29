@@ -81,6 +81,8 @@ describe('ListUpcomingAnniversariesUseCase', () => {
       kind: 'iniciacao',
       diasAte: 0,
       anosCompletos: 11,
+      dia: 12,
+      mes: 3,
     });
   });
 
@@ -173,7 +175,7 @@ describe('ListUpcomingAnniversariesUseCase', () => {
     const result = await useCase.execute(ctx);
 
     expect(result).toHaveLength(1);
-    expect(result[0]).toMatchObject({ kind: 'nascimento', diasAte: 1 });
+    expect(result[0]).toMatchObject({ kind: 'nascimento', diasAte: 1, dia: 13, mes: 3 });
   });
 
   it('nunca usa o fallback de dia/mês do próprio Irmão quando já tem data completa', async () => {

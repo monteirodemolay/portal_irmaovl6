@@ -22,6 +22,11 @@ export interface ITokenCipher {
   decrypt(cipherText: string): string;
 }
 
+/** Hash de integridade unidirecional (ex.: hash do conteúdo de uma versão legal aceita) — nunca para senha/segredo (isso é responsabilidade do provedor de autenticação). */
+export interface IHasher {
+  sha256Hex(input: string): string;
+}
+
 export interface OAuthStatePayload {
   uid: string;
   tenantId: string;

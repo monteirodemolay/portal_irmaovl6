@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import * as Sentry from '@sentry/nextjs';
 import { AlertTriangle, Button, RefreshCw } from '@vl6/ui';
+import { ErrorDetails } from '@/components/error-details';
 
 /**
  * Error boundary da área administrativa — antes desta tela, qualquer
@@ -18,8 +19,10 @@ export default function AdminError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const [eventId, setEventId] = useState<string | undefined>(undefined);
+
   useEffect(() => {
-    Sentry.captureException(error, { tags: { boundary: 'admin' } });
+    setEventId(Sentry.captureException(error, { tags: { boundary: 'admin' } }));
   }, [error]);
 
   return (
@@ -34,6 +37,7 @@ export default function AdminError({
         <RefreshCw size={14} />
         Tentar novamente
       </Button>
+      <ErrorDetails digest={error.digest} eventId={eventId} />
     </div>
   );
 }

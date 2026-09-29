@@ -93,7 +93,20 @@ export interface Member extends BaseEntity {
   conjugeAniversarioMes: number | null;
   /** Lembretes de aniversário dos filhos — ver `MemberChild`. */
   filhos: MemberChild[];
+  /**
+   * @deprecated Nunca apareceu no Perfil público — que sempre usou
+   * `MemberCentralProfile.apresentacao` (um texto voluntário separado,
+   * editado pelo próprio Irmão em Meu Espaço). Mantido só pra não perder o
+   * que já foi preenchido; nenhuma tela edita mais este campo.
+   */
   biografia: string | null;
+  /**
+   * @deprecated Nunca apareceu no Perfil público — que sempre usou
+   * `MemberCentralProfile.externalLinks` (um conjunto mais completo,
+   * sujeito às permissões de privacidade). Mantido só pra não perder o que
+   * já foi preenchido; nenhuma tela edita mais este campo (ver
+   * `AssistedContentSections`, que edita `externalLinks` de verdade).
+   */
   redesSociais: SocialLinks;
   observacoes: string | null;
   /**

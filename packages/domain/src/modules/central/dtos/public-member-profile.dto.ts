@@ -4,6 +4,7 @@ import type { MemberCentralProfile } from '../entities/member-central-profile.en
 import type { PublicationSettings } from '../entities/publication-settings.entity';
 import { resolveAreaAtuacao } from '../lib/resolve-area-atuacao';
 import { resolveEspecializacao } from '../lib/resolve-especializacao';
+import { resolveEffectivePublication } from '../lib/resolve-effective-publication';
 import type { PublicFamiliaLegadoDTO } from '../lib/build-public-familia-legado';
 import type {
   CeremonyMatesGroup,
@@ -110,13 +111,34 @@ export interface PublicMemberProfileDTO {
   } | null;
   profissional: {
     profissao: string | null;
+    /**
+     * Empresa atual (`Member.empresa`) — cadastro administrativo/autoatendimento
+     * ("Empresa atual" em Meu Espaço), só pra contato entre colegas de
+     * trabalho. Nunca é a mesma coisa que `negocios` abaixo (divulgação
+     * pública de um negócio, com página própria) — até esta correção
+     * existia no cadastro mas nunca aparecia no perfil público.
+     */
+    empresa: string | null;
     areaAtuacao: string | null;
     areaAtuacaoKey: AreaAtuacaoKey | null;
     especializacao: string | null;
     formacao: string | null;
     resumoProfissional: string | null;
+    /**
+     * "Histórico Profissional" — currículo simplificado (empresas/cargos/
+     * períodos). Mesmo bloco `profissional` de visibilidade — o titular
+     * decide se aparece junto com profissão/área/formação, nunca separado.
+     */
+    historicoProfissional: MemberCentralProfile['historicoProfissional'];
   } | null;
   negocios: MemberCentralProfile['negocios'] | null;
+  /**
+   * "Formação Acadêmica" — currículo educacional (Ensino Infantil ao
+   * Pós-Doutorado). Mesmo bloco `profissional` de visibilidade que
+   * profissão/histórico profissional — nunca uma seção de privacidade
+   * separada.
+   */
+  formacaoAcademica: MemberCentralProfile['formacaoAcademica'] | null;
   competencias: string[] | null;
   servicos: string[] | null;
   afiliacoes: MemberCentralProfile['afiliacoes'] | null;
@@ -222,19 +244,6 @@ export interface PublicMemberProfileDTO {
   familia: PublicFamiliaLegadoDTO | null;
 }
 
-const CLOSED_BLOCKS: PublicationSettings['blocks'] = {
-  apresentacao: false,
-  informacoesPessoais: false,
-  profissional: false,
-  empresa: false,
-  informacoesMaconicas: false,
-  competencias: false,
-  servicos: false,
-  afiliacoes: false,
-  endereco: false,
-  memoriaFotografica: false,
-};
-
 /**
  * Filtragem server-side do perfil da Central (docs/architecture) — nunca
  * busca tudo pra esconder no client. Um bloco desligado em
@@ -244,18 +253,20 @@ const CLOSED_BLOCKS: PublicationSettings['blocks'] = {
  * tanto pelo perfil real (`GetPublicMemberProfileUseCase`) quanto pelo
  * preview "como os outros veem" (mesma função, mesmo filtro).
  *
- * `settings === null` cobre o Irmão institucional sem nenhum conteúdo
- * voluntário liberado (nunca publicou, ou está suspenso pela Administração
- * — o chamador decide qual dos dois, mas pra este builder os dois casos são
- * idênticos: todo bloco fechado) — usado por `GetPublicMemberProfileUseCase`
- * pra nunca devolver 404 pra um Irmão institucional sem perfil voluntário.
+ * Visibilidade real de `blocks`/`contatos`/`redes` vem de
+ * `resolveEffectivePublication` — `settings === null` (nunca configurou
+ * nada) é ABERTO por padrão (decisão do Administrador, ver comentário lá),
+ * suspenso ou explicitamente despublicado é sempre FECHADO. Usado por
+ * `GetPublicMemberProfileUseCase` pra nunca devolver 404 pra um Irmão
+ * institucional sem perfil voluntário.
  */
 export function buildPublicMemberProfileDTO(
   member: Member,
   profile: MemberCentralProfile | null,
   settings: PublicationSettings | null,
 ): PublicMemberProfileDTO {
-  const blocks = settings?.blocks ?? CLOSED_BLOCKS;
+  const effective = resolveEffectivePublication(settings);
+  const blocks = effective.blocks;
 
   return {
     memberId: member.id,
@@ -303,11 +314,13 @@ export function buildPublicMemberProfileDTO(
     profissional: blocks.profissional
       ? {
           profissao: member.profissao,
+          empresa: member.empresa,
           areaAtuacao: resolveAreaAtuacao(profile)?.label ?? null,
           areaAtuacaoKey: resolveAreaAtuacao(profile)?.key ?? null,
           especializacao: resolveEspecializacao(profile)?.label ?? null,
           formacao: profile?.formacao ?? null,
           resumoProfissional: profile?.resumoProfissional ?? null,
+          historicoProfissional: profile?.historicoProfissional ?? [],
         }
       : null,
     // Só negócios já aprovados pela Administração — rascunho/em revisão/
@@ -316,37 +329,36 @@ export function buildPublicMemberProfileDTO(
     negocios: blocks.empresa
       ? (profile?.negocios.filter((n) => n.status === 'published') ?? [])
       : null,
+    formacaoAcademica: blocks.profissional ? (profile?.formacaoAcademica ?? []) : null,
     competencias: blocks.competencias ? (profile?.competencias ?? []) : null,
     servicos: blocks.servicos ? (profile?.servicos ?? []) : null,
     afiliacoes: blocks.afiliacoes ? (profile?.afiliacoes ?? []) : null,
     contatos:
-      settings &&
-      (settings.contacts.telefone || settings.contacts.whatsapp || settings.contacts.email)
+      effective.contacts.telefone || effective.contacts.whatsapp || effective.contacts.email
         ? {
-            telefone: settings.contacts.telefone ? member.telefone : null,
-            whatsapp: settings.contacts.whatsapp ? member.whatsapp : null,
-            email: settings.contacts.email ? member.email : null,
+            telefone: effective.contacts.telefone ? member.telefone : null,
+            whatsapp: effective.contacts.whatsapp ? member.whatsapp : null,
+            email: effective.contacts.email ? member.email : null,
           }
         : null,
-    redes:
-      settings && Object.values(settings.externalLinks).some(Boolean)
-        ? {
-            whatsapp: settings.externalLinks.whatsapp
-              ? (profile?.externalLinks.whatsapp ?? null)
-              : null,
-            instagram: settings.externalLinks.instagram
-              ? (profile?.externalLinks.instagram ?? null)
-              : null,
-            facebook: settings.externalLinks.facebook
-              ? (profile?.externalLinks.facebook ?? null)
-              : null,
-            linkedin: settings.externalLinks.linkedin
-              ? (profile?.externalLinks.linkedin ?? null)
-              : null,
-            lattes: settings.externalLinks.lattes ? (profile?.externalLinks.lattes ?? null) : null,
-            site: settings.externalLinks.site ? (profile?.externalLinks.site ?? null) : null,
-          }
-        : null,
+    redes: Object.values(effective.externalLinks).some(Boolean)
+      ? {
+          whatsapp: effective.externalLinks.whatsapp
+            ? (profile?.externalLinks.whatsapp ?? null)
+            : null,
+          instagram: effective.externalLinks.instagram
+            ? (profile?.externalLinks.instagram ?? null)
+            : null,
+          facebook: effective.externalLinks.facebook
+            ? (profile?.externalLinks.facebook ?? null)
+            : null,
+          linkedin: effective.externalLinks.linkedin
+            ? (profile?.externalLinks.linkedin ?? null)
+            : null,
+          lattes: effective.externalLinks.lattes ? (profile?.externalLinks.lattes ?? null) : null,
+          site: effective.externalLinks.site ? (profile?.externalLinks.site ?? null) : null,
+        }
+      : null,
     informacoesMaconicas: blocks.informacoesMaconicas
       ? {
           lojasVisitadas: profile?.lojasVisitadas ?? null,

@@ -8,4 +8,5 @@ export interface IBoardPositionAssignmentRepository {
   findByGestaoAndCargo(gestaoId: string, cargo: string): Promise<BoardPositionAssignment | null>;
   create(assignment: BoardPositionAssignment): Promise<void>;
   update(assignment: BoardPositionAssignment): Promise<void>;
+  delete(id: string): Promise<void>;
 }

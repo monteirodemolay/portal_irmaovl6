@@ -12,6 +12,12 @@ import { useReportWebVitals } from 'next/web-vitals';
  */
 export function WebVitalsReporter() {
   useReportWebVitals((metric) => {
+    // `useReportWebVitals` também dispara pras métricas internas do Next.js
+    // (`Next.js-hydration`, `Next.js-route-change-to-render`, `Next.js-render`)
+    // — essas têm `label: 'custom'`, `name` fora do enum de
+    // `webVitalsBodySchema` e sem `rating`, então a API rejeitava com 400.
+    if (metric.label !== 'web-vital') return;
+
     const body = JSON.stringify({
       name: metric.name,
       value: metric.value,

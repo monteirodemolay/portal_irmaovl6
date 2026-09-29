@@ -13,7 +13,14 @@ export type AuditAction =
   | 'member_profile_assisted_updated'
   | 'member_profile_consent_recorded'
   | 'member_profile_blocks_published'
-  | 'member_profile_consent_revoked';
+  | 'member_profile_consent_revoked'
+  // Sistema de versionamento de Termos de Uso/Política de Privacidade
+  // (docs/legal/04-sistema-de-versionamento.md) — publicação de nova
+  // versão. O aceite em si não gera entrada aqui: `legalDocumentAcceptances`
+  // já é, por natureza, um log append-only equivalente (mesmo padrão de
+  // `publicationConsents`, que também não duplica cada aceite self-service
+  // em `auditLogs`).
+  | 'legal_document_version_published';
 
 /**
  * Registro de auditoria — imutável e append-only, por isso NÃO estende

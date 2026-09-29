@@ -17,6 +17,11 @@ export const runtime = 'nodejs';
  * fotografias, preview de documentos). `MediaAsset` guarda só `storageKey`
  * (não uma URL pronta), então resolve via `VercelBlobStorageAdapter.
  * getDownloadUrl` antes de buscar o binário.
+ *
+ * `?track=0` mantém o mesmo controle de acesso, mas não incrementa a
+ * métrica de visualização. É usado exclusivamente por superfícies de
+ * pré-visualização automática, como a Constelação VL6, para que um slideshow
+ * não seja contabilizado como abertura voluntária do registro.
  */
 export async function GET(
   request: NextRequest,
@@ -36,6 +41,7 @@ export async function GET(
 
     const variant =
       request.nextUrl.searchParams.get('variant') === 'poster' ? 'poster' : 'original';
+    const trackView = request.nextUrl.searchParams.get('track') !== '0';
     const binary = await fetchArchiveMediaBinary(
       container,
       session.authContext.tenantId,
@@ -56,9 +62,9 @@ export async function GET(
     }
 
     // Visualização — Fase C "Administração & métricas". Só o binário
-    // principal conta como visualização (a miniatura de vídeo é um detalhe
-    // técnico de exibição, não um acesso independente ao conteúdo).
-    if (variant !== 'poster') {
+    // principal conta como visualização e previews automáticos podem optar
+    // explicitamente por `track=0`.
+    if (variant !== 'poster' && trackView) {
       const viewResult = await container.useCases.recordArchiveMediaView.execute(
         session.authContext,
         archiveMediaId,

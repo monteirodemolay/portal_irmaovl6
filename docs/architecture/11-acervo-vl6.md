@@ -476,3 +476,36 @@ aprovar/rejeitar e motivo).
 - arquivos originais imutáveis e derivados regeneráveis;
 - nenhuma contagem ou informação histórica inventada na interface;
 - toda publicação e alteração relevante registrada em auditoria.
+
+## Reconhecimento facial assistido local — desenho aprovado
+
+O Acervo VL6 evoluirá a identificação manual de pessoas para um fluxo de **sugestão facial local com confirmação humana**, sem API externa de reconhecimento e sem custo variável por imagem.
+
+Princípios obrigatórios:
+
+- o processamento biométrico deve ocorrer no navegador do administrador sempre que tecnicamente possível;
+- nenhum rosto é identificado de forma definitiva sem confirmação humana;
+- `pessoasIdentificadas` continua contendo apenas IDs confirmados;
+- sugestões automáticas devem permanecer separadas de identificações confirmadas;
+- embeddings faciais não podem ser expostos ao usuário comum nem incorporados ao HTML público;
+- a base de comparação será limitada aos Irmãos cadastrados no próprio tenant;
+- falso positivo nunca pode se tornar registro histórico automaticamente;
+- fotografias devem ser revisáveis em visualização ampliada, com navegação anterior/próxima e marcação sem sair da imagem;
+- a implementação deve funcionar sem dependência de AWS Rekognition, Google Vision, Azure Face ou serviço similar;
+- qualquer biblioteca/modelo local só entra em produção depois de verificação explícita de licença e tamanho dos artefatos.
+
+### Fases
+
+1. **Revisão ampliada e marcação manual** — implementada: foto em tamanho grande, navegação por teclado/miniaturas e seleção de Irmãos.
+2. **Detecção local de rostos** — delimita faces na própria imagem, sem atribuir identidade.
+3. **Embeddings locais e sugestões** — compara cada face com referências confirmadas e apresenta candidatos ordenados por similaridade.
+4. **Curadoria e melhoria da base** — confirmações humanas podem gerar novas referências de qualidade; rejeições não alimentam a base.
+5. **Governança biométrica** — retenção, exclusão/reprocessamento, auditoria e controles de acesso específicos conforme documentos legais vigentes.
+
+## 11.8 Consolidação implementada — 28/09/2026
+
+A experiência atual da **Constelação VL6** não exige mais montar listas de pontos ou salvar quadros. `/acervo/constelacao` reúne eventos ligados a `ArchiveItem` e `ArchiveMedia`, respeitando publicação, tenant e nível de acesso. O loader em `apps/web/src/modules/archive/lib/constellation-memories.ts` exige fotografias ou vídeos em `constellation-media-eligibility.ts`; documentos e áudios isolados não entram. A interface `memory-constellation.tsx` oferece seleção por ano, lembrança aleatória equilibrada por período, slideshow e controle do vídeo; alturas responsivas são limitadas para evitar desconfiguração. A infraestrutura legada de relações permanece no repositório, mas não comanda a experiência principal.
+
+A publicação automática de mídias de notícias vinculadas a eventos é tratada em `apps/web/src/lib/content/sync-news-media-to-archive.ts`, com controle de origem/deduplicação. A data da notícia não substitui a data do evento e a integração não deve criar um segundo evento para armazenar a mídia já relacionada. A página `/acervo` possui vitrine **Memória em evidência** com moldura responsiva e altura controlada.
+
+A implementação atual limita quantos eventos, itens, mídias e lembranças são carregados numa execução; são limites técnicos explícitos, não garantia de consulta ilimitada. Fotografias/vídeos expostos pela Constelação utilizam proxy autenticado, com `track=0` para não inflar visualizações durante a rotação automática. **O desenho do reconhecimento facial assistido** descrito neste capítulo não pode ser tratado como serviço completo e validado sem evidências de sua integração e revisão efetivas. Ver o registro de arquitetura atualizado em [13-estado-atual-e-operacao.md](./13-estado-atual-e-operacao.md).

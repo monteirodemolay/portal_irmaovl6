@@ -29,9 +29,14 @@ export default async function ClaimAccountPage() {
   }
 
   const container = createServerContainer();
-  const unclaimedMembers = await container.repositories.member.findUnclaimedByTenant(
-    current.tenant.id,
-  );
+  const [unclaimedMembers, politicaPrivacidade, termosUso] = await Promise.all([
+    container.repositories.member.findUnclaimedByTenant(current.tenant.id),
+    container.repositories.legalDocumentVersion.findCurrent(
+      current.tenant.id,
+      'politica_privacidade',
+    ),
+    container.repositories.legalDocumentVersion.findCurrent(current.tenant.id, 'termos_uso'),
+  ]);
 
   return (
     <main className="bg-background flex min-h-screen items-center justify-center p-6">
@@ -42,7 +47,11 @@ export default async function ClaimAccountPage() {
           acesso já fica liberado.
         </p>
 
-        <ClaimAccountForm unclaimedMembers={unclaimedMembers} />
+        <ClaimAccountForm
+          unclaimedMembers={unclaimedMembers}
+          politicaPrivacidadeVersao={politicaPrivacidade?.versao ?? null}
+          termosUsoVersao={termosUso?.versao ?? null}
+        />
 
         <div className="bg-border my-6 h-px" />
         <p className="text-center text-sm">

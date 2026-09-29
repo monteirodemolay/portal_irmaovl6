@@ -26,6 +26,10 @@ import { getCurrentTenant } from '@/lib/tenant/get-current-tenant';
 import { AUDIT_ACTION_LABELS, AUDIT_ENTITY_LABELS } from '@/lib/audit/audit-action-label';
 import { resolveActorLabel } from '@/lib/audit/resolve-actor-label';
 import { formatRelativeDate, percentOf } from '@/modules/admin/lib/dashboard-metrics';
+import {
+  loadPublishedArchiveDocuments,
+  loadPublishedArchiveEventCards,
+} from '@/modules/archive/lib/load-published-archive-events';
 
 type IconType = React.ComponentType<{ size?: number; strokeWidth?: number; className?: string }>;
 
@@ -140,6 +144,8 @@ export default async function AdminDashboardPage() {
     libraryCount,
     galleryCount,
     archiveItemsCount,
+    archivePublishedDocuments,
+    archivePublishedEventCards,
   ] = await Promise.all([
     canMemberRead ? container.repositories.member.countByTenant(tenantId) : Promise.resolve(null),
     canMemberRead
@@ -188,6 +194,12 @@ export default async function AdminDashboardPage() {
     can('archiveItem:read')
       ? container.repositories.archiveItem.countByTenant(tenantId)
       : Promise.resolve(null),
+    can('file:read')
+      ? loadPublishedArchiveDocuments(container, ctx, session.role)
+      : Promise.resolve([]),
+    can('gallery:read')
+      ? loadPublishedArchiveEventCards(container, ctx, session.role)
+      : Promise.resolve([]),
   ]);
 
   const duplicateGroups = duplicateResult?.ok ? duplicateResult.value : [];
@@ -265,9 +277,14 @@ export default async function AdminDashboardPage() {
     });
   }
   if (filesCount !== null) {
+    // Soma os documentos legados (`FileAsset`, cadastrados em "Documentos")
+    // com os documentos publicados pela Central de Publicação (`ArchiveMedia`
+    // do tipo "documento") — as duas fontes já convivem em `/acervo/documentos`
+    // (visão do Irmão); sem somar aqui, este cartão mostrava só a fonte
+    // legada e parecia "zerado" mesmo com conteúdo publicado de verdade.
     moduleTiles.push({
       label: 'Documentos no Acervo',
-      value: filesCount,
+      value: filesCount + archivePublishedDocuments.length,
       href: '/admin/acervo/arquivos',
       icon: FileText,
     });
@@ -281,9 +298,16 @@ export default async function AdminDashboardPage() {
     });
   }
   if (galleryCount !== null) {
+    // Mesma lógica do cartão de Documentos acima, mas para fotos/vídeos —
+    // soma Álbuns da Galeria (legado) com Eventos que já têm foto/vídeo
+    // publicado pela Central de Publicação, mesmo critério de
+    // `/acervo/fotografias` (visão do Irmão).
+    const publishedPhotoEvents = archivePublishedEventCards.filter(
+      (card) => card.counts.foto + card.counts.video > 0,
+    ).length;
     moduleTiles.push({
       label: 'Álbuns de fotos',
-      value: galleryCount,
+      value: galleryCount + publishedPhotoEvents,
       href: '/admin/acervo/galeria',
       icon: Images,
     });

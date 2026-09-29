@@ -248,6 +248,12 @@ service cloud.firestore {
       allow create: if isSignedIn() && isOwner(request.resource.data, 'userId') && sameTenant(request.resource.data);
     }
 
+    // Tokens-bearer da assinatura Apple/Outlook. Somente o backend Admin SDK
+    // acessa esta coleção; nunca há leitura ou escrita direta pelo cliente.
+    match /calendarFeedTokens/{id} {
+      allow read, write: if false;
+    }
+
     // ---------------------------------------------------------------
     // Content
     // ---------------------------------------------------------------
@@ -444,6 +450,31 @@ service cloud.firestore {
         (isSelfCentralProfile(resource.data) || hasPermission('memberCentral:manage'));
       allow create: if sameTenant(request.resource.data) && isSelfCentralProfile(request.resource.data);
       allow update, delete: if false; // append-only, igual auditLogs
+    }
+
+    // Sistema de versionamento — Política de Privacidade e Termos de Uso
+    // (docs/legal/04-sistema-de-versionamento.md). Publicação de versão só
+    // pela Administração, sempre via Admin SDK (Server Action) — nunca pelo
+    // client, mesmo com `legalDocument:manage`, porque o Use Case precisa
+    // checar duplicidade de versão antes de gravar (mesmo motivo de
+    // `auditLogs`/`publicationConsents` nunca aceitarem escrita direta do
+    // client apesar de terem `allow create` documentado em outras coleções:
+    // aqui optamos pelo caminho mais restritivo desde o início).
+    match /legalDocumentVersions/{id} {
+      allow read: if sameTenant(resource.data) && hasPermission('legalDocument:read');
+      allow write: if false;
+    }
+
+    // O aceite em si é gravado só via Admin SDK também: o fluxo de
+    // autorreivindicação de conta (`claimMemberAccountAction`) registra o
+    // primeiro aceite ANTES de existir sessão/Custom Claims (`request.auth`
+    // ainda não existiria pra satisfazer nenhuma regra de `create` aqui),
+    // então não faz sentido ter uma regra de escrita client-side que só
+    // serviria pro fluxo pós-login.
+    match /legalDocumentAcceptances/{id} {
+      allow read: if sameTenant(resource.data) &&
+        (isOwner(resource.data, 'userId') || hasPermission('legalDocument:manage'));
+      allow write: if false; // append-only, igual auditLogs/publicationConsents
     }
 
     // ---------------------------------------------------------------

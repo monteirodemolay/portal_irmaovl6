@@ -1,3 +1,5 @@
+> **Atualização de leitura (28/09/2026):** os marcos abaixo são o roadmap original e incluem funcionalidades planejadas ou realizadas em momentos diferentes. Para diferenciar código, piloto e operação validada, consultar [13-estado-atual-e-operacao.md](./13-estado-atual-e-operacao.md). Em especial: Constelação e Acervo evoluíram além do MVP; Cripta não deve ser considerada pronta para custódia anual; Firebase permanece integrado mesmo sem Cloud Functions.
+
 # 10. Roadmap por Versões
 
 Critério de corte de cada versão: entregar um conjunto **coeso e usável**
@@ -58,8 +60,9 @@ Objetivo: a Loja consegue operar o essencial no dia a dia.
   (nenhuma regra de busca nova) + novo `GetBusinessDirectoryEntryUseCase`
   (composição sobre o de busca, sem duplicar filtro de publicação/tenant).
   URLs antigas preservadas via redirecionamento
-  (`/irmaos/negocios` → `/irmaos?tipo=negocios`) ou mantidas como estão
-  (`/irmaos/meu-espaco`, `/irmaos/configuracoes`).
+  (`/irmaos/negocios` → `/irmaos?tipo=negocios`; `/irmaos/configuracoes` →
+  `/configuracoes`, movida pra fora do prefixo `/irmaos/*` pra não ativar o
+  item "Irmãos" da sidebar) ou mantidas como estão (`/irmaos/meu-espaco`).
 - **Comissões** completas (vínculo com gestão + permissões de escopo).
 - **Galeria** (álbuns, fotos, vídeos, categorias, busca).
 - **Pesquisa de Irmãos** avançada (filtros por grau, cargo, cidade, CIM,

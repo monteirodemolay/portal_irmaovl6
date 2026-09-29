@@ -2,7 +2,10 @@
 
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
-import type { NormalizeBoardTermNamesResult } from '@vl6/domain';
+import type {
+  BackfillArchiveBoardTermLinksResult,
+  NormalizeBoardTermNamesResult,
+} from '@vl6/domain';
 import { createServerContainer } from '@vl6/infra';
 import { requireSession } from '@/lib/auth/require-session';
 import { CUSTOM_CARGO_VALUE } from '../lib/cargo-constants';
@@ -14,6 +17,33 @@ export interface GovernanceActionState {
 export interface NormalizeBoardTermNamesState {
   error: string | null;
   result: NormalizeBoardTermNamesResult | null;
+}
+
+export interface BackfillArchiveBoardTermLinksState {
+  error: string | null;
+  result: BackfillArchiveBoardTermLinksResult | null;
+}
+
+/**
+ * Correção em massa, um clique: recalcula `boardTermId` de Eventos/itens do
+ * Acervo VL6 que ficaram com `null` — acontece quando a data de
+ * iniciação/elevação/exaltação de um Irmão é registrada antes de a Gestão
+ * do ano corrente existir no Portal (`findByDate` não achava nada na hora).
+ * Sem isso, "Iniciados/Elevados/Exaltados nesta Gestão" na página da Gestão
+ * nunca mostra esse Irmão, mesmo a Gestão certa já cadastrada depois.
+ */
+export async function backfillArchiveBoardTermLinksAction(): Promise<BackfillArchiveBoardTermLinksState> {
+  const session = await requireSession();
+  const container = createServerContainer();
+
+  const result = await container.useCases.backfillArchiveBoardTermLinks.execute(
+    session.authContext,
+  );
+  if (!result.ok) return { error: result.error.message, result: null };
+
+  revalidatePath('/admin/pessoas/gestoes');
+  revalidatePath('/acervo/gestoes');
+  return { error: null, result: result.value };
 }
 
 /**
@@ -41,6 +71,7 @@ export async function createBoardTermAction(
   const nome = String(formData.get('nome') ?? '');
   const periodoInicio = new Date(String(formData.get('periodoInicio')));
   const periodoFim = new Date(String(formData.get('periodoFim')));
+  const permitirSobreposicao = formData.get('permitirSobreposicao') === 'on';
   if (!nome || Number.isNaN(periodoInicio.getTime()) || Number.isNaN(periodoFim.getTime())) {
     return { error: 'Preencha nome e as duas datas do período.' };
   }
@@ -50,6 +81,7 @@ export async function createBoardTermAction(
     nome,
     periodoInicio,
     periodoFim,
+    permitirSobreposicao,
   });
   if (!result.ok) {
     return { error: result.error.message };
@@ -69,6 +101,7 @@ export async function updateBoardTermAction(
   const nome = String(formData.get('nome') ?? '');
   const periodoInicio = new Date(String(formData.get('periodoInicio')));
   const periodoFim = new Date(String(formData.get('periodoFim')));
+  const permitirSobreposicao = formData.get('permitirSobreposicao') === 'on';
   if (!nome || Number.isNaN(periodoInicio.getTime()) || Number.isNaN(periodoFim.getTime())) {
     return { error: 'Preencha nome e as duas datas do período.' };
   }
@@ -78,6 +111,7 @@ export async function updateBoardTermAction(
     nome,
     periodoInicio,
     periodoFim,
+    permitirSobreposicao,
   });
   if (!result.ok) {
     return { error: result.error.message };
@@ -110,6 +144,60 @@ export async function assignBoardPositionAction(
     cargo,
     memberId,
     ordem,
+  });
+  if (!result.ok) {
+    return { error: result.error.message };
+  }
+
+  revalidatePath(`/admin/pessoas/gestoes/${gestaoId}`);
+  return { error: null };
+}
+
+/**
+ * Tira um Irmão de um cargo sem colocar outro no lugar — complementa
+ * `assignBoardPositionAction` (que só troca quem ocupa um cargo de
+ * ocorrência única) pros casos em que não há substituto ainda, ou pra
+ * remover uma ocorrência extra de Diácono/Experto.
+ */
+export async function removeBoardPositionAction(
+  gestaoId: string,
+  assignmentId: string,
+): Promise<void> {
+  const session = await requireSession();
+
+  const container = createServerContainer();
+  const result = await container.useCases.removeBoardPosition.execute(session.authContext, {
+    assignmentId,
+  });
+  if (!result.ok) {
+    throw new Error(result.error.message);
+  }
+
+  revalidatePath(`/admin/pessoas/gestoes/${gestaoId}`);
+}
+
+/**
+ * Corrige o NOME de um cargo já atribuído (ex.: erro de digitação num
+ * cargo extra digitado à mão) sem mexer em quem ocupa nem em quando
+ * ocupou — diferente de `assignBoardPositionAction` (troca o titular).
+ */
+export async function renameBoardPositionCargoAction(
+  gestaoId: string,
+  _prevState: GovernanceActionState,
+  formData: FormData,
+): Promise<GovernanceActionState> {
+  const session = await requireSession();
+
+  const assignmentId = String(formData.get('assignmentId') ?? '');
+  const novoCargo = String(formData.get('novoCargo') ?? '');
+  if (!assignmentId || !novoCargo.trim()) {
+    return { error: 'Informe o novo nome do cargo.' };
+  }
+
+  const container = createServerContainer();
+  const result = await container.useCases.renameBoardPositionCargo.execute(session.authContext, {
+    assignmentId,
+    novoCargo,
   });
   if (!result.ok) {
     return { error: result.error.message };

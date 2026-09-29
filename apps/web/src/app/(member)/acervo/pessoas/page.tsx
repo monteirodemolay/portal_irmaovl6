@@ -3,6 +3,7 @@ import {
   getMemberJourneyCargos,
   getMemberJourneyCommittees,
   resolveAreaAtuacao,
+  resolveEffectivePublication,
 } from '@vl6/domain';
 import { createServerContainer } from '@vl6/infra';
 import {
@@ -121,7 +122,9 @@ export default async function ArchivePeoplePage({
         situacaoLabel: MEMBER_SITUATION_STATUS_LABELS[member.situacao],
         papelLabel: papel?.label ?? null,
         gestaoNome: papel?.gestaoNome ?? null,
-        area: settings?.blocks.profissional ? resolveAreaAtuacao(profile) : null,
+        area: resolveEffectivePublication(settings ?? null).blocks.profissional
+          ? resolveAreaAtuacao(profile)
+          : null,
       };
     })
     .sort((a, b) => a.nomeCompleto.localeCompare(b.nomeCompleto, 'pt-BR'));

@@ -17,6 +17,12 @@ export interface ArchiveMedia extends BaseEntity {
   boardTermId: string | null;
   archiveItemId: string;
   mediaAssetId: string;
+  /**
+   * News.id de origem quando esta mídia foi incorporada automaticamente
+   * a partir de uma notícia. Permite deduplicar, mover ou remover somente
+   * as mídias daquela notícia sem criar um ArchiveItem separado.
+   */
+  origemNewsId?: string | null;
   mediaType: ArchiveMediaTypeKey;
   documentType: string | null;
   role: string | null;

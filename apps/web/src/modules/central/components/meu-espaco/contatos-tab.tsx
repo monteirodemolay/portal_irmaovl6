@@ -31,19 +31,19 @@ export function ContatosTab({
               key: 'telefone',
               label: 'Telefone',
               icon: Phone,
-              defaultChecked: settings?.contacts.telefone ?? false,
+              defaultChecked: settings?.contacts.telefone ?? true,
             },
             {
               key: 'whatsapp',
               label: 'WhatsApp',
               icon: MessageCircle,
-              defaultChecked: settings?.contacts.whatsapp ?? false,
+              defaultChecked: settings?.contacts.whatsapp ?? true,
             },
             {
               key: 'email',
               label: 'E-mail',
               icon: Mail,
-              defaultChecked: settings?.contacts.email ?? false,
+              defaultChecked: settings?.contacts.email ?? true,
             },
           ]}
         />

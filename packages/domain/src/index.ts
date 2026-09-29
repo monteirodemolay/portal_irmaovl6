@@ -18,7 +18,8 @@ export * from './modules/tenancy/repositories/tenant-domain-verification.reposit
 export * from './modules/tenancy/services/dns-resolver';
 export * from './modules/tenancy/use-cases/create-tenant.use-case';
 export * from './modules/tenancy/use-cases/update-tenant-branding.use-case';
-export * from './modules/tenancy/use-cases/update-comunidade-hero-foto.use-case';
+export * from './modules/tenancy/use-cases/update-hero-photo.use-case';
+export * from './modules/tenancy/lib/resolve-hero-photo';
 export * from './modules/tenancy/use-cases/update-tenant-settings.use-case';
 export * from './modules/tenancy/use-cases/resolve-tenant-by-host.use-case';
 export * from './modules/tenancy/use-cases/request-domain-verification.use-case';
@@ -65,6 +66,7 @@ export * from './modules/membership/use-cases/register-member-situation.use-case
 export * from './modules/membership/use-cases/edit-member-situation-record.use-case';
 export * from './modules/membership/use-cases/seed-member-situation-history.use-case';
 export * from './modules/membership/use-cases/backfill-data-falecimento.use-case';
+export * from './modules/archive/use-cases/backfill-archive-board-term-links.use-case';
 export * from './modules/membership/use-cases/backfill-conjuge-estado-civil.use-case';
 export * from './modules/membership/use-cases/dedupe-member-children.use-case';
 export * from './modules/membership/use-cases/verify-birthday-data.use-case';
@@ -93,6 +95,8 @@ export * from './modules/governance/use-cases/create-board-term.use-case';
 export * from './modules/governance/use-cases/update-board-term.use-case';
 export * from './modules/governance/use-cases/normalize-board-term-names.use-case';
 export * from './modules/governance/use-cases/assign-board-position.use-case';
+export * from './modules/governance/use-cases/remove-board-position.use-case';
+export * from './modules/governance/use-cases/rename-board-position-cargo.use-case';
 export * from './modules/governance/use-cases/get-active-board.use-case';
 export * from './modules/governance/use-cases/get-public-board.use-case';
 export * from './modules/governance/use-cases/list-board-terms.use-case';
@@ -122,6 +126,7 @@ export * from './modules/central/dtos/business-directory-entry.dto';
 export * from './modules/central/lib/business-directory-metrics';
 export * from './modules/central/dtos/business-submission-admin-view.dto';
 export * from './modules/central/lib/resolve-area-atuacao';
+export * from './modules/central/lib/resolve-effective-publication';
 export * from './modules/central/lib/build-public-familia-legado';
 export * from './modules/central/lib/profile-completion';
 export * from './modules/central/lib/directory-metrics';
@@ -188,6 +193,19 @@ export * from './modules/audit/entities/audit-log.entity';
 export * from './modules/audit/repositories/audit-log.repository';
 export * from './modules/audit/use-cases/record-audit-entry.use-case';
 export * from './modules/audit/use-cases/list-audit-log.use-case';
+
+// Sistema de versionamento — Política de Privacidade e Termos de Uso
+// (docs/legal/04-sistema-de-versionamento.md)
+export * from './modules/legal/entities/legal-document-version.entity';
+export * from './modules/legal/entities/legal-document-acceptance.entity';
+export * from './modules/legal/repositories/legal-document-version.repository';
+export * from './modules/legal/repositories/legal-document-acceptance.repository';
+export * from './modules/legal/use-cases/publish-legal-document-version.use-case';
+export * from './modules/legal/use-cases/list-legal-document-versions.use-case';
+export * from './modules/legal/use-cases/get-legal-acceptance-status.use-case';
+export * from './modules/legal/use-cases/record-legal-acceptance.use-case';
+export * from './modules/legal/use-cases/list-legal-acceptance-overview.use-case';
+export * from './modules/legal/use-cases/list-legal-acceptance-history-for-user.use-case';
 
 // Document Management
 export * from './modules/document-management/entities/file-asset.entity';

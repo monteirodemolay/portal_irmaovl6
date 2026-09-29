@@ -1,6 +1,7 @@
 'use client';
 
-import { useActionState, useState, useTransition } from 'react';
+import { useActionState, useEffect, useRef, useState, useTransition } from 'react';
+import { useRouter } from 'next/navigation';
 import { useFormStatus } from 'react-dom';
 import type { GoogleCalendarConnection } from '@vl6/domain';
 import {
@@ -19,6 +20,7 @@ import {
 } from '@vl6/ui';
 import {
   disconnectGoogleCalendarAction,
+  syncGoogleCalendarIfStaleAction,
   syncGoogleCalendarNowAction,
   updateGoogleCalendarPreferencesAction,
   type GoogleCalendarActionState,
@@ -60,8 +62,27 @@ export function GoogleConnectionCard({
 }: {
   connection: GoogleCalendarConnection | null;
 }) {
+  const router = useRouter();
   const [connecting, setConnecting] = useState(false);
   const [preferencesOpen, setPreferencesOpen] = useState(false);
+  const [autoSyncing, setAutoSyncing] = useState(false);
+  const autoSyncTriggered = useRef(false);
+
+  useEffect(() => {
+    if (!connection || autoSyncTriggered.current) return;
+    if (!connection.preferences.exibirEventosGoogle || connection.syncStatus === 'syncing') return;
+
+    const lastSyncedAt = connection.lastSyncedAt?.getTime() ?? 0;
+    if (Date.now() - lastSyncedAt < 5 * 60 * 1000) return;
+
+    autoSyncTriggered.current = true;
+    setAutoSyncing(true);
+    void syncGoogleCalendarIfStaleAction()
+      .then((result) => {
+        if (result.ok && !result.skipped) router.refresh();
+      })
+      .finally(() => setAutoSyncing(false));
+  }, [connection, router]);
 
   if (!connection) {
     return (
@@ -105,7 +126,9 @@ export function GoogleConnectionCard({
             </p>
           </div>
         </div>
-        <p className="text-muted mt-2 text-xs">{formatLastSync(connection.lastSyncedAt)}</p>
+        <p className="text-muted mt-2 text-xs">
+          {autoSyncing ? 'Atualizando automaticamente…' : formatLastSync(connection.lastSyncedAt)}
+        </p>
         {connection.syncStatus === 'error' && connection.lastError && (
           <p className="mt-2 text-xs text-red-600">{connection.lastError}</p>
         )}

@@ -29,6 +29,18 @@ export function BoardTermForm() {
       <FormField label="Fim do período" htmlFor="periodoFim">
         <Input id="periodoFim" name="periodoFim" type="date" required />
       </FormField>
+      <label className="flex items-start gap-2 text-sm">
+        <input
+          type="checkbox"
+          id="permitirSobreposicao"
+          name="permitirSobreposicao"
+          className="mt-0.5"
+        />
+        <span>
+          Sei que o período se sobrepõe a outra gestão já cadastrada, e é intencional (ex.: troca de
+          Venerável Mestre no meio do ano) — permitir mesmo assim.
+        </span>
+      </label>
       {state.error && <p className="text-sm text-red-600">{state.error}</p>}
       <SubmitButton />
     </form>

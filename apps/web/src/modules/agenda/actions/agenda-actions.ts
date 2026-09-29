@@ -206,6 +206,11 @@ function parseEventForm(formData: FormData, capaUrl: string | null) {
   const dataFimRaw = formData.get('dataFim');
   const tipo = formData.get('tipo');
   const isSessao = tipo === 'sessao';
+  const isRecesso = tipo === 'recesso';
+  const agendaContextRaw = String(formData.get('agendaContext') || 'loja');
+  const agendaContext =
+    agendaContextRaw === 'paramaconica' || agendaContextRaw === 'outro' ? agendaContextRaw : 'loja';
+  const paramasonicEntityIdRaw = String(formData.get('paramasonicEntityId') || '').trim();
 
   // Campos de classificação da Sessão só existem no formulário quando
   // `tipo === 'sessao'` (ver `EventForm`) — fora disso ficam sempre `null`,
@@ -230,14 +235,19 @@ function parseEventForm(formData: FormData, capaUrl: string | null) {
 
   return eventSchema.parse({
     tipo,
+    agendaContext,
+    paramasonicEntityId:
+      agendaContext === 'paramaconica' && paramasonicEntityIdRaw ? paramasonicEntityIdRaw : null,
     titulo: formData.get('titulo'),
     descricao: formData.get('descricao') || null,
-    local: formData.get('local'),
+    local: isRecesso
+      ? String(formData.get('local') || 'Loja Maçônica Verdadeira Luz nº 06')
+      : formData.get('local'),
     dataInicio: typeof dataInicioRaw === 'string' ? parseBrazilDateTimeLocal(dataInicioRaw) : null,
     dataFim:
       typeof dataFimRaw === 'string' && dataFimRaw ? parseBrazilDateTimeLocal(dataFimRaw) : null,
-    exigeConfirmacaoPresenca: formData.get('exigeConfirmacaoPresenca') === 'on',
-    capacidadeMaxima: capacidadeMaxima ? capacidadeMaxima : null,
+    exigeConfirmacaoPresenca: !isRecesso && formData.get('exigeConfirmacaoPresenca') === 'on',
+    capacidadeMaxima: !isRecesso && capacidadeMaxima ? capacidadeMaxima : null,
     traje: formData.get('traje') || null,
     chegadaSugerida: formData.get('chegadaSugerida') || null,
     observacoes: formData.get('observacoes') || null,

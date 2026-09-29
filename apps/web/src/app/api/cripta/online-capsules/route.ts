@@ -1,0 +1,136 @@
+import { randomUUID } from 'node:crypto';
+import { getAdminFirestore } from '@vl6/infra';
+import { NextResponse } from 'next/server';
+import { activeCriptaSession } from '@/modules/cripta/lib/active-member';
+import {
+  deletePrivateCiphertext,
+  downloadPrivateCiphertext,
+  uploadPrivateCiphertext,
+} from '@/modules/cripta/lib/wix-private-files';
+import { isOnlineOpen, openingRef } from '@/modules/cripta/lib/online-opening';
+
+/** The member's browser seals the letter with the Cripta's public key before it ever reaches
+ * this route (see cripta-key.ts) — no passphrase involved, nothing for the member to lose. The
+ * server only validates the envelope shape and stores the bytes it is given; it never holds a
+ * key that could decrypt this letter. Only a quorum of Guardiões, offline, can open it. */
+function isSealedEnvelope(
+  value: unknown,
+): value is { format: string; ephemeralPublicKey: unknown; nonce: string; ciphertext: string } {
+  if (!value || typeof value !== 'object') return false;
+  const envelope = value as Record<string, unknown>;
+  const ephemeral = envelope.ephemeralPublicKey as Record<string, unknown> | undefined;
+  return (
+    envelope.format === 'vl6-cripta-seal-v1' &&
+    typeof envelope.nonce === 'string' &&
+    typeof envelope.ciphertext === 'string' &&
+    !!ephemeral &&
+    ephemeral.kty === 'EC' &&
+    ephemeral.crv === 'P-256' &&
+    typeof ephemeral.x === 'string' &&
+    typeof ephemeral.y === 'string'
+  );
+}
+
+export const runtime = 'nodejs';
+export const maxDuration = 60;
+const collection = () => getAdminFirestore().collection('criptaOnlineCapsulesV1');
+
+export async function GET() {
+  const session = await activeCriptaSession();
+  if (!session) return NextResponse.json({ error: 'Acesso negado.' }, { status: 403 });
+  const docs = await collection().where('uid', '==', session.user.id).get();
+  return NextResponse.json(
+    {
+      items: docs.docs
+        .filter(
+          (doc) =>
+            doc.data().tenantId === session.authContext.tenantId && doc.data().status === 'ready',
+        )
+        .map((doc) => ({
+          id: doc.id,
+          createdAt: doc.data().createdAt,
+          format: doc.data().format as string,
+        })),
+    },
+    { headers: { 'Cache-Control': 'no-store' } },
+  );
+}
+
+export async function POST(request: Request) {
+  const session = await activeCriptaSession();
+  if (!session || request.headers.get('origin') !== new URL(request.url).origin) {
+    return NextResponse.json({ error: 'Acesso negado.' }, { status: 403 });
+  }
+  if (!(await isOnlineOpen(session.authContext.tenantId))) {
+    return NextResponse.json(
+      { error: 'O recebimento de cartas está fechado. Aguarde a abertura pela Administração.' },
+      { status: 403 },
+    );
+  }
+  if (Number(request.headers.get('content-length') ?? 0) > 5_000_000) {
+    return NextResponse.json({ error: 'Carta acima do limite atual.' }, { status: 413 });
+  }
+  const body = await request.text();
+  if (Buffer.byteLength(body) > 5_000_000 || body.length < 100) {
+    return NextResponse.json({ error: 'Pacote inválido.' }, { status: 413 });
+  }
+  let envelope: unknown;
+  try {
+    envelope = JSON.parse(body);
+  } catch {
+    return NextResponse.json({ error: 'Pacote inválido.' }, { status: 400 });
+  }
+  if (!isSealedEnvelope(envelope))
+    return NextResponse.json({ error: 'Formato cifrado inválido.' }, { status: 400 });
+  const existing = await collection().where('uid', '==', session.user.id).get();
+  if (
+    existing.docs.filter(
+      (doc) =>
+        doc.data().tenantId === session.authContext.tenantId && doc.data().status === 'ready',
+    ).length >= 5
+  ) {
+    return NextResponse.json(
+      { error: 'Limite de cinco cartas. Exclua ou substitua uma carta antes de continuar.' },
+      { status: 409 },
+    );
+  }
+  let fileId: string | undefined;
+  try {
+    const id = randomUUID();
+    // The request body IS the sealed envelope; the server never sees the plaintext letter.
+    const uploaded = await uploadPrivateCiphertext(Buffer.from(body, 'utf8'));
+    fileId = uploaded.fileId;
+    await downloadPrivateCiphertext(uploaded.fileId, uploaded.sha256);
+    const createdAt = new Date().toISOString();
+    await getAdminFirestore().runTransaction(async (transaction) => {
+      const opening = await transaction.get(openingRef(session.authContext.tenantId));
+      if (opening.exists && opening.data()?.open !== true)
+        throw new Error('Recebimento fechado durante o envio.');
+      transaction.create(collection().doc(id), {
+        tenantId: session.authContext.tenantId,
+        uid: session.user.id,
+        fileId,
+        sha256: uploaded.sha256,
+        createdAt,
+        status: 'ready',
+        format: 'vl6-cripta-seal-v1',
+      });
+    });
+    return NextResponse.json(
+      { id, createdAt },
+      { status: 201, headers: { 'Cache-Control': 'no-store' } },
+    );
+  } catch {
+    if (fileId) {
+      try {
+        await deletePrivateCiphertext(fileId);
+      } catch {
+        /* reconcile orphan */
+      }
+    }
+    return NextResponse.json(
+      { error: 'O envio não foi confirmado. Tente novamente.' },
+      { status: 502 },
+    );
+  }
+}

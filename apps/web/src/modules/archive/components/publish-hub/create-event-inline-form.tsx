@@ -148,7 +148,13 @@ export function CreateEventInlineForm({ onCreated }: { onCreated: (event: Event)
               </Select>
             </FormField>
             <FormField label="Local" htmlFor="local">
-              <Input id="local" name="local" required maxLength={200} />
+              <Input
+                id="local"
+                name="local"
+                required
+                maxLength={200}
+                defaultValue="Templo da Verdadeira Luz - Ivan Damasceno"
+              />
             </FormField>
           </div>
 

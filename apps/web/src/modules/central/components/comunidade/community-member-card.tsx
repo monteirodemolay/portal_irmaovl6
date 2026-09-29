@@ -57,9 +57,7 @@ export function CommunityMemberCard({
                 {profile.situacao !== 'ativo' && <SituacaoBadge situacao={profile.situacao} />}
               </div>
             </div>
-            {isFalecido ? (
-              <p className="text-muted text-xs">In memoriam</p>
-            ) : (
+            {!isFalecido && (
               <div className="text-muted min-w-0 text-xs">
                 <p className="truncate">{cargoOuComissao ?? 'Irmão do Quadro'}</p>
                 {(profissaoOuArea || cidade) && (
@@ -99,9 +97,9 @@ export function CommunityMemberCard({
                 />
                 {profile.situacao !== 'ativo' && <SituacaoBadge situacao={profile.situacao} />}
               </div>
-              <p className="text-muted text-xs">
-                {isFalecido ? 'In memoriam' : (cargoOuComissao ?? 'Irmão do Quadro')}
-              </p>
+              {!isFalecido && (
+                <p className="text-muted text-xs">{cargoOuComissao ?? 'Irmão do Quadro'}</p>
+              )}
             </div>
           </div>
           <ChevronRight size={18} className="text-muted mt-1 shrink-0" />

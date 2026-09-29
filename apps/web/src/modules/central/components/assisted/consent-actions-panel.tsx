@@ -129,7 +129,9 @@ export function ConsentActionsPanel({
     { error: null },
   );
 
-  const published = settings?.profilePublished ?? false;
+  // `settings === null` (nunca mexeu na aba) é publicado por padrão — mesma
+  // regra de `resolveEffectivePublication` no servidor.
+  const published = settings?.profilePublished ?? true;
 
   return (
     <div className="flex flex-col gap-4">

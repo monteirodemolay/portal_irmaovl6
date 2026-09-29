@@ -1,124 +1,111 @@
 # Portal do Irmão VL6
 
-Plataforma oficial da Loja Maçônica Verdadeira Luz nº 06 — projetada desde o
-início como um produto multi-tenant, para futuramente atender outras Lojas
-sem alteração de código.
+Portal autenticado da **Loja Maçônica Verdadeira Luz nº 06**, construído em monorepo multi-tenant (preparado para outras Lojas), com gestão institucional, serviços ao Irmão e preservação da memória da Loja. O site institucional público `www.vl6.com.br` permanece externo (Wix); o Portal opera em `portal.vl6.com.br`.
 
-A arquitetura completa (visão geral, modelo de dados, RBAC, design system,
-roadmap de versões) está documentada em [`docs/architecture`](./docs/architecture/00-README.md).
-Este README cobre apenas como rodar o que já existe no repositório.
+**Referência técnica atualizada em 28/09/2026:** [Estado implementado e operação](./docs/architecture/13-estado-atual-e-operacao.md) · [Índice de arquitetura](./docs/architecture/00-README.md) · [Acervo VL6](./docs/architecture/11-acervo-vl6.md).
 
-## Estado atual
+## O que existe no repositório
 
-Monorepo em Clean Architecture (domínio, infraestrutura e app separados),
-multi-tenant, com autenticação completa (login, sessão, Custom Claims, MFA)
-e os módulos de negócio da área do Irmão e do painel administrativo já
-implementados e funcionando contra Firestore real: Dashboard, Perfil,
-Agenda, Arquivos, Biblioteca, Avisos, Downloads, Galeria, Notícias, Links
-Úteis, além do `/admin` completo (Irmãos — incluindo importação em massa
-por planilha `.xlsx` ou relatório `.pdf` de outro sistema, com tela de
-revisão/seleção antes de gravar —, Usuários, Permissões, Arquivos,
-Biblioteca, Agenda, Avisos, Notícias, Galeria, Gestões, Loja, Configurações,
-Integrações) e do painel `/plataforma` para o Administrador Geral
-(multi-tenant cross-tenant). O cadastro de um Irmão não exige e-mail: quem
-foi importado sem e-mail cria o próprio acesso sozinho em `/reivindicar`
-(escolhe o nome numa lista e confirma o CIM), sem depender do
-Administrador. Detalhes de cada módulo e o histórico de versões estão no
-[roadmap](./docs/architecture/10-roadmap.md).
+| Núcleo                  | Funcionalidades e rotas                                                                                                                                                                                         |
+| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Identidade e Loja       | Login Firebase, recuperação de acesso, reivindicação em `/reivindicar`, perfil/diretório de Irmãos, administração de membros, gestões, usuários e papéis RBAC; painel multi-tenant `/plataforma`.               |
+| Agenda                  | `/agenda`: sessões, eventos, aniversariantes, paramaçônicas, recessos, compromissos/notas/tarefas pessoais, arquivos iCalendar e integração opcional com Google Calendar por OAuth.                             |
+| Conteúdo                | Notícias `/noticias` e `/noticias/todas`, avisos, notificações, administração editorial, destaques, filtros/paginação, importação e reimportação de notícias de `vl6.com.br`.                                   |
+| Acervo VL6              | `/acervo`: arquivos, biblioteca física/digital, fotografias, vídeos, documentos, coleções, eventos, gestões, pessoas, exposições, linha do tempo, contribuição/catálogo e experiências de descoberta.           |
+| Constelação             | `/acervo/constelacao`: central automática de lembranças por ano; apenas eventos ligados a **fotos ou vídeos publicados e acessíveis**; reprodução automática e `Surpreenda-me`, sem exigir montagem de trilhas. |
+| Biblioteca              | Catálogo, capas, exemplares, estantes, tombo/QR, carrinho, empréstimos, avaliações, circulação, devolução e baixas.                                                                                             |
+| Comunidade Paramaçônica | `/paramaconicas`, perfis e autorizações específicas, com recorte de dados separado da área privativa dos Irmãos.                                                                                                |
+| Termos e Privacidade    | Aceite autenticado, versões, histórico e publicação administrativa com possibilidade de solicitar novo aceite.                                                                                                  |
+| Cripta                  | `/cripta` e `/cripta-administracao`: experiência **piloto restrita** para cartas, rascunhos, anexos e Wix privado; a custódia institucional anual e recuperação de chaves **não estão concluídas**.             |
 
-## Stack
+Detalhes, decisões, restrições e próximos trabalhos constam em [13-estado-atual-e-operacao.md](./docs/architecture/13-estado-atual-e-operacao.md). A existência de código não substitui testes autenticados em produção; o histórico do roadmap não deve ser lido como uma lista integral de entregas concluídas.
 
-Next.js 15 · React 19 · TypeScript · Tailwind CSS · Firebase (Auth,
-Firestore) · Vercel Blob (upload de arquivos/mídia) · Vercel Cron
-(`/api/cron/*`, substitui Cloud Functions agendadas — sem plano Blaze) ·
-Zod · React Hook Form · TanStack Query · pnpm workspaces + Turborepo.
+## Stack e organização
 
-## Pré-requisitos
+**Next.js 15**, **React 19**, **TypeScript**, **Tailwind CSS**, Firebase **Authentication/Firestore** (SDK de cliente e Admin), **Vercel Blob** (mídias do portal), **Vercel Cron**, **Google Calendar OAuth** e integração **Wix Media** restrita ao piloto da Cripta. Também são utilizados Zod, React Hook Form, TanStack Query, Vitest, Playwright, pnpm e Turborepo.
 
-- Node.js ≥ 20
-- pnpm ≥ 9 (`corepack enable` já resolve isso)
-- Um projeto Firebase (ou o [Firebase Emulator Suite](https://firebase.google.com/docs/emulator-suite) para desenvolvimento local)
-
-## Setup
-
-```bash
-pnpm install
-
-# apps/web precisa das credenciais do Firebase — copie e preencha:
-cp apps/web/.env.example apps/web/.env.local
+```text
+apps/web         Next.js App Router: Portal, /admin, /plataforma, /api/*
+packages/domain  Entidades, casos de uso e contratos de repositório
+packages/infra   Repositórios Firebase/Firestore e gateways
+packages/shared  Tipos, schemas, enums, regras utilitárias
+packages/ui      Componentes reutilizáveis e tokens visuais
+packages/config  Presets TypeScript, ESLint, Tailwind
+scripts/         Seeds, scripts operacionais e verificações
+docs/            Arquitetura, procedimentos e políticas
 ```
 
-`.env.local` precisa de três seções:
+Os registros principais seguem `tenantId` e controles de acesso. O conteúdo do Acervo usa `ArchiveItem`, `ArchiveMedia` e `MediaAsset`; o Portal mantém compatibilidade com módulos de Arquivos/Biblioteca/Galeria já existentes.
 
-1. **Client SDK** (`NEXT_PUBLIC_FIREBASE_*`) — em Firebase Console → Configurações do projeto → Apps → SDK do Firebase.
-2. **Admin SDK** (`FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY`) — gere uma chave de conta de serviço em Configurações do projeto → Contas de serviço. Em produção (Cloud Run/App Hosting) deixe em branco e use Application Default Credentials.
-3. **Vercel Blob** (`BLOB_READ_WRITE_TOKEN`) — em Vercel → Storage → Blob, crie um Blob Store e copie o token (ou `vercel env pull` num projeto já conectado). **Obrigatório**: sem essa variável, todo upload de Arquivos/Biblioteca/Galeria/foto de Irmão falha.
+## Pré-requisitos e instalação
 
-## Rodando localmente
+- Node.js >= 20.16; pnpm >= 9 (versão de referência `pnpm@9.15.0`);
+- Firebase Auth e Firestore ou emuladores em ambiente de desenvolvimento;
+- variáveis de ambiente conforme `apps/web/.env.example` e documentação de cada integração.
 
 ```bash
-# Emuladores do Firebase (Auth + Firestore) — não há emulador de Storage
-# porque o storage de binários é o Vercel Blob, não o Firebase Storage.
-firebase emulators:start
-
-# Provisiona o tenant Verdadeira Luz nº 06 + primeiro Administrador
-# (contra os emuladores, sem precisar de credenciais — ver scripts/seed-tenant.ts)
-FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 \
-FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099 \
-ADMIN_EMAIL=admin@vl6.org.br ADMIN_PASSWORD=troque-esta-senha \
-pnpm --filter @vl6/scripts seed-tenant
-
-# App Next.js
+corepack enable
+pnpm install
+cp apps/web/.env.example apps/web/.env.local
 pnpm --filter @vl6/web dev
 ```
 
-Acesse `http://vl6.localhost:3000` (o subdomínio precisa bater com
-`Tenant.subdominio` — ver `middleware.ts` e `docs/architecture/07-fluxo-
-autenticacao.md §7.1`; em `localhost` puro configure `/etc/hosts` ou acesse
-via `127.0.0.1` com um cabeçalho de host customizado durante o
-desenvolvimento).
+As configurações são divididas em:
 
-## Comandos do monorepo
+1. **Client SDK**: `NEXT_PUBLIC_FIREBASE_*` (informações públicas de inicialização da aplicação).
+2. **Firebase Admin**: `FIREBASE_PROJECT_ID` e credenciais de conta de serviço **somente em servidor** (`FIREBASE_CLIENT_EMAIL` com `FIREBASE_PRIVATE_KEY_BASE64` ou `FIREBASE_PRIVATE_KEY`); alternativamente, credenciais de aplicação padrão em ambiente autorizado. Nunca comitar JSON de conta de serviço.
+3. **Vercel Blob**: `BLOB_READ_WRITE_TOKEN` para upload/armazenamento de mídias do portal.
+4. **Integrações opcionais e crons**: parâmetros de Google Calendar, Wix (Cripta, conforme ambiente), `CRON_SECRET` e flags de capacidade sob documentação específica.
+
+Exemplos e chaves não devem ser copiados para README, commits ou saídas de terminal compartilhadas. Não existe Firebase Cloud Functions neste monorepo; isso **não** estabelece o plano de cobrança do Firebase. A instância operacional `portalvl6` foi identificada no plano Blaze em 28/09/2026.
+
+### Desenvolvimento com emuladores
 
 ```bash
-pnpm dev          # turbo run dev (todos os apps)
-pnpm build        # turbo run build
-pnpm lint         # turbo run lint
-pnpm type-check   # turbo run type-check
-pnpm test         # turbo run test
-pnpm format       # prettier --write .
+firebase emulators:start
 ```
 
-Cada pacote também roda isoladamente: `pnpm --filter @vl6/domain test`,
-`pnpm --filter @vl6/web build`, etc.
+Para seeds em ambiente local, consulte `scripts/seed-tenant.ts` e as condições necessárias no cabeçalho do script. O acesso por subdomínio local deve observar a resolução de tenant descrita em [07-fluxo-autenticacao.md](./docs/architecture/07-fluxo-autenticacao.md). **Nunca** executar seed de tenant contra produção sem conferência do projeto, identidade e finalidade.
 
-## Estrutura
+## Comandos
 
-Ver a árvore completa e a explicação de cada camada em
-[`docs/architecture/02-estrutura-diretorios.md`](./docs/architecture/02-estrutura-diretorios.md).
-Resumo:
-
-```
-apps/web        Next.js — login, área do Irmão, painel admin e /plataforma
-packages/domain Entidades, casos de uso, interfaces de repositório (Clean Architecture)
-packages/infra  Implementações Firestore + Vercel Blob dos repositórios/storage do domínio
-packages/ui     Design system (tokens + componentes)
-packages/shared Enums, schemas Zod e logger compartilhados
-packages/config Presets de eslint/tailwind/tsconfig compartilhados
-scripts/        Scripts operacionais (seed do tenant inicial, seed do Administrador Geral)
+```bash
+pnpm dev                 # Turbo: desenvolvimento
+pnpm build               # Turbo: compilação
+pnpm lint                # Turbo: lint
+pnpm type-check          # Turbo: checagem de tipos
+pnpm test                # Turbo: testes unitários
+pnpm test:e2e            # Testes E2E com emuladores (ver scripts/run-e2e.sh)
+pnpm format:check        # Verificação de formatação
+pnpm --filter @vl6/web build
+pnpm --filter @vl6/domain test
 ```
 
-Não há `functions/` (Firebase Cloud Functions) neste repositório — o
-projeto roda no plano Spark (sem Cloud Functions/Blaze); tarefas antes
-pensadas como Functions viraram rotas em `apps/web/src/app/api/cron/*`
-acionadas por Vercel Cron (`apps/web/vercel.json`), protegidas por
-`CRON_SECRET`.
+Há CI em `.github/workflows/validate-portal.yml`; a Vercel cuida de preview e produção de acordo com a branch/ambiente configurados. **Build aprovado, deploy READY e testes visuais autenticados são verificações distintas**.
 
-## Deploy
+## Manutenção de dados: exemplo de migração segura
 
-`apps/web` já está configurado para deploy na Vercel (`apps/web/vercel.json`
-define os crons de `/api/cron/*`). `firebase.json` cobre apenas Firestore
-(Rules/Indexes) e os emuladores de Auth/Firestore — não há Firebase
-Hosting, Storage nem Cloud Functions configurados, pois o storage de
-binários é o Vercel Blob (`BLOB_READ_WRITE_TOKEN`) e não há tarefas
-agendadas fora do Vercel Cron.
+O script `scripts/normalize-temple-location.ts` altera exclusivamente valores antigos do campo `local` dos eventos da Loja para `Templo da Verdadeira Luz - Ivan Damasceno`. Ele exige um `TENANT_ID` explícito, autenticação Firebase Admin e roda em **simulação por padrão**.
+
+```bash
+# Após configurar o TENANT_ID e credenciais administrativas seguras:
+pnpm --filter @vl6/scripts exec tsx normalize-temple-location.ts
+# Conferir scanned/candidates; aplicar só com autorização:
+pnpm --filter @vl6/scripts exec tsx normalize-temple-location.ts --apply
+# Verificar candidatos remanescentes:
+pnpm --filter @vl6/scripts exec tsx normalize-temple-location.ts
+```
+
+**Histórico de 28/09/2026:** 81 documentos examinados, 61 atualizados e, em nova simulação, nenhum candidato restante. Trata-se de um registro de execução, não de um job recorrente. A chave temporária usada na operação foi posteriormente revogada pelo administrador; não deve permanecer no repositório nem ser reutilizada.
+
+## Publicação e segurança operacional
+
+- `apps/web/vercel.json` define os crons de aniversários, backup, limpeza do piloto da Cripta, publicações agendadas e tarefas de notificações/comunicação.
+- `firebase.json` e `firestore.rules` tratam dos emuladores e das regras/índices do Firestore. Binários comuns ficam no Vercel Blob, não no Firebase Storage.
+- Alterações em RBAC, regras Firestore, importações, migrações e chaves exigem revisão específica e testes, além do build.
+- O desenho/limitações da **Cripta** estão registrados em `docs/architecture/cripta-*.md`. Não habilitar custódia real com base apenas em um deployment bem-sucedido.
+- Termos e LGPD: `docs/legal/`. Verificar versões publicadas e aceite quando houver mudanças relevantes no tratamento de dados.
+
+## Documentação
+
+Comece pelo [índice arquitetural](./docs/architecture/00-README.md). A [visão geral](./docs/architecture/01-visao-geral.md) explica as decisões de fundação; [modelo de dados](./docs/architecture/03-modelo-dados.md), [RBAC](./docs/architecture/08-permissoes-rbac.md), [Acervo](./docs/architecture/11-acervo-vl6.md), [biblioteca](./docs/architecture/12-biblioteca-e-circulacao.md), [comunidade paramaçônica](./docs/architecture/12-comunidade-paramaconica.md), [Cripta](./docs/architecture/cripta-operacao-real.md) e [estado atual](./docs/architecture/13-estado-atual-e-operacao.md) complementam a referência.

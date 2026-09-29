@@ -1,9 +1,11 @@
 import Link from 'next/link';
-import { buildPublicMemberProfileDTO, hasPermission, type PublicationSettings } from '@vl6/domain';
+import { buildPublicMemberProfileDTO, hasPermission } from '@vl6/domain';
 import { createServerContainer } from '@vl6/infra';
 import { ArrowLeft, Card, CardContent, Tabs, TabsContent, TabsList, TabsTrigger } from '@vl6/ui';
 import { requireSession } from '@/lib/auth/require-session';
 import { listUsedProfessions } from '@/modules/membership/lib/list-used-professions';
+import { listUsedCompanies } from '@/modules/membership/lib/list-used-companies';
+import { listUsedInstitutions } from '@/modules/membership/lib/list-used-institutions';
 import { listUsedBusinessNames } from '@/modules/central/lib/list-used-business-names';
 import { AfiliacoesTab } from '@/modules/central/components/meu-espaco/afiliacoes-tab';
 import { ContatosTab } from '@/modules/central/components/meu-espaco/contatos-tab';
@@ -18,40 +20,6 @@ import { PrivacidadeTab } from '@/modules/central/components/meu-espaco/privacid
 import { ProfissionalTab } from '@/modules/central/components/meu-espaco/profissional-tab';
 import { RedesTab } from '@/modules/central/components/meu-espaco/redes-tab';
 import { SpaceHeader } from '@/modules/central/components/meu-espaco/space-header';
-
-const EMPTY_PUBLICATION_SETTINGS: Omit<
-  PublicationSettings,
-  'id' | 'tenantId' | 'memberId' | 'createdAt' | 'updatedAt' | 'createdBy' | 'updatedBy'
-> = {
-  profilePublished: false,
-  blocks: {
-    apresentacao: false,
-    informacoesPessoais: false,
-    profissional: false,
-    empresa: false,
-    informacoesMaconicas: false,
-    competencias: false,
-    servicos: false,
-    afiliacoes: false,
-    endereco: false,
-    memoriaFotografica: false,
-  },
-  contacts: { telefone: false, whatsapp: false, email: false },
-  externalLinks: {
-    whatsapp: false,
-    instagram: false,
-    facebook: false,
-    linkedin: false,
-    lattes: false,
-    site: false,
-  },
-  suspendedAt: null,
-  suspendedBy: null,
-  suspendedReason: null,
-  deletedAt: null,
-  status: 'active',
-  ativo: true,
-};
 
 const VALID_TABS = [
   'geral',
@@ -76,11 +44,20 @@ export default async function MeuEspacoPage({
   // VL6) e pelo menu do usuário, pra abrir a seção certa deste editor.
   const initialTab = (VALID_TABS as readonly string[]).includes(tab ?? '') ? tab! : 'geral';
 
-  const [member, myCommittees, customProfessions, businessNames] = await Promise.all([
+  const [
+    member,
+    myCommittees,
+    customProfessions,
+    businessNames,
+    knownCompanies,
+    knownInstitutions,
+  ] = await Promise.all([
     container.repositories.member.findByUserId(session.authContext.tenantId, session.user.id),
     container.useCases.listMyCommittees.execute(session.authContext),
     listUsedProfessions(container, session.authContext),
     listUsedBusinessNames(container, session.authContext),
+    listUsedCompanies(container, session.authContext),
+    listUsedInstitutions(container, session.authContext),
   ]);
 
   if (!member) {
@@ -122,20 +99,12 @@ export default async function MeuEspacoPage({
     ),
   ]);
 
-  const previewDto = buildPublicMemberProfileDTO(
-    member,
-    centralProfile,
-    publicationSettings ?? {
-      ...EMPTY_PUBLICATION_SETTINGS,
-      id: '',
-      tenantId: member.tenantId,
-      memberId: member.id,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      createdBy: member.id,
-      updatedBy: member.id,
-    },
-  );
+  // `publicationSettings` direto (sem sintetizar um "fechado" quando `null`)
+  // — `buildPublicMemberProfileDTO` já trata "nunca configurou" como aberto
+  // por padrão (`resolveEffectivePublication`), então o preview "como os
+  // outros veem" precisa refletir exatamente isso, não um estado fechado
+  // inventado aqui.
+  const previewDto = buildPublicMemberProfileDTO(member, centralProfile, publicationSettings);
 
   return (
     <div className="flex max-w-4xl flex-col gap-6">
@@ -150,7 +119,7 @@ export default async function MeuEspacoPage({
       <SpaceHeader
         member={member}
         profile={centralProfile}
-        profilePublished={publicationSettings?.profilePublished ?? false}
+        profilePublished={publicationSettings?.profilePublished ?? true}
         previewDto={previewDto}
       />
 
@@ -182,6 +151,8 @@ export default async function MeuEspacoPage({
             member={member}
             profile={centralProfile}
             customProfessions={customProfessions}
+            knownCompanies={knownCompanies}
+            knownInstitutions={knownInstitutions}
           />
         </TabsContent>
         <TabsContent value="empresa" className="pt-6">

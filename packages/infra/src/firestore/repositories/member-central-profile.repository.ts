@@ -1,6 +1,8 @@
 import { Timestamp, type Firestore } from 'firebase-admin/firestore';
 import type {
   CentralBusinessEntry,
+  CentralEducationEntry,
+  CentralEmploymentEntry,
   IMemberCentralProfileRepository,
   MemberCentralProfile,
 } from '@vl6/domain';
@@ -53,8 +55,45 @@ function normalizeBusinessEntry(raw: CentralBusinessEntry): CentralBusinessEntry
   };
 }
 
+/**
+ * `dataInicio`/`dataFim` chegam como `Timestamp` cru do Admin SDK, mesmo
+ * motivo de `toUpdatedAtDate` acima — e `null` é um valor legítimo aqui
+ * (período em aberto ou nunca informado), não um "documento antigo sem o
+ * campo" pra tratar como erro.
+ */
+function toOptionalDate(value: unknown): Date | null {
+  if (value instanceof Timestamp) return value.toDate();
+  if (value instanceof Date) return value;
+  return null;
+}
+
+function normalizeEmploymentEntry(raw: CentralEmploymentEntry): CentralEmploymentEntry {
+  return {
+    ...raw,
+    dataInicio: toOptionalDate(raw.dataInicio),
+    dataFim: toOptionalDate(raw.dataFim),
+  };
+}
+
+function normalizeEducationEntry(raw: CentralEducationEntry): CentralEducationEntry {
+  return {
+    ...raw,
+    dataInicio: toOptionalDate(raw.dataInicio),
+    dataFim: toOptionalDate(raw.dataFim),
+  };
+}
+
 function normalizeProfile(profile: MemberCentralProfile): MemberCentralProfile {
-  return { ...profile, negocios: profile.negocios.map(normalizeBusinessEntry) };
+  return {
+    ...profile,
+    negocios: profile.negocios.map(normalizeBusinessEntry),
+    // `historicoProfissional`/`formacaoAcademica` são campos novos —
+    // documentos gravados antes deles existirem não têm essas chaves no
+    // Firestore (`undefined`, não `[]`), mesma classe de bug que já
+    // quebrou `Tenant.heroPhotos` em produção.
+    historicoProfissional: (profile.historicoProfissional ?? []).map(normalizeEmploymentEntry),
+    formacaoAcademica: (profile.formacaoAcademica ?? []).map(normalizeEducationEntry),
+  };
 }
 
 export class FirestoreMemberCentralProfileRepository implements IMemberCentralProfileRepository {

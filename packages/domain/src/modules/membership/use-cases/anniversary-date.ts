@@ -11,6 +11,20 @@ export interface NextOccurrence {
   diasAte: number;
   /** Quantos anos completos a ocorrência representa. */
   anosCompletos: number;
+  /**
+   * Dia/mês da ocorrência (já com 29/fev corrigido para 28/fev quando
+   * aplicável) como NÚMEROS, não um `Date` — quem consome isto (painel
+   * "Esta semana na Loja", Client Component) recebe os dados via props que
+   * atravessam a fronteira servidor/cliente do React. Um `Date` nessa
+   * travessia é serializado como instante ISO e reconstruído no navegador:
+   * `getDate()`/`getMonth()` nesse `Date` reconstruído leem o fuso horário
+   * do NAVEGADOR do Irmão, não o do servidor — pra quem está em São Paulo
+   * (UTC-3) vendo um `Date` que representa meia-noite UTC, isso empurra a
+   * data um dia pra trás (22/09 virando 21/09, bug relatado pelo
+   * Administrador). Números primitivos não sofrem esse deslocamento.
+   */
+  dia: number;
+  mes: number;
 }
 
 function safeDateForYear(date: Date, year: number): Date {
@@ -53,5 +67,5 @@ export function computeNextOccurrence(from: Date, date: Date): NextOccurrence {
 
   const diasAte = Math.round((occurrence.getTime() - fromMidnight.getTime()) / 86_400_000);
   const anosCompletos = occurrence.getFullYear() - date.getFullYear();
-  return { diasAte, anosCompletos };
+  return { diasAte, anosCompletos, dia: occurrence.getDate(), mes: occurrence.getMonth() + 1 };
 }

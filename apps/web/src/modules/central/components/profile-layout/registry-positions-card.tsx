@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import type { PublicMemberProfileDTO } from '@vl6/domain';
 import { getBoardPositionLabel } from '@vl6/shared';
 import { Landmark } from '@vl6/ui';
@@ -17,12 +18,14 @@ export function RegistryPositionsCard({ profile }: { profile: PublicMemberProfil
   const entries = [
     ...(trajetoria?.cargos.map((cargo) => ({
       titulo: getBoardPositionLabel(cargo.cargo),
+      gestaoId: cargo.gestaoId,
       gestaoNome: cargo.gestaoNome,
       dataInicio: cargo.dataInicio,
       dataFim: cargo.dataFim,
     })) ?? []),
     ...(trajetoria?.comissoes.map((comissao) => ({
       titulo: comissao.nome,
+      gestaoId: comissao.gestaoId,
       gestaoNome: comissao.gestaoNome,
       dataInicio: comissao.dataInicio,
       dataFim: comissao.dataFim,
@@ -40,15 +43,17 @@ export function RegistryPositionsCard({ profile }: { profile: PublicMemberProfil
     <Panel id="cargos" kicker="CARGOS" title="Cargos e Funções" icon={Landmark} compact>
       <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {entries.map((entry, index) => (
-          <li
-            key={`${entry.titulo}-${index}`}
-            className="border-border bg-background rounded-xl border p-3.5"
-          >
-            <p className="text-sm font-semibold">{entry.titulo}</p>
-            <p className="text-muted mt-1 text-xs">
-              Gestão {entry.gestaoNome} · {formatCompactDate(entry.dataInicio)}
-              {entry.dataFim ? ` até ${formatCompactDate(entry.dataFim)}` : ' · em curso'}
-            </p>
+          <li key={`${entry.titulo}-${index}`}>
+            <Link
+              href={`/acervo/gestoes/${entry.gestaoId}`}
+              className="border-border bg-background hover:border-accent block rounded-xl border p-3.5 transition-colors"
+            >
+              <p className="text-sm font-semibold">{entry.titulo}</p>
+              <p className="text-muted mt-1 text-xs">
+                Gestão {entry.gestaoNome} · {formatCompactDate(entry.dataInicio)}
+                {entry.dataFim ? ` até ${formatCompactDate(entry.dataFim)}` : ' · em curso'}
+              </p>
+            </Link>
           </li>
         ))}
       </ul>

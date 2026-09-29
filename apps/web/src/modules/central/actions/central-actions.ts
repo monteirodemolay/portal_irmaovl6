@@ -222,6 +222,16 @@ export async function updateCentralProfileAction(
     member.id,
   );
   if (logoError) return { error: logoError };
+  const historicoProfissional = jsonArrayOrCurrent(
+    formData,
+    'historicoProfissional',
+    current?.historicoProfissional ?? [],
+  );
+  const formacaoAcademica = jsonArrayOrCurrent(
+    formData,
+    'formacaoAcademica',
+    current?.formacaoAcademica ?? [],
+  );
   const competencias = jsonArrayOrCurrent(formData, 'competencias', current?.competencias ?? []);
   const servicos = jsonArrayOrCurrent(formData, 'servicos', current?.servicos ?? []);
 
@@ -333,6 +343,8 @@ export async function updateCentralProfileAction(
         current?.resumoProfissional ?? null,
       ),
       negocios,
+      historicoProfissional,
+      formacaoAcademica,
       competencias,
       servicos,
       afiliacoes,

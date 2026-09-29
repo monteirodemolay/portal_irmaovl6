@@ -1,6 +1,7 @@
 import type { PublicMemberProfileDTO } from '@vl6/domain';
-import { buildWhatsappLink } from '@vl6/shared';
+import { buildWhatsappLink, EDUCATION_LEVEL_LABELS } from '@vl6/shared';
 import {
+  Briefcase,
   Compass,
   Facebook,
   GraduationCap,
@@ -14,7 +15,7 @@ import {
   Phone,
 } from '@vl6/ui';
 import { ProfileBioText } from './profile-bio-text';
-import { LinkPill, Panel, SummaryRow } from './profile-shared';
+import { LinkPill, Panel, SummaryRow, formatMonthYear } from './profile-shared';
 
 /**
  * Aba "Visão Geral" do Perfil único (Fase 2) — apresentação/bio, resumo,
@@ -55,7 +56,8 @@ export function ProfileOverviewTab({
     (profile.profissional.profissao ||
       profile.profissional.areaAtuacao ||
       profile.profissional.formacao ||
-      profile.profissional.resumoProfissional),
+      profile.profissional.resumoProfissional ||
+      profile.profissional.historicoProfissional.length > 0),
   );
   const hasVidaMaconica = Boolean(
     profile.informacoesMaconicas &&
@@ -63,6 +65,22 @@ export function ProfileOverviewTab({
       profile.informacoesMaconicas.interessesMaconicos),
   );
   const hasAfiliacoes = Boolean(profile.afiliacoes && profile.afiliacoes.length > 0);
+  const historicoProfissional = [...(profile.profissional?.historicoProfissional ?? [])].sort(
+    (a, b) => {
+      if (a.atual !== b.atual) return a.atual ? -1 : 1;
+      const aTime = a.dataInicio?.getTime() ?? 0;
+      const bTime = b.dataInicio?.getTime() ?? 0;
+      return bTime - aTime;
+    },
+  );
+  const hasHistoricoProfissional = historicoProfissional.length > 0;
+  const formacaoAcademica = [...(profile.formacaoAcademica ?? [])].sort((a, b) => {
+    if (a.atual !== b.atual) return a.atual ? -1 : 1;
+    const aTime = a.dataInicio?.getTime() ?? 0;
+    const bTime = b.dataInicio?.getTime() ?? 0;
+    return bTime - aTime;
+  });
+  const hasFormacaoAcademica = formacaoAcademica.length > 0;
   const hasCompetenciasServicos = Boolean(
     (profile.competencias && profile.competencias.length > 0) ||
     (profile.servicos && profile.servicos.length > 0),
@@ -73,6 +91,7 @@ export function ProfileOverviewTab({
     profile.informacoesPessoais ||
     profile.endereco ||
     hasProfissional ||
+    hasFormacaoAcademica ||
     hasCompetenciasServicos ||
     hasNegocios ||
     hasConexoes ||
@@ -216,6 +235,68 @@ export function ProfileOverviewTab({
                         <LinkPill href={afiliacao.siteUrl} label="Site" icon={Globe} />
                       )}
                     </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </Panel>
+        )}
+
+        {hasHistoricoProfissional && (
+          <Panel
+            kicker="TRAJETÓRIA"
+            title="Histórico Profissional"
+            icon={Briefcase}
+            editTab={canEdit ? 'profissional' : undefined}
+            compact
+          >
+            <div className="flex flex-col gap-3">
+              {historicoProfissional.map((entry) => (
+                <div key={entry.id} className="flex flex-col gap-0.5">
+                  <p className="text-sm font-medium">
+                    {entry.cargo ? `${entry.cargo} — ${entry.empresa}` : entry.empresa}
+                  </p>
+                  <p className="text-muted text-xs">
+                    {entry.dataInicio ? formatMonthYear(entry.dataInicio) : '—'}
+                    {' · '}
+                    {entry.atual ? 'atual' : entry.dataFim ? formatMonthYear(entry.dataFim) : '—'}
+                  </p>
+                  {entry.descricao && (
+                    <p className="text-muted mt-0.5 text-xs leading-relaxed">{entry.descricao}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </Panel>
+        )}
+
+        {hasFormacaoAcademica && (
+          <Panel
+            kicker="FORMAÇÃO"
+            title="Formação Acadêmica"
+            icon={GraduationCap}
+            editTab={canEdit ? 'profissional' : undefined}
+            compact
+          >
+            <div className="flex flex-col gap-3">
+              {formacaoAcademica.map((entry) => (
+                <div key={entry.id} className="flex flex-col gap-0.5">
+                  <p className="text-sm font-medium">
+                    {EDUCATION_LEVEL_LABELS[entry.nivel]}
+                    {entry.curso ? ` — ${entry.curso}` : ''}
+                  </p>
+                  <p className="text-muted text-xs">{entry.instituicao}</p>
+                  <p className="text-muted text-xs">
+                    {entry.dataInicio ? formatMonthYear(entry.dataInicio) : '—'}
+                    {' · '}
+                    {entry.atual
+                      ? 'em andamento'
+                      : entry.dataFim
+                        ? formatMonthYear(entry.dataFim)
+                        : '—'}
+                  </p>
+                  {entry.descricao && (
+                    <p className="text-muted mt-0.5 text-xs leading-relaxed">{entry.descricao}</p>
                   )}
                 </div>
               ))}

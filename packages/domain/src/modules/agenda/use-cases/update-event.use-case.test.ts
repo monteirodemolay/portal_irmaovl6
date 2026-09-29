@@ -55,6 +55,8 @@ const baseEvent: Event = {
 
 const input: EventFormValues = {
   tipo: 'sessao',
+  agendaContext: 'loja',
+  paramasonicEntityId: null,
   titulo: 'Sessão Ordinária Editada',
   descricao: null,
   local: 'Sede da Loja',

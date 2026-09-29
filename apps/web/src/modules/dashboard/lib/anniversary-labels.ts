@@ -10,24 +10,24 @@ export const ANNIVERSARY_KIND_LABELS: Record<AnniversaryKind, string> = {
 };
 
 /**
- * `entry.data` (`ListUpcomingAnniversariesUseCase`/`computeNextOccurrence`)
- * é uma data-calendário pura (dia/mês, sem significado real de horário),
- * montada com o construtor local de `Date` (`new Date(ano, mes, dia)`) — só
- * faz sentido lida pelos mesmos getters locais que a montaram
- * (`getDate`/`getMonth`). Formatar com `Intl.DateTimeFormat` forçando
- * `timeZone: 'America/Sao_Paulo'` tratava esse valor como um instante real,
- * e a conversão de fuso empurrava a meia-noite construída em UTC (fuso do
- * servidor) pro dia anterior em São Paulo (UTC-3) — bug relatado pelo
- * Administrador: aniversário de 22/09 aparecendo como 21/09.
+ * Recebe `dia`/`mes` como NÚMEROS (`UpcomingAnniversaryEntry.dia`/`mes`),
+ * nunca um `Date` — este painel é um Client Component, então `entry` chega
+ * via props que atravessam a fronteira servidor/cliente do React. Um
+ * `Date` nessa travessia é serializado como instante ISO e reconstruído no
+ * navegador do Irmão; ler `getDate()`/`getMonth()` desse `Date`
+ * reconstruído usa o fuso horário do NAVEGADOR, não o do servidor — pra
+ * quem está em São Paulo (UTC-3), isso empurrava a meia-noite (construída
+ * no servidor) pro dia anterior. Bug relatado pelo Administrador:
+ * aniversário de 22/09 aparecendo como 21/09 mesmo depois de corrigido o
+ * cálculo de "hoje" no servidor — a causa era essa reidratação no cliente,
+ * não o cálculo em si. Números primitivos não sofrem esse deslocamento.
  */
-function formatShortDate(data: Date): string {
-  const dia = String(data.getDate()).padStart(2, '0');
-  const mes = String(data.getMonth() + 1).padStart(2, '0');
-  return `${dia}/${mes}`;
+function formatShortDate(dia: number, mes: number): string {
+  return `${String(dia).padStart(2, '0')}/${String(mes).padStart(2, '0')}`;
 }
 
-function dayLabel(diasAte: number, data: Date): string {
-  const dataLabel = formatShortDate(data);
+function dayLabel(diasAte: number, dia: number, mes: number): string {
+  const dataLabel = formatShortDate(dia, mes);
   if (diasAte === 0) return `hoje (${dataLabel})`;
   if (diasAte === 1) return `amanhã (${dataLabel})`;
   return `em ${diasAte} dias (${dataLabel})`;
@@ -41,7 +41,7 @@ function dayLabel(diasAte: number, data: Date): string {
  * pediu para destacar.
  */
 export function anniversaryHeadline(entry: UpcomingAnniversaryEntry): string {
-  const dia = dayLabel(entry.diasAte, entry.data);
+  const dia = dayLabel(entry.diasAte, entry.dia, entry.mes);
   if (entry.kind === 'nascimento') {
     return `Aniversário ${dia}`;
   }

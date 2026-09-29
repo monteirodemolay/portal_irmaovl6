@@ -19,6 +19,8 @@ describe('computeNextOccurrence', () => {
     const result = computeNextOccurrence(noonUtc('2026-03-12'), new Date('2015-03-12'));
     expect(result.diasAte).toBe(0);
     expect(result.anosCompletos).toBe(11);
+    expect(result.dia).toBe(12);
+    expect(result.mes).toBe(3);
   });
 
   it('calcula dias restantes quando a ocorrência ainda não passou este ano', () => {
@@ -37,6 +39,8 @@ describe('computeNextOccurrence', () => {
     const result = computeNextOccurrence(noonUtc('2026-02-25'), new Date('2016-02-29'));
     expect(result.diasAte).toBe(3);
     expect(result.anosCompletos).toBe(10);
+    expect(result.dia).toBe(28);
+    expect(result.mes).toBe(2);
   });
 
   it('trata a virada de dezembro para janeiro corretamente', () => {
@@ -52,5 +56,8 @@ describe('computeNextOccurrence', () => {
     // Se "hoje" fosse lido pelo dia UTC (22/09), a ocorrência de 22/09 seria
     // "hoje" (0 dias); no calendário de São Paulo (21/09), ainda falta 1 dia.
     expect(result.diasAte).toBe(1);
+    // A ocorrência em si continua sendo 22/09 — só a contagem de dias muda.
+    expect(result.dia).toBe(22);
+    expect(result.mes).toBe(9);
   });
 });

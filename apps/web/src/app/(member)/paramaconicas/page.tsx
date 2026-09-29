@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { hasPermission } from '@vl6/domain';
+import { hasPermission, resolveHeroPhoto } from '@vl6/domain';
 import { FRATERNAL_AFFILIATION_LABELS, type FraternalAffiliationKind } from '@vl6/shared';
 import { createServerContainer } from '@vl6/infra';
 import {
@@ -9,10 +9,13 @@ import {
   FilterBar,
   Handshake,
   Lock,
+  PageHero,
   ShieldCheck,
   Users,
 } from '@vl6/ui';
+import { PageHeroPhotoUpload } from '@/components/member/page-hero-photo-upload';
 import { requireSession } from '@/lib/auth/require-session';
+import { getCurrentTenant } from '@/lib/tenant/get-current-tenant';
 import { ParamasonicEntityMembersBrowser } from '@/modules/family-legacy/components/paramasonic-entity-members-browser';
 
 function buildHref(affiliationKind?: string): string {
@@ -38,8 +41,12 @@ export default async function ParamasonicCommunityPage({
 }: {
   searchParams: Promise<{ entidade?: string }>;
 }) {
-  const session = await requireSession();
-  const params = await searchParams;
+  const [session, current, params] = await Promise.all([
+    requireSession(),
+    getCurrentTenant(),
+    searchParams,
+  ]);
+  if (!current) return null;
 
   if (!hasPermission(session.authContext, 'paramasonicCommunity:read')) {
     return (
@@ -54,6 +61,8 @@ export default async function ParamasonicCommunityPage({
   const container = createServerContainer();
   const canSeeVinculos = hasPermission(session.authContext, 'familyLegacy:read');
   const canSeeEntidades = hasPermission(session.authContext, 'paramasonicEntity:read');
+  const canManageHeroPhoto = hasPermission(session.authContext, 'tenant:manage');
+  const heroPhoto = resolveHeroPhoto(current.tenant, 'paramaconicas');
 
   const [vinculos, entidades, todosOsIntegrantes] = await Promise.all([
     canSeeVinculos
@@ -91,25 +100,24 @@ export default async function ParamasonicCommunityPage({
         </Link>
       )}
 
-      <header className="border-border from-primary-dark to-primary relative overflow-hidden rounded-2xl border bg-gradient-to-br p-6 text-white shadow-sm sm:p-8">
-        <div className="relative z-10 max-w-3xl">
-          <span className="text-accent flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em]">
-            <Handshake size={16} />
-            Família Maçônica
-          </span>
-          <h1 className="font-display mt-3 text-3xl font-semibold">Comunidade Paramaçônica VL6</h1>
-          <p className="mt-3 max-w-2xl text-sm leading-6 text-white/80">
-            Um espaço de aproximação entre a Verdadeira Luz nº 06 e as organizações irmãs, liberado
-            de forma gradual e responsável pela Administração da Loja.
-          </p>
-        </div>
-        <Handshake
-          aria-hidden
-          size={180}
-          strokeWidth={0.8}
-          className="absolute -bottom-12 -right-8 text-white/10"
-        />
-      </header>
+      <PageHero
+        kicker="Família Maçônica"
+        kickerIcon={<Handshake size={16} />}
+        title="Comunidade Paramaçônica VL6"
+        description="Um espaço de aproximação entre a Verdadeira Luz nº 06 e as organizações irmãs, liberado de forma gradual e responsável pela Administração da Loja."
+        photoUrl={heroPhoto?.url}
+        photoPosicao={heroPhoto?.posicao}
+        actions={
+          canManageHeroPhoto && (
+            <PageHeroPhotoUpload
+              pageKey="paramaconicas"
+              path="/paramaconicas"
+              hasPhoto={Boolean(heroPhoto)}
+              initialPosicao={heroPhoto?.posicao ?? 50}
+            />
+          )
+        }
+      />
 
       <section className="grid gap-3 md:grid-cols-3">
         <div className="border-border bg-surface rounded-xl border p-4">

@@ -10,6 +10,7 @@ import {
   LayoutDashboard,
   Megaphone,
   Newspaper,
+  Lock,
   Send,
   Settings,
   Users,
@@ -18,6 +19,7 @@ import { isAdminPathAllowed, isAdminTier } from '@/lib/auth/is-admin-tier';
 import type { Dictionary } from '@/lib/i18n/get-dictionary';
 import { ADMIN_AREA_TABS, type AdminAreaKey } from './area-tabs';
 import type { AppShellNavFlyout, AppShellNavSection } from './app-shell';
+import { canAccessCriptaPilot } from '@/modules/cripta/lib/early-access';
 
 const ICON_SIZE = 18;
 const ICON_STROKE = 1.75;
@@ -64,8 +66,10 @@ const PORTAL_ITEMS: Array<{
   // Rota pessoal, distinta de `/admin/configuracoes` (administração do
   // tenant) — Fase 4 da Central de Avisos (docs/architecture). Sem
   // `permission`: é autoatendimento de qualquer autenticado, mesmo padrão
-  // de "Meu Espaço".
-  { href: '/irmaos/configuracoes', label: 'Configurações', icon: Settings },
+  // de "Meu Espaço". Fora de `/irmaos/*` de propósito: se ficasse sob esse
+  // prefixo, clicar em "Configurações" também ativava/expandia o item
+  // "Irmãos" na sidebar (o match de rota ativa é por prefixo).
+  { href: '/configuracoes', label: 'Configurações', icon: Settings },
 ];
 
 // Entrada única do Acervo para o Irmão. Documentos, Biblioteca, Fotografias
@@ -165,6 +169,7 @@ export function buildNavSections(
   role: Role | null,
   dictionary: Dictionary,
   unreadNotificationsCount = 0,
+  userEmail?: string | null,
 ): AppShellNavSection[] {
   const irmaosFlyout: AppShellNavFlyout = {
     title: 'Irmãos',
@@ -174,9 +179,9 @@ export function buildNavSections(
       { href: '/irmaos/negocios', label: 'Meus Negócios & Serviços' },
       { href: '/irmaos/galeria-de-honra', label: 'Galeria de Honra' },
       { href: '/irmaos/meu-espaco?tab=contatos', label: 'Privacidade e contatos' },
-      { href: '/irmaos/configuracoes', label: 'Configurações' },
     ],
     full: { href: '/irmaos', label: 'Ver diretório completo' },
+    fullPosition: 'first',
   };
 
   const acervoFlyout: AppShellNavFlyout = {
@@ -186,10 +191,12 @@ export function buildNavSections(
       { href: '/acervo/documentos', label: 'Documentos' },
       { href: '/acervo/biblioteca', label: 'Biblioteca' },
       { href: '/acervo/fotografias', label: 'Fotos e vídeos' },
+      { href: '/acervo/gestoes', label: 'Gestões' },
       { href: '/downloads', label: 'Favoritos' },
       { href: '/acervo/pesquisar', label: 'Pesquisar tudo' },
     ],
     full: { href: ACERVO_ITEM.href, label: 'Abrir Acervo completo' },
+    fullPosition: 'first',
   };
 
   const sections: AppShellNavSection[] = [
@@ -222,6 +229,16 @@ export function buildNavSections(
     });
   }
 
+  if (hasPermission(authContext, 'tenant:manage') && canAccessCriptaPilot(userEmail)) {
+    sections.push({
+      title: 'Cripta',
+      items: [
+        { href: '/cripta', content: navContent(Lock, 'Minhas cartas') },
+        { href: '/cripta-administracao', content: navContent(Lock, 'Administração') },
+      ],
+    });
+  }
+
   if (isAdminTier(role)) {
     const visibleAdminItems = ADMIN_ITEMS.filter(
       (item) =>
@@ -250,11 +267,13 @@ export function buildNavSections(
       };
       sections.push({
         title: 'Administração',
-        items: visibleAdminItems.map((item) => ({
-          href: item.href,
-          content: navContent(item.icon, dictionary.nav[item.labelKey]),
-          flyout: adminAreaFlyouts[item.href],
-        })),
+        items: [
+          ...visibleAdminItems.map((item) => ({
+            href: item.href,
+            content: navContent(item.icon, dictionary.nav[item.labelKey]),
+            flyout: adminAreaFlyouts[item.href],
+          })),
+        ],
       });
     }
   }

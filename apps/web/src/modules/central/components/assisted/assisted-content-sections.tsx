@@ -5,9 +5,22 @@ import { useFormStatus } from 'react-dom';
 import { AREA_ATUACAO_KEYS, AREA_ATUACAO_LABELS, type AreaAtuacaoKey } from '@vl6/shared';
 import type { CentralBusinessEntryValues } from '@vl6/shared';
 import type { MemberCentralProfile } from '@vl6/domain';
-import { Building2, Button, Input, Select, Share2, Sparkles, Textarea, X } from '@vl6/ui';
+import {
+  Briefcase,
+  Building2,
+  Button,
+  GraduationCap,
+  Input,
+  Select,
+  Share2,
+  Sparkles,
+  Textarea,
+  X,
+} from '@vl6/ui';
 import { FormField } from '@/components/forms/form-field';
 import { CollapsibleSection } from '@/components/forms/collapsible-section';
+import { EmploymentHistoryEditor } from '../employment-history-editor';
+import { EducationHistoryEditor } from '../education-history-editor';
 import { TagInput } from '../meu-espaco/tag-input';
 import {
   updateMemberCentralProfileAssistedAction,
@@ -54,9 +67,13 @@ function emptyNegocio(): CentralBusinessEntryValues {
 export function AssistedContentSections({
   memberId,
   profile,
+  knownCompanies = [],
+  knownInstitutions = [],
 }: {
   memberId: string;
   profile: MemberCentralProfile | null;
+  knownCompanies?: string[];
+  knownInstitutions?: string[];
 }) {
   const boundAction = updateMemberCentralProfileAssistedAction.bind(null, memberId);
   const [state, formAction] = useActionState<AdminCentralActionState, FormData>(boundAction, {
@@ -211,6 +228,32 @@ export function AssistedContentSections({
           </Button>
         )}
         <input type="hidden" name="negocios" value={JSON.stringify(negocios)} />
+      </CollapsibleSection>
+
+      <CollapsibleSection
+        icon={Briefcase}
+        title="Histórico Profissional"
+        description="Empresas e períodos em que o Irmão trabalha ou trabalhou — útil quando a Administração já sabe desse dado, mesmo que o Irmão ainda não tenha preenchido."
+        summary={`${profile?.historicoProfissional.length ?? 0}/15`}
+      >
+        <EmploymentHistoryEditor
+          name="historicoProfissional"
+          defaultValue={profile?.historicoProfissional ?? []}
+          knownCompanies={knownCompanies}
+        />
+      </CollapsibleSection>
+
+      <CollapsibleSection
+        icon={GraduationCap}
+        title="Formação Acadêmica"
+        description="Do Ensino Infantil ao Pós-Doutorado — útil quando a Administração já sabe desse dado, mesmo que o Irmão ainda não tenha preenchido."
+        summary={`${profile?.formacaoAcademica.length ?? 0}/20`}
+      >
+        <EducationHistoryEditor
+          name="formacaoAcademica"
+          defaultValue={profile?.formacaoAcademica ?? []}
+          knownInstitutions={knownInstitutions}
+        />
       </CollapsibleSection>
 
       <CollapsibleSection icon={Share2} title="Redes e perfis externos">

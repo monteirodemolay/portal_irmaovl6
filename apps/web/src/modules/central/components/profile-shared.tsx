@@ -50,6 +50,12 @@ export function formatCompactDate(date: Date): string {
   return `${d.getDate()} ${COMPACT_MONTH_LABELS[d.getMonth()]} ${d.getFullYear()}`;
 }
 
+/** "jun/2023" — granularidade de mês/ano, usada no Histórico Profissional (currículo). */
+export function formatMonthYear(date: Date): string {
+  const d = new Date(date);
+  return `${COMPACT_MONTH_LABELS[d.getMonth()]}/${d.getFullYear()}`;
+}
+
 /**
  * Quantos dias faltam pro próximo aniversário de `date` (só mês/dia
  * importam, o ano é ignorado) — usado pra ordenar a lista de Família e
@@ -145,11 +151,28 @@ export function LinkPill({
   );
 }
 
-export function SummaryRow({ label, value }: { label: string; value: string }) {
+export function SummaryRow({
+  label,
+  value,
+  href,
+}: {
+  label: string;
+  value: string;
+  /** Quando informado, `value` vira um link (ex. pra página de um negócio publicado). */
+  href?: string;
+}) {
   return (
     <div className="border-border flex items-center justify-between gap-3 border-b border-dashed pb-2.5 last:border-0 last:pb-0">
       <dt className="text-muted text-xs">{label}</dt>
-      <dd className="text-right text-xs font-semibold">{value}</dd>
+      <dd className="text-right text-xs font-semibold">
+        {href ? (
+          <Link href={href} className="text-accent hover:underline">
+            {value}
+          </Link>
+        ) : (
+          value
+        )}
+      </dd>
     </div>
   );
 }

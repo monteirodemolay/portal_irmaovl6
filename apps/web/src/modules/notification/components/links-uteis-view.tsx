@@ -17,10 +17,12 @@ import {
   Heart,
   Landmark,
   Link2,
+  PageHero,
   Search,
   Star,
   cn,
 } from '@vl6/ui';
+import { PageHeroPhotoUpload } from '@/components/member/page-hero-photo-upload';
 import { toggleLinkFavoriteAction } from '../actions/link-actions';
 import { SuggestLinkCard } from './suggest-link-card';
 
@@ -73,7 +75,17 @@ function normalize(value: string): string {
  * novo, nenhuma dependência nova). Estado de favorito é otimista: o clique
  * atualiza a tela na hora, a Server Action confirma em segundo plano.
  */
-export function LinksUteisView({ links }: { links: LinksUteisItem[] }) {
+export function LinksUteisView({
+  links,
+  heroPhotoUrl,
+  heroPhotoPosicao,
+  canManageHeroPhoto = false,
+}: {
+  links: LinksUteisItem[];
+  heroPhotoUrl?: string | null;
+  heroPhotoPosicao?: number;
+  canManageHeroPhoto?: boolean;
+}) {
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<FilterKey>('todos');
   const [favoriteIds, setFavoriteIds] = useState<Set<string>>(
@@ -110,19 +122,24 @@ export function LinksUteisView({ links }: { links: LinksUteisItem[] }) {
 
   return (
     <div className="flex flex-col gap-8">
-      <section className="from-primary via-primary to-primary-dark relative overflow-hidden rounded-[22px] bg-gradient-to-br px-6 py-9 text-white shadow-md sm:px-9">
-        <div className="relative flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-          <div className="max-w-xl">
-            <div className="text-accent mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.22em]">
-              <Compass size={16} strokeWidth={1.6} />
-              Central de referências
-            </div>
-            <h1 className="font-display text-3xl font-semibold sm:text-4xl">Links Úteis</h1>
-            <p className="mt-3 text-sm leading-6 text-white/75">
-              Encontre, em um só lugar, os acessos da Loja, instituições maçônicas, materiais de
-              estudo e serviços usados no dia a dia.
-            </p>
-          </div>
+      <PageHero
+        kicker="Central de referências"
+        kickerIcon={<Compass size={16} strokeWidth={1.6} />}
+        title="Links Úteis"
+        description="Encontre, em um só lugar, os acessos da Loja, instituições maçônicas, materiais de estudo e serviços usados no dia a dia."
+        photoUrl={heroPhotoUrl}
+        photoPosicao={heroPhotoPosicao}
+        actions={
+          canManageHeroPhoto && (
+            <PageHeroPhotoUpload
+              pageKey="links-uteis"
+              path="/links-uteis"
+              hasPhoto={Boolean(heroPhotoUrl)}
+              initialPosicao={heroPhotoPosicao ?? 50}
+            />
+          )
+        }
+        side={
           <div className="w-full lg:max-w-sm">
             <label className="sr-only" htmlFor="links-search">
               Pesquisar
@@ -138,8 +155,8 @@ export function LinksUteisView({ links }: { links: LinksUteisItem[] }) {
               />
             </div>
           </div>
-        </div>
-      </section>
+        }
+      />
 
       {featured.length > 0 && (
         <section>

@@ -2,6 +2,7 @@ import { z } from 'zod';
 import {
   AFFILIATION_ABRANGENCIA_KEYS,
   AREA_ATUACAO_KEYS,
+  EDUCATION_LEVEL_KEYS,
   FORMA_ATENDIMENTO_KEYS,
 } from '../enums/central';
 import { ESPECIALIZACAO_BY_AREA } from '../enums/especializacao';
@@ -95,6 +96,54 @@ export const centralAffiliationEntrySchema = z.object({
 });
 export type CentralAffiliationEntryValues = z.infer<typeof centralAffiliationEntrySchema>;
 
+/**
+ * Um período de trabalho numa empresa — "Histórico Profissional" (currículo
+ * simplificado) no perfil do Irmão. `atual: true` significa que ele ainda
+ * trabalha lá (`dataFim` é ignorado nesse caso, sempre tratado como "hoje"
+ * na exibição). O próprio Irmão decide manter ou excluir cada período —
+ * nada aqui é automático nem obrigatório.
+ */
+export const centralEmploymentEntrySchema = z
+  .object({
+    id: z.string().min(1),
+    empresa: z.string().min(1).max(150),
+    cargo: z.string().max(150).nullable(),
+    dataInicio: z.coerce.date().nullable(),
+    dataFim: z.coerce.date().nullable(),
+    atual: z.boolean(),
+    descricao: z.string().max(500).nullable(),
+  })
+  .refine((v) => !v.atual || v.dataFim === null, {
+    message: 'Um período marcado como atual não deve ter data de término.',
+    path: ['dataFim'],
+  });
+export type CentralEmploymentEntryValues = z.infer<typeof centralEmploymentEntrySchema>;
+
+/**
+ * Um período de formação acadêmica — "Formação Acadêmica" (currículo
+ * educacional) no perfil do Irmão. Nenhum campo é obrigatório além do
+ * nível e da instituição — cobre do início ao fim do sistema educacional
+ * brasileiro, e o Irmão preenche só o que quiser. `atual: true` = ainda
+ * cursando (`dataFim` sempre `null` nesse caso, mesma regra de
+ * `centralEmploymentEntrySchema`).
+ */
+export const centralEducationEntrySchema = z
+  .object({
+    id: z.string().min(1),
+    nivel: z.enum(EDUCATION_LEVEL_KEYS),
+    instituicao: z.string().min(1).max(150),
+    curso: z.string().max(150).nullable(),
+    dataInicio: z.coerce.date().nullable(),
+    dataFim: z.coerce.date().nullable(),
+    atual: z.boolean(),
+    descricao: z.string().max(500).nullable(),
+  })
+  .refine((v) => !v.atual || v.dataFim === null, {
+    message: 'Um período marcado como atual não deve ter data de término.',
+    path: ['dataFim'],
+  });
+export type CentralEducationEntryValues = z.infer<typeof centralEducationEntrySchema>;
+
 export const centralExternalLinksSchema = z.object({
   whatsapp: z.string().max(30).nullable(),
   instagram: z.string().max(200).nullable(),
@@ -122,6 +171,10 @@ export const memberCentralProfileSchema = z
     resumoProfissional: z.string().max(1000).nullable(),
     /** Limite de propósito — evita a Central virar um catálogo empresarial sem fim. */
     negocios: z.array(centralBusinessEntrySchema).max(5),
+    /** "Histórico Profissional" — um currículo simplificado, não uma lista infinita. */
+    historicoProfissional: z.array(centralEmploymentEntrySchema).max(15),
+    /** "Formação Acadêmica" — do Ensino Infantil ao Pós-Doutorado, ainda um currículo, não uma lista infinita. */
+    formacaoAcademica: z.array(centralEducationEntrySchema).max(20),
     /** Tags curtas — evita virar um currículo em forma de lista infinita. */
     competencias: z.array(tagSchema).max(10),
     servicos: z.array(tagSchema).max(10),

@@ -97,10 +97,16 @@ export function TopbarUser({
             Privacidade e contatos
           </Link>
           <Link
-            href="/irmaos/configuracoes"
+            href="/configuracoes"
             className="hover:bg-background rounded-md px-3 py-2 transition-colors"
           >
             Configurações
+          </Link>
+          <Link
+            href="/irmaos/configuracoes/termos-e-privacidade"
+            className="hover:bg-background rounded-md px-3 py-2 transition-colors"
+          >
+            Termos e Privacidade
           </Link>
           <div className="border-border-soft border-t px-1 pt-1.5">
             <LogoutButton className="w-full" />

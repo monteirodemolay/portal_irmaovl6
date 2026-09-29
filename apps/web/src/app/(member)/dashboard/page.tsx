@@ -1,6 +1,7 @@
-import { hasPermission } from '@vl6/domain';
-import { CalendarDays, Card, EmptyState, Sparkles } from '@vl6/ui';
+import { hasPermission, resolveHeroPhoto } from '@vl6/domain';
+import { CalendarDays, Card, EmptyState, PageHero, Sparkles } from '@vl6/ui';
 import { createServerContainer } from '@vl6/infra';
+import { PageHeroPhotoUpload } from '@/components/member/page-hero-photo-upload';
 import { getUpcomingEventsForPortal } from '@/lib/agenda/get-upcoming-events';
 import { getCurrentSession } from '@/lib/auth/get-current-session';
 import { resolveMemberDisplayName } from '@/lib/membership/resolve-display-name';
@@ -104,6 +105,8 @@ export default async function DashboardPage() {
       : null;
 
   const showDirectoryLink = hasPermission(authContext, 'memberDirectory:read');
+  const canManageHeroPhoto = hasPermission(authContext, 'tenant:manage');
+  const heroPhoto = resolveHeroPhoto(current.tenant, 'dashboard');
   const displayName = resolveMemberDisplayName(member, session.user.email);
   const firstName = displayName.split(' ')[0];
   const hasAnniversaries = anniversaries.length > 0;
@@ -121,24 +124,25 @@ export default async function DashboardPage() {
           Gestão vigente sobreposta e a frase do dia numa faixa discreta
           logo abaixo, sem dominar o layout. */}
       <div>
-        <section className="from-primary to-primary-dark relative overflow-hidden rounded-[18px] bg-gradient-to-br px-7 pb-11 pt-7 text-white shadow-md lg:px-9">
-          <div className="bg-accent/10 absolute -right-16 -top-16 h-64 w-64 rounded-full blur-3xl" />
-          <div className="relative flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-            <div className="flex flex-col gap-3">
-              <p className="text-accent text-xs font-semibold uppercase tracking-widest">
-                {greeting}
-              </p>
-              <h1 className="font-display text-3xl font-semibold leading-[1.1] sm:text-4xl">
-                Ir∴ {firstName}
-              </h1>
-              <p className="max-w-xl text-sm text-white/70">
-                Acompanhe a agenda, os avisos e o acervo da {current.tenant.nome} — tudo em um só
-                lugar.
-              </p>
-            </div>
-            <GovernanceHighlightCard board={activeBoard} />
-          </div>
-        </section>
+        <PageHero
+          kicker={greeting}
+          title={`Ir∴ ${firstName}`}
+          description={`Acompanhe a agenda, os avisos e o acervo da ${current.tenant.nome} — tudo em um só lugar.`}
+          photoUrl={heroPhoto?.url}
+          photoPosicao={heroPhoto?.posicao}
+          side={<GovernanceHighlightCard board={activeBoard} />}
+          actions={
+            canManageHeroPhoto && (
+              <PageHeroPhotoUpload
+                pageKey="dashboard"
+                path="/dashboard"
+                hasPhoto={Boolean(heroPhoto)}
+                initialPosicao={heroPhoto?.posicao ?? 50}
+              />
+            )
+          }
+          className="pb-11"
+        />
         {/* Fica no fluxo normal (não absolute) — só puxado pra cima o
             suficiente pra sobrepor a borda inferior do banner, dentro da
             área em branco reservada por pb-11 acima. Se a frase crescer

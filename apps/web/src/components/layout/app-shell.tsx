@@ -16,6 +16,8 @@ export interface AppShellNavFlyout {
   description?: string;
   links: AppShellNavFlyoutLink[];
   full?: { href: string; label: string };
+  /** Posição do link `full` na lista — `'last'` (padrão) ou `'first'`. */
+  fullPosition?: 'first' | 'last';
 }
 
 export interface AppShellNavItem {
@@ -68,6 +70,14 @@ export function AppShell({
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [expandedHref, setExpandedHref] = useState<string | null>(null);
+  // Item ativo (numa sub-rota do próprio flyout) abre o menu por padrão,
+  // mesmo sem clique — sem isso, navegar pra um item da lista (ex.:
+  // "Documentos") fechava o dropdown de novo, escondendo os outros itens
+  // logo depois de escolher um (pedido do Administrador). Guarda quando
+  // esse padrão foi explicitamente fechado por clique, já que
+  // `expandedHref` sozinho não sabia distinguir "nunca abri" de "abri e
+  // fechei de novo" pra um item que já estava ativo.
+  const [collapsedHref, setCollapsedHref] = useState<string | null>(null);
   const mobilePanelRef = useRef<HTMLDivElement>(null);
   const mobileCloseButtonRef = useRef<HTMLButtonElement>(null);
 
@@ -124,13 +134,13 @@ export function AppShell({
 
   const itemLinkClass = (active: boolean) =>
     cn(
-      'focus-visible:ring-accent focus-visible:ring-offset-primary my-0.5 flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm text-white/90 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
+      'focus-visible:ring-accent focus-visible:ring-offset-primary my-0.5 flex min-h-10 w-full min-w-0 items-center gap-3 overflow-hidden rounded-lg px-3 py-2.5 text-left text-sm text-white/90 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
       active ? 'bg-accent text-primary-dark font-semibold' : 'hover:bg-white/10',
     );
 
   function renderNav() {
     return (
-      <nav className="flex flex-1 flex-col gap-0.5 overflow-y-auto px-3 py-2">
+      <nav className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto overflow-x-hidden px-4 py-2 [scrollbar-gutter:stable]">
         {sections.map((section, index) => (
           <div key={section.title ?? index} className="mb-1">
             {section.title && (
@@ -149,12 +159,30 @@ export function AppShell({
                 );
               }
 
-              const isExpanded = expandedHref === item.href;
+              const isExpanded =
+                collapsedHref === item.href ? false : expandedHref === item.href || active;
+              const fullLink = item.flyout.full && (
+                <Link
+                  href={item.flyout.full.href}
+                  className="text-accent flex items-center gap-1 rounded-md px-2 py-2 text-sm font-semibold hover:underline"
+                >
+                  {item.flyout.full.label}
+                  <ChevronRight size={14} />
+                </Link>
+              );
               return (
                 <div key={item.href}>
                   <button
                     type="button"
-                    onClick={() => setExpandedHref(isExpanded ? null : item.href)}
+                    onClick={() => {
+                      if (isExpanded) {
+                        setCollapsedHref(item.href);
+                        setExpandedHref((current) => (current === item.href ? null : current));
+                      } else {
+                        setExpandedHref(item.href);
+                        setCollapsedHref((current) => (current === item.href ? null : current));
+                      }
+                    }}
                     aria-expanded={isExpanded}
                     className={itemLinkClass(active || isExpanded)}
                   >
@@ -169,25 +197,18 @@ export function AppShell({
                   </button>
                   {isExpanded && (
                     <div className="ml-4 mt-0.5 flex flex-col gap-0.5 border-l border-white/10 pl-3">
+                      {item.flyout.fullPosition === 'first' && fullLink}
                       {item.flyout.links.map((link) => (
                         <Link
                           key={link.href}
                           href={link.href}
                           className="focus-visible:ring-accent flex items-center justify-between gap-2 rounded-md px-2 py-2 text-sm text-white/80 hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2"
                         >
-                          <span>{link.label}</span>
+                          <span className="min-w-0 break-words">{link.label}</span>
                           {link.hint && <span className="text-xs text-white/45">{link.hint}</span>}
                         </Link>
                       ))}
-                      {item.flyout.full && (
-                        <Link
-                          href={item.flyout.full.href}
-                          className="text-accent flex items-center gap-1 rounded-md px-2 py-2 text-sm font-semibold hover:underline"
-                        >
-                          {item.flyout.full.label}
-                          <ChevronRight size={14} />
-                        </Link>
-                      )}
+                      {item.flyout.fullPosition !== 'first' && fullLink}
                     </div>
                   )}
                 </div>
@@ -201,13 +222,13 @@ export function AppShell({
 
   return (
     <div className="min-h-screen print:block">
-      <aside className="from-primary to-primary-dark fixed inset-y-0 left-0 z-10 hidden w-[260px] flex-col overflow-hidden border-r border-white/10 bg-gradient-to-b lg:flex print:hidden">
+      <aside className="from-primary to-primary-dark fixed inset-y-0 left-0 z-10 hidden w-[288px] flex-col overflow-hidden border-r border-white/10 bg-gradient-to-b lg:flex print:hidden">
         <div className="border-b border-white/10 px-5 py-5">{brand}</div>
         {renderNav()}
         {sidebarFooter && <div className="border-t border-white/10 px-5 py-4">{sidebarFooter}</div>}
       </aside>
 
-      <div className="min-w-0 lg:pl-[260px] print:pl-0">
+      <div className="min-w-0 lg:pl-[288px] print:pl-0">
         <header className="border-border bg-surface sticky top-0 z-20 flex h-[72px] items-center justify-between gap-4 border-b px-5 lg:px-7 print:hidden">
           <div className="flex items-center gap-3">
             <button
@@ -237,7 +258,7 @@ export function AppShell({
           />
           <div
             ref={mobilePanelRef}
-            className="from-primary to-primary-dark absolute inset-y-0 left-0 flex w-[270px] flex-col overflow-hidden bg-gradient-to-b shadow-md"
+            className="from-primary to-primary-dark absolute inset-y-0 left-0 flex w-[min(88vw,320px)] max-w-[calc(100vw-12px)] flex-col overflow-hidden bg-gradient-to-b shadow-md"
           >
             <div className="flex items-center justify-between gap-3 border-b border-white/10 px-5 py-5">
               {brand}

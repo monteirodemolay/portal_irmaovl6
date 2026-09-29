@@ -20,7 +20,9 @@ import { withdrawFromDirectoryAction } from '../../actions/central-actions';
 import { VisibilityMiniForm } from './visibility-mini-form';
 
 export function PrivacidadeTab({ settings }: { settings: PublicationSettings | null }) {
-  const published = settings?.profilePublished ?? false;
+  // `settings === null` (nunca mexeu na aba) é publicado por padrão — mesma
+  // regra de `resolveEffectivePublication` no servidor.
+  const published = settings?.profilePublished ?? true;
 
   return (
     <div className="flex flex-col gap-4">
@@ -75,61 +77,61 @@ export function PrivacidadeTab({ settings }: { settings: PublicationSettings | n
               key: 'apresentacao',
               label: 'Apresentação',
               icon: Quote,
-              defaultChecked: settings?.blocks.apresentacao ?? false,
+              defaultChecked: settings?.blocks.apresentacao ?? true,
             },
             {
               key: 'informacoesPessoais',
               label: 'Informações pessoais',
               icon: UserCircle,
-              defaultChecked: settings?.blocks.informacoesPessoais ?? false,
+              defaultChecked: settings?.blocks.informacoesPessoais ?? true,
             },
             {
               key: 'profissional',
               label: 'Profissional',
               icon: Briefcase,
-              defaultChecked: settings?.blocks.profissional ?? false,
+              defaultChecked: settings?.blocks.profissional ?? true,
             },
             {
               key: 'competencias',
               label: 'Competências',
               icon: Sparkles,
-              defaultChecked: settings?.blocks.competencias ?? false,
+              defaultChecked: settings?.blocks.competencias ?? true,
             },
             {
               key: 'servicos',
               label: 'Serviços',
               icon: Sparkles,
-              defaultChecked: settings?.blocks.servicos ?? false,
+              defaultChecked: settings?.blocks.servicos ?? true,
             },
             {
               key: 'empresa',
               label: 'Empresa e negócios',
               icon: Building2,
-              defaultChecked: settings?.blocks.empresa ?? false,
+              defaultChecked: settings?.blocks.empresa ?? true,
             },
             {
               key: 'afiliacoes',
               label: 'Outras afiliações',
               icon: Handshake,
-              defaultChecked: settings?.blocks.afiliacoes ?? false,
+              defaultChecked: settings?.blocks.afiliacoes ?? true,
             },
             {
               key: 'informacoesMaconicas',
               label: 'Informações maçônicas complementares',
               icon: Compass,
-              defaultChecked: settings?.blocks.informacoesMaconicas ?? false,
+              defaultChecked: settings?.blocks.informacoesMaconicas ?? true,
             },
             {
               key: 'endereco',
               label: 'Endereço',
               icon: MapPin,
-              defaultChecked: settings?.blocks.endereco ?? false,
+              defaultChecked: settings?.blocks.endereco ?? true,
             },
             {
               key: 'memoriaFotografica',
               label: 'Memória fotográfica (Acervo VL6)',
               icon: Camera,
-              defaultChecked: settings?.blocks.memoriaFotografica ?? false,
+              defaultChecked: settings?.blocks.memoriaFotografica ?? true,
             },
           ]}
         />

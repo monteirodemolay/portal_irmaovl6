@@ -6,8 +6,8 @@ import type { IMemberCentralProfileRepository } from '../../central/repositories
 import type { IPublicationSettingsRepository } from '../../central/repositories/publication-settings.repository';
 import type { IBoardTermRepository } from '../../governance/repositories/board-term.repository';
 import type { IBoardPositionAssignmentRepository } from '../../governance/repositories/board-position-assignment.repository';
-import { isCentralProfileVisible } from '../../central/entities/publication-settings.entity';
 import { resolveAreaAtuacao } from '../../central/lib/resolve-area-atuacao';
+import { resolveEffectivePublication } from '../../central/lib/resolve-effective-publication';
 import type { ParamasonicMemberDirectoryDTO } from '../dtos/paramasonic-member-directory.dto';
 
 export interface ListParamasonicMemberDirectoryDeps {
@@ -59,9 +59,9 @@ export class ListParamasonicMemberDirectoryUseCase {
       .map((member) => {
         const profile = profileByMember.get(member.id) ?? null;
         const publication = settingsByMember.get(member.id) ?? null;
-        const visible = isCentralProfileVisible(publication);
-        const blocks = visible ? publication.blocks : null;
-        const area = visible && blocks?.profissional ? resolveAreaAtuacao(profile) : null;
+        const effective = resolveEffectivePublication(publication);
+        const blocks = effective.open ? effective.blocks : null;
+        const area = blocks?.profissional ? resolveAreaAtuacao(profile) : null;
 
         return {
           memberId: member.id,

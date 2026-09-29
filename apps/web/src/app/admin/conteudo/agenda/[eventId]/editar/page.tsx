@@ -15,6 +15,15 @@ export default async function EditEventPage({ params }: { params: Promise<{ even
   const event = await container.repositories.event.findById(eventId);
   if (!event || event.tenantId !== session.authContext.tenantId) notFound();
 
+  const paramasonicEntities = (
+    await container.repositories.paramasonicEntity.listByTenant(session.authContext.tenantId)
+  )
+    .sort((a, b) => a.shortName.localeCompare(b.shortName, 'pt-BR'))
+    .map((entity) => ({
+      id: entity.id,
+      label: entity.unitNumber ? `${entity.shortName} nº ${entity.unitNumber}` : entity.shortName,
+    }));
+
   const initialAttachments = (
     await Promise.all(
       (event.arquivosRelacionados ?? []).map((compositeId) =>
@@ -26,7 +35,11 @@ export default async function EditEventPage({ params }: { params: Promise<{ even
   return (
     <div className="flex flex-col gap-6">
       <h1 className="font-display text-2xl font-semibold">Editar evento</h1>
-      <EventForm event={event} initialAttachments={initialAttachments} />
+      <EventForm
+        event={event}
+        initialAttachments={initialAttachments}
+        paramasonicEntities={paramasonicEntities}
+      />
     </div>
   );
 }

@@ -23,5 +23,5 @@ export async function updateMyNotificationChannelsAction(formData: FormData): Pr
 
   await container.useCases.updateNotificationPreference.execute(session.authContext, canais);
 
-  revalidatePath('/irmaos/configuracoes');
+  revalidatePath('/configuracoes');
 }

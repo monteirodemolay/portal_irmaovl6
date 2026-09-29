@@ -29,11 +29,18 @@ export interface CentralExternalLinksVisibility {
 
 /**
  * Visibilidade granular do conteúdo de `MemberCentralProfile` — 1:1 por
- * `memberId`. Toda entrada nasce `false` ("cadastrar ≠ publicar", princípio
- * central da Central dos Irmãos VL6). `profilePublished` é a chave-mestra:
- * só com ela em `true` (e sem suspensão administrativa ativa) o perfil
- * aparece no diretório/busca — os blocos individuais controlam o que
- * aparece DENTRO do perfil já publicado.
+ * `memberId`. Só existe UMA linha desta entidade quando o próprio Irmão (ou
+ * um Administrador em nome dele) mexeu na aba "Privacidade" pelo menos uma
+ * vez — quem nunca tocou nisso não tem registro nenhum aqui, `null`.
+ *
+ * A ausência desse registro NÃO significa perfil fechado: decisão do
+ * Administrador (setembro/2026) — todo Irmão nasce com o perfil publicado e
+ * tudo aberto por padrão, `null` incluído, pra não ficar vazio antes de
+ * alguém ter acesso ao Portal pra configurar algo. Ver
+ * `resolveEffectivePublication` (única fonte da verdade pra "o que está
+ * visível agora", nunca ler `blocks`/`contacts`/`externalLinks` direto sem
+ * passar por ela) — `profilePublished`/suspensão só têm efeito quando ESTE
+ * registro existe; sem ele, tudo é aberto.
  */
 export interface PublicationSettings extends BaseEntity {
   memberId: string;
@@ -54,10 +61,4 @@ export interface PublicationSettings extends BaseEntity {
   suspendedAt: Date | null;
   suspendedBy: string | null;
   suspendedReason: string | null;
-}
-
-export function isCentralProfileVisible(
-  settings: PublicationSettings | null,
-): settings is PublicationSettings {
-  return settings !== null && settings.profilePublished && settings.suspendedAt === null;
 }
