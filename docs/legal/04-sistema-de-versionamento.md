@@ -129,7 +129,6 @@ Adicionado também um error boundary dedicado (`apps/web/src/app/(member)/error.
 
 **Nota (superada por §7):** o `PublishLegalDocumentVersionUseCase` continua sem disparar `notifyAllActiveUsers` sozinho — isso é responsabilidade de quem chama o Use Case. A UI de administração (`/admin/configuracoes/termos-e-privacidade/editar/[documento]`) já aciona a notificação quando "exigir novo aceite" está marcado; só publicar via script/Use Case direto ainda exige disparar a notificação manualmente.
 
-
 ## 9. Registro de alteração — 24/09/2026
 
 ### 1.1.0 — Integração automática Notícias ↔ Acervo
@@ -141,3 +140,15 @@ Adicionado também um error boundary dedicado (`apps/web/src/app/(member)/error.
 - **Novo terceiro/subprocessador:** não. O armazenamento continua no Vercel Blob já declarado.
 - **Nova finalidade:** não; trata-se de extensão operacional da finalidade já declarada de preservação da memória histórica institucional.
 - **Exige novo aceite:** **não**. A mudança não amplia a finalidade, não cria novo compartilhamento externo e não altera direitos/obrigações dos usuários; documenta uma nova forma técnica de incorporar ao Acervo conteúdo institucional já publicado pela própria Loja.
+
+## 10. Registro de alteração — 29/09/2026
+
+### 1.2.0 — Nome do autor exibido nos comentários de Notícias + moderação notificada
+
+- **Classificação:** `nova_funcionalidade` / `mudanca_operacional`
+- **Impacto:** baixo
+- **Motivo:** os comentários em notícias institucionais já existiam no Portal (`NewsComment`), mas nunca haviam sido documentados nesta trilha; a exibição do nome do autor junto ao comentário aprovado e o disparo automático de notificação interna para os Administradores com `news:manage` a cada novo comentário pendente são o motivo direto desta atualização.
+- **Itens alterados:** Inventário LGPD §3.6-A (nova); Política de Privacidade §8.5 e §10; Termos de Uso §6.
+- **Novo terceiro/subprocessador:** não — a notificação usa a coleção `notifications` já existente, sem canal externo novo.
+- **Nova finalidade:** não. O comentário sempre foi atribuído a um autor (`autorId`) e qualquer Irmão autenticado já vê o nome completo de qualquer outro Irmão em todo o Portal (Diretório interno, §3.2 do Inventário) — exibir o nome junto ao comentário aprovado não cria uma categoria de exposição nova, só documenta uma que já existia sem registro formal.
+- **Exige novo aceite:** **não**. Não há novo dado coletado, novo compartilhamento externo ou mudança de direitos/obrigações — é a formalização documental de uma exibição de dado já publicamente visível entre Irmãos autenticados em qualquer outra tela do Portal.

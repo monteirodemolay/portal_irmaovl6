@@ -22,9 +22,8 @@ function extractContentImages(html: string): string[] {
 }
 
 function removeContentImage(html: string, url: string): string {
-  const figures = html.replace(
-    /<figure\b[^>]*>[\s\S]*?<\/figure>/gi,
-    (figure) => (figure.includes(url) || figure.includes(url.replace(/&/g, '&amp;')) ? '' : figure),
+  const figures = html.replace(/<figure\b[^>]*>[\s\S]*?<\/figure>/gi, (figure) =>
+    figure.includes(url) || figure.includes(url.replace(/&/g, '&amp;')) ? '' : figure,
   );
 
   return figures
@@ -45,8 +44,30 @@ export interface NewsEventOption {
 
 function normalizeWords(value: string): string[] {
   const ignored = new Set([
-    'a', 'as', 'o', 'os', 'de', 'da', 'das', 'do', 'dos', 'e', 'em', 'no', 'na', 'nos', 'nas',
-    'para', 'por', 'com', 'uma', 'um', 'nº', '06', 'verdadeira', 'luz',
+    'a',
+    'as',
+    'o',
+    'os',
+    'de',
+    'da',
+    'das',
+    'do',
+    'dos',
+    'e',
+    'em',
+    'no',
+    'na',
+    'nos',
+    'nas',
+    'para',
+    'por',
+    'com',
+    'uma',
+    'um',
+    'nº',
+    '06',
+    'verdadeira',
+    'luz',
   ]);
   return value
     .normalize('NFD')
@@ -239,7 +260,7 @@ export function NewsForm({ action, news, events = [] }: NewsFormProps) {
             name="eventId"
             value={selectedEventId}
             onChange={(event) => setSelectedEventId(event.target.value)}
-            className="border-border bg-background text-foreground h-11 w-full rounded-lg border px-3 text-sm outline-none focus:border-primary"
+            className="border-border bg-background text-foreground focus:border-primary h-11 w-full rounded-lg border px-3 text-sm outline-none"
           >
             <option value="">Sem evento relacionado — manter como memória editorial</option>
             {events.map((event) => (
@@ -275,8 +296,8 @@ export function NewsForm({ action, news, events = [] }: NewsFormProps) {
           <div>
             <h2 className="font-display text-lg font-semibold">Imagens da notícia</h2>
             <p className="text-muted mt-1 text-xs leading-relaxed">
-              Revise as imagens importadas. Use “Remover” nas fotos que não pertencem à matéria;
-              a alteração será gravada ao salvar a notícia.
+              Revise as imagens importadas. Use “Remover” nas fotos que não pertencem à matéria; a
+              alteração será gravada ao salvar a notícia.
             </p>
           </div>
 

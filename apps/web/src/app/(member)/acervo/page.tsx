@@ -67,9 +67,11 @@ function ArchiveResultImage({
       src={result.imageUrl}
       alt=""
       loading="lazy"
-      className={featured
-        ? 'absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105'
-        : 'h-full w-full object-cover transition-transform duration-500 group-hover:scale-105'}
+      className={
+        featured
+          ? 'absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105'
+          : 'h-full w-full object-cover transition-transform duration-500 group-hover:scale-105'
+      }
     />
   ) : (
     <div className="from-primary to-primary-dark flex h-full w-full flex-col justify-between bg-gradient-to-br p-4 text-white">

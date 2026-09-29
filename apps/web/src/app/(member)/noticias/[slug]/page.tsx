@@ -6,6 +6,7 @@ import { getCurrentTenant } from '@/lib/tenant/get-current-tenant';
 import { getCurrentSession } from '@/lib/auth/get-current-session';
 import { NewsCommentForm } from '@/modules/content/components/news-comment-form';
 import { NewsImageGallery } from '@/modules/content/components/news-image-gallery';
+import { resolveCommentAuthorNames } from '@/modules/content/lib/resolve-comment-authors';
 
 function formatDate(date: Date | null): string {
   return date
@@ -18,7 +19,10 @@ function formatDate(date: Date | null): string {
 }
 
 function readingTime(html: string): number {
-  const words = html.replace(/<[^>]*>/g, ' ').split(/\s+/).filter(Boolean).length;
+  const words = html
+    .replace(/<[^>]*>/g, ' ')
+    .split(/\s+/)
+    .filter(Boolean).length;
   return Math.max(1, Math.ceil(words / 220));
 }
 
@@ -58,11 +62,14 @@ export default async function PublicNewsDetailPage({
     getCurrentSession(),
     container.useCases.listPublishedNews.execute(current.tenant.id, { limit: 12 }),
     news.eventId
-      ? container.repositories.event.findById(news.eventId).then((event) =>
-          event && event.tenantId === current.tenant.id && !event.deletedAt ? event : null,
-        )
+      ? container.repositories.event
+          .findById(news.eventId)
+          .then((event) =>
+            event && event.tenantId === current.tenant.id && !event.deletedAt ? event : null,
+          )
       : Promise.resolve(null),
   ]);
+  const authorNames = await resolveCommentAuthorNames(container, current.tenant.id, comments);
 
   const related = relatedPage.items
     .filter((item) => item.id !== news.id && item.categoria === news.categoria)
@@ -81,7 +88,9 @@ export default async function PublicNewsDetailPage({
             <div className="flex flex-wrap gap-2">
               <Badge variant="accent">{news.categoria}</Badge>
               {news.destaquePrincipal && <Badge variant="outline">Destaque principal</Badge>}
-              {!news.destaquePrincipal && news.destaque && <Badge variant="outline">Destaque</Badge>}
+              {!news.destaquePrincipal && news.destaque && (
+                <Badge variant="outline">Destaque</Badge>
+              )}
             </div>
 
             <h1 className="font-display mt-4 text-balance text-4xl font-semibold leading-tight sm:text-5xl">
@@ -108,7 +117,7 @@ export default async function PublicNewsDetailPage({
           )}
 
           <div
-            className="prose prose-slate mx-auto mt-8 max-w-3xl prose-headings:font-display prose-img:rounded-xl"
+            className="prose prose-slate prose-headings:font-display prose-img:rounded-xl mx-auto mt-8 max-w-3xl"
             dangerouslySetInnerHTML={{ __html: bodyHtml }}
           />
 
@@ -160,8 +169,15 @@ export default async function PublicNewsDetailPage({
             ) : (
               <ul className="mt-4 flex flex-col gap-3">
                 {comments.map((comment) => (
-                  <li key={comment.id} className="border-border bg-surface rounded-lg border p-4 text-sm">
-                    {comment.texto}
+                  <li
+                    key={comment.id}
+                    className="border-border bg-surface rounded-lg border p-4 text-sm"
+                  >
+                    <p className="mb-1 flex items-baseline gap-2">
+                      <span className="font-semibold">{authorNames[comment.autorId]}</span>
+                      <time className="text-muted text-xs">{formatDate(comment.createdAt)}</time>
+                    </p>
+                    <p>{comment.texto}</p>
                   </li>
                 ))}
               </ul>
@@ -188,7 +204,11 @@ export default async function PublicNewsDetailPage({
                 {related.map((item) => (
                   <Link key={item.id} href={`/noticias/${item.slug}`} className="group">
                     {item.imagemCapaUrl && (
-                      <img src={item.imagemCapaUrl} alt="" className="h-28 w-full rounded-lg object-cover" />
+                      <img
+                        src={item.imagemCapaUrl}
+                        alt=""
+                        className="h-28 w-full rounded-lg object-cover"
+                      />
                     )}
                     <p className="text-muted mt-2 text-xs">{formatDate(item.dataPublicacao)}</p>
                     <p className="font-display mt-1 font-semibold leading-snug group-hover:underline">

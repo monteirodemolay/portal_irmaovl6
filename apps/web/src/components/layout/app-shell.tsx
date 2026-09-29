@@ -140,7 +140,7 @@ export function AppShell({
 
   function renderNav() {
     return (
-      <nav className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-x-hidden overflow-y-auto px-4 py-2 [scrollbar-gutter:stable]">
+      <nav className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto overflow-x-hidden px-4 py-2 [scrollbar-gutter:stable]">
         {sections.map((section, index) => (
           <div key={section.title ?? index} className="mb-1">
             {section.title && (

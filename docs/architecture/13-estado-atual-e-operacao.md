@@ -33,18 +33,18 @@ Server Components + Server Actions + Route Handlers (/api/*)
 
 ## 13.2 Componentes em funcionamento de código
 
-| Área | Entradas e implementação verificáveis | Limites/observações |
-| --- | --- | --- |
-| Identidade e Diretório | `/reivindicar`, `/irmaos`, `/irmaos/meu-espaco`, administração de membros/papéis; Firebase Auth, RBAC e dados de membro | A autorização precisa ser reavaliada para cada acesso a dados. |
-| Agenda unificada | `/agenda`, `my-agenda-view.tsx`, `calendar-item.ts`, `event-form.tsx`; sessões, eventos, aniversários, paramaçônicas, recessos, entradas pessoais e Google | Ano civil como janela padrão; em dezembro inclui janeiro seguinte. Recesso usa intervalo de datas; sincronização Google sob OAuth é condicionada e limitada por tempo, não gratuita em termos de chamadas. |
-| Notícias | `/noticias`, `/noticias/todas`, `/[slug]`; destaque editorial, pesquisa, filtros por ano/categoria e paginação; administração e importação de URLs de `vl6.com.br` | Importação/reimportação e vínculo `News.eventId` precisam de revisão de resultado por administradores. |
-| Acervo | `/acervo` e rotas de eventos, pessoas, gestões, coleções, fotografias, audiovisual, documentos, exposições, contribuições, catalogação e linha do tempo | Convivência deliberada entre objetos do Acervo unificado e módulos legados. Ver doc 11. |
-| Constelação VL6 | `/acervo/constelacao`, `loadConstellationMemories` e `MemoryConstellation` | Experiência automática; filtra eventos com **foto ou vídeo** publicado, não excluído e acessível, com ID de mídia; não mostra documento/áudio isolado como lembrança. |
-| Biblioteca | `/acervo/biblioteca` e operações administrativas de exemplares, QR/tombo, estantes, reservas/empréstimos, avaliações e baixas | Ver `12-biblioteca-e-circulacao.md`; regras patrimoniais próprias. |
-| Comunidade Paramaçônica | `/paramaconicas` e papéis com exposição reduzida de informações | Acesso da comunidade não equivale ao acesso de um Irmão da Loja; ver `12-comunidade-paramaconica.md`. |
-| Comunicação / Avisos / Notificações | `/admin/comunicacao`, rotas de tarefas diárias, notícias e avisos | Crons operacionais requerem `CRON_SECRET` e implantação configurada. |
-| Termos e privacidade | entidades `LegalDocumentVersion` e `LegalDocumentAcceptance`; administração e aceite de versões | Publicação pelo painel pode exigir novo aceite e notificar; solicitações LGPD completas ainda dependem de fluxo institucional. Ver `docs/legal/04-sistema-de-versionamento.md`. |
-| Cripta | `/cripta`, `/cripta-administracao`, `/cripta-laboratorio`, `/cripta-demonstracao`; rascunhos, envelopes, mídia otimizada e integração Wix | **Piloto restrito; não interpretar como custódia anual pronta.** As três cópias externas, a recuperação institucional e os ensaios finais continuam pendentes. Ver documentos da Cripta. |
+| Área                                | Entradas e implementação verificáveis                                                                                                                              | Limites/observações                                                                                                                                                                                        |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Identidade e Diretório              | `/reivindicar`, `/irmaos`, `/irmaos/meu-espaco`, administração de membros/papéis; Firebase Auth, RBAC e dados de membro                                            | A autorização precisa ser reavaliada para cada acesso a dados.                                                                                                                                             |
+| Agenda unificada                    | `/agenda`, `my-agenda-view.tsx`, `calendar-item.ts`, `event-form.tsx`; sessões, eventos, aniversários, paramaçônicas, recessos, entradas pessoais e Google         | Ano civil como janela padrão; em dezembro inclui janeiro seguinte. Recesso usa intervalo de datas; sincronização Google sob OAuth é condicionada e limitada por tempo, não gratuita em termos de chamadas. |
+| Notícias                            | `/noticias`, `/noticias/todas`, `/[slug]`; destaque editorial, pesquisa, filtros por ano/categoria e paginação; administração e importação de URLs de `vl6.com.br` | Importação/reimportação e vínculo `News.eventId` precisam de revisão de resultado por administradores.                                                                                                     |
+| Acervo                              | `/acervo` e rotas de eventos, pessoas, gestões, coleções, fotografias, audiovisual, documentos, exposições, contribuições, catalogação e linha do tempo            | Convivência deliberada entre objetos do Acervo unificado e módulos legados. Ver doc 11.                                                                                                                    |
+| Constelação VL6                     | `/acervo/constelacao`, `loadConstellationMemories` e `MemoryConstellation`                                                                                         | Experiência automática; filtra eventos com **foto ou vídeo** publicado, não excluído e acessível, com ID de mídia; não mostra documento/áudio isolado como lembrança.                                      |
+| Biblioteca                          | `/acervo/biblioteca` e operações administrativas de exemplares, QR/tombo, estantes, reservas/empréstimos, avaliações e baixas                                      | Ver `12-biblioteca-e-circulacao.md`; regras patrimoniais próprias.                                                                                                                                         |
+| Comunidade Paramaçônica             | `/paramaconicas` e papéis com exposição reduzida de informações                                                                                                    | Acesso da comunidade não equivale ao acesso de um Irmão da Loja; ver `12-comunidade-paramaconica.md`.                                                                                                      |
+| Comunicação / Avisos / Notificações | `/admin/comunicacao`, rotas de tarefas diárias, notícias e avisos                                                                                                  | Crons operacionais requerem `CRON_SECRET` e implantação configurada.                                                                                                                                       |
+| Termos e privacidade                | entidades `LegalDocumentVersion` e `LegalDocumentAcceptance`; administração e aceite de versões                                                                    | Publicação pelo painel pode exigir novo aceite e notificar; solicitações LGPD completas ainda dependem de fluxo institucional. Ver `docs/legal/04-sistema-de-versionamento.md`.                            |
+| Cripta                              | `/cripta`, `/cripta-administracao`, `/cripta-laboratorio`, `/cripta-demonstracao`; rascunhos, envelopes, mídia otimizada e integração Wix                          | **Piloto restrito; não interpretar como custódia anual pronta.** As três cópias externas, a recuperação institucional e os ensaios finais continuam pendentes. Ver documentos da Cripta.                   |
 
 ## 13.3 Acervo, Notícias e Constelação
 
@@ -74,15 +74,15 @@ Há código funcional para a experiência pessoal de carta e mídias, rascunho e
 
 ## 13.6 Operação, segurança e verificações
 
-| Tema | Regra prática |
-| --- | --- |
-| Fonte da verdade | O código versionado, o estado real do Firestore e os workflows de deploy; textos históricos podem representar uma fase anterior. |
-| CI | `.github/workflows/validate-portal.yml` — instalação, type-check e build; executar também testes específicos quando mudar regras de domínio. |
-| Produção | Vercel, branch configurada para o projeto; distinguir `READY` de preview, `READY` em produção e validação visual autenticada após o deploy. |
-| Banco | Scripts retroativos devem delimitar tenant, ser idempotentes, começar com simulação e não extrapolar os campos previstos. |
-| Dados pessoais | Consentimento/aceite e RBAC por rota não dispensam minimização, proteção de logs e tratamento das solicitações LGPD. |
-| Integrações | Firebase Auth/Firestore, Google Calendar, Vercel Blob e Wix têm credenciais e limites independentes. Não reutilizar indiscriminadamente credenciais administrativas. |
-| Documentação | Atualizar README (visão executiva), índice (navegação), doc especializado (regras) e este inventário (status), sempre no mesmo PR da mudança arquitetural. |
+| Tema             | Regra prática                                                                                                                                                        |
+| ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Fonte da verdade | O código versionado, o estado real do Firestore e os workflows de deploy; textos históricos podem representar uma fase anterior.                                     |
+| CI               | `.github/workflows/validate-portal.yml` — instalação, type-check e build; executar também testes específicos quando mudar regras de domínio.                         |
+| Produção         | Vercel, branch configurada para o projeto; distinguir `READY` de preview, `READY` em produção e validação visual autenticada após o deploy.                          |
+| Banco            | Scripts retroativos devem delimitar tenant, ser idempotentes, começar com simulação e não extrapolar os campos previstos.                                            |
+| Dados pessoais   | Consentimento/aceite e RBAC por rota não dispensam minimização, proteção de logs e tratamento das solicitações LGPD.                                                 |
+| Integrações      | Firebase Auth/Firestore, Google Calendar, Vercel Blob e Wix têm credenciais e limites independentes. Não reutilizar indiscriminadamente credenciais administrativas. |
+| Documentação     | Atualizar README (visão executiva), índice (navegação), doc especializado (regras) e este inventário (status), sempre no mesmo PR da mudança arquitetural.           |
 
 ## 13.7 Itens que permanecem para validação/aperfeiçoamento
 

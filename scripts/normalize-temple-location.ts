@@ -16,7 +16,8 @@ import { normalizeEventLocation, VL6_TEMPLE_LOCATION } from '@vl6/shared';
 
 async function main(): Promise<void> {
   const tenantId = process.env.TENANT_ID?.trim();
-  if (!tenantId) throw new Error('Defina TENANT_ID explicitamente para evitar alterações entre Lojas.');
+  if (!tenantId)
+    throw new Error('Defina TENANT_ID explicitamente para evitar alterações entre Lojas.');
 
   const apply = process.argv.includes('--apply');
   const db = getAdminFirestore();
@@ -55,8 +56,22 @@ async function main(): Promise<void> {
     if (snap.size < pageSize) break;
   }
 
-  console.log(JSON.stringify({ tenantId, mode: apply ? 'APPLY' : 'DRY_RUN', scanned, candidates, updated, newLocation: VL6_TEMPLE_LOCATION }, null, 2));
-  if (!apply) console.log('Somente auditoria. Execute novamente com --apply para persistir as alterações.');
+  console.log(
+    JSON.stringify(
+      {
+        tenantId,
+        mode: apply ? 'APPLY' : 'DRY_RUN',
+        scanned,
+        candidates,
+        updated,
+        newLocation: VL6_TEMPLE_LOCATION,
+      },
+      null,
+      2,
+    ),
+  );
+  if (!apply)
+    console.log('Somente auditoria. Execute novamente com --apply para persistir as alterações.');
 }
 main().catch((error) => {
   console.error(error);

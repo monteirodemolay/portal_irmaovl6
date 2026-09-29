@@ -246,7 +246,7 @@ export function MyAgendaView({
             type="button"
             onClick={() => setCategoryFilter(card.category)}
             className={cn(
-              'border-border bg-white hover:border-primary/40 flex min-h-24 flex-col rounded-xl border p-4 text-left transition-colors',
+              'border-border hover:border-primary/40 flex min-h-24 flex-col rounded-xl border bg-white p-4 text-left transition-colors',
               categoryFilter === card.category && 'border-primary ring-primary/10 ring-2',
             )}
           >

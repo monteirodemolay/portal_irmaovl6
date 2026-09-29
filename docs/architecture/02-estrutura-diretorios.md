@@ -221,7 +221,6 @@ prática, que a arquitetura não degrade com o tempo.
 | Coleções Firestore        | camelCase plural            | `memberPositionHistory` |
 | Rotas de API              | kebab-case, versionadas     | `/api/v1/members`       |
 
-
 ## 2.x Índice das áreas adicionadas até 28/09/2026
 
 A árvore acima documenta o desenho de fundação e algumas rotas antigas. Para localizar o estado atual, verificar diretamente:

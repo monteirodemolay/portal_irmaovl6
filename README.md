@@ -6,17 +6,17 @@ Portal autenticado da **Loja Maçônica Verdadeira Luz nº 06**, construído em 
 
 ## O que existe no repositório
 
-| Núcleo | Funcionalidades e rotas |
-| --- | --- |
-| Identidade e Loja | Login Firebase, recuperação de acesso, reivindicação em `/reivindicar`, perfil/diretório de Irmãos, administração de membros, gestões, usuários e papéis RBAC; painel multi-tenant `/plataforma`. |
-| Agenda | `/agenda`: sessões, eventos, aniversariantes, paramaçônicas, recessos, compromissos/notas/tarefas pessoais, arquivos iCalendar e integração opcional com Google Calendar por OAuth. |
-| Conteúdo | Notícias `/noticias` e `/noticias/todas`, avisos, notificações, administração editorial, destaques, filtros/paginação, importação e reimportação de notícias de `vl6.com.br`. |
-| Acervo VL6 | `/acervo`: arquivos, biblioteca física/digital, fotografias, vídeos, documentos, coleções, eventos, gestões, pessoas, exposições, linha do tempo, contribuição/catálogo e experiências de descoberta. |
-| Constelação | `/acervo/constelacao`: central automática de lembranças por ano; apenas eventos ligados a **fotos ou vídeos publicados e acessíveis**; reprodução automática e `Surpreenda-me`, sem exigir montagem de trilhas. |
-| Biblioteca | Catálogo, capas, exemplares, estantes, tombo/QR, carrinho, empréstimos, avaliações, circulação, devolução e baixas. |
-| Comunidade Paramaçônica | `/paramaconicas`, perfis e autorizações específicas, com recorte de dados separado da área privativa dos Irmãos. |
-| Termos e Privacidade | Aceite autenticado, versões, histórico e publicação administrativa com possibilidade de solicitar novo aceite. |
-| Cripta | `/cripta` e `/cripta-administracao`: experiência **piloto restrita** para cartas, rascunhos, anexos e Wix privado; a custódia institucional anual e recuperação de chaves **não estão concluídas**. |
+| Núcleo                  | Funcionalidades e rotas                                                                                                                                                                                         |
+| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Identidade e Loja       | Login Firebase, recuperação de acesso, reivindicação em `/reivindicar`, perfil/diretório de Irmãos, administração de membros, gestões, usuários e papéis RBAC; painel multi-tenant `/plataforma`.               |
+| Agenda                  | `/agenda`: sessões, eventos, aniversariantes, paramaçônicas, recessos, compromissos/notas/tarefas pessoais, arquivos iCalendar e integração opcional com Google Calendar por OAuth.                             |
+| Conteúdo                | Notícias `/noticias` e `/noticias/todas`, avisos, notificações, administração editorial, destaques, filtros/paginação, importação e reimportação de notícias de `vl6.com.br`.                                   |
+| Acervo VL6              | `/acervo`: arquivos, biblioteca física/digital, fotografias, vídeos, documentos, coleções, eventos, gestões, pessoas, exposições, linha do tempo, contribuição/catálogo e experiências de descoberta.           |
+| Constelação             | `/acervo/constelacao`: central automática de lembranças por ano; apenas eventos ligados a **fotos ou vídeos publicados e acessíveis**; reprodução automática e `Surpreenda-me`, sem exigir montagem de trilhas. |
+| Biblioteca              | Catálogo, capas, exemplares, estantes, tombo/QR, carrinho, empréstimos, avaliações, circulação, devolução e baixas.                                                                                             |
+| Comunidade Paramaçônica | `/paramaconicas`, perfis e autorizações específicas, com recorte de dados separado da área privativa dos Irmãos.                                                                                                |
+| Termos e Privacidade    | Aceite autenticado, versões, histórico e publicação administrativa com possibilidade de solicitar novo aceite.                                                                                                  |
+| Cripta                  | `/cripta` e `/cripta-administracao`: experiência **piloto restrita** para cartas, rascunhos, anexos e Wix privado; a custódia institucional anual e recuperação de chaves **não estão concluídas**.             |
 
 Detalhes, decisões, restrições e próximos trabalhos constam em [13-estado-atual-e-operacao.md](./docs/architecture/13-estado-atual-e-operacao.md). A existência de código não substitui testes autenticados em produção; o histórico do roadmap não deve ser lido como uma lista integral de entregas concluídas.
 

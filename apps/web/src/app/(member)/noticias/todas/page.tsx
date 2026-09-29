@@ -91,8 +91,8 @@ export default async function AllNewsPage({
 
   const allNews = published.items;
   const heroPhoto = resolveHeroPhoto(current.tenant, 'noticias');
-  const categories = [...new Set(allNews.map((item) => item.categoria).filter(Boolean))].sort((a, b) =>
-    a.localeCompare(b, 'pt-BR'),
+  const categories = [...new Set(allNews.map((item) => item.categoria).filter(Boolean))].sort(
+    (a, b) => a.localeCompare(b, 'pt-BR'),
   );
   const years = [
     ...new Set(
@@ -106,7 +106,8 @@ export default async function AllNewsPage({
   const filtered = allNews
     .filter((item) => {
       if (selectedCategory && item.categoria !== selectedCategory) return false;
-      if (selectedYear && String(item.dataPublicacao?.getFullYear() ?? '') !== selectedYear) return false;
+      if (selectedYear && String(item.dataPublicacao?.getFullYear() ?? '') !== selectedYear)
+        return false;
       if (!normalizedQuery) return true;
 
       const haystack = [
@@ -143,13 +144,13 @@ export default async function AllNewsPage({
           <div className="flex flex-wrap gap-3">
             <Link
               href="/noticias"
-              className="rounded-lg border border-white/35 bg-white/10 px-3 py-2 text-xs font-semibold text-white transition-colors hover:border-accent"
+              className="hover:border-accent rounded-lg border border-white/35 bg-white/10 px-3 py-2 text-xs font-semibold text-white transition-colors"
             >
               ← Voltar aos destaques
             </Link>
             <Link
               href="/acervo/linha-do-tempo"
-              className="rounded-lg border border-white/35 bg-white/10 px-3 py-2 text-xs font-semibold text-white transition-colors hover:border-accent"
+              className="hover:border-accent rounded-lg border border-white/35 bg-white/10 px-3 py-2 text-xs font-semibold text-white transition-colors"
             >
               Linha do tempo da Loja
             </Link>
@@ -164,13 +165,15 @@ export default async function AllNewsPage({
           className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_220px_150px_190px_auto]"
         >
           <div className="border-border flex min-w-0 items-center rounded-xl border px-4">
-            <span className="text-muted mr-2" aria-hidden="true">⌕</span>
+            <span className="text-muted mr-2" aria-hidden="true">
+              ⌕
+            </span>
             <input
               type="search"
               name="q"
               defaultValue={query}
               placeholder="Pesquisar por título, assunto, Irmão, sessão..."
-              className="h-11 min-w-0 w-full bg-transparent text-sm outline-none"
+              className="h-11 w-full min-w-0 bg-transparent text-sm outline-none"
             />
           </div>
 
@@ -178,11 +181,13 @@ export default async function AllNewsPage({
             name="categoria"
             defaultValue={selectedCategory}
             aria-label="Filtrar por editoria"
-            className="border-border bg-surface h-11 rounded-xl border px-3 text-sm outline-none focus:border-primary"
+            className="border-border bg-surface focus:border-primary h-11 rounded-xl border px-3 text-sm outline-none"
           >
             <option value="">Todas as editorias</option>
             {categories.map((category) => (
-              <option key={category} value={category}>{category}</option>
+              <option key={category} value={category}>
+                {category}
+              </option>
             ))}
           </select>
 
@@ -190,11 +195,13 @@ export default async function AllNewsPage({
             name="ano"
             defaultValue={selectedYear}
             aria-label="Filtrar por ano"
-            className="border-border bg-surface h-11 rounded-xl border px-3 text-sm outline-none focus:border-primary"
+            className="border-border bg-surface focus:border-primary h-11 rounded-xl border px-3 text-sm outline-none"
           >
             <option value="">Todos os anos</option>
             {years.map((year) => (
-              <option key={year} value={year}>{year}</option>
+              <option key={year} value={year}>
+                {year}
+              </option>
             ))}
           </select>
 
@@ -202,7 +209,7 @@ export default async function AllNewsPage({
             name="ordem"
             defaultValue={order === 'asc' ? 'antigas' : 'recentes'}
             aria-label="Ordenação"
-            className="border-border bg-surface h-11 rounded-xl border px-3 text-sm outline-none focus:border-primary"
+            className="border-border bg-surface focus:border-primary h-11 rounded-xl border px-3 text-sm outline-none"
           >
             <option value="recentes">Mais novas primeiro</option>
             <option value="antigas">Mais antigas primeiro</option>
@@ -210,7 +217,7 @@ export default async function AllNewsPage({
 
           <button
             type="submit"
-            className="bg-primary text-white h-11 rounded-xl px-5 text-sm font-semibold"
+            className="bg-primary h-11 rounded-xl px-5 text-sm font-semibold text-white"
           >
             Aplicar filtros
           </button>
@@ -222,7 +229,10 @@ export default async function AllNewsPage({
             {filtered.length === 1 ? 'notícia encontrada' : 'notícias encontradas'}
           </p>
           {hasFilters && (
-            <Link href="/noticias/todas" className="text-primary text-sm font-semibold hover:underline">
+            <Link
+              href="/noticias/todas"
+              className="text-primary text-sm font-semibold hover:underline"
+            >
               Limpar todos os filtros
             </Link>
           )}
@@ -243,7 +253,10 @@ export default async function AllNewsPage({
                   key={item.id}
                   className="border-border bg-surface grid overflow-hidden rounded-2xl border shadow-sm sm:grid-cols-[230px_minmax(0,1fr)]"
                 >
-                  <Link href={'/noticias/' + item.slug} className="block min-h-48 overflow-hidden bg-slate-900 sm:min-h-full">
+                  <Link
+                    href={'/noticias/' + item.slug}
+                    className="block min-h-48 overflow-hidden bg-slate-900 sm:min-h-full"
+                  >
                     {item.imagemCapaUrl ? (
                       <img
                         src={item.imagemCapaUrl}
@@ -269,7 +282,9 @@ export default async function AllNewsPage({
                       </h2>
                     </Link>
 
-                    <p className="text-muted mt-2 line-clamp-3 text-sm leading-6">{excerpt(item)}</p>
+                    <p className="text-muted mt-2 line-clamp-3 text-sm leading-6">
+                      {excerpt(item)}
+                    </p>
 
                     <div className="text-muted mt-4 flex flex-wrap gap-x-4 gap-y-1 text-xs">
                       <span>{readingTime(item)} min de leitura</span>
@@ -346,7 +361,7 @@ export default async function AllNewsPage({
                           aria-current={pageNumber === currentPage ? 'page' : undefined}
                           className={
                             pageNumber === currentPage
-                              ? 'bg-primary text-white flex h-9 min-w-9 items-center justify-center rounded-lg px-2 text-sm font-semibold'
+                              ? 'bg-primary flex h-9 min-w-9 items-center justify-center rounded-lg px-2 text-sm font-semibold text-white'
                               : 'border-border bg-surface hover:border-primary flex h-9 min-w-9 items-center justify-center rounded-lg border px-2 text-sm font-medium'
                           }
                         >
@@ -392,16 +407,28 @@ export default async function AllNewsPage({
               gestões, fotografias e documentos preservados no Acervo VL6.
             </p>
             <div className="mt-4 flex flex-col gap-2 text-sm">
-              <Link href="/acervo/linha-do-tempo" className="text-accent font-semibold hover:underline">
+              <Link
+                href="/acervo/linha-do-tempo"
+                className="text-accent font-semibold hover:underline"
+              >
                 Linha do tempo →
               </Link>
-              <Link href="/acervo/eventos" className="text-white/85 hover:text-white hover:underline">
+              <Link
+                href="/acervo/eventos"
+                className="text-white/85 hover:text-white hover:underline"
+              >
                 Eventos e sessões →
               </Link>
-              <Link href="/acervo/gestoes" className="text-white/85 hover:text-white hover:underline">
+              <Link
+                href="/acervo/gestoes"
+                className="text-white/85 hover:text-white hover:underline"
+              >
                 Gestões da Loja →
               </Link>
-              <Link href="/acervo/pesquisar" className="text-white/85 hover:text-white hover:underline">
+              <Link
+                href="/acervo/pesquisar"
+                className="text-white/85 hover:text-white hover:underline"
+              >
                 Pesquisa completa no Acervo →
               </Link>
             </div>
@@ -421,7 +448,7 @@ export default async function AllNewsPage({
                   })}
                   className={
                     selectedYear === String(year)
-                      ? 'bg-primary text-white rounded-full px-3 py-1.5 text-xs font-semibold'
+                      ? 'bg-primary rounded-full px-3 py-1.5 text-xs font-semibold text-white'
                       : 'border-border hover:border-primary rounded-full border px-3 py-1.5 text-xs'
                   }
                 >

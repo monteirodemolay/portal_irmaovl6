@@ -56,12 +56,7 @@ export function PublishLegalDocumentVersionForm({
           <Input id="versao" name="versao" required defaultValue={proximaVersaoSugerida} />
         </FormField>
         <FormField label="Responsável" htmlFor="responsavel">
-          <Input
-            id="responsavel"
-            name="responsavel"
-            required
-            defaultValue={responsavelPadrao}
-          />
+          <Input id="responsavel" name="responsavel" required defaultValue={responsavelPadrao} />
         </FormField>
       </div>
 

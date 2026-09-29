@@ -12,7 +12,11 @@ if (dsn) {
   // Mesmo SHA usado no `release` do lado servidor (`instrumentation.ts`) e
   // no upload de sourcemap (`next.config.ts`) — necessário pro Sentry
   // juntar os dois lados do mesmo erro sob o mesmo release.
-  Sentry.init({ dsn, tracesSampleRate: 0.1, release: process.env.NEXT_PUBLIC_DEPLOY_SHA || undefined });
+  Sentry.init({
+    dsn,
+    tracesSampleRate: 0.1,
+    release: process.env.NEXT_PUBLIC_DEPLOY_SHA || undefined,
+  });
 }
 
 export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;

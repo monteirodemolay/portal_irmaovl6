@@ -29,13 +29,13 @@ O verificador já existe para ensaios com dados artificiais, mas **a exportaçã
 
 ## Papéis e poderes
 
-| Papel | Pode fazer | Não pode fazer sozinho |
-| --- | --- | --- |
-| Irmão titular ativo | Preparar, revisar e excluir suas cápsulas dentro da janela autorizada. | Abrir a janela, obter a chave de outro irmão ou decretar quite-placet. |
-| Operador | Conferir índice cifrado, hashes, mídias e recibos, sem teor das cartas. | Reconstruir chaves ou entregar conteúdo por iniciativa própria. |
+| Papel                               | Pode fazer                                                                                                       | Não pode fazer sozinho                                                                      |
+| ----------------------------------- | ---------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| Irmão titular ativo                 | Preparar, revisar e excluir suas cápsulas dentro da janela autorizada.                                           | Abrir a janela, obter a chave de outro irmão ou decretar quite-placet.                      |
+| Operador                            | Conferir índice cifrado, hashes, mídias e recibos, sem teor das cartas.                                          | Reconstruir chaves ou entregar conteúdo por iniciativa própria.                             |
 | Guardião (três titulares distintos) | Conservar parcela física da recuperação; dois presentes poderão reconstruir a chave sob procedimento autorizado. | Guardar as três parcelas, enviá-las por e-mail ou manter cópia digital íntegra no servidor. |
-| Aprovadores | Autorizar janela, adiamento e exceções documentadas. | Desbloquear uma cápsula sem os controles de custódia definidos. |
-| Destinatário aprovado | Receber somente sua cápsula e abrir no próprio equipamento com a chave apropriada. | Obter os pacotes de outros destinatários. |
+| Aprovadores                         | Autorizar janela, adiamento e exceções documentadas.                                                             | Desbloquear uma cápsula sem os controles de custódia definidos.                             |
+| Destinatário aprovado               | Receber somente sua cápsula e abrir no próprio equipamento com a chave apropriada.                               | Obter os pacotes de outros destinatários.                                                   |
 
 O modelo 2 de 3 é uma **meta de desenho**, ainda não um mecanismo implantado. Antes do primeiro depósito: eleger guardiões e substitutos; contratar revisão técnica do esquema de partilha; escrever procedimento de rotação, perda, morte e suspeita de comprometimento de cada parcela. Biometria e e-mail podem autenticar pedidos, mas não substituem cópia da chave.
 
@@ -56,14 +56,14 @@ O arquivo do ensaio atual `vl6-capsule-v1` inclui apenas carta e campos `title`,
 
 ## Ciclo anual pretendido
 
-| Fase | Evidência para avançar | Conduta se falhar |
-| --- | --- | --- |
-| Planejamento | Deliberação interna, datas e guardiões confirmados, teste recente das três mídias. | Adiar sem abrir. |
-| Preparação | Inventário e hashes das três unidades externas conferidos; restauração amostral em equipamento isolado. | Isolar mídia defeituosa e restaurar da íntegra antes de abrir. |
-| Abertura | Registro de abertura, hora autenticada, versão implantada e controles de acesso testados. | Bloquear gravações; não confiar apenas no relógio do navegador. |
-| Dez dias | Titular ativo altera apenas o próprio conteúdo, com limites aplicados também no servidor; cópias temporárias cifradas. | Suspender depósitos em caso de incidente; preservar evidências sem expor cartas. |
-| Fechamento | Bloquear uploads, aguardar transações, exportar inventário final e gravar/verificar três unidades externas independentes. | Manter janela fechada para usuários, mas não apagar a cópia temporária até garantir restauração. |
-| Limpeza temporária | Recibos por objeto removido, verificação posterior da listagem e política de retenção do provedor. | Registrar pendência; não declarar eliminação total. |
+| Fase               | Evidência para avançar                                                                                                    | Conduta se falhar                                                                                |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| Planejamento       | Deliberação interna, datas e guardiões confirmados, teste recente das três mídias.                                        | Adiar sem abrir.                                                                                 |
+| Preparação         | Inventário e hashes das três unidades externas conferidos; restauração amostral em equipamento isolado.                   | Isolar mídia defeituosa e restaurar da íntegra antes de abrir.                                   |
+| Abertura           | Registro de abertura, hora autenticada, versão implantada e controles de acesso testados.                                 | Bloquear gravações; não confiar apenas no relógio do navegador.                                  |
+| Dez dias           | Titular ativo altera apenas o próprio conteúdo, com limites aplicados também no servidor; cópias temporárias cifradas.    | Suspender depósitos em caso de incidente; preservar evidências sem expor cartas.                 |
+| Fechamento         | Bloquear uploads, aguardar transações, exportar inventário final e gravar/verificar três unidades externas independentes. | Manter janela fechada para usuários, mas não apagar a cópia temporária até garantir restauração. |
+| Limpeza temporária | Recibos por objeto removido, verificação posterior da listagem e política de retenção do provedor.                        | Registrar pendência; não declarar eliminação total.                                              |
 
 Em uma hecatombe ou ausência dos responsáveis, a data passa sem abertura. Nova data exige decisão documentada; não existe desbloqueio automático. Se um irmão falecer fora da janela, abrir somente a cápsula elegível em procedimento excepcional, com verificação documental, destinatário e aprovação por duas pessoas; a janela geral continua fechada.
 

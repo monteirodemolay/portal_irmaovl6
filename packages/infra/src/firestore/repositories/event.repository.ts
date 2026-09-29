@@ -128,7 +128,9 @@ export class FirestoreEventRepository implements IEventRepository {
   }
 
   async create(event: Event): Promise<void> {
-    await this.collection.doc(event.id).set({ ...event, local: normalizeEventLocation(event.local) });
+    await this.collection
+      .doc(event.id)
+      .set({ ...event, local: normalizeEventLocation(event.local) });
   }
 
   async update(event: Event): Promise<void> {

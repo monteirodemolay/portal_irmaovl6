@@ -71,8 +71,10 @@ export default async function ImportHistoricalBoardTermsPage() {
         <p className="text-sm font-semibold">Manutenção</p>
         <p className="text-muted mt-1 text-xs">
           Se a importação foi interrompida no meio (por exemplo, por causa de um tempo de execução
-          esgotado) e algum vínculo de cargo ficou duplicado, use o botão abaixo pra limpar — não
-          duplica nada, só remove as cópias extras mantendo a mais antiga.
+          esgotado) e algum vínculo de cargo ficou duplicado, ou se um cargo apareceu repetido no
+          Perfil do Irmão (mesmo cargo, mesma Gestão, datas diferentes — reenvio do formulário de
+          Diretoria), use o botão abaixo pra limpar — não apaga o período real, só junta os pedaços
+          num registro só.
         </p>
         <div className="mt-3">
           <DedupeMemberPositionHistoryButton />

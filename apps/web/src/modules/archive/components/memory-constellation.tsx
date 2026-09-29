@@ -61,7 +61,7 @@ export function MemoryConstellation({ initial }: MemoryConstellationProps) {
   const currentImage =
     currentMedia?.mediaType === 'foto'
       ? currentMedia.url
-      : currentMedia?.posterUrl ?? current?.fallbackImageUrl ?? null;
+      : (currentMedia?.posterUrl ?? current?.fallbackImageUrl ?? null);
 
   React.useEffect(() => {
     setMediaIndex(0);
@@ -86,8 +86,10 @@ export function MemoryConstellation({ initial }: MemoryConstellationProps) {
   const upcoming = React.useMemo(() => {
     if (memories.length <= 1) return [];
     const count = Math.min(3, memories.length - 1);
-    return Array.from({ length: count }, (_, offset) => memories[(index + offset + 1) % memories.length])
-      .filter((memory): memory is ConstellationMemory => Boolean(memory));
+    return Array.from(
+      { length: count },
+      (_, offset) => memories[(index + offset + 1) % memories.length],
+    ).filter((memory): memory is ConstellationMemory => Boolean(memory));
   }, [index, memories]);
 
   async function changeYear(value: string) {
@@ -137,7 +139,7 @@ export function MemoryConstellation({ initial }: MemoryConstellationProps) {
     });
     const years = [...byYear.keys()];
     const year = years[Math.floor(Math.random() * years.length)];
-    const candidates = year ? byYear.get(year) ?? [] : [];
+    const candidates = year ? (byYear.get(year) ?? []) : [];
     if (candidates.length === 0) return;
     const chosen = candidates[Math.floor(Math.random() * candidates.length)];
     if (chosen !== undefined) {
@@ -161,10 +163,13 @@ export function MemoryConstellation({ initial }: MemoryConstellationProps) {
       <section className="border-border bg-surface flex min-h-72 flex-col items-center justify-center rounded-[22px] border p-8 text-center shadow-sm">
         <Compass className="text-accent" size={28} />
         <h2 className="font-display mt-4 text-2xl font-semibold">
-          {selectedYear ? `Sem fotos ou vídeos publicados em ${selectedYear}` : 'A Constelação está pronta para receber memórias'}
+          {selectedYear
+            ? `Sem fotos ou vídeos publicados em ${selectedYear}`
+            : 'A Constelação está pronta para receber memórias'}
         </h2>
         <p className="text-muted mx-auto mt-2 max-w-xl text-sm leading-6">
-          Aqui aparecem somente eventos com fotografias ou vídeos publicados e disponíveis ao seu acesso.
+          Aqui aparecem somente eventos com fotografias ou vídeos publicados e disponíveis ao seu
+          acesso.
         </p>
         {selectedYear !== null && (
           <Button
@@ -194,7 +199,8 @@ export function MemoryConstellation({ initial }: MemoryConstellationProps) {
             Escolha apenas o período. A Constelação faz o restante.
           </p>
           <p className="text-muted mt-1 text-xs">
-            {stats.totalMemories} lembranças · {stats.totalPhotos} fotos · {stats.totalVideos} vídeos · {stats.totalYears} anos com registros
+            {stats.totalMemories} lembranças · {stats.totalPhotos} fotos · {stats.totalVideos}{' '}
+            vídeos · {stats.totalYears} anos com registros
           </p>
         </div>
 
@@ -207,7 +213,7 @@ export function MemoryConstellation({ initial }: MemoryConstellationProps) {
             value={selectedYear ?? 'all'}
             disabled={loading}
             onChange={(event) => void changeYear(event.target.value)}
-            className="border-border bg-background h-9 rounded-lg border px-3 text-sm outline-none focus:ring-2 focus:ring-accent"
+            className="border-border bg-background focus:ring-accent h-9 rounded-lg border px-3 text-sm outline-none focus:ring-2"
           >
             <option value="all">Toda a história</option>
             {initial.years.map((year) => (
@@ -270,10 +276,12 @@ export function MemoryConstellation({ initial }: MemoryConstellationProps) {
             )}
             <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-black/15" />
 
-            <div className={cn(
-              'pointer-events-none absolute inset-x-0 p-5 text-white sm:p-7',
-              isVideo ? 'bottom-[4rem]' : 'bottom-0',
-            )}>
+            <div
+              className={cn(
+                'pointer-events-none absolute inset-x-0 p-5 text-white sm:p-7',
+                isVideo ? 'bottom-[4rem]' : 'bottom-0',
+              )}
+            >
               <div className="mb-3 flex flex-wrap gap-2">
                 <span className="bg-accent text-primary-dark rounded-full px-3 py-1 text-[11px] font-bold tracking-wide">
                   {current.year}
@@ -285,7 +293,10 @@ export function MemoryConstellation({ initial }: MemoryConstellationProps) {
                 )}
               </div>
               <p className="text-sm font-medium text-white/75">{current.dateLabel}</p>
-              <h2 aria-live="polite" className="font-display mt-1 line-clamp-3 max-w-3xl break-words text-2xl font-semibold leading-tight sm:text-4xl">
+              <h2
+                aria-live="polite"
+                className="font-display mt-1 line-clamp-3 max-w-3xl break-words text-2xl font-semibold leading-tight sm:text-4xl"
+              >
                 {current.title}
               </h2>
               {current.archiveTitle && (
@@ -336,7 +347,10 @@ export function MemoryConstellation({ initial }: MemoryConstellationProps) {
                   Evento · {current.year}
                 </span>
                 {current.kindLabels.slice(0, 3).map((label) => (
-                  <span key={label} className="rounded-full border border-white/15 bg-white/5 px-3 py-2 text-xs">
+                  <span
+                    key={label}
+                    className="rounded-full border border-white/15 bg-white/5 px-3 py-2 text-xs"
+                  >
                     {label}
                   </span>
                 ))}
@@ -348,17 +362,21 @@ export function MemoryConstellation({ initial }: MemoryConstellationProps) {
               </div>
 
               {current.description && (
-                <p className="mt-6 line-clamp-4 break-words text-sm leading-6 text-white/72">
+                <p className="text-white/72 mt-6 line-clamp-4 break-words text-sm leading-6">
                   {current.description}
                 </p>
               )}
 
               <div className="mt-6 grid grid-cols-2 gap-3">
                 <div className="rounded-xl border border-white/10 bg-white/5 p-3">
-                  {current.videoCount > 0
-                    ? <Video className="text-accent" size={16} />
-                    : <ImageIcon className="text-accent" size={16} />}
-                  <strong className="mt-2 block text-lg">{current.photoCount + current.videoCount}</strong>
+                  {current.videoCount > 0 ? (
+                    <Video className="text-accent" size={16} />
+                  ) : (
+                    <ImageIcon className="text-accent" size={16} />
+                  )}
+                  <strong className="mt-2 block text-lg">
+                    {current.photoCount + current.videoCount}
+                  </strong>
                   <span className="text-[10px] uppercase tracking-wider text-white/50">
                     {current.photoCount} fotos · {current.videoCount} vídeos
                   </span>
@@ -366,7 +384,9 @@ export function MemoryConstellation({ initial }: MemoryConstellationProps) {
                 <div className="rounded-xl border border-white/10 bg-white/5 p-3">
                   <Users className="text-accent" size={16} />
                   <strong className="mt-2 block text-lg">{current.peopleCount}</strong>
-                  <span className="text-[10px] uppercase tracking-wider text-white/50">identificados</span>
+                  <span className="text-[10px] uppercase tracking-wider text-white/50">
+                    identificados
+                  </span>
                 </div>
               </div>
             </div>
@@ -397,7 +417,9 @@ export function MemoryConstellation({ initial }: MemoryConstellationProps) {
               <p className="text-accent text-[10px] font-semibold uppercase tracking-[0.18em]">
                 Próximas lembranças
               </p>
-              <p className="text-muted mt-1 text-xs">A sequência muda conforme você explora a história.</p>
+              <p className="text-muted mt-1 text-xs">
+                A sequência muda conforme você explora a história.
+              </p>
             </div>
             <button
               type="button"
@@ -453,8 +475,8 @@ export function MemoryConstellation({ initial }: MemoryConstellationProps) {
       )}
 
       <div className="text-muted flex items-center justify-center gap-2 text-center text-xs">
-        <History size={13} />
-        A Constelação exibe somente eventos com fotografias e vídeos publicados no Acervo VL6.
+        <History size={13} />A Constelação exibe somente eventos com fotografias e vídeos publicados
+        no Acervo VL6.
       </div>
     </section>
   );

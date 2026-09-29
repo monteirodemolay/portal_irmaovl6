@@ -30,16 +30,16 @@ Decisão do proponente em 25/09/2026: **recuperação por custódia conjunta**. 
 
 ## Ensaios obrigatórios antes da flag
 
-| Ensaio | Aceitação |
-| --- | --- |
-| Chave Wix e permissões | Upload real privado, download autenticado e exclusão verificada sem URL pública. |
-| Carta e anexos | Cifrar antes do envio, reabrir no dispositivo do titular, rejeitar adulteração de um byte. |
-| Acesso | Outro usuário, janela fechada, conta inativa e URL antiga não obtêm conteúdo; testar no servidor. |
-| Limites | Dez fotos por carta, cinco cartas, vídeo até 60 s/60 MB, dois áudios até 3 min/10 MB cada, total de 150 MB por irmão; testar concorrência e tamanho após cifragem. |
-| Resiliência | Interromper upload, perder conexão, repetir requisição, faltar espaço e restaurar **cada uma** das três unidades externas em computador diferente. |
-| Recuperação | Simular perda de chave, troca de operador, falha de uma unidade externa, indisponibilidade Wix e adiamento da janela. |
-| Desligamento | Exportar inventário cifrado, comparar SHA-256, restaurar amostras sob autorização, retirar objetos temporários Wix, verificar exclusão. |
-| Entrega excepcional | Validar autorização dupla e destinatário; testar que pacote de outro irmão não é entregue. |
+| Ensaio                 | Aceitação                                                                                                                                                          |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Chave Wix e permissões | Upload real privado, download autenticado e exclusão verificada sem URL pública.                                                                                   |
+| Carta e anexos         | Cifrar antes do envio, reabrir no dispositivo do titular, rejeitar adulteração de um byte.                                                                         |
+| Acesso                 | Outro usuário, janela fechada, conta inativa e URL antiga não obtêm conteúdo; testar no servidor.                                                                  |
+| Limites                | Dez fotos por carta, cinco cartas, vídeo até 60 s/60 MB, dois áudios até 3 min/10 MB cada, total de 150 MB por irmão; testar concorrência e tamanho após cifragem. |
+| Resiliência            | Interromper upload, perder conexão, repetir requisição, faltar espaço e restaurar **cada uma** das três unidades externas em computador diferente.                 |
+| Recuperação            | Simular perda de chave, troca de operador, falha de uma unidade externa, indisponibilidade Wix e adiamento da janela.                                              |
+| Desligamento           | Exportar inventário cifrado, comparar SHA-256, restaurar amostras sob autorização, retirar objetos temporários Wix, verificar exclusão.                            |
+| Entrega excepcional    | Validar autorização dupla e destinatário; testar que pacote de outro irmão não é entregue.                                                                         |
 
 ## Ordem de implementação
 

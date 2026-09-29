@@ -310,6 +310,7 @@ export * from './modules/notification/repositories/link-favorite.repository';
 export * from './modules/notification/repositories/link-suggestion.repository';
 export * from './modules/notification/services/notification-gateway';
 export * from './modules/notification/use-cases/notify-recipient.use-case';
+export * from './modules/notification/use-cases/notify-users-with-permission.use-case';
 export * from './modules/notification/use-cases/list-my-notifications.use-case';
 export * from './modules/identity-access/use-cases/delete-my-account.use-case';
 export * from './modules/notification/use-cases/mark-notification-as-read.use-case';
@@ -424,6 +425,7 @@ export * from './modules/archive/use-cases/list-constellation-view-revisions.use
 export * from './modules/archive/use-cases/restore-constellation-view-revision.use-case';
 export * from './modules/archive/use-cases/create-elevation-archive-item.use-case';
 export * from './modules/archive/use-cases/create-exaltation-archive-item.use-case';
+export * from './modules/archive/use-cases/remove-member-from-ceremony-archive-item.use-case';
 export * from './modules/archive/use-cases/register-media-asset.use-case';
 export * from './modules/archive/use-cases/attach-media-to-archive-item.use-case';
 export * from './modules/archive/use-cases/set-archive-item-cover.use-case';

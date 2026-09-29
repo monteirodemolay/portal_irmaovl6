@@ -74,7 +74,7 @@ Nome e data de aniversário (dia/mês) do cônjuge e dos filhos do Irmão, para 
 
 ### 8.5 Dados de uso e participação institucional
 
-Confirmação de presença em sessões e eventos, empréstimos e devoluções na Biblioteca, itens do Acervo Histórico visualizados/baixados (de forma agregada, sem identificar individualmente quem acessou cada item — Seção 10), notificações recebidas e seu status de leitura.
+Confirmação de presença em sessões e eventos, empréstimos e devoluções na Biblioteca, itens do Acervo Histórico visualizados/baixados (de forma agregada, sem identificar individualmente quem acessou cada item — Seção 10), notificações recebidas e seu status de leitura, e comentários feitos em notícias institucionais (texto e nome do autor, exibidos aos demais Irmãos autenticados somente após aprovação da moderação).
 
 ### 8.6 Dados de publicação voluntária (perfil da Central VL6)
 
@@ -102,16 +102,17 @@ O Portal não coleta, no seu funcionamento atual: geolocalização precisa, dado
 
 ## 10. Finalidades específicas por dado
 
-| Dado                            | Finalidade                                                                                   |
-| ------------------------------- | -------------------------------------------------------------------------------------------- |
-| Identificação e contato         | Gestão do quadro de Irmãos, comunicação institucional, Diretório interno                     |
-| Trajetória maçônica             | Registro histórico, controle de regularidade, elegibilidade a cargos                         |
-| Dados profissionais/negócios    | Rede de apoio profissional entre Irmãos (módulo Negócios), sempre voluntário                 |
-| Dados de familiares             | Lembretes de datas comemorativas; preservação de memória familiar (Família e Legado)         |
-| Dados de uso/participação       | Organização de eventos, gestão da Biblioteca, estatísticas agregadas de uso do Acervo        |
-| Perfil voluntário (Central VL6) | Divulgação voluntária do Irmão a outros membros, conforme blocos que ele mesmo autorizar     |
-| Dados técnicos/segurança        | Prevenção a fraude, investigação de incidentes, auditoria de ações administrativas           |
-| Arquivos e imagens              | Preservação do patrimônio histórico da Loja, gestão da Biblioteca, comunicação institucional |
+| Dado                            | Finalidade                                                                                    |
+| ------------------------------- | --------------------------------------------------------------------------------------------- |
+| Identificação e contato         | Gestão do quadro de Irmãos, comunicação institucional, Diretório interno                      |
+| Trajetória maçônica             | Registro histórico, controle de regularidade, elegibilidade a cargos                          |
+| Dados profissionais/negócios    | Rede de apoio profissional entre Irmãos (módulo Negócios), sempre voluntário                  |
+| Dados de familiares             | Lembretes de datas comemorativas; preservação de memória familiar (Família e Legado)          |
+| Dados de uso/participação       | Organização de eventos, gestão da Biblioteca, estatísticas agregadas de uso do Acervo         |
+| Comentários em notícias         | Interação institucional entre Irmãos em conteúdo editorial, sempre moderada antes de publicar |
+| Perfil voluntário (Central VL6) | Divulgação voluntária do Irmão a outros membros, conforme blocos que ele mesmo autorizar      |
+| Dados técnicos/segurança        | Prevenção a fraude, investigação de incidentes, auditoria de ações administrativas            |
+| Arquivos e imagens              | Preservação do patrimônio histórico da Loja, gestão da Biblioteca, comunicação institucional  |
 
 O Portal não trata nenhum dado pessoal para finalidade diversa da institucional/fraterna descrita nesta política, e não realiza tomada de decisão automatizada que produza efeitos jurídicos ou de impacto significativo aos titulares.
 
@@ -149,14 +150,14 @@ O Portal utiliza apenas **um cookie estritamente necessário**, de sessão de au
 
 ## 15. Retenção de dados
 
-| Categoria                                                      | Prazo de retenção                                                                                                                                                              |
-| -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Categoria                                                      | Prazo de retenção                                                                                                                 |
+| -------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
 | Cadastro de Irmão (Diretório) e histórico de situação maçônica | Por prazo indeterminado, durante e após o vínculo institucional do Irmão com a Loja, como parte do acervo histórico institucional |
-| Conta de acesso ao Portal (login)                              | Até solicitação de exclusão pelo próprio titular ou desligamento formal, conforme Seção 16                                                                                     |
-| Registros de auditoria                                         | Mantidos de forma permanente e imutável, para fins de segurança e responsabilização, enquanto o Portal estiver em operação                                                     |
-| Cópias de segurança (backup)                                   | Mantidas por prazo indeterminado, enquanto o Portal estiver em operação                                                                                                        |
-| Notificações internas                                          | Até 30 dias após a leitura ou expiração, com exclusão definitiva automática 7 dias depois de arquivadas                                                                        |
-| Registros de consentimento de publicação                       | Mantidos de forma permanente, como prova de conformidade                                                                                                                       |
+| Conta de acesso ao Portal (login)                              | Até solicitação de exclusão pelo próprio titular ou desligamento formal, conforme Seção 16                                        |
+| Registros de auditoria                                         | Mantidos de forma permanente e imutável, para fins de segurança e responsabilização, enquanto o Portal estiver em operação        |
+| Cópias de segurança (backup)                                   | Mantidas por prazo indeterminado, enquanto o Portal estiver em operação                                                           |
+| Notificações internas                                          | Até 30 dias após a leitura ou expiração, com exclusão definitiva automática 7 dias depois de arquivadas                           |
+| Registros de consentimento de publicação                       | Mantidos de forma permanente, como prova de conformidade                                                                          |
 
 ## 16. Direitos do titular
 

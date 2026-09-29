@@ -3,12 +3,64 @@ import type { AuthContext } from '../../../shared/auth-context';
 import { ForbiddenError, NotFoundError } from '../../../shared/result';
 import {
   FixedClock,
+  InMemoryMemberRepository,
   InMemoryNewsCommentRepository,
   InMemoryNewsRepository,
+  InMemoryNotificationPreferenceRepository,
+  InMemoryNotificationRepository,
+  InMemoryRoleRepository,
+  InMemoryUserRepository,
   SequentialIdGenerator,
 } from '../../../test/fakes';
+import type { Role } from '../../identity-access/entities/role.entity';
+import type { User } from '../../identity-access/entities/user.entity';
+import type { INotificationGateway } from '../../notification/services/notification-gateway';
 import type { News } from '../entities/news.entity';
 import { CreateNewsCommentUseCase } from './create-news-comment.use-case';
+
+class NoopGateway implements INotificationGateway {
+  async send(): Promise<void> {}
+}
+
+function buildRole(overrides: Partial<Role> = {}): Role {
+  return {
+    id: 'role-editor',
+    tenantId: 't1',
+    nome: 'Editor de Conteúdo',
+    chave: 'editor',
+    permissoes: ['news:manage'],
+    sistemico: true,
+    createdAt: new Date('2025-01-01'),
+    updatedAt: new Date('2025-01-01'),
+    createdBy: 'admin-1',
+    updatedBy: 'admin-1',
+    deletedAt: null,
+    status: 'active',
+    ativo: true,
+    ...overrides,
+  };
+}
+
+function buildUser(overrides: Partial<User> = {}): User {
+  return {
+    id: 'admin-1',
+    tenantId: 't1',
+    email: 'admin@vl6.org.br',
+    memberId: null,
+    roleId: 'role-editor',
+    mfaHabilitado: false,
+    ultimoLogin: null,
+    statusConta: 'active',
+    createdAt: new Date('2025-01-01'),
+    updatedAt: new Date('2025-01-01'),
+    createdBy: 'admin-1',
+    updatedBy: 'admin-1',
+    deletedAt: null,
+    status: 'active',
+    ativo: true,
+    ...overrides,
+  };
+}
 
 const ctx: AuthContext = {
   uid: 'membro-1',
@@ -52,13 +104,31 @@ function buildNews(overrides: Partial<News> = {}): News {
 function buildUseCase() {
   const newsRepository = new InMemoryNewsRepository();
   const newsCommentRepository = new InMemoryNewsCommentRepository();
+  const memberRepository = new InMemoryMemberRepository();
+  const roleRepository = new InMemoryRoleRepository();
+  const userRepository = new InMemoryUserRepository();
+  const notificationRepository = new InMemoryNotificationRepository();
+  const notificationPreferenceRepository = new InMemoryNotificationPreferenceRepository();
   const useCase = new CreateNewsCommentUseCase({
     newsRepository,
     newsCommentRepository,
+    memberRepository,
+    roleRepository,
+    userRepository,
+    notificationRepository,
+    notificationPreferenceRepository,
+    notificationGateway: new NoopGateway(),
     clock: new FixedClock(new Date('2026-02-01T00:00:00Z')),
     idGenerator: new SequentialIdGenerator(),
   });
-  return { useCase, newsRepository, newsCommentRepository };
+  return {
+    useCase,
+    newsRepository,
+    newsCommentRepository,
+    roleRepository,
+    userRepository,
+    notificationRepository,
+  };
 }
 
 describe('CreateNewsCommentUseCase', () => {
@@ -77,6 +147,32 @@ describe('CreateNewsCommentUseCase', () => {
 
     const persisted = await newsCommentRepository.findById(result.value.id);
     expect(persisted).not.toBeNull();
+  });
+
+  it('avisa quem tem news:manage sobre o comentário pendente de moderação', async () => {
+    const { useCase, newsRepository, roleRepository, userRepository, notificationRepository } =
+      buildUseCase();
+    await newsRepository.create(buildNews());
+    await roleRepository.create(buildRole());
+    await userRepository.create(buildUser());
+    // Papel sem `news:manage` não deve receber a notificação.
+    await roleRepository.create(
+      buildRole({ id: 'role-bibliotecario', permissoes: ['libraryItem:manage'] }),
+    );
+    await userRepository.create(buildUser({ id: 'bibliotecario-1', roleId: 'role-bibliotecario' }));
+
+    const result = await useCase.execute(ctx, 'news-1', 'Muito boa a notícia!');
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    const notified = await notificationRepository.listByDedupeKeyPrefix(
+      't1',
+      `news-comment:${result.value.id}:notify:`,
+    );
+    expect(notified).toHaveLength(1);
+    expect(notified[0]?.destinatarioId).toBe('admin-1');
+    expect(notified[0]?.link).toBe('/admin/conteudo/noticias/news-1');
+    expect(notified[0]?.priority).toBe('attention');
   });
 
   it('lança ForbiddenError sem a permissão news:read', async () => {

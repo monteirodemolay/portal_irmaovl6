@@ -134,7 +134,6 @@ request.auth.token.tenantId` como última linha de defesa.
    componente — tudo vem de `TenantBranding`/`TenantSettings` carregado no
    layout raiz (ver doc 09).
 
-
 ## 1.8 Atualização de implementação — 28/09/2026
 
 Este capítulo preserva os princípios e a visão de fundação. Desde sua elaboração, o Portal recebeu Acervo VL6 estruturado, Biblioteca e circulação, Notícias editoriais integradas a Eventos, Agenda unificada com integração Google opcional, Comunidade Paramaçônica, gestão de versões de Termos/Privacidade, Constelação automática e uma Cripta em **piloto restrito**. Consulte [13-estado-atual-e-operacao.md](./13-estado-atual-e-operacao.md) para o mapa de módulos, rotas e respectivos limites; não leia as intenções de escala, integrações e roadmap deste capítulo como capacidades integralmente testadas.

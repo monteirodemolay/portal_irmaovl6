@@ -477,7 +477,6 @@ aprovar/rejeitar e motivo).
 - nenhuma contagem ou informação histórica inventada na interface;
 - toda publicação e alteração relevante registrada em auditoria.
 
-
 ## Reconhecimento facial assistido local — desenho aprovado
 
 O Acervo VL6 evoluirá a identificação manual de pessoas para um fluxo de **sugestão facial local com confirmação humana**, sem API externa de reconhecimento e sem custo variável por imagem.
@@ -502,7 +501,6 @@ Princípios obrigatórios:
 3. **Embeddings locais e sugestões** — compara cada face com referências confirmadas e apresenta candidatos ordenados por similaridade.
 4. **Curadoria e melhoria da base** — confirmações humanas podem gerar novas referências de qualidade; rejeições não alimentam a base.
 5. **Governança biométrica** — retenção, exclusão/reprocessamento, auditoria e controles de acesso específicos conforme documentos legais vigentes.
-
 
 ## 11.8 Consolidação implementada — 28/09/2026
 

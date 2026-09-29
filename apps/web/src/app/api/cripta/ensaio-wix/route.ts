@@ -9,7 +9,11 @@ export const maxDuration = 60;
 
 export async function POST(request: Request) {
   const session = await getCurrentSession();
-  if (!session || !hasPermission(session.authContext, 'tenant:manage') || !canAccessCriptaPilot(session.user.email)) {
+  if (
+    !session ||
+    !hasPermission(session.authContext, 'tenant:manage') ||
+    !canAccessCriptaPilot(session.user.email)
+  ) {
     return NextResponse.json({ error: 'Acesso negado.' }, { status: 403 });
   }
   if (request.headers.get('origin') !== new URL(request.url).origin) {
@@ -19,6 +23,9 @@ export async function POST(request: Request) {
     return NextResponse.json(await runWixTestCycle(), { headers: { 'Cache-Control': 'no-store' } });
   } catch (error) {
     // Never echo Wix response bodies, signed URLs or the API key.
-    return NextResponse.json({ error: error instanceof Error ? error.message : 'Ensaio Wix falhou.' }, { status: 502 });
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : 'Ensaio Wix falhou.' },
+      { status: 502 },
+    );
   }
 }
