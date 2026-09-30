@@ -156,7 +156,7 @@ export function PersonalizationPreferences() {
           </span>
           <Switch
             checked={value.highContrast}
-            onCheckedChange={(checked) => update({ highContrast: checked })}
+            onChange={(event) => update({ highContrast: event.target.checked })}
           />
         </label>
 
@@ -169,7 +169,7 @@ export function PersonalizationPreferences() {
           </span>
           <Switch
             checked={value.reduceMotion}
-            onCheckedChange={(checked) => update({ reduceMotion: checked })}
+            onChange={(event) => update({ reduceMotion: event.target.checked })}
           />
         </label>
       </div>
