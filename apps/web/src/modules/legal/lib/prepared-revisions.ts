@@ -114,6 +114,14 @@ Dados e conteúdos inseridos na Cripta são de responsabilidade do Irmão que os
     );
   }
 
+  if (!text.includes('Quando uma notícia institucional do site oficial da Loja')) {
+    const newsArchive = `Quando uma notícia institucional do site oficial da Loja (\`vl6.com.br\`) é vinculada por um administrador a um Evento ou Sessão do Acervo, o Portal pode importar automaticamente para o Acervo as fotografias, vídeos diretos e documentos que integrem a área editorial dessa notícia. Essa cópia tem finalidade exclusiva de preservação da memória institucional e não altera a data editorial da matéria: o contexto histórico permanece determinado pela data do Evento relacionado. Os arquivos incorporados seguem os mesmos controles de acesso, armazenamento, retenção e auditoria aplicáveis ao restante do Acervo.`;
+    const marker = '### 17.3 Conteúdo enviado pelos Irmãos';
+    if (text.includes(marker)) {
+      text = text.replace(marker, `${newsArchive}\n\n${marker}`);
+    }
+  }
+
   const criptaFiles = `### 17.5 Cripta Digital
 
 A Cripta possui finalidade distinta do Acervo Histórico. Seu conteúdo não é destinado à consulta ordinária por outros Irmãos nem à administração cotidiana. O Portal trata a carta como conteúdo privado do titular, aplica cifragem antes do armazenamento temporário e mantém apenas os metadados necessários à operação e à auditoria.
