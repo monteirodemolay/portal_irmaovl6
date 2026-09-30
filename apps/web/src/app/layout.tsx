@@ -71,6 +71,12 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     >
       <head>
         <style dangerouslySetInnerHTML={{ __html: `:root { ${styleString} }` }} />
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "try{var p=JSON.parse(localStorage.getItem('vl6:personalizacao')||'{}');var r=document.documentElement;if(p.fontScale)r.setAttribute('data-font-scale',p.fontScale);if(p.highContrast)r.setAttribute('data-high-contrast','');if(p.reduceMotion)r.setAttribute('data-reduce-motion','');}catch(e){}",
+          }}
+        />
       </head>
       <body>
         <Providers dictionary={dictionary}>{children}</Providers>
