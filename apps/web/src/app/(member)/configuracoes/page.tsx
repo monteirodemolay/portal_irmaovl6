@@ -26,18 +26,20 @@ import { GoogleConnectionCard } from '@/modules/integrations/components/google-c
 import { NotificationPreferenceForm } from '@/modules/notification/components/notification-preference-form';
 
 function SectionCard({
+  id,
   icon,
   title,
   description,
   children,
 }: {
+  id?: string;
   icon: React.ReactNode;
   title: string;
   description: string;
   children: React.ReactNode;
 }) {
   return (
-    <section className="border-border bg-surface overflow-hidden rounded-2xl border shadow-sm">
+    <section id={id} className="border-border bg-surface scroll-mt-24 overflow-hidden rounded-2xl border shadow-sm">
       <header className="border-border-soft flex items-start gap-3 border-b px-5 py-4">
         <span className="bg-primary/10 text-primary flex h-9 w-9 shrink-0 items-center justify-center rounded-xl">
           {icon}
@@ -168,6 +170,7 @@ export default async function ConfiguracoesPage() {
           </SectionCard>
 
           <SectionCard
+            id="perfil-diretorio"
             icon={<UserCircle size={19} />}
             title="Perfil e diretório"
             description="Controle o que os demais Irmãos podem ver no Diretório da Loja."
@@ -283,7 +286,7 @@ export default async function ConfiguracoesPage() {
                 icon={<UserCircle size={18} />}
                 title={profilePublished ? 'Perfil publicado' : 'Perfil não publicado'}
                 detail="Controle a visibilidade no Diretório"
-                href="/irmaos/meu-espaco?tab=privacidade"
+                href="/configuracoes#perfil-diretorio"
               />
               <SummaryRow
                 icon={<Scale size={18} />}
