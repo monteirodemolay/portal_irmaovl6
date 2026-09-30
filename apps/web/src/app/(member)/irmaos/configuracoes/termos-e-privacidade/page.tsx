@@ -6,7 +6,7 @@ import { getLegalAcceptanceStatus } from '@/lib/legal/get-legal-acceptance-statu
 import { LEGAL_DOCUMENT_SLUGS, LEGAL_DOCUMENT_TITLES } from '@/lib/legal/document-slug';
 import { AcceptLegalDocumentCard } from '@/modules/legal/components/accept-legal-document-card';
 import { LegalDocumentPreviewSheet } from '@/modules/legal/components/legal-document-preview-sheet';
-import { CLASSIFICATION_LABELS, IMPACT_LABELS } from '@/modules/legal/lib/labels';
+import { getLegalClassificationLabel, IMPACT_LABELS } from '@/modules/legal/lib/labels';
 
 const DOCUMENTOS: LegalDocumentKey[] = ['politica_privacidade', 'termos_uso'];
 
@@ -107,7 +107,7 @@ export default async function TermosEPrivacidadePage() {
                           {version.publicadoEm.toLocaleDateString('pt-BR')}
                         </span>
                         <span className="bg-accent/10 text-accent rounded-full px-2 py-0.5 font-medium">
-                          {CLASSIFICATION_LABELS[version.classificacao]}
+                          {getLegalClassificationLabel(version.versao, version.classificacao)}
                         </span>
                         <span className="text-muted">{IMPACT_LABELS[version.impacto]}</span>
                       </div>
