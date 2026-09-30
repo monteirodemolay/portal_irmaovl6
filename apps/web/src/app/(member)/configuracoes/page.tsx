@@ -3,36 +3,21 @@ import { hasPermission, resolveHeroPhoto } from '@vl6/domain';
 import { createServerContainer } from '@vl6/infra';
 import {
   Bell,
-  Briefcase,
-  Building2,
   CalendarDays,
-  Camera,
   CheckCircle2,
   ChevronRight,
-  Compass,
-  Facebook,
-  Globe,
-  GraduationCap,
-  Handshake,
-  Instagram,
-  Linkedin,
-  Mail,
-  MapPin,
-  MessageCircle,
-  PageHero,
+    PageHero,
   Palette,
-  Phone,
-  Scale,
+    Scale,
   Share2,
   ShieldCheck,
-  Sparkles,
-  UserCircle,
+    UserCircle,
 } from '@vl6/ui';
 import { PageHeroPhotoUpload } from '@/components/member/page-hero-photo-upload';
 import { requireSession } from '@/lib/auth/require-session';
 import { getLegalAcceptanceStatus } from '@/lib/legal/get-legal-acceptance-status';
 import { getCurrentTenant } from '@/lib/tenant/get-current-tenant';
-import { VisibilityMiniForm } from '@/modules/central/components/meu-espaco/visibility-mini-form';
+import { ConfiguracoesDirectorySettings } from '@/modules/central/components/meu-espaco/configuracoes-directory-settings';
 import { ChangePasswordForm } from '@/modules/identity-access/components/change-password-form';
 import { DeleteAccountSection } from '@/modules/identity-access/components/delete-account-section';
 import { MfaEnrollmentPanel } from '@/modules/identity-access/components/mfa-enrollment-panel';
@@ -208,63 +193,7 @@ export default async function ConfiguracoesPage() {
                   </Link>
                 </div>
 
-                <details className="border-border rounded-xl border p-4">
-                  <summary className="cursor-pointer text-sm font-semibold">
-                    Blocos visíveis do perfil
-                  </summary>
-                  <div className="pt-3">
-                    <VisibilityMiniForm
-                      group="blocks"
-                      items={[
-                        { key: 'apresentacao', label: 'Apresentação', icon: Sparkles, defaultChecked: publicationSettings?.blocks.apresentacao ?? true },
-                        { key: 'informacoesPessoais', label: 'Informações pessoais', icon: UserCircle, defaultChecked: publicationSettings?.blocks.informacoesPessoais ?? true },
-                        { key: 'profissional', label: 'Profissional', icon: Briefcase, defaultChecked: publicationSettings?.blocks.profissional ?? true },
-                        { key: 'competencias', label: 'Competências', icon: Sparkles, defaultChecked: publicationSettings?.blocks.competencias ?? true },
-                        { key: 'servicos', label: 'Serviços', icon: Sparkles, defaultChecked: publicationSettings?.blocks.servicos ?? true },
-                        { key: 'empresa', label: 'Empresa e negócios', icon: Building2, defaultChecked: publicationSettings?.blocks.empresa ?? true },
-                        { key: 'afiliacoes', label: 'Afiliações', icon: Handshake, defaultChecked: publicationSettings?.blocks.afiliacoes ?? true },
-                        { key: 'informacoesMaconicas', label: 'Informações maçônicas complementares', icon: Compass, defaultChecked: publicationSettings?.blocks.informacoesMaconicas ?? true },
-                        { key: 'endereco', label: 'Endereço', icon: MapPin, defaultChecked: publicationSettings?.blocks.endereco ?? true },
-                        { key: 'memoriaFotografica', label: 'Memória fotográfica', icon: Camera, defaultChecked: publicationSettings?.blocks.memoriaFotografica ?? true },
-                      ]}
-                    />
-                  </div>
-                </details>
-
-                <details className="border-border rounded-xl border p-4">
-                  <summary className="cursor-pointer text-sm font-semibold">
-                    Visibilidade dos contatos
-                  </summary>
-                  <div className="pt-3">
-                    <VisibilityMiniForm
-                      group="contacts"
-                      items={[
-                        { key: 'telefone', label: 'Telefone', icon: Phone, defaultChecked: publicationSettings?.contacts.telefone ?? true },
-                        { key: 'whatsapp', label: 'WhatsApp', icon: MessageCircle, defaultChecked: publicationSettings?.contacts.whatsapp ?? true },
-                        { key: 'email', label: 'E-mail', icon: Mail, defaultChecked: publicationSettings?.contacts.email ?? true },
-                      ]}
-                    />
-                  </div>
-                </details>
-
-                <details className="border-border rounded-xl border p-4">
-                  <summary className="cursor-pointer text-sm font-semibold">
-                    Visibilidade das redes e perfis externos
-                  </summary>
-                  <div className="pt-3">
-                    <VisibilityMiniForm
-                      group="externalLinks"
-                      items={[
-                        { key: 'whatsapp', label: 'WhatsApp', icon: MessageCircle, defaultChecked: publicationSettings?.externalLinks.whatsapp ?? true },
-                        { key: 'instagram', label: 'Instagram', icon: Instagram, defaultChecked: publicationSettings?.externalLinks.instagram ?? true },
-                        { key: 'facebook', label: 'Facebook', icon: Facebook, defaultChecked: publicationSettings?.externalLinks.facebook ?? true },
-                        { key: 'linkedin', label: 'LinkedIn', icon: Linkedin, defaultChecked: publicationSettings?.externalLinks.linkedin ?? true },
-                        { key: 'lattes', label: 'Currículo Lattes', icon: GraduationCap, defaultChecked: publicationSettings?.externalLinks.lattes ?? true },
-                        { key: 'site', label: 'Site / portfólio', icon: Globe, defaultChecked: publicationSettings?.externalLinks.site ?? true },
-                      ]}
-                    />
-                  </div>
-                </details>
+                <ConfiguracoesDirectorySettings settings={publicationSettings} />
               </div>
             )}
           </SectionCard>
