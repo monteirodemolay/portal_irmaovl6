@@ -1,7 +1,20 @@
 import Link from 'next/link';
 import { buildPublicMemberProfileDTO, hasPermission } from '@vl6/domain';
 import { createServerContainer } from '@vl6/infra';
-import { ArrowLeft, Card, CardContent, Tabs, TabsContent, TabsList, TabsTrigger } from '@vl6/ui';
+import {
+  ArrowLeft,
+  Briefcase,
+  Building2,
+  Card,
+  CardContent,
+  ChevronRight,
+  Handshake,
+  Heart,
+  Phone,
+  Settings,
+  Share2,
+  Sparkles,
+} from '@vl6/ui';
 import { requireSession } from '@/lib/auth/require-session';
 import { listUsedProfessions } from '@/modules/membership/lib/list-used-professions';
 import { listUsedCompanies } from '@/modules/membership/lib/list-used-companies';
@@ -16,33 +29,45 @@ import {
   EMPTY_OWNER_FAMILY_NETWORK,
   loadOwnerFamilyNetworkDTO,
 } from '@/modules/family-legacy/lib/load-owner-family-network-dto';
-import { PrivacidadeTab } from '@/modules/central/components/meu-espaco/privacidade-tab';
 import { ProfissionalTab } from '@/modules/central/components/meu-espaco/profissional-tab';
 import { RedesTab } from '@/modules/central/components/meu-espaco/redes-tab';
 import { SpaceHeader } from '@/modules/central/components/meu-espaco/space-header';
 
-const VALID_TABS = [
-  'geral',
-  'pessoal',
-  'profissional',
-  'empresa',
-  'afiliacoes',
-  'contatos',
-  'redes',
-  'privacidade',
+const EDIT_SECTIONS = [
+  { id: 'geral', label: 'Sobre mim', icon: Sparkles },
+  { id: 'pessoal', label: 'Família e dados pessoais', icon: Heart },
+  { id: 'profissional', label: 'Vida profissional', icon: Briefcase },
+  { id: 'empresa', label: 'Empresas e negócios', icon: Building2 },
+  { id: 'afiliacoes', label: 'Afiliações', icon: Handshake },
+  { id: 'contatos', label: 'Contatos', icon: Phone },
+  { id: 'redes', label: 'Redes e links', icon: Share2 },
 ] as const;
 
-export default async function MeuEspacoPage({
-  searchParams,
+function EditorSection({
+  id,
+  title,
+  description,
+  children,
 }: {
-  searchParams: Promise<{ tab?: string }>;
+  id: string;
+  title: string;
+  description: string;
+  children: React.ReactNode;
 }) {
+  return (
+    <section id={id} className="scroll-mt-24">
+      <div className="mb-3">
+        <h2 className="font-display text-xl font-semibold">{title}</h2>
+        <p className="text-muted mt-1 text-sm">{description}</p>
+      </div>
+      {children}
+    </section>
+  );
+}
+
+export default async function MeuEspacoPage() {
   const session = await requireSession();
   const container = createServerContainer();
-  const { tab } = await searchParams;
-  // `?tab=` — usado pelos botões "Editar" contextuais do perfil (Comunidade
-  // VL6) e pelo menu do usuário, pra abrir a seção certa deste editor.
-  const initialTab = (VALID_TABS as readonly string[]).includes(tab ?? '') ? tab! : 'geral';
 
   const [
     member,
@@ -71,18 +96,10 @@ export default async function MeuEspacoPage({
     );
   }
 
-  // Papéis (`roles`) de tenants já existentes só ganham permissões novas
-  // (como `familyLegacy:read`) depois que um Admin clica "Sincronizar" em
-  // `/admin/pessoas/permissoes` — até lá, a sessão pode não ter a
-  // permissão mesmo sendo `membro`. Checar antes de chamar evita que o
-  // `ForbiddenError` do caso de uso derrube a página inteira do Meu Espaço.
   const familyNetwork = hasPermission(session.authContext, 'familyLegacy:read')
     ? await loadOwnerFamilyNetworkDTO(container, session.authContext, member.id)
     : EMPTY_OWNER_FAMILY_NETWORK;
 
-  // "Descoberta de parentesco cruzado" — quando o titular e outro Irmão têm
-  // o mesmo FamilyPerson na árvore (ex.: o mesmo avô), avisa os dois. Mesmo
-  // gate de `familyLegacy:read` do bloco acima.
   const sharedFamilyPersonsResult = hasPermission(session.authContext, 'familyLegacy:read')
     ? await container.useCases.findSharedFamilyPersons.execute(session.authContext, member.id)
     : null;
@@ -99,22 +116,26 @@ export default async function MeuEspacoPage({
     ),
   ]);
 
-  // `publicationSettings` direto (sem sintetizar um "fechado" quando `null`)
-  // — `buildPublicMemberProfileDTO` já trata "nunca configurou" como aberto
-  // por padrão (`resolveEffectivePublication`), então o preview "como os
-  // outros veem" precisa refletir exatamente isso, não um estado fechado
-  // inventado aqui.
   const previewDto = buildPublicMemberProfileDTO(member, centralProfile, publicationSettings);
 
   return (
-    <div className="flex max-w-4xl flex-col gap-6">
-      <Link
-        href="/irmaos"
-        className="border-border bg-surface hover:border-primary hover:text-primary flex w-fit items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm transition-colors"
-      >
-        <ArrowLeft size={16} />
-        Voltar à Comunidade VL6
-      </Link>
+    <div className="mx-auto flex max-w-6xl flex-col gap-6">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <Link
+          href={`/irmaos/${member.id}`}
+          className="border-border bg-surface hover:border-primary hover:text-primary flex w-fit items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm transition-colors"
+        >
+          <ArrowLeft size={16} />
+          Voltar ao meu perfil
+        </Link>
+        <Link
+          href="/configuracoes#perfil-diretorio"
+          className="text-muted hover:text-primary flex items-center gap-1.5 text-sm transition-colors"
+        >
+          <Settings size={15} />
+          Privacidade e visibilidade
+        </Link>
+      </div>
 
       <SpaceHeader
         member={member}
@@ -123,54 +144,123 @@ export default async function MeuEspacoPage({
         previewDto={previewDto}
       />
 
-      <Tabs defaultValue={initialTab}>
-        <TabsList className="flex-wrap">
-          <TabsTrigger value="geral">Geral</TabsTrigger>
-          <TabsTrigger value="pessoal">Pessoal</TabsTrigger>
-          <TabsTrigger value="profissional">Profissional</TabsTrigger>
-          <TabsTrigger value="empresa">Empresa</TabsTrigger>
-          <TabsTrigger value="afiliacoes">Afiliações</TabsTrigger>
-          <TabsTrigger value="contatos">Contatos</TabsTrigger>
-          <TabsTrigger value="redes">Redes</TabsTrigger>
-          <TabsTrigger value="privacidade">Privacidade</TabsTrigger>
-        </TabsList>
+      <Card id="perfil-editor" className="overflow-hidden">
+        <CardContent className="p-0">
+          <div className="border-border-soft border-b px-5 py-4 sm:px-6">
+            <p className="text-primary text-xs font-bold uppercase tracking-[0.14em]">Meu Perfil</p>
+            <h1 className="font-display mt-1 text-2xl font-semibold">Editar informações do perfil</h1>
+            <p className="text-muted mt-1 max-w-3xl text-sm leading-6">
+              Edite somente os dados que desejar. As informações institucionais da Loja continuam
+              protegidas e são mantidas pela Secretaria. Privacidade e visibilidade agora ficam em
+              Configurações.
+            </p>
+          </div>
 
-        <TabsContent value="geral" className="pt-6">
+          <nav className="grid grid-cols-2 gap-2 p-4 sm:grid-cols-3 lg:grid-cols-7">
+            {EDIT_SECTIONS.map((section) => (
+              <a
+                key={section.id}
+                href={`#${section.id}`}
+                className="border-border bg-background hover:border-primary hover:text-primary flex items-center justify-between gap-2 rounded-xl border px-3 py-2.5 text-xs font-semibold transition-colors"
+              >
+                <span className="flex min-w-0 items-center gap-2">
+                  <section.icon size={15} className="shrink-0" />
+                  <span className="truncate">{section.label}</span>
+                </span>
+                <ChevronRight size={13} className="shrink-0 opacity-60" />
+              </a>
+            ))}
+          </nav>
+        </CardContent>
+      </Card>
+
+      <div className="grid items-start gap-6 lg:grid-cols-2">
+        <EditorSection
+          id="geral"
+          title="Sobre mim"
+          description="Apresentação, dados maçônicos e comissões. Os dados institucionais são somente leitura."
+        >
           <GeralTab member={member} profile={centralProfile} myCommittees={myCommittees} />
-        </TabsContent>
-        <TabsContent value="pessoal" className="pt-6">
+        </EditorSection>
+
+        <EditorSection
+          id="pessoal"
+          title="Família e dados pessoais"
+          description="Dados pessoais, endereço, cônjuge, filhos, família e vivência maçônica complementar."
+        >
           <PessoalTab
             member={member}
             profile={centralProfile}
             familyNetwork={familyNetwork}
             sharedFamilyPersons={sharedFamilyPersons}
           />
-        </TabsContent>
-        <TabsContent value="profissional" className="pt-6">
-          <ProfissionalTab
-            member={member}
-            profile={centralProfile}
-            customProfessions={customProfessions}
-            knownCompanies={knownCompanies}
-            knownInstitutions={knownInstitutions}
-          />
-        </TabsContent>
-        <TabsContent value="empresa" className="pt-6">
-          <EmpresaTab profile={centralProfile} knownBusinessNames={businessNames} />
-        </TabsContent>
-        <TabsContent value="afiliacoes" className="pt-6">
+        </EditorSection>
+      </div>
+
+      <EditorSection
+        id="profissional"
+        title="Vida profissional"
+        description="Profissão, atuação, histórico profissional, formação acadêmica, competências e serviços."
+      >
+        <ProfissionalTab
+          member={member}
+          profile={centralProfile}
+          customProfessions={customProfessions}
+          knownCompanies={knownCompanies}
+          knownInstitutions={knownInstitutions}
+        />
+      </EditorSection>
+
+      <EditorSection
+        id="empresa"
+        title="Empresas e negócios"
+        description="Cadastre e mantenha os negócios e serviços que podem compor sua apresentação no Portal."
+      >
+        <EmpresaTab profile={centralProfile} knownBusinessNames={businessNames} />
+      </EditorSection>
+
+      <div className="grid items-start gap-6 lg:grid-cols-2">
+        <EditorSection
+          id="afiliacoes"
+          title="Afiliações"
+          description="Associações, instituições e demais vínculos voluntários."
+        >
           <AfiliacoesTab profile={centralProfile} />
-        </TabsContent>
-        <TabsContent value="contatos" className="pt-6">
-          <ContatosTab member={member} settings={publicationSettings} />
-        </TabsContent>
-        <TabsContent value="redes" className="pt-6">
-          <RedesTab profile={centralProfile} settings={publicationSettings} />
-        </TabsContent>
-        <TabsContent value="privacidade" className="pt-6">
-          <PrivacidadeTab settings={publicationSettings} />
-        </TabsContent>
-      </Tabs>
+        </EditorSection>
+
+        <div className="flex flex-col gap-6">
+          <EditorSection
+            id="contatos"
+            title="Contatos"
+            description="Telefone, WhatsApp e informações de contato vinculadas ao cadastro."
+          >
+            <ContatosTab member={member} settings={publicationSettings} />
+          </EditorSection>
+
+          <EditorSection
+            id="redes"
+            title="Redes e links"
+            description="Instagram, Facebook, LinkedIn, Lattes, site e demais perfis externos."
+          >
+            <RedesTab profile={centralProfile} settings={publicationSettings} />
+          </EditorSection>
+        </div>
+      </div>
+
+      <div className="border-accent/40 bg-accent/10 flex flex-col gap-3 rounded-2xl border p-5 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="font-display font-semibold">Privacidade saiu da edição do perfil</p>
+          <p className="text-muted mt-1 text-sm">
+            Defina o que os outros Irmãos podem visualizar em Configurações → Perfil e Diretório.
+          </p>
+        </div>
+        <Link
+          href="/configuracoes#perfil-diretorio"
+          className="bg-primary hover:bg-primary-dark w-fit rounded-lg px-4 py-2 text-sm font-semibold text-white transition-colors"
+        >
+          Abrir configurações
+        </Link>
+      </div>
     </div>
   );
 }

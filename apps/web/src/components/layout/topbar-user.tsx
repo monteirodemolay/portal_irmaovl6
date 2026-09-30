@@ -85,16 +85,16 @@ export function TopbarUser({
             Editar meu perfil
           </Link>
           <Link
-            href="/irmaos/meu-espaco?tab=empresa"
+            href="/irmaos/meu-espaco#empresa"
             className="hover:bg-background rounded-md px-3 py-2 transition-colors"
           >
             Gerenciar meus negócios
           </Link>
           <Link
-            href="/irmaos/meu-espaco?tab=contatos"
+            href="/configuracoes#perfil-diretorio"
             className="hover:bg-background rounded-md px-3 py-2 transition-colors"
           >
-            Privacidade e contatos
+            Privacidade e visibilidade
           </Link>
           <Link
             href="/configuracoes"

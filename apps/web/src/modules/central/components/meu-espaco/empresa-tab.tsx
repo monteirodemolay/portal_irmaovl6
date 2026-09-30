@@ -504,7 +504,8 @@ export function EmpresaTab({
             </Button>
           )}
           <input type="hidden" name="negocios" value={JSON.stringify(negocios)} />
-          {contentState.error && <p className="text-sm text-red-600">{contentState.error}</p>}
+          {contentState.error && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{contentState.error}</p>}
+        {contentState.success && <p className="rounded-lg bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-700">✓ {contentState.success}</p>}
           <SubmitButton />
         </form>
       </FormSectionCard>

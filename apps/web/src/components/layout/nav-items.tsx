@@ -175,10 +175,10 @@ export function buildNavSections(
     title: 'Irmãos',
     description: 'Diretório e autoatendimento',
     links: [
-      { href: '/irmaos/meu-espaco', label: 'Meu Espaço (editar perfil)' },
+      { href: '/irmaos/meu-espaco', label: 'Meu Perfil (editar dados)' },
       { href: '/irmaos/negocios', label: 'Meus Negócios & Serviços' },
       { href: '/irmaos/galeria-de-honra', label: 'Galeria de Honra' },
-      { href: '/irmaos/meu-espaco?tab=contatos', label: 'Privacidade e contatos' },
+      { href: '/configuracoes#perfil-diretorio', label: 'Privacidade e visibilidade' },
     ],
     full: { href: '/irmaos', label: 'Ver diretório completo' },
     fullPosition: 'first',
