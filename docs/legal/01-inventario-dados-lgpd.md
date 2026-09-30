@@ -1,7 +1,7 @@
 # Inventário de Dados Pessoais e Auditoria LGPD — Portal do Irmão VL6
 
 > **Status:** rascunho técnico, gerado por auditoria direta do código-fonte (não é peça jurídica).
-> **Versão:** 1.0.0 · **Data:** 22/09/2026 · **Autor:** Auditoria automatizada (5 varreduras paralelas do repositório) + consolidação.
+> **Versão:** 2.0.0 · **Auditoria inicial:** 22/09/2026 · **Revisão:** 30/09/2026 · **Autor:** Auditoria automatizada do repositório + consolidação.
 > **Objetivo:** servir de base factual para a Política de Privacidade, os Termos de Uso e o sistema de versionamento vivo descritos em `docs/legal/` (a construir). Nada aqui deve ser copiado para uma peça jurídica sem revisão de um advogado especialista em Direito Digital/LGPD — este documento aponta _o que o sistema faz_, não _o que ele deveria dizer juridicamente_.
 >
 > Este inventário **não substitui revisão jurídica**. Vários pontos abaixo (bases legais, prazos de retenção, tratamento de dados de menores e de terceiros) exigem validação formal antes de virarem texto contratual.
@@ -40,6 +40,7 @@ Achados que mais importam para a Política de Privacidade e os Termos de Uso:
 | Banco de dados        | Firestore (multi-tenant, coleções flat filtradas por `tenantId`)        | ~40 coleções: identidade, cadastro, governança, biblioteca, agenda, conteúdo, galeria, acervo, auditoria, notificação, integrações, CMS público, Central VL6, Família e Legado |
 | Automação/agendamento | Rotas `apps/web/src/app/api/cron/*` (Vercel Cron)                       | **Não há Cloud Functions em produção** (plano Firebase Spark); substituem triggers                                                                                             |
 | Arquivos/mídia        | Vercel Blob (`access: public`)                                          | Sem `storage.rules`; controle de acesso via proxy autenticado no Next.js                                                                                                       |
+| Armazenamento temporário da Cripta | Wix Media Manager | Rascunhos/cartas/anexos durante a janela operacional; cartas novas chegam cifradas pelo navegador e seguem fluxo próprio de retirada/guarda física |
 | RBAC                  | `packages/shared/src/enums/rbac.ts`                                     | Permissões `recurso:ação`; Custom Claims no Firebase Auth (`tenantId`,`roleId`,`permissions`)                                                                                  |
 | Auditoria             | Coleção `auditLogs` (append-only)                                       | Snapshot completo antes/depois em ~25 coleções via `withAudit` (Proxy)                                                                                                         |
 | Consentimento         | Coleção `publicationConsents` (append-only)                             | Registro formal de aceite/revogação de publicação no Diretório/Central                                                                                                         |
@@ -145,6 +146,27 @@ Qualquer Irmão autenticado (`news:read`) pode comentar uma notícia publicada �
 Não há cookies de terceiros, publicidade ou rastreamento entre sites.
 
 ---
+
+### 3.9 Cripta Digital VL6
+
+A Cripta introduz uma categoria própria de tratamento, diferente do Acervo institucional. O módulo trata cartas pessoais, destinatários indicados pelo autor, anexos opcionais (fotos, áudio, vídeo), estados de rascunho/selagem, versões, hashes de integridade, inventário, guardiões e ocorrências administrativas.
+
+- **Conteúdo:** cartas novas são cifradas no navegador antes do envio, por envelope criptográfico da Cripta. O servidor recebe o ciphertext e não mantém a chave privada capaz de abrir as cartas seladas.
+- **Custódia:** a chave privada da Cripta é destinada ao procedimento offline e colegiado dos Guardiões; cartas seladas não são restauradas ao Wix para leitura administrativa.
+- **Armazenamento temporário:** durante a janela operacional, Wix Media Manager recebe conteúdo privado necessário ao rascunho/conferência. Rascunhos podem ser restaurados entre janelas; cartas seladas seguem a guarda externa.
+- **Cópias físicas:** o ciclo prevê duas unidades externas conferidas por manifesto/hash. Essas mídias passam a integrar a cadeia de custódia e exigem procedimento físico próprio.
+- **Metadados administrativos:** Firestore mantém autoria, IDs opacos, estado, timestamps, hashes, inventário e auditoria sem necessidade de copiar o texto da carta para logs.
+- **Aberturas excepcionais:** falecimento, quite-placet ou outra hipótese institucional não autoriza leitura automática; depende de procedimento específico, validação e registro.
+- **Dados de terceiros:** o autor pode inserir informações pessoais de destinatários ou outras pessoas na carta/anexos; a responsabilidade de legitimidade e pertinência é do autor, sem afastar as obrigações da Loja como controladora do ambiente.
+- **Retenção:** o conteúdo segue o ciclo de janela, guarda externa, restauração de rascunhos e entrega. O sistema não deve prometer apagamento físico imediato de mídias ou backups sem comprovação técnica.
+
+### 3.10 Configurações, privacidade e preferências locais
+
+A tela unificada de Configurações passou a concentrar segurança da conta, MFA, visibilidade do perfil, preferências de comunicação, Google Calendar, Termos e Privacidade e personalização visual.
+
+As preferências de aparência/acessibilidade (tema, tamanho do texto, contraste reforçado e redução de animações) são gravadas no `localStorage` do navegador. Quando o usuário escolhe explicitamente tema claro ou escuro, um cookie funcional `theme` pode ser gravado por até um ano para aplicar o tema antes da renderização. Esses valores não são usados para publicidade ou perfilamento.
+
+A mudança de local dos controles de visibilidade do Perfil para Configurações não cria nova categoria de dado nem nova finalidade: apenas centraliza o consentimento/controle já existente em `PublicationSettings`.
 
 ## 4. Dados sensíveis, de terceiros e de menores — pontos de maior atenção
 
