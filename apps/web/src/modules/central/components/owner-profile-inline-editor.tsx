@@ -81,8 +81,14 @@ export async function OwnerProfileInlineEditor({
   let content: React.ReactNode = null;
 
   if (section === 'geral') {
-    const myCommittees = await container.useCases.listMyCommittees.execute(session.authContext);
-    content = <GeralTab member={member} profile={centralProfile} myCommittees={myCommittees} />;
+    content = (
+      <GeralTab
+        member={member}
+        profile={centralProfile}
+        myCommittees={[]}
+        showInstitutional={false}
+      />
+    );
   }
 
   if (section === 'pessoal') {
