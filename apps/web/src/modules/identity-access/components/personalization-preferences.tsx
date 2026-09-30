@@ -73,12 +73,18 @@ export function PersonalizationPreferences() {
 
   function save() {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(value));
+    if (value.theme === 'system') {
+      document.cookie = 'theme=; Path=/; Max-Age=0; SameSite=Lax';
+    } else {
+      document.cookie = 'theme=' + value.theme + '; Path=/; Max-Age=31536000; SameSite=Lax';
+    }
     applyPreferences(value);
     setSaved(true);
   }
 
   function reset() {
     window.localStorage.removeItem(STORAGE_KEY);
+    document.cookie = 'theme=; Path=/; Max-Age=0; SameSite=Lax';
     setValue(DEFAULT_STATE);
     applyPreferences(DEFAULT_STATE);
     setSaved(true);
