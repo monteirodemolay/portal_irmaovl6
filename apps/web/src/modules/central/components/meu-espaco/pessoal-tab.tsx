@@ -31,7 +31,7 @@ export function PessoalTab({
 
       <p className="text-muted flex items-center gap-1.5 text-xs">
         <MapPin size={12} /> Estado civil nunca aparece na Central. O endereço pode aparecer no seu
-        perfil se você permitir na aba &ldquo;Privacidade&rdquo; — por padrão, fica visível só para
+        perfil se você permitir em &ldquo;Configurações → Perfil e Diretório&rdquo; — por padrão, fica visível só para
         a administração da Loja.
       </p>
 
