@@ -4,11 +4,13 @@ import { requirePagePermission } from '@/lib/auth/require-permission';
 import { canAccessCriptaPilot } from '@/modules/cripta/lib/early-access';
 import { appointCustodians } from '../appoint-custodians';
 import { OnlineOpeningControl } from '../online-opening-control';
-import { isOnlineOpen } from '@/modules/cripta/lib/online-opening';
+import { isOnlineOpen, openingRef } from '@/modules/cripta/lib/online-opening';
 import { currentCriptaMaster } from '@/modules/cripta/lib/current-master';
 import { SealPanel } from '../seal-panel';
 import { PhysicalUnitCheck } from '../physical-unit-check';
 import { ExportPanel } from '../export-panel';
+import { CycleWizardView } from '../cycle-wizard-view';
+import { computeCycleStatus } from '@/modules/cripta/lib/cycle-wizard';
 import Link from 'next/link';
 
 export const maxDuration = 300;
@@ -21,13 +23,31 @@ export default async function Page() {
   const tenantId = session.authContext.tenantId;
   const container = createServerContainer();
   const db = getAdminFirestore();
-  const [result, governance, onlineOpen, currentMaster, seal] = await Promise.all([
+  const [result, governance, onlineOpen, openingDoc, currentMaster, seal] = await Promise.all([
     container.repositories.member.search({ tenantId, situacao: 'ativo' }, { limit: 100 }),
     db.collection('criptaGovernanceV1').doc(tenantId).get(),
     isOnlineOpen(tenantId),
+    openingRef(tenantId).get(),
     currentCriptaMaster(tenantId),
     db.collection('criptaSealsV1').doc(tenantId).get(),
   ]);
+  const sealData = seal.data();
+  const wizard = computeCycleStatus({
+    hasCommission: !!governance.data()?.commissionMemberIds?.length,
+    open: onlineOpen,
+    closesAt: openingDoc.data()?.closesAt ?? null,
+    receiptStatus: sealData?.status ?? null,
+    receiptCode: sealData?.code ?? null,
+    exportReceiptCode: sealData?.export?.receiptCode ?? null,
+    physicalCheckOk:
+      sealData?.physicalCheck?.receiptDigest === sealData?.receiptDigest &&
+      (sealData?.physicalCheck?.units?.length ?? 0) >= 3,
+    cleanupOk:
+      sealData?.cleanup?.receiptCode === sealData?.code && sealData?.cleanup?.complete === true,
+    restorationOk:
+      sealData?.restoration?.receiptCode === sealData?.code &&
+      sealData?.restoration?.complete === true,
+  });
   const members = result.items;
   const eligible = members.filter((member) => !!member.userId);
   const records = await Promise.all(
@@ -74,6 +94,7 @@ export default async function Page() {
           o fechamento e o recibo. O conteúdo das cartas não aparece nesta tela.
         </p>
       </header>
+      <CycleWizardView result={wizard} />
       <p className="text-sm text-[#8a9bb0]">
         Esta tela cobre as etapas 1, 3, 4, 5, 6 e 7 do ciclo anual. As etapas 2 (abrir o
         recebimento) e 8 (restaurar rascunhos) ficam na tela{' '}
@@ -82,41 +103,6 @@ export default async function Page() {
         </Link>
         .
       </p>
-      <nav
-        aria-label="Etapas nesta tela, na ordem em que devem ser feitas"
-        className="grid gap-3 sm:grid-cols-3"
-      >
-        <div className="rounded-xl border border-[#dbcda9] bg-white p-4">
-          <strong>1 · Comissão</strong>
-          <p className="mt-1 text-sm text-[#536074]">
-            Antes de abrir: nomear os guardiões e prever a próxima data.
-          </p>
-        </div>
-        <div className="rounded-xl border border-[#dbcda9] bg-white p-4">
-          <strong>3 · Fechamento</strong>
-          <p className="mt-1 text-sm text-[#536074]">
-            Depois que os irmãos escreveram: fechar o recebimento.
-          </p>
-        </div>
-        <div className="rounded-xl border border-[#dbcda9] bg-white p-4">
-          <strong>4 · Lacração</strong>
-          <p className="mt-1 text-sm text-[#536074]">Gerar o recibo do inventário para a ata.</p>
-        </div>
-        <div className="rounded-xl border border-[#dbcda9] bg-white p-4">
-          <strong>5 · Exportação</strong>
-          <p className="mt-1 text-sm text-[#536074]">
-            Baixar o .lacre e copiar para as 3 unidades.
-          </p>
-        </div>
-        <div className="rounded-xl border border-[#dbcda9] bg-white p-4">
-          <strong>6 · Conferência</strong>
-          <p className="mt-1 text-sm text-[#536074]">Ler duas unidades de volta e comparar.</p>
-        </div>
-        <div className="rounded-xl border border-[#dbcda9] bg-white p-4">
-          <strong>7 · Limpeza</strong>
-          <p className="mt-1 text-sm text-[#536074]">Só então apagar do Wix.</p>
-        </div>
-      </nav>
       <section className="rounded-2xl border border-[#dbcda9] bg-[#fbf8f1] p-6">
         <p className="text-xs font-semibold uppercase tracking-widest text-[#8a682d]">
           Etapa 1 · deliberação em Loja

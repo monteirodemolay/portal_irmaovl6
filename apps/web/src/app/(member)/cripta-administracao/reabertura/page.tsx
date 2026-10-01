@@ -3,11 +3,13 @@ import { notFound } from 'next/navigation';
 import { createServerContainer, getAdminFirestore } from '@vl6/infra';
 import { requirePagePermission } from '@/lib/auth/require-permission';
 import { canAccessCriptaPilot } from '@/modules/cripta/lib/early-access';
-import { isOnlineOpen } from '@/modules/cripta/lib/online-opening';
+import { isOnlineOpen, openingRef } from '@/modules/cripta/lib/online-opening';
 import { currentCriptaMaster } from '@/modules/cripta/lib/current-master';
 import { OnlineOpeningControl } from '../online-opening-control';
 import { SealPanel } from '../seal-panel';
 import { RestorePanel } from '../restore-panel';
+import { CycleWizardView } from '../cycle-wizard-view';
+import { computeCycleStatus } from '@/modules/cripta/lib/cycle-wizard';
 
 export const metadata = {
   title: 'Reabertura | Cripta VL6',
@@ -18,13 +20,14 @@ export default async function Page() {
   const session = await requirePagePermission('tenant:manage');
   if (!canAccessCriptaPilot(session.user.email)) notFound();
   const tenantId = session.authContext.tenantId;
-  const [members, governance, open, master, seal] = await Promise.all([
+  const [members, governance, open, openingDoc, master, seal] = await Promise.all([
     createServerContainer().repositories.member.search(
       { tenantId, situacao: 'ativo' },
       { limit: 100 },
     ),
     getAdminFirestore().collection('criptaGovernanceV1').doc(tenantId).get(),
     isOnlineOpen(tenantId),
+    openingRef(tenantId).get(),
     currentCriptaMaster(tenantId),
     getAdminFirestore().collection('criptaSealsV1').doc(tenantId).get(),
   ]);
@@ -39,6 +42,19 @@ export default async function Page() {
   const eligible = members.items.filter(
     (member) => member.userId && member.id !== master?.member.id,
   );
+  const wizard = computeCycleStatus({
+    hasCommission: !!control?.commissionMemberIds?.length,
+    open,
+    closesAt: openingDoc.data()?.closesAt ?? null,
+    receiptStatus: record?.status ?? null,
+    receiptCode: record?.code ?? null,
+    exportReceiptCode: record?.export?.receiptCode ?? null,
+    physicalCheckOk:
+      record?.physicalCheck?.receiptDigest === record?.receiptDigest &&
+      (record?.physicalCheck?.units?.length ?? 0) >= 3,
+    cleanupOk: !!cleanupComplete,
+    restorationOk: !!restoration?.complete,
+  });
   return (
     <div className="mx-auto max-w-5xl space-y-6 pb-12 text-[#17263f]">
       <Link
@@ -57,6 +73,7 @@ export default async function Page() {
           é: confirme a conferência das unidades, restaure os rascunhos e só então reabra a escrita.
         </p>
       </header>
+      <CycleWizardView result={wizard} />
       <section className="rounded-2xl border border-[#d8c8a4] bg-[#fffdf8] p-6">
         <h2 className="font-serif text-2xl">Antes de continuar: data e Comissão</h2>
         <p className="mt-2 text-sm leading-6 text-[#5e584c]">
@@ -82,9 +99,9 @@ export default async function Page() {
       <section className="rounded-2xl border border-[#d8c8a4] bg-[#fffdf8] p-6">
         <h2 className="font-serif text-2xl">6 · Confirme a conferência das unidades</h2>
         <p className="mt-2 text-sm leading-6 text-[#5e584c]">
-          Antes de restaurar, leia pelo menos duas das três unidades na tela de Lacração (“Ler as
-          cópias gravadas”) e confira se batem com o manifesto e o recibo. Só prossiga para a etapa
-          8, abaixo, depois disso.
+          Antes de restaurar, leia as três unidades (A, B e C) na tela de Lacração (“Ler as cópias
+          gravadas”) e confira se batem com o manifesto e o recibo. Só prossiga para a etapa 8,
+          abaixo, depois disso.
         </p>
         <Link
           href="/cripta-administracao/lacracao"

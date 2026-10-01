@@ -84,7 +84,7 @@ export function PhysicalUnitCheck({
   return (
     <section className="rounded-2xl border border-[#dbcda9] bg-white p-6 text-[#142a43]">
       <p className="text-xs font-semibold uppercase tracking-widest text-[#8a682d]">
-        Conferência física · três unidades
+        6 · conferência física · três unidades
       </p>
       <h2 className="mt-2 font-serif text-2xl">Ler as cópias gravadas</h2>
       <p className="mt-2 text-sm leading-6 text-[#536074]">

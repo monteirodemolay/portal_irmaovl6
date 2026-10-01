@@ -4,8 +4,10 @@ import { notFound } from 'next/navigation';
 import { getAdminFirestore } from '@vl6/infra';
 import { requirePagePermission } from '@/lib/auth/require-permission';
 import { canAccessCriptaPilot } from '@/modules/cripta/lib/early-access';
-import { isOnlineOpen } from '@/modules/cripta/lib/online-opening';
+import { isOnlineOpen, openingRef } from '@/modules/cripta/lib/online-opening';
 import { readCriptaPublicKey } from '@/modules/cripta/lib/cripta-crypto-state';
+import { CycleWizardView } from './cycle-wizard-view';
+import { computeCycleStatus } from '@/modules/cripta/lib/cycle-wizard';
 
 export const metadata = {
   title: 'Estado da Cripta | Portal VL6',
@@ -32,8 +34,9 @@ export default async function Page() {
   if (!canAccessCriptaPilot(session.user.email)) notFound();
   const tenantId = session.authContext.tenantId;
   const db = getAdminFirestore();
-  const [open, governance, receipt, inauguration] = await Promise.all([
+  const [open, openingDoc, governance, receipt, inauguration] = await Promise.all([
     isOnlineOpen(tenantId),
+    openingRef(tenantId).get(),
     db.collection('criptaGovernanceV1').doc(tenantId).get(),
     db.collection('criptaSealsV1').doc(tenantId).get(),
     readCriptaPublicKey(tenantId),
@@ -41,6 +44,24 @@ export default async function Page() {
   const data = governance.data();
   const current = receipt.data();
   const inaugurated = !!inauguration;
+  const wizard = inaugurated
+    ? computeCycleStatus({
+        hasCommission: !!data?.commissionMemberIds?.length,
+        open,
+        closesAt: openingDoc.data()?.closesAt ?? null,
+        receiptStatus: current?.status ?? null,
+        receiptCode: current?.code ?? null,
+        exportReceiptCode: current?.export?.receiptCode ?? null,
+        physicalCheckOk:
+          current?.physicalCheck?.receiptDigest === current?.receiptDigest &&
+          (current?.physicalCheck?.units?.length ?? 0) >= 3,
+        cleanupOk:
+          current?.cleanup?.receiptCode === current?.code && current?.cleanup?.complete === true,
+        restorationOk:
+          current?.restoration?.receiptCode === current?.code &&
+          current?.restoration?.complete === true,
+      })
+    : null;
   return (
     <div className="mx-auto max-w-5xl space-y-6 pb-12 text-[#17263f]">
       <header className="rounded-[2rem] border border-[#c9a55a] bg-[#17263f] p-8 text-white sm:p-10">
@@ -56,7 +77,7 @@ export default async function Page() {
           {open ? 'Recebimento aberto' : 'Recebimento fechado'}
         </p>
       </header>
-      <ResetPanel />
+      {wizard && <CycleWizardView result={wizard} />}
       <section
         className="rounded-2xl border border-amber-300 bg-amber-50 p-6"
         aria-label="Preparação para liberação"
@@ -65,7 +86,7 @@ export default async function Page() {
         <p className="mt-2 text-sm leading-6">
           O acesso permanece restrito ao ensaio. Antes da liberação, registre a recuperação offline
           com os arquivos dos Guardiões, confira as três unidades e valide rascunhos, cartas antigas
-          e entrega individual. A limpeza geral do Wix está suspensa para preservar os arquivos.
+          e entrega individual.
         </p>
       </section>
 
@@ -176,6 +197,21 @@ export default async function Page() {
             só, a gravação e a verificação dos pen drives.
           </p>
         </details>
+      </section>
+
+      <hr className="border-[#d8c8a4]" />
+
+      <section>
+        <p className="text-xs font-semibold uppercase tracking-widest text-red-800">
+          Ferramenta de ensaio · apaga dados de verdade
+        </p>
+        <p className="mt-1 text-sm text-[#5e584c]">
+          Use só para repetir um percurso de teste do zero. Não é parte do ciclo anual normal — a
+          limpeza de cada ano é a etapa 7, acima, nas telas de Lacração e Reabertura.
+        </p>
+        <div className="mt-3">
+          <ResetPanel />
+        </div>
       </section>
     </div>
   );

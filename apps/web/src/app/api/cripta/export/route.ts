@@ -87,6 +87,20 @@ export const GET = criptaRoute(async function GET() {
       },
       payload,
     );
+    // Best-effort record of exactly which lacre file was last produced for this receipt — the
+    // wizard reads this so the operator always knows the one filename expected on every unit,
+    // instead of relying on a download prompt they may have missed or lost.
+    try {
+      await sealRef(tenantId).update({
+        export: {
+          at: new Date().toISOString(),
+          operatorId: session.user.id,
+          receiptCode: receipt.code,
+        },
+      });
+    } catch {
+      /* the file itself is still valid; this is only a display aid */
+    }
     return new Response(new Uint8Array(file), {
       headers: {
         'Content-Type': 'application/octet-stream',
