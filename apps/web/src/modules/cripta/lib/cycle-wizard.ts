@@ -1,8 +1,9 @@
 export type WizardStepStatus = 'done' | 'current' | 'pending';
 export type WizardStep = { n: number; label: string; status: WizardStepStatus };
 
-/** Which single screen the wizard shows right now. 'aberto' covers both "writing is live" and
- * "closed, about to lacrar" (the Fechamento button lives on that same screen); 'exportar' covers
+/** Which single screen the wizard shows right now. 'abrir' is the Comissão-named-but-never-opened
+ * state — a Comissão existing is not the same as the window ever having been opened, so it gets
+ * its own "abrir" action, distinct from 'aberto' (writing is live right now). 'exportar' covers
  * exportação, conferência física and limpeza together, since an operator genuinely bounces
  * between those three while reading units back — splitting them into separate screens would
  * strand the cleanup button a screen away from the check it depends on. Restauração and reabrir
@@ -11,6 +12,7 @@ export type WizardStep = { n: number; label: string; status: WizardStepStatus };
 export type WizardPhase =
   | 'inauguracao'
   | 'comissao'
+  | 'abrir'
   | 'aberto'
   | 'lacrar'
   | 'exportar'
@@ -21,6 +23,11 @@ export type WizardInput = {
   inaugurated: boolean;
   hasCommission: boolean;
   open: boolean;
+  /** Whether the receiving window has ever been opened since this Comissão was named — the
+   * Firestore opening doc keeps `openedAt` set even after a later closing. Without this, a
+   * freshly named Comissão that never opened a window looks identical to one that opened and
+   * closed it, and the wizard would skip straight to "lacrar" with no way left to open at all. */
+  everOpened: boolean;
   closesAt?: string | null;
   receiptStatus?: string | null;
   receiptCode?: string | null;
@@ -43,6 +50,7 @@ export type WizardResult = {
 const LABELS = [
   'Inauguração',
   'Comissão e data',
+  'Abertura',
   'Recebimento aberto',
   'Fechamento',
   'Lacração',
@@ -53,8 +61,11 @@ const LABELS = [
 ] as const;
 
 /** Derives where the annual cycle stands purely from already-stored state — no separate event
- * log to keep in sync. Each receipt code closes out steps 4-8 once; step 8 (restauração) loops
- * back to step 2 (reabrir), which is why this never reaches a final "done" phase. */
+ * log to keep in sync. "Abertura" (step 2, the act of opening) is its own step, separate from
+ * "Recebimento aberto" (step 3, the window actually being live) and from "Fechamento" (step 4,
+ * the window having been closed and awaiting lacração) — three different moments that used to be
+ * folded together. Each receipt code closes out steps 5-9 once; step 9 (restauração) loops back
+ * to step 2 (reabrir), which is why this never reaches a final "done" phase. */
 export function computeCycleStatus(input: WizardInput): WizardResult {
   const steps: WizardStep[] = LABELS.map((label, index) => ({ n: index, label, status: 'pending' as WizardStepStatus }));
   const set = (n: number, status: WizardStepStatus) => { steps[n]!.status = status; };
@@ -66,7 +77,7 @@ export function computeCycleStatus(input: WizardInput): WizardResult {
   set(0, 'done');
 
   if (input.open) {
-    set(1, 'done'); set(2, 'current');
+    set(1, 'done'); set(2, 'done'); set(3, 'current');
     return {
       phase: 'aberto',
       phaseLabel: input.closesAt
@@ -80,39 +91,44 @@ export function computeCycleStatus(input: WizardInput): WizardResult {
   if (!input.hasCommission) {
     return { phase: 'comissao', phaseLabel: 'Nomeie a Comissão antes de prosseguir', currentFile: null, steps };
   }
+
+  if (!input.everOpened) {
+    set(2, 'current');
+    return { phase: 'abrir', phaseLabel: 'Comissão nomeada · pronto para abrir o recebimento', currentFile: null, steps };
+  }
   set(2, 'done');
 
   const sealed = input.receiptStatus === 'sealed';
   if (!sealed) {
-    set(3, 'current');
+    set(3, 'done'); set(4, 'current');
     return { phase: 'lacrar', phaseLabel: 'Recebimento fechado · pronto para lacrar', currentFile: null, steps };
   }
-  set(3, 'done'); set(4, 'done');
+  set(3, 'done'); set(4, 'done'); set(5, 'done');
   const filename = input.receiptCode ? `${input.receiptCode}.lacre` : null;
   const exported = sealed && input.exportReceiptCode === input.receiptCode;
 
   if (!exported) {
-    set(5, 'current');
-    return { phase: 'exportar', phaseLabel: `Lacrado (${input.receiptCode}) · aguardando exportação`, currentFile: filename, steps };
-  }
-  set(5, 'done');
-
-  if (!input.physicalCheckOk) {
     set(6, 'current');
-    return { phase: 'exportar', phaseLabel: 'Exportado · aguardando conferência das 3 unidades', currentFile: filename, steps };
+    return { phase: 'exportar', phaseLabel: `Lacrado (${input.receiptCode}) · aguardando exportação`, currentFile: filename, steps };
   }
   set(6, 'done');
 
-  if (!input.cleanupOk) {
+  if (!input.physicalCheckOk) {
     set(7, 'current');
-    return { phase: 'exportar', phaseLabel: 'Conferido · aguardando limpeza do Wix', currentFile: filename, steps };
+    return { phase: 'exportar', phaseLabel: 'Exportado · aguardando conferência das 3 unidades', currentFile: filename, steps };
   }
   set(7, 'done');
 
-  if (!input.restorationOk) {
+  if (!input.cleanupOk) {
     set(8, 'current');
+    return { phase: 'exportar', phaseLabel: 'Conferido · aguardando limpeza do Wix', currentFile: filename, steps };
+  }
+  set(8, 'done');
+
+  if (!input.restorationOk) {
+    set(9, 'current');
     return { phase: 'restaurar', phaseLabel: 'Limpo · aguardando restauração dos rascunhos', currentFile: filename, steps };
   }
-  set(8, 'done'); set(2, 'current');
+  set(9, 'done'); set(2, 'current');
   return { phase: 'reabrir', phaseLabel: 'Restaurado · pronto para reabrir o recebimento', currentFile: filename, steps };
 }

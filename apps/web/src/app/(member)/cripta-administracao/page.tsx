@@ -51,6 +51,7 @@ export default async function Page() {
     inaugurated: !!inauguration,
     hasCommission: !!control?.commissionMemberIds?.length,
     open,
+    everOpened: typeof openingDoc.data()?.openedAt === 'string',
     closesAt: openingDoc.data()?.closesAt ?? null,
     receiptStatus: sealData?.status ?? null,
     receiptCode: sealData?.code ?? null,
@@ -135,6 +136,17 @@ export default async function Page() {
           masterMissing={!master}
           control={control}
           prominent
+        />
+      )}
+
+      {wizard.phase === 'abrir' && (
+        <OnlineOpeningControl
+          step="2"
+          initiallyOpen={false}
+          masterName={master?.member.nomeCompleto ?? ''}
+          commissionMemberIds={control?.commissionMemberIds ?? []}
+          nextOpeningDate={control?.nextOpeningDate ?? ''}
+          choices={choices}
         />
       )}
 
