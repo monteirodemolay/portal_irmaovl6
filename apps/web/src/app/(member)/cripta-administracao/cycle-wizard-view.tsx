@@ -13,7 +13,7 @@ export function CycleWizardView({ result }: { result: WizardResult }) {
       <p className="text-xs font-semibold uppercase tracking-widest text-[#8a682d]">
         Onde estamos agora
       </p>
-      <h2 className="mt-1 font-serif text-xl text-[#142a43]">{result.phase}</h2>
+      <h2 className="mt-1 font-serif text-xl text-[#142a43]">{result.phaseLabel}</h2>
       {result.currentFile && (
         <p className="mt-1 text-sm text-[#536074]">
           Arquivo desta rodada:{' '}

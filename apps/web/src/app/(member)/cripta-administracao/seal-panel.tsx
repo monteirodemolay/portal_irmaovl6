@@ -27,7 +27,18 @@ type Result = {
   error?: string;
 };
 
-export function SealPanel({ initiallyOpen, step }: { initiallyOpen: boolean; step?: string }) {
+export function SealPanel({
+  initiallyOpen,
+  step,
+  showAdvanceAfterSeal,
+}: {
+  initiallyOpen: boolean;
+  step?: string;
+  /** The wizard passes this only while this panel is the active "lacrar" step — gives the
+   * operator an explicit, deliberate way to move on to exportação once they have downloaded the
+   * receipt, instead of the screen changing out from under them automatically. */
+  showAdvanceAfterSeal?: boolean;
+}) {
   const [result, setResult] = useState<Result | null>(null);
   const [minutes, setMinutes] = useState('');
   const [busy, setBusy] = useState(false);
@@ -141,6 +152,15 @@ export function SealPanel({ initiallyOpen, step }: { initiallyOpen: boolean; ste
           >
             Baixar recibo para a ata
           </button>
+          {showAdvanceAfterSeal && receipt.status === 'sealed' && (
+            <button
+              type="button"
+              onClick={() => window.location.reload()}
+              className="ml-3 mt-4 rounded-xl bg-[#123c69] px-4 py-3 font-semibold text-white"
+            >
+              Continuar para exportação →
+            </button>
+          )}
         </div>
       )}
       {!initiallyOpen && receipt?.status !== 'sealed' && (

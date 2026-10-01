@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { computeCycleStatus, type WizardInput } from './cycle-wizard';
 
 const base: WizardInput = {
+  inaugurated: false,
   hasCommission: false,
   open: false,
   physicalCheckOk: false,
@@ -10,54 +11,77 @@ const base: WizardInput = {
 };
 
 describe('computeCycleStatus', () => {
-  it('starts at step 1 when there is no Comissão yet', () => {
+  it('starts at step 0 (Inauguração) before anything is inaugurated', () => {
     const result = computeCycleStatus(base);
-    expect(result.steps[0]).toEqual({ n: 1, label: 'Comissão e data', status: 'current' });
+    expect(result.phase).toBe('inauguracao');
+    expect(result.steps[0]).toEqual({ n: 0, label: 'Inauguração', status: 'current' });
     expect(result.steps.slice(1).every((step) => step.status === 'pending')).toBe(true);
     expect(result.currentFile).toBeNull();
   });
 
-  it('moves to step 3 once the Comissão is named and the window is closed', () => {
-    const result = computeCycleStatus({ ...base, hasCommission: true });
-    expect(result.steps[0]!.status).toBe('done');
-    expect(result.steps[1]!.status).toBe('done');
-    expect(result.steps[2]!.status).toBe('current');
-  });
-
-  it('shows step 2 as current whenever the window is open, regardless of later state', () => {
-    const result = computeCycleStatus({ ...base, hasCommission: true, open: true, closesAt: '2027-01-01T00:00:00.000Z' });
+  it('moves to comissao once inaugurated, before any Comissão is named', () => {
+    const result = computeCycleStatus({ ...base, inaugurated: true });
+    expect(result.phase).toBe('comissao');
     expect(result.steps[0]!.status).toBe('done');
     expect(result.steps[1]!.status).toBe('current');
-    expect(result.phase).toContain('aberto até');
   });
 
-  it('reaches step 4 done and step 5 current right after sealing, before export', () => {
-    const result = computeCycleStatus({ ...base, hasCommission: true, receiptStatus: 'sealed', receiptCode: 'VL6-X' });
+  it('moves to step 3 (lacrar) once the Comissão is named and the window is closed', () => {
+    const result = computeCycleStatus({ ...base, inaugurated: true, hasCommission: true });
+    expect(result.phase).toBe('lacrar');
+    expect(result.steps[1]!.status).toBe('done');
+    expect(result.steps[2]!.status).toBe('done');
+    expect(result.steps[3]!.status).toBe('current');
+  });
+
+  it('shows "aberto" whenever the window is open, regardless of later state', () => {
+    const result = computeCycleStatus({ ...base, inaugurated: true, hasCommission: true, open: true, closesAt: '2027-01-01T00:00:00.000Z' });
+    expect(result.phase).toBe('aberto');
+    expect(result.steps[1]!.status).toBe('done');
+    expect(result.steps[2]!.status).toBe('current');
+    expect(result.phaseLabel).toContain('aberto até');
+  });
+
+  it('reaches "exportar" right after sealing, before export', () => {
+    const result = computeCycleStatus({ ...base, inaugurated: true, hasCommission: true, receiptStatus: 'sealed', receiptCode: 'VL6-X' });
+    expect(result.phase).toBe('exportar');
     expect(result.steps[3]!.status).toBe('done');
-    expect(result.steps[4]!.status).toBe('current');
+    expect(result.steps[4]!.status).toBe('done');
+    expect(result.steps[5]!.status).toBe('current');
     expect(result.currentFile).toBe('VL6-X.lacre');
   });
 
   it('never marks export done for a stale export recorded under a different, earlier receipt code', () => {
     const result = computeCycleStatus({
-      ...base, hasCommission: true, receiptStatus: 'sealed', receiptCode: 'VL6-NEW', exportReceiptCode: 'VL6-OLD',
+      ...base, inaugurated: true, hasCommission: true, receiptStatus: 'sealed', receiptCode: 'VL6-NEW', exportReceiptCode: 'VL6-OLD',
     });
-    expect(result.steps[4]!.status).toBe('current');
+    expect(result.steps[5]!.status).toBe('current');
   });
 
-  it('walks through export, conferência, limpeza and restauração in order', () => {
-    const common = { ...base, hasCommission: true, receiptStatus: 'sealed' as const, receiptCode: 'VL6-X', exportReceiptCode: 'VL6-X' };
-    expect(computeCycleStatus(common).steps[5]!.status).toBe('current');
-    expect(computeCycleStatus({ ...common, physicalCheckOk: true }).steps[6]!.status).toBe('current');
-    expect(computeCycleStatus({ ...common, physicalCheckOk: true, cleanupOk: true }).steps[7]!.status).toBe('current');
+  it('walks through export, conferência, limpeza and restauração in order, all inside the "exportar" phase until restauração', () => {
+    const common = { ...base, inaugurated: true, hasCommission: true, receiptStatus: 'sealed' as const, receiptCode: 'VL6-X', exportReceiptCode: 'VL6-X' };
+    const afterExport = computeCycleStatus(common);
+    expect(afterExport.phase).toBe('exportar');
+    expect(afterExport.steps[6]!.status).toBe('current');
+
+    const afterCheck = computeCycleStatus({ ...common, physicalCheckOk: true });
+    expect(afterCheck.phase).toBe('exportar');
+    expect(afterCheck.steps[7]!.status).toBe('current');
+
+    const afterCleanup = computeCycleStatus({ ...common, physicalCheckOk: true, cleanupOk: true });
+    expect(afterCleanup.phase).toBe('restaurar');
+    expect(afterCleanup.steps[8]!.status).toBe('current');
+
     const done = computeCycleStatus({ ...common, physicalCheckOk: true, cleanupOk: true, restorationOk: true });
-    expect(done.steps[7]!.status).toBe('done');
-    expect(done.phase).toContain('pronto para reabrir');
+    expect(done.phase).toBe('reabrir');
+    expect(done.steps[8]!.status).toBe('done');
+    expect(done.steps[2]!.status).toBe('current');
+    expect(done.phaseLabel).toContain('pronto para reabrir');
   });
 
-  it('every step from 1 to the current one is done, and every step after is pending — no gaps', () => {
+  it('every step before the current one is done, and every step after is pending — no gaps', () => {
     const result = computeCycleStatus({
-      ...base, hasCommission: true, receiptStatus: 'sealed', receiptCode: 'VL6-X', exportReceiptCode: 'VL6-X', physicalCheckOk: true,
+      ...base, inaugurated: true, hasCommission: true, receiptStatus: 'sealed', receiptCode: 'VL6-X', exportReceiptCode: 'VL6-X', physicalCheckOk: true,
     });
     const currentIndex = result.steps.findIndex((step) => step.status === 'current');
     result.steps.forEach((step, index) => {
