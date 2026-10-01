@@ -1,8 +1,6 @@
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
 import { createServerContainer, getAdminFirestore } from '@vl6/infra';
 import { requirePagePermission } from '@/lib/auth/require-permission';
-import { canAccessCriptaPilot } from '@/modules/cripta/lib/early-access';
 import { isOnlineOpen, openingRef } from '@/modules/cripta/lib/online-opening';
 import { currentCriptaMaster } from '@/modules/cripta/lib/current-master';
 import { readCriptaPublicKey } from '@/modules/cripta/lib/cripta-crypto-state';
@@ -26,7 +24,6 @@ export const metadata = {
 
 export default async function Page() {
   const session = await requirePagePermission('tenant:manage');
-  if (!canAccessCriptaPilot(session.user.email)) notFound();
   const tenantId = session.authContext.tenantId;
   const container = createServerContainer();
   const db = getAdminFirestore();
@@ -69,6 +66,15 @@ export default async function Page() {
   const name = (id: string | undefined) =>
     members.find((member) => member.id === id)?.nomeCompleto ?? 'Não indicado';
   const choices = eligible.map((member) => ({ id: member.id, name: member.nomeCompleto }));
+
+  // A Comissão marca "nextOpeningDate" com antecedência (ComissaoForm); como não há cron neste
+  // ambiente, a abertura em si continua sendo um clique manual — isto só decide se o aviso "hoje
+  // é o dia marcado" aparece nas fases de abertura, calculado no fuso do Rio/São Paulo para não
+  // depender do relógio do navegador de quem está logado.
+  const todayBR = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(
+    new Date(),
+  );
+  const openingDue = !!control?.nextOpeningDate && todayBR >= control.nextOpeningDate;
 
   return (
     <div className="mx-auto max-w-5xl space-y-6 pb-12 text-[#17263f]">
@@ -143,6 +149,7 @@ export default async function Page() {
         <OnlineOpeningControl
           step="2"
           initiallyOpen={false}
+          due={openingDue}
           masterName={master?.member.nomeCompleto ?? ''}
           commissionMemberIds={control?.commissionMemberIds ?? []}
           nextOpeningDate={control?.nextOpeningDate ?? ''}
@@ -203,6 +210,7 @@ export default async function Page() {
         <OnlineOpeningControl
           step="2"
           initiallyOpen={false}
+          due={openingDue}
           masterName={master?.member.nomeCompleto ?? ''}
           commissionMemberIds={control?.commissionMemberIds ?? []}
           nextOpeningDate={control?.nextOpeningDate ?? ''}

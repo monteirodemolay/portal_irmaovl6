@@ -101,7 +101,7 @@ export default async function MemberLayout({ children }: { children: React.React
             session.role,
             dictionary,
             unreadCount,
-            session.user.email,
+            member?.situacao === 'ativo' && !!member.userId,
           )}
           sidebarFooter={
             current?.tenant.site && (

@@ -2,7 +2,6 @@ import { criptaRoute } from '@/modules/cripta/lib/cripta-route';
 import { getAdminFirestore } from '@vl6/infra';
 import { NextResponse } from 'next/server';
 import { requirePagePermission } from '@/lib/auth/require-permission';
-import { canAccessCriptaPilot } from '@/modules/cripta/lib/early-access';
 import { sealRef, currentInventory } from '@/modules/cripta/lib/seal-state';
 import { parseLacreFile } from '@/modules/cripta/lib/lacre-format';
 import { uploadPrivateCiphertext } from '@/modules/cripta/lib/wix-private-files';
@@ -20,10 +19,7 @@ export const maxDuration = 300;
  * this route only counts them to report an honest total back to the operator. */
 export const POST = criptaRoute(async function POST(request: Request) {
   const session = await requirePagePermission('tenant:manage');
-  if (
-    !canAccessCriptaPilot(session.user.email) ||
-    request.headers.get('origin') !== new URL(request.url).origin
-  ) {
+  if (request.headers.get('origin') !== new URL(request.url).origin) {
     return NextResponse.json({ error: 'Acesso negado.' }, { status: 403 });
   }
   const tenantId = session.authContext.tenantId;

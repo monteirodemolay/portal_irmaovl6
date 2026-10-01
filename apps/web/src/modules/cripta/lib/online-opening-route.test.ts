@@ -53,7 +53,6 @@ vi.mock('@vl6/infra', () => ({
 vi.mock('@/modules/cripta/lib/cripta-route', () => ({ criptaRoute: (handler: unknown) => handler }));
 vi.mock('@/lib/auth/require-permission', () => ({ requirePagePermission: harness.session }));
 vi.mock('@/lib/auth/get-current-session', () => ({ getCurrentSession: harness.session }));
-vi.mock('@/modules/cripta/lib/early-access', () => ({ canAccessCriptaPilot: () => true }));
 vi.mock('@/modules/cripta/lib/current-master', () => ({
   currentCriptaMaster: async () => ({ member: { id: 'master-1', nomeCompleto: 'Venerável Teste' }, termId: 'term-1' }),
 }));

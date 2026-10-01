@@ -2,7 +2,6 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { createServerContainer, getAdminFirestore } from '@vl6/infra';
 import { requireSession } from '@/lib/auth/require-session';
-import { canAccessCriptaPilot } from '@/modules/cripta/lib/early-access';
 import { isOnlineOpen } from '@/modules/cripta/lib/online-opening';
 
 export const metadata = {
@@ -17,7 +16,7 @@ export default async function Page() {
     tenantId,
     session.user.id,
   );
-  if (member?.situacao !== 'ativo' || !canAccessCriptaPilot(session.user.email)) notFound();
+  if (member?.situacao !== 'ativo') notFound();
   const db = getAdminFirestore();
   const [open, letters, draft, governance] = await Promise.all([
     isOnlineOpen(tenantId),

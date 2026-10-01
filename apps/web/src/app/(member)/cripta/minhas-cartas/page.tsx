@@ -2,7 +2,6 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { requireSession } from '@/lib/auth/require-session';
 import { createServerContainer } from '@vl6/infra';
-import { canAccessCriptaPilot } from '@/modules/cripta/lib/early-access';
 import { CriptaExperience } from '../cripta-experience';
 
 export const metadata = {
@@ -16,7 +15,7 @@ export default async function Page() {
     session.authContext.tenantId,
     session.user.id,
   );
-  if (member?.situacao !== 'ativo' || !canAccessCriptaPilot(session.user.email)) notFound();
+  if (member?.situacao !== 'ativo') notFound();
   return (
     <div className="space-y-4">
       <Link

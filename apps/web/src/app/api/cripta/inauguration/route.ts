@@ -3,7 +3,6 @@ import { webcrypto } from 'node:crypto';
 import { createServerContainer, getAdminFirestore } from '@vl6/infra';
 import { NextResponse } from 'next/server';
 import { requirePagePermission } from '@/lib/auth/require-permission';
-import { canAccessCriptaPilot } from '@/modules/cripta/lib/early-access';
 import { currentCriptaMaster } from '@/modules/cripta/lib/current-master';
 import { criptaCryptoRef, readCriptaPublicKey } from '@/modules/cripta/lib/cripta-crypto-state';
 import type { CriptaPublicKey } from '@/modules/cripta/lib/cripta-key';
@@ -29,8 +28,6 @@ function isPublicKey(value: unknown): value is CriptaPublicKey {
 
 export const GET = criptaRoute(async function GET() {
   const session = await requirePagePermission('tenant:manage');
-  if (!canAccessCriptaPilot(session.user.email))
-    return NextResponse.json({ error: 'Acesso negado.' }, { status: 403 });
   const state = await readCriptaPublicKey(session.authContext.tenantId);
   return NextResponse.json({ inaugurated: !!state, state }, { headers });
 });
@@ -40,10 +37,7 @@ export const GET = criptaRoute(async function GET() {
  * they must never be sent here or appear in any request the server logs. */
 export const POST = criptaRoute(async function POST(request: Request) {
   const session = await requirePagePermission('tenant:manage');
-  if (
-    !canAccessCriptaPilot(session.user.email) ||
-    request.headers.get('origin') !== new URL(request.url).origin
-  ) {
+  if (request.headers.get('origin') !== new URL(request.url).origin) {
     return NextResponse.json({ error: 'Acesso negado.' }, { status: 403 });
   }
   const tenantId = session.authContext.tenantId;

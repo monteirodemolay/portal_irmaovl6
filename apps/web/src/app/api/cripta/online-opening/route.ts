@@ -3,7 +3,6 @@ import { getAdminFirestore } from '@vl6/infra';
 import { NextResponse } from 'next/server';
 import { getCurrentSession } from '@/lib/auth/get-current-session';
 import { requirePagePermission } from '@/lib/auth/require-permission';
-import { canAccessCriptaPilot } from '@/modules/cripta/lib/early-access';
 import { isReceivingWindowOpen } from '@/modules/cripta/lib/receiving-window';
 import { criptaCryptoRef } from '@/modules/cripta/lib/cripta-crypto-state';
 import { openingRef } from '@/modules/cripta/lib/online-opening';
@@ -17,9 +16,10 @@ export const runtime = 'nodejs';
 export const maxDuration = 300;
 
 export const GET = criptaRoute(async function GET() {
+  // criptaRoute already requires an active member session; any Irmão Ativo may check whether
+  // the window is open (this backs both the admin controls and the member deposit screen).
   const session = await getCurrentSession();
-  if (!session || !canAccessCriptaPilot(session.user.email))
-    return NextResponse.json({ error: 'Acesso negado.' }, { status: 403 });
+  if (!session) return NextResponse.json({ error: 'Acesso negado.' }, { status: 403 });
   const snapshot = await openingRef(session.authContext.tenantId).get();
   return NextResponse.json(
     { open: isReceivingWindowOpen(snapshot.data()), closesAt: snapshot.data()?.closesAt ?? null },
@@ -29,10 +29,7 @@ export const GET = criptaRoute(async function GET() {
 
 export const POST = criptaRoute(async function POST(request: Request) {
   const session = await requirePagePermission('tenant:manage');
-  if (
-    !canAccessCriptaPilot(session.user.email) ||
-    request.headers.get('origin') !== new URL(request.url).origin
-  ) {
+  if (request.headers.get('origin') !== new URL(request.url).origin) {
     return NextResponse.json({ error: 'Acesso negado.' }, { status: 403 });
   }
   const payload = (await request.json().catch(() => null)) as {

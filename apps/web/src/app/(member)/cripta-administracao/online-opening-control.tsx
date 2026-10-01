@@ -9,6 +9,10 @@ type Props = {
   nextOpeningDate: string;
   choices: Array<{ id: string; name: string }>;
   step: string;
+  /** True quando a data marcada pela Comissão (nextOpeningDate) já chegou ou passou — mostra um
+   * aviso em destaque em vez do texto neutro "abertura prevista para". Não há abertura
+   * automática por cron neste ambiente: isto só lembra o operador de abrir manualmente. */
+  due?: boolean;
 };
 
 export function OnlineOpeningControl({
@@ -18,6 +22,7 @@ export function OnlineOpeningControl({
   nextOpeningDate,
   choices,
   step,
+  due,
 }: Props) {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
@@ -69,11 +74,19 @@ export function OnlineOpeningControl({
       <h2 className="mt-2 font-serif text-2xl text-[#142a43]">
         {opening ? 'Registrar abertura' : 'Registrar fechamento'}
       </h2>
+      {opening && due && (
+        <p className="mt-3 rounded-xl border border-[#c9a449] bg-[#fbeecb] p-4 text-sm font-semibold text-[#142a43]">
+          Hoje é o dia marcado para a abertura ({displayDate}) — ou já passou. Abra agora para
+          liberar a escrita a todos os irmãos Ativos, inclusive os que entraram depois da última
+          abertura.
+        </p>
+      )}
       <p className="mt-2 text-sm leading-6 text-[#536074]">
         {opening
-          ? 'Abertura prevista para ' +
-            displayDate +
-            '. Registre agora quem compareceu. A data pode ter sido remarcada na Comissão acima.'
+          ? (due
+              ? 'Registre quem compareceu. '
+              : `Abertura prevista para ${displayDate}. Registre agora quem compareceu. `) +
+            'A data pode ter sido remarcada na Comissão acima.'
           : 'O Venerável vigente preside o fechamento com um integrante da Comissão. Depois de fechar, emita o recibo abaixo.'}
       </p>
       <div className="mt-4 rounded-xl border border-[#c9a449] bg-white p-4 text-sm">
