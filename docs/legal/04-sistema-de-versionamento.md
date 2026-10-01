@@ -6,6 +6,8 @@
 
 ## 1. Numeração de versão
 
+Antes da semântica de versões, o sistema reconhece uma classificação histórica especial: **Marco Inicial**. Toda versão `1.0.0` publicada como primeira versão de um documento é exibida no histórico como Marco Inicial, ainda que o registro legado tenha sido persistido com a classificação técnica `mudanca_institucional`. O registro original não é alterado; apenas sua apresentação institucional é normalizada.
+
 Semântica `MAJOR.MINOR.PATCH`, aplicada independentemente a cada documento (Política e Termos têm numeração própria):
 
 - **MAJOR** — mudança jurídica ou de tratamento de dados que exige novo aceite dos usuários (ex.: nova finalidade, novo compartilhamento com terceiro).
@@ -69,6 +71,16 @@ Sempre que uma versão é publicada:
 4. Um banner aparece após o login (já prototipado no mock-up) até que o usuário revise e aceite a nova versão.
 
 ## 5. Manutenção contínua (detecção de impacto)
+
+### Processo por marcos de commit
+
+Cada revisão jurídica deve registrar dois pontos objetivos:
+
+1. **Marco jurídico anterior** — commit do repositório no qual a última auditoria jurídica foi encerrada.
+2. **Marco técnico revisado** — commit efetivamente em Production usado como limite final da comparação.
+
+A revisão analisa somente o intervalo entre esses marcos, classifica cada alteração como sem impacto jurídico, atualização documental sem novo aceite ou alteração material com novo aceite, e grava os dois SHAs nos itens alterados da nova versão. O arquivo `docs/legal/05-marcos-revisao.md` mantém a trilha consolidada. Branches e PRs ainda não publicados em Production ficam fora do marco e entram na revisão seguinte depois de publicados.
+
 
 Processo institucional (não totalmente automatizável hoje, dado que não há Cloud Functions/triggers em produção — ver auditoria §2):
 
@@ -152,3 +164,23 @@ Adicionado também um error boundary dedicado (`apps/web/src/app/(member)/error.
 - **Novo terceiro/subprocessador:** não — a notificação usa a coleção `notifications` já existente, sem canal externo novo.
 - **Nova finalidade:** não. O comentário sempre foi atribuído a um autor (`autorId`) e qualquer Irmão autenticado já vê o nome completo de qualquer outro Irmão em todo o Portal (Diretório interno, §3.2 do Inventário) — exibir o nome junto ao comentário aprovado não cria uma categoria de exposição nova, só documenta uma que já existia sem registro formal.
 - **Exige novo aceite:** **não**. Não há novo dado coletado, novo compartilhamento externo ou mudança de direitos/obrigações — é a formalização documental de uma exibição de dado já publicamente visível entre Irmãos autenticados em qualquer outra tela do Portal.
+
+
+## 11. Marco de revisão — 30/09/2026
+
+### 2.0.0 — Cripta Digital + transparência técnica consolidada
+
+- **Marco jurídico anterior:** `24d09676532a91f82ef1a81801b58d9ce57be116` (29/09/2026).
+- **Marco técnico revisado:** `1c699dd7f19cf04c80e85ea64f2214977cd742ab` (Production após PR #200).
+- **Intervalo analisado:** 25 commits.
+- **Fora do marco:** PR #201 / branch `fix/perfil-edicao-inline`, ainda não publicado em Production na data da revisão.
+- **Política de Privacidade:** v2.0.0, classificação `mudanca_lgpd`, impacto alto.
+- **Termos de Uso:** v2.0.0, classificação `nova_funcionalidade`, impacto alto.
+- **Exige novo aceite:** **sim**, em ambos os documentos.
+- **Motivo principal:** a Cripta Digital introduz cartas privadas, anexos, destinatários, armazenamento temporário no Wix, cifragem, custódia offline/externa e hipóteses excepcionais de abertura/entrega — categoria relevante de tratamento que não existia no Marco Inicial.
+- **Outras adequações consolidadas:** comentários moderados em Notícias; integração automática Notícias ↔ Acervo; centralização de privacidade do Perfil em Configurações; preferências locais de aparência/acessibilidade e cookie funcional de tema; novo fluxo visual de aceite.
+- **Novo subprocessador documentado:** Wix Media Manager, limitado ao ciclo operacional da Cripta.
+- **Nova finalidade:** sim, guarda privada de mensagens/cartas pessoais na Cripta.
+- **Resultado:** revisão preparada automaticamente no painel administrativo. A Administração revisa e publica, sem reconstruir manualmente versão, classificação, motivo, itens alterados ou resumo.
+
+O próximo ciclo de auditoria deve começar no commit que efetivamente entrar em Production contendo esta revisão jurídica, e não no SHA de uma branch/PR ainda pendente.
