@@ -74,9 +74,11 @@ export function PhysicalUnitCheck({
         throw new Error(data.error ?? 'Não foi possível registrar a conferência.');
       setResult(data.evidence);
       setMessage('Leitura concluída e registrada. Guarde os manifestos nas respectivas unidades.');
+      // Recarrega para que o botão "7 · Solicitar limpeza do Wix" (calculado no servidor a
+      // partir do mesmo physicalCheck que acabamos de gravar) libere sem precisar de F5 manual.
+      window.location.reload();
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Não foi possível conferir as unidades.');
-    } finally {
       setBusy(false);
     }
   }
