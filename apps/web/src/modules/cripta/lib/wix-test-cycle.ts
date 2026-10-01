@@ -1,5 +1,6 @@
 import 'server-only';
 import { createCipheriv, createHash, randomBytes } from 'node:crypto';
+import { trackCriptaUpload } from './storage-scope';
 import { wixError } from './wix-error';
 
 const API = 'https://www.wixapis.com';
@@ -70,6 +71,7 @@ export async function runWixTestCycle(): Promise<WixTestResult> {
   let privateFile = false;
   let downloadIssue: string | undefined;
   try {
+    await trackCriptaUpload(fileId);
     for (let attempt = 0; attempt < 4; attempt++) {
       const descriptor = await wix<{ files?: Array<{ private?: boolean }> }>(
         '/site-media/v1/files/get-files', { fileIds: [fileId] },

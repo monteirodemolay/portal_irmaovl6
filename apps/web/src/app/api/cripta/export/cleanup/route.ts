@@ -1,10 +1,12 @@
+import { criptaRoute } from '@/modules/cripta/lib/cripta-route';
 import { NextResponse } from 'next/server';
 import { requirePagePermission } from '@/lib/auth/require-permission';
 import { canAccessCriptaPilot } from '@/modules/cripta/lib/early-access';
 
 export const runtime = 'nodejs';
+export const maxDuration = 300;
 
-export async function POST(request: Request) {
+export const POST = criptaRoute(async function POST(request: Request) {
   const session = await requirePagePermission('tenant:manage');
   if (
     !canAccessCriptaPilot(session.user.email) ||
@@ -20,4 +22,4 @@ export async function POST(request: Request) {
     },
     { status: 409, headers: { 'Cache-Control': 'no-store, private' } },
   );
-}
+});

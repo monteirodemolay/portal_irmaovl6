@@ -1,3 +1,4 @@
+import { criptaRoute } from '@/modules/cripta/lib/cripta-route';
 import { randomUUID } from 'node:crypto';
 import { isReceivingWindowOpen } from '@/modules/cripta/lib/receiving-window';
 import { getAdminFirestore } from '@vl6/infra';
@@ -11,6 +12,7 @@ import { openForAccount } from '@/modules/cripta/lib/account-envelope';
 import { isOnlineOpen, openingRef } from '@/modules/cripta/lib/online-opening';
 
 export const runtime = 'nodejs';
+export const maxDuration = 300;
 const collection = () => getAdminFirestore().collection('criptaOnlineCapsulesV1');
 
 async function find(request: Request, id: string) {
@@ -31,7 +33,10 @@ async function find(request: Request, id: string) {
   return { reference, data, session };
 }
 
-export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
+export const GET = criptaRoute(async function GET(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
   const found = await find(request, (await params).id);
   if (!found) return NextResponse.json({ error: 'Carta não encontrada.' }, { status: 404 });
   try {
@@ -64,9 +69,12 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       { status: 502 },
     );
   }
-}
+});
 
-export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
+export const DELETE = criptaRoute(async function DELETE(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
   const found = await find(request, (await params).id);
   if (!found) return NextResponse.json({ error: 'Carta não encontrada.' }, { status: 404 });
   if (!(await isOnlineOpen(found.session.authContext.tenantId)))
@@ -112,4 +120,4 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
       { status: 502 },
     );
   }
-}
+});

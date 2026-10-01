@@ -1,3 +1,4 @@
+import { criptaRoute } from '@/modules/cripta/lib/cripta-route';
 import { randomUUID } from 'node:crypto';
 import { hasPermission } from '@vl6/domain';
 import { getAdminFirestore } from '@vl6/infra';
@@ -22,7 +23,7 @@ async function pilot() {
     : null;
 }
 
-export async function GET() {
+export const GET = criptaRoute(async function GET() {
   const session = await pilot();
   if (!session) return NextResponse.json({ error: 'Acesso negado.' }, { status: 403 });
   const docs = await collection().where('uid', '==', session.user.id).get();
@@ -39,9 +40,9 @@ export async function GET() {
     },
     { headers: { 'Cache-Control': 'no-store' } },
   );
-}
+});
 
-export async function POST(request: Request) {
+export const POST = criptaRoute(async function POST(request: Request) {
   const session = await pilot();
   if (!session || request.headers.get('origin') !== new URL(request.url).origin) {
     return NextResponse.json({ error: 'Acesso negado.' }, { status: 403 });
@@ -82,16 +83,15 @@ export async function POST(request: Request) {
     const id = randomUUID();
     const createdAt = new Date().toISOString();
     const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString();
-    await collection()
-      .doc(id)
-      .create({
-        uid: session.user.id,
-        fileId,
-        sha256: uploaded.sha256,
-        createdAt,
-        expiresAt,
-        kind: 'fictional-test-only',
-      });
+    await collection().doc(id).create({
+      uid: session.user.id,
+      tenantId: session.authContext.tenantId,
+      fileId,
+      sha256: uploaded.sha256,
+      createdAt,
+      expiresAt,
+      kind: 'fictional-test-only',
+    });
     return NextResponse.json(
       { id, createdAt, expiresAt },
       { status: 201, headers: { 'Cache-Control': 'no-store' } },
@@ -109,4 +109,4 @@ export async function POST(request: Request) {
       { status: 502 },
     );
   }
-}
+});

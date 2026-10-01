@@ -11,17 +11,15 @@ import {
   Input,
   Instagram,
   Linkedin,
-  MessageCircle,
   Share2,
 } from '@vl6/ui';
 import { FormField } from '@/components/forms/form-field';
 import { FormSectionCard } from '@/components/forms/section-card';
 import { updateCentralProfileAction, type CentralActionState } from '../../actions/central-actions';
-import { VisibilityMiniForm } from './visibility-mini-form';
 
 export function RedesTab({
   profile,
-  settings,
+  settings: _settings,
 }: {
   profile: MemberCentralProfile | null;
   settings: PublicationSettings | null;
@@ -79,58 +77,10 @@ export function RedesTab({
               />
             </FormField>
           </div>
-          {state.error && <p className="text-sm text-red-600">{state.error}</p>}
+          {state.error && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{state.error}</p>}
+          {state.success && <p className="rounded-lg bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-700">✓ {state.success}</p>}
           <SubmitButton />
         </form>
-      </FormSectionCard>
-
-      <FormSectionCard
-        icon={Share2}
-        title="Visibilidade das redes"
-        description="Cada link é exibido de forma independente aos demais Irmãos."
-        contentClassName="pt-1"
-      >
-        <VisibilityMiniForm
-          group="externalLinks"
-          items={[
-            {
-              key: 'whatsapp',
-              label: 'WhatsApp',
-              icon: MessageCircle,
-              defaultChecked: settings?.externalLinks.whatsapp ?? true,
-            },
-            {
-              key: 'instagram',
-              label: 'Instagram',
-              icon: Instagram,
-              defaultChecked: settings?.externalLinks.instagram ?? true,
-            },
-            {
-              key: 'facebook',
-              label: 'Facebook',
-              icon: Facebook,
-              defaultChecked: settings?.externalLinks.facebook ?? true,
-            },
-            {
-              key: 'linkedin',
-              label: 'LinkedIn',
-              icon: Linkedin,
-              defaultChecked: settings?.externalLinks.linkedin ?? true,
-            },
-            {
-              key: 'lattes',
-              label: 'Currículo Lattes',
-              icon: GraduationCap,
-              defaultChecked: settings?.externalLinks.lattes ?? true,
-            },
-            {
-              key: 'site',
-              label: 'Site / portfólio',
-              icon: Globe,
-              defaultChecked: settings?.externalLinks.site ?? true,
-            },
-          ]}
-        />
       </FormSectionCard>
     </div>
   );

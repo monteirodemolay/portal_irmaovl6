@@ -27,6 +27,7 @@ const harness = vi.hoisted(() => {
   } };
   return { records, db, session: vi.fn(), upload: vi.fn(), download: vi.fn(), remove: vi.fn() };
 });
+vi.mock('@/modules/cripta/lib/cripta-route', () => ({ criptaRoute: (handler: unknown) => handler }));
 vi.mock('@vl6/infra', () => ({ getAdminFirestore: () => harness.db }));
 vi.mock('@/modules/cripta/lib/active-member', () => ({ activeCriptaSession: harness.session }));
 vi.mock('@/modules/cripta/lib/wix-private-files', () => ({ uploadPrivateCiphertext: harness.upload, downloadPrivateCiphertext: harness.download, deletePrivateCiphertext: harness.remove }));

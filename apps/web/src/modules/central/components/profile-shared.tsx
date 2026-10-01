@@ -6,7 +6,7 @@ import {
   type IconType,
 } from '@/components/membership/institutional-panel';
 
-/** Tabs de Meu Espaço que cada bloco do perfil edita. */
+/** Seções do editor contínuo de Meu Perfil que cada bloco do perfil edita. */
 export type EditTab =
   'geral' | 'pessoal' | 'profissional' | 'empresa' | 'afiliacoes' | 'contatos' | 'redes';
 
@@ -118,7 +118,7 @@ export function Panel({
         trailing ??
         (editTab && (
           <Link
-            href={`/irmaos/meu-espaco?tab=${editTab}`}
+            href={`/irmaos/meu-espaco#${editTab}`}
             className="text-accent shrink-0 text-xs font-semibold hover:underline"
           >
             Editar

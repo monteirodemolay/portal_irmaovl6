@@ -17,6 +17,7 @@ import type { ProfileFieldActionState } from '@/modules/membership/components/pr
 
 export interface SelfProfileActionState {
   error: string | null;
+  success?: string | null;
 }
 
 /**
@@ -121,7 +122,7 @@ export async function updateMyProfileAction(
   }
 
   revalidatePath('/irmaos', 'layout');
-  return { error: null };
+  return { error: null, success: 'Alterações salvas com sucesso.' };
 }
 
 /**
@@ -171,5 +172,5 @@ export async function updateMyPhotoAction(
   }
 
   revalidatePath('/irmaos', 'layout');
-  return { error: null };
+  return { error: null, success: 'Alterações salvas com sucesso.' };
 }

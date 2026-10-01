@@ -80,6 +80,7 @@ export function CriptaExperience() {
   const [draftStatus, setDraftStatus] = useState('');
   const pendingDeposit = useRef<{ digest: string; wire: string } | null>(null);
   const draftRevision = useRef(0);
+  const draftGeneration = useRef(0);
   const draftSaved = useRef('');
   const draftValues = useRef({ title, recipient, body, attachments });
   draftValues.current = { title, recipient, body, attachments };
@@ -136,6 +137,7 @@ export function CriptaExperience() {
           draftSaved.current = JSON.stringify(result.draft);
         }
         draftRevision.current = result.revision ?? 0;
+        draftGeneration.current = Number(response.headers.get('X-Cripta-Generation') ?? '0');
       })
       .catch((error) =>
         setDraftStatus(error instanceof Error ? error.message : 'Rascunho indisponível.'),
@@ -159,7 +161,10 @@ export function CriptaExperience() {
         setDraftStatus('Salvando…');
         const response = await fetch('/api/cripta/draft', {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Cripta-Generation': String(draftGeneration.current),
+          },
           body: JSON.stringify({ revision: draftRevision.current, letter: JSON.parse(content) }),
         });
         const result = (await response.json()) as {
@@ -601,7 +606,10 @@ export function CriptaExperience() {
       draftEnabled.current = false;
       const clear = await fetch('/api/cripta/draft', {
         method: 'DELETE',
-        headers: { 'X-Draft-Revision': String(draftRevision.current) },
+        headers: {
+          'X-Draft-Revision': String(draftRevision.current),
+          'X-Cripta-Generation': String(draftGeneration.current),
+        },
       });
       if (clear.ok) {
         const cleared = (await clear.json()) as { revision: number };

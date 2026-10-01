@@ -1,3 +1,4 @@
+import { criptaRoute } from '@/modules/cripta/lib/cripta-route';
 import { webcrypto } from 'node:crypto';
 import { createServerContainer, getAdminFirestore } from '@vl6/infra';
 import { NextResponse } from 'next/server';
@@ -8,6 +9,7 @@ import { criptaCryptoRef, readCriptaPublicKey } from '@/modules/cripta/lib/cript
 import type { CriptaPublicKey } from '@/modules/cripta/lib/cripta-key';
 
 export const runtime = 'nodejs';
+export const maxDuration = 300;
 const headers = { 'Cache-Control': 'no-store, private' };
 const BASE64URL = /^[A-Za-z0-9_-]{40,48}$/;
 
@@ -25,18 +27,18 @@ function isPublicKey(value: unknown): value is CriptaPublicKey {
   );
 }
 
-export async function GET() {
+export const GET = criptaRoute(async function GET() {
   const session = await requirePagePermission('tenant:manage');
   if (!canAccessCriptaPilot(session.user.email))
     return NextResponse.json({ error: 'Acesso negado.' }, { status: 403 });
   const state = await readCriptaPublicKey(session.authContext.tenantId);
   return NextResponse.json({ inaugurated: !!state, state }, { headers });
-}
+});
 
 /** This route only ever receives the Cripta's PUBLIC key plus ceremony metadata. The private
  * scalar and every Shamir share are generated and split in the browser and discarded there —
  * they must never be sent here or appear in any request the server logs. */
-export async function POST(request: Request) {
+export const POST = criptaRoute(async function POST(request: Request) {
   const session = await requirePagePermission('tenant:manage');
   if (
     !canAccessCriptaPilot(session.user.email) ||
@@ -149,4 +151,4 @@ export async function POST(request: Request) {
       { status: 502 },
     );
   }
-}
+});

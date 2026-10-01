@@ -22,6 +22,8 @@
 
 ## Prompt corrigido
 
+**Nota de implementação (29/09/2026):** o texto abaixo é a especificação de destino registrada em 26/09/2026 e não foi reescrito por inteiro; dois pontos específicos já foram superados pela implementação e pelo redesenho de custódia descrito no Diagnóstico acima, e não devem ser seguidos ao pé da letra: (1) "Chaves e restauração" ainda descreve o modelo antigo de chave por conta no Firestore — o modelo real é a chave única da Cripta, dividida por Shamir entre os Guardiões, sem chave capaz de decifrar cartas em nenhum lugar do Portal ou do Firestore; (2) "Próxima abertura: restaurar cartas e rascunhos..." — na prática só os **rascunhos** voltam ao Wix na reabertura (`/api/cripta/restore`, painel "Restaurar rascunhos" em `/cripta-administracao/reabertura`); cartas já **seladas** nunca retornam ao Wix, permanecem só nas unidades físicas e só os Guardiões, offline, conseguem abri-las — restaurá-las ao Portal reintroduziria o risco que a custódia por Guardiões foi criada para eliminar.
+
 Implemente a Cripta do Irmão no repositório `monteirodemolay/portal_irmaovl6` como funcionalidade real do Portal VL6. Antes de editar, examine rotas, autenticação, autorização, cadastro de irmãos Ativos, integração Wix, dados Firestore, documentos de arquitetura e cartas legadas. Preserve os dados existentes. Entregue código, eventuais migrações, manual de operação e evidências de testes de ponta a ponta. Se uma etapa ainda não passar nos testes, mostre-a como pendente em vez de anunciá-la como concluída.
 
 ### 1. Produto, navegação e visual

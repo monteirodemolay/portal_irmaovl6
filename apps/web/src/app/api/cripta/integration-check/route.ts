@@ -1,3 +1,4 @@
+import { criptaRoute } from '@/modules/cripta/lib/cripta-route';
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import { hasPermission } from '@vl6/domain';
 import { NextResponse } from 'next/server';
@@ -20,7 +21,7 @@ export const runtime = 'nodejs';
 export const maxDuration = 60;
 
 /** Synthetic-only Wix + Firestore roundtrip. No user's text, files or keys. */
-export async function POST(request: Request) {
+export const POST = criptaRoute(async function POST(request: Request) {
   const session = await getCurrentSession();
   if (
     !session ||
@@ -94,4 +95,4 @@ export async function POST(request: Request) {
       }
     }
   }
-}
+});

@@ -1,3 +1,4 @@
+import { criptaRoute } from '@/modules/cripta/lib/cripta-route';
 import { hasPermission } from '@vl6/domain';
 import { NextResponse } from 'next/server';
 import { getCurrentSession } from '@/lib/auth/get-current-session';
@@ -7,7 +8,7 @@ import { runWixTestCycle } from '@/modules/cripta/lib/wix-test-cycle';
 export const runtime = 'nodejs';
 export const maxDuration = 60;
 
-export async function POST(request: Request) {
+export const POST = criptaRoute(async function POST(request: Request) {
   const session = await getCurrentSession();
   if (
     !session ||
@@ -28,4 +29,4 @@ export async function POST(request: Request) {
       { status: 502 },
     );
   }
-}
+});

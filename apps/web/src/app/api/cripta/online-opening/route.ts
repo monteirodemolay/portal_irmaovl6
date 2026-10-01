@@ -1,3 +1,4 @@
+import { criptaRoute } from '@/modules/cripta/lib/cripta-route';
 import { getAdminFirestore } from '@vl6/infra';
 import { NextResponse } from 'next/server';
 import { getCurrentSession } from '@/lib/auth/get-current-session';
@@ -9,11 +10,13 @@ import { openingRef } from '@/modules/cripta/lib/online-opening';
 import { sealRef, currentInventory } from '@/modules/cripta/lib/seal-state';
 import { currentCriptaMaster } from '@/modules/cripta/lib/current-master';
 import { receiptDigest } from '@/modules/cripta/lib/seal-manifest';
+import { resolveExpectedInventory } from '@/modules/cripta/lib/reopen-check';
 import { createServerContainer } from '@vl6/infra';
 
 export const runtime = 'nodejs';
+export const maxDuration = 300;
 
-export async function GET() {
+export const GET = criptaRoute(async function GET() {
   const session = await getCurrentSession();
   if (!session || !canAccessCriptaPilot(session.user.email))
     return NextResponse.json({ error: 'Acesso negado.' }, { status: 403 });
@@ -22,9 +25,9 @@ export async function GET() {
     { open: isReceivingWindowOpen(snapshot.data()), closesAt: snapshot.data()?.closesAt ?? null },
     { headers: { 'Cache-Control': 'no-store' } },
   );
-}
+});
 
-export async function POST(request: Request) {
+export const POST = criptaRoute(async function POST(request: Request) {
   const session = await requirePagePermission('tenant:manage');
   if (
     !canAccessCriptaPilot(session.user.email) ||
@@ -108,18 +111,25 @@ export async function POST(request: Request) {
         if (!cryptoState.data()?.publicKey)
           throw new Error('Inaugure a Cripta antes de abrir o recebimento.');
         const firstOpening = !receipt.exists && inventory?.count === 0;
+        const expected = resolveExpectedInventory(
+          data as Parameters<typeof resolveExpectedInventory>[0],
+        );
+        const cleaned =
+          data?.cleanup?.receiptCode === data?.code && data?.cleanup?.complete === true;
         if (
           !firstOpening &&
           (!data ||
             data.status !== 'sealed' ||
             typeof payload.code !== 'string' ||
             payload.code.trim().toUpperCase() !== data.code ||
-            data.inventoryDigest !== inventory?.digest ||
-            data.count !== inventory?.count ||
+            expected?.digest !== inventory?.digest ||
+            expected?.count !== inventory?.count ||
             receiptDigest(data as Parameters<typeof receiptDigest>[0]) !== data.receiptDigest)
         ) {
           throw new Error(
-            'Lacre ausente, código incorreto ou inventário divergente. Suspenda a abertura e confira as unidades.',
+            cleaned
+              ? 'Restaure o arquivo .lacre da unidade física antes de reabrir a escrita.'
+              : 'Lacre ausente, código incorreto ou inventário divergente. Suspenda a abertura e confira as unidades.',
           );
         }
         if (!firstOpening)
@@ -175,4 +185,4 @@ export async function POST(request: Request) {
     );
   }
   return NextResponse.json({ open: payload.open }, { headers: { 'Cache-Control': 'no-store' } });
-}
+});

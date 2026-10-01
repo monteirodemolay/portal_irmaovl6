@@ -1,3 +1,4 @@
+import { criptaRoute } from '@/modules/cripta/lib/cripta-route';
 import { hasPermission } from '@vl6/domain';
 import { getAdminFirestore } from '@vl6/infra';
 import { NextResponse } from 'next/server';
@@ -9,6 +10,7 @@ import {
 } from '@/modules/cripta/lib/wix-private-files';
 
 export const runtime = 'nodejs';
+export const maxDuration = 300;
 const collection = () => getAdminFirestore().collection('criptaTestCapsulesV1');
 
 async function find(request: Request, id: string) {
@@ -29,7 +31,10 @@ async function find(request: Request, id: string) {
   return { reference, data };
 }
 
-export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
+export const GET = criptaRoute(async function GET(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
   const found = await find(request, (await params).id);
   if (!found || found.data.expiresAt <= new Date().toISOString()) {
     return NextResponse.json({ error: 'Ensaio expirado ou não encontrado.' }, { status: 404 });
@@ -50,9 +55,12 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   } catch {
     return NextResponse.json({ error: 'Falha de integridade ou leitura.' }, { status: 502 });
   }
-}
+});
 
-export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
+export const DELETE = criptaRoute(async function DELETE(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
   const found = await find(request, (await params).id);
   if (!found) return NextResponse.json({ error: 'Acesso negado.' }, { status: 403 });
   try {
@@ -65,4 +73,4 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
       { status: 502 },
     );
   }
-}
+});

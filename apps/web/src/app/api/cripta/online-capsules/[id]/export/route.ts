@@ -1,11 +1,16 @@
+import { criptaRoute } from '@/modules/cripta/lib/cripta-route';
 import { getAdminFirestore } from '@vl6/infra';
 import { NextResponse } from 'next/server';
 import { activeCriptaSession } from '@/modules/cripta/lib/active-member';
 import { downloadPrivateCiphertext } from '@/modules/cripta/lib/wix-private-files';
 
 export const runtime = 'nodejs';
+export const maxDuration = 300;
 
-export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
+export const GET = criptaRoute(async function GET(
+  _request: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
   const session = await activeCriptaSession();
   const { id } = await params;
   if (!session || !/^[a-f0-9-]{36}$/.test(id))
@@ -37,4 +42,4 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
       { status: 502 },
     );
   }
-}
+});

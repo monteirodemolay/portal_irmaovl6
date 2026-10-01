@@ -1,3 +1,4 @@
+import { criptaRoute } from '@/modules/cripta/lib/cripta-route';
 import { buildPenDriveCode } from '@/modules/cripta/lib/physical-unit';
 import { randomUUID } from 'node:crypto';
 import { getAdminFirestore } from '@vl6/infra';
@@ -8,9 +9,10 @@ import { sealRef } from '@/modules/cripta/lib/seal-state';
 import { receiptDigest } from '@/modules/cripta/lib/seal-manifest';
 
 export const runtime = 'nodejs';
+export const maxDuration = 300;
 const headers = { 'Cache-Control': 'no-store, private' };
 
-export async function POST(request: Request) {
+export const POST = criptaRoute(async function POST(request: Request) {
   const session = await requirePagePermission('tenant:manage');
   if (
     !canAccessCriptaPilot(session.user.email) ||
@@ -88,4 +90,4 @@ export async function POST(request: Request) {
       { status: 409 },
     );
   }
-}
+});

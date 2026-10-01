@@ -1,5 +1,6 @@
 import 'server-only';
 import { getAdminFirestore } from '@vl6/infra';
+import { resetControlRef } from './reset-control';
 import type { VaultWindow } from './operation-policy';
 
 type CapsuleRecord = {
@@ -13,7 +14,8 @@ type CapsuleRecord = {
 const db = () => getAdminFirestore();
 const owner = (uid: string) => db().collection('criptaPilotV1').doc(uid);
 
-export async function readWindow(): Promise<VaultWindow | null> {
+export async function readWindow(tenantId: string): Promise<VaultWindow | null> {
+  if (((await resetControlRef(tenantId).get()).data()?.generation ?? 0) > 0) return null;
   const snap = await db().collection('criptaControlV1').doc('pilot').get();
   const value = snap.data();
   if (!value || typeof value.opensAt !== 'string' || typeof value.closesAt !== 'string' ||

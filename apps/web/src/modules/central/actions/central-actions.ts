@@ -40,6 +40,7 @@ import { lookupCnpj, type CnpjLookupFailureReason } from '@/lib/central/cnpj-loo
  */
 export interface CentralActionState {
   error: string | null;
+  success?: string | null;
 }
 
 export interface LookupBusinessCnpjResult {
@@ -373,7 +374,7 @@ export async function updateCentralProfileAction(
   }
 
   revalidatePath('/irmaos', 'layout');
-  return { error: null };
+  return { error: null, success: 'Alterações salvas com sucesso.' };
 }
 
 export async function updatePublicationSettingsAction(
@@ -484,7 +485,7 @@ export async function updatePublicationSettingsAction(
   }
 
   revalidatePath('/irmaos', 'layout');
-  return { error: null };
+  return { error: null, success: 'Alterações salvas com sucesso.' };
 }
 
 export async function withdrawFromDirectoryAction(): Promise<void> {

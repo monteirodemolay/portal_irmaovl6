@@ -1,3 +1,4 @@
+import { criptaRoute } from '@/modules/cripta/lib/cripta-route';
 import { getAdminFirestore } from '@vl6/infra';
 import { NextResponse } from 'next/server';
 import { requirePagePermission } from '@/lib/auth/require-permission';
@@ -16,7 +17,7 @@ export const maxDuration = 300;
  * mismatched file. Downloads every ciphertext from Wix; for a very large inventory this holds
  * everything in memory before responding, which is fine at pilot scale but should become a true
  * stream before this serves a full Loja. */
-export async function GET() {
+export const GET = criptaRoute(async function GET() {
   const session = await requirePagePermission('tenant:manage');
   if (!canAccessCriptaPilot(session.user.email))
     return NextResponse.json({ error: 'Acesso negado.' }, { status: 403 });
@@ -100,4 +101,4 @@ export async function GET() {
       { status: 502 },
     );
   }
-}
+});

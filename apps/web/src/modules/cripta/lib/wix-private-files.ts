@@ -1,5 +1,6 @@
 import 'server-only';
 import { createHash, randomUUID } from 'node:crypto';
+import { trackCriptaUpload } from './storage-scope';
 import { wixError } from './wix-error';
 
 const API = 'https://www.wixapis.com';
@@ -71,6 +72,7 @@ export async function uploadPrivateCiphertext(ciphertext: Buffer): Promise<{ fil
   const fileId = uploaded.file?.id;
   if (!fileId) throw new Error('Wix não identificou o arquivo enviado.');
   try {
+    await trackCriptaUpload(fileId);
     if (uploaded.file?.parentFolderId !== parentFolderId) throw new Error('Arquivo fora da pasta temporária.');
     let privateFile = false;
     for (let attempt = 0; attempt < 4; attempt++) {
@@ -120,4 +122,26 @@ export async function downloadPrivateCiphertext(fileId: string, sha256: string):
 
 export async function deletePrivateCiphertext(fileId: string): Promise<void> {
   await wix('/site-media/v1/bulk/files/delete', { fileIds: [fileId], permanent: true });
+}
+
+/** The documented Get File Descriptor endpoint returns HTTP 404 for absence.
+ * Authentication, transport and malformed-response failures never count as deletion.
+ * https://dev.wix.com/docs/api-reference/assets/media/media-manager/files/get-file-descriptor */
+export async function deleteAndVerifyPrivateCiphertext(fileId: string): Promise<void> {
+  async function exists() {
+    const key = process.env.WIX_CRIPTA_API_KEY;
+    if (!key) throw new Error('Integração Wix não configurada.');
+    const response = await fetch(`${API}/site-media/v1/files/get-file-by-id?fileId=${encodeURIComponent(fileId)}`, {
+      headers: { Authorization: key, 'wix-site-id': SITE_ID },
+      cache: 'no-store', signal: AbortSignal.timeout(15_000),
+    });
+    if (response.status === 404) return false;
+    if (!response.ok) throw await wixError(response, 'conferir-exclusao');
+    const data = await response.json() as { file?: { id?: string } };
+    if (data.file?.id !== fileId) throw new Error('Wix não confirmou a consulta do arquivo.');
+    return true;
+  }
+  if (!await exists()) return;
+  await deletePrivateCiphertext(fileId);
+  if (await exists()) throw new Error('Wix ainda não confirmou a exclusão. Retome a zerada em instantes.');
 }

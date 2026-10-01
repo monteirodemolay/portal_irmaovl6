@@ -27,7 +27,7 @@ type Result = {
   error?: string;
 };
 
-export function SealPanel({ initiallyOpen }: { initiallyOpen: boolean }) {
+export function SealPanel({ initiallyOpen, step }: { initiallyOpen: boolean; step?: string }) {
   const [result, setResult] = useState<Result | null>(null);
   const [minutes, setMinutes] = useState('');
   const [busy, setBusy] = useState(false);
@@ -87,7 +87,7 @@ export function SealPanel({ initiallyOpen }: { initiallyOpen: boolean }) {
   return (
     <section className="rounded-2xl border border-[#dbcda9] bg-white p-6">
       <p className="text-xs font-semibold uppercase tracking-widest text-[#8a682d]">
-        Etapa 2 · registro verificável
+        {step ?? 'Situação do lacre'}
       </p>
       <h2 className="mt-2 font-serif text-2xl text-[#142a43]">Recibo da lacração</h2>
       <p className="mt-2 text-sm leading-6 text-[#536074]">

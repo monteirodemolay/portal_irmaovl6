@@ -62,3 +62,37 @@ body {
   font-family: var(--font-body);
   overflow-x: hidden;
 }
+
+
+/* Preferências pessoais de aparência — salvas por dispositivo em
+   `vl6:personalizacao` e aplicadas por data-attributes no <html>. */
+:root[data-font-scale='small'] {
+  font-size: 15px;
+}
+
+:root[data-font-scale='normal'] {
+  font-size: 16px;
+}
+
+:root[data-font-scale='large'] {
+  font-size: 18px;
+}
+
+:root[data-high-contrast] {
+  --color-border: 209 35% 42%;
+  --color-text-muted: 209 45% 24%;
+}
+
+:root[data-theme='dark'][data-high-contrast] {
+  --color-border: 210 30% 62%;
+  --color-text-muted: 210 22% 83%;
+}
+
+:root[data-reduce-motion] *,
+:root[data-reduce-motion] *::before,
+:root[data-reduce-motion] *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  scroll-behavior: auto !important;
+  transition-duration: 0.001ms !important;
+}

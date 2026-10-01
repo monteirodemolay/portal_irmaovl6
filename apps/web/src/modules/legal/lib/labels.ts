@@ -16,3 +16,11 @@ export const IMPACT_LABELS: Record<LegalDocumentImpact, string> = {
   medio: 'Impacto médio',
   alto: 'Impacto alto',
 };
+
+
+export function getLegalClassificationLabel(
+  versao: string,
+  classificacao: LegalDocumentClassification,
+): string {
+  return versao === '1.0.0' ? 'Marco Inicial' : CLASSIFICATION_LABELS[classificacao];
+}

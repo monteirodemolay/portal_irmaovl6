@@ -54,3 +54,9 @@ Nenhuma chave, carta, comissão ou arquivo de produção foi modificado durante 
 - TypeScript do aplicativo passou em execução limpa (`tsc --noEmit --incremental false -p apps/web/tsconfig.json`).
 - ESLint passou nos arquivos TypeScript/React alterados; `git diff --check` sem erros.
 - Não executados: build de produção completo, navegação autenticada, teste visual de aparelhos reais, restauração de base Firestore, chamadas reais de upload/exclusão no Wix e gravação física das unidades.
+
+## Atualização de 01/10/2026
+
+Foi adicionada uma zerada administrativa, retomável, para repetir os percursos
+de ensaio. Consulte [o procedimento e seus limites](cripta-zerada-ensaios.md).
+A zerada não remove os bloqueios da liberação definitiva nem da limpeza anual.

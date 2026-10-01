@@ -1,3 +1,4 @@
+import { criptaRoute } from '@/modules/cripta/lib/cripta-route';
 import { randomUUID } from 'node:crypto';
 import {
   MAX_LETTERS,
@@ -21,7 +22,7 @@ export const runtime = 'nodejs';
 export const maxDuration = 60;
 const collection = () => getAdminFirestore().collection('criptaOnlineCapsulesV1');
 
-export async function GET() {
+export const GET = criptaRoute(async function GET() {
   const session = await activeCriptaSession();
   if (!session) return NextResponse.json({ error: 'Acesso negado.' }, { status: 403 });
   const docs = await collection().where('uid', '==', session.user.id).get();
@@ -40,9 +41,9 @@ export async function GET() {
     },
     { headers: { 'Cache-Control': 'no-store' } },
   );
-}
+});
 
-export async function POST(request: Request) {
+export const POST = criptaRoute(async function POST(request: Request) {
   const session = await activeCriptaSession();
   if (!session || request.headers.get('origin') !== new URL(request.url).origin)
     return NextResponse.json({ error: 'Acesso negado.' }, { status: 403 });
@@ -151,4 +152,4 @@ export async function POST(request: Request) {
       }
     }
   }
-}
+});

@@ -1,3 +1,4 @@
+import { withCriptaOperation } from '@/modules/cripta/lib/reset-control';
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
@@ -5,6 +6,8 @@ import { randomUUID } from 'node:crypto';
 import { createServerContainer, getAdminFirestore } from '@vl6/infra';
 import { requirePagePermission } from '@/lib/auth/require-permission';
 import { canAccessCriptaPilot } from '@/modules/cripta/lib/early-access';
+
+export const maxDuration = 300;
 
 export const metadata = {
   title: 'Abertura individual | Cripta VL6',
@@ -16,34 +19,39 @@ async function registerEvent(data: FormData) {
   const session = await requirePagePermission('tenant:manage');
   if (!canAccessCriptaPilot(session.user.email)) notFound();
   const tenantId = session.authContext.tenantId;
-  const memberId = String(data.get('memberId') ?? '');
-  const reason = String(data.get('reason') ?? '');
-  const minutes = String(data.get('minutes') ?? '').trim();
-  const reference = String(data.get('reference') ?? '').trim();
-  if (
-    !['falecimento', 'desligamento'].includes(reason) ||
-    minutes.length < 5 ||
-    minutes.length > 160 ||
-    reference.length < 5 ||
-    reference.length > 160
-  ) {
-    redirect('/cripta-administracao/abertura-individual?erro=campos');
-  }
-  const member = await createServerContainer().repositories.member.findById(memberId);
-  if (!member || member.tenantId !== tenantId)
-    redirect('/cripta-administracao/abertura-individual?erro=irmao');
-  const event = {
-    tenantId,
-    memberId,
-    memberName: member.nomeCompleto,
-    reason,
-    minutes,
-    reference,
-    status: 'registrado',
-    at: new Date().toISOString(),
-    operatorId: session.user.id,
-  };
-  await getAdminFirestore().collection('criptaIndividualEventsV2').doc(randomUUID()).create(event);
+  await withCriptaOperation(tenantId, async () => {
+    const memberId = String(data.get('memberId') ?? '');
+    const reason = String(data.get('reason') ?? '');
+    const minutes = String(data.get('minutes') ?? '').trim();
+    const reference = String(data.get('reference') ?? '').trim();
+    if (
+      !['falecimento', 'desligamento'].includes(reason) ||
+      minutes.length < 5 ||
+      minutes.length > 160 ||
+      reference.length < 5 ||
+      reference.length > 160
+    ) {
+      redirect('/cripta-administracao/abertura-individual?erro=campos');
+    }
+    const member = await createServerContainer().repositories.member.findById(memberId);
+    if (!member || member.tenantId !== tenantId)
+      redirect('/cripta-administracao/abertura-individual?erro=irmao');
+    const event = {
+      tenantId,
+      memberId,
+      memberName: member.nomeCompleto,
+      reason,
+      minutes,
+      reference,
+      status: 'registrado',
+      at: new Date().toISOString(),
+      operatorId: session.user.id,
+    };
+    await getAdminFirestore()
+      .collection('criptaIndividualEventsV2')
+      .doc(randomUUID())
+      .create(event);
+  });
   revalidatePath('/cripta-administracao/abertura-individual');
   redirect('/cripta-administracao/abertura-individual?registro=feito');
 }

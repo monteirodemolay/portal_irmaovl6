@@ -1,3 +1,4 @@
+import { criptaRoute } from '@/modules/cripta/lib/cripta-route';
 import { randomUUID } from 'node:crypto';
 import { hasPermission } from '@vl6/domain';
 import { NextResponse } from 'next/server';
@@ -30,10 +31,10 @@ async function pilotSession() {
   return session;
 }
 
-export async function GET() {
+export const GET = criptaRoute(async function GET() {
   const session = await pilotSession();
   if (!session) return NextResponse.json({ error: 'Acesso negado.' }, { status: 403 });
-  const window = await readWindow();
+  const window = await readWindow(session.authContext.tenantId);
   return NextResponse.json(
     {
       items: await listCapsules(session.user.id),
@@ -41,15 +42,15 @@ export async function GET() {
     },
     { headers: { 'Cache-Control': 'no-store' } },
   );
-}
+});
 
-export async function POST(request: Request) {
+export const POST = criptaRoute(async function POST(request: Request) {
   const session = await pilotSession();
   if (!session) return NextResponse.json({ error: 'Acesso negado.' }, { status: 403 });
   if (request.headers.get('origin') !== new URL(request.url).origin) {
     return NextResponse.json({ error: 'Origem inválida.' }, { status: 403 });
   }
-  const window = await readWindow();
+  const window = await readWindow(session.authContext.tenantId);
   if (!canAcceptRealContent(process.env.CRIPTA_REAL_CONTENT_ENABLED, window, new Date())) {
     return NextResponse.json({ error: 'Cripta fechada para depósitos reais.' }, { status: 423 });
   }
@@ -92,4 +93,4 @@ export async function POST(request: Request) {
     if (id) await cancelReservation(session.user.id, id);
     return NextResponse.json({ error: 'Falha ao armazenar pacote cifrado.' }, { status: 502 });
   }
-}
+});

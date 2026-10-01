@@ -1,3 +1,4 @@
+import { criptaRoute } from '@/modules/cripta/lib/cripta-route';
 import { hasPermission } from '@vl6/domain';
 import { NextResponse } from 'next/server';
 import { getCurrentSession } from '@/lib/auth/get-current-session';
@@ -7,8 +8,12 @@ import { canAcceptRealContent } from '@/modules/cripta/lib/operation-policy';
 import { downloadPrivateCiphertext } from '@/modules/cripta/lib/wix-private-files';
 
 export const runtime = 'nodejs';
+export const maxDuration = 300;
 
-export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
+export const GET = criptaRoute(async function GET(
+  _request: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
   const session = await getCurrentSession();
   if (
     !session ||
@@ -18,7 +23,11 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
     return NextResponse.json({ error: 'Acesso negado.' }, { status: 403 });
   }
   if (
-    !canAcceptRealContent(process.env.CRIPTA_REAL_CONTENT_ENABLED, await readWindow(), new Date())
+    !canAcceptRealContent(
+      process.env.CRIPTA_REAL_CONTENT_ENABLED,
+      await readWindow(session.authContext.tenantId),
+      new Date(),
+    )
   ) {
     return NextResponse.json({ error: 'Cripta fechada.' }, { status: 423 });
   }
@@ -44,4 +53,4 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
       { status: 502 },
     );
   }
-}
+});

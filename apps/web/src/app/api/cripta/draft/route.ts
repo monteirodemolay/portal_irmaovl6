@@ -1,3 +1,4 @@
+import { criptaRoute } from '@/modules/cripta/lib/cripta-route';
 import { randomUUID } from 'node:crypto';
 import { getAdminFirestore } from '@vl6/infra';
 import { NextResponse } from 'next/server';
@@ -29,7 +30,7 @@ async function recordCleanup(fileId: string, tenantId: string, uid: string) {
   });
 }
 
-export async function GET() {
+export const GET = criptaRoute(async function GET() {
   const session = await activeCriptaSession();
   if (!session) return NextResponse.json({ error: 'Acesso negado.' }, { status: 403 });
   const tenantId = session.authContext.tenantId;
@@ -52,9 +53,9 @@ export async function GET() {
       { status: 502 },
     );
   }
-}
+});
 
-export async function PUT(request: Request) {
+export const PUT = criptaRoute(async function PUT(request: Request) {
   const session = await activeCriptaSession();
   if (!session || request.headers.get('origin') !== new URL(request.url).origin) {
     return NextResponse.json({ error: 'Acesso negado.' }, { status: 403 });
@@ -150,9 +151,9 @@ export async function PUT(request: Request) {
       { status: 502 },
     );
   }
-}
+});
 
-export async function DELETE(request: Request) {
+export const DELETE = criptaRoute(async function DELETE(request: Request) {
   const session = await activeCriptaSession();
   if (!session || request.headers.get('origin') !== new URL(request.url).origin) {
     return NextResponse.json({ error: 'Acesso negado.' }, { status: 403 });
@@ -201,4 +202,4 @@ export async function DELETE(request: Request) {
       { status: 409 },
     );
   }
-}
+});

@@ -11,6 +11,8 @@ import { PhysicalUnitCheck } from '../physical-unit-check';
 import { ExportPanel } from '../export-panel';
 import Link from 'next/link';
 
+export const maxDuration = 300;
+
 export const metadata = { title: 'Lacração | Cripta VL6', robots: { index: false, follow: false } };
 
 export default async function Page() {
@@ -72,22 +74,47 @@ export default async function Page() {
           o fechamento e o recibo. O conteúdo das cartas não aparece nesta tela.
         </p>
       </header>
-      <nav aria-label="Etapas da sessão" className="grid gap-3 sm:grid-cols-3">
+      <p className="text-sm text-[#8a9bb0]">
+        Esta tela cobre as etapas 1, 3, 4, 5, 6 e 7 do ciclo anual. As etapas 2 (abrir o
+        recebimento) e 8 (restaurar rascunhos) ficam na tela{' '}
+        <Link href="/cripta-administracao/reabertura" className="font-semibold text-[#123c69]">
+          Reabertura
+        </Link>
+        .
+      </p>
+      <nav
+        aria-label="Etapas nesta tela, na ordem em que devem ser feitas"
+        className="grid gap-3 sm:grid-cols-3"
+      >
         <div className="rounded-xl border border-[#dbcda9] bg-white p-4">
           <strong>1 · Comissão</strong>
           <p className="mt-1 text-sm text-[#536074]">
-            Nomear os guardiões e prever a próxima data.
+            Antes de abrir: nomear os guardiões e prever a próxima data.
           </p>
         </div>
         <div className="rounded-xl border border-[#dbcda9] bg-white p-4">
-          <strong>2 · Recebimento</strong>
+          <strong>3 · Fechamento</strong>
           <p className="mt-1 text-sm text-[#536074]">
-            Acompanhar cartas, rascunhos e irmãos que ainda não participaram.
+            Depois que os irmãos escreveram: fechar o recebimento.
           </p>
         </div>
         <div className="rounded-xl border border-[#dbcda9] bg-white p-4">
-          <strong>3 · Lacração</strong>
-          <p className="mt-1 text-sm text-[#536074]">Fechar a escrita e guardar o recibo na ata.</p>
+          <strong>4 · Lacração</strong>
+          <p className="mt-1 text-sm text-[#536074]">Gerar o recibo do inventário para a ata.</p>
+        </div>
+        <div className="rounded-xl border border-[#dbcda9] bg-white p-4">
+          <strong>5 · Exportação</strong>
+          <p className="mt-1 text-sm text-[#536074]">
+            Baixar o .lacre e copiar para as 3 unidades.
+          </p>
+        </div>
+        <div className="rounded-xl border border-[#dbcda9] bg-white p-4">
+          <strong>6 · Conferência</strong>
+          <p className="mt-1 text-sm text-[#536074]">Ler duas unidades de volta e comparar.</p>
+        </div>
+        <div className="rounded-xl border border-[#dbcda9] bg-white p-4">
+          <strong>7 · Limpeza</strong>
+          <p className="mt-1 text-sm text-[#536074]">Só então apagar do Wix.</p>
         </div>
       </nav>
       <section className="rounded-2xl border border-[#dbcda9] bg-[#fbf8f1] p-6">
@@ -219,6 +246,7 @@ export default async function Page() {
       </section>
       {onlineOpen && (
         <OnlineOpeningControl
+          step="3"
           initiallyOpen={onlineOpen}
           masterName={currentMaster?.member.nomeCompleto ?? ''}
           commissionMemberIds={control?.commissionMemberIds ?? []}
@@ -228,19 +256,7 @@ export default async function Page() {
             .map((member) => ({ id: member.id, name: member.nomeCompleto }))}
         />
       )}
-      <SealPanel initiallyOpen={onlineOpen} />
-      {seal.data()?.status === 'sealed' && (
-        <PhysicalUnitCheck
-          receiptCode={seal.data()!.code as string}
-          totalLetters={seal.data()!.letters as number}
-          inventoryDigest={seal.data()!.inventoryDigest as string}
-          recorded={
-            seal.data()!.physicalCheck?.receiptDigest === seal.data()!.receiptDigest
-              ? seal.data()!.physicalCheck
-              : null
-          }
-        />
-      )}
+      <SealPanel initiallyOpen={onlineOpen} step="4 · lacração" />
       {seal.data()?.status === 'sealed' && (
         <ExportPanel
           receiptCode={seal.data()!.code as string}
@@ -250,6 +266,18 @@ export default async function Page() {
           cleanupComplete={
             seal.data()!.cleanup?.receiptCode === seal.data()!.code &&
             seal.data()!.cleanup?.complete === true
+          }
+        />
+      )}
+      {seal.data()?.status === 'sealed' && (
+        <PhysicalUnitCheck
+          receiptCode={seal.data()!.code as string}
+          totalLetters={seal.data()!.letters as number}
+          inventoryDigest={seal.data()!.inventoryDigest as string}
+          recorded={
+            seal.data()!.physicalCheck?.receiptDigest === seal.data()!.receiptDigest
+              ? seal.data()!.physicalCheck
+              : null
           }
         />
       )}

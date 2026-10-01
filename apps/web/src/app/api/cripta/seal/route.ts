@@ -1,3 +1,4 @@
+import { criptaRoute } from '@/modules/cripta/lib/cripta-route';
 import { randomBytes } from 'node:crypto';
 import { getAdminFirestore } from '@vl6/infra';
 import { NextResponse } from 'next/server';
@@ -23,7 +24,7 @@ async function access(request?: Request) {
   return session;
 }
 
-export async function GET() {
+export const GET = criptaRoute(async function GET() {
   const session = await access();
   if (!session) return NextResponse.json({ error: 'Acesso negado.' }, { status: 403 });
   const snap = await sealRef(session.authContext.tenantId).get();
@@ -51,9 +52,9 @@ export async function GET() {
       { headers },
     );
   }
-}
+});
 
-export async function POST(request: Request) {
+export const POST = criptaRoute(async function POST(request: Request) {
   const session = await access(request);
   if (!session) return NextResponse.json({ error: 'Acesso negado.' }, { status: 403 });
   const body = (await request.json().catch(() => null)) as { minutes?: unknown } | null;
@@ -151,4 +152,4 @@ export async function POST(request: Request) {
       { status: 409 },
     );
   }
-}
+});
