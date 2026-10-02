@@ -4,7 +4,6 @@ import { createServerContainer, getAdminFirestore } from '@vl6/infra';
 import { hasPermission, resolveHeroPhoto } from '@vl6/domain';
 import {
   Archive,
-  CalendarDays,
   EyeOff,
   FileArchive,
   FileText,
@@ -39,7 +38,12 @@ export default async function Page() {
   );
   if (member?.situacao !== 'ativo') notFound();
   const db = getAdminFirestore();
-  const [open, letters, draft, governance, openingDoc] = await Promise.all([
+  // A próxima data de abertura NÃO é buscada nem exibida aqui, de propósito: é informação
+  // operacional da Comissão, anunciada em sessão — publicá-la com antecedência pra toda a
+  // Loja (agora que o acesso é de todo Irmão Ativo) daria a quem tivesse más intenções o
+  // calendário exato de quando atacar. O irmão só vê uma data quando ela já é fato consumado:
+  // o prazo de FECHAMENTO, uma vez que a escrita já está aberta (closesAt, abaixo).
+  const [open, letters, draft, openingDoc] = await Promise.all([
     isOnlineOpen(tenantId),
     db.collection('criptaOnlineCapsulesV1').where('uid', '==', session.user.id).get(),
     db
@@ -48,14 +52,12 @@ export default async function Page() {
       .collection('users')
       .doc(session.user.id)
       .get(),
-    db.collection('criptaGovernanceV1').doc(tenantId).get(),
     openingRef(tenantId).get(),
   ]);
   const count = letters.docs.filter(
     (doc) => doc.data().tenantId === tenantId && doc.data().status === 'ready',
   ).length;
   const hasDraft = draft.exists && draft.data()?.status !== 'deleted';
-  const nextOpeningDate = governance.data()?.nextOpeningDate as string | undefined;
   const closesAt = openingDoc.data()?.closesAt as string | undefined;
   const daysLeft =
     open && closesAt
@@ -133,9 +135,7 @@ export default async function Page() {
                 ? daysLeft
                   ? `Encerra em ${daysLeft} dia${daysLeft === 1 ? '' : 's'}`
                   : null
-                : nextOpeningDate
-                  ? `Próxima abertura: ${new Date(`${nextOpeningDate}T12:00:00Z`).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}`
-                  : 'Próxima abertura: a definir pela Comissão'}
+                : 'A Comissão avisa em sessão quando a próxima abertura for marcada'}
             </span>
           </div>
         }
@@ -161,16 +161,10 @@ export default async function Page() {
           small
         />
         <StatCard
-          icon={<CalendarDays size={16} />}
-          label="Próxima abertura prevista"
-          value={
-            nextOpeningDate
-              ? new Date(`${nextOpeningDate}T12:00:00Z`).toLocaleDateString('pt-BR', {
-                  timeZone: 'UTC',
-                })
-              : 'A definir'
-          }
-          hint="Pode ser remarcada pela Comissão, com ata"
+          icon={<ShieldCheck size={16} />}
+          label="Guardiões da Cripta"
+          value="5"
+          hint="Pelo menos 3 precisam se reunir para retirar um arquivo lacrado"
           small
         />
       </section>
