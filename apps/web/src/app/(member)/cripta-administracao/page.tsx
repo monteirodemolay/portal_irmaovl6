@@ -12,6 +12,7 @@ import { OnlineOpeningControl } from './online-opening-control';
 import { SealPanel } from './seal-panel';
 import { ExportPanel } from './export-panel';
 import { PhysicalUnitCheck } from './physical-unit-check';
+import { CleanupPanel } from './cleanup-panel';
 import { RestorePanel } from './restore-panel';
 import { ResetPanel } from './reset-panel';
 
@@ -179,10 +180,6 @@ export default async function Page() {
             receiptCode={sealData.code as string}
             totalLetters={sealData.letters as number}
             inventoryDigest={sealData.inventoryDigest as string}
-            physicalCheckOk={sealData.physicalCheck?.receiptDigest === sealData.receiptDigest}
-            cleanupComplete={
-              sealData.cleanup?.receiptCode === sealData.code && sealData.cleanup?.complete === true
-            }
           />
           <PhysicalUnitCheck
             receiptCode={sealData.code as string}
@@ -192,6 +189,12 @@ export default async function Page() {
               sealData.physicalCheck?.receiptDigest === sealData.receiptDigest
                 ? sealData.physicalCheck
                 : null
+            }
+          />
+          <CleanupPanel
+            physicalCheckOk={sealData.physicalCheck?.receiptDigest === sealData.receiptDigest}
+            cleanupComplete={
+              sealData.cleanup?.receiptCode === sealData.code && sealData.cleanup?.complete === true
             }
           />
         </>
