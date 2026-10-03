@@ -391,6 +391,48 @@ function jsonArrayOrCurrentAdmin<T>(formData: FormData, key: string, current: T[
   }
 }
 
+/** Mesmo dia (calendário) para uma data maçônica não conta como mudança — só o dia importa, nunca a hora (essas datas nascem sempre à meia-noite). */
+function masonicDateChanged(previous: Date | null, next: Date): boolean {
+  if (!previous) return false;
+  return (
+    previous.getUTCFullYear() !== next.getUTCFullYear() ||
+    previous.getUTCMonth() !== next.getUTCMonth() ||
+    previous.getUTCDate() !== next.getUTCDate()
+  );
+}
+
+/**
+ * Tira o Irmão da sessão do dia ANTIGO quando uma data maçônica é
+ * corrigida (ver `RemoveMemberFromCeremonyArchiveItemUseCase`) — mesmo
+ * tratamento silencioso/defensivo dos `CreateXArchiveItemUseCase` vizinhos:
+ * nunca falha a edição do Irmão por causa deste efeito colateral.
+ */
+async function removeFromOldCeremonySilently(
+  container: ServerContainer,
+  authContext: CurrentSession['authContext'],
+  tipo: 'iniciacao' | 'elevacao' | 'exaltacao',
+  previousDate: Date,
+  memberId: string,
+): Promise<void> {
+  try {
+    await container.useCases.removeMemberFromCeremonyArchiveItem.execute(authContext, {
+      memberId,
+      tipo,
+      previousDate,
+    });
+  } catch (error) {
+    logger.error('Falha ao remover Irmão da sessão antiga no Acervo VL6', {
+      route: 'updateMemberIdentityAction',
+      memberId,
+      tipo,
+      ...errorToLogContext(error),
+    });
+    Sentry.captureException(error, {
+      tags: { route: `updateMemberIdentityAction:acervoRemover${tipo}` },
+    });
+  }
+}
+
 /**
  * Edição administrativa dos campos também editáveis pelo próprio Irmão —
  * mesmo subconjunto de `updateMyProfileAction`, usada pelos cartões
@@ -611,7 +653,22 @@ export async function updateMemberIdentityAction(
   // chamar de novo numa edição que não mudou a data é inofensivo. Mesmo
   // tratamento defensivo — nunca falha a edição do Irmão por causa deste
   // efeito colateral.
+  //
+  // Quando a data mudou de um valor antigo pra outro (correção de data
+  // errada, não primeiro preenchimento), o Irmão primeiro sai da sessão do
+  // dia ANTIGO (`RemoveMemberFromCeremonyArchiveItemUseCase`) — sem isso
+  // ele ficava "esquecido" para sempre como colega de cerimônia de quem
+  // realmente foi iniciado/elevado/exaltado naquele dia errado.
   if (result.value.dataIniciacao) {
+    if (masonicDateChanged(current.dataIniciacao, result.value.dataIniciacao)) {
+      await removeFromOldCeremonySilently(
+        container,
+        session.authContext,
+        'iniciacao',
+        current.dataIniciacao!,
+        result.value.id,
+      );
+    }
     try {
       await container.useCases.createInitiationArchiveItem.execute(session.authContext, {
         memberId: result.value.id,
@@ -630,6 +687,15 @@ export async function updateMemberIdentityAction(
     }
   }
   if (result.value.dataElevacao) {
+    if (masonicDateChanged(current.dataElevacao, result.value.dataElevacao)) {
+      await removeFromOldCeremonySilently(
+        container,
+        session.authContext,
+        'elevacao',
+        current.dataElevacao!,
+        result.value.id,
+      );
+    }
     try {
       await container.useCases.createElevationArchiveItem.execute(session.authContext, {
         memberId: result.value.id,
@@ -648,6 +714,15 @@ export async function updateMemberIdentityAction(
     }
   }
   if (result.value.dataExaltacao) {
+    if (masonicDateChanged(current.dataExaltacao, result.value.dataExaltacao)) {
+      await removeFromOldCeremonySilently(
+        container,
+        session.authContext,
+        'exaltacao',
+        current.dataExaltacao!,
+        result.value.id,
+      );
+    }
     try {
       await container.useCases.createExaltationArchiveItem.execute(session.authContext, {
         memberId: result.value.id,

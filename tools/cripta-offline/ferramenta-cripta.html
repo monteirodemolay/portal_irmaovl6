@@ -1,0 +1,400 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ferramenta da Cripta</title>
+<script src="cripta-core.js"></script>
+<style>
+:root{--fundo:#F4F0E6;--cartao:#FFFDF8;--borda:#DDD5C3;--tinta:#1B1A17;--suave:#5E584C;--azul:#17263F;--ouro:#8A6A1F;--ok:#24552D;--okf:#E3EEDF;--av:#6E4F0E;--avf:#F6E6C8;--er:#8A2A16;--erf:#F5DCD5}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--fundo);color:var(--tinta);font-size:15px;line-height:1.5}
+header{background:var(--azul);color:#FFFDF8;padding:20px 32px;display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
+header h1{margin:0;font-family:Georgia,serif;font-size:28px;font-weight:600}
+header small{color:#D8D2C4}
+nav.abas{display:flex;gap:8px;padding:16px 32px 0;flex-wrap:wrap}
+nav.abas button{min-height:44px;padding:0 18px;border:1px solid var(--borda);border-bottom:0;border-radius:10px 10px 0 0;background:#EDE8DC;font:600 14px system-ui;color:var(--suave);cursor:pointer}
+nav.abas button[aria-selected=true]{background:var(--cartao);color:var(--azul)}
+main{padding:0 32px 48px}
+section.aba{display:none;background:var(--cartao);border:1px solid var(--borda);border-radius:0 14px 14px 14px;padding:28px}
+section.aba.ativa{display:block}
+h2{font-family:Georgia,serif;font-weight:600;font-size:24px;margin:0 0 8px}
+h3{font-size:16px;margin:24px 0 8px}
+p.ajuda{color:var(--suave);margin:0 0 16px;max-width:880px}
+.grade{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin:12px 0}
+label{display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:600;color:#3A362F}
+input[type=text],input[type=number],input[type=url],input[type=password],textarea{min-height:44px;border:1px solid #CFC6B2;border-radius:10px;padding:8px 12px;font:15px system-ui;background:#fff}
+textarea{min-height:110px;font-family:ui-monospace,Menlo,monospace;font-size:13px}
+input[type=file]{font-size:14px}
+button.btn{min-height:44px;padding:0 18px;border-radius:10px;border:1px solid var(--azul);background:var(--azul);color:#FFFDF8;font:600 14px system-ui;cursor:pointer}
+button.btn.sec{background:transparent;color:var(--azul)}
+button.btn:disabled{opacity:.5;cursor:not-allowed}
+.linha{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin:12px 0}
+.aviso{padding:12px 16px;border-radius:10px;margin:12px 0}
+.aviso.ok{background:var(--okf);color:var(--ok)}.aviso.av{background:var(--avf);color:var(--av)}.aviso.er{background:var(--erf);color:var(--er)}
+.mono{font-family:ui-monospace,Menlo,monospace}
+table{border-collapse:collapse;width:100%;margin:8px 0;font-size:14px}
+th{text-align:left;font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--suave);border-bottom:1px solid var(--borda);padding:8px}
+td{border-bottom:1px solid #ECE5D6;padding:8px;vertical-align:top}
+.pd{border:1px solid var(--borda);border-radius:12px;padding:16px;margin:10px 0;background:#fff}
+progress{width:100%;height:12px}
+#log{white-space:pre-wrap;font-family:ui-monospace,Menlo,monospace;font-size:12px;background:#1B1A17;color:#E8E2D4;border-radius:10px;padding:12px;max-height:220px;overflow:auto;margin-top:24px}
+</style>
+</head>
+<body>
+<header>
+<div><h1>Ferramenta da Cripta</h1><small>Funciona sem internet. Abra direto do pen drive ou do computador da Comissão.</small></div>
+<small class="mono" id="versao">formato CRIPTA/2</small>
+</header>
+<nav class="abas" role="tablist">
+<button role="tab" aria-selected="true" data-aba="lacrar">I · Lacrar</button>
+<button role="tab" aria-selected="false" data-aba="verificar">II · Verificar pen drives</button>
+<button role="tab" aria-selected="false" data-aba="abrir">II e III · Abrir</button>
+</nav>
+<main>
+
+<!-- =================== LACRAR =================== -->
+<section class="aba ativa" id="aba-lacrar">
+<h2>Lacração das cartas</h2>
+<p class="ajuda">Esta ferramenta usa um JSON de exportação compatível. O Portal atual ainda não emite esse JSON: use dados de ensaio até a integração da exportação e da recuperação. A ferramenta cifra o pacote, gera um manifesto por unidade e uma parte da chave para o envelope do Termo.</p>
+<div class="grade">
+<label>Arquivo de exportação (.json)<input type="file" id="l-export" accept=".json,application/json"></label>
+<label>Pasta com os anexos (opcional)<input type="file" id="l-pasta" webkitdirectory multiple></label>
+<label>Nome da Loja<input type="text" id="l-loja" value="Loja Verdadeira Luz nº 6"></label>
+</div>
+<div class="grade">
+<label>Quantidade de pen drives<input type="number" id="l-n" min="2" max="9" value="2"></label>
+<label>Partes necessárias para abrir (k)<input type="number" id="l-k" min="2" max="9" value="2"></label>
+<label>Código do recibo do Portal (para ensaio, vazio = gerar)<input type="text" id="l-codigo" placeholder="VL6-AAAAMMDD-XXXXXXXXXXXX" class="mono"></label>
+</div>
+<p class="ajuda">Com k = 2: dois pen drives abrem a Cripta; em caso excepcional, um pen drive mais o envelope do Termo. Os anexos são buscados pelos links da exportação; se o navegador bloquear, selecione a pasta onde eles foram baixados (nomes iguais aos da exportação).</p>
+<div class="linha"><button class="btn" id="l-go">Lacrar agora</button><progress id="l-prog" value="0" max="1" hidden></progress></div>
+<div id="l-saida"></div>
+</section>
+
+<!-- =================== VERIFICAR =================== -->
+<section class="aba" id="aba-verificar">
+<h2>Verificação dos pen drives</h2>
+<p class="ajuda">Para cada pen drive, selecione o arquivo <span class="mono">.lacre</span> e o <span class="mono">manifesto-PD-X.json</span> que estão nele. Basta uma cópia íntegra para não perder a Cripta.</p>
+<div id="v-lista"></div>
+<div class="linha"><button class="btn sec" id="v-add">+ Adicionar pen drive</button><button class="btn" id="v-go">Verificar todos</button></div>
+<div id="v-saida"></div>
+</section>
+
+<!-- =================== ABRIR =================== -->
+<section class="aba" id="aba-abrir">
+<h2>Abertura</h2>
+<p class="ajuda">Usa uma cópia íntegra verificada na aba anterior. As partes da chave dos manifestos carregados entram sozinhas; se faltar alguma, cole abaixo a parte do envelope do Termo. O conteúdo das cartas nunca é exibido nesta tela.</p>
+<label>Partes da chave adicionais (uma por linha)<textarea id="a-partes" placeholder="CRIPTA2:LAC-2026-XXXX:x=200:k=2:..."></textarea></label>
+<div class="linha"><button class="btn" id="a-chave">Reconstruir chave e abrir índice</button></div>
+<div id="a-resumo"></div>
+<div id="a-acoes" hidden>
+<h3>Reabertura geral (Tela 02): liberar no site</h3>
+<p class="ajuda">A importação das cartas recuperadas nas contas do Portal ainda não está integrada. Guarde a cópia restaurada em ambiente autorizado e não informe credenciais nesta tela.</p>
+<div class="grade">
+<label>Endereço do site<input type="url" id="a-site" placeholder="https://www.suasite.com.br"></label>
+<label>Token de integração<input type="password" id="a-token"></label>
+</div>
+<div class="linha"><button class="btn" id="a-liberar" disabled title="Integração ao Portal pendente">Liberação no Portal indisponível</button><button class="btn sec" id="a-pasta">Salvar tudo em uma pasta (cópia de segurança)</button></div>
+<h3>Abertura individual (Tela 03): falecimento ou desligamento</h3>
+<div class="grade"><label>Código pessoal do irmão<input type="text" id="a-irmao" class="mono" placeholder="CRP-26-0417-K7Q3"></label></div>
+<div class="linha"><button class="btn" id="a-ind-salvar">Salvar só as cartas deste irmão</button><button class="btn sec" id="a-ind-relacrar">Relacrar sem as cartas deste irmão</button></div>
+<progress id="a-prog" value="0" max="1" hidden></progress>
+<div id="a-saida"></div>
+</div>
+</section>
+<div id="log" aria-live="polite"></div>
+</main>
+
+<script>
+(function () {
+'use strict';
+const C = window.CriptaCore;
+const $ = (s) => document.querySelector(s);
+const enc = new TextEncoder();
+const log = (m) => { const el = $('#log'); el.textContent += `[${new Date().toLocaleTimeString('pt-BR')}] ${m}\n`; el.scrollTop = el.scrollHeight; };
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const fmtBytes = (n) => n > 1e9 ? (n / 1e9).toFixed(2) + ' GB' : n > 1e6 ? (n / 1e6).toFixed(1) + ' MB' : (n / 1e3).toFixed(0) + ' KB';
+function baixar(nome, dados, tipo) {
+  const blob = dados instanceof Blob ? dados : new Blob(Array.isArray(dados) ? dados : [dados], { type: tipo || 'application/octet-stream' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = nome; document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 4000);
+}
+function leitorDeArquivo(file) { return async (o, n) => new Uint8Array(await file.slice(o, o + n).arrayBuffer()); }
+function aviso(el, tipo, html) { el.insertAdjacentHTML('beforeend', `<div class="aviso ${tipo}">${html}</div>`); }
+
+/* ---------- abas ---------- */
+document.querySelectorAll('nav.abas button').forEach((b) => b.addEventListener('click', () => {
+  document.querySelectorAll('nav.abas button').forEach((x) => x.setAttribute('aria-selected', x === b));
+  document.querySelectorAll('section.aba').forEach((s) => s.classList.toggle('ativa', s.id === 'aba-' + b.dataset.aba));
+}));
+
+/* ================= saída comum de uma lacração ================= */
+async function gerarSaidasDaLacracao({ pac, codigo, loja, n, k, arquivoBlob, saida, origem }) {
+  const ler = leitorDeArquivo(arquivoBlob);
+  log('Calculando impressão digital...');
+  const impressao = await C.impressaoDigital(ler, arquivoBlob.size);
+  const coeficientes = C.gerarCoeficientes(pac.chave, k);
+  const pds = [];
+  for (let i = 0; i < n; i++) {
+    const x = i + 1;
+    pds.push({
+      codigoPenDrive: C.codigoPenDrive(codigo, i), x,
+      parte: await C.codificarParte(codigo, x, k, C.parteDaChave(pac.chave, x, k, coeficientes)),
+    });
+  }
+  const envelope = await C.codificarParte(codigo, C.X_ENVELOPE, k, C.parteDaChave(pac.chave, C.X_ENVELOPE, k, coeficientes));
+  coeficientes.forEach((coeficiente) => coeficiente.fill(0));
+  pac.chave.fill(0); // descarta a chave da memória
+  const nomeArq = `cripta-${codigo}.lacre`;
+  const base = {
+    formato: C.FORMATO, codigoLacracao: codigo, loja, arquivo: nomeArq, tamanho: arquivoBlob.size, impressaoDigital: impressao,
+    ...(pac.cabecalho.inventoryDigest ? { inventoryDigest: pac.cabecalho.inventoryDigest } : {}),
+    criadoEm: pac.cabecalho.criadoEm, totalCartas: pac.cabecalho.totalCartas, totalIrmaos: pac.cabecalho.totalIrmaos, totalItens: pac.cabecalho.totalItens,
+    partesNecessarias: k, verificadorChave: pac.cabecalho.chave.verificador, origem: origem || null,
+  };
+  const resumoSite = { ...base, penDrives: pds.map((p) => p.codigoPenDrive) };
+  saida.innerHTML = '';
+  aviso(saida, 'ok', `<strong>Lacração ${esc(codigo)} concluída.</strong> ${base.totalCartas} cartas de ${base.totalIrmaos} irmãos, ${fmtBytes(base.tamanho)}.<br><span class="mono">Impressão digital: ${impressao}</span>`);
+  saida.insertAdjacentHTML('beforeend', `
+    <h3>1. Arquivo lacrado (copiar para TODOS os pen drives)</h3>
+    <div class="linha"><button class="btn" data-b="arq">Baixar ${esc(nomeArq)}</button></div>
+    <h3>2. Manifesto de cada pen drive (um em cada)</h3>
+    <div class="linha">${pds.map((p, i) => `<button class="btn sec" data-b="pd${i}">manifesto-${esc(p.codigoPenDrive)}.json</button>`).join('')}</div>
+    <p class="ajuda">Copie também <span class="mono">ferramenta-cripta.html</span> e <span class="mono">cripta-core.js</span> para cada pen drive.</p>
+    <h3>3. Envelope do Termo (imprimir, lacrar e guardar no cofre)</h3>
+    <div class="linha"><button class="btn sec" data-b="env">Parte da chave do envelope</button><button class="btn sec" data-b="termo">Termo de Lacração (para imprimir)</button></div>
+    <h3>4. Registro no site</h3>
+    <div class="linha"><button class="btn sec" data-b="site">resumo-para-o-site.json</button></div>
+    <div class="aviso av">Depois de gravar e conferir as cópias (aba II), registre o resumo no site e só então execute a exclusão dos dados temporários.</div>`);
+  const acoes = {
+    arq: () => baixar(nomeArq, arquivoBlob),
+    env: () => baixar(`envelope-${codigo}.txt`, `ENVELOPE DO TERMO DE LACRAÇÃO ${codigo}\nNão abrir, salvo por ato do Venerável Mestre na reabertura excepcional.\n\n${envelope}\n`, 'text/plain'),
+    termo: () => baixar(`termo-${codigo}.html`, gerarTermo(base, pds), 'text/html'),
+    site: () => baixar(`resumo-para-o-site-${codigo}.json`, JSON.stringify(resumoSite, null, 2), 'application/json'),
+  };
+  pds.forEach((p, i) => { acoes['pd' + i] = () => baixar(`manifesto-${p.codigoPenDrive}.json`, JSON.stringify({ ...base, codigoPenDrive: p.codigoPenDrive, parteDaChave: p.parte }, null, 2), 'application/json'); });
+  saida.querySelectorAll('[data-b]').forEach((b) => b.addEventListener('click', acoes[b.dataset.b]));
+  log(`Lacração ${codigo} pronta.`);
+}
+
+function gerarTermo(base, pds) {
+  const d = new Date(base.criadoEm);
+  const linhas = ['Venerável Mestre', 'Presidente da Comissão', 'Membro da Comissão', 'Membro da Comissão', ...pds.map((p) => `Guardião ${p.codigoPenDrive}`)];
+  return `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Termo ${esc(base.codigoLacracao)}</title>
+<style>body{font-family:Georgia,serif;max-width:780px;margin:40px auto;padding:0 24px;color:#111;line-height:1.6}h1{text-align:center;font-size:24px}
+.c{text-align:center;font-family:monospace;font-size:13px}table{width:100%;border-collapse:collapse;font-size:14px}td,th{border:1px solid #999;padding:6px 8px;text-align:left}
+.ass{display:grid;grid-template-columns:1fr 1fr;gap:48px 40px;margin-top:56px}.ass div{border-top:1px solid #111;padding-top:4px;text-align:center;font-size:13px}@media print{button{display:none}}</style></head><body>
+<button onclick="print()">Imprimir</button>
+<h1>Termo de Lacração da Cripta</h1>
+<p class="c">${esc(base.loja)}<br>Código ${esc(base.codigoLacracao)}<br>Impressão digital Cripta (SHA-256 por blocos) ${esc(base.impressaoDigital)}</p>
+<p>Aos ${d.getDate()} dias do mês de ${d.toLocaleString('pt-BR', { month: 'long' })} de ${d.getFullYear()}, a ferramenta gerou o arquivo único <em>${esc(base.arquivo)}</em> (${fmtBytes(base.tamanho)}), cifrado com AES-256, para ${base.totalCartas} cartas de ${base.totalIrmaos} irmãos. São necessárias ${base.partesNecessarias} partes para a abertura. O registro da gravação, conferência independente das unidades, guarda do envelope e assinaturas deve ser completado pelos responsáveis depois dos respectivos atos.</p>
+<table><tr><th>Pen drive</th><th>Guardião</th><th>Conferido</th></tr>${pds.map((p) => `<tr><td style="font-family:monospace">${esc(p.codigoPenDrive)}</td><td>&nbsp;</td><td>&nbsp;</td></tr>`).join('')}</table>
+<p>A exclusão dos dados temporários depende da recuperação efetiva de amostra autorizada, da conferência das unidades e de decisão registrada separadamente. Este termo não atesta exclusão.</p>
+<div class="ass">${linhas.map((l) => `<div>${esc(l)}</div>`).join('')}</div>
+</body></html>`;
+}
+
+/* ================= I · LACRAR ================= */
+$('#l-go').addEventListener('click', async () => {
+  const saida = $('#l-saida'); saida.innerHTML = '';
+  const fExp = $('#l-export').files[0];
+  if (!fExp) return aviso(saida, 'er', 'Selecione o arquivo de exportação.');
+  const n = +$('#l-n').value, k = +$('#l-k').value;
+  if (k > n + 1) return aviso(saida, 'er', 'O número de partes necessárias não pode passar de pen drives + envelope.');
+  let exp;
+  try { exp = JSON.parse(await fExp.text()); } catch (e) { return aviso(saida, 'er', 'Arquivo de exportação inválido.'); }
+  const pasta = new Map(Array.from($('#l-pasta').files || []).map((f) => [f.name, f]));
+  const codigo = ($('#l-codigo').value.trim() || exp.codigoLacracao || C.gerarCodigoLacracao(new Date().getFullYear())).toUpperCase();
+  const itens = [];
+  for (const c of exp.cartas || []) {
+    const baseMeta = { codigoCarta: c.codigoCarta, codigoIrmao: c.codigoIrmao, membroId: c.membroId, nomeIrmao: c.nomeIrmao, titulo: c.titulo, para: c.para, criadoEm: c.criadoEm };
+    itens.push({ meta: { ...baseMeta, tipo: 'carta', nome: `${c.codigoCarta}.json`, mime: 'application/json' },
+      obterBytes: async () => enc.encode(JSON.stringify({ titulo: c.titulo, para: c.para, texto: c.texto, criadoEm: c.criadoEm })) });
+    for (const a of c.anexos || []) {
+      itens.push({ meta: { ...baseMeta, tipo: 'anexo', anexoId: a.id, nome: a.nome, mime: a.mime, tipoAnexo: a.tipo },
+        obterBytes: async () => {
+          const local = pasta.get(a.arquivo) || pasta.get(a.nome);
+          if (local) return new Uint8Array(await local.arrayBuffer());
+          const r = await fetch(a.url);
+          if (!r.ok) throw new Error(`Não foi possível baixar ${a.nome} (${r.status}). Baixe os anexos e selecione a pasta.`);
+          return new Uint8Array(await r.arrayBuffer());
+        } });
+    }
+  }
+  if (!itens.length) return aviso(saida, 'er', 'A exportação não tem cartas.');
+  const btn = $('#l-go'); btn.disabled = true; const prog = $('#l-prog'); prog.hidden = false;
+  try {
+    log(`Lacrando ${itens.length} itens com código ${codigo}...`);
+    const pac = await C.criarPacote({ codigoLacracao: codigo, loja: $('#l-loja').value, itens, k, nPenDrives: n,
+      inventoryDigest: /^[a-f0-9]{64}$/.test(exp.inventoryDigest) ? exp.inventoryDigest : undefined,
+      aoProgredir: (i, t, m) => { prog.value = i / t; log(`cifrado ${i}/${t}: ${m.codigoCarta} ${m.tipo}`); } });
+    const blob = new Blob(pac.partes, { type: 'application/octet-stream' });
+    await gerarSaidasDaLacracao({ pac, codigo, loja: $('#l-loja').value, n, k, arquivoBlob: blob, saida });
+  } catch (e) { aviso(saida, 'er', esc(e.message)); log('ERRO: ' + e.message); }
+  finally { btn.disabled = false; prog.hidden = true; }
+});
+
+/* ================= II · VERIFICAR ================= */
+const pendrives = [];
+function addPD() {
+  const i = pendrives.length; const div = document.createElement('div'); div.className = 'pd';
+  div.innerHTML = `<strong>Pen drive ${i + 1}</strong><div class="grade"><label>Arquivo .lacre<input type="file" accept=".lacre"></label><label>Manifesto (.json)<input type="file" accept=".json"></label></div><div class="st"></div>`;
+  $('#v-lista').appendChild(div);
+  const [fl, fm] = div.querySelectorAll('input');
+  pendrives.push({ div, fl, fm, estado: null });
+}
+addPD(); addPD(); addPD();
+$('#v-add').addEventListener('click', addPD);
+
+let copiaIntegra = null; // { file, manifesto }
+const manifestos = [];
+$('#v-go').addEventListener('click', async () => {
+  const saida = $('#v-saida'); saida.innerHTML = ''; copiaIntegra = null; manifestos.length = 0;
+  let integros = 0, total = 0, codigoRef = null;
+  for (const p of pendrives) {
+    const st = p.div.querySelector('.st'); st.innerHTML = '';
+    const f = p.fl.files[0], fm = p.fm.files[0];
+    if (!f && !fm) continue;
+    total++;
+    let man = null;
+    try { man = fm ? JSON.parse(await fm.text()) : null; } catch (e) { /* manifesto ilegível */ }
+    if (man) { manifestos.push(man); codigoRef = codigoRef || man.codigoLacracao; }
+    if (!f) { aviso(st, 'er', 'Arquivo .lacre ausente ou ilegível neste pen drive.'); continue; }
+    if (!man) { aviso(st, 'av', 'Manifesto ausente: a cópia será comparada com os manifestos dos outros pen drives.'); }
+    try {
+      log(`Verificando ${f.name} (${fmtBytes(f.size)})...`);
+      const cab = (await C.lerCabecalho(leitorDeArquivo(f), f.size)).cabecalho;
+      const h = await C.impressaoDigital(leitorDeArquivo(f), f.size);
+      p.impressao = h; p.cab = cab; p.man = man;
+      const ref = man || manifestos.find((m) => m.codigoLacracao === cab.codigoLacracao);
+      if (ref && ref.impressaoDigital === h) { integros++; aviso(st, 'ok', `Íntegro. <span class="mono">${esc(cab.codigoLacracao)} · ${h.slice(0, 16)}…</span>`); copiaIntegra = copiaIntegra || { file: f, manifesto: ref }; }
+      else aviso(st, 'er', `Corrompido: impressão digital não confere. <span class="mono">${h.slice(0, 16)}…</span>`);
+    } catch (e) { aviso(st, 'er', 'Falha de leitura: ' + esc(e.message)); }
+  }
+  if (!total) return aviso(saida, 'av', 'Nenhum pen drive selecionado.');
+  if (integros) {
+    aviso(saida, 'ok', `<strong>${integros} de ${total} cópias íntegras.</strong> Abertura possível. Para substituir uma cópia com defeito, grave o arquivo abaixo em um pen drive novo e emita o manifesto dele na aba Abrir (precisa da chave).`);
+    saida.insertAdjacentHTML('beforeend', `<div class="linha"><button class="btn sec" id="v-copia">Baixar nova cópia do arquivo lacrado</button></div>`);
+    $('#v-copia').addEventListener('click', () => baixar(copiaIntegra.manifesto.arquivo || copiaIntegra.file.name, copiaIntegra.file));
+  } else aviso(saida, 'er', '<strong>Nenhuma cópia íntegra.</strong> Não abra nem apague nada; procure outras cópias antes de qualquer decisão.');
+});
+
+/* ================= ABRIR ================= */
+let aberto = null;
+$('#a-chave').addEventListener('click', async () => {
+  const out = $('#a-resumo'); out.innerHTML = ''; $('#a-acoes').hidden = true; aberto = null;
+  if (!copiaIntegra) return aviso(out, 'er', 'Verifique os pen drives na aba II primeiro; é preciso ao menos uma cópia íntegra.');
+  const ref = copiaIntegra.manifesto;
+  const textos = manifestos.map((m) => m.parteDaChave).filter(Boolean).concat($('#a-partes').value.split('\n').map((s) => s.trim()).filter(Boolean));
+  try {
+    const chave = await C.reconstruirChave(textos, ref.codigoLacracao, ref.verificadorChave);
+    const partesValidas = [];
+    for (const texto of textos) {
+      const parte = await C.decodificarParte(texto);
+      if (parte.codigoLacracao !== ref.codigoLacracao) throw new Error('Parte de outra lacração');
+      if (!partesValidas.some((anterior) => anterior.x === parte.x)) partesValidas.push(parte);
+    }
+    const ler = leitorDeArquivo(copiaIntegra.file);
+    aberto = await C.abrirIndice(ler, copiaIntegra.file.size, chave);
+    aberto.chave = chave; aberto.ler = ler;
+    const porIrmao = new Map();
+    for (const e of aberto.indice) { const r = porIrmao.get(e.codigoIrmao) || { nome: e.nomeIrmao, cartas: 0, anexos: 0 }; e.tipo === 'carta' ? r.cartas++ : r.anexos++; porIrmao.set(e.codigoIrmao, r); }
+    aviso(out, 'ok', `<strong>Chave reconstruída.</strong> ${aberto.cabecalho.totalCartas} cartas, ${porIrmao.size} irmãos. O conteúdo não é exibido.`);
+    out.insertAdjacentHTML('beforeend', `<table><tr><th>Código do irmão</th><th>Nome</th><th>Cartas</th><th>Anexos</th></tr>${[...porIrmao].map(([c, r]) => `<tr><td class="mono">${esc(c)}</td><td>${esc(r.nome)}</td><td>${r.cartas}</td><td>${r.anexos}</td></tr>`).join('')}</table>`);
+    const faltam = []; // pen drives cuja parte não foi carregada: permite reemitir manifesto
+    const k = aberto.cabecalho.chave.k, nPD = aberto.cabecalho.chave.partesPenDrive;
+    for (let i = 0; i < nPD; i++) faltam.push({ x: i + 1, codigo: C.codigoPenDrive(ref.codigoLacracao, i) });
+    out.insertAdjacentHTML('beforeend', `<h3>Reemitir manifesto de pen drive substituto</h3><div class="linha">${faltam.map((f) => `<button class="btn sec" data-x="${f.x}" data-c="${esc(f.codigo)}">manifesto-${esc(f.codigo)}.json</button>`).join('')}</div>`);
+    out.querySelectorAll('[data-x]').forEach((b) => b.addEventListener('click', async () => {
+      const parte = await C.codificarParte(ref.codigoLacracao, +b.dataset.x, k, C.interpolarParte(partesValidas.slice(0, k), +b.dataset.x));
+      const base = { ...ref }; delete base.parteDaChave;
+      baixar(`manifesto-${b.dataset.c}.json`, JSON.stringify({ ...base, codigoPenDrive: b.dataset.c, parteDaChave: parte, reemitidoEm: new Date().toISOString() }, null, 2), 'application/json');
+      log(`Manifesto ${b.dataset.c} reemitido. Registre no Termo de Ocorrência.`);
+    }));
+    $('#a-acoes').hidden = false;
+    log('Índice aberto.');
+  } catch (e) { aviso(out, 'er', esc(e.message)); log('ERRO: ' + e.message); }
+});
+
+async function pedirPasta() {
+  if (!window.showDirectoryPicker) throw new Error('Este navegador não grava pastas. Use Google Chrome ou Microsoft Edge.');
+  return window.showDirectoryPicker({ mode: 'readwrite' });
+}
+async function gravar(dir, caminho, bytes) {
+  const partes = caminho.split('/'); let d = dir;
+  for (const p of partes.slice(0, -1)) d = await d.getDirectoryHandle(p, { create: true });
+  const fh = await d.getFileHandle(partes[partes.length - 1], { create: true });
+  const w = await fh.createWritable(); await w.write(bytes); await w.close();
+}
+const nomeSeguro = (s) => String(s).replace(/[\\/:*?"<>|]+/g, '_').slice(0, 120);
+async function salvarItens(entradas) {
+  const dir = await pedirPasta(); const prog = $('#a-prog'); prog.hidden = false;
+  let i = 0;
+  for (const e of entradas) {
+    const bytes = await C.extrairItem(aberto, aberto.ler, e);
+    await gravar(dir, `${nomeSeguro(e.codigoIrmao)}/${nomeSeguro(e.codigoCarta)}/${e.tipo === 'carta' ? 'carta.json' : nomeSeguro(e.nome)}`, bytes);
+    prog.value = ++i / entradas.length;
+  }
+  prog.hidden = true; return i;
+}
+
+$('#a-pasta').addEventListener('click', async () => {
+  try { const n = await salvarItens(aberto.indice); aviso($('#a-saida'), 'ok', `${n} itens salvos na pasta escolhida.`); }
+  catch (e) { aviso($('#a-saida'), 'er', esc(e.message)); }
+});
+
+$('#a-ind-salvar').addEventListener('click', async () => {
+  const cod = $('#a-irmao').value.trim().toUpperCase(); const out = $('#a-saida');
+  const itens = aberto.indice.filter((e) => e.codigoIrmao === cod);
+  if (!itens.length) return aviso(out, 'er', 'Nenhuma carta com este código.');
+  try { const n = await salvarItens(itens); aviso(out, 'ok', `${n} itens de ${esc(cod)} salvos. As demais cartas não foram abertas.`); log(`Abertura individual de ${cod}: ${n} itens.`); }
+  catch (e) { aviso(out, 'er', esc(e.message)); }
+});
+
+$('#a-ind-relacrar').addEventListener('click', async () => {
+  const cod = $('#a-irmao').value.trim().toUpperCase(); const out = $('#a-saida'); out.innerHTML = '';
+  const restantes = aberto.indice.filter((e) => e.codigoIrmao !== cod);
+  if (restantes.length === aberto.indice.length) return aviso(out, 'er', 'Nenhuma carta com este código; nada a retirar.');
+  const antigo = aberto.cabecalho.codigoLacracao;
+  const m = antigo.match(/^(.*?)(?:-R(\d+))?$/); const novo = `${m[1]}-R${(+(m[2] || 0)) + 1}`;
+  const k = aberto.cabecalho.chave.k, n = aberto.cabecalho.chave.partesPenDrive;
+  try {
+    const itens = restantes.map((e) => { const meta = { ...e }; ['id', 'offset', 'iv', 'blocos', 'sha256', 'tamanho'].forEach((c) => delete meta[c]); return { meta, obterBytes: () => C.extrairItem(aberto, aberto.ler, e) }; });
+    log(`Relacrando como ${novo} sem as cartas de ${cod}...`);
+    const pac = await C.criarPacote({ codigoLacracao: novo, loja: aberto.cabecalho.loja, itens, k, nPenDrives: n });
+    await gerarSaidasDaLacracao({ pac, codigo: novo, loja: aberto.cabecalho.loja, n, k, arquivoBlob: new Blob(pac.partes), saida: out, origem: { anterior: antigo, retirado: cod } });
+  } catch (e) { aviso(out, 'er', esc(e.message)); }
+});
+
+$('#a-liberar').addEventListener('click', async () => {
+  const out = $('#a-saida'); out.innerHTML = '';
+  const site = $('#a-site').value.trim().replace(/\/$/, ''); const token = $('#a-token').value.trim();
+  if (!site || !token) return aviso(out, 'er', 'Informe o endereço do site e o token de integração.');
+  const api = (rota, corpo) => fetch(`${site}/_functions/${rota}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token, ...corpo }) })
+    .then(async (r) => { const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.erro || `HTTP ${r.status}`); return j; });
+  const prog = $('#a-prog'); prog.hidden = false; let i = 0, falhas = 0;
+  for (const e of aberto.indice) {
+    try {
+      const bytes = await C.extrairItem(aberto, aberto.ler, e);
+      const base = { codigoLacracao: aberto.cabecalho.codigoLacracao, membroId: e.membroId, codigoIrmao: e.codigoIrmao, codigoCarta: e.codigoCarta, tipo: e.tipo };
+      if (e.tipo === 'carta') {
+        const c = JSON.parse(new TextDecoder().decode(bytes));
+        await api('criptaLiberarCarta', { ...base, titulo: c.titulo, para: c.para, texto: c.texto, criadoEm: c.criadoEm });
+      } else {
+        const { uploadUrl } = await api('criptaUrlUploadLiberado', { ...base, nome: e.nome, mime: e.mime, tamanho: bytes.length });
+        const r = await fetch(`${uploadUrl}?filename=${encodeURIComponent(e.nome)}`, { method: 'PUT', headers: { 'Content-Type': e.mime || 'application/octet-stream' }, body: bytes });
+        if (!r.ok) throw new Error(`upload ${r.status}`);
+        const arq = await r.json();
+        await api('criptaLiberarAnexo', { ...base, nome: e.nome, mime: e.mime, tamanho: bytes.length, arquivo: arq.file || arq });
+      }
+    } catch (err) { falhas++; log(`Falha em ${e.codigoCarta} (${e.tipo}): ${err.message}`); }
+    prog.value = ++i / aberto.indice.length;
+  }
+  prog.hidden = true;
+  aviso(out, falhas ? 'av' : 'ok', `${i - falhas} de ${i} itens liberados.${falhas ? ' Repita para os que falharam; itens já liberados são ignorados pelo site.' : ''}`);
+});
+})();
+</script>
+</body>
+</html>

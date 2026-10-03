@@ -1,8 +1,8 @@
 # Inventário de Dados Pessoais e Auditoria LGPD — Portal do Irmão VL6
 
 > **Status:** rascunho técnico, gerado por auditoria direta do código-fonte (não é peça jurídica).
-> **Versão:** 1.0.0 · **Data:** 22/09/2026 · **Autor:** Auditoria automatizada (5 varreduras paralelas do repositório) + consolidação.
-> **Objetivo:** servir de base factual para a Política de Privacidade, os Termos de Uso e o sistema de versionamento vivo descritos em `docs/legal/` (a construir). Nada aqui deve ser copiado para uma peça jurídica sem revisão de um advogado especialista em Direito Digital/LGPD — este documento aponta *o que o sistema faz*, não *o que ele deveria dizer juridicamente*.
+> **Versão:** 2.2.0 · **Auditoria inicial:** 22/09/2026 · **Revisão:** 30/09/2026 · **Revisão:** 03/10/2026 (ficha da carta, registro de cerimônia e rastreamento das partes dos Guardiões da Cripta) · **Autor:** Auditoria automatizada do repositório + consolidação.
+> **Objetivo:** servir de base factual para a Política de Privacidade, os Termos de Uso e o sistema de versionamento vivo descritos em `docs/legal/` (a construir). Nada aqui deve ser copiado para uma peça jurídica sem revisão de um advogado especialista em Direito Digital/LGPD — este documento aponta _o que o sistema faz_, não _o que ele deveria dizer juridicamente_.
 >
 > Este inventário **não substitui revisão jurídica**. Vários pontos abaixo (bases legais, prazos de retenção, tratamento de dados de menores e de terceiros) exigem validação formal antes de virarem texto contratual.
 
@@ -33,18 +33,19 @@ Achados que mais importam para a Política de Privacidade e os Termos de Uso:
 
 ## 2. Arquitetura de dados (visão geral)
 
-| Camada | Tecnologia | Observação |
-|---|---|---|
-| Autenticação | Firebase Authentication | E-mail/senha + MFA TOTP opcional (self-service); sem OAuth social |
-| Sessão | Cookie `__vl6_session` (HttpOnly, Secure em prod, SameSite=Lax, 5 dias) | Gerado a partir do ID Token via `createSessionCookie` (Admin SDK) |
-| Banco de dados | Firestore (multi-tenant, coleções flat filtradas por `tenantId`) | ~40 coleções: identidade, cadastro, governança, biblioteca, agenda, conteúdo, galeria, acervo, auditoria, notificação, integrações, CMS público, Central VL6, Família e Legado |
-| Automação/agendamento | Rotas `apps/web/src/app/api/cron/*` (Vercel Cron) | **Não há Cloud Functions em produção** (plano Firebase Spark); substituem triggers |
-| Arquivos/mídia | Vercel Blob (`access: public`) | Sem `storage.rules`; controle de acesso via proxy autenticado no Next.js |
-| RBAC | `packages/shared/src/enums/rbac.ts` | Permissões `recurso:ação`; Custom Claims no Firebase Auth (`tenantId`,`roleId`,`permissions`) |
-| Auditoria | Coleção `auditLogs` (append-only) | Snapshot completo antes/depois em ~25 coleções via `withAudit` (Proxy) |
-| Consentimento | Coleção `publicationConsents` (append-only) | Registro formal de aceite/revogação de publicação no Diretório/Central |
-| Backup | `apps/web/src/app/api/cron/daily-backup/route.ts` | Dump diário de ~27 coleções para Vercel Blob, sem expurgo |
-| Observabilidade | Logger estruturado interno + Sentry (condicional a DSN) | Sem analytics/telemetria de produto (nenhum GA/Firebase Analytics/PostHog) |
+| Camada                             | Tecnologia                                                              | Observação                                                                                                                                                                     |
+| ---------------------------------- | ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Autenticação                       | Firebase Authentication                                                 | E-mail/senha + MFA TOTP opcional (self-service); sem OAuth social                                                                                                              |
+| Sessão                             | Cookie `__vl6_session` (HttpOnly, Secure em prod, SameSite=Lax, 5 dias) | Gerado a partir do ID Token via `createSessionCookie` (Admin SDK)                                                                                                              |
+| Banco de dados                     | Firestore (multi-tenant, coleções flat filtradas por `tenantId`)        | ~40 coleções: identidade, cadastro, governança, biblioteca, agenda, conteúdo, galeria, acervo, auditoria, notificação, integrações, CMS público, Central VL6, Família e Legado |
+| Automação/agendamento              | Rotas `apps/web/src/app/api/cron/*` (Vercel Cron)                       | **Não há Cloud Functions em produção** (plano Firebase Spark); substituem triggers                                                                                             |
+| Arquivos/mídia                     | Vercel Blob (`access: public`)                                          | Sem `storage.rules`; controle de acesso via proxy autenticado no Next.js                                                                                                       |
+| Armazenamento temporário da Cripta | Wix Media Manager                                                       | Rascunhos/cartas/anexos durante a janela operacional; cartas novas chegam cifradas pelo navegador e seguem fluxo próprio de retirada/guarda física                             |
+| RBAC                               | `packages/shared/src/enums/rbac.ts`                                     | Permissões `recurso:ação`; Custom Claims no Firebase Auth (`tenantId`,`roleId`,`permissions`)                                                                                  |
+| Auditoria                          | Coleção `auditLogs` (append-only)                                       | Snapshot completo antes/depois em ~25 coleções via `withAudit` (Proxy)                                                                                                         |
+| Consentimento                      | Coleção `publicationConsents` (append-only)                             | Registro formal de aceite/revogação de publicação no Diretório/Central                                                                                                         |
+| Backup                             | `apps/web/src/app/api/cron/daily-backup/route.ts`                       | Dump diário de ~27 coleções para Vercel Blob, sem expurgo                                                                                                                      |
+| Observabilidade                    | Logger estruturado interno + Sentry (condicional a DSN)                 | Sem analytics/telemetria de produto (nenhum GA/Firebase Analytics/PostHog)                                                                                                     |
 
 ---
 
@@ -52,16 +53,16 @@ Achados que mais importam para a Política de Privacidade e os Termos de Uso:
 
 ### 3.1 Identidade e acesso (`users`, Firebase Auth)
 
-| Dado | Origem/coleta | Armazenamento | Quem vê / edita / exclui | Retenção | Finalidade |
-|---|---|---|---|---|---|
-| E-mail | Login, convite, autorreivindicação | Firebase Auth + `users.email` | Próprio usuário (leitura); Admin (`user:manage`) edita/reseta; exclusão só via "excluir minha conta" | Indefinida (soft delete) | Identificação/login |
-| Senha | Login, cadastro, troca | Só Firebase Auth (nunca no Firestore/logs) | Ninguém no backend da aplicação | Até troca/exclusão | Autenticação |
-| Cookie/token de sessão | Login | Cookie `HttpOnly` no navegador + claims no Firebase Auth | Só o navegador do usuário; Admin SDK pode revogar | 5 dias / até logout | Sessão autenticada |
-| `ultimoLogin` | A cada login | `users.ultimoLogin` (Firestore) | Próprio usuário + quem tem `user:read` | Indefinida | Auditoria de atividade/segurança |
-| Custom Claims (`tenantId`,`roleId`,`permissions`) | Criação/alteração de conta | Firebase Auth | Sistema (Rules, middleware) | Enquanto a conta existir | Autorização (RBAC) |
-| Senha temporária (convite/reset admin) | Ação do Admin | Exibida uma única vez em tela; não persistida | O Admin, na hora; repasse manual fora do sistema (risco de processo) | Não retida | Onboarding/reset |
-| MFA (TOTP) | Autoatendimento do Irmão | Firebase Auth | Só o próprio usuário gerencia | Enquanto ativo | Segurança adicional (opcional) |
-| Chaves de API (`apiKeys`) | Admin, painel de integrações | Só `keyHash` (SHA-256) + `keyPrefix`, nunca a chave em texto puro | `tenant:manage` | Até revogação (soft delete) | Integrações externas autenticadas |
+| Dado                                              | Origem/coleta                      | Armazenamento                                                     | Quem vê / edita / exclui                                                                             | Retenção                    | Finalidade                        |
+| ------------------------------------------------- | ---------------------------------- | ----------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- | --------------------------- | --------------------------------- |
+| E-mail                                            | Login, convite, autorreivindicação | Firebase Auth + `users.email`                                     | Próprio usuário (leitura); Admin (`user:manage`) edita/reseta; exclusão só via "excluir minha conta" | Indefinida (soft delete)    | Identificação/login               |
+| Senha                                             | Login, cadastro, troca             | Só Firebase Auth (nunca no Firestore/logs)                        | Ninguém no backend da aplicação                                                                      | Até troca/exclusão          | Autenticação                      |
+| Cookie/token de sessão                            | Login                              | Cookie `HttpOnly` no navegador + claims no Firebase Auth          | Só o navegador do usuário; Admin SDK pode revogar                                                    | 5 dias / até logout         | Sessão autenticada                |
+| `ultimoLogin`                                     | A cada login                       | `users.ultimoLogin` (Firestore)                                   | Próprio usuário + quem tem `user:read`                                                               | Indefinida                  | Auditoria de atividade/segurança  |
+| Custom Claims (`tenantId`,`roleId`,`permissions`) | Criação/alteração de conta         | Firebase Auth                                                     | Sistema (Rules, middleware)                                                                          | Enquanto a conta existir    | Autorização (RBAC)                |
+| Senha temporária (convite/reset admin)            | Ação do Admin                      | Exibida uma única vez em tela; não persistida                     | O Admin, na hora; repasse manual fora do sistema (risco de processo)                                 | Não retida                  | Onboarding/reset                  |
+| MFA (TOTP)                                        | Autoatendimento do Irmão           | Firebase Auth                                                     | Só o próprio usuário gerencia                                                                        | Enquanto ativo              | Segurança adicional (opcional)    |
+| Chaves de API (`apiKeys`)                         | Admin, painel de integrações       | Só `keyHash` (SHA-256) + `keyPrefix`, nunca a chave em texto puro | `tenant:manage`                                                                                      | Até revogação (soft delete) | Integrações externas autenticadas |
 
 ### 3.2 Diretório dos Irmãos / Perfil (`members`)
 
@@ -108,6 +109,10 @@ Camada de visualização/navegação sobre dados já existentes (Acervo, Members
 - `Notification`: canal interno sempre persistido; e-mail/WhatsApp/Telegram/push usam contato já cadastrado em `Member`. **Única coleção do sistema com retenção automática codificada**: arquivada ao expirar e **excluída fisicamente** 7 dias depois (`PurgeExpiredNotificationsUseCase`).
 - Cron `birthday-reminder` varre todos os tenants e cria eventos com o **nome do Irmão aniversariante no título**, visíveis a todo `event:read` da Loja (não só ao próprio Irmão).
 
+### 3.6-A Comentários em Notícias institucionais (`newsComment`)
+
+Qualquer Irmão autenticado (`news:read`) pode comentar uma notícia publicada — texto livre + `autorId`. O comentário nasce `moderado: false` e só fica visível aos demais Irmãos depois que um Administrador com `news:manage` aprova; reprovar é soft delete (nunca aparece). **O nome completo do autor é exibido junto do comentário aprovado**, tanto na página pública da notícia (para todo Irmão autenticado) quanto no painel de moderação do Administrador. Assim que o comentário é criado, todo usuário com `news:manage` recebe uma notificação interna automática contendo o nome do autor e um trecho do texto (até 140 caracteres), para acelerar a moderação — antes o Administrador só via o conteúdo abrindo a notícia manualmente. Não há hard delete do texto do comentário reprovado nem retenção diferenciada da usada pelo restante do conteúdo institucional.
+
 ### 3.7 Storage, Acervo, Biblioteca, Galeria, Downloads, QR Codes
 
 - **Infra real:** Vercel Blob (`access: public`), não Firebase Storage — migração documentada no próprio código. Todo blob fica em URL pública; a única proteção é o UUID do path não ser adivinhável.
@@ -129,18 +134,42 @@ Camada de visualização/navegação sobre dados já existentes (Acervo, Members
 
 ### 3.9 Armazenamento no navegador (cliente)
 
-| Mecanismo | Conteúdo | Duração | Dado pessoal? |
-|---|---|---|---|
-| Cookie `__vl6_session` | Session cookie do Firebase Auth, HttpOnly | 5 dias | Indireto (uid) |
-| `localStorage: vl6-library-cart` | IDs de itens de Biblioteca no carrinho | Até finalizar pedido/limpar navegador | Não diretamente |
-| Cache do Service Worker (PWA) | Shell estático + páginas HTML já visitadas | Até nova versão do app | Possivelmente sim (páginas podem renderizar dado pessoal) |
-| Cache do React Query | Respostas de dados da sessão atual | Em memória, até fechar aba (30s de *stale time*) | Sim, temporariamente |
-| IndexedDB | Nenhum uso direto do Portal (só uso interno do SDK do Firebase) | — | — |
-| Analytics/telemetria de produto | **Nenhuma** (sem GA/Firebase Analytics/PostHog/Mixpanel) | — | — |
+| Mecanismo                        | Conteúdo                                                        | Duração                                          | Dado pessoal?                                             |
+| -------------------------------- | --------------------------------------------------------------- | ------------------------------------------------ | --------------------------------------------------------- |
+| Cookie `__vl6_session`           | Session cookie do Firebase Auth, HttpOnly                       | 5 dias                                           | Indireto (uid)                                            |
+| `localStorage: vl6-library-cart` | IDs de itens de Biblioteca no carrinho                          | Até finalizar pedido/limpar navegador            | Não diretamente                                           |
+| Cache do Service Worker (PWA)    | Shell estático + páginas HTML já visitadas                      | Até nova versão do app                           | Possivelmente sim (páginas podem renderizar dado pessoal) |
+| Cache do React Query             | Respostas de dados da sessão atual                              | Em memória, até fechar aba (30s de _stale time_) | Sim, temporariamente                                      |
+| IndexedDB                        | Nenhum uso direto do Portal (só uso interno do SDK do Firebase) | —                                                | —                                                         |
+| Analytics/telemetria de produto  | **Nenhuma** (sem GA/Firebase Analytics/PostHog/Mixpanel)        | —                                                | —                                                         |
 
 Não há cookies de terceiros, publicidade ou rastreamento entre sites.
 
 ---
+
+### 3.9 Cripta Digital VL6
+
+A Cripta introduz uma categoria própria de tratamento, diferente do Acervo institucional. O módulo trata cartas pessoais, destinatários indicados pelo autor, anexos opcionais (fotos, áudio, vídeo), estados de rascunho/selagem, versões, hashes de integridade, inventário, guardiões e ocorrências administrativas.
+
+- **Conteúdo:** cartas novas são cifradas no navegador antes do envio, por envelope criptográfico da Cripta. O servidor recebe o ciphertext e não mantém a chave privada capaz de abrir as cartas seladas.
+- **Custódia:** a chave privada da Cripta é destinada ao procedimento offline e colegiado dos Guardiões; cartas seladas não são restauradas ao Wix para leitura administrativa.
+- **Armazenamento temporário:** durante a janela operacional, Wix Media Manager recebe conteúdo privado necessário ao rascunho/conferência. Rascunhos podem ser restaurados entre janelas; cartas seladas seguem a guarda externa.
+- **Cópias físicas:** o ciclo prevê duas unidades externas conferidas por manifesto/hash. Essas mídias passam a integrar a cadeia de custódia e exigem procedimento físico próprio.
+- **Metadados administrativos:** Firestore mantém autoria, IDs opacos, estado, timestamps, hashes, inventário e auditoria sem necessidade de copiar o texto da carta para logs.
+- **Aberturas excepcionais:** falecimento, quite-placet ou outra hipótese institucional não autoriza leitura automática; depende de procedimento específico, validação e registro.
+- **Dados de terceiros:** o autor pode inserir informações pessoais de destinatários ou outras pessoas na carta/anexos; a responsabilidade de legitimidade e pertinência é do autor, sem afastar as obrigações da Loja como controladora do ambiente.
+- **Retenção:** o conteúdo segue o ciclo de janela, guarda externa, restauração de rascunhos e entrega. O sistema não deve prometer apagamento físico imediato de mídias ou backups sem comprovação técnica.
+- **Ficha da carta (`criptaLetterRecordsV1`, adicionado 2026-10-03):** ao lado de cada carta selada, um registro em claro com um apelido escolhido pelo próprio autor para reconhecer a carta depois (nunca o conteúdo nem o nome legal do destinatário), o modo de entrega escolhido (privada/sessão em Loja/ambas) e se o autor pediu para reter a entrega — visível e editável só pelo próprio autor, em qualquer reabertura, sem necessidade de justificativa. Histórico de mudanças (quando, não o motivo) é mantido para o próprio autor consultar. Nenhum dado desta ficha é visível à Administração.
+- **Registro de cerimônia (`criptaCryptoV1`/`criptaOnlineOpeningV1`/`criptaSealsV1`, coleções `events`, adicionado 2026-10-03):** cada ato da Inauguração, Abertura, Fechamento e Reabertura (quem presidiu, ata, e — novo — resultado do sorteio dos Guardiões, incluindo o nome de cada Irmão presente e sorteado, e qualquer "sortear de novo") é gravado permanentemente, append-only, para auditoria e para os anais da Loja. É dado de participação em sessão (equivalente a ata), não conteúdo de carta; nunca inclui dado da ficha de nenhum Irmão.
+- **Rastreamento das partes dos Guardiões (`criptaCryptoV1.guardianShares`, adicionado 2026-10-03):** status de cada parte Shamir (`válida`/`comprometida`) por Irmão Guardião, e um motivo em texto livre e opcional preenchido pela Administração ao registrar extravio ou impedimento (ex.: "pen drive extraviado"). **Atenção:** esse campo é texto livre e pode, na prática, acabar registrando motivo de afastamento de um Guardião (ex.: falecimento, problema de saúde) — recomenda-se orientar a Administração a preencher só a categoria operacional (extravio/impedimento), nunca detalhe de saúde, mas o sistema não impede tecnicamente. Cada mudança gera um evento (`parte.comprometida`/`parte.revalidada`), mesmo padrão append-only acima.
+
+### 3.10 Configurações, privacidade e preferências locais
+
+A tela unificada de Configurações passou a concentrar segurança da conta, MFA, visibilidade do perfil, preferências de comunicação, Google Calendar, Termos e Privacidade e personalização visual.
+
+As preferências de aparência/acessibilidade (tema, tamanho do texto, contraste reforçado e redução de animações) são gravadas no `localStorage` do navegador. Quando o usuário escolhe explicitamente tema claro ou escuro, um cookie funcional `theme` pode ser gravado por até um ano para aplicar o tema antes da renderização. Esses valores não são usados para publicidade ou perfilamento.
+
+A mudança de local dos controles de visibilidade do Perfil para Configurações não cria nova categoria de dado nem nova finalidade: apenas centraliza o consentimento/controle já existente em `PublicationSettings`.
 
 ## 4. Dados sensíveis, de terceiros e de menores — pontos de maior atenção
 
@@ -156,21 +185,22 @@ Não há cookies de terceiros, publicidade ou rastreamento entre sites.
 
 ## 5. Bases legais candidatas (a validar com jurídico)
 
-| Categoria de dado | Base legal provável (LGPD art. 7º/11) |
-|---|---|
-| Cadastro civil básico (nome, contato, endereço) | Execução de política institucional por associação / legítimo interesse |
-| Dados de trajetória maçônica e grau | Execução da finalidade da associação — **avaliar se exige consentimento explícito por analogia a dado sensível** |
-| Dados de cônjuge/filhos (lembrete) | Legítimo interesse limitado à finalidade (minimizado a dia/mês) — **validar necessidade de aviso ao titular terceiro** |
-| Dados de menores (paramaçônica, família) | Consentimento específico de responsável legal — **não identificado tecnicamente hoje** |
-| Perfil voluntário / Central VL6 / negócios | Consentimento (opt-in já implementado via `publicationConsents`) |
-| Auditoria e segurança | Cumprimento de obrigação legal / exercício regular de direitos / legítimo interesse |
-| Backup | Legítimo interesse (continuidade de negócio) — **exige prazo de retenção definido** |
+| Categoria de dado                               | Base legal provável (LGPD art. 7º/11)                                                                                  |
+| ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| Cadastro civil básico (nome, contato, endereço) | Execução de política institucional por associação / legítimo interesse                                                 |
+| Dados de trajetória maçônica e grau             | Execução da finalidade da associação — **avaliar se exige consentimento explícito por analogia a dado sensível**       |
+| Dados de cônjuge/filhos (lembrete)              | Legítimo interesse limitado à finalidade (minimizado a dia/mês) — **validar necessidade de aviso ao titular terceiro** |
+| Dados de menores (paramaçônica, família)        | Consentimento específico de responsável legal — **não identificado tecnicamente hoje**                                 |
+| Perfil voluntário / Central VL6 / negócios      | Consentimento (opt-in já implementado via `publicationConsents`)                                                       |
+| Auditoria e segurança                           | Cumprimento de obrigação legal / exercício regular de direitos / legítimo interesse                                    |
+| Backup                                          | Legítimo interesse (continuidade de negócio) — **exige prazo de retenção definido**                                    |
 
 ---
 
 ## 6. Riscos priorizados (segurança + LGPD)
 
 **Altos**
+
 - [R1] `auditLogs` e backups diários retêm dado pessoal sensível indefinidamente, sem expurgo, inclusive após exclusão lógica do dado original.
 - [R2] Dados de cônjuge/filhos expostos a todo o Diretório sem controle de opt-in, apesar de serem dado de terceiro/menor.
 - [R3] Ausência de campo de licenciamento/consentimento de uso de imagem/documento em contribuições ao Acervo e Biblioteca.
@@ -178,6 +208,7 @@ Não há cookies de terceiros, publicidade ou rastreamento entre sites.
 - [R5] Regra do Firestore permite ao próprio Irmão sobrescrever qualquer campo do seu documento `members` (inclusive `situacao`, `grau`, `cim`) via acesso direto ao SDK — falha de integridade, não só de confidencialidade.
 
 **Médios**
+
 - [R6] Rate limiting de login/autorreivindicação é em memória por processo — ineficaz em ambiente serverless com múltiplas instâncias.
 - [R7] Senha mínima de 6 caracteres no fluxo de autorreivindicação de conta.
 - [R8] CNPJ usado para cruzar/expor rede profissional entre Irmãos além da finalidade declarada de "achar colega".
@@ -185,6 +216,7 @@ Não há cookies de terceiros, publicidade ou rastreamento entre sites.
 - [R10] API pública `/api/v1/members` compartilha dados pessoais com integrações externas sem mapeamento formal como transferência a terceiros.
 
 **Baixos / de processo**
+
 - [R11] Senha temporária de convite/reset exibida em texto puro ao Admin, repassada por canal externo ao sistema.
 - [R12] Campos `ip`/`dispositivo` do log de auditoria nunca são preenchidos, apesar de existirem no schema — lacuna de rastreabilidade.
 - [R13] Comentários desatualizados no `firestore.rules` mencionando Cloud Functions inexistentes (risco de confusão em auditorias futuras, não de dados).
@@ -240,4 +272,4 @@ Não há cookies de terceiros, publicidade ou rastreamento entre sites.
 
 ---
 
-*Próximo passo sugerido: usar este inventário como base factual para redigir a Política de Privacidade e os Termos de Uso definitivos (substituindo o conteúdo ilustrativo do mock-up), e para dimensionar o sistema de versionamento/aceite descrito na área "Termos e Privacidade" do Portal.*
+_Próximo passo sugerido: usar este inventário como base factual para redigir a Política de Privacidade e os Termos de Uso definitivos (substituindo o conteúdo ilustrativo do mock-up), e para dimensionar o sistema de versionamento/aceite descrito na área "Termos e Privacidade" do Portal._

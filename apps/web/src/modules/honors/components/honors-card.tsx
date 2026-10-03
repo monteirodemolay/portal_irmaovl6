@@ -12,7 +12,13 @@ import {
 } from '../actions/honor-actions';
 
 function formatDate(date: Date | null): string {
-  return date ? new Intl.DateTimeFormat('pt-BR').format(new Date(date)) : 'data não registrada';
+  // Data de concessão é só calendário (meia-noite UTC, sem hora real) —
+  // sem `timeZone: 'UTC'` aqui (componente client, roda no fuso do
+  // navegador), mostraria o dia anterior pra todo Irmão a oeste de
+  // Greenwich (ex.: Brasil).
+  return date
+    ? new Intl.DateTimeFormat('pt-BR', { timeZone: 'UTC' }).format(new Date(date))
+    : 'data não registrada';
 }
 
 function SubmitButton() {

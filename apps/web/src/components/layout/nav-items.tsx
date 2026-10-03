@@ -19,7 +19,6 @@ import { isAdminPathAllowed, isAdminTier } from '@/lib/auth/is-admin-tier';
 import type { Dictionary } from '@/lib/i18n/get-dictionary';
 import { ADMIN_AREA_TABS, type AdminAreaKey } from './area-tabs';
 import type { AppShellNavFlyout, AppShellNavSection } from './app-shell';
-import { canAccessCriptaPilot } from '@/modules/cripta/lib/early-access';
 
 const ICON_SIZE = 18;
 const ICON_STROKE = 1.75;
@@ -169,16 +168,16 @@ export function buildNavSections(
   role: Role | null,
   dictionary: Dictionary,
   unreadNotificationsCount = 0,
-  userEmail?: string | null,
+  isActiveCriptaMember = false,
 ): AppShellNavSection[] {
   const irmaosFlyout: AppShellNavFlyout = {
     title: 'Irmãos',
     description: 'Diretório e autoatendimento',
     links: [
-      { href: '/irmaos/meu-espaco', label: 'Meu Espaço (editar perfil)' },
+      { href: '/irmaos/meu-espaco', label: 'Meu Perfil (editar dados)' },
       { href: '/irmaos/negocios', label: 'Meus Negócios & Serviços' },
       { href: '/irmaos/galeria-de-honra', label: 'Galeria de Honra' },
-      { href: '/irmaos/meu-espaco?tab=contatos', label: 'Privacidade e contatos' },
+      { href: '/configuracoes#perfil-diretorio', label: 'Privacidade e visibilidade' },
     ],
     full: { href: '/irmaos', label: 'Ver diretório completo' },
     fullPosition: 'first',
@@ -229,6 +228,18 @@ export function buildNavSections(
     });
   }
 
+  const canManageCripta = hasPermission(authContext, 'tenant:manage');
+  if (isActiveCriptaMember || canManageCripta) {
+    const items = [];
+    if (isActiveCriptaMember)
+      items.push({ href: '/cripta', content: navContent(Lock, 'Minhas cartas') });
+    if (canManageCripta) {
+      items.push({ href: '/cripta-administracao', content: navContent(Lock, 'Administração') });
+      items.push({ href: '/cripta-projetor', content: navContent(Lock, 'Projetor') });
+    }
+    sections.push({ title: 'Cripta', items });
+  }
+
   if (isAdminTier(role)) {
     const visibleAdminItems = ADMIN_ITEMS.filter(
       (item) =>
@@ -263,13 +274,6 @@ export function buildNavSections(
             content: navContent(item.icon, dictionary.nav[item.labelKey]),
             flyout: adminAreaFlyouts[item.href],
           })),
-          ...(hasPermission(authContext, 'tenant:manage') && canAccessCriptaPilot(userEmail)
-            ? [
-                { href: '/cripta', content: navContent(Lock, 'Cripta · experiência') },
-                { href: '/cripta-administracao', content: navContent(Lock, 'Cripta · administração') },
-                { href: '/cripta-laboratorio', content: navContent(Lock, 'Cripta · laboratório V1') },
-              ]
-            : []),
         ],
       });
     }

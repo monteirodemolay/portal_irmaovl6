@@ -52,9 +52,7 @@ export function NewsImageGallery({ images, title }: NewsImageGalleryProps) {
       <section className="mx-auto mt-10 max-w-5xl">
         <div className="mb-4 flex items-end justify-between gap-4">
           <div>
-            <p className="text-accent text-xs font-semibold uppercase tracking-[0.18em]">
-              Galeria
-            </p>
+            <p className="text-accent text-xs font-semibold uppercase tracking-[0.18em]">Galeria</p>
             <h2 className="font-display mt-1 text-2xl font-semibold">Fotos da notícia</h2>
           </div>
           <span className="text-muted text-xs">
@@ -69,7 +67,7 @@ export function NewsImageGallery({ images, title }: NewsImageGalleryProps) {
               type="button"
               onClick={() => setActiveIndex(index)}
               className={
-                'group relative overflow-hidden rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ' +
+                'focus-visible:ring-accent group relative overflow-hidden rounded-xl focus-visible:outline-none focus-visible:ring-2 ' +
                 (index === 0 && images.length > 2 ? 'col-span-2 row-span-2' : '')
               }
               aria-label={'Abrir foto ' + (index + 1) + ' de ' + images.length}
@@ -128,7 +126,9 @@ export function NewsImageGallery({ images, title }: NewsImageGalleryProps) {
               className="max-h-[82vh] max-w-full rounded-lg object-contain"
             />
             <div className="mt-3 flex items-center gap-3 text-sm text-white/80">
-              <span>{activeIndex + 1} de {images.length}</span>
+              <span>
+                {activeIndex + 1} de {images.length}
+              </span>
               <span className="hidden sm:inline">Use ← → para navegar e Esc para fechar</span>
             </div>
           </div>
@@ -159,7 +159,9 @@ export function NewsImageGallery({ images, title }: NewsImageGalleryProps) {
                   }}
                   className={
                     'h-14 w-16 shrink-0 overflow-hidden rounded-md border-2 transition-opacity ' +
-                    (index === activeIndex ? 'border-white opacity-100' : 'border-transparent opacity-55 hover:opacity-90')
+                    (index === activeIndex
+                      ? 'border-white opacity-100'
+                      : 'border-transparent opacity-55 hover:opacity-90')
                   }
                   aria-label={'Ir para foto ' + (index + 1)}
                   aria-current={index === activeIndex ? 'true' : undefined}

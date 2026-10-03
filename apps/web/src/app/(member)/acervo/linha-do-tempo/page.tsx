@@ -156,7 +156,7 @@ export default async function ArchiveTimelinePage() {
                       )}
                     </Link>
                     {entry.relatedNews.length > 0 && (
-                      <div className="border-border mt-3 ml-1 border-l pl-4">
+                      <div className="border-border ml-1 mt-3 border-l pl-4">
                         <p className="text-muted mb-2 text-[10px] font-semibold uppercase tracking-wider">
                           Notícias relacionadas a este acontecimento
                         </p>
@@ -167,7 +167,7 @@ export default async function ArchiveTimelinePage() {
                               href={`/noticias/${news.slug}`}
                               className="group block"
                             >
-                              <span className="font-display text-sm font-semibold group-hover:text-accent">
+                              <span className="font-display group-hover:text-accent text-sm font-semibold">
                                 {news.titulo}
                               </span>
                               {news.dataPublicacao && (

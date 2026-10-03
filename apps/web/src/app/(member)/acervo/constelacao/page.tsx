@@ -8,11 +8,7 @@ import { loadConstellationMemories } from '@/modules/archive/lib/constellation-m
 export default async function ArchiveConstellationPage() {
   const session = await requirePagePermission('archiveRelation:read');
   const container = createServerContainer();
-  const initial = await loadConstellationMemories(
-    session.authContext,
-    session.role,
-    container,
-  );
+  const initial = await loadConstellationMemories(session.authContext, session.role, container);
 
   return (
     <div className="flex flex-col gap-6">
@@ -34,9 +30,9 @@ export default async function ArchiveConstellationPage() {
               Você escolhe o tempo. A Constelação encontra as lembranças.
             </h2>
             <p className="mt-4 max-w-2xl text-sm leading-6 text-white/70">
-              Sem montar trilhas ou listas. A experiência cruza automaticamente Eventos,
-              Gestões, itens, fotografias e pessoas identificadas no Acervo VL6 para revelar
-              momentos reais da história da Verdadeira Luz nº 06.
+              Sem montar trilhas ou listas. A experiência cruza automaticamente Eventos, Gestões,
+              itens, fotografias, vídeos e pessoas identificadas no Acervo VL6 para revelar momentos
+              reais da história da Verdadeira Luz nº 06.
             </p>
           </div>
 
@@ -53,8 +49,12 @@ export default async function ArchiveConstellationPage() {
             </div>
             <div className="rounded-xl border border-white/10 bg-white/5 p-3 backdrop-blur-sm">
               <Images className="text-accent" size={17} />
-              <strong className="mt-3 block text-xl">{initial.stats.totalPhotos}</strong>
-              <span className="text-[10px] uppercase tracking-wider text-white/55">fotografias</span>
+              <strong className="mt-3 block text-xl">
+                {initial.stats.totalPhotos + initial.stats.totalVideos}
+              </strong>
+              <span className="text-[10px] uppercase tracking-wider text-white/55">
+                fotos e vídeos
+              </span>
             </div>
           </div>
         </div>

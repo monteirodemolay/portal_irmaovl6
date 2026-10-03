@@ -180,9 +180,15 @@ function WeekItemChip({
 }) {
   const content = (
     <>
-      <span className={cn('h-1.5 w-1.5 shrink-0 rounded-full', CATEGORY_DOT_CLASS[item.category])} />
+      <span
+        className={cn('h-1.5 w-1.5 shrink-0 rounded-full', CATEGORY_DOT_CLASS[item.category])}
+      />
       <span className="text-muted shrink-0">
-        {item.category === 'recesso' ? 'recesso' : item.isInformational ? 'dia' : formatTime(item.inicio)}
+        {item.category === 'recesso'
+          ? 'recesso'
+          : item.isInformational
+            ? 'dia'
+            : formatTime(item.inicio)}
       </span>
       <span className="truncate">{item.titulo}</span>
     </>

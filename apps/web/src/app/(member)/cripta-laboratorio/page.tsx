@@ -1,6 +1,4 @@
 import { requirePagePermission } from '@/lib/auth/require-permission';
-import { canAccessCriptaPilot } from '@/modules/cripta/lib/early-access';
-import { notFound } from 'next/navigation';
 import { CriptaLab } from './cripta-lab';
 
 export const metadata = {
@@ -9,7 +7,6 @@ export const metadata = {
 };
 
 export default async function Page() {
-  const session = await requirePagePermission('tenant:manage');
-  if (!canAccessCriptaPilot(session.user.email)) notFound();
+  await requirePagePermission('tenant:manage');
   return <CriptaLab />;
 }

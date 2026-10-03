@@ -1,3 +1,5 @@
+> **Atualização de leitura (28/09/2026):** os marcos abaixo são o roadmap original e incluem funcionalidades planejadas ou realizadas em momentos diferentes. Para diferenciar código, piloto e operação validada, consultar [13-estado-atual-e-operacao.md](./13-estado-atual-e-operacao.md). Em especial: Constelação e Acervo evoluíram além do MVP; Cripta não deve ser considerada pronta para custódia anual; Firebase permanece integrado mesmo sem Cloud Functions.
+
 # 10. Roadmap por Versões
 
 Critério de corte de cada versão: entregar um conjunto **coeso e usável**

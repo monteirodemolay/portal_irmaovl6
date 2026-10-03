@@ -32,6 +32,18 @@ function endOfDay(date: Date): Date {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate(), 23, 59, 59, 999);
 }
 
+export type CeremonyOrigemField =
+  | 'origemIniciacaoMemberIds'
+  | 'origemElevacaoMemberIds'
+  | 'origemExaltacaoMemberIds';
+
+/** `origem*MemberIds` correspondente a cada tipo de cerimônia — usado por quem precisa do campo sem montar o `find`/`get` inteiro (ex.: remover um Irmão de uma sessão antiga quando a data é corrigida). */
+export const CEREMONY_ORIGEM_FIELD: Record<CeremonyMateKind, CeremonyOrigemField> = {
+  iniciacao: 'origemIniciacaoMemberIds',
+  elevacao: 'origemElevacaoMemberIds',
+  exaltacao: 'origemExaltacaoMemberIds',
+};
+
 const CEREMONIES: {
   tipo: CeremonyMateKind;
   dateField: 'dataIniciacao' | 'dataElevacao' | 'dataExaltacao';
@@ -49,12 +61,12 @@ const CEREMONIES: {
  * com os colegas) e `getMemberCeremonyEventIds` (que só se importa com o
  * `eventId`, mesmo quando o Irmão foi o único participante da sessão).
  */
-async function findCeremonyArchiveItem(
+export async function findCeremonyArchiveItem(
   deps: Pick<GetCeremonyMatesDeps, 'archiveItemRepository' | 'eventRepository'>,
   tenantId: string,
   memberId: string,
   data: Date,
-  origemField: (typeof CEREMONIES)[number]['origemField'],
+  origemField: CeremonyOrigemField,
 ): Promise<{ eventId: string; item: ArchiveItem } | null> {
   const events = await deps.eventRepository.listInRange(tenantId, startOfDay(data), endOfDay(data));
   for (const event of events) {

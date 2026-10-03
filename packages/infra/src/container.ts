@@ -76,6 +76,7 @@ import {
   CreateInitiationArchiveItemUseCase,
   CreateElevationArchiveItemUseCase,
   CreateExaltationArchiveItemUseCase,
+  RemoveMemberFromCeremonyArchiveItemUseCase,
   RegisterMediaAssetUseCase,
   AttachMediaToArchiveItemUseCase,
   SetArchiveItemCoverUseCase,
@@ -829,6 +830,8 @@ export function createServerContainer() {
     }),
     dedupeMemberPositionHistory: new DedupeMemberPositionHistoryUseCase({
       positionHistoryRepository: repositories.memberPositionHistory,
+      boardTermRepository: repositories.boardTerm,
+      clock,
     }),
     backfillMestreInstaladoTitles: new BackfillMestreInstaladoTitlesUseCase({
       positionHistoryRepository: repositories.memberPositionHistory,
@@ -1074,6 +1077,12 @@ export function createServerContainer() {
     createNewsComment: new CreateNewsCommentUseCase({
       newsCommentRepository: repositories.newsComment,
       newsRepository: repositories.news,
+      memberRepository: repositories.member,
+      roleRepository: repositories.role,
+      userRepository: repositories.user,
+      notificationRepository: repositories.notification,
+      notificationPreferenceRepository: repositories.notificationPreference,
+      notificationGateway,
       clock,
       idGenerator,
     }),
@@ -1821,6 +1830,11 @@ export function createServerContainer() {
       tenantRepository: repositories.tenant,
       clock,
       idGenerator,
+    }),
+    removeMemberFromCeremonyArchiveItem: new RemoveMemberFromCeremonyArchiveItemUseCase({
+      archiveItemRepository: repositories.archiveItem,
+      eventRepository: repositories.event,
+      clock,
     }),
     registerMediaAsset: new RegisterMediaAssetUseCase({
       mediaAssetRepository: repositories.mediaAsset,

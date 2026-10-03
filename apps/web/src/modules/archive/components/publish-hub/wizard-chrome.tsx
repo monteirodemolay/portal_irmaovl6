@@ -1,5 +1,5 @@
 import { BRAZIL_TIME_ZONE } from '@vl6/shared';
-import { cn } from '@vl6/ui';
+import { Button, EmptyState, cn } from '@vl6/ui';
 import type { ArchiveMediaCounts } from '@vl6/domain';
 
 export const WIZARD_STEPS = [
@@ -146,6 +146,32 @@ const MEDIA_STAT_ICON: Record<keyof ArchiveMediaCounts, { label: string; classNa
   documento: { label: 'Documentos', className: 'bg-red-50 text-red-600' },
   audio: { label: 'Áudios', className: 'bg-amber-50 text-amber-700' },
 };
+
+/**
+ * Estado de erro dos passos "Organização"/"Revisão"/"Publicação" quando o
+ * `ArchiveItem` do rascunho não carrega (ex.: rascunho excluído entre a
+ * lista de "Continuar rascunho" e o clique, ou merge que já absorveu esse
+ * item em outro). Antes disso a tela travava sem nenhuma saída — voltar
+ * pro passo "Classificação" só reproduzia a mesma falha em silêncio (o
+ * spinner ficava girando pra sempre e "Continuar" seguia liberado),
+ * formando um laço sem saída. Aqui sempre tem um jeito de voltar pro
+ * início do wizard.
+ */
+export function WorkspaceLoadErrorState({ onRestart }: { onRestart: () => void }) {
+  return (
+    <div className="border-border bg-surface rounded-xl border p-8">
+      <EmptyState
+        title="Não foi possível carregar este item."
+        description="O rascunho pode ter sido excluído ou unificado com outro nesse meio-tempo. Volte e escolha o Evento novamente."
+      />
+      <div className="mt-4 flex justify-center">
+        <Button type="button" variant="outline" onClick={onRestart}>
+          ← Voltar para a lista de Eventos
+        </Button>
+      </div>
+    </div>
+  );
+}
 
 /** Faixa com a contagem por tipo de mídia — reaparece em Arquivos, Classificação e Revisão. */
 export function MediaStatsRow({ counts }: { counts: ArchiveMediaCounts }) {

@@ -1,366 +1,1308 @@
 'use client';
 
 import { useEffect, useRef, useState, type ChangeEvent, type DragEvent } from 'react';
-import { decodeLetter, encodeLetter, openCapsule, sealCapsule } from '@/modules/cripta/lib/sealed-capsule';
+import { sealForCripta, type CriptaPublicKey } from '@/modules/cripta/lib/cripta-key';
+import {
+  convertedName,
+  optimizePhoto,
+  optimizeRecording,
+  recorderOptions,
+} from '@/modules/cripta/lib/media-optimizer';
+import letterStyles from './cripta-letter.module.css';
 
-type Section = 'visao' | 'cartas' | 'arquivos' | 'video' | 'audios' | 'destinatarios';
-type DraftFile = { id: string; file: File; kind: 'foto' | 'video' | 'audio'; url: string; letterId: string };
-type Letter = { id: string; title: string; body: string; recipient: string };
+type Kind = 'foto' | 'audio' | 'video';
+type Attachment = { id: string; file: File; kind: Kind; url: string };
+type DeliveryMode = 'privada' | 'sessao' | 'ambas';
+type LetterRecord = {
+  id: string;
+  label: string;
+  deliveryMode: DeliveryMode;
+  status: 'ativa' | 'retida';
+  createdAt: string;
+};
+const DELIVERY_MODE_LABEL: Record<DeliveryMode, string> = {
+  privada: 'Entrega privada à pessoa indicada',
+  sessao: 'Lida em sessão, para todos os Irmãos',
+  ambas: 'Entregue à pessoa e também lida em sessão',
+};
+type StoredDraft = {
+  title: string;
+  recipient: string;
+  body: string;
+  attachments: Array<{ kind: Kind; name: string; type: string; data: string }>;
+};
+type Step = 'inicio' | 'escrever' | 'revisar';
 
-const LIMIT = { foto: 5 * 1024 * 1024, video: 60 * 1024 * 1024, audio: 10 * 1024 * 1024 };
-const MAX_TOTAL = 150 * 1024 * 1024;
-const panels: { id: Section; title: string; description: string }[] = [
-  { id: 'visao', title: 'Visão geral', description: 'O que poderá ser guardado' },
-  { id: 'cartas', title: 'Cartas', description: 'Até 5 cartas escritas aqui' },
-  { id: 'arquivos', title: 'Fotos', description: 'Até 10 fotos por carta' },
-  { id: 'video', title: 'Apresentação', description: 'Um vídeo de até 1 minuto' },
-  { id: 'audios', title: 'Áudios', description: 'Até 2 mensagens de voz' },
-  { id: 'destinatarios', title: 'Destinatários', description: 'Quem recebe cada carta' },
-];
+const LIMIT = { foto: 25 * 1024 * 1024, audio: 10 * 1024 * 1024, video: 60 * 1024 * 1024 };
+const MAX_TOTAL = 2_300_000;
+const size = (bytes: number) => `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+const ONLINE_BYTES = MAX_TOTAL;
 
-const formatSize = (size: number) => `${(size / 1024 / 1024).toFixed(1)} MB`;
+function toBase64(bytes: Uint8Array): string {
+  let result = '';
+  for (let i = 0; i < bytes.length; i += 8192)
+    result += String.fromCharCode(...bytes.subarray(i, i + 8192));
+  return btoa(result);
+}
+
+async function onlinePayload(letter: {
+  title: string;
+  recipient: string;
+  body: string;
+  attachments: Attachment[];
+}): Promise<Uint8Array> {
+  if (letter.attachments.reduce((sum, item) => sum + item.file.size, 0) > ONLINE_BYTES) {
+    throw new Error('Os anexos desta carta devem somar até 2,3 MB depois da conversão.');
+  }
+  const items = await Promise.all(
+    letter.attachments.map(async (item) => ({
+      kind: item.kind,
+      name: item.file.name.slice(0, 120),
+      type: item.file.type,
+      data: toBase64(new Uint8Array(await item.file.arrayBuffer())),
+    })),
+  );
+  const bytes = new TextEncoder().encode(
+    JSON.stringify({
+      format: 'vl6-online-letter-v1',
+      title: letter.title,
+      recipient: letter.recipient,
+      body: letter.body,
+      attachments: items,
+    }),
+  );
+  if (bytes.length > 3_200_000) throw new Error('Carta acima do limite de envio.');
+  return bytes;
+}
 
 export function CriptaExperience() {
-  const [section, setSection] = useState<Section>('visao');
-  const [letters, setLetters] = useState<Letter[]>([]);
+  const [step, setStep] = useState<Step>('inicio');
   const [title, setTitle] = useState('');
+  const [recipient, setRecipient] = useState('');
   const [body, setBody] = useState('');
-  const [letterRecipient, setLetterRecipient] = useState('');
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [selectedLetterId, setSelectedLetterId] = useState<string | null>(null);
-  const [confirmClear, setConfirmClear] = useState(false);
-  const [clearPhrase, setClearPhrase] = useState('');
-  const [files, setFiles] = useState<DraftFile[]>([]);
+  const [label, setLabel] = useState('');
+  const [deliveryMode, setDeliveryMode] = useState<DeliveryMode>('privada');
+  const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [message, setMessage] = useState('');
-  const [exportPassphrase, setExportPassphrase] = useState('');
-  const [importPassphrase, setImportPassphrase] = useState('');
-  const [working, setWorking] = useState(false);
-  const [remoteItems, setRemoteItems] = useState<Array<{ id: string; createdAt: string; bytes: number }>>([]);
-  const [canDeposit, setCanDeposit] = useState(false);
-  const [recording, setRecording] = useState<'video' | 'audio' | null>(null);
+  const [remote, setRemote] = useState<Array<{ id: string; createdAt: string }>>([]);
+  const [records, setRecords] = useState<LetterRecord[]>([]);
+  const [recordBusy, setRecordBusy] = useState<string | null>(null);
+  const [publicKey, setPublicKey] = useState<CriptaPublicKey | null>(null);
+  const [publicKeyChecked, setPublicKeyChecked] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [receivingOpen, setReceivingOpen] = useState(false);
+  const [openingChecked, setOpeningChecked] = useState(false);
+  const [draft, setDraft] = useState<StoredDraft | null>(null);
+  const [draftChecked, setDraftChecked] = useState(false);
+  const [draftStatus, setDraftStatus] = useState('');
+  const pendingDeposit = useRef<{ digest: string; wire: string } | null>(null);
+  const draftRevision = useRef(0);
+  const draftGeneration = useRef(0);
+  const draftSaved = useRef('');
+  const draftValues = useRef({ title, recipient, body, attachments });
+  draftValues.current = { title, recipient, body, attachments };
+  const draftEnabled = useRef(false);
+  const draftPending = useRef(false);
+  const draftSaving = useRef<Promise<void> | null>(null);
+  const [recording, setRecording] = useState<Kind | null>(null);
+  const [optimizing, setOptimizing] = useState(false);
   const recorder = useRef<MediaRecorder | null>(null);
   const stream = useRef<MediaStream | null>(null);
   const chunks = useRef<Blob[]>([]);
-  const discardRecording = useRef(false);
-  const startedAt = useRef(0);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const filesRef = useRef(files);
-  filesRef.current = files;
+  const attachmentsRef = useRef(attachments);
+  attachmentsRef.current = attachments;
 
   useEffect(() => {
-    let active = true;
-    fetch('/api/cripta/capsules', { cache: 'no-store' }).then(async (response) => {
-      if (!response.ok) return;
-      const data = await response.json() as { items: typeof remoteItems; canDeposit: boolean };
-      if (active) { setRemoteItems(data.items); setCanDeposit(data.canDeposit); }
-    }).catch(() => { /* offline preview remains available */ });
-    return () => { active = false; };
-  }, []);
-
-  useEffect(() => () => {
-    if (timer.current) clearTimeout(timer.current);
-    if (recorder.current?.state === 'recording') recorder.current.stop();
-    stream.current?.getTracks().forEach((track) => track.stop());
-    filesRef.current.forEach((item) => URL.revokeObjectURL(item.url));
-  }, []);
-
-  const used = files.reduce((sum, entry) => sum + entry.file.size, 0);
-  const ofKind = (kind: DraftFile['kind']) => files.filter((entry) => entry.kind === kind);
-  const selectedLetter = letters.find((entry) => entry.id === selectedLetterId);
-
-  async function exportSealedLetter(letter: Letter) {
-    if (exportPassphrase.length < 16 || working) { setMessage('Informe uma frase secreta com pelo menos 16 caracteres.'); return; }
-    setWorking(true);
-    try {
-      const envelope = await sealCapsule(encodeLetter(letter), exportPassphrase);
-      const url = URL.createObjectURL(new Blob([JSON.stringify(envelope)], { type: 'application/json' }));
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `cripta-carta-ensaio-${letter.id}.json`;
-      link.click();
-      setTimeout(() => URL.revokeObjectURL(url), 30_000);
-      setMessage('Carta fictícia exportada cifrada. Guarde a frase separadamente e teste a restauração em outro dispositivo. Anexos não estão incluídos.');
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Não foi possível cifrar a carta.');
-    } finally { setExportPassphrase(''); setWorking(false); }
-  }
-
-  async function importSealedLetter(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    event.target.value = '';
-    if (!file || working) return;
-    if (file.size > 1_500_000 || importPassphrase.length < 16) {
-      setMessage('Selecione um pacote de até 1,5 MB e informe a frase secreta de pelo menos 16 caracteres.'); return;
-    }
-    setWorking(true);
-    try {
-      const value: unknown = JSON.parse(await file.text());
-      const letter = decodeLetter(await openCapsule(value, importPassphrase));
-      if (!letter.title.trim() || letter.title.length > 80 || !letter.body.trim() || letter.body.length > 20_000 ||
-          !letter.recipient.trim() || letter.recipient.length > 100 || letters.length >= 5) {
-        throw new Error('Carta inválida ou limite de cinco cartas atingido.');
-      }
-      const id = crypto.randomUUID();
-      setLetters((items) => [...items, { ...letter, id }]);
-      setSelectedLetterId(id);
-      setSection('cartas');
-      setMessage('Carta fictícia restaurada nesta aba. Nenhum dado foi enviado ao servidor.');
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Não foi possível restaurar o pacote.');
-    } finally { setImportPassphrase(''); setWorking(false); }
-  }
-
-  async function storeSealedLetter(letter: Letter) {
-    if (!canDeposit || working || exportPassphrase.length < 16) {
-      setMessage('Depósitos fechados ou frase secreta insuficiente.'); return;
-    }
-    setWorking(true);
-    try {
-      const sealed = await sealCapsule(encodeLetter(letter), exportPassphrase);
-      const response = await fetch('/api/cripta/capsules', {
-        method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(sealed),
+    fetch('/api/cripta/online-opening', { cache: 'no-store' })
+      .then(async (response) => {
+        if (!response.ok) throw new Error('Estado indisponível.');
+        setReceivingOpen(((await response.json()) as { open: boolean }).open === true);
+      })
+      .catch(() =>
+        setMessage(
+          'Não foi possível conferir se o recebimento está aberto. Tente atualizar a página.',
+        ),
+      )
+      .finally(() => setOpeningChecked(true));
+    fetch('/api/cripta/online-capsules', { cache: 'no-store' })
+      .then(async (response) => {
+        if (response.ok) setRemote(((await response.json()) as { items: typeof remote }).items);
+      })
+      .catch(() => {
+        /* UI can still be explored without the service */
       });
-      const result = await response.json() as { id?: string; error?: string };
-      if (!response.ok || !result.id) throw new Error(result.error || 'Depósito não confirmado.');
-      setRemoteItems((items) => [...items, { id: result.id!, createdAt: new Date().toISOString(), bytes: JSON.stringify(sealed).length }]);
-      setMessage('Pacote cifrado registrado. Baixe uma cópia de verificação e teste a restauração antes de depender dele. Anexos não foram incluídos.');
-    } catch (error) { setMessage(error instanceof Error ? error.message : 'Falha no depósito.'); }
-    finally { setExportPassphrase(''); setWorking(false); }
-  }
-
-  function clearLocalPreview() {
-    if (clearPhrase !== 'APAGAR') return;
-    discardRecording.current = true;
-    stopRecording();
-    files.forEach((entry) => URL.revokeObjectURL(entry.url));
-    setFiles([]); setLetters([]); setSelectedLetterId(null); setEditingId(null);
-    setTitle(''); setBody(''); setLetterRecipient('');
-    setConfirmClear(false); setClearPhrase('');
-    setMessage('Prévia local limpa. Este ensaio não apaga dados do servidor ou cópias físicas.');
-  }
-
-  function downloadLetterImage(letter: Letter) {
-    const canvas = document.createElement('canvas');
-    canvas.width = 1200; canvas.height = 1680;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-    const lines: string[] = [];
-    ctx.font = '31px Georgia, serif';
-    for (const paragraph of letter.body.split('\n')) {
-      let line = '';
-      for (const word of paragraph.split(/\s+/)) {
-        const next = line ? `${line} ${word}` : word;
-        if (ctx.measureText(next).width > 980 && line) { lines.push(line); line = word; }
-        else line = next;
-      }
-      lines.push(line);
-    }
-    const perPage = 29;
-    const pages = Math.max(1, Math.ceil(lines.length / perPage));
-    for (let page = 0; page < pages; page++) {
-      ctx.fillStyle = '#f8f1e4'; ctx.fillRect(0, 0, 1200, 1680);
-      ctx.strokeStyle = '#b69a62'; ctx.lineWidth = 3; ctx.strokeRect(72, 72, 1056, 1536);
-      ctx.strokeStyle = '#e0cfab'; ctx.strokeRect(86, 86, 1028, 1508);
-      ctx.fillStyle = '#927035'; ctx.textAlign = 'center'; ctx.font = '24px Georgia, serif';
-      ctx.fillText('CRIPTA DO IRMÃO  ·  PRÉVIA FICTÍCIA', 600, 150);
-      ctx.fillStyle = '#26344a'; ctx.font = 'bold 46px Georgia, serif';
-      ctx.fillText(letter.title.slice(0, 42), 600, 244);
-      ctx.fillStyle = '#927035'; ctx.font = '25px Georgia, serif';
-      ctx.fillText(`Para ${letter.recipient.slice(0, 55)}`, 600, 290);
-      ctx.textAlign = 'left'; ctx.font = '31px Georgia, serif';
-      lines.slice(page * perPage, (page + 1) * perPage).forEach((line, index) => ctx.fillText(line, 112, 330 + index * 42));
-      ctx.textAlign = 'center'; ctx.font = '22px Georgia, serif'; ctx.fillStyle = '#927035';
-      ctx.fillText(`Página ${page + 1} de ${pages}  ·  Não armazenada no Portal`, 600, 1550);
-      const link = document.createElement('a');
-      link.download = `carta-ficticia-${page + 1}.png`;
-      link.href = canvas.toDataURL('image/png'); link.click();
-    }
-  }
-
-  function acceptFile(file: File, kind: DraftFile['kind']) {
-    const current = filesRef.current;
-    if (!selectedLetterId || !letters.some((letter) => letter.id === selectedLetterId)) {
-      setMessage('Escolha ou escreva primeiro a carta à qual esta mídia pertence.'); return;
-    }
-    const maxCount = kind === 'foto' ? 10 : kind === 'audio' ? 2 : 1;
-    if (current.filter((item) => item.kind === kind && (kind !== 'foto' || item.letterId === selectedLetterId)).length >= maxCount) {
-      setMessage(`Limite de ${maxCount} arquivo(s) de ${kind}. Remova um antes de adicionar outro.`); return;
-    }
-    if (file.size > LIMIT[kind] || current.reduce((sum, item) => sum + item.file.size, 0) + file.size > MAX_TOTAL) {
-      setMessage(`Arquivo acima do limite: ${kind} até ${formatSize(LIMIT[kind])}; total até 150 MB.`); return;
-    }
-    const valid = kind === 'foto' ? file.type.startsWith('image/') : file.type.startsWith(`${kind === 'video' ? 'video' : 'audio'}/`);
-    if (!valid) { setMessage('Formato incompatível com esta área.'); return; }
-    const targetLetterId = selectedLetterId;
-    if (kind === 'video' || kind === 'audio') {
-      const preview = document.createElement(kind);
-      const tempUrl = URL.createObjectURL(file);
-      preview.preload = 'metadata';
-      preview.onloadedmetadata = () => {
-        URL.revokeObjectURL(tempUrl);
-        if (!Number.isFinite(preview.duration) || preview.duration > (kind === 'video' ? 60 : 180)) {
-          setMessage(`Duração inválida: ${kind === 'video' ? 'vídeo até 1 minuto' : 'áudio até 3 minutos'}.`); return;
+    fetch('/api/cripta/letter-records', { cache: 'no-store' })
+      .then(async (response) => {
+        if (response.ok) setRecords(((await response.json()) as { items: LetterRecord[] }).items);
+      })
+      .catch(() => {
+        /* a Irmão can still write without seeing the list of fichas right away */
+      });
+    fetch('/api/cripta/public-key', { cache: 'no-store' })
+      .then(async (response) => {
+        if (response.ok)
+          setPublicKey(((await response.json()) as { publicKey: CriptaPublicKey }).publicKey);
+      })
+      .catch(() => {
+        /* treated as "not yet inaugurated" below */
+      })
+      .finally(() => setPublicKeyChecked(true));
+    fetch('/api/cripta/draft', { cache: 'no-store' })
+      .then(async (response) => {
+        const result = (await response.json()) as {
+          draft?: StoredDraft | null;
+          revision?: number;
+          error?: string;
+        };
+        if (!response.ok) throw new Error(result.error || 'Não foi possível recuperar o rascunho.');
+        if (result.draft) {
+          setDraft(result.draft);
+          draftSaved.current = JSON.stringify(result.draft);
         }
-        addLocal(file, kind, targetLetterId);
-      };
-      preview.onerror = () => { URL.revokeObjectURL(tempUrl); setMessage('Não foi possível conferir a duração deste arquivo.'); };
-      preview.src = tempUrl;
+        draftRevision.current = result.revision ?? 0;
+        draftGeneration.current = Number(response.headers.get('X-Cripta-Generation') ?? '0');
+      })
+      .catch((error) =>
+        setDraftStatus(error instanceof Error ? error.message : 'Rascunho indisponível.'),
+      )
+      .finally(() => setDraftChecked(true));
+  }, []);
+
+  async function persistDraft() {
+    if (!draftEnabled.current || !receivingOpen) return;
+    if (draftSaving.current) {
+      draftPending.current = true;
+      return draftSaving.current;
+    }
+    const task = (async () => {
+      do {
+        draftPending.current = false;
+        const values = draftValues.current;
+        const bytes = await onlinePayload(values);
+        const content = new TextDecoder().decode(bytes);
+        if (content === draftSaved.current) continue;
+        setDraftStatus('Salvando…');
+        const response = await fetch('/api/cripta/draft', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Cripta-Generation': String(draftGeneration.current),
+          },
+          body: JSON.stringify({ revision: draftRevision.current, letter: JSON.parse(content) }),
+        });
+        const result = (await response.json()) as {
+          revision?: number;
+          updatedAt?: string;
+          error?: string;
+        };
+        if (!response.ok || !result.revision)
+          throw new Error(result.error || 'Rascunho não salvo.');
+        draftRevision.current = result.revision;
+        draftSaved.current = content;
+        setDraft(JSON.parse(content) as StoredDraft);
+        setDraftStatus(
+          `Salvo às ${new Date(result.updatedAt || Date.now()).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`,
+        );
+        if (draftEnabled.current) {
+          const latest = await onlinePayload(draftValues.current);
+          if (new TextDecoder().decode(latest) !== draftSaved.current) draftPending.current = true;
+        }
+      } while (draftPending.current && draftEnabled.current);
+    })();
+    const settled = task
+      .catch((error) => {
+        setDraftStatus(error instanceof Error ? error.message : 'Rascunho não salvo.');
+      })
+      .finally(() => {
+        draftSaving.current = null;
+      });
+    draftSaving.current = settled;
+    await settled;
+  }
+
+  useEffect(() => {
+    if (
+      step !== 'escrever' ||
+      !draftChecked ||
+      !receivingOpen ||
+      !draftEnabled.current ||
+      (!recipient.trim() && !body.trim() && attachments.length === 0)
+    )
+      return;
+    const timer = setTimeout(() => {
+      void persistDraft();
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, [step, title, recipient, body, attachments, draftChecked, receivingOpen]);
+
+  useEffect(
+    () => () => {
+      if (timer.current) clearTimeout(timer.current);
+      if (recorder.current?.state === 'recording') recorder.current.stop();
+      stream.current?.getTracks().forEach((track) => track.stop());
+      attachmentsRef.current.forEach((item) => URL.revokeObjectURL(item.url));
+    },
+    [],
+  );
+
+  const count = (kind: Kind) => attachments.filter((item) => item.kind === kind).length;
+  const total = attachments.reduce((sum, item) => sum + item.file.size, 0);
+
+  function startNew() {
+    if (!draftChecked) return;
+    draftEnabled.current = true;
+    attachmentsRef.current.forEach((item) => URL.revokeObjectURL(item.url));
+    setTitle('');
+    setRecipient('');
+    setBody('');
+    setLabel('');
+    setDeliveryMode('privada');
+    setAttachments([]);
+    setMessage('');
+    setStep('escrever');
+  }
+
+  function continueDraft() {
+    if (!draft) return;
+    attachmentsRef.current.forEach((item) => URL.revokeObjectURL(item.url));
+    const restored = draft.attachments.map((entry) => {
+      const file = new File(
+        [Uint8Array.from(atob(entry.data), (char) => char.charCodeAt(0))],
+        entry.name,
+        { type: entry.type },
+      );
+      return { id: crypto.randomUUID(), file, kind: entry.kind, url: URL.createObjectURL(file) };
+    });
+    draftEnabled.current = true;
+    setTitle(draft.title);
+    setRecipient(draft.recipient);
+    setBody(draft.body);
+    setAttachments(restored);
+    setMessage('');
+    setStep('escrever');
+  }
+
+  function removeAttachment(id: string) {
+    const item = attachments.find((entry) => entry.id === id);
+    if (item) URL.revokeObjectURL(item.url);
+    setAttachments((entries) => entries.filter((entry) => entry.id !== id));
+    setDraftStatus('Alterações ainda não salvas');
+  }
+
+  async function addFile(file: File, kind: Kind) {
+    const current = attachmentsRef.current;
+    const n = current.filter((item) => item.kind === kind).length;
+    if (n >= (kind === 'foto' ? 10 : kind === 'audio' ? 2 : 1)) {
+      setMessage('Limite desta mídia atingido. Remova um arquivo antes de incluir outro.');
       return;
     }
-    addLocal(file, kind, targetLetterId);
+    if (!file.type.startsWith(`${kind === 'foto' ? 'image' : kind}/`)) {
+      setMessage('Escolha uma foto, um áudio ou um vídeo compatível.');
+      return;
+    }
+    if (file.size > LIMIT[kind]) {
+      setMessage(`O arquivo original excede ${size(LIMIT[kind])}. Escolha um arquivo menor.`);
+      return;
+    }
+    const accept = (prepared: File) => {
+      const latest = attachmentsRef.current;
+      if (
+        latest.filter((item) => item.kind === kind).length >=
+        (kind === 'foto' ? 10 : kind === 'audio' ? 2 : 1)
+      )
+        return;
+      if (latest.reduce((sum, item) => sum + item.file.size, 0) + prepared.size > MAX_TOTAL) {
+        setMessage(
+          'O arquivo convertido ainda excede o espaço disponível. Remova outro anexo ou escolha uma mensagem menor.',
+        );
+        return;
+      }
+      const next = [
+        ...latest,
+        { id: crypto.randomUUID(), file: prepared, kind, url: URL.createObjectURL(prepared) },
+      ];
+      attachmentsRef.current = next;
+      setAttachments(next);
+      setMessage(
+        prepared.size < file.size
+          ? `Arquivo preparado: ${size(file.size)} → ${size(prepared.size)}. Confira a qualidade antes de guardar.`
+          : 'Arquivo incluído. Ainda não foi enviado.',
+      );
+      setDraftStatus('Alterações ainda não salvas');
+    };
+    if (kind === 'foto') {
+      setOptimizing(true);
+      try {
+        accept(
+          await optimizePhoto(
+            file,
+            Math.min(900_000, MAX_TOTAL - current.reduce((sum, item) => sum + item.file.size, 0)),
+          ),
+        );
+      } catch (error) {
+        setMessage(error instanceof Error ? error.message : 'Foto não convertida.');
+      } finally {
+        setOptimizing(false);
+      }
+      return;
+    }
+    const preview = document.createElement(kind);
+    const url = URL.createObjectURL(file);
+    preview.preload = 'metadata';
+    setOptimizing(true);
+    await new Promise<void>((resolve) => {
+      const timeout = setTimeout(() => {
+        cleanup();
+        setMessage('A mídia demorou para abrir. Escolha outro arquivo.');
+        resolve();
+      }, 15_000);
+      const cleanup = () => {
+        clearTimeout(timeout);
+        preview.onloadedmetadata = null;
+        preview.onerror = null;
+        preview.removeAttribute('src');
+        preview.load();
+        URL.revokeObjectURL(url);
+      };
+      preview.onloadedmetadata = async () => {
+        const duration = preview.duration;
+        cleanup();
+        if (!Number.isFinite(duration) || duration > (kind === 'video' ? 60 : 180)) {
+          setMessage(
+            kind === 'video' ? 'Vídeo: no máximo 1 minuto.' : 'Áudio: no máximo 3 minutos.',
+          );
+          resolve();
+          return;
+        }
+        setMessage('Preparando sua lembrança no aparelho. Mantenha esta página aberta…');
+        try {
+          const remaining =
+            MAX_TOTAL - attachmentsRef.current.reduce((sum, item) => sum + item.file.size, 0);
+          accept(await optimizeRecording(file, kind, remaining, duration));
+        } catch (error) {
+          setMessage(error instanceof Error ? error.message : 'Não foi possível preparar a mídia.');
+        }
+        resolve();
+      };
+      preview.onerror = () => {
+        cleanup();
+        setMessage('Não foi possível conferir a duração. Escolha outro arquivo.');
+        resolve();
+      };
+      preview.src = url;
+    });
+    setOptimizing(false);
   }
 
-  function addLocal(file: File, kind: DraftFile['kind'], targetLetterId: string | null) {
-    const current = filesRef.current;
-    const max = kind === 'foto' ? 10 : kind === 'audio' ? 2 : 1;
-    if (!targetLetterId || !letters.some((letter) => letter.id === targetLetterId)) {
-      setMessage('Selecione uma carta antes de adicionar a mídia.'); return;
-    }
-    if (current.filter((entry) => entry.kind === kind && (kind !== 'foto' || entry.letterId === targetLetterId)).length >= max ||
-        current.reduce((sum, entry) => sum + entry.file.size, 0) + file.size > MAX_TOTAL) {
-      setMessage('Limite atingido; remova um arquivo antes de adicionar outro.'); return;
-    }
-    const next = [...current, { id: crypto.randomUUID(), file, kind, url: URL.createObjectURL(file), letterId: targetLetterId }];
-    filesRef.current = next;
-    setFiles(next);
-    setMessage('Adicionado à prévia local. O arquivo ainda não foi enviado ao servidor.');
-  }
-
-  function handleInput(event: ChangeEvent<HTMLInputElement>, kind: DraftFile['kind']) {
-    [...(event.target.files ?? [])].forEach((file) => acceptFile(file, kind));
+  async function choose(event: ChangeEvent<HTMLInputElement>, kind: Kind) {
+    for (const file of Array.from(event.target.files ?? [])) await addFile(file, kind);
     event.target.value = '';
   }
 
-  function handleDrop(event: DragEvent<HTMLDivElement>, kind: DraftFile['kind']) {
-    event.preventDefault();
-    [...event.dataTransfer.files].forEach((file) => acceptFile(file, kind));
-  }
-
-  async function startRecording(kind: 'video' | 'audio') {
-    if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') {
-      setMessage('Seu navegador não permite gravação nesta página. Escolha um arquivo existente.'); return;
+  async function importWord(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+    if (!/\.docx$/i.test(file.name) || file.size > 5_000_000) {
+      setMessage('Escolha um documento Word .docx de até 5 MB.');
+      return;
     }
     try {
-      const media = await navigator.mediaDevices.getUserMedia(kind === 'video' ? { audio: true, video: true } : { audio: true });
-      const targetLetterId = selectedLetterId;
-      const capture = new MediaRecorder(media);
+      const JSZip = (await import('jszip')).default;
+      const archive = await JSZip.loadAsync(file);
+      const entry = archive.file('word/document.xml');
+      if (!entry) throw new Error('O arquivo não contém uma carta Word compatível.');
+      const xml = await entry.async('string');
+      if (xml.length > 1_000_000) throw new Error('O documento possui texto acima do limite.');
+      const document = new DOMParser().parseFromString(xml, 'application/xml');
+      if (document.querySelector('parsererror'))
+        throw new Error('Não foi possível ler o documento.');
+      const paragraphs = Array.from(document.getElementsByTagName('w:p')).map((paragraph) =>
+        Array.from(paragraph.getElementsByTagName('w:t'))
+          .map((node) => node.textContent ?? '')
+          .join(''),
+      );
+      const imported = paragraphs.join('\n').trim();
+      if (!imported || imported.length > 20_000)
+        throw new Error('O texto importado está vazio ou ultrapassa o limite da carta.');
+      if (
+        body.trim() &&
+        !window.confirm(
+          'Substituir o texto atual pelo conteúdo do Word? Confira antes de continuar.',
+        )
+      )
+        return;
+      setBody(imported);
+      setDraftStatus('Alterações ainda não salvas');
+      setMessage('Texto do Word importado. Revise antes de guardar sua carta.');
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Não foi possível importar o Word.');
+    }
+  }
+  async function drop(event: DragEvent<HTMLDivElement>, kind: Kind) {
+    event.preventDefault();
+    for (const file of Array.from(event.dataTransfer.files)) await addFile(file, kind);
+  }
+
+  async function record(kind: 'audio' | 'video') {
+    if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') {
+      setMessage('Este navegador não permite gravar aqui. Escolha um arquivo do aparelho.');
+      return;
+    }
+    try {
+      const remaining =
+        MAX_TOTAL - attachmentsRef.current.reduce((sum, item) => sum + item.file.size, 0);
+      if (remaining < 50_000)
+        throw new Error('Espaço insuficiente. Remova um anexo antes de gravar.');
+      const media = await navigator.mediaDevices.getUserMedia(
+        kind === 'video'
+          ? {
+              video: {
+                width: { ideal: 640 },
+                height: { ideal: 360 },
+                frameRate: { ideal: 24, max: 30 },
+              },
+              audio: true,
+            }
+          : { audio: true },
+      );
+      const maxSeconds =
+        kind === 'video'
+          ? Math.min(60, Math.floor((remaining * 8 * 0.82) / 300_000))
+          : Math.min(180, Math.floor((remaining * 8 * 0.82) / 24_000));
+      let capture: MediaRecorder;
+      try {
+        capture = new MediaRecorder(media, recorderOptions(kind, remaining, maxSeconds));
+      } catch (error) {
+        media.getTracks().forEach((track) => track.stop());
+        throw error;
+      }
       stream.current = media;
       recorder.current = capture;
       chunks.current = [];
-      capture.ondataavailable = (event) => { if (event.data.size) chunks.current.push(event.data); };
+      capture.ondataavailable = (event) => {
+        if (event.data.size) chunks.current.push(event.data);
+      };
       capture.onstop = () => {
         media.getTracks().forEach((track) => track.stop());
         setRecording(null);
         const blob = new Blob(chunks.current, { type: capture.mimeType });
-        if (discardRecording.current) return;
-        if (blob.size && blob.size <= LIMIT[kind] && Date.now() - startedAt.current <= (kind === 'video' ? 61_000 : 181_000)) {
-          // O próprio temporizador limitou a gravação; alguns WebM gravados
-          // pelo navegador apresentam duração indefinida nos metadados.
-          addLocal(new File([blob], `ensaio-${kind}.webm`, { type: capture.mimeType }), kind, targetLetterId);
-        } else if (blob.size) {
-          setMessage('A gravação ultrapassou o limite de tempo ou tamanho. Grave novamente.');
-        }
+        if (
+          blob.size &&
+          blob.size <= LIMIT[kind] &&
+          blob.size + attachmentsRef.current.reduce((sum, item) => sum + item.file.size, 0) <=
+            MAX_TOTAL
+        ) {
+          const mime =
+            capture.mimeType.split(';')[0] || (kind === 'video' ? 'video/webm' : 'audio/webm');
+          const file = new File([blob], convertedName(`mensagem-${kind}`, mime), { type: mime });
+          const next = [
+            ...attachmentsRef.current,
+            { id: crypto.randomUUID(), file, kind, url: URL.createObjectURL(file) },
+          ];
+          attachmentsRef.current = next;
+          setAttachments(next);
+          setDraftStatus('Alterações ainda não salvas');
+        } else
+          setMessage('A gravação excedeu o espaço atual da carta. Grave uma mensagem mais curta.');
       };
-      startedAt.current = Date.now();
-      discardRecording.current = false;
       capture.start(1000);
       setRecording(kind);
-      timer.current = setTimeout(() => capture.state === 'recording' && capture.stop(), kind === 'video' ? 60_000 : 180_000);
-    } catch { setMessage('Permissão de câmera ou microfone negada. Escolha um arquivo existente.'); }
+      setMessage(
+        `Gravação iniciada. Ela terminará em até ${maxSeconds} segundos; você pode parar antes.`,
+      );
+      timer.current = setTimeout(() => {
+        if (capture.state === 'recording') capture.stop();
+      }, maxSeconds * 1000);
+    } catch (error) {
+      setMessage(
+        error instanceof Error ? error.message : 'Não foi possível acessar câmera ou microfone.',
+      );
+    }
   }
-
   function stopRecording() {
     if (timer.current) clearTimeout(timer.current);
     if (recorder.current?.state === 'recording') recorder.current.stop();
   }
 
-  function saveLetter() {
-    if (!title.trim() || !body.trim()) { setMessage('Preencha título e texto da carta.'); return; }
-    if (body.length > 20_000) { setMessage('O texto ultrapassa 20 mil caracteres.'); return; }
-    if (!letterRecipient.trim()) { setMessage('Informe um destinatário fictício para esta carta.'); return; }
-    if (editingId) { setLetters((entries) => entries.map((entry) => entry.id === editingId ? { ...entry, title: title.trim(), body: body.trim(), recipient: letterRecipient.trim() } : entry)); setSelectedLetterId(editingId); }
-    else if (letters.length < 5) { const id = crypto.randomUUID(); setLetters((entries) => [...entries, { id, title: title.trim(), body: body.trim(), recipient: letterRecipient.trim() }]); setSelectedLetterId(id); }
-    else { setMessage('Limite de 5 cartas.'); return; }
-    setEditingId(null); setTitle(''); setBody(''); setLetterRecipient('');
-    setMessage('Carta mantida apenas na memória desta aba para demonstrar a interface.');
+  async function review() {
+    if (optimizing) {
+      setMessage('Aguarde a conversão do arquivo terminar.');
+      return;
+    }
+    if (!recipient.trim() || !body.trim()) {
+      setMessage('Informe para quem é a carta e escreva sua mensagem.');
+      return;
+    }
+    if (body.length > 20_000 || title.length > 80 || recipient.length > 100) {
+      setMessage('O texto ultrapassa o limite permitido.');
+      return;
+    }
+    await persistDraft();
+    try {
+      const current = new TextDecoder().decode(await onlinePayload(draftValues.current));
+      if (current !== draftSaved.current) {
+        setMessage('Aguarde o rascunho ser salvo antes de continuar.');
+        return;
+      }
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Rascunho não salvo.');
+      return;
+    }
+    setMessage('');
+    setStep('revisar');
+  }
+  async function keepPreview() {
+    await persistDraft();
+    try {
+      const current = new TextDecoder().decode(await onlinePayload(draftValues.current));
+      if (draftSaved.current !== current)
+        throw new Error('O rascunho ainda não foi salvo. Tente novamente.');
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Rascunho não salvo.');
+      return;
+    }
+    setMessage(
+      'Rascunho guardado. Você poderá continuar em outro aparelho enquanto a Cripta estiver aberta.',
+    );
+    setStep('inicio');
   }
 
-  function filePicker(kind: DraftFile['kind'], accept: string) {
-    return <div className="space-y-4">
-      <label htmlFor={`attach-${kind}`} className="block text-sm font-semibold text-[#142a43]">Vincular à carta</label>
-      <select id={`attach-${kind}`} value={selectedLetterId ?? ''} onChange={(event) => setSelectedLetterId(event.target.value || null)} className="w-full rounded-xl border border-[#dbcda9] bg-white p-3 text-sm">
-        <option value="">Selecione uma carta</option>
-        {letters.map((letter) => <option key={letter.id} value={letter.id}>{letter.title} — para {letter.recipient}</option>)}
-      </select>
-      {!letters.length && <p className="text-sm text-[#8a6330]">Crie uma carta antes de adicionar mídias.</p>}
-      <div onDragOver={(event) => event.preventDefault()} onDrop={(event) => handleDrop(event, kind)} className="rounded-2xl border-2 border-dashed border-[#c9a449]/70 bg-[radial-gradient(circle_at_top,#fffdf7,#f2ebdb)] p-9 text-center shadow-inner">
-        <p className="font-medium">Arraste {kind === 'foto' ? 'fotos' : kind === 'video' ? 'um vídeo' : 'áudios'} aqui</p>
-        <p className="mt-1 text-sm text-muted">ou selecione do computador ou celular</p>
-        <label className="mt-4 inline-block cursor-pointer rounded-lg bg-[#123c69] px-4 py-2 text-sm font-semibold text-white">Escolher arquivo<input type="file" accept={accept} multiple={kind !== 'video'} onChange={(event) => handleInput(event, kind)} className="sr-only" /></label>
+  async function depositTest() {
+    if (!receivingOpen || !openingChecked) {
+      setMessage('O recebimento está fechado. Aguarde a abertura pela Administração.');
+      return;
+    }
+    if (!publicKey) {
+      setMessage(
+        'A Cripta ainda não foi inaugurada pela Administração. Aguarde antes de guardar cartas.',
+      );
+      return;
+    }
+    if (busy || optimizing) return;
+    setBusy(true);
+    try {
+      if (draftSaving.current) await draftSaving.current;
+      const payload = await onlinePayload({
+        title: title.trim() || 'Minha carta',
+        recipient: recipient.trim(),
+        body: body.trim(),
+        attachments,
+      });
+      // Sealed in this browser with the Cripta's public key — no passphrase, nothing to forget.
+      // Only a quorum of Guardiões, offline, can ever open this envelope.
+      const digest =
+        Array.from(
+          new Uint8Array(await crypto.subtle.digest('SHA-256', payload as BufferSource)),
+          (byte) => byte.toString(16).padStart(2, '0'),
+        ).join('') +
+        publicKey.x +
+        publicKey.y;
+      if (pendingDeposit.current?.digest !== digest) {
+        pendingDeposit.current = {
+          digest,
+          wire: JSON.stringify(await sealForCripta(payload, publicKey)),
+        };
+      }
+      const wire = pendingDeposit.current.wire;
+      if (new TextEncoder().encode(wire).length > 4_400_000)
+        throw new Error('Carta acima do limite de envio. Reduza os anexos.');
+      const response = await fetch('/api/cripta/online-capsules', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Cripta-Key': `${publicKey.x}.${publicKey.y}`,
+          'X-Cripta-Label': label.trim() || recipient.trim(),
+          'X-Cripta-Delivery-Mode': deliveryMode,
+        },
+        body: wire,
+      });
+      const result = (await response.json()) as { id?: string; createdAt?: string; error?: string };
+      if (!response.ok || !result.id || !result.createdAt)
+        throw new Error(result.error || 'Envio não confirmado.');
+      const check = await fetch(`/api/cripta/online-capsules/${result.id}`, { cache: 'no-store' });
+      if (!check.ok || (await check.text()) !== wire) {
+        throw new Error(
+          'A carta foi enviada, mas a leitura de conferência falhou. Atualize a página e confira antes de reenviar.',
+        );
+      }
+      setRemote((items) => [
+        ...items.filter((item) => item.id !== result.id),
+        { id: result.id!, createdAt: result.createdAt! },
+      ]);
+      fetch('/api/cripta/letter-records', { cache: 'no-store' })
+        .then(async (listResponse) => {
+          if (listResponse.ok)
+            setRecords(((await listResponse.json()) as { items: LetterRecord[] }).items);
+        })
+        .catch(() => undefined);
+      draftEnabled.current = false;
+      const clear = await fetch('/api/cripta/draft', {
+        method: 'DELETE',
+        headers: {
+          'X-Draft-Revision': String(draftRevision.current),
+          'X-Cripta-Generation': String(draftGeneration.current),
+        },
+      });
+      if (clear.ok) {
+        const cleared = (await clear.json()) as { revision: number };
+        setDraft(null);
+        draftSaved.current = '';
+        draftRevision.current = cleared.revision;
+        setDraftStatus('');
+      }
+      attachmentsRef.current.forEach((item) => URL.revokeObjectURL(item.url));
+      setAttachments([]);
+      setMessage(
+        clear.ok
+          ? 'Carta enviada e selada. A partir de agora, só os Guardiões da Cripta, reunidos, conseguem abri-la. Para mudar algo, escreva uma carta nova.'
+          : 'Carta enviada. O rascunho antigo ainda aparece; abra "Escrever minha carta" para começar um novo.',
+      );
+      setStep('inicio');
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Envio falhou.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function updateRecord(
+    id: string,
+    action: 'retida' | 'reativada' | 'modo_alterado',
+    nextMode?: DeliveryMode,
+  ) {
+    setRecordBusy(id);
+    try {
+      const response = await fetch('/api/cripta/letter-records', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, action, deliveryMode: nextMode }),
+      });
+      const result = (await response.json()) as { error?: string };
+      if (!response.ok) throw new Error(result.error || 'Não foi possível atualizar.');
+      setRecords((items) =>
+        items.map((item) =>
+          item.id === id
+            ? {
+                ...item,
+                status:
+                  action === 'retida' ? 'retida' : action === 'reativada' ? 'ativa' : item.status,
+                deliveryMode: nextMode ?? item.deliveryMode,
+              }
+            : item,
+        ),
+      );
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Não foi possível atualizar a ficha.');
+    } finally {
+      setRecordBusy(null);
+    }
+  }
+
+  async function deleteTest(id: string) {
+    if (!window.confirm('Excluir esta carta do Wix? Esta ação não poderá ser desfeita.')) return;
+    setBusy(true);
+    try {
+      const response = await fetch(`/api/cripta/online-capsules/${id}`, { method: 'DELETE' });
+      if (!response.ok) throw new Error('A exclusão no Wix não foi confirmada.');
+      setRemote((items) => items.filter((item) => item.id !== id));
+      const result = (await response.json()) as { providerCleanupPending?: boolean };
+      setMessage(
+        result.providerCleanupPending
+          ? 'Carta retirada da lista. A remoção no armazenamento ainda está pendente.'
+          : 'Carta retirada da lista e remoção solicitada ao armazenamento. Cópias externas não são apagadas por esta ação.',
+      );
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Exclusão falhou.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function downloadOffline() {
+    if (busy) return;
+    setBusy(true);
+    try {
+      // Works from what is still in this tab's memory, before sealing — the server only ever sees ciphertext.
+      const items = await Promise.all(
+        attachments.map(async (item) => ({
+          kind: item.kind,
+          name: item.file.name,
+          type: item.file.type,
+          data: toBase64(new Uint8Array(await item.file.arrayBuffer())),
+        })),
+      );
+      const letter = {
+        format: 'vl6-online-letter-v1' as const,
+        title: title.trim() || 'Minha carta',
+        recipient: recipient.trim(),
+        body: body.trim(),
+        attachments: items,
+      };
+      const { makeOfflinePackage } = await import('@/modules/cripta/lib/offline-package');
+      const blob = await makeOfflinePackage(letter);
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'CARTA_CRIPTA_VL6.zip';
+      document.body.append(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 60_000);
+      setMessage(
+        'Arquivo da carta preparado. Abra o ZIP e confira ABRA_AQUI_A_CARTA.html com os anexos.',
+      );
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Exportação indisponível.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function picker(kind: Kind, label: string, accept: string, description: string) {
+    return (
+      <section className="rounded-2xl border border-[#ddd0b7] bg-white p-5">
+        <h3 className="font-serif text-xl text-[#142a43]">
+          {label} <span className="font-sans text-sm font-normal text-[#607084]">(opcional)</span>
+        </h3>
+        <p className="mt-1 text-sm text-[#536074]">{description}</p>
+        <div
+          onDragOver={(event) => event.preventDefault()}
+          onDrop={(event) => drop(event, kind)}
+          className="mt-4 rounded-xl border-2 border-dashed border-[#c9a449] bg-[#faf7ef] p-5 text-center"
+        >
+          <label className="inline-block cursor-pointer rounded-xl bg-[#123c69] px-5 py-3 font-semibold text-white">
+            Escolher {kind === 'foto' ? 'fotos' : kind === 'audio' ? 'áudio' : 'vídeo'}
+            <input
+              type="file"
+              accept={accept}
+              multiple={kind === 'foto'}
+              onChange={(event) => choose(event, kind)}
+              className="sr-only"
+            />
+          </label>
+          {kind === 'foto' && (
+            <label className="ml-2 inline-block cursor-pointer rounded-xl border border-[#a78648] bg-white px-5 py-3 font-semibold text-[#142a43]">
+              Tirar foto
+              <input
+                type="file"
+                accept="image/*"
+                capture="environment"
+                onChange={(event) => choose(event, 'foto')}
+                className="sr-only"
+              />
+            </label>
+          )}
+          <p className="mt-2 text-xs text-[#536074]">
+            Também pode arrastar arquivos para esta área.
+          </p>
+        </div>
+        {kind !== 'foto' && (
+          <button
+            type="button"
+            disabled={recording !== null || count(kind) >= (kind === 'audio' ? 2 : 1)}
+            onClick={() => record(kind)}
+            className="mt-3 rounded-xl border border-[#a78648] px-4 py-3 text-sm font-semibold disabled:opacity-50"
+          >
+            Gravar {kind === 'audio' ? 'minha voz' : 'um vídeo'}
+          </button>
+        )}
+        {recording === kind && (
+          <button
+            type="button"
+            onClick={stopRecording}
+            className="ml-3 rounded-xl bg-red-800 px-4 py-3 text-sm text-white"
+          >
+            Parar gravação
+          </button>
+        )}
+        {attachments
+          .filter((item) => item.kind === kind)
+          .map((item) => (
+            <div
+              key={item.id}
+              className="mt-3 flex flex-wrap items-center gap-3 rounded-xl border p-3 text-sm"
+            >
+              {kind === 'foto' ? (
+                <img
+                  src={item.url}
+                  alt="Foto incluída"
+                  className="h-16 w-16 rounded object-cover"
+                />
+              ) : kind === 'video' ? (
+                <video controls src={item.url} className="h-24 max-w-48" />
+              ) : (
+                <audio controls src={item.url} className="max-w-56" />
+              )}
+              <span className="min-w-0 flex-1 truncate">
+                {item.file.name} · {size(item.file.size)}
+              </span>
+              <button
+                type="button"
+                onClick={() => removeAttachment(item.id)}
+                className="rounded-lg border px-3 py-2"
+              >
+                Remover
+              </button>
+            </div>
+          ))}
+      </section>
+    );
+  }
+
+  return (
+    <div className="mx-auto max-w-4xl space-y-6 pb-16">
+      <header className="rounded-[2rem] bg-[radial-gradient(ellipse_at_top_right,#344d67,#112640_55%,#06172e)] p-8 text-white sm:p-12">
+        <p className="text-xs font-semibold uppercase tracking-[.25em] text-[#e3bd62]">
+          Cripta do Irmão
+        </p>
+        <h1 className="mt-4 font-serif text-4xl">Uma carta para quem você ama.</h1>
+        <p className="mt-4 max-w-2xl leading-7 text-slate-200">
+          Escreva com calma. Se quiser, acrescente fotos, sua voz ou um vídeo. Cada carta e seus
+          arquivos formam uma lembrança para a pessoa indicada.
+        </p>
+      </header>
+      <div
+        role="status"
+        className="rounded-2xl border border-amber-400 bg-amber-50 p-5 text-sm leading-6 text-amber-950"
+      >
+        <strong>
+          Guarda online no Wix ·{' '}
+          {openingChecked
+            ? receivingOpen
+              ? 'recebimento aberto'
+              : 'recebimento fechado'
+            : 'conferindo abertura…'}
+          .
+        </strong>{' '}
+        A carta é cifrada no seu navegador com a chave da própria Cripta — sem senha pessoal. Uma
+        vez guardada, ninguém a reabre sozinho: são necessários os Guardiões da Cripta reunidos.
       </div>
-      {ofKind(kind).filter((entry) => entry.letterId === selectedLetterId).map((entry) => <div key={entry.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[#dbcda9] bg-white p-3 text-sm">
-        <div className="min-w-0 flex-1"><p className="truncate font-medium">{entry.file.name}</p><p className="text-muted">{formatSize(entry.file.size)} · anexo da carta · prévia local</p></div>
-        {kind === 'foto' ? <img src={entry.url} alt="Prévia selecionada" className="h-16 w-16 rounded object-cover" /> : kind === 'video' ? <video controls src={entry.url} className="h-24 max-w-48" /> : <audio controls src={entry.url} className="max-w-56" />}
-        <button type="button" className="rounded border px-3 py-2" onClick={() => { URL.revokeObjectURL(entry.url); setFiles((items) => items.filter((item) => item.id !== entry.id)); }}>Remover</button>
-      </div>)}
-    </div>;
-  }
-
-  return <div className="mx-auto max-w-6xl space-y-6 pb-14">
-    <header className="relative overflow-hidden rounded-[2rem] border border-[#b99b5c]/40 bg-[radial-gradient(ellipse_at_75%_10%,#344d67_0%,#112640_43%,#06172e_100%)] p-8 text-white shadow-[0_24px_65px_-35px_#06172e] sm:p-12">
-      <div aria-hidden className="pointer-events-none absolute -right-24 -top-32 h-96 w-96 rounded-full border border-[#c9a449]/20 shadow-[0_0_0_35px_#c9a44908,0_0_0_75px_#c9a44908]" />
-      <div className="relative max-w-2xl"><p className="text-xs font-semibold uppercase tracking-[.25em] text-[#e3bd62]">Cripta do Irmão · espaço pessoal</p>
-      <h1 className="mt-5 font-serif text-4xl leading-tight sm:text-5xl">Há memórias que merecem atravessar o tempo.</h1>
-      <div className="mt-5 h-px w-24 bg-[#c9a449]" /><p className="mt-5 text-sm leading-7 text-slate-200">Escreva suas cartas. Reúna imagens e mensagens em sua própria voz. Escolha quem deverá recebê-las no futuro.</p></div>
-    </header>
-    <div role="alert" className="rounded-xl border border-amber-400 bg-amber-50 p-4 text-sm leading-6 text-amber-950"><strong>Protótipo: use somente conteúdo inventado.</strong> As cartas e mídias desta aba não são salvas no servidor. É possível exportar uma carta cifrada para testar restauração offline; os anexos continuam fora desse arquivo. A Cripta real ainda não está habilitada.</div>
-    {message && <p role="status" aria-live="polite" className="rounded-xl border border-[#c9a449] bg-card p-3 text-sm">{message}</p>}
-    <div className="grid gap-6 lg:grid-cols-[250px_1fr]">
-      <nav aria-label="Áreas da Cripta" className="flex gap-2 overflow-x-auto lg:flex-col">
-        {panels.map((panel, index) => <button type="button" key={panel.id} onClick={() => setSection(panel.id)} aria-current={section === panel.id ? 'page' : undefined} className={`min-w-40 rounded-2xl border p-4 text-left text-sm shadow-sm transition-colors lg:min-w-0 ${section === panel.id ? 'border-[#c9a449] bg-[#0a2547] text-white shadow-[#0a2547]/20' : 'border-[#d9c9a8]/50 bg-[#f7f3ea] hover:border-[#c9a449]'}`}><span className={`mb-2 block font-serif text-xl ${section === panel.id ? 'text-[#e3bd62]' : 'text-[#a48242]'}`}>{String(index + 1).padStart(2, '0')}</span><span className="block font-semibold">{panel.title}</span><span className={`mt-1 block text-xs ${section === panel.id ? 'text-slate-200' : 'text-muted'}`}>{panel.description}</span></button>)}
-      </nav>
-      <main className="min-h-96 rounded-[2rem] border border-[#dbcda9] bg-[#fbf8f1] p-5 shadow-[0_22px_60px_-45px_#06172e] sm:p-9">
-        {section === 'visao' && <><p className="text-xs font-semibold uppercase tracking-[.2em] text-[#96763c]">Seu espaço de memórias</p><h2 className="mt-2 font-serif text-4xl text-[#142a43]">Minha Cripta</h2><p className="mt-3 text-sm leading-7 text-[#536074]">Cada lembrança tem seu lugar. Explore as áreas abaixo e veja como será preparar a sua mensagem.</p><div className="mt-8 grid gap-4 sm:grid-cols-2">{panels.slice(1).map((panel, index) => <button type="button" key={panel.id} onClick={() => setSection(panel.id)} className="group rounded-2xl border border-[#d7c9a9] bg-white p-6 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-[#ac8740] hover:shadow-md"><span className="font-serif text-3xl text-[#ae8c4d]">{['✉', '▧', '▷', '♫', '✧'][index]}</span><strong className="mt-3 block font-serif text-xl text-[#172e47]">{panel.title}</strong><p className="mt-1 text-sm text-[#5c6775]">{panel.description}</p></button>)}</div><div className="mt-8 rounded-2xl border border-[#d7c9a9] bg-white p-5 text-sm text-[#243449]"><p>Espaço selecionado: <strong>{formatSize(used)} de 150 MB</strong> · {letters.length} de 5 cartas</p><div className="mt-3 h-2 overflow-hidden rounded-full bg-[#ece8dd]"><div className="h-full rounded-full bg-[#c9a449]" style={{ width: `${Math.min(100, used / MAX_TOTAL * 100)}%` }} /></div></div><div className="mt-8 border-t border-[#d7c9a9] pt-6"><h3 className="font-serif text-xl text-[#142a43]">Limpar minha Cripta</h3><p className="mt-2 text-sm leading-6 text-[#5c6775]">Na versão operacional, o irmão poderá solicitar a exclusão de todo o próprio conteúdo durante a janela de abertura. Neste ensaio, o botão limpa apenas as prévias desta aba.</p>{!confirmClear ? <button type="button" onClick={() => setConfirmClear(true)} className="mt-4 rounded-lg border border-red-700/60 px-4 py-2 text-sm font-semibold text-red-800">Excluir todas as prévias</button> : <div className="mt-4 rounded-xl border border-red-300 bg-red-50 p-4"><label htmlFor="clear-confirm" className="block text-sm font-semibold text-red-900">Para confirmar, digite APAGAR</label><input id="clear-confirm" autoComplete="off" value={clearPhrase} onChange={(event) => setClearPhrase(event.target.value)} className="mt-2 w-full max-w-64 rounded border border-red-300 bg-white p-2" /><div className="mt-3 flex gap-3"><button type="button" disabled={clearPhrase !== 'APAGAR'} onClick={clearLocalPreview} className="rounded-lg bg-red-800 px-4 py-2 text-sm text-white disabled:opacity-40">Limpar prévia local</button><button type="button" onClick={() => { setConfirmClear(false); setClearPhrase(''); }} className="rounded-lg border px-4 py-2 text-sm">Cancelar</button></div></div>}</div></>}
-        {section === 'cartas' && <>
-          <p className="text-xs font-semibold uppercase tracking-[.2em] text-[#96763c]">Uma mensagem, um destinatário</p>
-          <h2 className="mt-2 font-serif text-4xl text-[#142a43]">Cartas e lembranças</h2>
-          <p className="mt-3 text-sm leading-7 text-[#536074]">Cada carta reúne sua mensagem, um destinatário e até 10 fotografias. Vídeos e áudios também poderão ser vinculados à carta.</p>
-          <div className="mt-7 rounded-2xl border border-[#dbcda9] bg-white p-5 shadow-sm">
-            <label htmlFor="cripta-title" className="block text-sm font-semibold">Título da carta</label>
-            <input id="cripta-title" maxLength={80} value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Ex.: Uma mensagem para o futuro" className="mt-2 w-full rounded-lg border bg-background p-3" />
-            <label htmlFor="cripta-recipient" className="mt-5 block text-sm font-semibold">Para quem será esta carta?</label>
-            <input id="cripta-recipient" maxLength={100} value={letterRecipient} onChange={(event) => setLetterRecipient(event.target.value)} placeholder="Use um nome inventado neste ensaio" className="mt-2 w-full rounded-lg border bg-background p-3" />
-            <label htmlFor="cripta-body" className="mt-5 block text-sm font-semibold">Sua mensagem</label>
-            <textarea id="cripta-body" maxLength={20_000} rows={9} value={body} onChange={(event) => setBody(event.target.value)} placeholder="Comece a escrever sua carta fictícia..." className="mt-2 w-full rounded-lg border bg-background p-3 leading-7" />
-            <p className="mt-2 text-right text-xs text-muted">{body.length}/20.000 caracteres</p>
-            <button type="button" onClick={saveLetter} className="mt-3 rounded-lg bg-[#123c69] px-5 py-3 text-sm font-semibold text-white">{editingId ? 'Atualizar carta' : 'Concluir carta e visualizar'}</button>
+      {publicKeyChecked && !publicKey && (
+        <p
+          role="alert"
+          className="rounded-2xl border border-red-300 bg-red-50 p-5 text-sm text-red-900"
+        >
+          A Cripta ainda não foi inaugurada pela Administração — a chave que protege as cartas ainda
+          não existe. Você pode escrever e guardar um rascunho, mas o envio final só ficará
+          disponível depois da inauguração.
+        </p>
+      )}
+      <p className="mt-4 text-sm text-[#536074]">
+        Rascunhos permitem continuar a edição e são protegidos pela infraestrutura do Portal.
+        Somente a carta selada usa a chave dos Guardiões, sem chave de leitura no servidor.
+      </p>
+      {message && (
+        <p
+          role="status"
+          aria-live="polite"
+          className="rounded-xl border border-[#c9a449] bg-white p-4 text-sm"
+        >
+          {message}
+        </p>
+      )}
+      {step === 'inicio' && (
+        <main className="rounded-[2rem] border border-[#ddd0b7] bg-[#fbf8f1] p-6 sm:p-9">
+          <p className="text-xs font-semibold uppercase tracking-widest text-[#96763c]">
+            Meu espaço
+          </p>
+          <h2 className="mt-2 font-serif text-3xl text-[#142a43]">Minhas cartas</h2>
+          <p className="mt-3 text-[#536074]">
+            Escreva no seu tempo. Você pode continuar um rascunho salvo, conferir as cartas enviadas
+            e anexar lembranças se desejar.
+          </p>
+          {draft && (
+            <article className="mt-7 rounded-2xl border border-[#d7c9a9] bg-white p-5">
+              <h3 className="font-serif text-xl text-[#142a43]">Rascunho guardado</h3>
+              <p className="mt-1 text-sm text-[#536074]">
+                {draft.recipient
+                  ? `Para ${draft.recipient}`
+                  : 'Escolha o destinatário quando quiser'}{' '}
+                · {draft.attachments.length} anexo(s)
+              </p>
+              <button
+                type="button"
+                disabled={!receivingOpen}
+                onClick={continueDraft}
+                className="mt-4 rounded-xl bg-[#123c69] px-6 py-4 font-semibold text-white disabled:opacity-50"
+              >
+                Continuar minha carta
+              </button>
+            </article>
+          )}
+          {!draft && (
+            <button
+              type="button"
+              disabled={!draftChecked || !receivingOpen}
+              onClick={startNew}
+              className="mt-7 rounded-xl bg-[#123c69] px-6 py-4 text-base font-semibold text-white disabled:opacity-50"
+            >
+              Escrever minha carta
+            </button>
+          )}
+          {draftStatus && (
+            <p role="status" className="mt-3 text-sm text-[#536074]">
+              {draftStatus}
+            </p>
+          )}
+          {records.length > 0 && (
+            <section className="mt-8 rounded-2xl border border-[#d7c9a9] bg-white p-5">
+              <h3 className="font-serif text-xl">Minhas cartas, por apelido</h3>
+              <p className="mt-2 text-sm text-[#536074]">
+                Aqui você reconhece cada carta pelo apelido que escolheu — o conteúdo continua só
+                com os Guardiões. Você pode reter uma entrega ou mudar como ela será entregue a
+                qualquer momento, em qualquer reabertura, sem precisar explicar o motivo.
+              </p>
+              {records.map((record) => (
+                <div
+                  key={record.id}
+                  className="mt-4 flex flex-wrap items-center gap-3 border-t pt-4 text-sm"
+                >
+                  <div className="flex-1">
+                    <strong
+                      className={record.status === 'retida' ? 'text-red-800' : 'text-[#142a43]'}
+                    >
+                      {record.label}
+                    </strong>{' '}
+                    {record.status === 'retida' && (
+                      <span className="text-red-800">· retida, não será entregue</span>
+                    )}
+                    <p className="text-[#536074]">{DELIVERY_MODE_LABEL[record.deliveryMode]}</p>
+                  </div>
+                  {record.status === 'ativa' ? (
+                    <button
+                      type="button"
+                      disabled={recordBusy === record.id}
+                      onClick={() => updateRecord(record.id, 'retida')}
+                      className="rounded-xl border border-red-700 px-4 py-3 text-red-800 disabled:opacity-50"
+                    >
+                      Reter esta entrega
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      disabled={recordBusy === record.id}
+                      onClick={() => updateRecord(record.id, 'reativada')}
+                      className="rounded-xl border px-4 py-3 disabled:opacity-50"
+                    >
+                      Reativar entrega
+                    </button>
+                  )}
+                  <select
+                    disabled={recordBusy === record.id}
+                    value={record.deliveryMode}
+                    onChange={(event) =>
+                      updateRecord(record.id, 'modo_alterado', event.target.value as DeliveryMode)
+                    }
+                    className="rounded-xl border px-3 py-3 disabled:opacity-50"
+                  >
+                    {(['privada', 'sessao', 'ambas'] as const).map((mode) => (
+                      <option key={mode} value={mode}>
+                        {DELIVERY_MODE_LABEL[mode]}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ))}
+            </section>
+          )}
+          {remote.length > 0 && (
+            <section className="mt-8 rounded-2xl border border-[#d7c9a9] bg-white p-5">
+              <h3 className="font-serif text-xl">Cartas guardadas</h3>
+              <p className="mt-2 text-sm text-[#536074]">
+                Cada carta abaixo já está selada com a chave da Cripta. Nem você, nem o Portal
+                conseguem reabri-la — só os Guardiões da Cripta, reunidos, em cerimônia. Se quiser
+                mudar algo, escreva uma carta nova.
+              </p>
+              {remote.map((item) => (
+                <div
+                  key={item.id}
+                  className="mt-4 flex flex-wrap items-center gap-3 border-t pt-4 text-sm"
+                >
+                  <span className="flex-1">
+                    Guardada em {new Date(item.createdAt).toLocaleString('pt-BR')} · selada
+                  </span>
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => deleteTest(item.id)}
+                    className="rounded-xl border px-4 py-3 disabled:opacity-50"
+                  >
+                    Excluir carta
+                  </button>
+                </div>
+              ))}
+            </section>
+          )}
+        </main>
+      )}
+      {step === 'escrever' && (
+        <main className="space-y-6 rounded-[2rem] border border-[#ddd0b7] bg-[#fbf8f1] p-6 sm:p-9">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-widest text-[#96763c]">
+              1 de 2 · Prepare sua carta
+            </p>
+            <h2 className="mt-2 font-serif text-3xl text-[#142a43]">Escrever minha carta</h2>
+            <p className="mt-2 text-sm text-[#536074]">
+              Indique a pessoa que deverá receber esta carta. Os arquivos abaixo acompanharão a
+              mesma mensagem.
+            </p>
           </div>
-          <div className="mt-6 rounded-2xl border border-[#dbcda9] bg-[#f5eedf] p-5"><h3 className="font-serif text-xl text-[#142a43]">Ensaio de recuperação de carta</h3><p className="mt-2 text-sm leading-6 text-[#536074]">Crie uma carta fictícia, escolha uma frase longa, baixe o pacote cifrado e abra-o neste ou em outro aparelho. A frase não é enviada ao portal. Fotos, áudio e vídeo não fazem parte deste ensaio.</p><div className="mt-4 grid gap-4 sm:grid-cols-2"><label className="text-sm font-semibold">Frase para exportar<input type="password" autoComplete="new-password" value={exportPassphrase} onChange={(event) => setExportPassphrase(event.target.value)} className="mt-2 w-full rounded-lg border bg-white p-3" /></label><label className="text-sm font-semibold">Frase para restaurar<input type="password" autoComplete="off" value={importPassphrase} onChange={(event) => setImportPassphrase(event.target.value)} className="mt-2 w-full rounded-lg border bg-white p-3" /></label></div><label className="mt-4 inline-block cursor-pointer rounded-lg border border-[#b99552] bg-white px-4 py-2 text-sm font-semibold">Abrir pacote cifrado<input type="file" accept=".json,application/json" onChange={importSealedLetter} disabled={working} className="sr-only" /></label></div>
-          {remoteItems.length > 0 && <div className="mt-5 rounded-xl border border-[#dbcda9] bg-white p-4"><h3 className="font-serif text-lg">Pacotes cifrados registrados</h3><p className="mt-1 text-xs text-muted">O inventário não mostra título nem destinatário. O download só estará disponível durante uma janela autorizada.</p>{remoteItems.map((item) => <div key={item.id} className="mt-3 flex items-center justify-between gap-3 border-t pt-3 text-xs"><span>{new Date(item.createdAt).toLocaleDateString('pt-BR')} · {formatSize(item.bytes)}</span><a className="font-semibold text-[#123c69] underline" href={`/api/cripta/capsules/${item.id}`}>Baixar cifrado</a></div>)}</div>}
-          <div className="mt-8 space-y-3">{letters.map((letter) => <div key={letter.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[#dbcda9] bg-white p-4">
-            <button type="button" onClick={() => setSelectedLetterId(letter.id)} className="min-w-0 text-left font-serif text-lg text-[#142a43] hover:underline">✉ &nbsp;{letter.title}<span className="block pl-8 font-sans text-xs text-muted">Para {letter.recipient} · {files.filter((entry) => entry.letterId === letter.id).length} anexo(s)</span></button>
-            <div className="flex gap-3 text-sm">{canDeposit && <button type="button" disabled={working} onClick={() => storeSealedLetter(letter)} className="font-semibold text-[#123c69] disabled:opacity-50">Guardar cifrada</button>}<button type="button" disabled={working} onClick={() => exportSealedLetter(letter)} className="font-semibold text-[#123c69] disabled:opacity-50">Baixar cifrada</button><button type="button" onClick={() => { setEditingId(letter.id); setTitle(letter.title); setBody(letter.body); setLetterRecipient(letter.recipient); setSelectedLetterId(letter.id); }}>Editar</button><button type="button" onClick={() => {
-              files.filter((entry) => entry.letterId === letter.id).forEach((entry) => URL.revokeObjectURL(entry.url));
-              setFiles((items) => items.filter((entry) => entry.letterId !== letter.id));
-              setLetters((items) => items.filter((item) => item.id !== letter.id));
-              if (selectedLetterId === letter.id) setSelectedLetterId(null);
-              if (editingId === letter.id) { setEditingId(null); setTitle(''); setBody(''); setLetterRecipient(''); }
-            }}>Remover</button></div>
-          </div>)}</div>
-          {selectedLetter && <div className="mt-8"><div className="mb-3 flex flex-wrap items-center justify-between gap-3"><h3 className="font-serif text-xl text-[#142a43]">Prévia da carta</h3><button type="button" onClick={() => downloadLetterImage(selectedLetter)} className="rounded-lg border border-[#b99552] bg-white px-4 py-2 text-sm font-semibold text-[#142a43]">Baixar imagem PNG da carta</button></div>
-            <article className="relative mx-auto max-w-2xl border border-[#ccb682] bg-[#f8f1e4] p-7 text-[#26344a] shadow-[0_16px_35px_-20px_#45351c] sm:p-12"><div className="pointer-events-none absolute inset-3 border border-[#dfcfac]" /><div className="relative"><p className="text-center text-[10px] font-semibold uppercase tracking-[.2em] text-[#94733c]">Cripta do Irmão · Prévia fictícia</p><div className="mx-auto mt-4 h-px w-16 bg-[#c9a449]" /><h4 className="mt-7 break-words text-center font-serif text-3xl">{selectedLetter.title}</h4><p className="mt-5 text-sm text-[#927035]">Para {selectedLetter.recipient}</p><p className="mt-7 whitespace-pre-wrap break-words font-serif text-base leading-8">{selectedLetter.body}</p>
-              {files.some((entry) => entry.kind === 'foto' && entry.letterId === selectedLetter.id) && <div className="mt-9 grid grid-cols-2 gap-3 border-t border-[#dfcfac] pt-6 sm:grid-cols-3">{files.filter((entry) => entry.kind === 'foto' && entry.letterId === selectedLetter.id).map((entry) => <img key={entry.id} src={entry.url} alt="Foto anexa à carta fictícia" className="aspect-square w-full rounded object-cover" />)}</div>}
-              <p className="mt-10 text-center text-xs text-[#927035]">Esta visualização não foi armazenada no Portal</p></div></article>
-            <p className="mt-3 text-xs text-muted">O PNG contém somente o texto. Fotos, áudio e vídeo permanecem como anexos separados nesta prévia.</p>
-          </div>}
-        </>}
-        {section === 'arquivos' && <><p className="text-xs font-semibold uppercase tracking-[.2em] text-[#96763c]">Fotografias e lembranças</p><h2 className="mt-2 font-serif text-4xl text-[#142a43]">Fotos da carta</h2><p className="mb-6 mt-3 text-sm leading-7 text-muted">Escolha uma carta e acrescente até 10 fotos de 5 MB cada. Elas acompanharão aquela mensagem e terão o mesmo destinatário.</p>{filePicker('foto', 'image/*')}</>}
-        {section === 'video' && <><p className="text-xs font-semibold uppercase tracking-[.2em] text-[#96763c]">Sua presença em imagem</p><h2 className="mt-2 font-serif text-4xl text-[#142a43]">Apresentação em vídeo</h2><p className="mt-3 text-sm leading-7 text-muted">Um vídeo de até 1 minuto e 60 MB, vinculado à carta escolhida. Escolha um vídeo ou grave uma mensagem de teste.</p><button type="button" disabled={recording !== null || ofKind('video').length > 0 || !selectedLetterId} onClick={() => startRecording('video')} className="my-5 rounded-lg border border-[#b99552] bg-white px-4 py-2 text-sm disabled:opacity-50">Gravar vídeo</button>{recording === 'video' && <button type="button" onClick={stopRecording} className="ml-3 rounded-lg bg-red-700 px-4 py-2 text-sm text-white">Parar gravação</button>}{filePicker('video', 'video/*')}</>}
-        {section === 'audios' && <><p className="text-xs font-semibold uppercase tracking-[.2em] text-[#96763c]">Sua voz preservada</p><h2 className="mt-2 font-serif text-4xl text-[#142a43]">Mensagens de voz</h2><p className="mt-3 text-sm leading-7 text-muted">Até 2 áudios de 3 minutos e 10 MB cada, vinculados à carta escolhida. Revise ouvindo a prévia.</p><button type="button" disabled={recording !== null || ofKind('audio').length >= 2 || !selectedLetterId} onClick={() => startRecording('audio')} className="my-5 rounded-lg border border-[#b99552] bg-white px-4 py-2 text-sm disabled:opacity-50">Gravar áudio</button>{recording === 'audio' && <button type="button" onClick={stopRecording} className="ml-3 rounded-lg bg-red-700 px-4 py-2 text-sm text-white">Parar gravação</button>}{filePicker('audio', 'audio/*')}</>}
-        {section === 'destinatarios' && <><p className="text-xs font-semibold uppercase tracking-[.2em] text-[#96763c]">Entrega individual</p><h2 className="mt-2 font-serif text-4xl text-[#142a43]">A quem se destina</h2><p className="mt-3 text-sm leading-7 text-muted">O destinatário é escolhido em cada carta. Na versão operacional, será necessário confirmar sua identidade e definir uma forma de abertura que não entregue à Loja a chave de leitura.</p><div className="mt-7 space-y-3">{letters.map((letter) => <div key={letter.id} className="rounded-xl border border-[#dbcda9] bg-white p-5"><h3 className="font-serif text-xl text-[#142a43]">{letter.title}</h3><p className="mt-2 text-sm">Destinatário da prévia: <strong>{letter.recipient}</strong></p><p className="mt-1 text-xs text-muted">{files.filter((entry) => entry.letterId === letter.id).length} arquivo(s) vinculado(s)</p><button type="button" onClick={() => { setSection('cartas'); setEditingId(letter.id); setTitle(letter.title); setBody(letter.body); setLetterRecipient(letter.recipient); setSelectedLetterId(letter.id); }} className="mt-3 text-sm font-semibold text-[#123c69] underline">Alterar destinatário</button></div>)}{!letters.length && <p className="rounded-xl border border-[#dbcda9] bg-white p-5 text-sm">Escreva sua primeira carta para definir um destinatário.</p>}</div></>}
-      </main>
+          <p role="status" className="rounded-xl border border-[#ddd0b7] bg-white p-3 text-sm">
+            {draftStatus || 'Escreva no seu tempo. O rascunho será salvo automaticamente.'}
+          </p>
+          <div className="space-y-5 rounded-2xl border border-[#ddd0b7] bg-white p-5">
+            <label className="block font-semibold text-[#142a43]">
+              Para quem é esta carta?
+              <input
+                value={recipient}
+                maxLength={100}
+                onChange={(event) => {
+                  setRecipient(event.target.value);
+                  setDraftStatus('Alterações ainda não salvas');
+                }}
+                placeholder="Nome de quem deverá receber"
+                className="mt-2 w-full rounded-xl border p-4 font-normal"
+              />
+            </label>
+            <details className="text-sm text-[#536074]">
+              <summary className="cursor-pointer font-semibold">
+                ? Por que indicar uma pessoa?
+              </summary>
+              <p>
+                O nome orientará a futura entrega desta carta. Você poderá revisar antes de guardar.
+              </p>
+            </details>
+            <label className="block font-semibold text-[#142a43]">
+              Como você vai reconhecer esta carta depois?{' '}
+              <span className="font-normal text-[#607084]">(só você vê este apelido)</span>
+              <input
+                value={label}
+                maxLength={80}
+                onChange={(event) => setLabel(event.target.value)}
+                placeholder={recipient.trim() || 'Ex.: minha esposa, meu filho mais velho...'}
+                className="mt-2 w-full rounded-xl border p-4 font-normal"
+              />
+            </label>
+            <fieldset>
+              <legend className="font-semibold text-[#142a43]">
+                Como esta carta deve ser entregue?
+              </legend>
+              <div className="mt-2 space-y-2">
+                {(['privada', 'sessao', 'ambas'] as const).map((mode) => (
+                  <label key={mode} className="flex items-start gap-2 text-sm text-[#536074]">
+                    <input
+                      type="radio"
+                      name="delivery-mode"
+                      checked={deliveryMode === mode}
+                      onChange={() => setDeliveryMode(mode)}
+                      className="mt-1"
+                    />
+                    {DELIVERY_MODE_LABEL[mode]}
+                  </label>
+                ))}
+              </div>
+              <p className="mt-1 text-xs text-[#536074]">
+                Você pode mudar isso depois, em qualquer reabertura, sem precisar justificar.
+              </p>
+            </fieldset>
+            <label className="block font-semibold text-[#142a43]">
+              Título <span className="font-normal text-[#607084]">(opcional)</span>
+              <input
+                value={title}
+                maxLength={80}
+                onChange={(event) => {
+                  setTitle(event.target.value);
+                  setDraftStatus('Alterações ainda não salvas');
+                }}
+                placeholder="Minha mensagem"
+                className="mt-2 w-full rounded-xl border p-4 font-normal"
+              />
+            </label>
+            <label className="block font-semibold text-[#142a43]">
+              Escreva sua carta
+              <textarea
+                value={body}
+                maxLength={20_000}
+                onChange={(event) => {
+                  setBody(event.target.value);
+                  setDraftStatus('Alterações ainda não salvas');
+                }}
+                rows={10}
+                placeholder="Escreva com suas próprias palavras..."
+                className="mt-2 w-full rounded-xl border p-4 font-serif font-normal leading-8"
+              />
+            </label>
+            <label className="inline-flex cursor-pointer items-center rounded-xl border border-[#a78648] px-4 py-3 font-semibold text-[#142a43]">
+              Importar texto do Word (.docx)
+              <input
+                type="file"
+                accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                onChange={(event) => {
+                  void importWord(event);
+                }}
+                className="sr-only"
+              />
+            </label>
+            <p className="text-sm text-[#536074]">
+              O texto será colocado no editor para você conferir. Fotos e outros arquivos são
+              adicionados abaixo.
+            </p>
+          </div>
+          <div>
+            <h3 className="font-serif text-2xl text-[#142a43]">
+              Quer acrescentar alguma lembrança?
+            </h3>
+            <p className="mt-1 text-sm text-[#536074]">
+              Você pode seguir sem anexar nada. Se enviar pelo celular, toque no tipo de lembrança
+              abaixo.
+            </p>
+          </div>
+          {picker(
+            'foto',
+            'Fotografias',
+            'image/*',
+            'Até 10 fotos. Fotos grandes são reduzidas no aparelho antes do envio.',
+          )}
+          {picker(
+            'audio',
+            'Mensagem de voz',
+            'audio/*',
+            'Até 2 áudios. A conversão pode levar o tempo da gravação.',
+          )}
+          {picker(
+            'video',
+            'Vídeo',
+            'video/*',
+            'Até 1 minuto. Vídeos grandes podem não caber no espaço atual, mesmo convertidos.',
+          )}
+          <p role="status" className="text-sm text-[#536074]">
+            {optimizing
+              ? 'Convertendo o arquivo no aparelho. Mantenha esta tela aberta.'
+              : `Arquivos nesta carta: ${size(total)} de 2,3 MB.`}{' '}
+            A redução de tamanho pode alterar a qualidade. Confira cada arquivo antes de enviar.
+          </p>
+          <div className="flex flex-wrap gap-3">
+            <button
+              type="button"
+              disabled={recording !== null || optimizing}
+              onClick={review}
+              className="rounded-xl bg-[#123c69] px-6 py-4 font-semibold text-white disabled:opacity-50"
+            >
+              Revisar minha carta
+            </button>
+            <button
+              type="button"
+              disabled={optimizing}
+              onClick={() => {
+                void keepPreview();
+              }}
+              className="rounded-xl border px-5 py-4 disabled:opacity-50"
+            >
+              Guardar rascunho e voltar
+            </button>
+          </div>
+        </main>
+      )}
+      {step === 'revisar' && (
+        <main className="rounded-[2rem] border border-[#ddd0b7] bg-[#fbf8f1] p-6 sm:p-9">
+          <p className="text-xs font-semibold uppercase tracking-widest text-[#96763c]">
+            2 de 2 · Confira a prévia
+          </p>
+          <h2 className="mt-2 font-serif text-3xl text-[#142a43]">
+            Sua carta está pronta para revisão
+          </h2>
+          <article className={`${letterStyles.paper} mx-auto mt-7 max-w-2xl`}>
+            <header className={letterStyles.header}>
+              <p className={letterStyles.eyebrow}>Verdadeira Luz nº 06 · Cripta do Irmão</p>
+              <p className={letterStyles.ornament} aria-hidden="true">
+                ❧ ✦ ❧
+              </p>
+              <h3 className={letterStyles.title}>{title.trim() || 'Minha carta'}</h3>
+              <p className={letterStyles.recipient}>Para {recipient.trim()}</p>
+            </header>
+            <div className={letterStyles.rule} aria-hidden="true" />
+            <div className={letterStyles.body}>{body.trim()}</div>
+            {attachments.length > 0 && (
+              <section className={letterStyles.section}>
+                <h4 className={letterStyles.sectionTitle}>Lembranças que acompanham esta carta</h4>
+                {attachments.map((item) => (
+                  <figure key={item.id} className={letterStyles.media}>
+                    {item.kind === 'foto' ? (
+                      <img src={item.url} alt={item.file.name} />
+                    ) : item.kind === 'audio' ? (
+                      <audio controls preload="metadata" src={item.url} />
+                    ) : (
+                      <video controls preload="metadata" src={item.url} />
+                    )}
+                    <figcaption className={letterStyles.caption}>{item.file.name}</figcaption>
+                  </figure>
+                ))}
+              </section>
+            )}
+            <footer className={letterStyles.footer}>
+              Uma mensagem para guardar através do tempo
+            </footer>
+          </article>
+          <div className="mt-6 rounded-xl border bg-white p-5 text-sm">
+            <strong>Arquivos desta carta:</strong> {attachments.length || 'nenhum'}
+            {attachments.map((item) => (
+              <p key={item.id} className="mt-2 break-all">
+                {item.kind}: {item.file.name}
+              </p>
+            ))}
+          </div>
+          <p className="mt-5 text-sm text-[#795521]">
+            Você pode guardar até cinco cartas. O envio atual aceita até 2,3 MB de anexos juntos.
+          </p>
+          <div className="mt-5 rounded-xl border border-[#c9a449] bg-white p-5 text-sm leading-6 text-[#536074]">
+            <strong className="text-[#142a43]">Ao guardar, esta carta é selada.</strong> Ela é
+            cifrada no seu navegador com a chave da Cripta — sem senha para você lembrar. A partir
+            daí, só os Guardiões da Cripta, reunidos em cerimônia, conseguem abri-la. Se quiser
+            mudar algo depois, escreva uma carta nova.
+          </div>
+          <div className="mt-6 flex flex-wrap gap-3">
+            <button
+              type="button"
+              disabled={busy || !receivingOpen || !openingChecked || !publicKey}
+              onClick={depositTest}
+              className="rounded-xl bg-[#123c69] px-6 py-4 font-semibold text-white disabled:opacity-50"
+            >
+              Guardar minha carta
+            </button>
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => {
+                void downloadOffline();
+              }}
+              className="rounded-xl border border-[#a78648] px-6 py-4 font-semibold disabled:opacity-50"
+            >
+              Baixar carta para abrir sem internet
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                void keepPreview();
+              }}
+              className="rounded-xl border px-6 py-4"
+            >
+              Guardar rascunho
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                draftEnabled.current = true;
+                setStep('escrever');
+              }}
+              className="rounded-xl border px-5 py-4"
+            >
+              Voltar e alterar
+            </button>
+          </div>
+        </main>
+      )}
     </div>
-    <p className="text-xs leading-6 text-muted">A área técnica de cifra, chaves e ensaios permanece separada no Laboratório V1. Limites exibidos são propostas para validação. Nesta página, arquivos escolhidos ficam na memória local e não constituem backup.</p>
-  </div>;
+  );
 }

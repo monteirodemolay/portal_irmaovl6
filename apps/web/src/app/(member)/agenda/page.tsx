@@ -76,68 +76,66 @@ export default async function AgendaPage() {
     anniversaryEntries,
     paramasonicEntities,
   ] = await Promise.all([
-      canReadVl6
-        ? safeFetch('eventos VL6', [], () =>
-            container.useCases.listEventsInRange.execute(session.authContext, { from, to }),
-          )
-        : Promise.resolve([]),
-      safeFetch('compromissos pessoais', [], () =>
-        container.useCases.listMyPersonalEvents.execute(session.authContext, { from, to }),
+    canReadVl6
+      ? safeFetch('eventos VL6', [], () =>
+          container.useCases.listEventsInRange.execute(session.authContext, { from, to }),
+        )
+      : Promise.resolve([]),
+    safeFetch('compromissos pessoais', [], () =>
+      container.useCases.listMyPersonalEvents.execute(session.authContext, { from, to }),
+    ),
+    safeFetch('conexão com o Google Agenda', null, () =>
+      container.repositories.googleCalendarConnection.findByUserId(
+        session.authContext.tenantId,
+        session.authContext.uid,
       ),
-      safeFetch('conexão com o Google Agenda', null, () =>
-        container.repositories.googleCalendarConnection.findByUserId(
-          session.authContext.tenantId,
-          session.authContext.uid,
-        ),
-      ),
-      safeFetch('minhas tarefas', [], () =>
-        container.useCases.listMyPersonalTasks.execute(session.authContext),
-      ),
-      safeFetch('minhas anotações', [], () =>
-        container.useCases.listMyPersonalNotes.execute(session.authContext),
-      ),
-      canReadMembers
-        ? safeFetch('datas comemorativas dos Irmãos', [], () =>
-            container.useCases.listUpcomingAnniversaries.execute(session.authContext, {
-              withinDays: anniversaryWindowDays,
-            }),
-          )
-        : Promise.resolve([]),
-      canReadVl6
-        ? safeFetch('entidades paramaçônicas', [], () =>
-            container.repositories.paramasonicEntity.listByTenant(session.authContext.tenantId),
-          )
-        : Promise.resolve([]),
-    ]);
+    ),
+    safeFetch('minhas tarefas', [], () =>
+      container.useCases.listMyPersonalTasks.execute(session.authContext),
+    ),
+    safeFetch('minhas anotações', [], () =>
+      container.useCases.listMyPersonalNotes.execute(session.authContext),
+    ),
+    canReadMembers
+      ? safeFetch('datas comemorativas dos Irmãos', [], () =>
+          container.useCases.listUpcomingAnniversaries.execute(session.authContext, {
+            withinDays: anniversaryWindowDays,
+          }),
+        )
+      : Promise.resolve([]),
+    canReadVl6
+      ? safeFetch('entidades paramaçônicas', [], () =>
+          container.repositories.paramasonicEntity.listByTenant(session.authContext.tenantId),
+        )
+      : Promise.resolve([]),
+  ]);
 
-  const agendaAnniversaries: AgendaAnniversarySummary[] = anniversaryEntries.map(
-    (entry, index) => {
-      const occurrence = new Date();
-      occurrence.setHours(12, 0, 0, 0);
-      occurrence.setDate(occurrence.getDate() + entry.diasAte);
+  const agendaAnniversaries: AgendaAnniversarySummary[] = anniversaryEntries.map((entry, index) => {
+    const occurrence = new Date();
+    occurrence.setHours(12, 0, 0, 0);
+    occurrence.setDate(occurrence.getDate() + entry.diasAte);
 
-      const titulo =
-        entry.kind === 'nascimento'
-          ? `Aniversário de ${entry.nomeCompleto}`
-          : entry.kind === 'conjuge'
-            ? `Aniversário de ${entry.conjugeNome ?? 'cônjuge'} · família de ${entry.nomeCompleto}`
-            : entry.kind === 'filho'
-              ? `Aniversário de ${entry.filhoNome ?? 'filho(a)'} · família de ${entry.nomeCompleto}`
-              : entry.kind === 'iniciacao'
-                ? `Aniversário de Iniciação · ${entry.nomeCompleto}`
-                : entry.kind === 'elevacao'
-                  ? `Aniversário de Elevação · ${entry.nomeCompleto}`
-                  : `Aniversário de Exaltação · ${entry.nomeCompleto}`;
+    const titulo =
+      entry.kind === 'nascimento'
+        ? `Aniversário de ${entry.nomeCompleto}`
+        : entry.kind === 'conjuge'
+          ? `Aniversário de ${entry.conjugeNome ?? 'cônjuge'} · família de ${entry.nomeCompleto}`
+          : entry.kind === 'filho'
+            ? `Aniversário de ${entry.filhoNome ?? 'filho(a)'} · família de ${entry.nomeCompleto}`
+            : entry.kind === 'iniciacao'
+              ? `Aniversário de Iniciação · ${entry.nomeCompleto}`
+              : entry.kind === 'elevacao'
+                ? `Aniversário de Elevação · ${entry.nomeCompleto}`
+                : `Aniversário de Exaltação · ${entry.nomeCompleto}`;
 
-      return {
-        id: `anniversary-${entry.kind}-${entry.memberId}-${occurrence.getFullYear()}-${index}`,
-        memberId: entry.memberId,
-        titulo,
-        inicio: occurrence,
-        kind: entry.kind,
-      };
-    },
-  );
+    return {
+      id: `anniversary-${entry.kind}-${entry.memberId}-${occurrence.getFullYear()}-${index}`,
+      memberId: entry.memberId,
+      titulo,
+      inicio: occurrence,
+      kind: entry.kind,
+    };
+  });
 
   const paramasonicEntityNames = Object.fromEntries(
     paramasonicEntities.map((entity) => [

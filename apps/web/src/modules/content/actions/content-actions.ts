@@ -213,7 +213,11 @@ export async function reimportImportedNewsAction(): Promise<ReimportImportedNews
         dataPublicacao: scraped.publishedAt ?? news.dataPublicacao,
       });
 
-      const result = await container.useCases.updateNews.execute(session.authContext, news.id, input);
+      const result = await container.useCases.updateNews.execute(
+        session.authContext,
+        news.id,
+        input,
+      );
 
       if (result.ok && result.value.eventId) {
         await syncNewsMediaToArchive({
@@ -252,7 +256,6 @@ export async function reimportImportedNewsAction(): Promise<ReimportImportedNews
 
   return results;
 }
-
 
 /**
  * Corrige retroativamente a `dataPublicacao` de not\u00edcias importadas do site
@@ -357,7 +360,11 @@ export async function createNewsAction(
   }
 
   const container = createServerContainer();
-  const eventLinkError = await validateNewsEventLink(container, session.authContext.tenantId, input.eventId);
+  const eventLinkError = await validateNewsEventLink(
+    container,
+    session.authContext.tenantId,
+    input.eventId,
+  );
   if (eventLinkError) return { error: eventLinkError };
 
   const result = await container.useCases.createNews.execute(session.authContext, input);
@@ -413,7 +420,11 @@ export async function updateNewsAction(
 
   const container = createServerContainer();
   const previousNews = await container.repositories.news.findById(newsId);
-  const eventLinkError = await validateNewsEventLink(container, session.authContext.tenantId, input.eventId);
+  const eventLinkError = await validateNewsEventLink(
+    container,
+    session.authContext.tenantId,
+    input.eventId,
+  );
   if (eventLinkError) return { error: eventLinkError };
 
   const result = await container.useCases.updateNews.execute(session.authContext, newsId, input);
@@ -845,5 +856,7 @@ export async function moderateNewsCommentAction(
   if (!result.ok) throw new Error(result.error.message);
 
   revalidatePath(`/admin/conteudo/noticias/${newsId}`);
+  revalidatePath('/admin/conteudo/noticias/comentarios');
+  revalidatePath('/admin');
   revalidatePath(`/noticias`);
 }
