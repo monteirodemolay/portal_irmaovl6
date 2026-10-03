@@ -65,9 +65,13 @@ export const GET = criptaRoute(async function GET(request: Request) {
   const rows = events
     .map((event) => {
       const label = EVENT_LABEL[event.type ?? ''] ?? event.type ?? 'Evento';
-      const participantes = memberIdsIn(event)
-        .map((id) => names.get(id) ?? id)
-        .join(', ');
+      const others = Array.isArray(event.presentOthers)
+        ? event.presentOthers.filter((name): name is string => typeof name === 'string')
+        : [];
+      const participantes = [
+        ...memberIdsIn(event).map((id) => names.get(id) ?? id),
+        ...others,
+      ].join(', ');
       const ata = typeof event.minutes === 'string' && event.minutes ? event.minutes : '';
       const at = typeof event.at === 'string' ? new Date(event.at).toLocaleString('pt-BR') : '';
       return `<tr><td>${escapeHtml(at)}</td><td>${escapeHtml(label)}</td><td>${escapeHtml(participantes)}</td><td>${escapeHtml(ata)}</td></tr>`;

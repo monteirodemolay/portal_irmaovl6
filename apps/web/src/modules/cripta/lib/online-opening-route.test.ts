@@ -158,6 +158,33 @@ describe('Comissão nomeada que nunca abriu a escrita', () => {
     expect(wizardAfterOpening.phase).toBe('aberto');
   });
 
+  it('registra a lista de presença completa (opcional) sem exigi-la para abrir', async () => {
+    const response = await POST(
+      request({
+        open: true,
+        minutes: 'Ata 001/2027',
+        presentMemberId: 'member-2',
+        durationDays: 10,
+        presentMemberIds: ['member-2', 'member-2', ''],
+        presentOthers: ['Convidado Externo', '  ', 'Convidado Externo'],
+      }),
+    );
+    expect(response.status).toBe(200);
+    const eventKey = [...harness.records.keys()].find((key) =>
+      key.startsWith(`criptaOnlineOpeningV1/${TENANT}/events/`),
+    )!;
+    const event = harness.records.get(eventKey);
+    expect(event?.presentMemberIds).toEqual(['member-2']);
+    expect(event?.presentOthers).toEqual(['Convidado Externo']);
+  });
+
+  it('abre normalmente sem nenhuma lista de presença adicional (campo opcional ausente)', async () => {
+    const response = await POST(
+      request({ open: true, minutes: 'Ata 001/2027', presentMemberId: 'member-2', durationDays: 10 }),
+    );
+    expect(response.status).toBe(200);
+  });
+
   it('rejeita abrir sem Comissão nomeada', async () => {
     harness.records.delete(`criptaGovernanceV1/${TENANT}`);
     const response = await POST(

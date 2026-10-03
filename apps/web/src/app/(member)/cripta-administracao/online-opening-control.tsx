@@ -33,6 +33,8 @@ export function OnlineOpeningControl({
   );
   const [durationDays, setDurationDays] = useState(10);
   const [reason, setReason] = useState('');
+  const [presentMemberIds, setPresentMemberIds] = useState<string[]>([]);
+  const [presentOthersText, setPresentOthersText] = useState('');
   const opening = !initiallyOpen;
   const outsideCommission =
     opening && !!presentMemberId && !commissionMemberIds.includes(presentMemberId);
@@ -54,6 +56,11 @@ export function OnlineOpeningControl({
           presentMemberId,
           reason,
           durationDays,
+          presentMemberIds,
+          presentOthers: presentOthersText
+            .split('\n')
+            .map((name) => name.trim())
+            .filter(Boolean),
         }),
       });
       const data = (await response.json()) as { open?: boolean; error?: string };
@@ -129,6 +136,37 @@ export function OnlineOpeningControl({
               ))}
           </select>
         </label>
+        <div className="text-sm font-semibold sm:col-span-2">
+          Demais presentes na sessão <span className="font-normal text-[#607084]">(opcional)</span>
+          <div className="mt-2 grid max-h-40 gap-2 overflow-y-auto rounded-xl border border-[#c9b98f] bg-white p-3 sm:grid-cols-2">
+            {choices.map((entry) => (
+              <label key={entry.id} className="flex items-center gap-2 text-sm font-normal">
+                <input
+                  type="checkbox"
+                  checked={presentMemberIds.includes(entry.id)}
+                  onChange={(event) =>
+                    setPresentMemberIds((ids) =>
+                      event.target.checked
+                        ? [...ids, entry.id]
+                        : ids.filter((id) => id !== entry.id),
+                    )
+                  }
+                />
+                {entry.name}
+              </label>
+            ))}
+          </div>
+          <textarea
+            value={presentOthersText}
+            onChange={(event) => setPresentOthersText(event.target.value)}
+            placeholder="Outros presentes sem conta vinculada ao Portal, um nome por linha"
+            rows={2}
+            className="mt-2 w-full rounded-xl border border-[#c9b98f] bg-white p-3 font-normal"
+          />
+          <p className="mt-1 text-xs text-[#607084]">
+            Só enriquece o registro da ata — não é exigido para abrir ou fechar.
+          </p>
+        </div>
         {opening && (
           <label className="text-sm font-semibold">
             Prazo de recebimento (dias)

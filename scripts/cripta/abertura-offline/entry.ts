@@ -100,6 +100,28 @@ export async function parseLacre(bytes: Uint8Array): Promise<ParsedLacreFile> {
   return parseLacreFile(bytes);
 }
 
+export type EligibleMember = { id: string; nome: string };
+
+/** The list is carried in by hand (downloaded online, before going offline) purely to cut down
+ * typing errors when naming the new Guardiões in step 4 — it never travels the other way and
+ * carries nothing secret, just name/id, so a wrong or stale copy is a UX annoyance, never a
+ * security concern. */
+export function parseEligibleMembers(value: unknown): EligibleMember[] {
+  if (!value || typeof value !== 'object')
+    throw new Error('Arquivo de Irmãos elegíveis não reconhecido.');
+  const parsed = value as Record<string, unknown>;
+  if (parsed.format !== 'vl6-cripta-eligible-members-v1' || !Array.isArray(parsed.members)) {
+    throw new Error('Arquivo de Irmãos elegíveis não reconhecido.');
+  }
+  return parsed.members.map((entry) => {
+    const member = entry as Record<string, unknown>;
+    if (typeof member.id !== 'string' || typeof member.nome !== 'string') {
+      throw new Error('Registro de Irmão elegível inválido no arquivo.');
+    }
+    return { id: member.id, nome: member.nome };
+  });
+}
+
 /** Opens exactly one letter entry. Throws if the reconstructed key cannot open it (wrong
  * ceremony, tampered envelope) or if the entry is a draft (drafts use a different, server-held
  * key and cannot be opened offline — see cripta-especificacao-funcional.md). */
@@ -221,6 +243,7 @@ declare global {
       reencryptAllLetters: typeof reencryptAllLetters;
       generateRenewedKey: typeof generateRenewedKey;
       buildRenewedLacre: typeof buildRenewedLacre;
+      parseEligibleMembers: typeof parseEligibleMembers;
     };
   }
 }
@@ -237,5 +260,6 @@ if (typeof window !== 'undefined') {
     reencryptAllLetters,
     generateRenewedKey,
     buildRenewedLacre,
+    parseEligibleMembers,
   };
 }

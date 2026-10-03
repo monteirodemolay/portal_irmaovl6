@@ -96,13 +96,15 @@ Abertura e Fechamento **não têm isso**. `online-opening-control.tsx` só colet
 
 Isso é uma lacuna real para o registro de anais: o relatório de uma Abertura ou Fechamento (`/api/cripta/ceremony-report`) hoje só consegue nomear o Venerável e um integrante — não "quem compareceu à sessão".
 
-### Desenho para fechar esta lacuna (não implementado ainda)
+### Implementado (2026-10-03) — decisão institucional: quem pode ser marcado, e obrigatoriedade
 
-- `OnlineOpeningControl` ganha a mesma UI de checkboxes já construída em `InaugurationPanel` (lista de Irmãos elegíveis, marcar os presentes) — reaproveitar o componente, não duplicar.
-- `POST /api/cripta/online-opening` passa a aceitar `presentMemberIds: string[]` (lista completa), mantendo `presentMemberId` (o signatário do ato, sempre um dos da lista) para não quebrar a regra já validada de quem pode assinar.
-- O evento gravado em `criptaOnlineOpeningV1/{tenantId}/events` ganha o campo `presentMemberIds`, ao lado do que já existe — sem remover `presentMemberId`, que continua sendo o registro formal de quem assinou.
-- `eventsForCeremony`/`ceremony-report`/Projetor não precisam mudar: já exibem qualquer campo que termine em `Id`/`Ids` (`memberIdsIn` em `ceremony-report/route.ts`) e resolvem nome automaticamente — a lista de presença apareceria no relatório sem trabalho adicional nessas peças.
-- Risco baixo, mas não zero: muda o contrato de uma rota já em uso (`online-opening`) — fazer com teste cobrindo o formato antigo continuando aceito (nem todo Irmão vai, de cara, preencher a lista nova) antes de tornar `presentMemberIds` obrigatório.
+Decidido explicitamente: (a) qualquer Irmão Ativo pode ser marcado presente, mesmo sem conta vinculada ao Portal (não só quem tem conta, como no sorteio de Guardiões); (b) a lista é **opcional** — só enriquece a ata, nunca bloqueia abrir ou fechar.
+
+- `OnlineOpeningControl` ganhou uma lista de checkboxes (Irmãos elegíveis, mesma fonte já usada) **mais** uma área de texto livre para "outros presentes sem conta vinculada" — um nome por linha, já que a decisão foi permitir quem não tem conta.
+- `POST /api/cripta/online-opening` aceita `presentMemberIds: string[]` (subset de `choices`, deduplicado) e `presentOthers: string[]` (nomes livres, deduplicados, até 50) — ambos opcionais, sem quebrar o contrato existente (`presentMemberId`, o signatário, continua a única exigência).
+- O evento gravado em `criptaOnlineOpeningV1/{tenantId}/events` ganhou os dois campos, ao lado do que já existia.
+- `ceremony-report/route.ts` passou a juntar `presentOthers` (nomes já em claro, sem ID pra resolver) aos nomes resolvidos de `presentMemberIds` na coluna de participantes — sem precisar mudar `eventsForCeremony` nem o Projetor.
+- Testado (`online-opening-route.test.ts`): a lista funciona, dedupe e filtra vazios, e abrir/fechar continua funcionando sem ela (campo ausente).
 
 ### Migração do `cycle-wizard.ts`
 
@@ -140,7 +142,7 @@ Shamir's Secret Sharing **não tem revogação nativa**: uma vez emitida, uma pa
 - `RenewalPanel` em `/cripta-administracao` (sempre visível exceto durante o recebimento aberto) conduz essa segunda metade — upload do resultado, associação de apelidos a contas reais, confirmação.
 - Depois de registrado, o ciclo normal (Conferência física → Limpeza do Wix → Restauração → Reabertura) se aplica sem nenhuma mudança — reaproveita tudo o que já existia.
 
-**Ainda não feito, por decisão deliberada de escopo** (não é lacuna de segurança, é trabalho de UI além do essencial):
+**Decidido institucionalmente e implementado (2026-10-03):**
 
-- A ferramenta offline não lista nomes reais de Irmãos (não tem acesso à rede) — por isso usa apelidos digitados na hora, associados à conta real só depois, online, em `RenewalPanel`.
-- Nenhuma automação decide "quando" renovar — o painel de alerta (`guardian-shares-panel.tsx`) e o selo no Projetor apontam a urgência; a decisão de convocar a cerimônia continua institucional.
+- **Import de lista pré-exportada na ferramenta offline** (reduz erro de digitação, continua 100% offline): `GET /api/cripta/eligible-members` — rota online, só leitura, devolve `{id, nome}` dos Irmãos Ativos com conta vinculada (mesma elegibilidade do sorteio), nada secreto. `RenewalPanel` ganhou o botão de baixar esse arquivo, para levar ao ambiente offline antes de começar. Lá, `parseEligibleMembers` (novo, testado) lê o arquivo e `template.html` passa a oferecer um `<select>` com os nomes (mais "Outro" para digitar, se o Irmão não estiver na lista) em vez de só um campo de texto livre — a associação à conta real continua acontecendo depois, online, como já era.
+- **Notificação proativa no nível crítico**: quando `PATCH /api/cripta/guardian-shares` recalcula o alerta e ele chega a `critico`, a rota dispara `notifyAllActiveUsers` (mecanismo já existente da Central de Avisos do Portal) para todo usuário com permissão `tenant:manage`, com `tipo: 'system'` e link direto para `/cripta-administracao` — deduplicado por `validCount`, então um novo aviso só sai se a situação piorar ainda mais enquanto crítico, não a cada checagem. Não bloqueia nenhuma ação do sistema (decisão institucional: só avisar, não travar).

@@ -90,6 +90,11 @@
       final, as partes antigas dos Guardiões ficam inúteis de propósito. Confirme com a
       Administração antes de prosseguir, e faça isto com o recebimento de cartas fechado.
     </div>
+    <p class="muted">Se tiver, carregue a lista de Irmãos elegíveis baixada do Portal antes de vir
+    para este ambiente — reduz erro de digitação. Sem ela, digite o nome livremente.</p>
+    <label for="renewal-members-file">Lista de Irmãos elegíveis (opcional)</label>
+    <input type="file" id="renewal-members-file" accept=".json,application/json">
+    <div id="status-renewal-members"></div>
     <p class="muted">Informe os 5 novos Guardiões (nome ou apelido — só para você reconhecer cada
     parte; a vinculação com a conta real de cada Irmão no Portal é feita depois, online, pela
     Administração).</p>
@@ -246,15 +251,50 @@
   });
 
   var TOTAL_GUARDIANS = 5;
+  state.eligibleMembers = [];
+
+  document.getElementById('renewal-members-file').addEventListener('change', function (event) {
+    var file = event.target.files && event.target.files[0];
+    if (!file) return;
+    clearStatus('status-renewal-members');
+    file.text().then(function (text) {
+      return window.CriptaOffline.parseEligibleMembers(JSON.parse(text));
+    }).then(function (members) {
+      state.eligibleMembers = members;
+      setStatus('status-renewal-members', 'ok', members.length + ' Irmão(s) elegível(eis) carregado(s).');
+      renderRenewalNames();
+    }).catch(function (error) {
+      setStatus('status-renewal-members', 'err', 'Não foi possível ler a lista: ' + (error && error.message ? error.message : String(error)));
+    });
+  });
 
   function renderRenewalNames() {
     var wrap = document.getElementById('renewal-names');
     var fields = '';
+    var hasList = state.eligibleMembers.length > 0;
     for (var i = 1; i <= TOTAL_GUARDIANS; i++) {
-      fields += '<label for="renewal-name-' + i + '">Novo Guardião ' + i + '</label>' +
-        '<input type="text" id="renewal-name-' + i + '" placeholder="Nome ou apelido">';
+      fields += '<label for="renewal-name-' + i + '">Novo Guardião ' + i + '</label>';
+      if (hasList) {
+        var options = '<option value="">Selecione</option>';
+        state.eligibleMembers.forEach(function (member) {
+          options += '<option value="' + member.nome.replace(/"/g, '&quot;') + '">' + member.nome + '</option>';
+        });
+        options += '<option value="__outro__">Outro (digitar)</option>';
+        fields += '<select id="renewal-name-' + i + '" onchange="document.getElementById(\'renewal-name-' + i + '-outro\').style.display = this.value === \'__outro__\' ? \'block\' : \'none\'">' + options + '</select>' +
+          '<input type="text" id="renewal-name-' + i + '-outro" placeholder="Nome ou apelido" style="display:none;margin-top:.5rem">';
+      } else {
+        fields += '<input type="text" id="renewal-name-' + i + '" placeholder="Nome ou apelido">';
+      }
     }
     wrap.innerHTML = fields;
+  }
+
+  function renewalNameValue(i) {
+    var field = document.getElementById('renewal-name-' + i);
+    if (field.tagName === 'SELECT' && field.value === '__outro__') {
+      return document.getElementById('renewal-name-' + i + '-outro').value.trim();
+    }
+    return field.value.trim();
   }
 
   document.getElementById('btn-renew').addEventListener('click', function () {
@@ -268,7 +308,7 @@
     }
     var names = [];
     for (var i = 1; i <= TOTAL_GUARDIANS; i++) {
-      var value = document.getElementById('renewal-name-' + i).value.trim();
+      var value = renewalNameValue(i);
       if (!value) {
         setStatus('status-renewal', 'err', 'Informe os ' + TOTAL_GUARDIANS + ' nomes antes de continuar.');
         return;

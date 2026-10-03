@@ -10,6 +10,7 @@ import {
   isGuardianShareStatus,
   validShareCount,
 } from '@/modules/cripta/lib/guardian-shares';
+import { notifyAllActiveUsers } from '@/modules/notification/lib/notify-all-active-users';
 
 export const runtime = 'nodejs';
 const headers = { 'Cache-Control': 'no-store, private' };
@@ -85,10 +86,23 @@ export const PATCH = criptaRoute(async function PATCH(request: Request) {
       return { shares: next, total, threshold };
     });
     const validCount = validShareCount(result.shares);
-    return NextResponse.json(
-      { validCount, alertLevel: guardianAlertLevel(validCount, result.total, result.threshold) },
-      { headers },
-    );
+    const alertLevel = guardianAlertLevel(validCount, result.total, result.threshold);
+    // Avisa quem pode agir — decisão institucional de não esperar alguém abrir a tela por conta
+    // própria quando já não há mais partes suficientes para reconstruir a chave. Dedupeia por
+    // validCount: um novo aviso só sai se a contagem piorar ainda mais enquanto crítico.
+    if (alertLevel === 'critico') {
+      const container = createServerContainer();
+      void notifyAllActiveUsers(container, tenantId, {
+        tipo: 'system',
+        titulo: 'Cripta do Irmão: partes dos Guardiões insuficientes',
+        mensagem: `Só ${validCount} de ${result.total} partes dos Guardiões ainda são confiáveis — abaixo do limiar necessário para reconstruir a chave. A Cripta está inacessível até uma Renovação de Guardiões.`,
+        link: '/cripta-administracao',
+        priority: 'attention',
+        audienceFilter: (_user, role) => !!role?.permissoes.includes('tenant:manage'),
+        dedupeKey: (userId) => `cripta-guardioes-critico:${tenantId}:${validCount}:${userId}`,
+      });
+    }
+    return NextResponse.json({ validCount, alertLevel }, { headers });
   } catch (error) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Não foi possível atualizar.' },

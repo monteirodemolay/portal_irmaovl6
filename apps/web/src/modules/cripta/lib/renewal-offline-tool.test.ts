@@ -11,6 +11,7 @@ import { buildLacreFile, encodeEntries, type LacreEntry } from './lacre-format';
 import {
   buildRenewedLacre,
   generateRenewedKey,
+  parseEligibleMembers,
   reencryptAllLetters,
 } from '../../../../../../scripts/cripta/abertura-offline/entry';
 import { parseLacreFile } from './lacre-format';
@@ -118,5 +119,21 @@ describe('buildRenewedLacre', () => {
       encodeEntries(entries),
     );
     expect(renewed.bytes).toEqual(manual);
+  });
+});
+
+describe('parseEligibleMembers', () => {
+  it('lê a lista exportada pelo Portal', () => {
+    const members = parseEligibleMembers({
+      format: 'vl6-cripta-eligible-members-v1',
+      generatedAt: '2027-01-01T00:00:00.000Z',
+      members: [{ id: 'm1', nome: 'Fulano' }, { id: 'm2', nome: 'Beltrano' }],
+    });
+    expect(members).toEqual([{ id: 'm1', nome: 'Fulano' }, { id: 'm2', nome: 'Beltrano' }]);
+  });
+
+  it('rejeita formato desconhecido ou registro inválido', () => {
+    expect(() => parseEligibleMembers({ format: 'outra-coisa', members: [] })).toThrow();
+    expect(() => parseEligibleMembers({ format: 'vl6-cripta-eligible-members-v1', members: [{ id: 'm1' }] })).toThrow();
   });
 });

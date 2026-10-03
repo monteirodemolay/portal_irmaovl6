@@ -207,3 +207,16 @@ O próximo ciclo de auditoria deve começar no commit que efetivamente entrar em
 - **Nova finalidade:** não — é extensão operacional do mesmo registro de cerimônia/custódia já declarado na v2.1.0, agora cobrindo o status de cada parte individualmente.
 - **Atenção registrada:** o motivo (texto livre, opcional) que a Administração pode anotar ao marcar uma parte comprometida poderia, na prática, conter informação de saúde/óbito do Guardião, ainda que o campo não exija isso — recomendação operacional de preencher só a categoria (extravio/impedimento), não detalhe clínico, registrada no Inventário §3.9.
 - **Exige novo aceite:** **não**. É dado administrativo sobre o exercício da função de Guardião, não dado pessoal geral do titular, e não cria finalidade nova nem compartilhamento externo.
+
+## 14. Registro de alteração — 03/10/2026 (continuação)
+
+### 2.3.0 — Lista de presença completa, exportação de elegíveis e notificação de nível crítico
+
+- **Classificação:** `mudanca_operacional`.
+- **Impacto:** baixo.
+- **Motivo:** três itens pendentes do Architecture da Cripta, fechados por decisão institucional explícita: (a) Abertura/Fechamento passam a registrar, opcionalmente, a lista completa de presentes — incluindo, por decisão, Irmãos Ativos sem conta vinculada ao Portal, registrados por nome em texto livre; (b) a Administração pode exportar uma lista de Irmãos elegíveis para levar ao ambiente offline da Renovação de Guardiões, reduzindo erro de digitação; (c) quando as partes válidas dos Guardiões caem abaixo do limiar necessário, o Portal notifica automaticamente quem tem permissão `tenant:manage`, pela Central de Avisos já existente.
+- **Itens alterados:** Inventário LGPD §3.9 (três novos itens); Política de Privacidade §8.9.
+- **Novo terceiro/subprocessador:** não.
+- **Nova finalidade:** não — (a) e (b) são extensão operacional do mesmo registro de cerimônia/custódia já declarado; (c) reaproveita a infraestrutura de notificação interna já existente e documentada para o Portal em geral, sem conteúdo pessoal novo na própria notificação.
+- **Atenção registrada:** o item (a) é o único que introduz dado de pessoa até então sem nenhum registro de nome neste sistema (Irmão Ativo sem conta vinculada) — campo opcional, não bloqueia nenhum ato, e documentado como tal no Inventário §3.9.
+- **Exige novo aceite:** **não**. Nenhum dos três cria finalidade nova, compartilhamento com terceiro externo, ou altera direito/obrigação de usuário — (a) é dado de participação em sessão (mesma natureza já coberta pelos Termos), (b) e (c) são puramente operacionais/administrativos.

@@ -23,11 +23,20 @@ const harness = vi.hoisted(() => {
         }),
     },
   };
-  return { state, events, members, ref, session: vi.fn(), findById: vi.fn(async (id: string) => members.get(id)) };
+  return {
+    state,
+    events,
+    members,
+    ref,
+    session: vi.fn(),
+    findById: vi.fn(async (id: string) => members.get(id)),
+    notify: vi.fn(),
+  };
 });
 
 vi.mock('@/modules/cripta/lib/cripta-route', () => ({ criptaRoute: (handler: unknown) => handler }));
 vi.mock('@vl6/infra', () => ({ createServerContainer: () => ({ repositories: { member: { findById: harness.findById } } }) }));
+vi.mock('@/modules/notification/lib/notify-all-active-users', () => ({ notifyAllActiveUsers: harness.notify }));
 vi.mock('@/lib/auth/require-permission', () => ({ requirePagePermission: harness.session }));
 vi.mock('@/modules/cripta/lib/cripta-crypto-state', () => ({
   criptaCryptoRef: () => harness.ref,
@@ -58,6 +67,7 @@ const patchRequest = (body: Record<string, unknown>) =>
 beforeEach(() => {
   harness.events.length = 0;
   harness.members.clear();
+  harness.notify.mockClear();
   harness.session.mockResolvedValue({ user: { id: 'operator-1' }, authContext: { tenantId: TENANT } });
   harness.members.set('g1', { nomeCompleto: 'Fulano Guardião' });
   harness.state.data = {
@@ -97,15 +107,21 @@ describe('PATCH /api/cripta/guardian-shares', () => {
     expect(body.alertLevel).toBe('atencao');
     expect(harness.events).toHaveLength(1);
     expect(harness.events[0]).toMatchObject({ type: 'parte.comprometida', memberId: 'g1', reason: 'pen drive extraviado' });
+    expect(harness.notify).not.toHaveBeenCalled();
   });
 
-  it('chega a urgente na segunda perda (3 de 5 válidas) e a crítico na terceira', async () => {
+  it('chega a urgente na segunda perda (3 de 5 válidas) e a crítico na terceira, notificando só no crítico', async () => {
     await PATCH(patchRequest({ memberId: 'g1', status: 'comprometida' }));
     const urgente = await PATCH(patchRequest({ memberId: 'g2', status: 'comprometida' }));
     expect((await urgente.json()).alertLevel).toBe('urgente');
+    expect(harness.notify).not.toHaveBeenCalled();
 
     const critico = await PATCH(patchRequest({ memberId: 'g3', status: 'comprometida' }));
     expect((await critico.json()).alertLevel).toBe('critico');
+    expect(harness.notify).toHaveBeenCalledTimes(1);
+    const [, notifiedTenant, notifyInput] = harness.notify.mock.calls[0]!;
+    expect(notifiedTenant).toBe(TENANT);
+    expect(notifyInput).toMatchObject({ tipo: 'system', link: '/cripta-administracao' });
   });
 
   it('revalida uma parte e registra o evento correspondente', async () => {

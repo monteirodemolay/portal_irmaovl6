@@ -1,6 +1,6 @@
 # Política de Privacidade — Portal do Irmão VL6
 
-> **Versão:** 2.2.0 · **Vigência a partir de:** 03/10/2026 · **Aprovada por:** Diretoria VL6
+> **Versão:** 2.3.0 · **Vigência a partir de:** 03/10/2026 · **Aprovada por:** Diretoria VL6
 > **Documento fonte:** `docs/legal/01-inventario-dados-lgpd.md`. Revisão v2.0.0 baseada no marco jurídico `24d0967` e no estado de Production `1c699dd7`, auditados em 30/09/2026.
 > Este arquivo é a versão vigente. Alterações futuras geram uma nova versão, publicada pela Administração em Configurações → Termos e Privacidade — nunca sobrescrevem esta sem preservar a anterior — ver `docs/legal/04-sistema-de-versionamento.md`.
 
@@ -103,6 +103,8 @@ A cada reabertura do recebimento, o próprio Irmão pode rever, ao lado de cada 
 A Loja mantém, ainda, um registro permanente dos atos de cada cerimônia da Cripta (Inauguração, Abertura, Fechamento, Reabertura) — incluindo quem presidiu, a ata e, quando aplicável, quais Irmãos estavam presentes e o resultado do sorteio dos Guardiões — para fins de auditoria e para constar nos anais da Loja. Esse registro não contém conteúdo de carta nem os dados de ficha (apelido, modo de entrega, retenção) de nenhum Irmão.
 
 A Loja mantém também, por Guardião, o status declarado de sua parte da chave (válida ou comprometida) e um motivo operacional opcional registrado pela Administração quando uma parte é declarada extraviada ou seu titular impossibilitado de exercer a função — informação necessária para decidir sobre a renovação da custódia da Cripta.
+
+O registro de presença em Abertura e Fechamento pode incluir, além dos Irmãos com conta no Portal, o nome de outros Irmãos Ativos presentes sem conta vinculada, registrado manualmente — mantido com a mesma permanência do restante do registro de cerimônia. A Administração pode também gerar, para uso exclusivamente operacional na Renovação de Guardiões, um arquivo com nome e identificador dos Irmãos elegíveis, transportado fisicamente até o ambiente offline correspondente e descartado após o uso. Quando o número de partes confiáveis dos Guardiões cai abaixo do mínimo necessário, o Portal notifica automaticamente, pelos canais internos já previstos nesta Política, os usuários responsáveis pela Administração.
 
 ### 8.10 Transparência sobre lacunas técnicas atuais
 
@@ -251,10 +253,10 @@ A versão 1.0.0 constitui o **Marco Inicial** dos documentos jurídicos do Porta
 
 ## 23. Data de vigência e versão
 
-- **Versão:** 2.2.0
+- **Versão:** 2.3.0
 - **Data de vigência:** 03/10/2026
-- **Classificação desta versão:** Atualização informativa — rastreamento do status de cada parte da chave dos Guardiões (válida/comprometida), para decidir sobre renovação da custódia da Cripta; não exige novo aceite (ver `04-sistema-de-versionamento.md`)
+- **Classificação desta versão:** Atualização informativa — lista de presença completa (incluindo Irmãos sem conta vinculada) em Abertura/Fechamento, exportação operacional de lista de elegíveis para a Renovação de Guardiões, e notificação automática de nível crítico das partes; não exige novo aceite (ver `04-sistema-de-versionamento.md`)
 
 ---
 
-_Esta Política de Privacidade v2.2.0 consolida a auditoria do Portal entre o marco jurídico `24d0967` e a Production `1c699dd7`, com a atualização de 03/10/2026 referente à Cripta Digital. A v1.0.0 permanece preservada como Marco Inicial no histórico do sistema._
+_Esta Política de Privacidade v2.3.0 consolida a auditoria do Portal entre o marco jurídico `24d0967` e a Production `1c699dd7`, com a atualização de 03/10/2026 referente à Cripta Digital. A v1.0.0 permanece preservada como Marco Inicial no histórico do sistema._

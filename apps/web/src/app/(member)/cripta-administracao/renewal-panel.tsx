@@ -109,10 +109,21 @@ export function RenewalPanel({ eligible }: { eligible: Member[] }) {
         Registrar o resultado da Renovação offline
       </h2>
       <p className="mt-2 text-sm leading-6 text-[#536074]">
-        Use só depois de concluir a etapa 4 na ferramenta offline (<code>abertura-offline</code>).
-        Suba aqui o arquivo <code>renovacao-resultado-*.json</code> baixado lá — ele só contém a
-        chave pública nova e os totais do novo lacre, nunca a chave privada nem uma parte dos
-        Guardiões.
+        Antes de ir para o ambiente offline, baixe a lista de Irmãos elegíveis — leve esse arquivo
+        junto para escolher os novos Guardiões por nome na ferramenta, em vez de digitar, evitando
+        erro de digitação. Ele só contém nome e identificador, nada secreto.
+      </p>
+      <a
+        href="/api/cripta/eligible-members"
+        download="elegiveis-guardioes.json"
+        className="mt-3 inline-block rounded-xl border border-red-700 px-4 py-2 text-sm font-semibold text-red-800 hover:bg-red-100"
+      >
+        Baixar lista de Irmãos elegíveis
+      </a>
+      <p className="mt-5 text-sm leading-6 text-[#536074]">
+        Depois de concluir a etapa 4 na ferramenta offline (<code>abertura-offline</code>), suba
+        aqui o arquivo <code>renovacao-resultado-*.json</code> baixado lá — ele só contém a chave
+        pública nova e os totais do novo lacre, nunca a chave privada nem uma parte dos Guardiões.
       </p>
       <label className="mt-4 block text-sm font-semibold">
         Arquivo renovacao-resultado-*.json

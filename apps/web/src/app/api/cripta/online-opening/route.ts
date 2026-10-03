@@ -39,6 +39,8 @@ export const POST = criptaRoute(async function POST(request: Request) {
     minutes?: unknown;
     presentMemberId?: unknown;
     reason?: unknown;
+    presentMemberIds?: unknown;
+    presentOthers?: unknown;
   } | null;
   if (typeof payload?.open !== 'boolean')
     return NextResponse.json({ error: 'Estado inválido.' }, { status: 400 });
@@ -52,6 +54,27 @@ export const POST = criptaRoute(async function POST(request: Request) {
   const presentMemberId =
     typeof payload.presentMemberId === 'string' ? payload.presentMemberId : '';
   const reason = typeof payload.reason === 'string' ? payload.reason.trim() : '';
+  // Presença completa — opcional, por decisão institucional: enriquece a ata sem travar o ato
+  // caso fique incompleta. O signatário (presentMemberId) continua a única exigência.
+  const presentMemberIds = Array.isArray(payload.presentMemberIds)
+    ? [
+        ...new Set(
+          payload.presentMemberIds.filter(
+            (id): id is string => typeof id === 'string' && id.length > 0,
+          ),
+        ),
+      ].slice(0, 300)
+    : [];
+  const presentOthers = Array.isArray(payload.presentOthers)
+    ? [
+        ...new Set(
+          payload.presentOthers
+            .filter((name): name is string => typeof name === 'string')
+            .map((name) => name.trim())
+            .filter((name) => name.length > 0 && name.length <= 100),
+        ),
+      ].slice(0, 50)
+    : [];
   if (minutes.length < 5 || minutes.length > 160)
     return NextResponse.json({ error: 'Informe a ata da sessão.' }, { status: 400 });
   const tenantId = session.authContext.tenantId;
@@ -147,6 +170,8 @@ export const POST = criptaRoute(async function POST(request: Request) {
           minutes,
           masterId: master.member.id,
           presentMemberId,
+          presentMemberIds,
+          presentOthers,
           commissionMemberIds: commission,
           plannedOpeningDate: designated?.nextOpeningDate ?? null,
           reason: reason || null,
@@ -169,6 +194,8 @@ export const POST = criptaRoute(async function POST(request: Request) {
         minutes,
         masterId: master.member.id,
         presentMemberId,
+        presentMemberIds,
+        presentOthers,
         commissionMemberIds: commission,
         plannedOpeningDate: designated?.nextOpeningDate ?? null,
         reason: reason || null,
