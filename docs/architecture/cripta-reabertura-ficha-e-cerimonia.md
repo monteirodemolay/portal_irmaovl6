@@ -41,22 +41,21 @@ Regras:
 
 `GET/PATCH /api/cripta/letter-records` — lista as fichas do Irmão autenticado (sem nunca tocar `criptaOnlineCapsulesV1`'s ciphertext) e aplica `retida`/`reativada`/`deliveryMode`. Disponível sempre que `isReceivingWindowOpen()` for verdadeiro — ou seja, em qualquer reabertura, não só na primeira abertura.
 
-## 3. Log de cerimônia (`criptaCeremonyLogV1`)
+## 3. Log de cerimônia — reaproveitar o que já existe, preencher só a lacuna real
 
-Append-only, um documento por evento relevante — não um blob por cerimônia, para nunca perder um evento por sobrescrita concorrente.
+**Correção sobre a primeira versão deste documento**: a Administração já grava um evento append-only a cada ato relevante — não precisa de uma coleção nova paralela, que só criaria uma segunda fonte de verdade para manter sincronizada com a primeira. Isso já existe e já está em produção:
 
 ```
-criptaCeremonyLogV1/{tenantId}/events/{eventId}
-  at: string (ISO)
-  ceremony: 'inauguracao' | 'abertura' | 'fechamento' | 'reabertura'
-  type: string   // 'presenca.registrada' | 'sorteio.resultado' | 'sorteio.redraw' | 'guardiao.compartilhamento_baixado' | 'lacracao.concluida' | ...
-  operatorId: string
-  payload: Record<string, unknown>  // metadados operacionais; nunca conteúdo de carta
+criptaCryptoV1/{tenantId}/events/{eventId}       // inauguração ('inaugurated')
+criptaOnlineOpeningV1/{tenantId}/events/{eventId} // abertura/fechamento ('opened' | 'closed' | 'unsealed')
+criptaSealsV1/{tenantId}/events/{eventId}         // lacração ('sealed')
 ```
 
-- Escrita apenas via `POST /api/cripta/ceremony-log` (permissão `tenant:manage`), nunca update/delete pela API — correção é um novo evento, não uma edição do antigo.
-- Alimenta duas coisas com a mesma fonte, sem duplicar dado: a tela do Projetor (leitura em tempo real, ver seção 4) e o relatório de anais (ver seção 5).
-- Cobre exatamente os eventos do mock-up do Projetor: presença confirmada, cada resultado de sorteio (incluindo "sortear novamente" e o motivo informado pelo operador, se algum), download de compartilhamento por Guardião, abertura/fechamento/lacração.
+Cada um já guarda `at`, `actorId`, ata (`minutes`), responsáveis (`masterId`, `presentMemberId`, `commissionMemberIds`) — append-only, nunca update/delete. Isso já é o "registro completo de tudo que aconteceu", só falta duas coisas:
+
+**a) O sorteio dos Guardiões não existe como funcionalidade real** (só na maquete do Projetor) — hoje `guardianMemberIds` é digitado manualmente em `/cripta-administracao/inauguracao`. Nova rota `POST /api/cripta/ceremony-draw`: recebe os Irmãos presentes (Ativos, com conta vinculada — mesma fonte que `comissao-form.tsx` já usa, `repositories.member.search({ situacao: 'ativo' })`), sorteia 5 distintos com `node:crypto` (nunca `Math.random`), grava evento `sorteio.resultado` em `criptaCryptoV1/{tenantId}/events`, e permite `sortear de novo` (grava `sorteio.redraw`, preservando o resultado anterior, nunca o apagando). O resultado alimenta o formulário de inauguração já existente — a rota de inauguração em si não muda.
+
+**b) Falta um leitor único que junte as três fontes em ordem cronológica**, para o Projetor e o relatório não lerem de três lugares cada. Nova rota de leitura `GET /api/cripta/ceremony-log?ceremony=inauguracao|abertura|fechamento|reabertura` — junta os eventos relevantes das três coleções acima (mais o novo `sorteio.*`), devolve em ordem, nunca grava nada.
 
 ## 4. Projetor — da maquete para dados reais
 
