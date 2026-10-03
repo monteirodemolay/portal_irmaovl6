@@ -38,12 +38,16 @@ vi.mock('@/modules/cripta/lib/online-opening', () => ({ openingRef: () => harnes
 vi.mock('@/modules/cripta/lib/cripta-crypto-state', () => ({ criptaCryptoRef: () => harness.db.collection('crypto').doc('tenant') }));
 vi.mock('@/modules/cripta/lib/receiving-window', async () => import('./receiving-window'));
 vi.mock('@/modules/cripta/lib/sealed-request', async () => import('./sealed-request'));
+vi.mock('@/modules/cripta/lib/letter-record', async () => {
+  const shape = await import('./letter-record-shape');
+  return { ...shape, letterRecordsCollection: (tenantId: string) => harness.db.collection('criptaLetterRecordsV1').doc(tenantId).collection('letters') };
+});
 import { POST } from '../../../app/api/cripta/online-capsules/route';
 
 let publicKey: CriptaPublicKey;
 let wire: string;
 const request = (origin = 'https://portal.example', body = wire, key = `${publicKey.x}.${publicKey.y}`) => new Request('https://portal.example/api/cripta/online-capsules', {
-  method: 'POST', headers: { Origin: origin, 'Content-Type': 'application/json', 'X-Cripta-Key': key }, body,
+  method: 'POST', headers: { Origin: origin, 'Content-Type': 'application/json', 'X-Cripta-Key': key, 'X-Cripta-Label': 'apelido de ensaio', 'X-Cripta-Delivery-Mode': 'privada' }, body,
 });
 beforeEach(async () => {
   harness.records.clear();
@@ -62,6 +66,15 @@ describe('API de depósito com serviços simulados', () => {
     expect((await POST(request('https://other.example'))).status).toBe(403);
     harness.session.mockResolvedValue(null);
     expect((await POST(request())).status).toBe(403);
+    expect(harness.upload).not.toHaveBeenCalled();
+  });
+  it('nega carta sem apelido ou modo de entrega escolhidos', async () => {
+    const noLabel = new Request('https://portal.example/api/cripta/online-capsules', {
+      method: 'POST',
+      headers: { Origin: 'https://portal.example', 'Content-Type': 'application/json', 'X-Cripta-Key': `${publicKey.x}.${publicKey.y}` },
+      body: wire,
+    });
+    expect((await POST(noLabel)).status).toBe(400);
     expect(harness.upload).not.toHaveBeenCalled();
   });
   it('nega janela fechada e envelope inválido', async () => {
