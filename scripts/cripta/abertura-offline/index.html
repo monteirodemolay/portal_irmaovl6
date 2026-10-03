@@ -2880,7 +2880,8 @@
     return parseLacreFile(bytes);
   }
   function parseEligibleMembers(value) {
-    if (!value || typeof value !== "object") throw new Error("Arquivo de Irm\xE3os eleg\xEDveis n\xE3o reconhecido.");
+    if (!value || typeof value !== "object")
+      throw new Error("Arquivo de Irm\xE3os eleg\xEDveis n\xE3o reconhecido.");
     const parsed = value;
     if (parsed.format !== "vl6-cripta-eligible-members-v1" || !Array.isArray(parsed.members)) {
       throw new Error("Arquivo de Irm\xE3os eleg\xEDveis n\xE3o reconhecido.");
