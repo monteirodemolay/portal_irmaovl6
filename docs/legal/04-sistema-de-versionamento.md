@@ -81,7 +81,6 @@ Cada revisão jurídica deve registrar dois pontos objetivos:
 
 A revisão analisa somente o intervalo entre esses marcos, classifica cada alteração como sem impacto jurídico, atualização documental sem novo aceite ou alteração material com novo aceite, e grava os dois SHAs nos itens alterados da nova versão. O arquivo `docs/legal/05-marcos-revisao.md` mantém a trilha consolidada. Branches e PRs ainda não publicados em Production ficam fora do marco e entram na revisão seguinte depois de publicados.
 
-
 Processo institucional (não totalmente automatizável hoje, dado que não há Cloud Functions/triggers em produção — ver auditoria §2):
 
 1. Ao planejar uma funcionalidade nova ou uma mudança relevante no tratamento de dados, quem a especifica preenche um checklist de impacto em LGPD (seções afetadas da Política/Termos, novo dado coletado, novo compartilhamento).
@@ -165,7 +164,6 @@ Adicionado também um error boundary dedicado (`apps/web/src/app/(member)/error.
 - **Nova finalidade:** não. O comentário sempre foi atribuído a um autor (`autorId`) e qualquer Irmão autenticado já vê o nome completo de qualquer outro Irmão em todo o Portal (Diretório interno, §3.2 do Inventário) — exibir o nome junto ao comentário aprovado não cria uma categoria de exposição nova, só documenta uma que já existia sem registro formal.
 - **Exige novo aceite:** **não**. Não há novo dado coletado, novo compartilhamento externo ou mudança de direitos/obrigações — é a formalização documental de uma exibição de dado já publicamente visível entre Irmãos autenticados em qualquer outra tela do Portal.
 
-
 ## 11. Marco de revisão — 30/09/2026
 
 ### 2.0.0 — Cripta Digital + transparência técnica consolidada
@@ -184,3 +182,15 @@ Adicionado também um error boundary dedicado (`apps/web/src/app/(member)/error.
 - **Resultado:** revisão preparada automaticamente no painel administrativo. A Administração revisa e publica, sem reconstruir manualmente versão, classificação, motivo, itens alterados ou resumo.
 
 O próximo ciclo de auditoria deve começar no commit que efetivamente entrar em Production contendo esta revisão jurídica, e não no SHA de uma branch/PR ainda pendente.
+
+## 12. Registro de alteração — 03/10/2026
+
+### 2.1.0 — Ficha da carta (modo de entrega e retenção) e registro permanente das cerimônias da Cripta
+
+- **Classificação:** `mudanca_operacional` (ficha da carta) + `mudanca_lgpd` sem exigência de aceite (registro de cerimônia) — ver justificativa abaixo.
+- **Impacto:** baixo.
+- **Motivo:** (a) o Irmão passou a poder, em qualquer reabertura do recebimento, rever o modo de entrega de uma carta já selada (privada/sessão/ambas) e reter sua entrega, sem decifrar o conteúdo e sem justificar — implementado via `docs/architecture/cripta-reabertura-ficha-e-cerimonia.md`, seções 1–2; (b) a Loja passou a manter registro permanente de presença e resultado do sorteio dos Guardiões em cada cerimônia (Inauguração/Abertura/Fechamento/Reabertura), para auditoria e para os anais — seções 2–4 do mesmo documento.
+- **Itens alterados:** Inventário LGPD §3.9 (Cripta Digital VL6, dois novos itens); Política de Privacidade §8.9, §15 (tabela de retenção) e §17.5; Termos de Uso §10-A.
+- **Novo terceiro/subprocessador:** não.
+- **Nova finalidade:** não, no sentido jurídico — (a) é um mecanismo de controle do próprio titular sobre um dado que ele mesmo gera (amplia autonomia, não cria exposição nova a terceiros); (b) é equivalente, em natureza, ao registro de ata de sessão que a Loja já mantém para outras cerimônias, agora formalizado para a Cripta.
+- **Exige novo aceite:** **não**. Em (a), o Irmão só ganha um controle adicional sobre seus próprios dados — nenhuma obrigação ou exposição nova lhe é imposta. Em (b), o dado gravado (presença e resultado de sorteio por nome) é da mesma natureza de dado de participação em sessão já coberto pelos Termos (comparecimento a eventos, §3.6 do Inventário) — não é conteúdo de carta, não é dado da ficha de nenhum Irmão, e não cria compartilhamento com terceiro externo à Loja.

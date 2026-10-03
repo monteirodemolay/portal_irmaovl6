@@ -1,6 +1,6 @@
 # Termos de Uso — Portal do Irmão VL6
 
-> **Versão:** 2.0.0 · **Vigência a partir de:** 30/09/2026 · **Aprovada por:** Diretoria VL6
+> **Versão:** 2.1.0 · **Vigência a partir de:** 03/10/2026 · **Aprovada por:** Diretoria VL6
 > **Documento fonte:** `docs/legal/01-inventario-dados-lgpd.md`. Revisão v2.0.0 baseada no marco jurídico `24d0967` e no estado de Production `1c699dd7`, auditados em 30/09/2026.
 > Este documento é independente da Política de Privacidade (`docs/legal/02-politica-privacidade.md`) e deve ser lido em conjunto com ela.
 
@@ -122,7 +122,7 @@ O acesso a áreas específicas de Comunidades Paramaçônicas (DeMolay, Filhas d
 
 A Cripta Digital é uma funcionalidade opcional e privada para que o Irmão escreva cartas pessoais e acrescente anexos destinados às pessoas que indicar. O autor é responsável pelo conteúdo enviado, pela legitimidade de inserir dados de terceiros e pela correta indicação dos destinatários.
 
-Durante a janela de escrita, o Irmão pode manter rascunhos e concluir cartas conforme os limites técnicos informados na interface. Ao selar uma carta, o usuário reconhece que o conteúdo entra no procedimento institucional de custódia e deixa de funcionar como um documento comum editável ou livremente reaberto pelo Portal.
+Durante a janela de escrita, o Irmão pode manter rascunhos e concluir cartas conforme os limites técnicos informados na interface. Ao selar uma carta, o usuário reconhece que o conteúdo entra no procedimento institucional de custódia e deixa de funcionar como um documento comum editável ou livremente reaberto pelo Portal. A qualquer reabertura futura do recebimento, o Irmão pode, sem necessidade de justificativa, rever o modo de entrega de uma carta já selada (entrega privada, leitura em sessão, ou ambas) ou reter sua entrega — sem que isso exija ou implique a leitura do conteúdo por qualquer pessoa.
 
 A Administração da Cripta acompanha estado, participação, integridade, cópias e ocorrências, mas não recebe autorização geral para ler o conteúdo das cartas. A abertura de carta selada depende do procedimento colegiado e offline dos Guardiões, conforme as regras vigentes da Loja e a hipótese institucional de entrega.
 
@@ -170,10 +170,10 @@ Fica eleito o foro da comarca de Rio Verde, Estado de Goiás, sede da Loja Maç�
 
 ## 18. Data de vigência e versão
 
-- **Versão:** 2.0.0
-- **Data de vigência:** 30/09/2026
-- **Classificação desta versão:** Nova funcionalidade relevante — Cripta Digital VL6 e consolidação das mudanças operacionais desde o Marco Inicial
+- **Versão:** 2.1.0
+- **Data de vigência:** 03/10/2026
+- **Classificação desta versão:** Atualização informativa — direito do Irmão de rever modo de entrega e reter carta já selada a cada reabertura, sem justificativa; não exige novo aceite (ver `04-sistema-de-versionamento.md`)
 
 ---
 
-_Estes Termos de Uso v2.0.0 consolidam a auditoria do Portal entre o marco jurídico `24d0967` e a Production `1c699dd7`. A v1.0.0 permanece preservada como Marco Inicial no histórico do sistema._
+_Estes Termos de Uso v2.1.0 consolidam a auditoria do Portal entre o marco jurídico `24d0967` e a Production `1c699dd7`, com a atualização de 03/10/2026 referente à Cripta Digital. A v1.0.0 permanece preservada como Marco Inicial no histórico do sistema._
