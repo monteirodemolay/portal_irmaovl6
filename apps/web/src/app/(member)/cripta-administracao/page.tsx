@@ -65,11 +65,16 @@ export default async function Page() {
         </p>
         <h1 className="mt-4 font-serif text-4xl sm:text-5xl">A Cripta, passo a passo</h1>
         <p className="mt-4 max-w-2xl leading-7 text-slate-200">
-          A inauguração acontece uma única vez: nomeia os Guardiões e gera a chave. Depois, um ciclo
-          de 8 etapas se repete a cada ano — esta tela sempre mostra só a etapa de agora. A
-          Reabertura (restaurar os rascunhos e reabrir o recebimento) é o fim de um ciclo e o começo
-          do próximo, uma etapa própria, depois da limpeza do Wix.
+          Quatro cerimônias: <strong>Inauguração</strong> (ato único), <strong>Abertura</strong>,{' '}
+          <strong>Fechamento</strong> e <strong>Reabertura</strong> — esta tela sempre mostra só a
+          etapa de agora, sem ir e voltar entre telas.
         </p>
+        <Link
+          href="/cripta-projetor"
+          className="mt-4 inline-block rounded-xl border border-[#e3bd62]/60 px-4 py-2 text-sm font-semibold text-[#e3bd62] hover:bg-[#e3bd62]/10"
+        >
+          Abrir o Projetor para a sessão →
+        </Link>
       </header>
 
       <CycleWizardView result={wizard} />

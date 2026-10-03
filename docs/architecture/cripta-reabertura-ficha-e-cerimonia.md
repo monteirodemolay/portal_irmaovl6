@@ -75,12 +75,20 @@ A maquete (`cripta-projetor-mockup.html`, versão 6) fixa o roteiro visual: 4 ce
 
 ## 6. Nova Administração — substitui o wizard único
 
-O wizard linear de `cycle-wizard.ts` tratava reabertura como um loop de volta à etapa 2. Isso deixa de fazer sentido quando reabertura é o estado permanente esperado. A tela nova é organizada por **cerimônia**, não por etapa única:
+O wizard linear de `cycle-wizard.ts` tratava reabertura como um loop de volta à etapa 2. Isso deixa de fazer sentido quando reabertura é o estado permanente esperado.
 
-- `/cripta-administracao` — painel com 4 cartões (Inauguração, Abertura, Fechamento, Reabertura), cada um mostrando seu próprio estado (`nunca realizada` | `em andamento` | `concluída — aguardando autorização para a próxima`), substituindo o "Próximo passo" morto.
-- Inauguração mostra o selo "Ato único" e fica desabilitada após ocorrer uma vez (`inaugurated: true` já existe em `cripta-crypto-state.ts`).
-- Dentro de cada cartão, as ações hoje espalhadas por `inauguration-panel.tsx`, `comissao-form.tsx`, `seal-panel.tsx`, `export-panel.tsx`, `cleanup-panel.tsx`, `physical-unit-check.tsx`, `restore-panel.tsx` são realocadas para a cerimônia a que pertencem, sem ida-e-volta entre telas — o problema de UX relatado ("preciso ir pra frente e voltar") não se repete porque cada cerimônia é uma tela própria com todas as suas etapas internas visíveis de uma vez.
-- `restore-panel.tsx` ganha uma seção adicional, só de leitura, mostrando quantas fichas de carta (não cartas) estão `retida` desde a última reabertura — para o operador saber que o pacote de entrega precisa respeitar essas retenções, sem ver quais.
+**Correção sobre a primeira versão deste documento, depois de reler o `page.tsx` atual:** ele já não tem o problema "ir pra frente e voltar" nem um botão "Próximo passo" morto — isso só existia na maquete do Projetor (corrigido na Fase 3). `page.tsx` já renderiza exatamente um bloco por `wizard.phase`, cada um com todas as suas ações visíveis de uma vez, sem navegação entre telas. A substituição necessária aqui é mais estreita do que a primeira versão deste documento previa:
+
+**Implementado (Fase 5, parcial, 2026-10-03):**
+
+- `InaugurationPanel` ganhou o sorteio real (seção com lista de presentes + "Sortear os Guardiões"/"Sortear de novo", chamando `/api/cripta/ceremony-draw`), preenchendo os 5 campos antes manuais — a lacuna real identificada na seção 3a.
+- Cabeçalho de `/cripta-administracao` reescrito para nomear as 4 cerimônias e linkar para `/cripta-projetor`.
+
+**Ainda pendente desta fase:**
+
+- Agrupar visualmente os blocos já existentes em 4 "cartões" por cerimônia (hoje são blocos sequenciais por `wizard.phase`, funcionalmente equivalentes mas sem o agrupamento visual explícito).
+- `restore-panel.tsx` mostrar, só leitura, quantas fichas estão `retida` desde a última reabertura.
+- Gravar presença como evento próprio nas cerimônias de abertura/fechamento (hoje só `presentMemberId`, um único Irmão, não uma lista de presença).
 
 ### Migração do `cycle-wizard.ts`
 
