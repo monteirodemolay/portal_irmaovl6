@@ -100,7 +100,7 @@ Dados e conteúdos inseridos na Cripta são de responsabilidade do Irmão que os
 
 A cada reabertura do recebimento, o próprio Irmão pode rever, ao lado de cada carta já selada, um apelido que ele mesmo escolheu para reconhecê-la, o modo de entrega (entrega privada à pessoa indicada, leitura em sessão para os Irmãos, ou ambas) e pode reter uma entrega já indicada — sem necessidade de justificativa e sem que o conteúdo da carta seja, em nenhum momento, decifrado ou lido por qualquer pessoa para isso. Esses dados são visíveis apenas ao próprio autor.
 
-A Loja mantém, ainda, um registro permanente dos atos de cada cerimônia da Cripta (Inauguração, Abertura, Fechamento, Reabertura) — incluindo quem presidiu, a ata e, quando aplicável, quais Irmãos estavam presentes e o resultado do sorteio dos Guardiões — para fins de auditoria e para constar nos anais da Loja. Esse registro não contém conteúdo de carta nem os dados de ficha (apelido, modo de entrega, retenção) de nenhum Irmão.
+A Loja mantém, ainda, um registro permanente dos atos de cada cerimônia da Cripta (Inauguração, Abertura, Fechamento, Reabertura) — incluindo quem presidiu, a ata e, quando aplicável, quais Irmãos estavam presentes e o resultado do sorteio dos Guardiões — para fins de auditoria e para constar no registro histórico da Loja. Esse registro não contém conteúdo de carta nem os dados de ficha (apelido, modo de entrega, retenção) de nenhum Irmão.
 
 A Loja mantém também, por Guardião, o status declarado de sua parte da chave (válida ou comprometida) e um motivo operacional opcional registrado pela Administração quando uma parte é declarada extraviada ou seu titular impossibilitado de exercer a função — informação necessária para decidir sobre a renovação da custódia da Cripta.
 
@@ -183,7 +183,7 @@ O Portal utiliza cookies estritamente funcionais. O principal é o cookie de ses
 | Rascunhos da Cripta                                            | Durante a janela de escrita e até sua inclusão no ciclo de guarda/restauração aplicável                                               |
 | Cartas seladas e anexos da Cripta                              | Conforme o ciclo de custódia institucional e as cópias físicas externas; metadados de auditoria podem permanecer para rastreabilidade |
 | Ficha da carta (apelido, modo de entrega, retenção) da Cripta  | Enquanto a carta selada correspondente existir; visível e alterável apenas pelo próprio autor                                         |
-| Registro das cerimônias da Cripta (presença, sorteio, ata)     | Mantido de forma permanente, para auditoria e para os anais da Loja                                                                   |
+| Registro das cerimônias da Cripta (presença, sorteio, ata)     | Mantido de forma permanente, para auditoria e para o registro histórico da Loja                                                       |
 
 ## 16. Direitos do titular
 
@@ -229,7 +229,7 @@ A Cripta possui finalidade distinta do Acervo Histórico. Seu conteúdo não é 
 
 O ciclo da Cripta pode envolver armazenamento temporário privado no Wix Media Manager e, após conferência, cópias em unidades físicas externas. A Loja mantém procedimentos próprios de lacração, restauração de rascunhos, verificação de integridade, abertura excepcional e entrega. A eliminação de cópias depende das limitações técnicas do provedor e das mídias físicas, razão pela qual o Portal não promete apagamento físico instantâneo ou irrecuperável quando isso não puder ser tecnicamente comprovado.
 
-A Loja mantém, ainda, registro permanente de presença e do resultado do sorteio de Guardiões em cada cerimônia da Cripta, para fins de auditoria e de registro histórico (anais) — equivalente, em natureza, a uma ata de sessão.
+A Loja mantém, ainda, registro permanente de presença e do resultado do sorteio de Guardiões em cada cerimônia da Cripta, para fins de auditoria e de registro histórico — equivalente, em natureza, a uma ata de sessão.
 
 ## 18. Responsabilidades
 

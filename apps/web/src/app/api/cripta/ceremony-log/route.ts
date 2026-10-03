@@ -6,7 +6,7 @@ import { CEREMONIES, eventsForCeremony, type Ceremony } from '@/modules/cripta/l
 export const runtime = 'nodejs';
 
 /** Reads, never writes — joins the three ceremony event sources (see ceremony-events.ts) so the
- * Projetor and the relatório de anais each read one feed instead of three. */
+ * Projetor and the relatório para o registro histórico each read one feed instead of three. */
 export const GET = criptaRoute(async function GET(request: Request) {
   const session = await requirePagePermission('tenant:manage');
   const ceremony = new URL(request.url).searchParams.get('ceremony');

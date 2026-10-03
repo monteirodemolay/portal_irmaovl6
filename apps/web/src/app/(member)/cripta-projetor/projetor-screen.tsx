@@ -224,7 +224,7 @@ export function ProjetorScreen() {
               rel="noopener noreferrer"
               className="inline-block rounded-xl border border-[#e3bd62]/60 px-5 py-3 text-sm font-semibold text-[#e3bd62] hover:bg-[#e3bd62]/10"
             >
-              Abrir relatório desta cerimônia para os anais
+              Abrir relatório desta cerimônia para o registro histórico
             </a>
           </div>
         )}

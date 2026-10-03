@@ -48,7 +48,7 @@ function escapeHtml(value: string): string {
 /** Read-only, built fresh from the same event sources the Projetor reads — never a second copy
  * kept in sync by hand. Names são resolvidos aqui, não guardados nos eventos, para o registro
  * permanente continuar só com identificadores até o momento em que alguém de fato pede o
- * relatório para os anais. */
+ * relatório para o registro histórico. */
 export const GET = criptaRoute(async function GET(request: Request) {
   const session = await requirePagePermission('tenant:manage');
   const url = new URL(request.url);
@@ -100,7 +100,7 @@ export const GET = criptaRoute(async function GET(request: Request) {
     <thead><tr><th>Quando</th><th>Ato</th><th>Participantes</th><th>Ata</th></tr></thead>
     <tbody>${rows || '<tr><td colspan="4">Nenhum registro ainda para esta cerimônia.</td></tr>'}</tbody>
   </table>
-  <footer>Gerado a partir do registro permanente de eventos da Cripta, para os anais da Loja. Não contém conteúdo de carta nem a ficha de retenção de nenhum Irmão.</footer>
+  <footer>Gerado a partir do registro permanente de eventos da Cripta, para o registro histórico da Loja. Não contém conteúdo de carta nem a ficha de retenção de nenhum Irmão.</footer>
 </body>
 </html>`;
 

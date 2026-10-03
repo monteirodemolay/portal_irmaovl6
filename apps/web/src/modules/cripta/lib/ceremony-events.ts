@@ -7,7 +7,7 @@ export const CEREMONIES = ['inauguracao', 'abertura', 'fechamento', 'reabertura'
 export type Ceremony = (typeof CEREMONIES)[number];
 export type CeremonyEvent = Record<string, unknown> & { id: string; type?: string; at?: string };
 
-/** Shared by the log aggregator (Projetor) and the relatório de anais — every event already
+/** Shared by the log aggregator (Projetor) and the relatório para o registro histórico — every event already
  * lives under its own ceremony's document (criptaCryptoV1 for inauguração/sorteio,
  * criptaOnlineOpeningV1 for abertura/fechamento, criptaSealsV1 for lacração); this just joins
  * them in chronological order. Abertura e reabertura share the same 'opened' events (reabertura

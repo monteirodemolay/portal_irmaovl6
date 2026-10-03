@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-/** The relatório de anais is built fresh from the same event sources the Projetor reads, with
+/** The relatório para o registro histórico is built fresh from the same event sources the Projetor reads, with
  * member names resolved only at report time — proves it names participants correctly and never
  * leaks letter content or ficha data, which never appear in ceremony events at all. */
 
@@ -75,7 +75,7 @@ beforeEach(() => {
   ]);
 });
 
-describe('relatório de anais', () => {
+describe('relatório para o registro histórico', () => {
   it('rejeita cerimônia inválida', async () => {
     expect((await GET(request('festa'))).status).toBe(400);
   });

@@ -10,7 +10,7 @@ O modelo até aqui tratava a Cripta como um ciclo único (inaugurar → abrir �
 
 1. **Reaberturas são recorrentes e permanentes**, não um evento raro — a Loja recebe Irmãos novos continuamente, então "reabertura" é o estado normal de operação, não uma exceção.
 2. **O Irmão precisa agir sobre cartas já seladas sem decifrá-las** — reter uma entrega, mudar o modo de entrega, sem prestar contas a ninguém. Isso exige um dado que hoje não existe: uma representação em claro da carta, separada do conteúdo cifrado.
-3. **A cerimônia (inauguração, sorteio de Guardiões, aberturas e fechamentos) precisa de registro permanente, auditável**, para os anais da Loja — hoje nada disso é persistido, só o estado presente.
+3. **A cerimônia (inauguração, sorteio de Guardiões, aberturas e fechamentos) precisa de registro permanente, auditável**, para o registro histórico da Loja — hoje nada disso é persistido, só o estado presente.
 
 ## 1. Princípio que não muda
 
@@ -69,9 +69,9 @@ A maquete (`cripta-projetor-mockup.html`, versão 6) fixa o roteiro visual: 4 ce
 - `POST /api/cripta/ceremony-draw` (Fase 2) calcula o sorteio no servidor com `node:crypto` — nunca no navegador do operador — e apoia "sortear de novo" sem apagar o resultado anterior.
 - Pendente ainda desta fase: o roteiro completo da maquete (presença passo a passo, queima dos pen drives narrada) — a versão real cobre o essencial (fase atual + linha do tempo de eventos por cerimônia) e será enriquecida junto da Fase 5, quando a Administração em si passar a gravar presença como evento próprio.
 
-## 5. Relatório para os anais
+## 5. Relatório para o registro histórico
 
-**Implementado (Fase 4, 2026-10-03).** `GET /api/cripta/ceremony-report?ceremony=inauguracao|abertura|fechamento|reabertura`, gerado a partir do mesmo `eventsForCeremony` que o Projetor usa (`ceremony-events.ts`, extraído do antigo `ceremony-log/route.ts` para ser compartilhado pelos dois) — nunca uma segunda cópia a manter sincronizada. Resolve nomes de Irmãos só no momento do relatório (os eventos guardam só IDs), monta uma página HTML imprimível no estilo certidão/pergaminho da própria Cripta, com data, ato, participantes e ata de cada evento. Não contém conteúdo de carta nem a ficha de nenhum Irmão. Acessível pelo Projetor ("Abrir relatório desta cerimônia para os anais").
+**Implementado (Fase 4, 2026-10-03).** `GET /api/cripta/ceremony-report?ceremony=inauguracao|abertura|fechamento|reabertura`, gerado a partir do mesmo `eventsForCeremony` que o Projetor usa (`ceremony-events.ts`, extraído do antigo `ceremony-log/route.ts` para ser compartilhado pelos dois) — nunca uma segunda cópia a manter sincronizada. Resolve nomes de Irmãos só no momento do relatório (os eventos guardam só IDs), monta uma página HTML imprimível no estilo certidão/pergaminho da própria Cripta, com data, ato, participantes e ata de cada evento. Não contém conteúdo de carta nem a ficha de nenhum Irmão. Acessível pelo Projetor ("Abrir relatório desta cerimônia para o registro histórico").
 
 ## 6. Nova Administração — substitui o wizard único
 
@@ -94,7 +94,7 @@ Hoje, de verdade, só a Inauguração tem uma lista de presença real: o conjunt
 
 Abertura e Fechamento **não têm isso**. `online-opening-control.tsx` só coleta um único `presentMemberId` — a pessoa que, com o Venerável, assina o ato para a ata (`criptaOnlineOpeningV1/{tenantId}/events`, campos `masterId`/`presentMemberId`/`commissionMemberIds`). Quem mais estava na sala nunca é registrado.
 
-Isso é uma lacuna real para o registro de anais: o relatório de uma Abertura ou Fechamento (`/api/cripta/ceremony-report`) hoje só consegue nomear o Venerável e um integrante — não "quem compareceu à sessão".
+Isso é uma lacuna real para o registro histórico: o relatório de uma Abertura ou Fechamento (`/api/cripta/ceremony-report`) hoje só consegue nomear o Venerável e um integrante — não "quem compareceu à sessão".
 
 ### Implementado (2026-10-03) — decisão institucional: quem pode ser marcado, e obrigatoriedade
 
@@ -117,7 +117,7 @@ A substituição é executada em fases, cada uma validada (tsc + eslint + vitest
 1. **Ficha da carta** (seção 2): schema + API + tela do Irmão. Base de tudo abaixo.
 2. **Log de cerimônia** (seção 3): schema + API de escrita, instrumentar as rotas existentes (`online-opening`, `seal`, `restore`) para gravar eventos.
 3. **Projetor real** (seção 4): nova rota lendo o log; mock-up retirado da navegação só depois de validado lado a lado com uma cerimônia real.
-4. **Relatório de anais** (seção 5).
+4. **Relatório para o registro histórico** (seção 5).
 5. **Nova Administração** (seção 6): só então os componentes antigos do wizard único são removidos — depois que as 4 telas por cerimônia estiverem no ar e testadas, nunca antes.
 
 ## 8. Impacto em `docs/legal`

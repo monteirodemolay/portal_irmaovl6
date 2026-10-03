@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 /** Drives the real /api/cripta/ceremony-draw handler: the Guardian lottery must pick exactly 5
  * distinct eligible presentes, reject anyone not Ativo/linked or the Venerável himself, log the
- * draw as an event (so it survives for the anais), and refuse once the Cripta is already
+ * draw as an event (so it survives for the registro histórico), and refuse once the Cripta is already
  * inaugurated — the draw is a one-time act, same as the inauguration it feeds. */
 
 type Data = Record<string, unknown>;
