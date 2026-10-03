@@ -10,6 +10,7 @@ import { letterRecordsCollection } from '@/modules/cripta/lib/letter-record';
 import { CeremonyCard } from './ceremony-card';
 import { CycleWizardView } from './cycle-wizard-view';
 import { GuardianSharesPanel } from './guardian-shares-panel';
+import { RenewalPanel } from './renewal-panel';
 import { InaugurationPanel } from './inauguration-panel';
 import { ComissaoForm } from './comissao-form';
 import { OnlineOpeningControl } from './online-opening-control';
@@ -86,6 +87,11 @@ export default async function Page() {
 
       <CycleWizardView result={wizard} />
       <GuardianSharesPanel />
+      {wizard.phase !== 'aberto' && (
+        <RenewalPanel
+          eligible={eligible.map((member) => ({ id: member.id, name: member.nomeCompleto }))}
+        />
+      )}
 
       {wizard.phase !== 'inauguracao' && wizard.phase !== 'comissao' && (
         <>

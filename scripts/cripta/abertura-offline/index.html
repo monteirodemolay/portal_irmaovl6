@@ -81,6 +81,26 @@
     <div id="delivery-wrap"></div>
   </section>
 
+  <section class="step" id="step-renewal" data-locked="true">
+    <h2>4. Renovação de Guardiões (ato excepcional)</h2>
+    <div class="warning">
+      <strong>Use isto só quando um Guardião faleceu, está impossibilitado, ou a parte dele foi
+      extraviada/retida.</strong> Isto gera uma chave nova e resela TODAS as cartas selecionadas
+      acima sob ela — a chave antiga, depois disso, não protege mais nada. É irreversível: ao
+      final, as partes antigas dos Guardiões ficam inúteis de propósito. Confirme com a
+      Administração antes de prosseguir, e faça isto com o recebimento de cartas fechado.
+    </div>
+    <p class="muted">Informe os 5 novos Guardiões (nome ou apelido — só para você reconhecer cada
+    parte; a vinculação com a conta real de cada Irmão no Portal é feita depois, online, pela
+    Administração).</p>
+    <div id="renewal-names"></div>
+    <label for="renewal-minutes">Ata desta sessão de Renovação</label>
+    <input type="text" id="renewal-minutes" placeholder="Ex.: Ata 140/2027 — Renovação por falecimento do Guardião X">
+    <button id="btn-renew">Gerar chave nova e reselar todas as cartas</button>
+    <div id="status-renewal"></div>
+    <div id="renewal-wrap"></div>
+  </section>
+
   <p class="muted" style="margin-top:3rem">
     Esta ferramenta reutiliza, sem reimplementar, os mesmos módulos de criptografia usados pelo
     Portal para selar as cartas e dividir a chave da Cripta entre os Guardiões.
@@ -2516,6 +2536,34 @@
   }
 
   // apps/web/src/modules/cripta/lib/shamir.ts
+  function randomByte() {
+    return crypto.getRandomValues(new Uint8Array(1))[0];
+  }
+  function evalPolynomial(coefficients, x) {
+    let result = 0;
+    let power = 1;
+    for (const coefficient of coefficients) {
+      result = gfAdd(result, gfMul(coefficient, power));
+      power = gfMul(power, x);
+    }
+    return result;
+  }
+  function splitSecret(secret, totalShares, threshold) {
+    if (!Number.isInteger(totalShares) || !Number.isInteger(threshold) || threshold < 2 || threshold > totalShares || totalShares < 2 || totalShares > 254) {
+      throw new Error("Par\xE2metros de fragmenta\xE7\xE3o inv\xE1lidos.");
+    }
+    if (secret.length === 0 || secret.length > 4096) throw new Error("Segredo de tamanho inv\xE1lido.");
+    const shares = Array.from({ length: totalShares }, (_, index) => ({
+      x: index + 1,
+      y: new Uint8Array(secret.length)
+    }));
+    for (let byteIndex = 0; byteIndex < secret.length; byteIndex++) {
+      const coefficients = [secret[byteIndex]];
+      for (let degree = 1; degree < threshold; degree++) coefficients.push(randomByte());
+      for (const share of shares) share.y[byteIndex] = evalPolynomial(coefficients, share.x);
+    }
+    return shares;
+  }
   function combineShares(shares) {
     if (shares.length < 2) throw new Error("S\xE3o necess\xE1rias ao menos duas partes.");
     const length = shares[0].y.length;
@@ -2554,6 +2602,16 @@
     const padded = value.replace(/-/g, "+").replace(/_/g, "/").padEnd(Math.ceil(value.length / 4) * 4, "=");
     return Uint8Array.from(atob(padded), (char) => char.charCodeAt(0));
   }
+  async function generateCriptaKeypair() {
+    const pair = await crypto.subtle.generateKey({ name: "ECDH", namedCurve: "P-256" }, true, ["deriveBits"]);
+    const publicJwk = await crypto.subtle.exportKey("jwk", pair.publicKey);
+    const privateJwk = await crypto.subtle.exportKey("jwk", pair.privateKey);
+    if (!publicJwk.x || !publicJwk.y || !privateJwk.d) throw new Error("Falha ao gerar a chave da Cripta.");
+    return {
+      publicKey: { kty: "EC", crv: "P-256", x: publicJwk.x, y: publicJwk.y },
+      privateScalar: fromBase64Url(privateJwk.d)
+    };
+  }
   async function importPublicKey(publicKey) {
     return crypto.subtle.importKey(
       "jwk",
@@ -2580,6 +2638,29 @@
       false,
       ["deriveBits"]
     );
+  }
+  async function sealForCripta(plaintext, publicKey) {
+    const recipientKey = await importPublicKey(publicKey);
+    const ephemeral = await crypto.subtle.generateKey({ name: "ECDH", namedCurve: "P-256" }, true, ["deriveBits"]);
+    const sharedBits = await crypto.subtle.deriveBits({ name: "ECDH", public: recipientKey }, ephemeral.privateKey, 256);
+    const hkdfKey = await crypto.subtle.importKey("raw", sharedBits, "HKDF", false, ["deriveKey"]);
+    const aesKey = await crypto.subtle.deriveKey(
+      { name: "HKDF", hash: "SHA-256", salt: new Uint8Array(0), info: encoder.encode("vl6-cripta-seal-v1") },
+      hkdfKey,
+      { name: "AES-GCM", length: 256 },
+      false,
+      ["encrypt"]
+    );
+    const nonce = crypto.getRandomValues(new Uint8Array(12));
+    const ciphertext = await crypto.subtle.encrypt({ name: "AES-GCM", iv: nonce }, aesKey, plaintext);
+    const ephemeralJwk = await crypto.subtle.exportKey("jwk", ephemeral.publicKey);
+    if (!ephemeralJwk.x || !ephemeralJwk.y) throw new Error("Falha ao cifrar para a Cripta.");
+    return {
+      format: "vl6-cripta-seal-v1",
+      ephemeralPublicKey: { kty: "EC", crv: "P-256", x: ephemeralJwk.x, y: ephemeralJwk.y },
+      nonce: toBase64Url(nonce),
+      ciphertext: toBase64Url(new Uint8Array(ciphertext))
+    };
   }
   async function openWithCriptaPrivateKey(envelope, privateScalar, publicKey) {
     if (envelope.format !== "vl6-cripta-seal-v1") throw new Error("Formato de pacote n\xE3o reconhecido.");
@@ -2609,6 +2690,11 @@
   var TRAILER = new TextEncoder().encode("CRIPTAFI");
   var CODE_PATTERN = /^LAC-[A-Z0-9-]{5,48}$|^VL6-[A-Z0-9-]{8,48}$/;
   var DIGEST_PATTERN = /^[a-f0-9]{64}$/;
+  function toBase64(bytes) {
+    let binary = "";
+    for (let offset = 0; offset < bytes.length; offset += 8192) binary += String.fromCharCode(...bytes.subarray(offset, offset + 8192));
+    return btoa(binary);
+  }
   function fromBase64(value) {
     if (!/^[A-Za-z0-9+/]*={0,2}$/.test(value)) throw new Error("Conte\xFAdo cifrado inv\xE1lido no lacre.");
     return Uint8Array.from(atob(value), (char) => char.charCodeAt(0));
@@ -2616,6 +2702,36 @@
   async function sha256Hex(bytes) {
     const digest = await crypto.subtle.digest("SHA-256", bytes);
     return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
+  }
+  function encodeEntries(entries) {
+    const lines = [...entries].sort((a, b) => {
+      const left = `${a.kind}:${a.uid}:${a.id}`;
+      const right = `${b.kind}:${b.uid}:${b.id}`;
+      return left < right ? -1 : left > right ? 1 : 0;
+    }).map((entry) => JSON.stringify({ kind: entry.kind, id: entry.id, uid: entry.uid, sha256: entry.sha256, bytes: toBase64(entry.bytes) }) + "\n");
+    return new TextEncoder().encode(lines.join(""));
+  }
+  function buildLacreFile(header, payload) {
+    if (header.formato !== "CRIPTA/2") throw new Error("Formato de cabe\xE7alho inv\xE1lido.");
+    if (!CODE_PATTERN.test(header.codigoLacracao)) throw new Error("C\xF3digo de lacra\xE7\xE3o inv\xE1lido.");
+    if (!DIGEST_PATTERN.test(header.inventoryDigest)) throw new Error("Digesto de invent\xE1rio inv\xE1lido.");
+    if (!Number.isInteger(header.totalCartas) || header.totalCartas < 0) throw new Error("Total de cartas inv\xE1lido.");
+    const headerJson = new TextEncoder().encode(JSON.stringify(header));
+    if (headerJson.length > 64 * 1024) throw new Error("Cabe\xE7alho do lacre grande demais.");
+    const lengthBytes = new Uint8Array(4);
+    new DataView(lengthBytes.buffer).setUint32(0, headerJson.length);
+    const out = new Uint8Array(MAGIC.length + lengthBytes.length + headerJson.length + payload.length + TRAILER.length);
+    let offset = 0;
+    out.set(MAGIC, offset);
+    offset += MAGIC.length;
+    out.set(lengthBytes, offset);
+    offset += lengthBytes.length;
+    out.set(headerJson, offset);
+    offset += headerJson.length;
+    out.set(payload, offset);
+    offset += payload.length;
+    out.set(TRAILER, offset);
+    return out;
   }
   async function parseLacreFile(file) {
     const decoder = new TextDecoder("utf-8", { fatal: true });
@@ -2711,6 +2827,18 @@
     return zip.generateAsync({ type: "blob", compression: "DEFLATE", compressionOptions: { level: 6 } });
   }
 
+  // apps/web/src/modules/cripta/lib/lacre-entry-digest.ts
+  async function digestLacreEntries(entries) {
+    const ordered = [...entries].map((entry) => ({ kind: entry.kind, id: entry.id, uid: entry.uid, sha256: entry.sha256 })).sort((a, b) => {
+      const left = `${a.kind}:${a.uid}:${a.id}`;
+      const right = `${b.kind}:${b.uid}:${b.id}`;
+      return left < right ? -1 : left > right ? 1 : 0;
+    });
+    const bytes = new TextEncoder().encode(JSON.stringify({ format: "vl6-lacre-inventory-v1", entries: ordered }));
+    const hash = await crypto.subtle.digest("SHA-256", bytes);
+    return Array.from(new Uint8Array(hash), (byte) => byte.toString(16).padStart(2, "0")).join("");
+  }
+
   // scripts/cripta/abertura-offline/entry.ts
   function isGuardianShareFile(value) {
     if (!value || typeof value !== "object") return false;
@@ -2759,7 +2887,65 @@
       throw new Error("Formato de carta n\xE3o reconhecido.");
     return letter;
   }
-  window.CriptaOffline = { combineGuardianShares, parseLacre, openLetterEntry, makeOfflinePackage };
+  async function reencryptAllLetters(entries, privateScalar, publicKey, newPublicKey) {
+    const renewed = [];
+    const failed = [];
+    for (const entry of entries) {
+      if (entry.kind !== "letter") {
+        renewed.push(entry);
+        continue;
+      }
+      try {
+        const envelope = JSON.parse(new TextDecoder().decode(entry.bytes));
+        const plaintext = await openWithCriptaPrivateKey(envelope, privateScalar, publicKey);
+        const resealed = await sealForCripta(plaintext, newPublicKey);
+        const bytes = new TextEncoder().encode(JSON.stringify(resealed));
+        const sha256 = Array.from(
+          new Uint8Array(await crypto.subtle.digest("SHA-256", bytes)),
+          (byte) => byte.toString(16).padStart(2, "0")
+        ).join("");
+        renewed.push({ kind: "letter", id: entry.id, uid: entry.uid, sha256, bytes });
+      } catch (error) {
+        failed.push({ id: entry.id, error: error instanceof Error ? error.message : String(error) });
+      }
+    }
+    return { entries: renewed, failed };
+  }
+  async function generateRenewedKey(totalGuardians, threshold) {
+    const { publicKey, privateScalar } = await generateCriptaKeypair();
+    const shares = splitSecret(privateScalar, totalGuardians, threshold);
+    privateScalar.fill(0);
+    return { publicKey, shares };
+  }
+  function randomHex(bytes) {
+    return Array.from(
+      crypto.getRandomValues(new Uint8Array(bytes)),
+      (byte) => byte.toString(16).padStart(2, "0")
+    ).join("").toUpperCase();
+  }
+  async function buildRenewedLacre(entries) {
+    const inventoryDigest = await digestLacreEntries(entries);
+    const letters = entries.filter((entry) => entry.kind === "letter").length;
+    const drafts = entries.filter((entry) => entry.kind === "draft").length;
+    const yyyymmdd = (/* @__PURE__ */ new Date()).toISOString().slice(0, 10).replaceAll("-", "");
+    const code = `VL6-${yyyymmdd}-${randomHex(6)}`;
+    const bytes = buildLacreFile(
+      { formato: "CRIPTA/2", codigoLacracao: code, inventoryDigest, totalCartas: letters },
+      encodeEntries(entries)
+    );
+    return { bytes, code, inventoryDigest, letters, drafts };
+  }
+  if (typeof window !== "undefined") {
+    window.CriptaOffline = {
+      combineGuardianShares,
+      parseLacre,
+      openLetterEntry,
+      makeOfflinePackage,
+      reencryptAllLetters,
+      generateRenewedKey,
+      buildRenewedLacre
+    };
+  }
 })();
 /*! Bundled license information:
 
@@ -2795,6 +2981,25 @@ jszip/dist/jszip.min.js:
   }
   function unlock(id) {
     document.getElementById(id).dataset.locked = 'false';
+  }
+  function downloadBytes(filename, bytes, mime) {
+    var blob = new Blob([bytes], { type: mime });
+    var url = URL.createObjectURL(blob);
+    var link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 60000);
+  }
+  function downloadJson(filename, data) {
+    downloadBytes(filename, new TextEncoder().encode(JSON.stringify(data, null, 2)), 'application/json');
+  }
+  function toBase64(bytes) {
+    var binary = '';
+    for (var i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+    return btoa(binary);
   }
 
   function readFilesAsJson(fileList) {
@@ -2837,6 +3042,8 @@ jszip/dist/jszip.min.js:
       setStatus('status-lacre', 'ok', 'Lacre lido: ' + parsed.header.codigoLacracao + ' — ' + parsed.entries.length + ' registro(s), ' + parsed.header.totalCartas + ' carta(s) seladas.');
       renderEntries();
       unlock('step-open');
+      unlock('step-renewal');
+      renderRenewalNames();
     }).catch(function (error) {
       setStatus('status-lacre', 'err', 'Não foi possível ler o arquivo: ' + (error && error.message ? error.message : String(error)));
     });
@@ -2889,6 +3096,103 @@ jszip/dist/jszip.min.js:
       setStatus('status-open', 'ok', 'Pacote de entrega pronto.');
     }).catch(function (error) {
       setStatus('status-open', 'err', 'Não foi possível abrir esta carta: ' + (error && error.message ? error.message : String(error)));
+    });
+  });
+
+  var TOTAL_GUARDIANS = 5;
+
+  function renderRenewalNames() {
+    var wrap = document.getElementById('renewal-names');
+    var fields = '';
+    for (var i = 1; i <= TOTAL_GUARDIANS; i++) {
+      fields += '<label for="renewal-name-' + i + '">Novo Guardião ' + i + '</label>' +
+        '<input type="text" id="renewal-name-' + i + '" placeholder="Nome ou apelido">';
+    }
+    wrap.innerHTML = fields;
+  }
+
+  document.getElementById('btn-renew').addEventListener('click', function () {
+    if (!state.privateScalar || !state.publicKey) {
+      setStatus('status-renewal', 'err', 'Reconstitua a chave da Cripta primeiro (etapa 1).');
+      return;
+    }
+    if (!state.entries.length) {
+      setStatus('status-renewal', 'err', 'Leia o arquivo .lacre primeiro (etapa 2).');
+      return;
+    }
+    var names = [];
+    for (var i = 1; i <= TOTAL_GUARDIANS; i++) {
+      var value = document.getElementById('renewal-name-' + i).value.trim();
+      if (!value) {
+        setStatus('status-renewal', 'err', 'Informe os ' + TOTAL_GUARDIANS + ' nomes antes de continuar.');
+        return;
+      }
+      names.push(value);
+    }
+    if (new Set(names).size !== names.length) {
+      setStatus('status-renewal', 'err', 'Os nomes dos novos Guardiões devem ser distintos.');
+      return;
+    }
+    var minutes = document.getElementById('renewal-minutes').value.trim();
+    if (minutes.length < 5) {
+      setStatus('status-renewal', 'err', 'Informe a ata desta sessão de Renovação.');
+      return;
+    }
+    if (!window.confirm('Isto gera uma chave nova e torna a chave atual inútil para todo conteúdo migrado. Confirma que a Administração autorizou esta Renovação?')) {
+      return;
+    }
+    clearStatus('status-renewal');
+    document.getElementById('renewal-wrap').innerHTML = '';
+    var oldScalar = state.privateScalar;
+    var oldPublicKey = state.publicKey;
+    var newKey;
+    window.CriptaOffline.generateRenewedKey(TOTAL_GUARDIANS, 3).then(function (generated) {
+      newKey = generated;
+      setStatus('status-renewal', 'info', 'Chave nova gerada. Reselando ' + state.entries.filter(function (e) { return e.kind === 'letter'; }).length + ' carta(s)...');
+      return window.CriptaOffline.reencryptAllLetters(state.entries, oldScalar, oldPublicKey, newKey.publicKey);
+    }).then(function (outcome) {
+      if (outcome.failed.length) {
+        setStatus('status-renewal', 'err', outcome.failed.length + ' carta(s) não puderam ser reseladas — nada foi gerado. Corrija antes de tentar de novo:\n' +
+          outcome.failed.map(function (f) { return f.id + ': ' + f.error; }).join('\n'));
+        return null;
+      }
+      return window.CriptaOffline.buildRenewedLacre(outcome.entries);
+    }).then(function (renewed) {
+      if (!renewed) return;
+      var at = new Date().toISOString();
+      downloadBytes(renewed.code + '.lacre', renewed.bytes, 'application/octet-stream');
+      newKey.shares.forEach(function (share, index) {
+        downloadJson('cripta-guardiao-renovado-' + share.x + '-de-' + TOTAL_GUARDIANS + '-' + names[index].replace(/\s+/g, '-').toLowerCase() + '.json', {
+          format: 'vl6-cripta-guardian-share-v1',
+          aviso: 'NÃO COMPARTILHE ESTE ARQUIVO. Parte de uma Renovação de Guardiões — substitui a parte antiga deste Guardião, que deve ser destruída.',
+          guardiao: names[index],
+          parte: share.x,
+          totalPartes: TOTAL_GUARDIANS,
+          limiar: 3,
+          valor: toBase64(share.y),
+          chavePublicaCripta: newKey.publicKey,
+          ata: minutes,
+          inauguradoEm: at,
+        });
+      });
+      downloadJson('renovacao-resultado-' + renewed.code + '.json', {
+        format: 'vl6-cripta-renewal-result-v1',
+        novoCodigo: renewed.code,
+        novaChavePublica: newKey.publicKey,
+        inventoryDigest: renewed.inventoryDigest,
+        totalCartas: renewed.letters,
+        totalRascunhos: renewed.drafts,
+        totalGuardioes: TOTAL_GUARDIANS,
+        limiar: 3,
+        ata: minutes,
+        at: at,
+        novosGuardioes: names,
+      });
+      setStatus('status-renewal', 'ok', 'Renovação concluída: ' + renewed.letters + ' carta(s) reseladas sob a chave nova (' + renewed.code + '). Baixe e entregue as ' +
+        TOTAL_GUARDIANS + ' partes novas, leve o novo .lacre para as 3 unidades físicas, e destrua as partes e cópias antigas. Depois, suba "renovacao-resultado-' + renewed.code +
+        '.json" na Administração (/cripta-administracao) para registrar a Renovação online.');
+    }).catch(function (error) {
+      setStatus('status-renewal', 'err', 'Não foi possível concluir a Renovação: ' + (error && error.message ? error.message : String(error)));
     });
   });
 })();
