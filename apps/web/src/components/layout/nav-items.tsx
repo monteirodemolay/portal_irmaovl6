@@ -233,8 +233,10 @@ export function buildNavSections(
     const items = [];
     if (isActiveCriptaMember)
       items.push({ href: '/cripta', content: navContent(Lock, 'Minhas cartas') });
-    if (canManageCripta)
+    if (canManageCripta) {
       items.push({ href: '/cripta-administracao', content: navContent(Lock, 'Administração') });
+      items.push({ href: '/cripta-projetor', content: navContent(Lock, 'Projetor') });
+    }
     sections.push({ title: 'Cripta', items });
   }
 

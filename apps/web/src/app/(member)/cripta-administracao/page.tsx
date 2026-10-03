@@ -1,10 +1,10 @@
 import Link from 'next/link';
 import { createServerContainer, getAdminFirestore } from '@vl6/infra';
 import { requirePagePermission } from '@/lib/auth/require-permission';
-import { isOnlineOpen, openingRef } from '@/modules/cripta/lib/online-opening';
+import { isOnlineOpen } from '@/modules/cripta/lib/online-opening';
 import { currentCriptaMaster } from '@/modules/cripta/lib/current-master';
 import { readCriptaPublicKey } from '@/modules/cripta/lib/cripta-crypto-state';
-import { computeCycleStatus } from '@/modules/cripta/lib/cycle-wizard';
+import { currentWizardStatus } from '@/modules/cripta/lib/wizard-status';
 import { CycleWizardView } from './cycle-wizard-view';
 import { InaugurationPanel } from './inauguration-panel';
 import { ComissaoForm } from './comissao-form';
@@ -29,40 +29,20 @@ export default async function Page() {
   const container = createServerContainer();
   const db = getAdminFirestore();
 
-  const [membersResult, governance, open, openingDoc, master, seal, inauguration] =
-    await Promise.all([
-      container.repositories.member.search({ tenantId, situacao: 'ativo' }, { limit: 100 }),
-      db.collection('criptaGovernanceV1').doc(tenantId).get(),
-      isOnlineOpen(tenantId),
-      openingRef(tenantId).get(),
-      currentCriptaMaster(tenantId),
-      db.collection('criptaSealsV1').doc(tenantId).get(),
-      readCriptaPublicKey(tenantId),
-    ]);
+  const [membersResult, governance, open, master, seal, inauguration, wizard] = await Promise.all([
+    container.repositories.member.search({ tenantId, situacao: 'ativo' }, { limit: 100 }),
+    db.collection('criptaGovernanceV1').doc(tenantId).get(),
+    isOnlineOpen(tenantId),
+    currentCriptaMaster(tenantId),
+    db.collection('criptaSealsV1').doc(tenantId).get(),
+    readCriptaPublicKey(tenantId),
+    currentWizardStatus(tenantId),
+  ]);
 
   const members = membersResult.items;
   const control = governance.data();
   const sealData = seal.data();
   const eligible = members.filter((member) => member.userId && member.id !== master?.member.id);
-
-  const wizard = computeCycleStatus({
-    inaugurated: !!inauguration,
-    hasCommission: !!control?.commissionMemberIds?.length,
-    open,
-    everOpened: typeof openingDoc.data()?.openedAt === 'string',
-    closesAt: openingDoc.data()?.closesAt ?? null,
-    receiptStatus: sealData?.status ?? null,
-    receiptCode: sealData?.code ?? null,
-    exportReceiptCode: sealData?.export?.receiptCode ?? null,
-    physicalCheckOk:
-      sealData?.physicalCheck?.receiptDigest === sealData?.receiptDigest &&
-      (sealData?.physicalCheck?.units?.length ?? 0) >= 3,
-    cleanupOk:
-      sealData?.cleanup?.receiptCode === sealData?.code && sealData?.cleanup?.complete === true,
-    restorationOk:
-      sealData?.restoration?.receiptCode === sealData?.code &&
-      sealData?.restoration?.complete === true,
-  });
 
   const name = (id: string | undefined) =>
     members.find((member) => member.id === id)?.nomeCompleto ?? 'Não indicado';

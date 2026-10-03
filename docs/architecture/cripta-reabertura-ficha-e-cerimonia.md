@@ -2,6 +2,8 @@
 
 **Estado:** especificação de destino registrada em 2026-10-03, implementação em andamento por fases (ver seção 7). Substitui, quando concluída, o modelo administrativo descrito em `cripta-especificacao-funcional.md` seção 5 e o wizard único de `cycle-wizard.ts`. Não apagar os documentos anteriores: eles continuam valendo como histórico até cada fase abaixo estar em produção e verificada.
 
+**Nota sobre risco de dados (2026-10-03):** confirmado com o Venerável que não há ainda cartas oficiais em custódia — a Cripta está em fase de testes. Isso reduz o risco de uma substituição mais ágil do wizard único (Fase 5), mas a disciplina de validar cada fase (tsc + eslint + vitest, revisão visual) antes de remover a anterior continua valendo por boa prática de engenharia, não por causa desse risco específico.
+
 ## 0. Por que este documento existe
 
 O modelo até aqui tratava a Cripta como um ciclo único (inaugurar → abrir → lacrar → exportar → restaurar → reabrir), operado por um wizard administrativo linear. Três necessidades novas não cabem nesse modelo sem reformular a base:
@@ -61,11 +63,11 @@ Cada um já guarda `at`, `actorId`, ata (`minutes`), responsáveis (`masterId`, 
 
 A maquete (`cripta-projetor-mockup.html`, versão 6) fixa o roteiro visual: 4 cerimônias (Inauguração — presença + sorteio com confirmar/sortear-de-novo; Abertura; Fechamento — incluindo a queima dos pen drives; Reabertura, clone estrutural da Abertura), o selo "Ato único" na Inauguração, e o aviso "Concluída — aguardando autorização" substituindo o botão morto "Próximo passo".
 
-Implementação real:
+**Implementado (Fase 3, 2026-10-03):**
 
-- Nova rota `/cripta-projetor` (tela cheia, sem navegação do Portal — pensada para um projetor de sessão), que lê `criptaCeremonyLogV1` (via `onSnapshot`/polling) e `cycle-wizard`'s fase atual — zero dado mockado.
-- Cada ação do operador na Administração (confirmar presença, sortear, confirmar Guardião, lacrar) grava um evento no log; o Projetor é um espectador puro do mesmo estado, nunca uma segunda fonte de verdade.
-- O sorteio em si (ordem e resultado) é calculado no servidor (rota `/api/cripta/ceremony-draw`), não no navegador do operador, para o resultado não poder ser escolhido a dedo e para o "sortear de novo" também ficar no log com o resultado anterior preservado (nunca apagado, só superado).
+- `/cripta-projetor` (`page.tsx` + `projetor-screen.tsx`), tela cheia, gated por `tenant:manage` — lê `GET /api/cripta/ceremony-status` (fase atual do wizard, via `wizard-status.ts`, a mesma função que a Administração usa) e `GET /api/cripta/ceremony-log?ceremony=...` por polling de 5s. Zero dado mockado; sem rota de escrita própria — é um espectador puro.
+- `POST /api/cripta/ceremony-draw` (Fase 2) calcula o sorteio no servidor com `node:crypto` — nunca no navegador do operador — e apoia "sortear de novo" sem apagar o resultado anterior.
+- Pendente ainda desta fase: o roteiro completo da maquete (presença passo a passo, queima dos pen drives narrada) — a versão real cobre o essencial (fase atual + linha do tempo de eventos por cerimônia) e será enriquecida junto da Fase 5, quando a Administração em si passar a gravar presença como evento próprio.
 
 ## 5. Relatório para os anais
 
