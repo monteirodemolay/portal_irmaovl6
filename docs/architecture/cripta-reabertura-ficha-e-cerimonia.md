@@ -121,3 +121,20 @@ A substituição é executada em fases, cada uma validada (tsc + eslint + vitest
 ## 8. Impacto em `docs/legal`
 
 A ficha da carta introduz dado pessoal novo: `label` (apelido escolhido pelo Irmão), `deliveryMode` e `status` de retenção. O log de cerimônia introduz retenção permanente de presença e resultado de sorteio por nome. Ambos exigem atualização de `01-inventario-dados-lgpd.md`, da Política de Privacidade e um novo registro em `04-sistema-de-versionamento.md`, feita junto com a Fase 1 e a Fase 2 de código, não depois. Avaliação preliminar: nenhuma das duas exige novo aceite dos usuários (a ficha amplia o controle do próprio Irmão sobre seu dado; o log de cerimônia é equivalente a ata de sessão, já esperada) — a confirmar explicitamente ao usuário quando essa atualização for feita.
+
+## 10. Renovação de Guardiões — o que acontece quando um Guardião falta, morre ou perde a parte
+
+Shamir's Secret Sharing **não tem revogação nativa**: uma vez emitida, uma parte continua matematicamente capaz de ajudar a reconstruir a chave para sempre — marcar uma parte como não confiável é um registro institucional, não um bloqueio técnico. A única forma criptograficamente sólida de responder a um Guardião falecido, impedido, ou a um pen drive extraviado/retido pela família é uma 5ª cerimônia, a **Renovação**: reconstruir a chave atual com as partes ainda confiáveis (precisa de ≥ limiar), gerar uma chave nova, reselar as cartas pendentes sob ela, e dividir a chave nova em 5 partes novas para o quadro de Guardiões corrigido. A chave antiga, depois disso, não protege mais nada — reconstruí-la não serve pra nada, então a parte extraviada deixa de representar risco.
+
+**Implementado agora — rastreamento e alerta** (sem tocar a ferramenta offline, que seria a parte que efetivamente executa a Renovação):
+
+- `criptaCryptoV1.guardianShares: Array<{ memberId, status: 'valida' | 'comprometida' }>`, inicializado na própria Inauguração (`initialGuardianShares`) — um por Guardião, na mesma ordem de `guardianMemberIds`.
+- `GET/PATCH /api/cripta/guardian-shares` — lê o quadro atual (nomes resolvidos, nunca partes), e permite à Administração marcar uma parte `comprometida` (com motivo livre opcional, só para registro interno) ou revertê-la, gravando sempre um evento (`parte.comprometida`/`parte.revalidada`) em `criptaCryptoV1/{tenantId}/events` — mesmo padrão append-only das demais cerimônias.
+- Nível de alerta (`guardian-shares-shape.ts`, testado): `ok` (5/5) → `atencao` (4/5) → `urgente` (exatamente no limiar, 3/5 — ainda dá pra renovar, mas é a última margem) → `critico` (abaixo do limiar — tarde demais, a Cripta já ficou inacessível).
+- Visível sempre (não ligado a uma cerimônia específica): painel permanente em `/cripta-administracao` (`guardian-shares-panel.tsx`) e selo no topo do `/cripta-projetor` quando o nível não é `ok`.
+
+**Ainda não implementado, aguardando confirmação explícita antes de codificar** (risco alto: um erro aqui ou perde acesso a cartas de verdade para sempre, ou fragiliza o sigilo sem ninguém notar):
+
+- Estender `scripts/cripta/abertura-offline` para, reunidas ≥ limiar partes: decifrar em lote todas as cartas seladas pendentes do `.lacre` vigente, gerar uma chave nova (`generateCriptaKeypair`), reselar cada carta sob ela, e dividir a chave nova em 5 partes novas para o quadro de Guardiões atualizado.
+- Fluxo administrativo para conduzir a cerimônia de Renovação em si (nomear substitutos, exportar o `.lacre` vigente para a ferramenta offline, registrar o evento `renovacao.concluida` com o quadro novo).
+- Regra operacional: a Renovação só deveria correr com o recebimento fechado (mesma janela de Fechamento/Exportação) — nunca com cartas novas chegando sob a chave antiga no meio do processo.

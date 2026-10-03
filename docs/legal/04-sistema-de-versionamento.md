@@ -194,3 +194,16 @@ O próximo ciclo de auditoria deve começar no commit que efetivamente entrar em
 - **Novo terceiro/subprocessador:** não.
 - **Nova finalidade:** não, no sentido jurídico — (a) é um mecanismo de controle do próprio titular sobre um dado que ele mesmo gera (amplia autonomia, não cria exposição nova a terceiros); (b) é equivalente, em natureza, ao registro de ata de sessão que a Loja já mantém para outras cerimônias, agora formalizado para a Cripta.
 - **Exige novo aceite:** **não**. Em (a), o Irmão só ganha um controle adicional sobre seus próprios dados — nenhuma obrigação ou exposição nova lhe é imposta. Em (b), o dado gravado (presença e resultado de sorteio por nome) é da mesma natureza de dado de participação em sessão já coberto pelos Termos (comparecimento a eventos, §3.6 do Inventário) — não é conteúdo de carta, não é dado da ficha de nenhum Irmão, e não cria compartilhamento com terceiro externo à Loja.
+
+## 13. Registro de alteração — 03/10/2026 (continuação)
+
+### 2.2.0 — Rastreamento das partes dos Guardiões (válida/comprometida)
+
+- **Classificação:** `mudanca_operacional`.
+- **Impacto:** baixo.
+- **Motivo:** Shamir's Secret Sharing não permite revogar uma parte tecnicamente — perder confiança em uma parte (Guardião falecido, impedido, pen drive extraviado ou retido) só pode ser resolvido de verdade por uma cerimônia de Renovação (reconstruir a chave, gerar uma nova, reselar cartas pendentes, redistribuir partes novas). Antes disso, a Loja precisa de um contador institucional de quantas partes ainda confia, com alerta antes de chegar ao limiar (3 de 5) — documentado em `docs/architecture/cripta-reabertura-ficha-e-cerimonia.md` §10. A cerimônia de Renovação em si (a parte que reconstrói/gera/reselada chaves) ainda não foi implementada; só o rastreamento e o alerta.
+- **Itens alterados:** Inventário LGPD §3.9 (novo item: rastreamento das partes); Política de Privacidade §8.9.
+- **Novo terceiro/subprocessador:** não.
+- **Nova finalidade:** não — é extensão operacional do mesmo registro de cerimônia/custódia já declarado na v2.1.0, agora cobrindo o status de cada parte individualmente.
+- **Atenção registrada:** o motivo (texto livre, opcional) que a Administração pode anotar ao marcar uma parte comprometida poderia, na prática, conter informação de saúde/óbito do Guardião, ainda que o campo não exija isso — recomendação operacional de preencher só a categoria (extravio/impedimento), não detalhe clínico, registrada no Inventário §3.9.
+- **Exige novo aceite:** **não**. É dado administrativo sobre o exercício da função de Guardião, não dado pessoal geral do titular, e não cria finalidade nova nem compartilhamento externo.

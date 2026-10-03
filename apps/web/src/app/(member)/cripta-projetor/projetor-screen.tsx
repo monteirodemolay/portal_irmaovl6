@@ -31,11 +31,49 @@ function formatAt(at: string | undefined) {
   return new Date(at).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
 }
 
+type GuardianAlert = {
+  validCount: number;
+  total: number;
+  alertLevel: 'ok' | 'atencao' | 'urgente' | 'critico';
+};
+const GUARDIAN_ALERT_LABEL: Record<GuardianAlert['alertLevel'], string> = {
+  ok: '',
+  atencao: 'Atenção',
+  urgente: 'Urgente',
+  critico: 'Crítico',
+};
+
 export function ProjetorScreen() {
   const [wizard, setWizard] = useState<WizardResult | null>(null);
   const [tab, setTab] = useState<Ceremony | null>(null);
   const [events, setEvents] = useState<CeremonyEvent[]>([]);
   const [error, setError] = useState('');
+  const [guardianAlert, setGuardianAlert] = useState<GuardianAlert | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function pollGuardianAlert() {
+      try {
+        const response = await fetch('/api/cripta/guardian-shares', { cache: 'no-store' });
+        if (!response.ok) return;
+        const body = (await response.json()) as { inaugurated: boolean } & Partial<GuardianAlert>;
+        if (!cancelled && body.inaugurated && body.alertLevel)
+          setGuardianAlert({
+            validCount: body.validCount!,
+            total: body.total!,
+            alertLevel: body.alertLevel,
+          });
+      } catch {
+        /* a Projetor screen that can't reach this endpoint just omits the badge */
+      }
+    }
+    void pollGuardianAlert();
+    const interval = setInterval(pollGuardianAlert, 10000);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -94,6 +132,20 @@ export function ProjetorScreen() {
           Loja Maçônica Verdadeira Luz nº 06 · Cripta do Irmão
         </p>
         <h1 className="mt-3 font-serif text-4xl sm:text-5xl">Projetor da Cripta</h1>
+        {guardianAlert && guardianAlert.alertLevel !== 'ok' && (
+          <p
+            className={`mx-auto mt-4 inline-block rounded-full border px-4 py-2 text-sm font-semibold ${
+              guardianAlert.alertLevel === 'critico'
+                ? 'border-red-400 bg-red-950/60 text-red-100'
+                : guardianAlert.alertLevel === 'urgente'
+                  ? 'border-orange-400 bg-orange-950/60 text-orange-100'
+                  : 'border-amber-400 bg-amber-950/60 text-amber-100'
+            }`}
+          >
+            {GUARDIAN_ALERT_LABEL[guardianAlert.alertLevel]} · {guardianAlert.validCount} de{' '}
+            {guardianAlert.total} partes dos Guardiões válidas
+          </p>
+        )}
       </header>
 
       <nav className="mx-auto mt-10 flex max-w-3xl flex-wrap justify-center gap-3">

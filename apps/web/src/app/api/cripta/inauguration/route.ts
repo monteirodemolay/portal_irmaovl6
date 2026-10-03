@@ -5,6 +5,7 @@ import { NextResponse } from 'next/server';
 import { requirePagePermission } from '@/lib/auth/require-permission';
 import { currentCriptaMaster } from '@/modules/cripta/lib/current-master';
 import { criptaCryptoRef, readCriptaPublicKey } from '@/modules/cripta/lib/cripta-crypto-state';
+import { initialGuardianShares } from '@/modules/cripta/lib/guardian-shares';
 import type { CriptaPublicKey } from '@/modules/cripta/lib/cripta-key';
 
 export const runtime = 'nodejs';
@@ -114,6 +115,7 @@ export const POST = criptaRoute(async function POST(request: Request) {
     totalGuardians: totalGuardians as number,
     threshold: threshold as number,
     guardianMemberIds: guardianMemberIds as string[],
+    guardianShares: initialGuardianShares(guardianMemberIds as string[]),
     minutes,
     masterId: master.member.id,
     inauguratedAt,

@@ -1,6 +1,6 @@
 # Política de Privacidade — Portal do Irmão VL6
 
-> **Versão:** 2.1.0 · **Vigência a partir de:** 03/10/2026 · **Aprovada por:** Diretoria VL6
+> **Versão:** 2.2.0 · **Vigência a partir de:** 03/10/2026 · **Aprovada por:** Diretoria VL6
 > **Documento fonte:** `docs/legal/01-inventario-dados-lgpd.md`. Revisão v2.0.0 baseada no marco jurídico `24d0967` e no estado de Production `1c699dd7`, auditados em 30/09/2026.
 > Este arquivo é a versão vigente. Alterações futuras geram uma nova versão, publicada pela Administração em Configurações → Termos e Privacidade — nunca sobrescrevem esta sem preservar a anterior — ver `docs/legal/04-sistema-de-versionamento.md`.
 
@@ -101,6 +101,8 @@ Dados e conteúdos inseridos na Cripta são de responsabilidade do Irmão que os
 A cada reabertura do recebimento, o próprio Irmão pode rever, ao lado de cada carta já selada, um apelido que ele mesmo escolheu para reconhecê-la, o modo de entrega (entrega privada à pessoa indicada, leitura em sessão para os Irmãos, ou ambas) e pode reter uma entrega já indicada — sem necessidade de justificativa e sem que o conteúdo da carta seja, em nenhum momento, decifrado ou lido por qualquer pessoa para isso. Esses dados são visíveis apenas ao próprio autor.
 
 A Loja mantém, ainda, um registro permanente dos atos de cada cerimônia da Cripta (Inauguração, Abertura, Fechamento, Reabertura) — incluindo quem presidiu, a ata e, quando aplicável, quais Irmãos estavam presentes e o resultado do sorteio dos Guardiões — para fins de auditoria e para constar nos anais da Loja. Esse registro não contém conteúdo de carta nem os dados de ficha (apelido, modo de entrega, retenção) de nenhum Irmão.
+
+A Loja mantém também, por Guardião, o status declarado de sua parte da chave (válida ou comprometida) e um motivo operacional opcional registrado pela Administração quando uma parte é declarada extraviada ou seu titular impossibilitado de exercer a função — informação necessária para decidir sobre a renovação da custódia da Cripta.
 
 ### 8.10 Transparência sobre lacunas técnicas atuais
 
@@ -249,10 +251,10 @@ A versão 1.0.0 constitui o **Marco Inicial** dos documentos jurídicos do Porta
 
 ## 23. Data de vigência e versão
 
-- **Versão:** 2.1.0
+- **Versão:** 2.2.0
 - **Data de vigência:** 03/10/2026
-- **Classificação desta versão:** Atualização informativa — ficha da carta (apelido, modo de entrega, retenção, controlada pelo próprio Irmão) e registro permanente das cerimônias da Cripta, para auditoria e anais; não exige novo aceite (ver `04-sistema-de-versionamento.md`)
+- **Classificação desta versão:** Atualização informativa — rastreamento do status de cada parte da chave dos Guardiões (válida/comprometida), para decidir sobre renovação da custódia da Cripta; não exige novo aceite (ver `04-sistema-de-versionamento.md`)
 
 ---
 
-_Esta Política de Privacidade v2.1.0 consolida a auditoria do Portal entre o marco jurídico `24d0967` e a Production `1c699dd7`, com a atualização de 03/10/2026 referente à Cripta Digital. A v1.0.0 permanece preservada como Marco Inicial no histórico do sistema._
+_Esta Política de Privacidade v2.2.0 consolida a auditoria do Portal entre o marco jurídico `24d0967` e a Production `1c699dd7`, com a atualização de 03/10/2026 referente à Cripta Digital. A v1.0.0 permanece preservada como Marco Inicial no histórico do sistema._

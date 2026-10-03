@@ -9,6 +9,7 @@ import { ceremonyStates } from '@/modules/cripta/lib/cycle-wizard';
 import { letterRecordsCollection } from '@/modules/cripta/lib/letter-record';
 import { CeremonyCard } from './ceremony-card';
 import { CycleWizardView } from './cycle-wizard-view';
+import { GuardianSharesPanel } from './guardian-shares-panel';
 import { InaugurationPanel } from './inauguration-panel';
 import { ComissaoForm } from './comissao-form';
 import { OnlineOpeningControl } from './online-opening-control';
@@ -84,6 +85,7 @@ export default async function Page() {
       </header>
 
       <CycleWizardView result={wizard} />
+      <GuardianSharesPanel />
 
       {wizard.phase !== 'inauguracao' && wizard.phase !== 'comissao' && (
         <>
