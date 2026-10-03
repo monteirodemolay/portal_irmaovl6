@@ -86,9 +86,23 @@ O wizard linear de `cycle-wizard.ts` tratava reabertura como um loop de volta à
 - `/cripta-administracao` reescrita como 4 cartões sempre visíveis (`ceremony-card.tsx`), cada um com seu próprio selo de estado (`Nunca realizada` | `Em andamento` | `Concluída — ...`) — não mais um único bloco condicional por fase. Inauguração carrega o selo "Ato único". Cabeçalho linka para `/cripta-projetor`.
 - `restore-panel.tsx` mostra, só leitura, quantas fichas estão `retida` no momento (nunca quais) — para o operador saber que o pacote de entrega da Reabertura precisa respeitar essas retenções.
 
-**Ainda pendente, fora do escopo desta fase:**
+**Ainda pendente, fora do escopo desta fase:** ver seção 9.
 
-- Gravar presença como lista (não um único `presentMemberId`) nas cerimônias de Abertura/Fechamento — hoje só a Inauguração tem lista de presença real, usada no sorteio.
+## 9. Lacuna documentada — lista de presença só existe na Inauguração
+
+Hoje, de verdade, só a Inauguração tem uma lista de presença real: o conjunto de Irmãos marcados como presentes alimenta o sorteio dos Guardiões (`ceremony-draw`) e cada um fica registrado no evento `sorteio.resultado`/`sorteio.redraw`.
+
+Abertura e Fechamento **não têm isso**. `online-opening-control.tsx` só coleta um único `presentMemberId` — a pessoa que, com o Venerável, assina o ato para a ata (`criptaOnlineOpeningV1/{tenantId}/events`, campos `masterId`/`presentMemberId`/`commissionMemberIds`). Quem mais estava na sala nunca é registrado.
+
+Isso é uma lacuna real para o registro de anais: o relatório de uma Abertura ou Fechamento (`/api/cripta/ceremony-report`) hoje só consegue nomear o Venerável e um integrante — não "quem compareceu à sessão".
+
+### Desenho para fechar esta lacuna (não implementado ainda)
+
+- `OnlineOpeningControl` ganha a mesma UI de checkboxes já construída em `InaugurationPanel` (lista de Irmãos elegíveis, marcar os presentes) — reaproveitar o componente, não duplicar.
+- `POST /api/cripta/online-opening` passa a aceitar `presentMemberIds: string[]` (lista completa), mantendo `presentMemberId` (o signatário do ato, sempre um dos da lista) para não quebrar a regra já validada de quem pode assinar.
+- O evento gravado em `criptaOnlineOpeningV1/{tenantId}/events` ganha o campo `presentMemberIds`, ao lado do que já existe — sem remover `presentMemberId`, que continua sendo o registro formal de quem assinou.
+- `eventsForCeremony`/`ceremony-report`/Projetor não precisam mudar: já exibem qualquer campo que termine em `Id`/`Ids` (`memberIdsIn` em `ceremony-report/route.ts`) e resolvem nome automaticamente — a lista de presença apareceria no relatório sem trabalho adicional nessas peças.
+- Risco baixo, mas não zero: muda o contrato de uma rota já em uso (`online-opening`) — fazer com teste cobrindo o formato antigo continuando aceito (nem todo Irmão vai, de cara, preencher a lista nova) antes de tornar `presentMemberIds` obrigatório.
 
 ### Migração do `cycle-wizard.ts`
 
