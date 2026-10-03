@@ -23,16 +23,18 @@ const harness = vi.hoisted(() => {
   return { events, session: vi.fn(), db: { collection } };
 });
 
+vi.mock('server-only', () => ({}));
+vi.mock('@/modules/cripta/lib/ceremony-events', async () => import('./ceremony-events'));
 vi.mock('@/modules/cripta/lib/cripta-route', () => ({ criptaRoute: (handler: unknown) => handler }));
 vi.mock('@vl6/infra', () => ({ getAdminFirestore: () => harness.db }));
 vi.mock('@/lib/auth/require-permission', () => ({ requirePagePermission: harness.session }));
-vi.mock('@/modules/cripta/lib/cripta-crypto-state', () => ({
+vi.mock('./cripta-crypto-state', () => ({
   criptaCryptoRef: (tenantId: string) => harness.db.collection('criptaCryptoV1').doc(tenantId),
 }));
-vi.mock('@/modules/cripta/lib/online-opening', () => ({
+vi.mock('./online-opening', () => ({
   openingRef: (tenantId: string) => harness.db.collection('criptaOnlineOpeningV1').doc(tenantId),
 }));
-vi.mock('@/modules/cripta/lib/seal-state', () => ({
+vi.mock('./seal-state', () => ({
   sealRef: (tenantId: string) => harness.db.collection('criptaSealsV1').doc(tenantId),
 }));
 

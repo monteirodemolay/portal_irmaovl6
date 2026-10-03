@@ -71,9 +71,7 @@ A maquete (`cripta-projetor-mockup.html`, versão 6) fixa o roteiro visual: 4 ce
 
 ## 5. Relatório para os anais
 
-Gerado a partir do log, nunca mantido como segunda cópia:
-
-`GET /api/cripta/ceremony-report?ceremony=inauguracao&at=...` — lê os eventos da cerimônia encerrada e monta um documento (HTML imprimível / PDF) com data, presentes, ordem e resultado do sorteio (com qualquer redraw e seu motivo), quem lacrou, código do recibo, hash do inventário. Não contém conteúdo de carta nem a ficha de nenhum Irmão (label/deliveryMode são dados do Irmão, não da cerimônia).
+**Implementado (Fase 4, 2026-10-03).** `GET /api/cripta/ceremony-report?ceremony=inauguracao|abertura|fechamento|reabertura`, gerado a partir do mesmo `eventsForCeremony` que o Projetor usa (`ceremony-events.ts`, extraído do antigo `ceremony-log/route.ts` para ser compartilhado pelos dois) — nunca uma segunda cópia a manter sincronizada. Resolve nomes de Irmãos só no momento do relatório (os eventos guardam só IDs), monta uma página HTML imprimível no estilo certidão/pergaminho da própria Cripta, com data, ato, participantes e ata de cada evento. Não contém conteúdo de carta nem a ficha de nenhum Irmão. Acessível pelo Projetor ("Abrir relatório desta cerimônia para os anais").
 
 ## 6. Nova Administração — substitui o wizard único
 

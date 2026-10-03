@@ -169,6 +169,19 @@ export function ProjetorScreen() {
             </li>
           ))}
         </ol>
+
+        {tab && events.length > 0 && (
+          <div className="mt-8 text-center">
+            <a
+              href={`/api/cripta/ceremony-report?ceremony=${tab}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block rounded-xl border border-[#e3bd62]/60 px-5 py-3 text-sm font-semibold text-[#e3bd62] hover:bg-[#e3bd62]/10"
+            >
+              Abrir relatório desta cerimônia para os anais
+            </a>
+          </div>
+        )}
       </main>
     </div>
   );
