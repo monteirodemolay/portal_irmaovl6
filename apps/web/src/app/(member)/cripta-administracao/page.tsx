@@ -5,6 +5,9 @@ import { isOnlineOpen } from '@/modules/cripta/lib/online-opening';
 import { currentCriptaMaster } from '@/modules/cripta/lib/current-master';
 import { readCriptaPublicKey } from '@/modules/cripta/lib/cripta-crypto-state';
 import { currentWizardStatus } from '@/modules/cripta/lib/wizard-status';
+import { ceremonyStates } from '@/modules/cripta/lib/cycle-wizard';
+import { letterRecordsCollection } from '@/modules/cripta/lib/letter-record';
+import { CeremonyCard } from './ceremony-card';
 import { CycleWizardView } from './cycle-wizard-view';
 import { InaugurationPanel } from './inauguration-panel';
 import { ComissaoForm } from './comissao-form';
@@ -29,15 +32,17 @@ export default async function Page() {
   const container = createServerContainer();
   const db = getAdminFirestore();
 
-  const [membersResult, governance, open, master, seal, inauguration, wizard] = await Promise.all([
-    container.repositories.member.search({ tenantId, situacao: 'ativo' }, { limit: 100 }),
-    db.collection('criptaGovernanceV1').doc(tenantId).get(),
-    isOnlineOpen(tenantId),
-    currentCriptaMaster(tenantId),
-    db.collection('criptaSealsV1').doc(tenantId).get(),
-    readCriptaPublicKey(tenantId),
-    currentWizardStatus(tenantId),
-  ]);
+  const [membersResult, governance, open, master, seal, inauguration, wizard, retainedLetterCount] =
+    await Promise.all([
+      container.repositories.member.search({ tenantId, situacao: 'ativo' }, { limit: 100 }),
+      db.collection('criptaGovernanceV1').doc(tenantId).get(),
+      isOnlineOpen(tenantId),
+      currentCriptaMaster(tenantId),
+      db.collection('criptaSealsV1').doc(tenantId).get(),
+      readCriptaPublicKey(tenantId),
+      currentWizardStatus(tenantId),
+      countRetainedLetterRecords(tenantId),
+    ]);
 
   const members = membersResult.items;
   const control = governance.data();
@@ -56,6 +61,7 @@ export default async function Page() {
     new Date(),
   );
   const openingDue = !!control?.nextOpeningDate && todayBR >= control.nextOpeningDate;
+  const states = ceremonyStates(wizard.phase);
 
   return (
     <div className="mx-auto max-w-5xl space-y-6 pb-12 text-[#17263f]">
@@ -95,116 +101,123 @@ export default async function Page() {
         </>
       )}
 
-      {wizard.phase === 'inauguracao' && (
-        <>
-          {!master && (
-            <p className="rounded-xl bg-red-50 p-4 text-sm text-red-900">
-              Cadastre o Venerável Mestre na gestão vigente e vincule sua conta antes de abrir esta
-              sessão.
-            </p>
-          )}
-          <p className="text-sm leading-6 text-[#536074]">
-            Ato único, em sessão fechada: nomeia os Guardiões da Cripta e gera a chave que vai
-            proteger todas as cartas, sem que ninguém — nem a própria Loja — precise guardar uma
-            senha por Irmão.
+      <CeremonyCard
+        id="inauguracao"
+        title="Inauguração"
+        badge="Ato único"
+        state={states.inauguracao}
+      >
+        {!master && (
+          <p className="rounded-xl bg-red-50 p-4 text-sm text-red-900">
+            Cadastre o Venerável Mestre na gestão vigente e vincule sua conta antes de abrir esta
+            sessão.
           </p>
-          <InaugurationPanel
-            eligible={members
-              .filter((member) => member.userId)
-              .map((member) => ({ id: member.id, name: member.nomeCompleto }))}
-            existing={inauguration}
+        )}
+        <p className="text-sm leading-6 text-[#536074]">
+          Ato único, em sessão fechada: nomeia os Guardiões da Cripta e gera a chave que vai
+          proteger todas as cartas, sem que ninguém — nem a própria Loja — precise guardar uma senha
+          por Irmão.
+        </p>
+        <InaugurationPanel
+          eligible={members
+            .filter((member) => member.userId)
+            .map((member) => ({ id: member.id, name: member.nomeCompleto }))}
+          existing={inauguration}
+          masterName={master?.member.nomeCompleto ?? ''}
+        />
+      </CeremonyCard>
+
+      <CeremonyCard id="abertura" title="Abertura" state={states.abertura}>
+        {wizard.phase === 'comissao' && (
+          <ComissaoForm
+            eligible={eligible.map((member) => ({
+              id: member.id,
+              nomeCompleto: member.nomeCompleto,
+            }))}
             masterName={master?.member.nomeCompleto ?? ''}
+            masterMissing={!master}
+            control={control}
+            prominent
           />
-        </>
-      )}
-
-      {wizard.phase === 'comissao' && (
-        <ComissaoForm
-          eligible={eligible.map((member) => ({
-            id: member.id,
-            nomeCompleto: member.nomeCompleto,
-          }))}
-          masterName={master?.member.nomeCompleto ?? ''}
-          masterMissing={!master}
-          control={control}
-          prominent
-        />
-      )}
-
-      {wizard.phase === 'abrir' && (
-        <OnlineOpeningControl
-          step="2"
-          initiallyOpen={false}
-          due={openingDue}
-          masterName={master?.member.nomeCompleto ?? ''}
-          commissionMemberIds={control?.commissionMemberIds ?? []}
-          nextOpeningDate={control?.nextOpeningDate ?? ''}
-          choices={choices}
-        />
-      )}
-
-      {wizard.phase === 'aberto' && (
-        <AbertoPhase
-          tenantId={tenantId}
-          members={members}
-          eligible={eligible}
-          choices={choices}
-          control={control}
-          master={master}
-          open={open}
-        />
-      )}
-
-      {wizard.phase === 'lacrar' && (
-        <SealPanel initiallyOpen={false} step="4 · lacração" showAdvanceAfterSeal />
-      )}
-
-      {wizard.phase === 'exportar' && sealData?.status === 'sealed' && (
-        <>
-          <ExportPanel
-            receiptCode={sealData.code as string}
-            totalLetters={sealData.letters as number}
-            inventoryDigest={sealData.inventoryDigest as string}
+        )}
+        {wizard.phase === 'abrir' && (
+          <OnlineOpeningControl
+            step="2"
+            initiallyOpen={false}
+            due={openingDue}
+            masterName={master?.member.nomeCompleto ?? ''}
+            commissionMemberIds={control?.commissionMemberIds ?? []}
+            nextOpeningDate={control?.nextOpeningDate ?? ''}
+            choices={choices}
           />
-          <PhysicalUnitCheck
+        )}
+        {wizard.phase === 'aberto' && (
+          <AbertoPhase
+            tenantId={tenantId}
+            members={members}
+            eligible={eligible}
+            choices={choices}
+            control={control}
+            master={master}
+            open={open}
+          />
+        )}
+      </CeremonyCard>
+
+      <CeremonyCard id="fechamento" title="Fechamento" state={states.fechamento}>
+        {wizard.phase === 'lacrar' && (
+          <SealPanel initiallyOpen={false} step="4 · lacração" showAdvanceAfterSeal />
+        )}
+        {wizard.phase === 'exportar' && sealData?.status === 'sealed' && (
+          <>
+            <ExportPanel
+              receiptCode={sealData.code as string}
+              totalLetters={sealData.letters as number}
+              inventoryDigest={sealData.inventoryDigest as string}
+            />
+            <PhysicalUnitCheck
+              receiptCode={sealData.code as string}
+              totalLetters={sealData.letters as number}
+              inventoryDigest={sealData.inventoryDigest as string}
+              recorded={
+                sealData.physicalCheck?.receiptDigest === sealData.receiptDigest
+                  ? sealData.physicalCheck
+                  : null
+              }
+            />
+            <CleanupPanel
+              physicalCheckOk={sealData.physicalCheck?.receiptDigest === sealData.receiptDigest}
+              cleanupComplete={
+                sealData.cleanup?.receiptCode === sealData.code &&
+                sealData.cleanup?.complete === true
+              }
+            />
+          </>
+        )}
+      </CeremonyCard>
+
+      <CeremonyCard id="reabertura" title="Reabertura" state={states.reabertura}>
+        {wizard.phase === 'restaurar' && sealData?.status === 'sealed' && (
+          <RestorePanel
             receiptCode={sealData.code as string}
-            totalLetters={sealData.letters as number}
-            inventoryDigest={sealData.inventoryDigest as string}
             recorded={
-              sealData.physicalCheck?.receiptDigest === sealData.receiptDigest
-                ? sealData.physicalCheck
-                : null
+              sealData.restoration?.receiptCode === sealData.code ? sealData.restoration : null
             }
+            retainedLetterCount={retainedLetterCount}
           />
-          <CleanupPanel
-            physicalCheckOk={sealData.physicalCheck?.receiptDigest === sealData.receiptDigest}
-            cleanupComplete={
-              sealData.cleanup?.receiptCode === sealData.code && sealData.cleanup?.complete === true
-            }
+        )}
+        {wizard.phase === 'reabrir' && (
+          <OnlineOpeningControl
+            step="2"
+            initiallyOpen={false}
+            due={openingDue}
+            masterName={master?.member.nomeCompleto ?? ''}
+            commissionMemberIds={control?.commissionMemberIds ?? []}
+            nextOpeningDate={control?.nextOpeningDate ?? ''}
+            choices={choices}
           />
-        </>
-      )}
-
-      {wizard.phase === 'restaurar' && sealData?.status === 'sealed' && (
-        <RestorePanel
-          receiptCode={sealData.code as string}
-          recorded={
-            sealData.restoration?.receiptCode === sealData.code ? sealData.restoration : null
-          }
-        />
-      )}
-
-      {wizard.phase === 'reabrir' && (
-        <OnlineOpeningControl
-          step="2"
-          initiallyOpen={false}
-          due={openingDue}
-          masterName={master?.member.nomeCompleto ?? ''}
-          commissionMemberIds={control?.commissionMemberIds ?? []}
-          nextOpeningDate={control?.nextOpeningDate ?? ''}
-          choices={choices}
-        />
-      )}
+        )}
+      </CeremonyCard>
 
       <hr className="border-[#d8c8a4]" />
 
@@ -338,4 +351,11 @@ async function AbertoPhase({
       />
     </>
   );
+}
+
+/** Só a contagem, nunca quais cartas — o operador precisa saber que o pacote de entrega da
+ * reabertura tem retenções a respeitar, sem ver de quem. */
+async function countRetainedLetterRecords(tenantId: string): Promise<number> {
+  const snapshot = await letterRecordsCollection(tenantId).where('status', '==', 'retida').get();
+  return snapshot.size;
 }

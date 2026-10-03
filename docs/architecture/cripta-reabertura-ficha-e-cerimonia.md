@@ -79,16 +79,16 @@ O wizard linear de `cycle-wizard.ts` tratava reabertura como um loop de volta à
 
 **Correção sobre a primeira versão deste documento, depois de reler o `page.tsx` atual:** ele já não tem o problema "ir pra frente e voltar" nem um botão "Próximo passo" morto — isso só existia na maquete do Projetor (corrigido na Fase 3). `page.tsx` já renderiza exatamente um bloco por `wizard.phase`, cada um com todas as suas ações visíveis de uma vez, sem navegação entre telas. A substituição necessária aqui é mais estreita do que a primeira versão deste documento previa:
 
-**Implementado (Fase 5, parcial, 2026-10-03):**
+**Implementado (Fase 5, 2026-10-03):**
 
-- `InaugurationPanel` ganhou o sorteio real (seção com lista de presentes + "Sortear os Guardiões"/"Sortear de novo", chamando `/api/cripta/ceremony-draw`), preenchendo os 5 campos antes manuais — a lacuna real identificada na seção 3a.
-- Cabeçalho de `/cripta-administracao` reescrito para nomear as 4 cerimônias e linkar para `/cripta-projetor`.
+- `InaugurationPanel` ganhou o sorteio real (seção com lista de presentes + "Sortear os Guardiões"/"Sortear de novo", chamando `/api/cripta/ceremony-draw`), preenchendo os 5 campos antes manuais — a lacuna real identificada na seção 3a. Só quem está marcado como presente pode ser sorteado; o servidor sorteia só dentro desse conjunto.
+- `cycle-wizard.ts` ganhou `ceremonyForPhase`/`ceremonyStates`, dobrando as 8 fases do wizard nas 4 cerimônias (testado em `cycle-wizard.test.ts`) — fonte única usada tanto por `/cripta-administracao` quanto por `/cripta-projetor` (que antes tinha sua própria cópia local, com uma inconsistência: colocava `restaurar` em "Fechamento" em vez de "Reabertura" — corrigida ao dedupicar).
+- `/cripta-administracao` reescrita como 4 cartões sempre visíveis (`ceremony-card.tsx`), cada um com seu próprio selo de estado (`Nunca realizada` | `Em andamento` | `Concluída — ...`) — não mais um único bloco condicional por fase. Inauguração carrega o selo "Ato único". Cabeçalho linka para `/cripta-projetor`.
+- `restore-panel.tsx` mostra, só leitura, quantas fichas estão `retida` no momento (nunca quais) — para o operador saber que o pacote de entrega da Reabertura precisa respeitar essas retenções.
 
-**Ainda pendente desta fase:**
+**Ainda pendente, fora do escopo desta fase:**
 
-- Agrupar visualmente os blocos já existentes em 4 "cartões" por cerimônia (hoje são blocos sequenciais por `wizard.phase`, funcionalmente equivalentes mas sem o agrupamento visual explícito).
-- `restore-panel.tsx` mostrar, só leitura, quantas fichas estão `retida` desde a última reabertura.
-- Gravar presença como evento próprio nas cerimônias de abertura/fechamento (hoje só `presentMemberId`, um único Irmão, não uma lista de presença).
+- Gravar presença como lista (não um único `presentMemberId`) nas cerimônias de Abertura/Fechamento — hoje só a Inauguração tem lista de presença real, usada no sorteio.
 
 ### Migração do `cycle-wizard.ts`
 

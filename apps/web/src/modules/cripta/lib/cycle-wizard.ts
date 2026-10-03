@@ -132,3 +132,39 @@ export function computeCycleStatus(input: WizardInput): WizardResult {
   set(9, 'done'); set(2, 'current');
   return { phase: 'reabrir', phaseLabel: 'Restaurado · pronto para reabrir o recebimento', currentFile: filename, steps };
 }
+
+/** The 4 cerimônias the Administração and the Projetor both organize themselves around.
+ * Inauguração is its own ato único; abrir/aberto fold into Abertura (the first-ever opening);
+ * lacrar/exportar fold into Fechamento; restaurar/reabrir fold into Reabertura (every opening
+ * after the first) — see docs/architecture/cripta-reabertura-ficha-e-cerimonia.md §6. */
+export type Ceremony = 'inauguracao' | 'abertura' | 'fechamento' | 'reabertura';
+export type CeremonyState = 'pending' | 'current' | 'done';
+
+const CEREMONY_BY_PHASE: Record<WizardPhase, Ceremony> = {
+  inauguracao: 'inauguracao',
+  comissao: 'abertura',
+  abrir: 'abertura',
+  aberto: 'abertura',
+  lacrar: 'fechamento',
+  exportar: 'fechamento',
+  restaurar: 'reabertura',
+  reabrir: 'reabertura',
+};
+
+export function ceremonyForPhase(phase: WizardPhase): Ceremony {
+  return CEREMONY_BY_PHASE[phase];
+}
+
+/** Everything strictly before the active cerimônia in the annual cycle is `done`; everything
+ * after is `pending` — Inauguração, being an ato único, is always `done` once passed, never
+ * `pending` again. */
+export function ceremonyStates(phase: WizardPhase): Record<Ceremony, CeremonyState> {
+  const order: Ceremony[] = ['inauguracao', 'abertura', 'fechamento', 'reabertura'];
+  const active = ceremonyForPhase(phase);
+  const activeIndex = order.indexOf(active);
+  const states = {} as Record<Ceremony, CeremonyState>;
+  order.forEach((ceremony, index) => {
+    states[ceremony] = index === activeIndex ? 'current' : index < activeIndex ? 'done' : 'pending';
+  });
+  return states;
+}

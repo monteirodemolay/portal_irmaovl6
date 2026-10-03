@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { computeCycleStatus, type WizardInput } from './cycle-wizard';
+import { ceremonyForPhase, ceremonyStates, computeCycleStatus, type WizardInput } from './cycle-wizard';
 
 const base: WizardInput = {
   inaugurated: false,
@@ -102,6 +102,34 @@ describe('computeCycleStatus', () => {
     result.steps.forEach((step, index) => {
       if (index < currentIndex) expect(step.status).toBe('done');
       else if (index > currentIndex) expect(step.status).toBe('pending');
+    });
+  });
+});
+
+describe('ceremonyForPhase / ceremonyStates', () => {
+  it('folds the 8 phases into the 4 cerimônias', () => {
+    expect(ceremonyForPhase('inauguracao')).toBe('inauguracao');
+    expect(ceremonyForPhase('comissao')).toBe('abertura');
+    expect(ceremonyForPhase('abrir')).toBe('abertura');
+    expect(ceremonyForPhase('aberto')).toBe('abertura');
+    expect(ceremonyForPhase('lacrar')).toBe('fechamento');
+    expect(ceremonyForPhase('exportar')).toBe('fechamento');
+    expect(ceremonyForPhase('restaurar')).toBe('reabertura');
+    expect(ceremonyForPhase('reabrir')).toBe('reabertura');
+  });
+
+  it('marks everything before the active cerimônia done and everything after pending', () => {
+    expect(ceremonyStates('inauguracao')).toEqual({
+      inauguracao: 'current', abertura: 'pending', fechamento: 'pending', reabertura: 'pending',
+    });
+    expect(ceremonyStates('aberto')).toEqual({
+      inauguracao: 'done', abertura: 'current', fechamento: 'pending', reabertura: 'pending',
+    });
+    expect(ceremonyStates('exportar')).toEqual({
+      inauguracao: 'done', abertura: 'done', fechamento: 'current', reabertura: 'pending',
+    });
+    expect(ceremonyStates('reabrir')).toEqual({
+      inauguracao: 'done', abertura: 'done', fechamento: 'done', reabertura: 'current',
     });
   });
 });

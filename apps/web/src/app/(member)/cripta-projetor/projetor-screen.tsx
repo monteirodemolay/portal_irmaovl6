@@ -1,9 +1,12 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import type { WizardPhase, WizardResult } from '@/modules/cripta/lib/cycle-wizard';
+import {
+  ceremonyForPhase,
+  type Ceremony,
+  type WizardResult,
+} from '@/modules/cripta/lib/cycle-wizard';
 
-type Ceremony = 'inauguracao' | 'abertura' | 'fechamento' | 'reabertura';
 type CeremonyEvent = { id: string; type?: string; at?: string; [key: string]: unknown };
 
 const CEREMONY_LABEL: Record<Ceremony, string> = {
@@ -22,15 +25,6 @@ const EVENT_LABEL: Record<string, string> = {
   unsealed: 'Lacre anterior rompido para esta reabertura',
   sealed: 'Cripta lacrada — recibo emitido',
 };
-
-/** Which ceremony tab the big screen should land on given the Administração's own wizard phase,
- * so the Projetor and the Administração never show a different "now" to the Loja. */
-function ceremonyForPhase(phase: WizardPhase): Ceremony {
-  if (phase === 'inauguracao') return 'inauguracao';
-  if (phase === 'comissao' || phase === 'abrir' || phase === 'aberto') return 'abertura';
-  if (phase === 'lacrar' || phase === 'exportar' || phase === 'restaurar') return 'fechamento';
-  return 'reabertura';
-}
 
 function formatAt(at: string | undefined) {
   if (!at) return '';
