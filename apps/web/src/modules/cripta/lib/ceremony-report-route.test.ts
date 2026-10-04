@@ -89,4 +89,39 @@ describe('relatório para o registro histórico', () => {
     expect(html).toContain('Ata 10/2026');
     expect(html).not.toContain('carta.body');
   });
+
+  it('nunca lista o uid de quem agiu (actorId) nem o id da Gestão (masterTermId) como participante', async () => {
+    harness.events.set('criptaCryptoV1/events', [
+      {
+        type: 'inaugurated',
+        at: '2026-01-01T10:05:00.000Z',
+        masterId: 'master-1',
+        minutes: 'Ata 10/2026',
+        actorId: 'firebase-uid-abc123',
+        masterTermId: 'term-xyz789',
+      },
+    ]);
+    const html = await (await GET(request('inauguracao'))).text();
+    expect(html).toContain('Fulano Venerável');
+    expect(html).not.toContain('firebase-uid-abc123');
+    expect(html).not.toContain('term-xyz789');
+  });
+
+  it('inclui a designação da Comissão de Guarda nos eventos de abertura/reabertura', async () => {
+    harness.events.set('criptaGovernanceV1/events', [
+      {
+        type: 'commission-appointed',
+        at: '2026-01-15T10:00:00.000Z',
+        commissionMemberIds: ['m1'],
+        minutes: 'Ata 05/2026',
+      },
+    ]);
+    harness.events.set('criptaOnlineOpeningV1/events', [
+      { type: 'opened', at: '2026-02-01T10:00:00.000Z' },
+    ]);
+    const html = await (await GET(request('abertura'))).text();
+    expect(html).toContain('Comissão de Guarda nomeada');
+    expect(html).toContain('Beltrano Guardião');
+    expect(html).toContain('Ata 05/2026');
+  });
 });

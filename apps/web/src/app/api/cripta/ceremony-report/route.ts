@@ -22,15 +22,23 @@ const EVENT_LABEL: Record<string, string> = {
   'sorteio.resultado': 'Sorteio dos Guardiões',
   'sorteio.redraw': 'Sorteio refeito',
   inaugurated: 'Cripta inaugurada',
+  'commission-appointed': 'Comissão de Guarda nomeada',
+  'commission-updated': 'Comissão de Guarda ou próxima data atualizada',
   opened: 'Recebimento aberto',
   closed: 'Recebimento encerrado',
   unsealed: 'Lacre anterior rompido',
   sealed: 'Cripta lacrada',
 };
 
+/** Campos que terminam em Id/Ids mas nunca guardam um Member.id — o uid de quem agiu
+ * (actorId/designatedBy) e o id da Gestão (masterTermId) — ficariam, sem isto, listados como
+ * "participante" com um id cru e irresolúvel, em vez de ficar de fora. */
+const NON_MEMBER_ID_FIELDS = new Set(['actorId', 'masterTermId', 'termId', 'designatedBy']);
+
 function memberIdsIn(event: CeremonyEvent): string[] {
   const ids = new Set<string>();
   for (const [key, value] of Object.entries(event)) {
+    if (NON_MEMBER_ID_FIELDS.has(key)) continue;
     if (!/Id$|Ids$|MemberId$/i.test(key)) continue;
     if (typeof value === 'string') ids.add(value);
     if (Array.isArray(value)) for (const item of value) if (typeof item === 'string') ids.add(item);

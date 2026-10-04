@@ -20,6 +20,8 @@ const EVENT_LABEL: Record<string, string> = {
   'sorteio.resultado': 'Sorteio dos Guardiões realizado',
   'sorteio.redraw': 'Sorteio refeito',
   inaugurated: 'Cripta inaugurada — chave gerada e dividida entre os Guardiões',
+  'commission-appointed': 'Comissão de Guarda nomeada',
+  'commission-updated': 'Comissão de Guarda ou próxima data atualizada',
   opened: 'Recebimento de cartas aberto',
   closed: 'Recebimento de cartas encerrado',
   unsealed: 'Lacre anterior rompido para esta reabertura',

@@ -56,6 +56,9 @@ beforeEach(() => {
     { type: 'closed', at: '2026-02-11T10:00:00.000Z' },
   ]);
   harness.events.set('criptaSealsV1/events', [{ type: 'sealed', at: '2026-02-12T10:00:00.000Z' }]);
+  harness.events.set('criptaGovernanceV1/events', [
+    { type: 'commission-appointed', at: '2026-01-15T10:00:00.000Z' },
+  ]);
 });
 
 describe('agregador de log de cerimônia', () => {
@@ -69,10 +72,10 @@ describe('agregador de log de cerimônia', () => {
     expect(body.events.map((event) => event.type)).toEqual(['sorteio.resultado', 'inaugurated']);
   });
 
-  it('abertura e reabertura mostram só os eventos de abertura, não os de fechamento', async () => {
+  it('abertura e reabertura juntam a designação da Comissão com os eventos de abertura, não os de fechamento', async () => {
     for (const ceremony of ['abertura', 'reabertura']) {
       const body = (await (await GET(request(ceremony))).json()) as { events: Array<{ type: string }> };
-      expect(body.events.map((event) => event.type)).toEqual(['opened']);
+      expect(body.events.map((event) => event.type)).toEqual(['commission-appointed', 'opened']);
     }
   });
 
