@@ -5,6 +5,13 @@ import { cn } from '../lib/cn';
 import { ChevronLeft, ChevronRight, Download, ExternalLink, FileText, X } from '../icons';
 import { VideoPlayer } from './video-player';
 import { PdfViewer } from './pdf-viewer';
+import { PlayPauseButton, PositionBar, ThumbButton } from './slideshow-parts';
+import {
+  prefersReducedMotion,
+  useAutoAdvance,
+  usePreloadImage,
+  useSwipe,
+} from '../lib/use-slideshow';
 
 export type MediaViewerItemKind = 'imagem' | 'video' | 'pdf' | 'outro';
 
@@ -29,9 +36,14 @@ export interface MediaViewerModalProps {
   index: number;
   onIndexChange: (index: number) => void;
   onClose: () => void;
+  /**
+   * Troca automática de fotografias (apresentação de slides). Ligada por
+   * padrão, exceto pra quem pediu "reduzir movimento" no sistema; só roda
+   * enquanto o item atual é uma imagem (nunca avança sozinho sobre vídeo/PDF)
+   * e pausa com o mouse em cima. O botão play/pause no topo controla.
+   */
+  autoPlay?: boolean;
 }
-
-const SWIPE_THRESHOLD_PX = 40;
 
 function MediaBody({ item }: { item: MediaViewerItem }) {
   if (item.kind === 'imagem') {
@@ -39,7 +51,7 @@ function MediaBody({ item }: { item: MediaViewerItem }) {
       <img
         src={item.src}
         alt={item.title}
-        className="max-h-full max-w-full select-none object-contain"
+        className="animate-in fade-in max-h-full max-w-full select-none object-contain duration-300"
         draggable={false}
       />
     );
@@ -80,9 +92,16 @@ function MediaBody({ item }: { item: MediaViewerItem }) {
  * mesma coleção — abrir uma foto e passar pro próximo item mesmo que seja
  * um PDF, sem fechar e reabrir.
  */
-export function MediaViewerModal({ items, index, onIndexChange, onClose }: MediaViewerModalProps) {
+export function MediaViewerModal({
+  items,
+  index,
+  onIndexChange,
+  onClose,
+  autoPlay = true,
+}: MediaViewerModalProps) {
   const dialogRef = React.useRef<HTMLDivElement>(null);
-  const touchStartX = React.useRef<number | null>(null);
+  const [playing, setPlaying] = React.useState(() => autoPlay && !prefersReducedMotion());
+  const [hovering, setHovering] = React.useState(false);
   const total = items.length;
   const current = items[index];
 
@@ -95,16 +114,30 @@ export function MediaViewerModal({ items, index, onIndexChange, onClose }: Media
   );
   const goPrev = React.useCallback(() => goTo(index - 1), [goTo, index]);
   const goNext = React.useCallback(() => goTo(index + 1), [goTo, index]);
+  const swipe = useSwipe(goPrev, goNext);
+
+  const hasSlideshow = total > 1 && current?.kind === 'imagem';
+  useAutoAdvance({
+    enabled: playing && !hovering && hasSlideshow,
+    resetKey: index,
+    onAdvance: goNext,
+  });
+  const nextItem = total > 1 ? items[(index + 1) % total] : undefined;
+  usePreloadImage(nextItem?.kind === 'imagem' ? nextItem.src : null);
 
   React.useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
       if (event.key === 'Escape') onClose();
       else if (event.key === 'ArrowLeft') goPrev();
       else if (event.key === 'ArrowRight') goNext();
+      else if (event.key === ' ' && hasSlideshow && event.target === dialogRef.current) {
+        event.preventDefault();
+        setPlaying((value) => !value);
+      }
     }
     document.addEventListener('keydown', onKeyDown);
     return () => document.removeEventListener('keydown', onKeyDown);
-  }, [onClose, goPrev, goNext]);
+  }, [onClose, goPrev, goNext, hasSlideshow]);
 
   React.useEffect(() => {
     dialogRef.current?.focus();
@@ -117,20 +150,6 @@ export function MediaViewerModal({ items, index, onIndexChange, onClose }: Media
 
   if (!current) return null;
 
-  function onTouchStart(event: React.TouchEvent) {
-    touchStartX.current = event.touches[0]?.clientX ?? null;
-  }
-
-  function onTouchEnd(event: React.TouchEvent) {
-    if (touchStartX.current === null) return;
-    const endX = event.changedTouches[0]?.clientX ?? touchStartX.current;
-    const delta = endX - touchStartX.current;
-    touchStartX.current = null;
-    if (Math.abs(delta) < SWIPE_THRESHOLD_PX) return;
-    if (delta > 0) goPrev();
-    else goNext();
-  }
-
   return (
     <div
       ref={dialogRef}
@@ -142,8 +161,8 @@ export function MediaViewerModal({ items, index, onIndexChange, onClose }: Media
       onClick={(event) => {
         if (event.target === event.currentTarget) onClose();
       }}
-      onTouchStart={onTouchStart}
-      onTouchEnd={onTouchEnd}
+      onTouchStart={swipe.onTouchStart}
+      onTouchEnd={swipe.onTouchEnd}
     >
       <div className="flex shrink-0 items-center justify-between gap-3 p-3 text-white sm:p-4">
         <span className="min-w-0 truncate text-xs font-medium opacity-80 sm:text-sm">
@@ -153,6 +172,9 @@ export function MediaViewerModal({ items, index, onIndexChange, onClose }: Media
           {total > 0 && <span className="ml-2 hidden sm:inline">{current.title}</span>}
         </span>
         <div className="flex shrink-0 items-center gap-2">
+          {hasSlideshow && (
+            <PlayPauseButton playing={playing} onToggle={() => setPlaying((value) => !value)} />
+          )}
           {current.externalHref && (
             <a
               href={current.externalHref}
@@ -192,6 +214,8 @@ export function MediaViewerModal({ items, index, onIndexChange, onClose }: Media
           'relative flex min-h-0 flex-1 items-center justify-center px-2 sm:px-4',
           current.kind === 'pdf' && 'py-2',
         )}
+        onMouseEnter={() => setHovering(true)}
+        onMouseLeave={() => setHovering(false)}
       >
         {total > 1 && (
           <button
@@ -207,7 +231,7 @@ export function MediaViewerModal({ items, index, onIndexChange, onClose }: Media
           </button>
         )}
 
-        <MediaBody item={current} />
+        <MediaBody key={index} item={current} />
 
         {total > 1 && (
           <button
@@ -225,7 +249,7 @@ export function MediaViewerModal({ items, index, onIndexChange, onClose }: Media
       </div>
 
       {(current.caption || (current.people && current.people.length > 0)) && (
-        <div className="shrink-0 px-4 pb-4 pt-2 text-center sm:pb-6">
+        <div className="shrink-0 px-4 pb-2 pt-2 text-center">
           {current.caption && <p className="text-sm text-white/85">{current.caption}</p>}
           {current.people && current.people.length > 0 && (
             <p className="mt-1.5 text-xs text-white/70">
@@ -244,6 +268,29 @@ export function MediaViewerModal({ items, index, onIndexChange, onClose }: Media
               ))}
             </p>
           )}
+        </div>
+      )}
+
+      {total > 1 && (
+        <div className="shrink-0 px-3 pb-3 sm:px-4 sm:pb-4" onClick={(e) => e.stopPropagation()}>
+          <PositionBar index={index} total={total} className="mb-2" />
+          <div
+            className="flex gap-2 overflow-x-auto pb-1"
+            role="group"
+            aria-label="Miniaturas da galeria"
+          >
+            {items.map((item, itemIndex) => (
+              <ThumbButton
+                key={`${itemIndex}-${item.src}`}
+                item={item}
+                position={itemIndex}
+                active={itemIndex === index}
+                onSelect={() => goTo(itemIndex)}
+                scrollIntoViewWhenActive
+                className="h-14 w-14 shrink-0 sm:h-16 sm:w-16"
+              />
+            ))}
+          </div>
         </div>
       )}
     </div>
