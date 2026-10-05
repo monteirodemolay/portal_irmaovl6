@@ -157,7 +157,7 @@ export function MediaViewerModal({
       aria-modal="true"
       aria-label={current.caption ? current.caption : `${current.title} — ${index + 1} de ${total}`}
       tabIndex={-1}
-      className="fixed inset-0 z-50 flex flex-col bg-[#0f0d0a]/95 outline-none"
+      className="fixed inset-0 z-50 flex flex-col bg-[#0f0d0a] outline-none"
       onClick={(event) => {
         if (event.target === event.currentTarget) onClose();
       }}
