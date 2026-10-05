@@ -157,7 +157,7 @@ export function MediaViewerModal({
       aria-modal="true"
       aria-label={current.caption ? current.caption : `${current.title} — ${index + 1} de ${total}`}
       tabIndex={-1}
-      className="fixed inset-0 z-50 flex flex-col bg-black/95 outline-none"
+      className="fixed inset-0 z-50 flex flex-col bg-[#0f0d0a]/95 outline-none"
       onClick={(event) => {
         if (event.target === event.currentTarget) onClose();
       }}
@@ -181,7 +181,7 @@ export function MediaViewerModal({
               target="_blank"
               rel="noreferrer"
               aria-label="Abrir em nova aba"
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 transition-colors hover:bg-white/20"
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 transition-colors hover:bg-[#D4AF37] hover:text-black"
               onClick={(event) => event.stopPropagation()}
             >
               <ExternalLink size={17} />
@@ -192,7 +192,7 @@ export function MediaViewerModal({
               href={current.downloadHref}
               download={current.downloadName}
               aria-label="Baixar"
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 transition-colors hover:bg-white/20"
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 transition-colors hover:bg-[#D4AF37] hover:text-black"
               onClick={(event) => event.stopPropagation()}
             >
               <Download size={18} />
@@ -202,7 +202,7 @@ export function MediaViewerModal({
             type="button"
             aria-label="Fechar"
             onClick={onClose}
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 transition-colors hover:bg-white/20"
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 transition-colors hover:bg-[#D4AF37] hover:text-black"
           >
             <X size={20} />
           </button>
@@ -225,7 +225,7 @@ export function MediaViewerModal({
               event.stopPropagation();
               goPrev();
             }}
-            className="absolute left-1 top-1/2 z-10 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20 sm:left-4"
+            className="absolute left-1 top-1/2 z-10 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-[#D4AF37] hover:text-black sm:left-4"
           >
             <ChevronLeft size={22} />
           </button>
@@ -241,7 +241,7 @@ export function MediaViewerModal({
               event.stopPropagation();
               goNext();
             }}
-            className="absolute right-1 top-1/2 z-10 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20 sm:right-4"
+            className="absolute right-1 top-1/2 z-10 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-[#D4AF37] hover:text-black sm:right-4"
           >
             <ChevronRight size={22} />
           </button>
@@ -273,7 +273,7 @@ export function MediaViewerModal({
 
       {total > 1 && (
         <div className="shrink-0 px-3 pb-3 sm:px-4 sm:pb-4" onClick={(e) => e.stopPropagation()}>
-          <PositionBar index={index} total={total} className="mb-2" />
+          <PositionBar index={index} total={total} className="mb-3" />
           <div
             className="flex gap-2 overflow-x-auto pb-1"
             role="group"
@@ -287,7 +287,7 @@ export function MediaViewerModal({
                 active={itemIndex === index}
                 onSelect={() => goTo(itemIndex)}
                 scrollIntoViewWhenActive
-                className="h-14 w-14 shrink-0 sm:h-16 sm:w-16"
+                className="h-16 w-24 shrink-0 sm:h-20 sm:w-28"
               />
             ))}
           </div>

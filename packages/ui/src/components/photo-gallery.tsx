@@ -74,7 +74,12 @@ export function PhotoGallery({
   if (!current) return null;
 
   return (
-    <div className={cn('flex flex-col gap-3', className)}>
+    <div
+      className={cn(
+        'flex flex-col gap-3 rounded-2xl border border-[#D4AF37]/25 bg-[#14110d] p-2 sm:gap-4 sm:p-4',
+        className,
+      )}
+    >
       <div
         role="group"
         aria-roledescription="carrossel"
@@ -88,7 +93,7 @@ export function PhotoGallery({
         onMouseLeave={() => setHovering(false)}
         onTouchStart={swipe.onTouchStart}
         onTouchEnd={swipe.onTouchEnd}
-        className="focus-visible:ring-accent group relative aspect-[4/3] w-full overflow-hidden rounded-xl bg-black focus-visible:outline-none focus-visible:ring-2 sm:aspect-[16/10]"
+        className="group relative aspect-[4/3] w-full overflow-hidden rounded-xl border border-[#D4AF37]/40 bg-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D4AF37] sm:aspect-[16/10]"
       >
         <button
           type="button"
@@ -111,7 +116,7 @@ export function PhotoGallery({
               type="button"
               aria-label="Fotografia anterior"
               onClick={goPrev}
-              className="absolute left-2 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-xl bg-black/50 text-white backdrop-blur transition-colors hover:bg-black/70 sm:left-4"
+              className="absolute left-2 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-xl bg-[#26221d]/85 text-white backdrop-blur transition-colors hover:bg-[#D4AF37] hover:text-black sm:left-4"
             >
               <ChevronLeft size={22} />
             </button>
@@ -119,7 +124,7 @@ export function PhotoGallery({
               type="button"
               aria-label="Próxima fotografia"
               onClick={goNext}
-              className="absolute right-2 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-xl bg-black/50 text-white backdrop-blur transition-colors hover:bg-black/70 sm:right-4"
+              className="absolute right-2 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-xl bg-[#26221d]/85 text-white backdrop-blur transition-colors hover:bg-[#D4AF37] hover:text-black sm:right-4"
             >
               <ChevronRight size={22} />
             </button>
@@ -131,37 +136,37 @@ export function PhotoGallery({
             <PlayPauseButton
               playing={playing}
               onToggle={() => setPlaying((value) => !value)}
-              className="bg-black/50 backdrop-blur hover:bg-black/70"
+              className="bg-[#26221d]/85 backdrop-blur"
             />
           )}
           <button
             type="button"
             aria-label="Tela cheia"
             onClick={() => setExpanded(true)}
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur transition-colors hover:bg-black/70"
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-[#26221d]/85 text-white backdrop-blur transition-colors hover:bg-[#D4AF37] hover:text-black"
           >
             <Maximize2 size={17} />
           </button>
         </div>
 
         <div className="pointer-events-none absolute inset-x-2 bottom-2 flex items-center justify-between gap-2 text-white sm:inset-x-3 sm:bottom-3">
-          <span className="flex items-center gap-1.5 rounded-full bg-black/50 px-3 py-1.5 text-xs font-medium backdrop-blur sm:text-sm">
-            <ZoomIn size={15} />
+          <span className="flex items-center gap-1.5 rounded-full bg-[#26221d]/85 px-3 py-1.5 text-xs font-medium backdrop-blur sm:text-sm">
+            <ZoomIn size={15} className="text-[#D4AF37]" />
             Clique para ampliar
           </span>
-          <span className="rounded-full bg-black/50 px-3 py-1.5 text-xs font-medium tabular-nums backdrop-blur sm:text-sm">
+          <span className="rounded-full bg-[#26221d]/85 px-3 py-1.5 text-xs font-medium tabular-nums backdrop-blur sm:text-sm">
             {index + 1} / {total}
           </span>
         </div>
       </div>
 
-      {current.caption && <p className="text-muted text-sm">{current.caption}</p>}
+      {current.caption && <p className="text-sm text-white/80">{current.caption}</p>}
 
       {total > 1 && (
         <>
-          <PositionBar index={index} total={total} className="bg-border" />
+          <PositionBar index={index} total={total} />
           <div
-            className="grid grid-cols-4 gap-2 sm:grid-cols-5 md:grid-cols-6"
+            className="grid grid-cols-3 gap-2 sm:grid-cols-4 sm:gap-3 md:grid-cols-5"
             role="group"
             aria-label="Miniaturas da galeria"
           >
@@ -172,7 +177,7 @@ export function PhotoGallery({
                 position={photoIndex}
                 active={photoIndex === index}
                 onSelect={() => setIndex(photoIndex)}
-                className="aspect-square w-full"
+                className="aspect-[4/3] w-full"
               />
             ))}
           </div>

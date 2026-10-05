@@ -32,7 +32,7 @@ export function PlayPauseButton({
         onToggle();
       }}
       className={cn(
-        'flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20',
+        'flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-[#D4AF37] hover:text-black',
         className,
       )}
     >
@@ -59,10 +59,10 @@ export function PositionBar({
       aria-valuemin={1}
       aria-valuemax={total}
       aria-valuenow={index + 1}
-      className={cn('h-1 w-full overflow-hidden rounded-full bg-white/15', className)}
+      className={cn('h-1 w-full overflow-hidden rounded-full bg-white/10', className)}
     >
       <div
-        className="bg-accent h-full rounded-full transition-[width] duration-300"
+        className="h-full rounded-full bg-[#D4AF37] transition-[width] duration-300"
         style={{ width: `${percent}%` }}
       />
     </div>
@@ -107,8 +107,10 @@ export function ThumbButton({
       aria-label={`Ver item ${position + 1}: ${item.title}`}
       aria-current={active ? 'true' : undefined}
       className={cn(
-        'focus-visible:ring-accent relative overflow-hidden rounded-lg border-2 bg-black/40 transition focus-visible:outline-none focus-visible:ring-2',
-        active ? 'border-accent opacity-100' : 'border-transparent opacity-60 hover:opacity-100',
+        'relative overflow-hidden rounded-xl border bg-black/40 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D4AF37]',
+        active
+          ? 'border-[#D4AF37] opacity-100 shadow-[0_0_0_1px_#D4AF37]'
+          : 'border-white/10 opacity-80 hover:border-[#D4AF37]/60 hover:opacity-100',
         className,
       )}
     >
