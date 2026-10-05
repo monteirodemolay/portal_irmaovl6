@@ -13,7 +13,7 @@ import { currentWizardStatus } from '@/modules/cripta/lib/wizard-status';
 import { ceremonyStates } from '@/modules/cripta/lib/cycle-wizard';
 import { CeremonyCard } from '../cripta-administracao/ceremony-card';
 import { CycleWizardView } from '../cripta-administracao/cycle-wizard-view';
-import { InaugurationPanel } from '../cripta-administracao/inauguration-panel';
+import { InaugurationStage } from './inauguration-stage';
 import { ComissaoForm } from '../cripta-administracao/comissao-form';
 import { OnlineOpeningControl } from '../cripta-administracao/online-opening-control';
 import { SealPanel } from '../cripta-administracao/seal-panel';
@@ -69,6 +69,17 @@ export default async function Page() {
       )
     : null;
 
+  if (wizard.phase === 'inauguracao') {
+    return (
+      <InaugurationStage
+        eligible={members
+          .filter((member) => member.userId && member.id !== master?.member.id)
+          .map((member) => ({ id: member.id, name: member.nomeCompleto }))}
+        masterName={master?.member.nomeCompleto ?? ''}
+      />
+    );
+  }
+
   return (
     <div className="mx-auto max-w-5xl space-y-6 pb-12 text-[#17263f]">
       <header className="rounded-[2rem] border border-[#c9a55a] bg-[#17263f] p-8 text-white sm:p-10">
@@ -111,24 +122,15 @@ export default async function Page() {
         badge="Ato único"
         state={states.inauguracao}
       >
-        {!master && (
-          <p className="rounded-xl bg-red-50 p-4 text-sm text-red-900">
-            Cadastre o Venerável Mestre na gestão vigente e vincule sua conta antes de abrir esta
-            sessão.
+        {inauguration && (
+          <p className="rounded-xl border border-green-300 bg-green-50 p-4 text-sm leading-6 text-green-950">
+            Concluída em{' '}
+            {new Date(inauguration.inauguratedAt).toLocaleString('pt-BR', {
+              timeZone: 'America/Sao_Paulo',
+            })}{' '}
+            · {inauguration.totalGuardians} Guardiões, limiar {inauguration.threshold}.
           </p>
         )}
-        <p className="text-sm leading-6 text-[#536074]">
-          Ato único, em sessão fechada: nomeia os Guardiões da Cripta e gera a chave que vai
-          proteger todas as cartas, sem que ninguém — nem a própria Loja — precise guardar uma senha
-          por Irmão.
-        </p>
-        <InaugurationPanel
-          eligible={members
-            .filter((member) => member.userId)
-            .map((member) => ({ id: member.id, name: member.nomeCompleto }))}
-          existing={inauguration}
-          masterName={master?.member.nomeCompleto ?? ''}
-        />
       </CeremonyCard>
 
       <CeremonyCard id="abertura" title="Abertura" state={states.abertura}>
