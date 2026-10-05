@@ -1,19 +1,14 @@
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
 import { createServerContainer, getAdminFirestore } from '@vl6/infra';
 import { requirePagePermission } from '@/lib/auth/require-permission';
-import { canAccessCriptaPilot } from '@/modules/cripta/lib/early-access';
-import { isOnlineOpen, openingRef } from '@/modules/cripta/lib/online-opening';
 import { currentCriptaMaster } from '@/modules/cripta/lib/current-master';
-import { readCriptaPublicKey } from '@/modules/cripta/lib/cripta-crypto-state';
-import { computeCycleStatus } from '@/modules/cripta/lib/cycle-wizard';
+import { currentWizardStatus } from '@/modules/cripta/lib/wizard-status';
+import { letterRecordsCollection } from '@/modules/cripta/lib/letter-record';
 import { CycleWizardView } from './cycle-wizard-view';
-import { InaugurationPanel } from './inauguration-panel';
-import { ComissaoForm } from './comissao-form';
-import { OnlineOpeningControl } from './online-opening-control';
-import { SealPanel } from './seal-panel';
-import { ExportPanel } from './export-panel';
-import { PhysicalUnitCheck } from './physical-unit-check';
+import { CeremonyHistory } from './ceremony-history';
+import { GuardianSharesPanel } from './guardian-shares-panel';
+import { RenewalPanel } from './renewal-panel';
+import { CleanupPanel } from './cleanup-panel';
 import { RestorePanel } from './restore-panel';
 import { ResetPanel } from './reset-panel';
 
@@ -24,50 +19,32 @@ export const metadata = {
   robots: { index: false, follow: false },
 };
 
+/** Só visualização do que já foi feito + administração geral (contas, manutenção) — os
+ * formulários de ação de cada cerimônia (sortear, gerar chave, nomear Comissão, abrir/fechar
+ * recebimento, lacrar, exportar, conferir) ficaram no Projetor: a mesma tela projetada durante a
+ * sessão, operada ali mesmo. Ver docs/architecture/cripta-reabertura-ficha-e-cerimonia.md. */
 export default async function Page() {
   const session = await requirePagePermission('tenant:manage');
-  if (!canAccessCriptaPilot(session.user.email)) notFound();
   const tenantId = session.authContext.tenantId;
   const container = createServerContainer();
   const db = getAdminFirestore();
 
-  const [membersResult, governance, open, openingDoc, master, seal, inauguration] =
-    await Promise.all([
-      container.repositories.member.search({ tenantId, situacao: 'ativo' }, { limit: 100 }),
-      db.collection('criptaGovernanceV1').doc(tenantId).get(),
-      isOnlineOpen(tenantId),
-      openingRef(tenantId).get(),
-      currentCriptaMaster(tenantId),
-      db.collection('criptaSealsV1').doc(tenantId).get(),
-      readCriptaPublicKey(tenantId),
-    ]);
+  const [membersResult, governance, master, seal, wizard, retainedLetterCount] = await Promise.all([
+    container.repositories.member.search({ tenantId, situacao: 'ativo' }, { limit: 100 }),
+    db.collection('criptaGovernanceV1').doc(tenantId).get(),
+    currentCriptaMaster(tenantId),
+    db.collection('criptaSealsV1').doc(tenantId).get(),
+    currentWizardStatus(tenantId),
+    countRetainedLetterRecords(tenantId),
+  ]);
 
   const members = membersResult.items;
   const control = governance.data();
   const sealData = seal.data();
   const eligible = members.filter((member) => member.userId && member.id !== master?.member.id);
 
-  const wizard = computeCycleStatus({
-    inaugurated: !!inauguration,
-    hasCommission: !!control?.commissionMemberIds?.length,
-    open,
-    closesAt: openingDoc.data()?.closesAt ?? null,
-    receiptStatus: sealData?.status ?? null,
-    receiptCode: sealData?.code ?? null,
-    exportReceiptCode: sealData?.export?.receiptCode ?? null,
-    physicalCheckOk:
-      sealData?.physicalCheck?.receiptDigest === sealData?.receiptDigest &&
-      (sealData?.physicalCheck?.units?.length ?? 0) >= 3,
-    cleanupOk:
-      sealData?.cleanup?.receiptCode === sealData?.code && sealData?.cleanup?.complete === true,
-    restorationOk:
-      sealData?.restoration?.receiptCode === sealData?.code &&
-      sealData?.restoration?.complete === true,
-  });
-
   const name = (id: string | undefined) =>
     members.find((member) => member.id === id)?.nomeCompleto ?? 'Não indicado';
-  const choices = eligible.map((member) => ({ id: member.id, name: member.nomeCompleto }));
 
   return (
     <div className="mx-auto max-w-5xl space-y-6 pb-12 text-[#17263f]">
@@ -75,126 +52,50 @@ export default async function Page() {
         <p className="text-xs font-semibold uppercase tracking-[.22em] text-[#e3bd62]">
           Cripta · administração
         </p>
-        <h1 className="mt-4 font-serif text-4xl sm:text-5xl">A Cripta, passo a passo</h1>
+        <h1 className="mt-4 font-serif text-4xl sm:text-5xl">Administração da Cripta</h1>
         <p className="mt-4 max-w-2xl leading-7 text-slate-200">
-          A inauguração acontece uma única vez: nomeia os Guardiões e gera a chave. Depois, um ciclo
-          de 8 etapas se repete a cada ano — esta tela sempre mostra só a etapa de agora. A
-          Reabertura (restaurar os rascunhos e reabrir o recebimento) é o fim de um ciclo e o começo
-          do próximo, uma etapa própria, depois da limpeza do Wix.
+          Esta tela é só para acompanhar o que já foi feito e para a administração geral — guarda de
+          partes, manutenção e a Renovação de Guardiões. As cerimônias em si (Inauguração, Abertura,
+          Fechamento, Reabertura) são operadas no Projetor, a tela projetada durante a sessão.
         </p>
+        <Link
+          href="/cripta-projetor"
+          className="mt-4 inline-block rounded-xl border border-[#e3bd62]/60 px-4 py-2 text-sm font-semibold text-[#e3bd62] hover:bg-[#e3bd62]/10"
+        >
+          Abrir o Projetor para operar a cerimônia →
+        </Link>
       </header>
 
       <CycleWizardView result={wizard} />
-
-      {wizard.phase !== 'inauguracao' && wizard.phase !== 'comissao' && (
-        <>
-          <ComissaoSummary control={control} name={name} />
-          <ComissaoForm
-            eligible={eligible.map((member) => ({
-              id: member.id,
-              nomeCompleto: member.nomeCompleto,
-            }))}
-            masterName={master?.member.nomeCompleto ?? ''}
-            masterMissing={!master}
-            control={control}
-            prominent={false}
-          />
-        </>
-      )}
-
-      {wizard.phase === 'inauguracao' && (
-        <>
-          {!master && (
-            <p className="rounded-xl bg-red-50 p-4 text-sm text-red-900">
-              Cadastre o Venerável Mestre na gestão vigente e vincule sua conta antes de abrir esta
-              sessão.
-            </p>
-          )}
-          <p className="text-sm leading-6 text-[#536074]">
-            Ato único, em sessão fechada: nomeia os Guardiões da Cripta e gera a chave que vai
-            proteger todas as cartas, sem que ninguém — nem a própria Loja — precise guardar uma
-            senha por Irmão.
-          </p>
-          <InaugurationPanel
-            eligible={members
-              .filter((member) => member.userId)
-              .map((member) => ({ id: member.id, name: member.nomeCompleto }))}
-            existing={inauguration}
-            masterName={master?.member.nomeCompleto ?? ''}
-          />
-        </>
-      )}
-
-      {wizard.phase === 'comissao' && (
-        <ComissaoForm
-          eligible={eligible.map((member) => ({
-            id: member.id,
-            nomeCompleto: member.nomeCompleto,
-          }))}
-          masterName={master?.member.nomeCompleto ?? ''}
-          masterMissing={!master}
-          control={control}
-          prominent
-        />
-      )}
-
+      <CeremonyHistory wizard={wizard} />
+      <ComissaoSummary control={control} name={name} />
       {wizard.phase === 'aberto' && (
-        <AbertoPhase
-          tenantId={tenantId}
-          members={members}
-          eligible={eligible}
-          choices={choices}
-          control={control}
-          master={master}
-          open={open}
-        />
+        <WritingProgress tenantId={tenantId} eligible={eligible} membersTotal={members.length} />
       )}
 
-      {wizard.phase === 'lacrar' && (
-        <SealPanel initiallyOpen={false} step="4 · lacração" showAdvanceAfterSeal />
-      )}
+      <GuardianSharesPanel />
 
       {wizard.phase === 'exportar' && sealData?.status === 'sealed' && (
-        <>
-          <ExportPanel
-            receiptCode={sealData.code as string}
-            totalLetters={sealData.letters as number}
-            inventoryDigest={sealData.inventoryDigest as string}
-            physicalCheckOk={sealData.physicalCheck?.receiptDigest === sealData.receiptDigest}
-            cleanupComplete={
-              sealData.cleanup?.receiptCode === sealData.code && sealData.cleanup?.complete === true
-            }
-          />
-          <PhysicalUnitCheck
-            receiptCode={sealData.code as string}
-            totalLetters={sealData.letters as number}
-            inventoryDigest={sealData.inventoryDigest as string}
-            recorded={
-              sealData.physicalCheck?.receiptDigest === sealData.receiptDigest
-                ? sealData.physicalCheck
-                : null
-            }
-          />
-        </>
+        <CleanupPanel
+          physicalCheckOk={sealData.physicalCheck?.receiptDigest === sealData.receiptDigest}
+          cleanupComplete={
+            sealData.cleanup?.receiptCode === sealData.code && sealData.cleanup?.complete === true
+          }
+        />
       )}
-
       {wizard.phase === 'restaurar' && sealData?.status === 'sealed' && (
         <RestorePanel
           receiptCode={sealData.code as string}
           recorded={
             sealData.restoration?.receiptCode === sealData.code ? sealData.restoration : null
           }
+          retainedLetterCount={retainedLetterCount}
         />
       )}
 
-      {wizard.phase === 'reabrir' && (
-        <OnlineOpeningControl
-          step="2"
-          initiallyOpen={false}
-          masterName={master?.member.nomeCompleto ?? ''}
-          commissionMemberIds={control?.commissionMemberIds ?? []}
-          nextOpeningDate={control?.nextOpeningDate ?? ''}
-          choices={choices}
+      {wizard.phase !== 'aberto' && (
+        <RenewalPanel
+          eligible={eligible.map((member) => ({ id: member.id, name: member.nomeCompleto }))}
         />
       )}
 
@@ -223,7 +124,8 @@ export default async function Page() {
         </p>
         <p className="mt-1 text-sm text-[#5e584c]">
           Use só para repetir um percurso de teste do zero. Não é parte do ciclo anual normal — a
-          limpeza de cada ano é a etapa 7, vista acima durante a Exportação.
+          limpeza de cada ano é a etapa 7, operada no Projetor durante a Exportação, e concluída
+          aqui.
         </p>
         <div className="mt-3">
           <ResetPanel />
@@ -258,22 +160,15 @@ function ComissaoSummary({
   );
 }
 
-async function AbertoPhase({
+/** Só a contagem de participação — a ação de fechar a escrita ficou no Projetor. */
+async function WritingProgress({
   tenantId,
-  members,
   eligible,
-  choices,
-  control,
-  master,
-  open,
+  membersTotal,
 }: {
   tenantId: string;
-  members: Array<{ id: string; userId?: string | null; nomeCompleto: string }>;
   eligible: Array<{ id: string; userId?: string | null; nomeCompleto: string }>;
-  choices: Array<{ id: string; name: string }>;
-  control: FirebaseFirestore.DocumentData | undefined;
-  master: Awaited<ReturnType<typeof currentCriptaMaster>>;
-  open: boolean;
+  membersTotal: number;
 }) {
   const db = getAdminFirestore();
   const records = await Promise.all(
@@ -297,37 +192,34 @@ async function AbertoPhase({
     }),
   );
   return (
-    <>
-      <section className="rounded-2xl border border-[#dbcda9] bg-white p-6">
-        <h2 className="font-serif text-2xl text-[#142a43]">Participação dos irmãos Ativos</h2>
-        <p className="mt-2 text-sm text-[#536074]">
-          {members.length} Ativos cadastrados · {eligible.length} com conta vinculada ·{' '}
-          {records.filter((record) => record.count > 0).length} com carta enviada ·{' '}
-          {records.filter((record) => record.hasDraft).length} com rascunho
-        </p>
-        <div className="mt-5 divide-y">
-          {records.map(({ member, count, hasDraft }) => (
-            <div key={member.id} className="flex items-center justify-between gap-4 py-3 text-sm">
-              <span>{member.nomeCompleto}</span>
-              <strong>
-                {count
-                  ? `${count} carta(s) enviada(s)`
-                  : hasDraft
-                    ? 'Em rascunho'
-                    : 'Ainda não iniciou'}
-              </strong>
-            </div>
-          ))}
-        </div>
-      </section>
-      <OnlineOpeningControl
-        step="3"
-        initiallyOpen={open}
-        masterName={master?.member.nomeCompleto ?? ''}
-        commissionMemberIds={control?.commissionMemberIds ?? []}
-        nextOpeningDate={control?.nextOpeningDate ?? ''}
-        choices={choices}
-      />
-    </>
+    <section className="rounded-2xl border border-[#dbcda9] bg-white p-6">
+      <h2 className="font-serif text-2xl text-[#142a43]">Participação dos irmãos Ativos</h2>
+      <p className="mt-2 text-sm text-[#536074]">
+        {membersTotal} Ativos cadastrados · {eligible.length} com conta vinculada ·{' '}
+        {records.filter((record) => record.count > 0).length} com carta enviada ·{' '}
+        {records.filter((record) => record.hasDraft).length} com rascunho
+      </p>
+      <div className="mt-5 divide-y">
+        {records.map(({ member, count, hasDraft }) => (
+          <div key={member.id} className="flex items-center justify-between gap-4 py-3 text-sm">
+            <span>{member.nomeCompleto}</span>
+            <strong>
+              {count
+                ? `${count} carta(s) enviada(s)`
+                : hasDraft
+                  ? 'Em rascunho'
+                  : 'Ainda não iniciou'}
+            </strong>
+          </div>
+        ))}
+      </div>
+    </section>
   );
+}
+
+/** Só a contagem, nunca quais cartas — o operador precisa saber que o pacote de entrega da
+ * reabertura tem retenções a respeitar, sem ver de quem. */
+async function countRetainedLetterRecords(tenantId: string): Promise<number> {
+  const snapshot = await letterRecordsCollection(tenantId).where('status', '==', 'retida').get();
+  return snapshot.size;
 }

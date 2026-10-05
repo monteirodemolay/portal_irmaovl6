@@ -1,11 +1,10 @@
 import { withCriptaOperation } from '@/modules/cripta/lib/reset-control';
 import Link from 'next/link';
-import { notFound, redirect } from 'next/navigation';
+import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { randomUUID } from 'node:crypto';
 import { createServerContainer, getAdminFirestore } from '@vl6/infra';
 import { requirePagePermission } from '@/lib/auth/require-permission';
-import { canAccessCriptaPilot } from '@/modules/cripta/lib/early-access';
 
 export const maxDuration = 300;
 
@@ -17,7 +16,6 @@ export const metadata = {
 async function registerEvent(data: FormData) {
   'use server';
   const session = await requirePagePermission('tenant:manage');
-  if (!canAccessCriptaPilot(session.user.email)) notFound();
   const tenantId = session.authContext.tenantId;
   await withCriptaOperation(tenantId, async () => {
     const memberId = String(data.get('memberId') ?? '');
@@ -62,7 +60,6 @@ export default async function Page({
   searchParams: Promise<{ erro?: string; registro?: string }>;
 }) {
   const session = await requirePagePermission('tenant:manage');
-  if (!canAccessCriptaPilot(session.user.email)) notFound();
   const tenantId = session.authContext.tenantId;
   const [members, events, params] = await Promise.all([
     createServerContainer().repositories.member.search({ tenantId }, { limit: 100 }),

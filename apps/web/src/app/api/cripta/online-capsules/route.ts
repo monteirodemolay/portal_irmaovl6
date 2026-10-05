@@ -17,6 +17,12 @@ import {
   uploadPrivateCiphertext,
 } from '@/modules/cripta/lib/wix-private-files';
 import { isOnlineOpen, openingRef } from '@/modules/cripta/lib/online-opening';
+import {
+  buildLetterRecord,
+  isDeliveryMode,
+  letterRecordsCollection,
+  sanitizeLabel,
+} from '@/modules/cripta/lib/letter-record';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
@@ -49,6 +55,16 @@ export const POST = criptaRoute(async function POST(request: Request) {
     return NextResponse.json({ error: 'Acesso negado.' }, { status: 403 });
   if (Number(request.headers.get('content-length') ?? 0) > MAX_SEALED_REQUEST_BYTES)
     return NextResponse.json({ error: 'Carta acima do limite atual.' }, { status: 413 });
+  const label = sanitizeLabel(request.headers.get('x-cripta-label'));
+  const deliveryModeHeader = request.headers.get('x-cripta-delivery-mode');
+  const deliveryMode =
+    deliveryModeHeader && isDeliveryMode(deliveryModeHeader) ? deliveryModeHeader : null;
+  const supersedes = request.headers.get('x-cripta-supersedes') || null;
+  if (!label || !deliveryMode)
+    return NextResponse.json(
+      { error: 'Informe um apelido e o modo de entrega desta carta.' },
+      { status: 400 },
+    );
   const body = await request.text();
   if (Buffer.byteLength(body) > MAX_SEALED_REQUEST_BYTES)
     return NextResponse.json({ error: 'Carta acima do limite atual.' }, { status: 413 });
@@ -75,15 +91,20 @@ export const POST = criptaRoute(async function POST(request: Request) {
     uploaded = await uploadPrivateCiphertext(Buffer.from(body, 'utf8'));
     await downloadPrivateCiphertext(uploaded.fileId, uploaded.sha256);
     const mutex = db.collection('criptaDepositLocksV1').doc(tenantId).collection('users').doc(uid);
+    const recordRef = letterRecordsCollection(tenantId).doc(id);
+    const supersededRef = supersedes ? letterRecordsCollection(tenantId).doc(supersedes) : null;
     const createdAt = await db.runTransaction(async (transaction) => {
-      const [current, opening, keyState, lock, letters] = await Promise.all([
+      const [current, opening, keyState, lock, letters, superseded] = await Promise.all([
         transaction.get(ref),
         transaction.get(openingRef(tenantId)),
         transaction.get(criptaCryptoRef(tenantId)),
         transaction.get(mutex),
         transaction.get(collection().where('uid', '==', uid)),
+        supersededRef ? transaction.get(supersededRef) : Promise.resolve(null),
       ]);
       if (current.data()?.status === 'ready') return current.data()!.createdAt as string;
+      if (supersededRef && superseded?.data()?.ownerUid !== uid)
+        throw new Error('A carta anterior indicada não é sua.');
       if (current.exists) throw new Error('Esta tentativa já foi retirada. Atualize a página.');
       if (!isReceivingWindowOpen(opening.data()))
         throw new Error('Recebimento fechado durante o envio.');
@@ -107,6 +128,10 @@ export const POST = criptaRoute(async function POST(request: Request) {
         format: 'vl6-cripta-seal-v1',
         publicKey: key,
       });
+      transaction.create(
+        recordRef,
+        buildLetterRecord({ ownerUid: uid, label, deliveryMode, supersedes }),
+      );
       transaction.set(mutex, { revision: Number(lock.data()?.revision ?? 0) + 1 });
       return at;
     });

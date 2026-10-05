@@ -4,7 +4,6 @@ import { randomUUID } from 'node:crypto';
 import { getAdminFirestore } from '@vl6/infra';
 import { NextResponse } from 'next/server';
 import { requirePagePermission } from '@/lib/auth/require-permission';
-import { canAccessCriptaPilot } from '@/modules/cripta/lib/early-access';
 import { sealRef } from '@/modules/cripta/lib/seal-state';
 import { receiptDigest } from '@/modules/cripta/lib/seal-manifest';
 
@@ -14,10 +13,7 @@ const headers = { 'Cache-Control': 'no-store, private' };
 
 export const POST = criptaRoute(async function POST(request: Request) {
   const session = await requirePagePermission('tenant:manage');
-  if (
-    !canAccessCriptaPilot(session.user.email) ||
-    request.headers.get('origin') !== new URL(request.url).origin
-  ) {
+  if (request.headers.get('origin') !== new URL(request.url).origin) {
     return NextResponse.json({ error: 'Acesso negado.' }, { status: 403 });
   }
   const body = (await request.json().catch(() => null)) as Record<string, unknown> | null;

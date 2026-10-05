@@ -2,7 +2,6 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { createServerContainer } from '@vl6/infra';
 import { requireSession } from '@/lib/auth/require-session';
-import { canAccessCriptaPilot } from '@/modules/cripta/lib/early-access';
 
 export const metadata = {
   title: 'Cartas liberadas | Cripta VL6',
@@ -14,7 +13,7 @@ export default async function Page() {
     session.authContext.tenantId,
     session.user.id,
   );
-  if (member?.situacao !== 'ativo' || !canAccessCriptaPilot(session.user.email)) notFound();
+  if (member?.situacao !== 'ativo') notFound();
   return (
     <div className="mx-auto max-w-3xl space-y-6 pb-12 text-[#17263f]">
       <Link href="/cripta/painel" className="text-sm font-semibold text-[#123c69]">

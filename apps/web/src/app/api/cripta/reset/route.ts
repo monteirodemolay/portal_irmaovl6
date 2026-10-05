@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { hasPermission } from '@vl6/domain';
 import { getCurrentSession } from '@/lib/auth/get-current-session';
-import { canAccessCriptaPilot } from '@/modules/cripta/lib/early-access';
 import { readResetStatus, startReset, continueReset } from '@/modules/cripta/lib/reset-service';
 
 export const runtime = 'nodejs';
@@ -9,11 +8,7 @@ export const maxDuration = 300;
 const headers = { 'Cache-Control': 'no-store, private' };
 async function administrator() {
   const session = await getCurrentSession();
-  return session &&
-    hasPermission(session.authContext, 'tenant:manage') &&
-    canAccessCriptaPilot(session.user.email)
-    ? session
-    : null;
+  return session && hasPermission(session.authContext, 'tenant:manage') ? session : null;
 }
 export async function GET() {
   const session = await administrator();

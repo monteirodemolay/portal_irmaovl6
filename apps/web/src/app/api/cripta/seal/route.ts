@@ -3,7 +3,6 @@ import { randomBytes } from 'node:crypto';
 import { getAdminFirestore } from '@vl6/infra';
 import { NextResponse } from 'next/server';
 import { requirePagePermission } from '@/lib/auth/require-permission';
-import { canAccessCriptaPilot } from '@/modules/cripta/lib/early-access';
 import { currentCriptaMaster } from '@/modules/cripta/lib/current-master';
 import { isReceivingWindowOpen } from '@/modules/cripta/lib/receiving-window';
 import { openingRef } from '@/modules/cripta/lib/online-opening';
@@ -16,11 +15,7 @@ const headers = { 'Cache-Control': 'no-store, private' };
 
 async function access(request?: Request) {
   const session = await requirePagePermission('tenant:manage');
-  if (
-    !canAccessCriptaPilot(session.user.email) ||
-    (request && request.headers.get('origin') !== new URL(request.url).origin)
-  )
-    return null;
+  if (request && request.headers.get('origin') !== new URL(request.url).origin) return null;
   return session;
 }
 

@@ -81,6 +81,31 @@
     <div id="delivery-wrap"></div>
   </section>
 
+  <section class="step" id="step-renewal" data-locked="true">
+    <h2>4. Renovação de Guardiões (ato excepcional)</h2>
+    <div class="warning">
+      <strong>Use isto só quando um Guardião faleceu, está impossibilitado, ou a parte dele foi
+      extraviada/retida.</strong> Isto gera uma chave nova e resela TODAS as cartas selecionadas
+      acima sob ela — a chave antiga, depois disso, não protege mais nada. É irreversível: ao
+      final, as partes antigas dos Guardiões ficam inúteis de propósito. Confirme com a
+      Administração antes de prosseguir, e faça isto com o recebimento de cartas fechado.
+    </div>
+    <p class="muted">Se tiver, carregue a lista de Irmãos elegíveis baixada do Portal antes de vir
+    para este ambiente — reduz erro de digitação. Sem ela, digite o nome livremente.</p>
+    <label for="renewal-members-file">Lista de Irmãos elegíveis (opcional)</label>
+    <input type="file" id="renewal-members-file" accept=".json,application/json">
+    <div id="status-renewal-members"></div>
+    <p class="muted">Informe os 5 novos Guardiões (nome ou apelido — só para você reconhecer cada
+    parte; a vinculação com a conta real de cada Irmão no Portal é feita depois, online, pela
+    Administração).</p>
+    <div id="renewal-names"></div>
+    <label for="renewal-minutes">Ata desta sessão de Renovação</label>
+    <input type="text" id="renewal-minutes" placeholder="Ex.: Ata 140/2027 — Renovação por falecimento do Guardião X">
+    <button id="btn-renew">Gerar chave nova e reselar todas as cartas</button>
+    <div id="status-renewal"></div>
+    <div id="renewal-wrap"></div>
+  </section>
+
   <p class="muted" style="margin-top:3rem">
     Esta ferramenta reutiliza, sem reimplementar, os mesmos módulos de criptografia usados pelo
     Portal para selar as cartas e dividir a chave da Cripta entre os Guardiões.
@@ -107,6 +132,25 @@
   }
   function unlock(id) {
     document.getElementById(id).dataset.locked = 'false';
+  }
+  function downloadBytes(filename, bytes, mime) {
+    var blob = new Blob([bytes], { type: mime });
+    var url = URL.createObjectURL(blob);
+    var link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 60000);
+  }
+  function downloadJson(filename, data) {
+    downloadBytes(filename, new TextEncoder().encode(JSON.stringify(data, null, 2)), 'application/json');
+  }
+  function toBase64(bytes) {
+    var binary = '';
+    for (var i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+    return btoa(binary);
   }
 
   function readFilesAsJson(fileList) {
@@ -149,6 +193,8 @@
       setStatus('status-lacre', 'ok', 'Lacre lido: ' + parsed.header.codigoLacracao + ' — ' + parsed.entries.length + ' registro(s), ' + parsed.header.totalCartas + ' carta(s) seladas.');
       renderEntries();
       unlock('step-open');
+      unlock('step-renewal');
+      renderRenewalNames();
     }).catch(function (error) {
       setStatus('status-lacre', 'err', 'Não foi possível ler o arquivo: ' + (error && error.message ? error.message : String(error)));
     });
@@ -201,6 +247,138 @@
       setStatus('status-open', 'ok', 'Pacote de entrega pronto.');
     }).catch(function (error) {
       setStatus('status-open', 'err', 'Não foi possível abrir esta carta: ' + (error && error.message ? error.message : String(error)));
+    });
+  });
+
+  var TOTAL_GUARDIANS = 5;
+  state.eligibleMembers = [];
+
+  document.getElementById('renewal-members-file').addEventListener('change', function (event) {
+    var file = event.target.files && event.target.files[0];
+    if (!file) return;
+    clearStatus('status-renewal-members');
+    file.text().then(function (text) {
+      return window.CriptaOffline.parseEligibleMembers(JSON.parse(text));
+    }).then(function (members) {
+      state.eligibleMembers = members;
+      setStatus('status-renewal-members', 'ok', members.length + ' Irmão(s) elegível(eis) carregado(s).');
+      renderRenewalNames();
+    }).catch(function (error) {
+      setStatus('status-renewal-members', 'err', 'Não foi possível ler a lista: ' + (error && error.message ? error.message : String(error)));
+    });
+  });
+
+  function renderRenewalNames() {
+    var wrap = document.getElementById('renewal-names');
+    var fields = '';
+    var hasList = state.eligibleMembers.length > 0;
+    for (var i = 1; i <= TOTAL_GUARDIANS; i++) {
+      fields += '<label for="renewal-name-' + i + '">Novo Guardião ' + i + '</label>';
+      if (hasList) {
+        var options = '<option value="">Selecione</option>';
+        state.eligibleMembers.forEach(function (member) {
+          options += '<option value="' + member.nome.replace(/"/g, '&quot;') + '">' + member.nome + '</option>';
+        });
+        options += '<option value="__outro__">Outro (digitar)</option>';
+        fields += '<select id="renewal-name-' + i + '" onchange="document.getElementById(\'renewal-name-' + i + '-outro\').style.display = this.value === \'__outro__\' ? \'block\' : \'none\'">' + options + '</select>' +
+          '<input type="text" id="renewal-name-' + i + '-outro" placeholder="Nome ou apelido" style="display:none;margin-top:.5rem">';
+      } else {
+        fields += '<input type="text" id="renewal-name-' + i + '" placeholder="Nome ou apelido">';
+      }
+    }
+    wrap.innerHTML = fields;
+  }
+
+  function renewalNameValue(i) {
+    var field = document.getElementById('renewal-name-' + i);
+    if (field.tagName === 'SELECT' && field.value === '__outro__') {
+      return document.getElementById('renewal-name-' + i + '-outro').value.trim();
+    }
+    return field.value.trim();
+  }
+
+  document.getElementById('btn-renew').addEventListener('click', function () {
+    if (!state.privateScalar || !state.publicKey) {
+      setStatus('status-renewal', 'err', 'Reconstitua a chave da Cripta primeiro (etapa 1).');
+      return;
+    }
+    if (!state.entries.length) {
+      setStatus('status-renewal', 'err', 'Leia o arquivo .lacre primeiro (etapa 2).');
+      return;
+    }
+    var names = [];
+    for (var i = 1; i <= TOTAL_GUARDIANS; i++) {
+      var value = renewalNameValue(i);
+      if (!value) {
+        setStatus('status-renewal', 'err', 'Informe os ' + TOTAL_GUARDIANS + ' nomes antes de continuar.');
+        return;
+      }
+      names.push(value);
+    }
+    if (new Set(names).size !== names.length) {
+      setStatus('status-renewal', 'err', 'Os nomes dos novos Guardiões devem ser distintos.');
+      return;
+    }
+    var minutes = document.getElementById('renewal-minutes').value.trim();
+    if (minutes.length < 5) {
+      setStatus('status-renewal', 'err', 'Informe a ata desta sessão de Renovação.');
+      return;
+    }
+    if (!window.confirm('Isto gera uma chave nova e torna a chave atual inútil para todo conteúdo migrado. Confirma que a Administração autorizou esta Renovação?')) {
+      return;
+    }
+    clearStatus('status-renewal');
+    document.getElementById('renewal-wrap').innerHTML = '';
+    var oldScalar = state.privateScalar;
+    var oldPublicKey = state.publicKey;
+    var newKey;
+    window.CriptaOffline.generateRenewedKey(TOTAL_GUARDIANS, 3).then(function (generated) {
+      newKey = generated;
+      setStatus('status-renewal', 'info', 'Chave nova gerada. Reselando ' + state.entries.filter(function (e) { return e.kind === 'letter'; }).length + ' carta(s)...');
+      return window.CriptaOffline.reencryptAllLetters(state.entries, oldScalar, oldPublicKey, newKey.publicKey);
+    }).then(function (outcome) {
+      if (outcome.failed.length) {
+        setStatus('status-renewal', 'err', outcome.failed.length + ' carta(s) não puderam ser reseladas — nada foi gerado. Corrija antes de tentar de novo:\n' +
+          outcome.failed.map(function (f) { return f.id + ': ' + f.error; }).join('\n'));
+        return null;
+      }
+      return window.CriptaOffline.buildRenewedLacre(outcome.entries);
+    }).then(function (renewed) {
+      if (!renewed) return;
+      var at = new Date().toISOString();
+      downloadBytes(renewed.code + '.lacre', renewed.bytes, 'application/octet-stream');
+      newKey.shares.forEach(function (share, index) {
+        downloadJson('cripta-guardiao-renovado-' + share.x + '-de-' + TOTAL_GUARDIANS + '-' + names[index].replace(/\s+/g, '-').toLowerCase() + '.json', {
+          format: 'vl6-cripta-guardian-share-v1',
+          aviso: 'NÃO COMPARTILHE ESTE ARQUIVO. Parte de uma Renovação de Guardiões — substitui a parte antiga deste Guardião, que deve ser destruída.',
+          guardiao: names[index],
+          parte: share.x,
+          totalPartes: TOTAL_GUARDIANS,
+          limiar: 3,
+          valor: toBase64(share.y),
+          chavePublicaCripta: newKey.publicKey,
+          ata: minutes,
+          inauguradoEm: at,
+        });
+      });
+      downloadJson('renovacao-resultado-' + renewed.code + '.json', {
+        format: 'vl6-cripta-renewal-result-v1',
+        novoCodigo: renewed.code,
+        novaChavePublica: newKey.publicKey,
+        inventoryDigest: renewed.inventoryDigest,
+        totalCartas: renewed.letters,
+        totalRascunhos: renewed.drafts,
+        totalGuardioes: TOTAL_GUARDIANS,
+        limiar: 3,
+        ata: minutes,
+        at: at,
+        novosGuardioes: names,
+      });
+      setStatus('status-renewal', 'ok', 'Renovação concluída: ' + renewed.letters + ' carta(s) reseladas sob a chave nova (' + renewed.code + '). Baixe e entregue as ' +
+        TOTAL_GUARDIANS + ' partes novas, leve o novo .lacre para as 3 unidades físicas, e destrua as partes e cópias antigas. Depois, suba "renovacao-resultado-' + renewed.code +
+        '.json" na Administração (/cripta-administracao) para registrar a Renovação online.');
+    }).catch(function (error) {
+      setStatus('status-renewal', 'err', 'Não foi possível concluir a Renovação: ' + (error && error.message ? error.message : String(error)));
     });
   });
 })();

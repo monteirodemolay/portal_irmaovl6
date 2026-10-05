@@ -12,6 +12,19 @@ import letterStyles from './cripta-letter.module.css';
 
 type Kind = 'foto' | 'audio' | 'video';
 type Attachment = { id: string; file: File; kind: Kind; url: string };
+type DeliveryMode = 'privada' | 'sessao' | 'ambas';
+type LetterRecord = {
+  id: string;
+  label: string;
+  deliveryMode: DeliveryMode;
+  status: 'ativa' | 'retida';
+  createdAt: string;
+};
+const DELIVERY_MODE_LABEL: Record<DeliveryMode, string> = {
+  privada: 'Entrega privada à pessoa indicada',
+  sessao: 'Lida em sessão, para todos os Irmãos',
+  ambas: 'Entregue à pessoa e também lida em sessão',
+};
 type StoredDraft = {
   title: string;
   recipient: string;
@@ -67,9 +80,13 @@ export function CriptaExperience() {
   const [title, setTitle] = useState('');
   const [recipient, setRecipient] = useState('');
   const [body, setBody] = useState('');
+  const [label, setLabel] = useState('');
+  const [deliveryMode, setDeliveryMode] = useState<DeliveryMode>('privada');
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [message, setMessage] = useState('');
   const [remote, setRemote] = useState<Array<{ id: string; createdAt: string }>>([]);
+  const [records, setRecords] = useState<LetterRecord[]>([]);
+  const [recordBusy, setRecordBusy] = useState<string | null>(null);
   const [publicKey, setPublicKey] = useState<CriptaPublicKey | null>(null);
   const [publicKeyChecked, setPublicKeyChecked] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -114,6 +131,13 @@ export function CriptaExperience() {
       })
       .catch(() => {
         /* UI can still be explored without the service */
+      });
+    fetch('/api/cripta/letter-records', { cache: 'no-store' })
+      .then(async (response) => {
+        if (response.ok) setRecords(((await response.json()) as { items: LetterRecord[] }).items);
+      })
+      .catch(() => {
+        /* a Irmão can still write without seeing the list of fichas right away */
       });
     fetch('/api/cripta/public-key', { cache: 'no-store' })
       .then(async (response) => {
@@ -232,6 +256,8 @@ export function CriptaExperience() {
     setTitle('');
     setRecipient('');
     setBody('');
+    setLabel('');
+    setDeliveryMode('privada');
     setAttachments([]);
     setMessage('');
     setStep('escrever');
@@ -587,6 +613,8 @@ export function CriptaExperience() {
         headers: {
           'Content-Type': 'application/json',
           'X-Cripta-Key': `${publicKey.x}.${publicKey.y}`,
+          'X-Cripta-Label': label.trim() || recipient.trim(),
+          'X-Cripta-Delivery-Mode': deliveryMode,
         },
         body: wire,
       });
@@ -603,6 +631,12 @@ export function CriptaExperience() {
         ...items.filter((item) => item.id !== result.id),
         { id: result.id!, createdAt: result.createdAt! },
       ]);
+      fetch('/api/cripta/letter-records', { cache: 'no-store' })
+        .then(async (listResponse) => {
+          if (listResponse.ok)
+            setRecords(((await listResponse.json()) as { items: LetterRecord[] }).items);
+        })
+        .catch(() => undefined);
       draftEnabled.current = false;
       const clear = await fetch('/api/cripta/draft', {
         method: 'DELETE',
@@ -630,6 +664,39 @@ export function CriptaExperience() {
       setMessage(error instanceof Error ? error.message : 'Envio falhou.');
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function updateRecord(
+    id: string,
+    action: 'retida' | 'reativada' | 'modo_alterado',
+    nextMode?: DeliveryMode,
+  ) {
+    setRecordBusy(id);
+    try {
+      const response = await fetch('/api/cripta/letter-records', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, action, deliveryMode: nextMode }),
+      });
+      const result = (await response.json()) as { error?: string };
+      if (!response.ok) throw new Error(result.error || 'Não foi possível atualizar.');
+      setRecords((items) =>
+        items.map((item) =>
+          item.id === id
+            ? {
+                ...item,
+                status:
+                  action === 'retida' ? 'retida' : action === 'reativada' ? 'ativa' : item.status,
+                deliveryMode: nextMode ?? item.deliveryMode,
+              }
+            : item,
+        ),
+      );
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Não foi possível atualizar a ficha.');
+    } finally {
+      setRecordBusy(null);
     }
   }
 
@@ -879,6 +946,67 @@ export function CriptaExperience() {
               {draftStatus}
             </p>
           )}
+          {records.length > 0 && (
+            <section className="mt-8 rounded-2xl border border-[#d7c9a9] bg-white p-5">
+              <h3 className="font-serif text-xl">Minhas cartas, por apelido</h3>
+              <p className="mt-2 text-sm text-[#536074]">
+                Aqui você reconhece cada carta pelo apelido que escolheu — o conteúdo continua só
+                com os Guardiões. Você pode reter uma entrega ou mudar como ela será entregue a
+                qualquer momento, em qualquer reabertura, sem precisar explicar o motivo.
+              </p>
+              {records.map((record) => (
+                <div
+                  key={record.id}
+                  className="mt-4 flex flex-wrap items-center gap-3 border-t pt-4 text-sm"
+                >
+                  <div className="flex-1">
+                    <strong
+                      className={record.status === 'retida' ? 'text-red-800' : 'text-[#142a43]'}
+                    >
+                      {record.label}
+                    </strong>{' '}
+                    {record.status === 'retida' && (
+                      <span className="text-red-800">· retida, não será entregue</span>
+                    )}
+                    <p className="text-[#536074]">{DELIVERY_MODE_LABEL[record.deliveryMode]}</p>
+                  </div>
+                  {record.status === 'ativa' ? (
+                    <button
+                      type="button"
+                      disabled={recordBusy === record.id}
+                      onClick={() => updateRecord(record.id, 'retida')}
+                      className="rounded-xl border border-red-700 px-4 py-3 text-red-800 disabled:opacity-50"
+                    >
+                      Reter esta entrega
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      disabled={recordBusy === record.id}
+                      onClick={() => updateRecord(record.id, 'reativada')}
+                      className="rounded-xl border px-4 py-3 disabled:opacity-50"
+                    >
+                      Reativar entrega
+                    </button>
+                  )}
+                  <select
+                    disabled={recordBusy === record.id}
+                    value={record.deliveryMode}
+                    onChange={(event) =>
+                      updateRecord(record.id, 'modo_alterado', event.target.value as DeliveryMode)
+                    }
+                    className="rounded-xl border px-3 py-3 disabled:opacity-50"
+                  >
+                    {(['privada', 'sessao', 'ambas'] as const).map((mode) => (
+                      <option key={mode} value={mode}>
+                        {DELIVERY_MODE_LABEL[mode]}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ))}
+            </section>
+          )}
           {remote.length > 0 && (
             <section className="mt-8 rounded-2xl border border-[#d7c9a9] bg-white p-5">
               <h3 className="font-serif text-xl">Cartas guardadas</h3>
@@ -946,6 +1074,39 @@ export function CriptaExperience() {
                 O nome orientará a futura entrega desta carta. Você poderá revisar antes de guardar.
               </p>
             </details>
+            <label className="block font-semibold text-[#142a43]">
+              Como você vai reconhecer esta carta depois?{' '}
+              <span className="font-normal text-[#607084]">(só você vê este apelido)</span>
+              <input
+                value={label}
+                maxLength={80}
+                onChange={(event) => setLabel(event.target.value)}
+                placeholder={recipient.trim() || 'Ex.: minha esposa, meu filho mais velho...'}
+                className="mt-2 w-full rounded-xl border p-4 font-normal"
+              />
+            </label>
+            <fieldset>
+              <legend className="font-semibold text-[#142a43]">
+                Como esta carta deve ser entregue?
+              </legend>
+              <div className="mt-2 space-y-2">
+                {(['privada', 'sessao', 'ambas'] as const).map((mode) => (
+                  <label key={mode} className="flex items-start gap-2 text-sm text-[#536074]">
+                    <input
+                      type="radio"
+                      name="delivery-mode"
+                      checked={deliveryMode === mode}
+                      onChange={() => setDeliveryMode(mode)}
+                      className="mt-1"
+                    />
+                    {DELIVERY_MODE_LABEL[mode]}
+                  </label>
+                ))}
+              </div>
+              <p className="mt-1 text-xs text-[#536074]">
+                Você pode mudar isso depois, em qualquer reabertura, sem precisar justificar.
+              </p>
+            </fieldset>
             <label className="block font-semibold text-[#142a43]">
               Título <span className="font-normal text-[#607084]">(opcional)</span>
               <input

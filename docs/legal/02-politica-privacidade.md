@@ -1,6 +1,6 @@
 # Política de Privacidade — Portal do Irmão VL6
 
-> **Versão:** 2.0.0 · **Vigência a partir de:** 30/09/2026 · **Aprovada por:** Diretoria VL6
+> **Versão:** 2.3.0 · **Vigência a partir de:** 03/10/2026 · **Aprovada por:** Diretoria VL6
 > **Documento fonte:** `docs/legal/01-inventario-dados-lgpd.md`. Revisão v2.0.0 baseada no marco jurídico `24d0967` e no estado de Production `1c699dd7`, auditados em 30/09/2026.
 > Este arquivo é a versão vigente. Alterações futuras geram uma nova versão, publicada pela Administração em Configurações → Termos e Privacidade — nunca sobrescrevem esta sem preservar a anterior — ver `docs/legal/04-sistema-de-versionamento.md`.
 
@@ -98,6 +98,14 @@ Rascunhos podem permanecer temporariamente disponíveis durante a janela para co
 
 Dados e conteúdos inseridos na Cripta são de responsabilidade do Irmão que os envia, inclusive quanto à indicação de destinatários e à presença de dados pessoais de terceiros nos textos ou anexos.
 
+A cada reabertura do recebimento, o próprio Irmão pode rever, ao lado de cada carta já selada, um apelido que ele mesmo escolheu para reconhecê-la, o modo de entrega (entrega privada à pessoa indicada, leitura em sessão para os Irmãos, ou ambas) e pode reter uma entrega já indicada — sem necessidade de justificativa e sem que o conteúdo da carta seja, em nenhum momento, decifrado ou lido por qualquer pessoa para isso. Esses dados são visíveis apenas ao próprio autor.
+
+A Loja mantém, ainda, um registro permanente dos atos de cada cerimônia da Cripta (Inauguração, Abertura, Fechamento, Reabertura) — incluindo quem presidiu, a ata e, quando aplicável, quais Irmãos estavam presentes e o resultado do sorteio dos Guardiões — para fins de auditoria e para constar no registro histórico da Loja. Esse registro não contém conteúdo de carta nem os dados de ficha (apelido, modo de entrega, retenção) de nenhum Irmão.
+
+A Loja mantém também, por Guardião, o status declarado de sua parte da chave (válida ou comprometida) e um motivo operacional opcional registrado pela Administração quando uma parte é declarada extraviada ou seu titular impossibilitado de exercer a função — informação necessária para decidir sobre a renovação da custódia da Cripta.
+
+O registro de presença em Abertura e Fechamento pode incluir, além dos Irmãos com conta no Portal, o nome de outros Irmãos Ativos presentes sem conta vinculada, registrado manualmente — mantido com a mesma permanência do restante do registro de cerimônia. A Administração pode também gerar, para uso exclusivamente operacional na Renovação de Guardiões, um arquivo com nome e identificador dos Irmãos elegíveis, transportado fisicamente até o ambiente offline correspondente e descartado após o uso. Quando o número de partes confiáveis dos Guardiões cai abaixo do mínimo necessário, o Portal notifica automaticamente, pelos canais internos já previstos nesta Política, os usuários responsáveis pela Administração.
+
 ### 8.10 Transparência sobre lacunas técnicas atuais
 
 Em conformidade com o dever de transparência, informamos que:
@@ -112,19 +120,19 @@ O Portal não coleta, no seu funcionamento atual: geolocalização precisa, dado
 
 ## 10. Finalidades específicas por dado
 
-| Dado                            | Finalidade                                                                                    |
-| ------------------------------- | --------------------------------------------------------------------------------------------- |
-| Identificação e contato         | Gestão do quadro de Irmãos, comunicação institucional, Diretório interno                      |
-| Trajetória maçônica             | Registro histórico, controle de regularidade, elegibilidade a cargos                          |
-| Dados profissionais/negócios    | Rede de apoio profissional entre Irmãos (módulo Negócios), sempre voluntário                  |
-| Dados de familiares             | Lembretes de datas comemorativas; preservação de memória familiar (Família e Legado)          |
-| Dados de uso/participação       | Organização de eventos, gestão da Biblioteca, estatísticas agregadas de uso do Acervo         |
-| Comentários em notícias         | Interação institucional entre Irmãos em conteúdo editorial, sempre moderada antes de publicar |
-| Perfil voluntário (Central VL6) | Divulgação voluntária do Irmão a outros membros, conforme blocos que ele mesmo autorizar      |
-| Dados técnicos/segurança        | Prevenção a fraude, investigação de incidentes, auditoria de ações administrativas            |
-| Arquivos e imagens              | Preservação do patrimônio histórico da Loja, gestão da Biblioteca, comunicação institucional  |
-| Cripta Digital                    | Guarda privada e temporária de cartas e anexos, com custódia e entrega conforme regra institucional |
-| Preferências locais               | Personalização de tema, contraste, tamanho do texto e redução de animações no dispositivo do usuário |
+| Dado                            | Finalidade                                                                                           |
+| ------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| Identificação e contato         | Gestão do quadro de Irmãos, comunicação institucional, Diretório interno                             |
+| Trajetória maçônica             | Registro histórico, controle de regularidade, elegibilidade a cargos                                 |
+| Dados profissionais/negócios    | Rede de apoio profissional entre Irmãos (módulo Negócios), sempre voluntário                         |
+| Dados de familiares             | Lembretes de datas comemorativas; preservação de memória familiar (Família e Legado)                 |
+| Dados de uso/participação       | Organização de eventos, gestão da Biblioteca, estatísticas agregadas de uso do Acervo                |
+| Comentários em notícias         | Interação institucional entre Irmãos em conteúdo editorial, sempre moderada antes de publicar        |
+| Perfil voluntário (Central VL6) | Divulgação voluntária do Irmão a outros membros, conforme blocos que ele mesmo autorizar             |
+| Dados técnicos/segurança        | Prevenção a fraude, investigação de incidentes, auditoria de ações administrativas                   |
+| Arquivos e imagens              | Preservação do patrimônio histórico da Loja, gestão da Biblioteca, comunicação institucional         |
+| Cripta Digital                  | Guarda privada e temporária de cartas e anexos, com custódia e entrega conforme regra institucional  |
+| Preferências locais             | Personalização de tema, contraste, tamanho do texto e redução de animações no dispositivo do usuário |
 
 O Portal não trata nenhum dado pessoal para finalidade diversa da institucional/fraterna descrita nesta política, e não realiza tomada de decisão automatizada que produza efeitos jurídicos ou de impacto significativo aos titulares.
 
@@ -164,16 +172,18 @@ O Portal utiliza cookies estritamente funcionais. O principal é o cookie de ses
 
 ## 15. Retenção de dados
 
-| Categoria                                                      | Prazo de retenção                                                                                                                 |
-| -------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| Cadastro de Irmão (Diretório) e histórico de situação maçônica | Por prazo indeterminado, durante e após o vínculo institucional do Irmão com a Loja, como parte do acervo histórico institucional |
-| Conta de acesso ao Portal (login)                              | Até solicitação de exclusão pelo próprio titular ou desligamento formal, conforme Seção 16                                        |
-| Registros de auditoria                                         | Mantidos de forma permanente e imutável, para fins de segurança e responsabilização, enquanto o Portal estiver em operação        |
-| Cópias de segurança (backup)                                   | Mantidas por prazo indeterminado, enquanto o Portal estiver em operação                                                           |
-| Notificações internas                                          | Até 30 dias após a leitura ou expiração, com exclusão definitiva automática 7 dias depois de arquivadas                           |
-| Registros de consentimento de publicação                       | Mantidos de forma permanente, como prova de conformidade                                                                          |
-| Rascunhos da Cripta                                              | Durante a janela de escrita e até sua inclusão no ciclo de guarda/restauração aplicável                                             |
-| Cartas seladas e anexos da Cripta                               | Conforme o ciclo de custódia institucional e as cópias físicas externas; metadados de auditoria podem permanecer para rastreabilidade |
+| Categoria                                                      | Prazo de retenção                                                                                                                     |
+| -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| Cadastro de Irmão (Diretório) e histórico de situação maçônica | Por prazo indeterminado, durante e após o vínculo institucional do Irmão com a Loja, como parte do acervo histórico institucional     |
+| Conta de acesso ao Portal (login)                              | Até solicitação de exclusão pelo próprio titular ou desligamento formal, conforme Seção 16                                            |
+| Registros de auditoria                                         | Mantidos de forma permanente e imutável, para fins de segurança e responsabilização, enquanto o Portal estiver em operação            |
+| Cópias de segurança (backup)                                   | Mantidas por prazo indeterminado, enquanto o Portal estiver em operação                                                               |
+| Notificações internas                                          | Até 30 dias após a leitura ou expiração, com exclusão definitiva automática 7 dias depois de arquivadas                               |
+| Registros de consentimento de publicação                       | Mantidos de forma permanente, como prova de conformidade                                                                              |
+| Rascunhos da Cripta                                            | Durante a janela de escrita e até sua inclusão no ciclo de guarda/restauração aplicável                                               |
+| Cartas seladas e anexos da Cripta                              | Conforme o ciclo de custódia institucional e as cópias físicas externas; metadados de auditoria podem permanecer para rastreabilidade |
+| Ficha da carta (apelido, modo de entrega, retenção) da Cripta  | Enquanto a carta selada correspondente existir; visível e alterável apenas pelo próprio autor                                         |
+| Registro das cerimônias da Cripta (presença, sorteio, ata)     | Mantido de forma permanente, para auditoria e para o registro histórico da Loja                                                       |
 
 ## 16. Direitos do titular
 
@@ -219,6 +229,8 @@ A Cripta possui finalidade distinta do Acervo Histórico. Seu conteúdo não é 
 
 O ciclo da Cripta pode envolver armazenamento temporário privado no Wix Media Manager e, após conferência, cópias em unidades físicas externas. A Loja mantém procedimentos próprios de lacração, restauração de rascunhos, verificação de integridade, abertura excepcional e entrega. A eliminação de cópias depende das limitações técnicas do provedor e das mídias físicas, razão pela qual o Portal não promete apagamento físico instantâneo ou irrecuperável quando isso não puder ser tecnicamente comprovado.
 
+A Loja mantém, ainda, registro permanente de presença e do resultado do sorteio de Guardiões em cada cerimônia da Cripta, para fins de auditoria e de registro histórico — equivalente, em natureza, a uma ata de sessão.
+
 ## 18. Responsabilidades
 
 A Loja VL6 é responsável pela definição das finalidades e das medidas de segurança do tratamento de dados no Portal. Cada Irmão é responsável pela veracidade e atualização dos dados que informa, inclusive quando informa dados de terceiros (cônjuge, filhos, familiares), devendo fazê-lo apenas com autorização desses terceiros ou de seus responsáveis legais, quando aplicável.
@@ -241,10 +253,10 @@ A versão 1.0.0 constitui o **Marco Inicial** dos documentos jurídicos do Porta
 
 ## 23. Data de vigência e versão
 
-- **Versão:** 2.0.0
-- **Data de vigência:** 30/09/2026
-- **Classificação desta versão:** Mudança de LGPD — nova categoria de tratamento (Cripta Digital) e atualização de transparência técnica
+- **Versão:** 2.3.0
+- **Data de vigência:** 03/10/2026
+- **Classificação desta versão:** Atualização informativa — lista de presença completa (incluindo Irmãos sem conta vinculada) em Abertura/Fechamento, exportação operacional de lista de elegíveis para a Renovação de Guardiões, e notificação automática de nível crítico das partes; não exige novo aceite (ver `04-sistema-de-versionamento.md`)
 
 ---
 
-_Esta Política de Privacidade v2.0.0 consolida a auditoria do Portal entre o marco jurídico `24d0967` e a Production `1c699dd7`. A v1.0.0 permanece preservada como Marco Inicial no histórico do sistema._
+_Esta Política de Privacidade v2.3.0 consolida a auditoria do Portal entre o marco jurídico `24d0967` e a Production `1c699dd7`, com a atualização de 03/10/2026 referente à Cripta Digital. A v1.0.0 permanece preservada como Marco Inicial no histórico do sistema._

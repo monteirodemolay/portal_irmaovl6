@@ -4,12 +4,10 @@ import { withCriptaOperation } from '@/modules/cripta/lib/reset-control';
 import { revalidatePath } from 'next/cache';
 import { getAdminFirestore, createServerContainer } from '@vl6/infra';
 import { requirePagePermission } from '@/lib/auth/require-permission';
-import { canAccessCriptaPilot } from '@/modules/cripta/lib/early-access';
 import { currentCriptaMaster } from '@/modules/cripta/lib/current-master';
 
 export async function appointCustodians(formData: FormData) {
   const session = await requirePagePermission('tenant:manage');
-  if (!canAccessCriptaPilot(session.user.email)) throw new Error('Acesso negado.');
   return withCriptaOperation(session.authContext.tenantId, async () => {
     const commissionMemberIds = [1, 2, 3]
       .map((number) => String(formData.get(`guardian${number}Id`) ?? ''))

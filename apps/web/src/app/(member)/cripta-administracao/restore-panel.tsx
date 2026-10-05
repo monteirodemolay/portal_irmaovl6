@@ -11,9 +11,9 @@ type Restoration = {
   at: string;
 };
 
-type Props = { receiptCode: string; recorded: Restoration | null };
+type Props = { receiptCode: string; recorded: Restoration | null; retainedLetterCount: number };
 
-export function RestorePanel({ receiptCode, recorded }: Props) {
+export function RestorePanel({ receiptCode, recorded, retainedLetterCount }: Props) {
   const [file, setFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
@@ -57,6 +57,17 @@ export function RestorePanel({ receiptCode, recorded }: Props) {
         até a entrega. Nada é enviado ao Portal além do arquivo — a leitura acontece aqui mesmo, no
         servidor, só para reencaminhar os rascunhos ainda cifrados.
       </p>
+      {retainedLetterCount > 0 && (
+        <p
+          role="status"
+          className="mt-4 rounded-xl border border-amber-400 bg-amber-50 p-3 text-sm text-amber-950"
+        >
+          <strong>{retainedLetterCount}</strong> carta(s) selada(s){' '}
+          {retainedLetterCount === 1 ? 'está marcada' : 'estão marcadas'} como retida pelo próprio
+          autor — o pacote de entrega deve respeitar essa retenção. Só a contagem aparece aqui;
+          quais cartas são, só o próprio autor vê, em "Minhas cartas".
+        </p>
+      )}
       <label className="mt-4 block text-sm font-semibold">
         Arquivo .lacre da unidade
         <input

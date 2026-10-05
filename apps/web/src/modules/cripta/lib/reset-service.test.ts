@@ -98,12 +98,10 @@ vi.mock('server-only', () => ({}));
 vi.mock('@vl6/infra', () => ({ getAdminFirestore: () => harness.db }));
 vi.mock('@vl6/domain', () => ({ hasPermission: harness.permission }));
 vi.mock('@/lib/auth/get-current-session', () => ({ getCurrentSession: harness.session }));
-vi.mock('./early-access', () => ({
-  canAccessCriptaPilot: (email: string) => email === 'pilot@example.test',
-}));
-vi.mock('@/modules/cripta/lib/early-access', () => ({
-  canAccessCriptaPilot: (email: string) => email === 'pilot@example.test',
-}));
+// criptaRoute (exercised directly below, unmocked) gates on an active member session via
+// active-member.ts; reuse the same session mock so both that wrapper and reset/route.ts's own
+// administrator() check agree on who is logged in.
+vi.mock('./active-member', () => ({ activeCriptaSession: harness.session }));
 vi.mock('./wix-private-files', () => ({ deleteAndVerifyPrivateCiphertext: harness.remove }));
 vi.mock('@/modules/cripta/lib/reset-service', async () => import('./reset-service'));
 import { criptaRoute } from './cripta-route';
@@ -276,15 +274,10 @@ describe('autorização e confirmação da API', () => {
     expect(harness.records.has('criptaResetControlV1/other')).toBe(false);
     expect(harness.remove).not.toHaveBeenCalled();
   });
-  it('nega sessão ausente, não administrador e conta fora do piloto', async () => {
+  it('nega sessão ausente e não administrador', async () => {
     harness.permission.mockReturnValue(false);
     expect((await GET()).status).toBe(403);
     harness.permission.mockReturnValue(true);
-    harness.session.mockResolvedValue({
-      user: { email: 'outsider@example.test' },
-      authContext: {},
-    });
-    expect((await GET()).status).toBe(403);
     harness.session.mockResolvedValue(null);
     expect((await POST(request({}))).status).toBe(403);
     expect(harness.records.size).toBe(0);

@@ -60,6 +60,10 @@ export function InaugurationPanel({
 }) {
   const [guardianIds, setGuardianIds] = useState<string[]>(Array(TOTAL).fill(''));
   const [minutes, setMinutes] = useState('');
+  const [presentIds, setPresentIds] = useState<string[]>([]);
+  const [drawing, setDrawing] = useState(false);
+  const [drawError, setDrawError] = useState('');
+  const [hasDrawn, setHasDrawn] = useState(false);
   const [generated, setGenerated] = useState<{
     publicKey: CriptaPublicKey;
     shares: Share[];
@@ -96,6 +100,29 @@ export function InaugurationPanel({
     distinctChosen.length === TOTAL &&
     new Set(distinctChosen).size === TOTAL &&
     minutes.trim().length >= 5;
+
+  async function draw(redraw: boolean) {
+    setDrawing(true);
+    setDrawError('');
+    try {
+      const response = await fetch('/api/cripta/ceremony-draw', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ presentMemberIds: presentIds, redraw }),
+      });
+      const data = (await response.json()) as {
+        result?: { guardianMemberIds: string[] };
+        error?: string;
+      };
+      if (!response.ok || !data.result) throw new Error(data.error ?? 'Sorteio não confirmado.');
+      setGuardianIds(data.result.guardianMemberIds);
+      setHasDrawn(true);
+    } catch (error) {
+      setDrawError(error instanceof Error ? error.message : 'Não foi possível sortear.');
+    } finally {
+      setDrawing(false);
+    }
+  }
 
   async function generate() {
     setBusy(true);
@@ -158,6 +185,45 @@ export function InaugurationPanel({
 
       {!generated && (
         <>
+          <section className="mt-5 rounded-xl border border-[#dbcda9] bg-white p-4">
+            <h3 className="font-serif text-lg text-[#142a43]">Sorteio dos Guardiões</h3>
+            <p className="mt-1 text-sm text-[#536074]">
+              Marque os Irmãos presentes e elegíveis nesta sessão, depois sorteie — o resultado
+              preenche os campos abaixo, que você ainda pode ajustar antes de gerar a chave.
+            </p>
+            <div className="mt-3 grid max-h-48 gap-2 overflow-y-auto sm:grid-cols-2">
+              {eligible.map((member) => (
+                <label key={member.id} className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={presentIds.includes(member.id)}
+                    onChange={(event) =>
+                      setPresentIds((ids) =>
+                        event.target.checked
+                          ? [...ids, member.id]
+                          : ids.filter((id) => id !== member.id),
+                      )
+                    }
+                  />
+                  {member.name}
+                </label>
+              ))}
+            </div>
+            <button
+              type="button"
+              disabled={drawing || presentIds.length < TOTAL}
+              onClick={() => draw(hasDrawn)}
+              className="mt-4 rounded-xl border border-[#a78648] bg-[#faf7ef] px-4 py-3 font-semibold disabled:opacity-50"
+            >
+              {drawing ? 'Sorteando…' : hasDrawn ? 'Sortear de novo' : 'Sortear os Guardiões'}
+            </button>
+            {presentIds.length < TOTAL && (
+              <p className="mt-2 text-xs text-[#8a682d]">
+                Marque ao menos {TOTAL} presentes para sortear.
+              </p>
+            )}
+            {drawError && <p className="mt-2 text-sm text-red-800">{drawError}</p>}
+          </section>
           <div className="mt-5 grid gap-4 sm:grid-cols-2">
             {Array.from({ length: TOTAL }, (_, index) => (
               <label key={index} className="text-sm font-semibold">

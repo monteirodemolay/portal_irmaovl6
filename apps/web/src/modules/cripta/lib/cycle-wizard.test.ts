@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { computeCycleStatus, type WizardInput } from './cycle-wizard';
+import { ceremonyForPhase, ceremonyStates, computeCycleStatus, type WizardInput } from './cycle-wizard';
 
 const base: WizardInput = {
   inaugurated: false,
   hasCommission: false,
   open: false,
+  everOpened: false,
   physicalCheckOk: false,
   cleanupOk: false,
   restorationOk: false,
@@ -26,67 +27,109 @@ describe('computeCycleStatus', () => {
     expect(result.steps[1]!.status).toBe('current');
   });
 
-  it('moves to step 3 (lacrar) once the Comissão is named and the window is closed', () => {
+  it('moves to "abrir" (step 2) once the Comissão is named but the window has never been opened', () => {
     const result = computeCycleStatus({ ...base, inaugurated: true, hasCommission: true });
+    expect(result.phase).toBe('abrir');
+    expect(result.steps[1]!.status).toBe('done');
+    expect(result.steps[2]!.status).toBe('current');
+    expect(result.steps[2]!.label).toBe('Abertura');
+  });
+
+  it('moves to step 4 (Fechamento/lacrar) once the window has been opened and then closed', () => {
+    const result = computeCycleStatus({
+      ...base, inaugurated: true, hasCommission: true, everOpened: true,
+    });
     expect(result.phase).toBe('lacrar');
     expect(result.steps[1]!.status).toBe('done');
     expect(result.steps[2]!.status).toBe('done');
-    expect(result.steps[3]!.status).toBe('current');
+    expect(result.steps[3]!.status).toBe('done');
+    expect(result.steps[4]!.status).toBe('current');
+    expect(result.steps[4]!.label).toBe('Fechamento');
   });
 
-  it('shows "aberto" whenever the window is open, regardless of later state', () => {
+  it('shows "aberto" (step 3, Recebimento aberto) whenever the window is open, regardless of later state', () => {
     const result = computeCycleStatus({ ...base, inaugurated: true, hasCommission: true, open: true, closesAt: '2027-01-01T00:00:00.000Z' });
     expect(result.phase).toBe('aberto');
     expect(result.steps[1]!.status).toBe('done');
-    expect(result.steps[2]!.status).toBe('current');
+    expect(result.steps[2]!.status).toBe('done');
+    expect(result.steps[3]!.status).toBe('current');
+    expect(result.steps[3]!.label).toBe('Recebimento aberto');
     expect(result.phaseLabel).toContain('aberto até');
   });
 
   it('reaches "exportar" right after sealing, before export', () => {
-    const result = computeCycleStatus({ ...base, inaugurated: true, hasCommission: true, receiptStatus: 'sealed', receiptCode: 'VL6-X' });
+    const result = computeCycleStatus({ ...base, inaugurated: true, hasCommission: true, everOpened: true, receiptStatus: 'sealed', receiptCode: 'VL6-X' });
     expect(result.phase).toBe('exportar');
-    expect(result.steps[3]!.status).toBe('done');
     expect(result.steps[4]!.status).toBe('done');
-    expect(result.steps[5]!.status).toBe('current');
+    expect(result.steps[5]!.status).toBe('done');
+    expect(result.steps[6]!.status).toBe('current');
     expect(result.currentFile).toBe('VL6-X.lacre');
   });
 
   it('never marks export done for a stale export recorded under a different, earlier receipt code', () => {
     const result = computeCycleStatus({
-      ...base, inaugurated: true, hasCommission: true, receiptStatus: 'sealed', receiptCode: 'VL6-NEW', exportReceiptCode: 'VL6-OLD',
+      ...base, inaugurated: true, hasCommission: true, everOpened: true, receiptStatus: 'sealed', receiptCode: 'VL6-NEW', exportReceiptCode: 'VL6-OLD',
     });
-    expect(result.steps[5]!.status).toBe('current');
+    expect(result.steps[6]!.status).toBe('current');
   });
 
   it('walks through export, conferência, limpeza and restauração in order, all inside the "exportar" phase until restauração', () => {
-    const common = { ...base, inaugurated: true, hasCommission: true, receiptStatus: 'sealed' as const, receiptCode: 'VL6-X', exportReceiptCode: 'VL6-X' };
+    const common = { ...base, inaugurated: true, hasCommission: true, everOpened: true, receiptStatus: 'sealed' as const, receiptCode: 'VL6-X', exportReceiptCode: 'VL6-X' };
     const afterExport = computeCycleStatus(common);
     expect(afterExport.phase).toBe('exportar');
-    expect(afterExport.steps[6]!.status).toBe('current');
+    expect(afterExport.steps[7]!.status).toBe('current');
 
     const afterCheck = computeCycleStatus({ ...common, physicalCheckOk: true });
     expect(afterCheck.phase).toBe('exportar');
-    expect(afterCheck.steps[7]!.status).toBe('current');
+    expect(afterCheck.steps[8]!.status).toBe('current');
 
     const afterCleanup = computeCycleStatus({ ...common, physicalCheckOk: true, cleanupOk: true });
     expect(afterCleanup.phase).toBe('restaurar');
-    expect(afterCleanup.steps[8]!.status).toBe('current');
+    expect(afterCleanup.steps[9]!.status).toBe('current');
 
     const done = computeCycleStatus({ ...common, physicalCheckOk: true, cleanupOk: true, restorationOk: true });
     expect(done.phase).toBe('reabrir');
-    expect(done.steps[8]!.status).toBe('done');
+    expect(done.steps[9]!.status).toBe('done');
     expect(done.steps[2]!.status).toBe('current');
     expect(done.phaseLabel).toContain('pronto para reabrir');
   });
 
   it('every step before the current one is done, and every step after is pending — no gaps', () => {
     const result = computeCycleStatus({
-      ...base, inaugurated: true, hasCommission: true, receiptStatus: 'sealed', receiptCode: 'VL6-X', exportReceiptCode: 'VL6-X', physicalCheckOk: true,
+      ...base, inaugurated: true, hasCommission: true, everOpened: true, receiptStatus: 'sealed', receiptCode: 'VL6-X', exportReceiptCode: 'VL6-X', physicalCheckOk: true,
     });
     const currentIndex = result.steps.findIndex((step) => step.status === 'current');
     result.steps.forEach((step, index) => {
       if (index < currentIndex) expect(step.status).toBe('done');
       else if (index > currentIndex) expect(step.status).toBe('pending');
+    });
+  });
+});
+
+describe('ceremonyForPhase / ceremonyStates', () => {
+  it('folds the 8 phases into the 4 cerimônias', () => {
+    expect(ceremonyForPhase('inauguracao')).toBe('inauguracao');
+    expect(ceremonyForPhase('comissao')).toBe('abertura');
+    expect(ceremonyForPhase('abrir')).toBe('abertura');
+    expect(ceremonyForPhase('aberto')).toBe('abertura');
+    expect(ceremonyForPhase('lacrar')).toBe('fechamento');
+    expect(ceremonyForPhase('exportar')).toBe('fechamento');
+    expect(ceremonyForPhase('restaurar')).toBe('reabertura');
+    expect(ceremonyForPhase('reabrir')).toBe('reabertura');
+  });
+
+  it('marks everything before the active cerimônia done and everything after pending', () => {
+    expect(ceremonyStates('inauguracao')).toEqual({
+      inauguracao: 'current', abertura: 'pending', fechamento: 'pending', reabertura: 'pending',
+    });
+    expect(ceremonyStates('aberto')).toEqual({
+      inauguracao: 'done', abertura: 'current', fechamento: 'pending', reabertura: 'pending',
+    });
+    expect(ceremonyStates('exportar')).toEqual({
+      inauguracao: 'done', abertura: 'done', fechamento: 'current', reabertura: 'pending',
+    });
+    expect(ceremonyStates('reabrir')).toEqual({
+      inauguracao: 'done', abertura: 'done', fechamento: 'done', reabertura: 'current',
     });
   });
 });

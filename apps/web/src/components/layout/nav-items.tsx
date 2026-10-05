@@ -19,7 +19,6 @@ import { isAdminPathAllowed, isAdminTier } from '@/lib/auth/is-admin-tier';
 import type { Dictionary } from '@/lib/i18n/get-dictionary';
 import { ADMIN_AREA_TABS, type AdminAreaKey } from './area-tabs';
 import type { AppShellNavFlyout, AppShellNavSection } from './app-shell';
-import { canAccessCriptaPilot } from '@/modules/cripta/lib/early-access';
 
 const ICON_SIZE = 18;
 const ICON_STROKE = 1.75;
@@ -169,7 +168,7 @@ export function buildNavSections(
   role: Role | null,
   dictionary: Dictionary,
   unreadNotificationsCount = 0,
-  userEmail?: string | null,
+  isActiveCriptaMember = false,
 ): AppShellNavSection[] {
   const irmaosFlyout: AppShellNavFlyout = {
     title: 'Irmãos',
@@ -229,14 +228,16 @@ export function buildNavSections(
     });
   }
 
-  if (hasPermission(authContext, 'tenant:manage') && canAccessCriptaPilot(userEmail)) {
-    sections.push({
-      title: 'Cripta',
-      items: [
-        { href: '/cripta', content: navContent(Lock, 'Minhas cartas') },
-        { href: '/cripta-administracao', content: navContent(Lock, 'Administração') },
-      ],
-    });
+  const canManageCripta = hasPermission(authContext, 'tenant:manage');
+  if (isActiveCriptaMember || canManageCripta) {
+    const items = [];
+    if (isActiveCriptaMember)
+      items.push({ href: '/cripta', content: navContent(Lock, 'Minhas cartas') });
+    if (canManageCripta) {
+      items.push({ href: '/cripta-administracao', content: navContent(Lock, 'Administração') });
+      items.push({ href: '/cripta-projetor', content: navContent(Lock, 'Projetor') });
+    }
+    sections.push({ title: 'Cripta', items });
   }
 
   if (isAdminTier(role)) {

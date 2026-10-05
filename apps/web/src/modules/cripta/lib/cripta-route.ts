@@ -1,16 +1,17 @@
 import 'server-only';
 import { criptaStorageScope } from './storage-scope';
 import { NextResponse } from 'next/server';
-import { getCurrentSession } from '@/lib/auth/get-current-session';
-import { canAccessCriptaPilot } from './early-access';
+import { activeCriptaSession } from './active-member';
 import { acquireCriptaOperation, CriptaBlocked, CriptaStaleCycle } from './reset-control';
 
-/** Covers the complete handler, including downloads, uploads and compensating cleanup. */
+/** Covers the complete handler, including downloads, uploads and compensating cleanup. Gates on
+ * "irmão Ativo com conta vinculada" — the same bar every Cripta screen and route uses — rather
+ * than on any particular permission, since admin-only handlers (lacração, exportação, reset...)
+ * each additionally require `tenant:manage` themselves right after this wrapper runs. */
 export function criptaRoute<Args extends unknown[]>(handler: (...args: Args) => Promise<Response>) {
   return async (...args: Args): Promise<Response> => {
-    const session = await getCurrentSession();
-    if (!session || !canAccessCriptaPilot(session.user.email))
-      return NextResponse.json({ error: 'Acesso negado.' }, { status: 403 });
+    const session = await activeCriptaSession();
+    if (!session) return NextResponse.json({ error: 'Acesso negado.' }, { status: 403 });
     const request = args[0] instanceof Request ? args[0] : undefined;
     if (
       request &&

@@ -2,7 +2,6 @@ import { criptaRoute } from '@/modules/cripta/lib/cripta-route';
 import { getAdminFirestore } from '@vl6/infra';
 import { NextResponse } from 'next/server';
 import { requirePagePermission } from '@/lib/auth/require-permission';
-import { canAccessCriptaPilot } from '@/modules/cripta/lib/early-access';
 import { sealRef, currentInventory } from '@/modules/cripta/lib/seal-state';
 import { parseLacreFile } from '@/modules/cripta/lib/lacre-format';
 import { uploadPrivateCiphertext } from '@/modules/cripta/lib/wix-private-files';
@@ -20,10 +19,7 @@ export const maxDuration = 300;
  * this route only counts them to report an honest total back to the operator. */
 export const POST = criptaRoute(async function POST(request: Request) {
   const session = await requirePagePermission('tenant:manage');
-  if (
-    !canAccessCriptaPilot(session.user.email) ||
-    request.headers.get('origin') !== new URL(request.url).origin
-  ) {
+  if (request.headers.get('origin') !== new URL(request.url).origin) {
     return NextResponse.json({ error: 'Acesso negado.' }, { status: 403 });
   }
   const tenantId = session.authContext.tenantId;
@@ -82,20 +78,24 @@ export const POST = criptaRoute(async function POST(request: Request) {
   const db = getAdminFirestore();
   const draftEntries = parsed.entries.filter((entry) => entry.kind === 'draft');
   const letterEntries = parsed.entries.filter((entry) => entry.kind === 'letter');
-  let restored = 0;
-  let skipped = 0;
-  const failed: Array<{ uid: string; error: string }> = [];
-  for (const entry of draftEntries) {
+  // Antes, isto reenviava um rascunho de cada vez — para uma Loja com muitos irmãos, a soma
+  // dos round-trips ao Wix podia estourar os 300s de maxDuration e derrubar a função no meio,
+  // sem resposta nenhuma para o operador (mesmo com o que já tinha sido restaurado até ali já
+  // gravado). Restaurar vários rascunhos ao mesmo tempo, em vez de um por um, encurta o tempo
+  // total na mesma proporção do paralelismo, sem disparar todos de uma vez contra o Wix.
+  const RESTORE_CONCURRENCY = 8;
+  const receiptCode = receipt.code as string; // narrowed above; re-bound so the closure below doesn't lose it
+  type DraftOutcome =
+    | { uid: string; status: 'restored' | 'skipped' }
+    | { uid: string; status: 'failed'; error: string };
+  async function restoreDraft(entry: (typeof draftEntries)[number]): Promise<DraftOutcome> {
     const draftRef = db
       .collection('criptaOnlineDraftsV1')
       .doc(tenantId)
       .collection('users')
       .doc(entry.uid);
     try {
-      if ((await draftRef.get()).exists) {
-        skipped++;
-        continue;
-      }
+      if ((await draftRef.get()).exists) return { uid: entry.uid, status: 'skipped' };
       const uploaded = await uploadPrivateCiphertext(Buffer.from(entry.bytes));
       if (uploaded.sha256 !== entry.sha256)
         throw new Error('Integridade divergente após reenvio ao Wix.');
@@ -106,13 +106,40 @@ export const POST = criptaRoute(async function POST(request: Request) {
         updatedAt: new Date().toISOString(),
         tenantId,
         uid: entry.uid,
-        restoredFrom: receipt.code,
+        restoredFrom: receiptCode,
       });
-      restored++;
+      return { uid: entry.uid, status: 'restored' };
     } catch (error) {
-      failed.push({ uid: entry.uid, error: error instanceof Error ? error.message : 'falha' });
+      return {
+        uid: entry.uid,
+        status: 'failed',
+        error: error instanceof Error ? error.message : 'falha',
+      };
     }
   }
+  async function restoreDraftsConcurrently(): Promise<DraftOutcome[]> {
+    const outcomes: DraftOutcome[] = new Array(draftEntries.length);
+    let next = 0;
+    async function worker() {
+      while (next < draftEntries.length) {
+        const index = next++;
+        outcomes[index] = await restoreDraft(draftEntries[index]!);
+      }
+    }
+    await Promise.all(
+      Array.from({ length: Math.min(RESTORE_CONCURRENCY, draftEntries.length) }, worker),
+    );
+    return outcomes;
+  }
+  const outcomes = await restoreDraftsConcurrently();
+  const restored = outcomes.filter((outcome) => outcome.status === 'restored').length;
+  const skipped = outcomes.filter((outcome) => outcome.status === 'skipped').length;
+  const failed = outcomes
+    .filter(
+      (outcome): outcome is { uid: string; status: 'failed'; error: string } =>
+        outcome.status === 'failed',
+    )
+    .map((outcome) => ({ uid: outcome.uid, error: outcome.error }));
   const inventory = await currentInventory(tenantId);
   const restoration = {
     at: new Date().toISOString(),
