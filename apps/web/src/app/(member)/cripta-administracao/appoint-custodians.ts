@@ -91,5 +91,6 @@ export async function appointCustodians(formData: FormData) {
       });
     });
     revalidatePath('/cripta-administracao');
+    revalidatePath('/cripta-projetor');
   });
 }

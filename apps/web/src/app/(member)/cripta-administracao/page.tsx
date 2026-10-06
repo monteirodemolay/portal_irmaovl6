@@ -4,6 +4,7 @@ import { requirePagePermission } from '@/lib/auth/require-permission';
 import { currentCriptaMaster } from '@/modules/cripta/lib/current-master';
 import { currentWizardStatus } from '@/modules/cripta/lib/wizard-status';
 import { letterRecordsCollection } from '@/modules/cripta/lib/letter-record';
+import { readCriptaPublicKey } from '@/modules/cripta/lib/cripta-crypto-state';
 import { CycleWizardView } from './cycle-wizard-view';
 import { CeremonyHistory } from './ceremony-history';
 import { GuardianSharesPanel } from './guardian-shares-panel';
@@ -29,14 +30,16 @@ export default async function Page() {
   const container = createServerContainer();
   const db = getAdminFirestore();
 
-  const [membersResult, governance, master, seal, wizard, retainedLetterCount] = await Promise.all([
-    container.repositories.member.search({ tenantId, situacao: 'ativo' }, { limit: 100 }),
-    db.collection('criptaGovernanceV1').doc(tenantId).get(),
-    currentCriptaMaster(tenantId),
-    db.collection('criptaSealsV1').doc(tenantId).get(),
-    currentWizardStatus(tenantId),
-    countRetainedLetterRecords(tenantId),
-  ]);
+  const [membersResult, governance, master, seal, wizard, retainedLetterCount, inauguration] =
+    await Promise.all([
+      container.repositories.member.search({ tenantId, situacao: 'ativo' }, { limit: 100 }),
+      db.collection('criptaGovernanceV1').doc(tenantId).get(),
+      currentCriptaMaster(tenantId),
+      db.collection('criptaSealsV1').doc(tenantId).get(),
+      currentWizardStatus(tenantId),
+      countRetainedLetterRecords(tenantId),
+      readCriptaPublicKey(tenantId),
+    ]);
 
   const members = membersResult.items;
   const control = governance.data();
@@ -67,6 +70,15 @@ export default async function Page() {
       </header>
 
       <CycleWizardView result={wizard} />
+      {inauguration && (
+        <div className="rounded-xl border border-green-300 bg-green-50 p-4 text-sm leading-6 text-green-950">
+          <strong>Inauguração concluída</strong> em{' '}
+          {new Date(inauguration.inauguratedAt).toLocaleString('pt-BR', {
+            timeZone: 'America/Sao_Paulo',
+          })}{' '}
+          · {inauguration.totalGuardians} Guardiões, limiar {inauguration.threshold}.
+        </div>
+      )}
       <CeremonyHistory wizard={wizard} />
       <ComissaoSummary control={control} name={name} />
       {wizard.phase === 'aberto' && (
