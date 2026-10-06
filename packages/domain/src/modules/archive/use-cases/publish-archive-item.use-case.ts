@@ -56,7 +56,14 @@ export function getArchiveItemPublicationBlockers(
  * Publicar" (Fase 3). Bloqueia com `ValidationError` (nunca lança exceção
  * de negócio) quando `getArchiveItemPublicationBlockers` encontra qualquer
  * pendência, ou quando o item já não está mais num estado publicável
- * (`rascunho`/`pronto_para_publicar`).
+ * (`rascunho`/`pronto_para_publicar`/`publicado`).
+ *
+ * Item já `publicado` também é aceito: é o caso de quem reabre um evento
+ * publicado ("Já publicado — editar") e acrescenta fotos/vídeos novos, que
+ * nascem em `rascunho` (`AttachMediaToArchiveItemUseCase`). Publicar de novo
+ * só promove essas mídias pendentes; as já publicadas não são tocadas e o
+ * item continua `publicado` sem passar por outro estado (nunca some do
+ * Acervo no meio da edição).
  */
 export class PublishArchiveItemUseCase {
   constructor(private readonly deps: PublishArchiveItemDeps) {}
@@ -69,7 +76,11 @@ export class PublishArchiveItemUseCase {
       return err(new NotFoundError('ArchiveItem', archiveItemId));
     }
 
-    if (item.publicacaoStatus !== 'rascunho' && item.publicacaoStatus !== 'pronto_para_publicar') {
+    if (
+      item.publicacaoStatus !== 'rascunho' &&
+      item.publicacaoStatus !== 'pronto_para_publicar' &&
+      item.publicacaoStatus !== 'publicado'
+    ) {
       return err(
         new ValidationError(
           `Item no estado "${item.publicacaoStatus}" não pode ser publicado a partir daqui.`,
@@ -90,8 +101,9 @@ export class PublishArchiveItemUseCase {
     }
 
     const now = this.deps.clock.now();
+    const pendingMedias = medias.filter((media) => media.publicacaoStatus !== 'publicado');
     await Promise.all(
-      medias.map((media) =>
+      pendingMedias.map((media) =>
         this.deps.archiveMediaRepository.update({
           ...media,
           publicacaoStatus: 'publicado',

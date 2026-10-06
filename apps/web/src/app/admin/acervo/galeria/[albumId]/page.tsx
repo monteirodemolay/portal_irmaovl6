@@ -1,7 +1,8 @@
 import { notFound } from 'next/navigation';
 import { createServerContainer } from '@vl6/infra';
-import { Badge, Card, CardContent, CardHeader, CardTitle, EmptyState } from '@vl6/ui';
+import { Card, CardContent, CardHeader, CardTitle, EmptyState } from '@vl6/ui';
 import { requirePagePermission } from '@/lib/auth/require-permission';
+import { GalleryAlbumGrid } from '@/modules/gallery/components/gallery-album-grid';
 import { GalleryMediaForm } from '@/modules/gallery/components/gallery-media-form';
 import { DeleteButton } from '@/components/admin/delete-button';
 import { deleteGalleryAlbumAction } from '@/modules/gallery/actions/gallery-actions';
@@ -58,25 +59,7 @@ export default async function GalleryAlbumDetailPage({
         {media.length === 0 ? (
           <EmptyState title="Nenhuma mídia enviada ainda" />
         ) : (
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-            {media.map((item, index) => (
-              <a key={item.id} href={item.url} target="_blank" rel="noreferrer">
-                <Card className="hover:border-accent overflow-hidden transition-colors">
-                  {item.tipo === 'foto' ? (
-                    <img
-                      src={item.url}
-                      alt={`Fotografia ${index + 1} do álbum ${album.titulo}`}
-                      className="aspect-square w-full object-cover"
-                    />
-                  ) : (
-                    <div className="bg-background flex aspect-square w-full items-center justify-center">
-                      <Badge variant="outline">Vídeo</Badge>
-                    </div>
-                  )}
-                </Card>
-              </a>
-            ))}
-          </div>
+          <GalleryAlbumGrid media={media} albumTitulo={album.titulo} />
         )}
       </div>
     </div>

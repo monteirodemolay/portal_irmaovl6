@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useTransition } from 'react';
-import { Button, Check, Copy, Input, Instagram } from '@vl6/ui';
+import { useMemo, useState, useTransition } from 'react';
+import { Button, Check, Copy, Input, Instagram, PhotoGallery, type MediaViewerItem } from '@vl6/ui';
 import { setArchiveItemInstagramLinkAction } from '../../actions/publish-hub-actions';
 import { EventContextBar, StepTitle, WorkspaceLoadErrorState } from './wizard-chrome';
 import { InstagramPreviewCard, PortalPreviewCard } from './publication-preview-cards';
@@ -123,6 +123,34 @@ function PublishedLinksPanel({
   );
 }
 
+/**
+ * Prévia das fotografias do evento no mesmo visualizador que os Irmãos vão
+ * ver no Portal (`PhotoGallery`) — pra conferir ordem/capa antes e depois de
+ * publicar, sem sair da Central de Publicação. Ordem = ordem do item.
+ */
+function PhotosPreview({ medias }: { medias: ArchiveItemSummaryMedia[] }) {
+  const photos = useMemo<MediaViewerItem[]>(
+    () =>
+      medias
+        .filter((media) => media.mediaType === 'foto')
+        .map((media) => ({
+          kind: 'imagem',
+          // `track=0`: prévia do admin não conta como visualização do Irmão.
+          src: `/api/archive-media/${media.id}?track=0`,
+          title: media.altText ?? media.caption ?? media.originalName,
+          caption: media.caption,
+        })),
+    [medias],
+  );
+  if (photos.length === 0) return null;
+  return (
+    <div className="mt-4 w-full max-w-3xl text-left">
+      <p className="text-muted mb-2 text-xs font-semibold">Prévia das fotografias</p>
+      <PhotoGallery photos={photos} autoPlay={false} />
+    </div>
+  );
+}
+
 function formatScheduledLabel(publicarEmIso: string): string {
   const date = new Date(publicarEmIso);
   return new Intl.DateTimeFormat('pt-BR', {
@@ -191,6 +219,8 @@ export function PublishStep({
           <span className="bg-bg rounded-full px-3 py-1.5">▦ Acervo VL6</span>
         </div>
 
+        <PhotosPreview medias={summary.medias} />
+
         <PublishedLinksPanel
           archiveItemId={summary.archiveItemId}
           eventId={summary.eventoId}
@@ -228,7 +258,7 @@ export function PublishStep({
           </div>
           <div>
             <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
-              PRONTO PARA PUBLICAR
+              {summary.itemPublicado ? 'NOVOS ARQUIVOS PARA PUBLICAR' : 'PRONTO PARA PUBLICAR'}
             </span>
             <h2 className="font-display mt-1 text-lg font-semibold">{summary.titulo}</h2>
             <div className="text-muted mt-1 flex gap-3 text-xs">
@@ -240,6 +270,10 @@ export function PublishStep({
           </div>
         </div>
 
+        <div className="mt-4">
+          <PhotosPreview medias={summary.medias} />
+        </div>
+
         {message && (
           <p className={`mt-3 text-sm ${message.error ? 'text-red-600' : 'text-emerald-700'}`}>
             {message.text}
@@ -249,55 +283,65 @@ export function PublishStep({
         <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div className="border-border flex flex-col gap-2 rounded-lg border p-4">
             <b className="text-sm">Publicar agora</b>
-            <p className="text-muted text-xs">O evento ficará disponível imediatamente.</p>
+            <p className="text-muted text-xs">
+              {summary.itemPublicado
+                ? 'O evento já está no Portal — os arquivos novos passam a aparecer imediatamente.'
+                : 'O evento ficará disponível imediatamente.'}
+            </p>
             <Button
               type="button"
               className="mt-2"
               onClick={handlePublish}
               disabled={isPublishing || !checklist?.canPublish}
             >
-              {isPublishing ? 'Publicando…' : 'Publicar evento ✓'}
+              {isPublishing
+                ? 'Publicando…'
+                : summary.itemPublicado
+                  ? 'Publicar arquivos novos ✓'
+                  : 'Publicar evento ✓'}
             </Button>
           </div>
 
-          <div className="border-border flex flex-col gap-2 rounded-lg border p-4">
-            <b className="text-sm">Agendar publicação</b>
-            <p className="text-muted text-xs">Defina uma data e horário para publicar.</p>
-            {isScheduled ? (
-              <div className="mt-1 flex flex-col gap-2">
-                <p className="text-muted text-xs">
-                  Agendado para{' '}
-                  {summary.publicarEm ? formatScheduledLabel(summary.publicarEm) : '—'}.
-                </p>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={handleCancelSchedule}
-                  disabled={isScheduling}
-                >
-                  Cancelar agendamento
-                </Button>
-              </div>
-            ) : (
-              <div className="mt-1 flex flex-col gap-2">
-                <Input
-                  type="datetime-local"
-                  value={scheduleValue}
-                  onChange={(event) => setScheduleValue(event.target.value)}
-                  disabled={!checklist?.canPublish || isScheduling}
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={handleSchedule}
-                  disabled={!checklist?.canPublish || isScheduling || !scheduleValue}
-                >
-                  {isScheduling ? 'Agendando…' : 'Agendar publicação'}
-                </Button>
-              </div>
-            )}
-          </div>
+          {!summary.itemPublicado && (
+            <div className="border-border flex flex-col gap-2 rounded-lg border p-4">
+              <b className="text-sm">Agendar publicação</b>
+              <p className="text-muted text-xs">Defina uma data e horário para publicar.</p>
+              {isScheduled ? (
+                <div className="mt-1 flex flex-col gap-2">
+                  <p className="text-muted text-xs">
+                    Agendado para{' '}
+                    {summary.publicarEm ? formatScheduledLabel(summary.publicarEm) : '—'}.
+                  </p>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleCancelSchedule}
+                    disabled={isScheduling}
+                  >
+                    Cancelar agendamento
+                  </Button>
+                </div>
+              ) : (
+                <div className="mt-1 flex flex-col gap-2">
+                  <Input
+                    type="datetime-local"
+                    value={scheduleValue}
+                    onChange={(event) => setScheduleValue(event.target.value)}
+                    disabled={!checklist?.canPublish || isScheduling}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleSchedule}
+                    disabled={!checklist?.canPublish || isScheduling || !scheduleValue}
+                  >
+                    {isScheduling ? 'Agendando…' : 'Agendar publicação'}
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         <p className="text-muted bg-bg mt-5 rounded-lg p-3 text-center text-xs">
