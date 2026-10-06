@@ -278,3 +278,15 @@ A mudança de local dos controles de visibilidade do Perfil para Configurações
 ---
 
 _Próximo passo sugerido: usar este inventário como base factual para redigir a Política de Privacidade e os Termos de Uso definitivos (substituindo o conteúdo ilustrativo do mock-up), e para dimensionar o sistema de versionamento/aceite descrito na área "Termos e Privacidade" do Portal._
+
+## Conhecimento VL6 — revisão preparada em 06/10/2026
+
+Nova finalidade: formação continuada institucional e acompanhamento individual de aprendizagem. Dados: vínculo tenant/user/member, grau já cadastrado (somente leitura para autorização), formações/aulas realizadas, ponto de retomada do vídeo, respostas, tentativas, nota/aproveitamento, retorno do instrutor, datas de participação/conclusão e código de certificado. Não há ranking, publicação externa de desempenho ou cadastro paralelo.
+
+Acesso: titular apenas ao próprio progresso/respostas; gestores com `knowledge:manage` ou `tenant:manage`, na mesma Loja, aos relatórios e respostas necessários ao acompanhamento. Grau e calendário restringem também leitura de aula, acesso de mídia e envio de atividade. Gabaritos não são enviados no DTO pessoal.
+
+Armazenamento: Firestore em novas coleções `knowledgeCourses`, `knowledgeVersions`, `knowledgeProgress`, `knowledgeAttempts` e `knowledgeAssets`; arquivos das novas aulas em Vercel Blob **privado** específico, servido por proxy autenticado. Não modifica arquivos/coleções do Acervo ou da Biblioteca. Leituras recomendadas armazenam somente IDs dos livros existentes.
+
+Retenção: registros de formação e respostas permanecem enquanto necessários à finalidade e à prestação de contas institucional, sujeitos à análise de solicitações do titular e obrigações aplicáveis; não há prazo automático de purga implementado. Despublicação/arquivamento remove disponibilidade, mas não apaga automaticamente respostas, snapshots ou arquivos. Gestão da Loja deve definir e documentar sua política de retenção antes de ampliar o uso. Carga horária é estimada, não monitoramento de tempo em tela.
+
+Sem novo fornecedor além dos subprocessadores já documentados. A utilização do modo privado é específica ao novo módulo. Certificados são apresentados no ambiente autenticado; não criam verificação pública por nome. Respostas livres não devem conter segredos ritualísticos, dados sensíveis ou informações pessoais de terceiros desnecessárias à atividade.

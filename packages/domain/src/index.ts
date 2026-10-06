@@ -534,3 +534,4 @@ export * from './modules/honors/use-cases/list-philosophical-journeys.use-case';
 export * from './modules/honors/use-cases/remove-philosophical-journey.use-case';
 
 export * from './modules/archive/lib/get-event-ceremony-members';
+export * from './modules/knowledge/knowledge';

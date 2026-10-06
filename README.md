@@ -113,3 +113,7 @@ Comece pelo [índice arquitetural](./docs/architecture/00-README.md). A [visão 
 ### Cripta — preparação para cartas reais
 
 Veja a [revisão de liberação de 29/09/2026](docs/architecture/cripta-revisao-liberacao-2026-09-29.md), com correções, evidências e pendências. O recebimento institucional ainda não está liberado; o acesso continua restrito ao piloto.
+
+### Conhecimento VL6
+
+Formação continuada aditiva, com instruções por grau, aulas, atividades, avaliações e progresso privado. Vincula leituras ao catálogo existente sem modificar Acervo ou Biblioteca. Arquitetura, Firestore, protocolos de publicação e roteiro de implantação: [Conhecimento VL6](docs/architecture/14-conhecimento-vl6.md).

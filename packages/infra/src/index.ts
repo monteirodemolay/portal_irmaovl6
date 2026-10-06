@@ -39,3 +39,4 @@ export * from './adapters/system-clock';
 export * from './adapters/firestore-id-generator';
 export * from './adapters/noop-notification-gateway';
 export * from './container';
+export * from './firestore/repositories/knowledge.repository';

@@ -201,6 +201,9 @@ export function getPreparedLegalRevision(
   currentVersion: string | null,
   currentMarkdown: string,
 ): PreparedLegalRevision | null {
+  const knowledgeRevision = getPreparedKnowledgeRevision(documento, currentVersion, currentMarkdown);
+  if (knowledgeRevision) return knowledgeRevision;
+
   if (currentVersion !== '1.0.0') return null;
 
   const marcoBase = LEGAL_REVIEW_MILESTONE.previousLegalCommit;
@@ -252,3 +255,59 @@ export function getPreparedLegalRevision(
     marcoAtual,
   };
 }
+
+// Revisão aditiva: preserva o texto vigente e o fluxo anterior para a versão inicial.
+function getPreparedKnowledgeRevision(
+  documento: LegalDocumentKey,
+  currentVersion: string | null,
+  currentMarkdown: string,
+): PreparedLegalRevision | null {
+  if (
+    !['2.0.0', '2.1.0', '2.2.0', '2.3.0', '2.3.1'].includes(currentVersion ?? '') ||
+    !currentMarkdown.trim() ||
+    currentMarkdown.includes('## Conhecimento VL6 — formação continuada')
+  )
+    return null;
+  const policy = documento === 'politica_privacidade';
+  const section = policy ? POLICY_KNOWLEDGE_COMPLEMENT : TERMS_KNOWLEDGE_COMPLEMENT;
+  const current = currentMarkdown.replace(/(\*\*Versão:\*\*\s*)\d+\.\d+\.\d+/g, '$12.4.0');
+  return {
+    versao: '2.4.0',
+    classificacao: policy ? 'mudanca_lgpd' : 'nova_funcionalidade',
+    impacto: 'alto',
+    motivo:
+      'Conhecimento VL6: nova finalidade de formação continuada, acompanhamento individual, respostas a atividades e avaliações, certificados e autorização das instruções por grau.',
+    itensAlterados: [
+      'Formação institucional e restrição de instruções por grau do cadastro',
+      'Progresso individual, respostas, tentativas, correção humana e certificados',
+      'Arquivos privados do Conhecimento e referências à Biblioteca existente',
+      'Acesso administrativo específico e retenção sem purga automática',
+    ],
+    diffResumo:
+      'Acrescenta o Conhecimento VL6 ao texto vigente, preservando as condições do Acervo e da Biblioteca. Exige novo aceite por nova finalidade de tratamento e novas condições de uso.',
+    exigeNovoAceite: true,
+    conteudoMarkdown: current + '\n\n' + section + '\n',
+    marcoBase: '6ac147850000845d529514f7ec4115c210bab948',
+    marcoAtual: 'Conhecimento VL6 — alterações deste PR; implantação ainda não confirmada',
+  };
+}
+
+const POLICY_KNOWLEDGE_COMPLEMENT = `## Conhecimento VL6 — formação continuada
+
+O Conhecimento VL6 organiza formação continuada e aperfeiçoamento institucional. Utiliza o grau existente no cadastro para limitar a disponibilidade das instruções e registra, de forma individual, aulas realizadas, ponto de retomada de vídeos, atividades, respostas, tentativas, aproveitamento, retornos dos responsáveis e certificados. A carga concluída é uma estimativa baseada nas aulas; não constitui medição de tempo assistido.
+
+Seu desempenho permanece privado. Você acessa seus próprios registros; responsáveis com permissão administrativa específica da Loja acessam os registros necessários ao acompanhamento e à avaliação. Não há ranking ou divulgação pública de notas, leituras ou respostas. Certificados são consultados no ambiente autenticado.
+
+Os arquivos das novas aulas são guardados em armazenamento privado da Vercel e servidos mediante autenticação e verificação de grau. O Firestore mantém os registros do módulo em coleções próprias. Materiais recomendados da Biblioteca são vinculados por referência e seguem as condições de acesso do catálogo original. Links externos continuam sujeitos às regras do respectivo serviço.
+
+Os registros permanecem enquanto necessários à formação e à prestação de contas institucional, observados direitos do titular e obrigações aplicáveis. Arquivar uma formação não apaga automaticamente seus registros. Não existe purga automática nesta implantação. Solicitações sobre os dados podem ser feitas pelos canais já indicados nesta Política. Evite incluir dados sensíveis, informações de terceiros ou conteúdos ritualísticos reservados em respostas livres.`;
+
+const TERMS_KNOWLEDGE_COMPLEMENT = `## Conhecimento VL6 — formação continuada
+
+O Conhecimento VL6 destina-se à formação institucional, histórica, administrativa e ao aperfeiçoamento dos Irmãos. Não é repositório de palavras, sinais, toques, segredos, cerimônias ou rituais reservados. Responsáveis autorizados devem revisar o conteúdo, direitos de uso, fontes e público antes de publicar.
+
+O acesso às instruções considera o grau registrado no cadastro e a regra de público definida pela Administração. O módulo utiliza sua conta atual; não exige novo cadastro. Leituras recomendadas remetem à Biblioteca existente, sem duplicar ou modificar seus livros e procedimentos de empréstimo.
+
+Aulas e atividades podem registrar progresso, ponto de retomada de vídeo, respostas, tentativas e aproveitamento. Concluir uma aula é declaração do usuário de estudo do conteúdo, não prova de tempo assistido. Reflexões e estudos de situação podem exigir análise do responsável. Avaliações têm critérios apresentados na formação e retornos orientados ao aperfeiçoamento, sem competição ou exposição pública.
+
+Certificados institucionais, quando habilitados, dependem das etapas obrigatórias e dos critérios de avaliação. Não substituem titulação acadêmica, progressão de grau ou decisão institucional da Loja. Os relatórios são restritos ao próprio titular e aos responsáveis autorizados. Alterações relevantes geram versão nova da formação e podem exigir novo percurso de estudo.`;

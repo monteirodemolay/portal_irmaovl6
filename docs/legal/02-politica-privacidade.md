@@ -262,3 +262,13 @@ A versão 1.0.0 constitui o **Marco Inicial** dos documentos jurídicos do Porta
 ---
 
 _Esta Política de Privacidade v2.3.0 consolida a auditoria do Portal entre o marco jurídico `24d0967` e a Production `1c699dd7`, com a atualização de 03/10/2026 referente à Cripta Digital. A v1.0.0 permanece preservada como Marco Inicial no histórico do sistema._
+
+## Conhecimento VL6 — complemento preparado para publicação
+
+O Conhecimento VL6 organiza formação continuada e aperfeiçoamento institucional. Utiliza o grau existente no cadastro para limitar a disponibilidade das instruções e registra, de forma individual, aulas realizadas, ponto de retomada de vídeos, atividades, respostas, tentativas, aproveitamento, retornos dos responsáveis e certificados. A carga concluída é uma estimativa baseada nas aulas; não constitui medição de tempo assistido.
+
+Seu desempenho permanece privado. Você acessa seus próprios registros; responsáveis com permissão administrativa específica da Loja acessam os registros necessários ao acompanhamento e à avaliação. Não há ranking ou divulgação pública de notas, leituras ou respostas. Certificados são consultados no ambiente autenticado.
+
+Os arquivos das novas aulas são guardados em armazenamento privado da Vercel e servidos mediante autenticação e verificação de grau. O Firestore mantém os registros do módulo em coleções próprias. Materiais recomendados da Biblioteca são vinculados por referência e seguem as condições de acesso do catálogo original. Links externos continuam sujeitos às regras do respectivo serviço.
+
+Os registros permanecem enquanto necessários à formação e à prestação de contas institucional, observados direitos do titular e obrigações aplicáveis. Arquivar uma formação não apaga automaticamente seus registros. Não existe purga automática nesta implantação. Solicitações sobre os dados podem ser feitas pelos canais já indicados nesta Política. Evite incluir dados sensíveis, informações de terceiros ou conteúdos ritualísticos reservados em respostas livres.
