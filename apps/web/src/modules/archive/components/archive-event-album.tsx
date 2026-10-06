@@ -2,19 +2,18 @@
 
 import * as React from 'react';
 import {
-  ArchiveLightbox,
   Camera,
   Download,
   FileText,
   MediaViewerModal,
   Music,
+  PhotoGallery,
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
   Video,
   VideoPlayer,
-  type ArchiveLightboxPhoto,
   type MediaViewerItem,
 } from '@vl6/ui';
 import type { EventAlbumMediaItem } from '../lib/load-event-album';
@@ -48,10 +47,11 @@ function toDocumentViewerItem(doc: EventAlbumMediaItem): MediaViewerItem {
   };
 }
 
-function toLightboxPhoto(media: EventAlbumMediaItem): ArchiveLightboxPhoto {
+function toGalleryPhoto(media: EventAlbumMediaItem): MediaViewerItem {
   return {
+    kind: 'imagem',
     src: media.src,
-    alt: media.altText ?? media.caption ?? media.originalName,
+    title: media.altText ?? media.caption ?? media.originalName,
     caption: media.caption,
     downloadHref: media.allowDownload ? media.src : null,
     downloadName: media.originalName,
@@ -61,36 +61,6 @@ function toLightboxPhoto(media: EventAlbumMediaItem): ArchiveLightboxPhoto {
       href: `/acervo/pessoas/${pessoa.id}`,
     })),
   };
-}
-
-function PhotoGrid({
-  photos,
-  onOpen,
-}: {
-  photos: EventAlbumMediaItem[];
-  onOpen: (index: number) => void;
-}) {
-  if (photos.length === 0) return null;
-  return (
-    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 md:grid-cols-4">
-      {photos.map((photo, index) => (
-        <button
-          key={photo.id}
-          type="button"
-          onClick={() => onOpen(index)}
-          aria-label={photo.caption ?? `Ampliar fotografia ${index + 1}`}
-          className="border-border hover:border-accent focus-visible:ring-accent aspect-square overflow-hidden rounded-lg border transition-colors focus-visible:outline-none focus-visible:ring-2"
-        >
-          <img
-            src={photo.src}
-            alt={photo.altText ?? photo.caption ?? photo.originalName}
-            loading="lazy"
-            className="h-full w-full object-cover"
-          />
-        </button>
-      ))}
-    </div>
-  );
 }
 
 function VideoList({ videos }: { videos: EventAlbumMediaItem[] }) {
@@ -216,8 +186,9 @@ export function ArchiveEventAlbum({ media }: { media: EventAlbumMediaItem[] }) {
     [media],
   );
 
-  const lightboxPhotos = React.useMemo(() => photos.map(toLightboxPhoto), [photos]);
-  const [lightboxIndex, setLightboxIndex] = React.useState<number | null>(null);
+  const galleryPhotos = React.useMemo(() => photos.map(toGalleryPhoto), [photos]);
+  // Índice elevado pra cá: a galeria da aba "Tudo" e a da aba "Fotografias" mostram a mesma foto.
+  const [photoIndex, setPhotoIndex] = React.useState(0);
 
   const documentViewerItems = React.useMemo(() => documents.map(toDocumentViewerItem), [documents]);
   const [documentViewerIndex, setDocumentViewerIndex] = React.useState<number | null>(null);
@@ -248,7 +219,11 @@ export function ArchiveEventAlbum({ media }: { media: EventAlbumMediaItem[] }) {
                   Fotografias
                 </h2>
               )}
-              <PhotoGrid photos={photos} onOpen={setLightboxIndex} />
+              <PhotoGallery
+                photos={galleryPhotos}
+                index={photoIndex}
+                onIndexChange={setPhotoIndex}
+              />
             </section>
           )}
           {videos.length > 0 && (
@@ -288,7 +263,7 @@ export function ArchiveEventAlbum({ media }: { media: EventAlbumMediaItem[] }) {
 
         {photos.length > 0 && (
           <TabsContent value="fotos" className="mt-4">
-            <PhotoGrid photos={photos} onOpen={setLightboxIndex} />
+            <PhotoGallery photos={galleryPhotos} index={photoIndex} onIndexChange={setPhotoIndex} />
           </TabsContent>
         )}
         {videos.length > 0 && (
@@ -307,15 +282,6 @@ export function ArchiveEventAlbum({ media }: { media: EventAlbumMediaItem[] }) {
           </TabsContent>
         )}
       </Tabs>
-
-      {lightboxIndex !== null && (
-        <ArchiveLightbox
-          photos={lightboxPhotos}
-          index={lightboxIndex}
-          onIndexChange={setLightboxIndex}
-          onClose={() => setLightboxIndex(null)}
-        />
-      )}
 
       {documentViewerIndex !== null && (
         <MediaViewerModal

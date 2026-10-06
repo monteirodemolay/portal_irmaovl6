@@ -26,7 +26,7 @@ export * from './components/provenance-panel';
 export * from './components/filter-bar';
 export * from './components/video-player';
 export * from './components/pdf-viewer';
-export * from './components/archive-lightbox';
+export * from './components/photo-gallery';
 export * from './components/media-viewer-modal';
 export * from './components/photo-preview-modal';
 export * from './components/lodge-tenure-badge';
