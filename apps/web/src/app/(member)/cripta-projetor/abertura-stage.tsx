@@ -126,6 +126,12 @@ function Body({
               prominent
             />
           </div>
+          <p className="cripta-lede" style={{ marginTop: 20 }}>
+            Depois de nomear, clique abaixo para seguir para a Abertura.
+          </p>
+          <button type="button" className="cripta-btn" onClick={() => window.location.reload()}>
+            Já nomeei — continuar →
+          </button>
         </Plaque>
       )}
 

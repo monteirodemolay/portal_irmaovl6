@@ -106,6 +106,11 @@ function Body({
             <span />
             <span />
           </span>
+          <div>
+            <button type="button" className="cripta-btn" onClick={() => window.location.reload()}>
+              Já restaurei — verificar de novo
+            </button>
+          </div>
         </Plaque>
       )}
 
