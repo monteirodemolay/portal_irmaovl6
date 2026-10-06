@@ -49,3 +49,5 @@ As áreas mais sensíveis continuam sendo:
 
 - [Inventário de dados](../legal/01-inventario-dados-lgpd.md), [Política de privacidade](../legal/02-politica-privacidade.md), [Termos de Uso](../legal/03-termos-de-uso.md) e [sistema de versões/aceite](../legal/04-sistema-de-versionamento.md).
 - O inventário do documento 13 não substitui a revisão legal nem comprova por si só que uma alteração já esteja disponível em produção.
+
+- [14 — Conhecimento VL6](14-conhecimento-vl6.md): formação continuada, público por grau, progresso privado, avaliações, arquivos privados e vinculação à Biblioteca existente.

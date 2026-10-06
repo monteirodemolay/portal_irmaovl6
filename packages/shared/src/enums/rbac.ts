@@ -27,6 +27,7 @@ export const TENANT_SYSTEM_ROLE_KEYS = SYSTEM_ROLE_KEYS.filter((key) => key !== 
 export const PLATFORM_TENANT_ID = 'platform';
 
 export const RESOURCE_KEYS = [
+  'knowledge',
   'tenant',
   'branding',
   'member',
@@ -188,6 +189,7 @@ export function isPermissionKey(value: string): value is PermissionKey {
 export const DEFAULT_ROLE_PERMISSIONS: Record<RoleKey, PermissionKey[]> = {
   super_admin: [...RESOURCE_KEYS.map((resource) => `${resource}:manage` as PermissionKey)],
   admin: [
+    'knowledge:manage',
     'tenant:manage',
     'branding:manage',
     'member:manage',
@@ -223,6 +225,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<RoleKey, PermissionKey[]> = {
     'legalDocument:manage',
   ],
   membro: [
+    'knowledge:read',
     'tenant:read',
     'member:read',
     'boardTerm:read',
@@ -269,6 +272,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<RoleKey, PermissionKey[]> = {
   // Irmão de `membro` pra `bibliotecario` nunca tira nada dele, só
   // acrescenta a gestão da Biblioteca.
   bibliotecario: [
+    'knowledge:read',
     'tenant:read',
     'member:read',
     'boardTerm:read',

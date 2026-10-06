@@ -4,6 +4,7 @@ import {
   Building2,
   CalendarDays,
   Compass,
+  GraduationCap,
   Globe,
   Handshake,
   Image as GalleryIcon,
@@ -215,18 +216,45 @@ export function buildNavSections(
     },
   ];
 
+  const memoryItems: AppShellNavSection['items'] = [];
   if (hasPermission(authContext, 'archiveItem:read')) {
-    sections.push({
-      title: 'Memória e conhecimento',
-      items: [
-        {
-          href: ACERVO_ITEM.href,
-          content: navContent(ACERVO_ITEM.icon, ACERVO_ITEM.label),
-          flyout: acervoFlyout,
-        },
-      ],
+    memoryItems.push({
+      href: ACERVO_ITEM.href,
+      content: navContent(ACERVO_ITEM.icon, ACERVO_ITEM.label),
+      flyout: acervoFlyout,
     });
   }
+  // Entrada aditiva: Acervo e Biblioteca mantêm rotas, menu e comportamentos.
+  // O backend confirma cadastro e grau, independentemente das claims antigas.
+  if (hasPermission(authContext, 'member:read') || hasPermission(authContext, 'knowledge:read')) {
+    memoryItems.push({
+      href: '/conhecimento',
+      content: navContent(GraduationCap, 'Conhecimento VL6'),
+      flyout: {
+        title: 'Conhecimento VL6',
+        description: 'Formação continuada',
+        full: { href: '/conhecimento', label: 'Visão geral' },
+        fullPosition: 'first',
+        links: [
+          { href: '/conhecimento/minha-jornada', label: 'Minha jornada' },
+          { href: '/conhecimento/formacoes', label: 'Formações' },
+          { href: '/conhecimento/rapido', label: 'Conhecimento rápido' },
+          { href: '/conhecimento/atividades', label: 'Atividades' },
+          { href: '/conhecimento/progresso', label: 'Meu progresso' },
+        ],
+      },
+    });
+  }
+  if (
+    hasPermission(authContext, 'knowledge:manage') ||
+    hasPermission(authContext, 'tenant:manage')
+  ) {
+    memoryItems.push({
+      href: '/admin/conhecimento',
+      content: navContent(GraduationCap, 'Gestão do Conhecimento'),
+    });
+  }
+  if (memoryItems.length) sections.push({ title: 'Memória e conhecimento', items: memoryItems });
 
   const canManageCripta = hasPermission(authContext, 'tenant:manage');
   if (isActiveCriptaMember || canManageCripta) {

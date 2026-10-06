@@ -1605,6 +1605,49 @@
         { "fieldPath": "deletedAt", "order": "ASCENDING" },
         { "fieldPath": "createdAt", "order": "DESCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "knowledgeCourses",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {"fieldPath": "tenantId", "order": "ASCENDING"},
+        {"fieldPath": "deletedAt", "order": "ASCENDING"},
+        {"fieldPath": "createdAt", "order": "DESCENDING"}
+      ]
+    },
+    {
+      "collectionGroup": "knowledgeProgress",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {"fieldPath": "tenantId", "order": "ASCENDING"},
+        {"fieldPath": "userId", "order": "ASCENDING"}
+      ]
+    },
+    {
+      "collectionGroup": "knowledgeVersions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {"fieldPath": "tenantId", "order": "ASCENDING"},
+        {"fieldPath": "courseId", "order": "ASCENDING"},
+        {"fieldPath": "version", "order": "DESCENDING"}
+      ]
+    },
+    {
+      "collectionGroup": "knowledgeAttempts",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {"fieldPath": "tenantId", "order": "ASCENDING"},
+        {"fieldPath": "pendingReview", "order": "ASCENDING"}
+      ]
+    },
+    {
+      "collectionGroup": "knowledgeAssets",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {"fieldPath": "tenantId", "order": "ASCENDING"},
+        {"fieldPath": "courseId", "order": "ASCENDING"},
+        {"fieldPath": "pathname", "order": "ASCENDING"}
+      ]
     }
   ],
   "fieldOverrides": []

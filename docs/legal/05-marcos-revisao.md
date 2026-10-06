@@ -39,3 +39,7 @@ Cada ciclo registra:
 Depois que a v2.0.0 e as alterações técnicas associadas estiverem em Production, registrar aqui o SHA definitivo desse deploy como novo marco-base. A próxima auditoria deverá comparar apenas as mudanças posteriores a esse SHA.
 
 O painel administrativo de Termos e Privacidade é o canal oficial de publicação. Revisões preparadas pelo sistema devem chegar ao formulário já com texto, versão, classificação, impacto, motivo, itens alterados, resumo e indicação de novo aceite preenchidos; a Administração apenas revisa e publica.
+
+## Revisão em preparação — Conhecimento VL6 (06/10/2026)
+
+Base técnica consultada: `6ac147850000845d529514f7ec4115c210bab948`. Novo módulo aditivo, sem mudança do Acervo/Biblioteca. Complementos jurídicos preparados em 2.4.0 com novo aceite recomendado por finalidade de formação e coleta de respostas/progresso. Este registro não é um marco de Production; aguarda publicação e SHA confirmado.

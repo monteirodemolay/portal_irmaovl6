@@ -232,3 +232,14 @@ O próximo ciclo de auditoria deve começar no commit que efetivamente entrar em
 - **Novo terceiro/subprocessador:** não.
 - **Nova finalidade:** não.
 - **Exige novo aceite:** **não**. Não cria finalidade, compartilhamento externo nem dado pessoal novo para o Irmão; só detalha como o conteúdo editorial já existente é armazenado.
+
+## Revisão preparada — 06/10/2026 — Conhecimento VL6
+
+- Política preparada: **2.4.0**, classificação `mudanca_lgpd`.
+- Termos preparados: **2.4.0**, classificação `nova_funcionalidade`.
+- Impacto: alto, pela nova finalidade de acompanhamento individual e coleta de respostas/desempenho.
+- Motivo: implantação aditiva do Conhecimento VL6 com autorização por grau, formação, progresso privado, avaliações, correção humana e certificados.
+- Itens alterados: Inventário LGPD, Política, Termos; arquitetura e protocolos do novo módulo.
+- Novo fornecedor: não. Firestore e Vercel já existentes; novo armazenamento privado específico sem mudança da Biblioteca.
+- Novo aceite recomendado: **sim**, por nova finalidade de tratamento e novas condições de uso.
+- Estado: **preparado no PR; não publicado nem aplicado a usuários**. Conferir a versão vigente no painel antes da publicação e ajustar o número se houver versão posterior. Registrar SHA de Production como marco somente após implantação confirmada.

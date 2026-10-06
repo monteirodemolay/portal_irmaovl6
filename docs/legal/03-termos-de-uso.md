@@ -177,3 +177,13 @@ Fica eleito o foro da comarca de Rio Verde, Estado de Goiás, sede da Loja Maç�
 ---
 
 _Estes Termos de Uso v2.1.0 consolidam a auditoria do Portal entre o marco jurídico `24d0967` e a Production `1c699dd7`, com a atualização de 03/10/2026 referente à Cripta Digital. A v1.0.0 permanece preservada como Marco Inicial no histórico do sistema._
+
+## Conhecimento VL6 — complemento preparado para publicação
+
+O Conhecimento VL6 destina-se à formação institucional, histórica, administrativa e ao aperfeiçoamento dos Irmãos. Não é repositório de palavras, sinais, toques, segredos, cerimônias ou rituais reservados. Responsáveis autorizados devem revisar o conteúdo, direitos de uso, fontes e público antes de publicar.
+
+O acesso às instruções considera o grau registrado no cadastro e a regra de público definida pela Administração. O módulo utiliza sua conta atual; não exige novo cadastro. Leituras recomendadas remetem à Biblioteca existente, sem duplicar ou modificar seus livros e procedimentos de empréstimo.
+
+Aulas e atividades podem registrar progresso, ponto de retomada de vídeo, respostas, tentativas e aproveitamento. Concluir uma aula é declaração do usuário de estudo do conteúdo, não prova de tempo assistido. Reflexões e estudos de situação podem exigir análise do responsável. Avaliações têm critérios apresentados na formação e retornos orientados ao aperfeiçoamento, sem competição ou exposição pública.
+
+Certificados institucionais, quando habilitados, dependem das etapas obrigatórias e dos critérios de avaliação. Não substituem titulação acadêmica, progressão de grau ou decisão institucional da Loja. Os relatórios são restritos ao próprio titular e aos responsáveis autorizados. Alterações relevantes geram versão nova da formação e podem exigir novo percurso de estudo.

@@ -55,6 +55,15 @@ service cloud.firestore {
       return data.deletedAt == null;
     }
 
+    // Conhecimento VL6 — apenas Server Actions e proxy autenticado.
+    // Grau e matrícula vêm de Member no servidor; nenhum dado/nota é
+    // entregue pelo SDK client, mesmo a um administrador.
+    match /knowledgeCourses/{id} { allow read, write: if false; }
+    match /knowledgeVersions/{id} { allow read, write: if false; }
+    match /knowledgeProgress/{id} { allow read, write: if false; }
+    match /knowledgeAttempts/{id} { allow read, write: if false; }
+    match /knowledgeAssets/{id} { allow read, write: if false; }
+
     // ---------------------------------------------------------------
     // Tenancy
     // ---------------------------------------------------------------
@@ -120,7 +129,10 @@ service cloud.firestore {
       allow read: if sameTenant(resource.data) && hasPermission('member:read');
       allow create: if sameTenant(request.resource.data) && hasPermission('member:create');
       allow update: if sameTenant(resource.data) &&
-        (hasPermission('member:update') || isOwner(resource.data, 'userId'));
+        (hasPermission('member:update') || (isOwner(resource.data, 'userId') &&
+          !request.resource.data.diff(resource.data).affectedKeys().hasAny([
+            'grau', 'tenantId', 'userId', 'ativo', 'status', 'deletedAt', 'situacao'
+          ])));
       allow delete: if false;
     }
 

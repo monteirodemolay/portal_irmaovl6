@@ -18,6 +18,7 @@ export const PLATFORM_ROUTE_PREFIX = '/plataforma';
 const PROTECTED_PREFIXES = [
   '/dashboard',
   '/acervo',
+  '/conhecimento',
   '/irmaos',
   '/avisos',
   '/biblioteca',
