@@ -1120,6 +1120,8 @@ export interface ArchiveItemSummary {
   publicarEm: string | null;
   /** Link do post/reel no Instagram onde este conteúdo também foi divulgado — puro registro, `null` até ser preenchido. */
   instagramUrl: string | null;
+  /** O item em si já está `publicado` (evento reaberto pra edição) — mídias novas ainda podem estar em rascunho. */
+  itemPublicado: boolean;
   medias: ArchiveItemSummaryMedia[];
 }
 
@@ -1150,6 +1152,7 @@ export async function loadArchiveItemSummaryAction(
     gestaoNome: boardTerm?.nome ?? null,
     publicarEm: item.publicarEm ? item.publicarEm.toISOString() : null,
     instagramUrl: item.instagramUrl ?? null,
+    itemPublicado: item.publicacaoStatus === 'publicado',
     medias: medias
       .slice()
       .sort((a, b) => a.order - b.order)

@@ -135,15 +135,36 @@ describe('PublishArchiveItemUseCase', () => {
     expect(result.ok).toBe(true);
   });
 
-  it('rejeita publicar item já publicado', async () => {
-    const { useCase, archiveItemRepository } = buildUseCase();
+  it('republica só as mídias novas de um item já publicado', async () => {
+    const { useCase, archiveItemRepository, archiveMediaRepository } = buildUseCase();
     await archiveItemRepository.create(buildItem({ publicacaoStatus: 'publicado' }));
+    await archiveMediaRepository.create(
+      buildMedia({ id: 'media-1', publicacaoStatus: 'publicado' }),
+    );
+    await archiveMediaRepository.create(
+      buildMedia({ id: 'media-2', publicacaoStatus: 'rascunho' }),
+    );
 
     const result = await useCase.execute(ctx, 'item-1');
 
-    expect(result.ok).toBe(false);
-    if (result.ok) return;
-    expect(result.error).toBeInstanceOf(ValidationError);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value.publicacaoStatus).toBe('publicado');
+    expect((await archiveMediaRepository.findById('media-1'))?.publicacaoStatus).toBe('publicado');
+    expect((await archiveMediaRepository.findById('media-2'))?.publicacaoStatus).toBe('publicado');
+  });
+
+  it('rejeita publicar item oculto ou arquivado', async () => {
+    for (const publicacaoStatus of ['oculto', 'arquivado'] as const) {
+      const { useCase, archiveItemRepository } = buildUseCase();
+      await archiveItemRepository.create(buildItem({ publicacaoStatus }));
+
+      const result = await useCase.execute(ctx, 'item-1');
+
+      expect(result.ok).toBe(false);
+      if (result.ok) continue;
+      expect(result.error).toBeInstanceOf(ValidationError);
+    }
   });
 
   it('rejeita item inexistente', async () => {

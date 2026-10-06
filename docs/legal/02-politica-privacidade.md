@@ -1,6 +1,6 @@
 # Política de Privacidade — Portal do Irmão VL6
 
-> **Versão:** 2.3.0 · **Vigência a partir de:** 03/10/2026 · **Aprovada por:** Diretoria VL6
+> **Versão:** 2.3.1 · **Vigência a partir de:** 06/10/2026 · **Aprovada por:** Diretoria VL6
 > **Documento fonte:** `docs/legal/01-inventario-dados-lgpd.md`. Revisão v2.0.0 baseada no marco jurídico `24d0967` e no estado de Production `1c699dd7`, auditados em 30/09/2026.
 > Este arquivo é a versão vigente. Alterações futuras geram uma nova versão, publicada pela Administração em Configurações → Termos e Privacidade — nunca sobrescrevem esta sem preservar a anterior — ver `docs/legal/04-sistema-de-versionamento.md`.
 
@@ -214,6 +214,8 @@ São de responsabilidade de quem as envia (o próprio Irmão, no caso de sua fot
 Fotografias, documentos e demais materiais do Acervo Histórico constituem patrimônio da Loja VL6. A identificação de pessoas em fotografias históricas é feita manualmente por administradores autorizados — o Portal não utiliza reconhecimento facial automatizado.
 
 Quando uma notícia institucional do site oficial da Loja (`vl6.com.br`) é vinculada por um administrador a um Evento ou Sessão do Acervo, o Portal pode importar automaticamente para o Acervo as fotografias, vídeos diretos e documentos que integrem a área editorial dessa notícia. Essa cópia tem finalidade exclusiva de preservação da memória institucional e não altera a data editorial da matéria: o contexto histórico permanece determinado pela data do Evento relacionado. Os arquivos incorporados seguem os mesmos controles de acesso, armazenamento, retenção e auditoria aplicáveis ao restante do Acervo.
+
+Fotografias enviadas diretamente por administradores ao redigir uma notícia institucional ficam armazenadas no mesmo serviço de arquivos do Portal, sem rotina de exclusão automática, e podem ser acessadas por quem tiver o endereço do arquivo — a notícia em si é exibida apenas a Irmãos autenticados. Por isso, só devem ser enviadas fotografias cuja divulgação institucional esteja autorizada.
 
 ### 17.3 Conteúdo enviado pelos Irmãos (contribuições ao Acervo e à Biblioteca)
 

@@ -220,3 +220,15 @@ O próximo ciclo de auditoria deve começar no commit que efetivamente entrar em
 - **Nova finalidade:** não — (a) e (b) são extensão operacional do mesmo registro de cerimônia/custódia já declarado; (c) reaproveita a infraestrutura de notificação interna já existente e documentada para o Portal em geral, sem conteúdo pessoal novo na própria notificação.
 - **Atenção registrada:** o item (a) é o único que introduz dado de pessoa até então sem nenhum registro de nome neste sistema (Irmão Ativo sem conta vinculada) — campo opcional, não bloqueia nenhum ato, e documentado como tal no Inventário §3.9.
 - **Exige novo aceite:** **não**. Nenhum dos três cria finalidade nova, compartilhamento com terceiro externo, ou altera direito/obrigação de usuário — (a) é dado de participação em sessão (mesma natureza já coberta pelos Termos), (b) e (c) são puramente operacionais/administrativos.
+
+## 15. Registro de alteração — 06/10/2026
+
+### 2.3.1 — Envio de fotos pelo editor de notícias
+
+- **Classificação:** `ajuste_informativo`.
+- **Impacto:** baixo.
+- **Motivo:** o formulário de notícias (admin) passou a aceitar o envio direto de fotografias (antes só havia campo de URL e importação do site oficial). O armazenamento (Vercel Blob), os perfis com acesso e a finalidade editorial/institucional são os mesmos já declarados; a Política passa a dizer expressamente que essas fotos usam URL direta do Blob (sem proxy) e não têm purga automática.
+- **Itens alterados:** Inventário LGPD §3.6-A (novo parágrafo "Envio de fotos pelo editor de notícias"); Política de Privacidade §17.2 (novo parágrafo). Termos de Uso: sem alteração (permanecem 2.1.0).
+- **Novo terceiro/subprocessador:** não.
+- **Nova finalidade:** não.
+- **Exige novo aceite:** **não**. Não cria finalidade, compartilhamento externo nem dado pessoal novo para o Irmão; só detalha como o conteúdo editorial já existente é armazenado.

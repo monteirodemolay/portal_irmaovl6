@@ -2,15 +2,25 @@
 
 import { useActionState, useMemo, useState } from 'react';
 import { useFormStatus } from 'react-dom';
+import { upload } from '@vercel/blob/client';
 import type { News } from '@vl6/domain';
 import { Button, Input, Textarea } from '@vl6/ui';
 import { FormField } from '@/components/forms/form-field';
 import type { ContentActionState } from '../actions/content-actions';
+import { appendGalleryImages } from '../lib/news-gallery-html';
 
 function toDateInputValue(date: Date | null): string | undefined {
   if (!date) return undefined;
   const pad = (value: number) => String(value).padStart(2, '0');
   return date.getFullYear() + '-' + pad(date.getMonth() + 1) + '-' + pad(date.getDate());
+}
+
+const ACCEPTED_IMAGE_TYPES = 'image/jpeg,image/png,image/webp,image/gif';
+
+function extensionFor(file: File): string {
+  const fromName = file.name.split('.').pop()?.toLowerCase();
+  if (fromName && /^[a-z0-9]{2,5}$/.test(fromName)) return fromName;
+  return file.type.split('/')[1] ?? 'jpg';
 }
 
 function extractContentImages(html: string): string[] {
@@ -121,6 +131,9 @@ export function NewsForm({ action, news, events = [] }: NewsFormProps) {
     toDateInputValue(news?.dataPublicacao ?? null) ?? '',
   );
   const [selectedEventId, setSelectedEventId] = useState(news?.eventId ?? '');
+  const [coverUrl, setCoverUrl] = useState(news?.imagemCapaUrl ?? '');
+  const [uploadingCount, setUploadingCount] = useState(0);
+  const [uploadErrors, setUploadErrors] = useState<string[]>([]);
   const contentImages = useMemo(() => extractContentImages(contentHtml), [contentHtml]);
 
   const suggestedEvents = useMemo(
@@ -133,6 +146,43 @@ export function NewsForm({ action, news, events = [] }: NewsFormProps) {
         .map(({ event }) => event),
     [events, title, publicationDate],
   );
+
+  /**
+   * Envio direto do navegador pro Vercel Blob (`/api/conteudo/blob-upload`) —
+   * cada foto que termina entra na galeria da notícia na hora; uma falha
+   * não derruba as outras. Só vira definitivo ao salvar a notícia.
+   */
+  async function handleFilesSelected(event: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(event.target.files ?? []);
+    event.target.value = '';
+    if (files.length === 0) return;
+
+    setUploadErrors([]);
+    setUploadingCount((count) => count + files.length);
+    await Promise.all(
+      files.map(async (file) => {
+        try {
+          const result = await upload(
+            `noticias/${crypto.randomUUID()}.${extensionFor(file)}`,
+            file,
+            {
+              access: 'public',
+              handleUploadUrl: '/api/conteudo/blob-upload',
+              contentType: file.type,
+            },
+          );
+          setContentHtml((current) => appendGalleryImages(current, [result.url]));
+        } catch (error) {
+          const reason = error instanceof Error ? error.message : 'falha no envio';
+          setUploadErrors((current) => [...current, file.name + ': ' + reason]);
+        } finally {
+          setUploadingCount((count) => count - 1);
+        }
+      }),
+    );
+  }
+
+  const uploading = uploadingCount > 0;
 
   return (
     <form action={formAction} className="flex max-w-4xl flex-col gap-4">
@@ -163,7 +213,12 @@ export function NewsForm({ action, news, events = [] }: NewsFormProps) {
       </FormField>
 
       <FormField label="URL da imagem de capa" htmlFor="imagemCapaUrl">
-        <Input id="imagemCapaUrl" name="imagemCapaUrl" defaultValue={news?.imagemCapaUrl ?? ''} />
+        <Input
+          id="imagemCapaUrl"
+          name="imagemCapaUrl"
+          value={coverUrl}
+          onChange={(event) => setCoverUrl(event.target.value)}
+        />
       </FormField>
 
       <div className="border-border bg-surface grid gap-3 rounded-lg border p-4 sm:grid-cols-2">
@@ -291,21 +346,62 @@ export function NewsForm({ action, news, events = [] }: NewsFormProps) {
         </div>
       </section>
 
-      {contentImages.length > 0 && (
-        <section className="border-border bg-surface rounded-xl border p-4">
-          <div>
-            <h2 className="font-display text-lg font-semibold">Imagens da notícia</h2>
-            <p className="text-muted mt-1 text-xs leading-relaxed">
-              Revise as imagens importadas. Use “Remover” nas fotos que não pertencem à matéria; a
-              alteração será gravada ao salvar a notícia.
-            </p>
-          </div>
+      <section className="border-border bg-surface rounded-xl border p-4">
+        <div>
+          <h2 className="font-display text-lg font-semibold">Imagens da notícia</h2>
+          <p className="text-muted mt-1 text-xs leading-relaxed">
+            Envie fotos do computador ou do celular — elas entram na galeria da notícia (foto
+            grande, miniaturas e tela cheia). Use “Remover” nas que não pertencem à matéria; tudo é
+            gravado ao salvar a notícia.
+          </p>
+        </div>
 
+        <div className="mt-4 flex flex-wrap items-center gap-3">
+          <label
+            htmlFor="news-photo-upload"
+            className={
+              'border-border hover:border-primary inline-flex h-10 cursor-pointer items-center rounded-lg border px-4 text-sm font-medium transition-colors ' +
+              (uploading ? 'pointer-events-none opacity-60' : '')
+            }
+          >
+            {uploading ? 'Enviando ' + uploadingCount + '…' : '+ Enviar fotos'}
+          </label>
+          <input
+            id="news-photo-upload"
+            type="file"
+            accept={ACCEPTED_IMAGE_TYPES}
+            multiple
+            className="sr-only"
+            disabled={uploading}
+            onChange={handleFilesSelected}
+          />
+          <span className="text-muted text-xs">JPG, PNG, WebP ou GIF, até 20 MB cada.</span>
+        </div>
+
+        {uploadErrors.length > 0 && (
+          <ul className="mt-3 list-disc pl-5 text-xs text-red-600">
+            {uploadErrors.map((message) => (
+              <li key={message}>{message}</li>
+            ))}
+          </ul>
+        )}
+
+        {contentImages.length > 0 && (
           <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
             {contentImages.map((url) => (
               <div key={url} className="border-border overflow-hidden rounded-lg border">
                 <img src={url} alt="" className="aspect-[4/3] w-full object-cover" />
-                <div className="p-2">
+                <div className="flex flex-col gap-1.5 p-2">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="w-full"
+                    disabled={coverUrl === url}
+                    onClick={() => setCoverUrl(url)}
+                  >
+                    {coverUrl === url ? 'É a capa' : 'Usar como capa'}
+                  </Button>
                   <Button
                     type="button"
                     size="sm"
@@ -319,8 +415,8 @@ export function NewsForm({ action, news, events = [] }: NewsFormProps) {
               </div>
             ))}
           </div>
-        </section>
-      )}
+        )}
+      </section>
 
       <FormField
         label="Conteúdo"
@@ -338,16 +434,16 @@ export function NewsForm({ action, news, events = [] }: NewsFormProps) {
       </FormField>
 
       {state.error && <p className="text-sm text-red-600">{state.error}</p>}
-      <SubmitButton />
+      <SubmitButton disabled={uploading} />
     </form>
   );
 }
 
-function SubmitButton() {
+function SubmitButton({ disabled = false }: { disabled?: boolean }) {
   const { pending } = useFormStatus();
   return (
-    <Button type="submit" disabled={pending} className="w-fit">
-      {pending ? 'Salvando…' : 'Salvar'}
+    <Button type="submit" disabled={pending || disabled} className="w-fit">
+      {pending ? 'Salvando…' : disabled ? 'Aguarde o envio das fotos…' : 'Salvar'}
     </Button>
   );
 }
