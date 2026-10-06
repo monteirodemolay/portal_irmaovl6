@@ -16,6 +16,13 @@ export interface News extends BaseEntity {
    * Opcional para compatibilidade com notícias legadas.
    */
   eventId?: string | null;
+  /**
+   * Links de publicações externas no Instagram relacionadas a esta matéria.
+   * O vínculo é editorial: quando a notícia está ligada a um Evento, esses
+   * links também aparecem automaticamente na memória daquele acontecimento.
+   * Campo aditivo/opcional para compatibilidade com notícias legadas.
+   */
+  instagramUrls?: string[];
   publicado: boolean;
   dataPublicacao: Date | null;
   contagemVisualizacoes: number;

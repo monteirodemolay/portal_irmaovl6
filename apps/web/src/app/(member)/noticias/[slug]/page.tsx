@@ -6,6 +6,7 @@ import { getCurrentTenant } from '@/lib/tenant/get-current-tenant';
 import { getCurrentSession } from '@/lib/auth/get-current-session';
 import { NewsCommentForm } from '@/modules/content/components/news-comment-form';
 import { NewsImageGallery } from '@/modules/content/components/news-image-gallery';
+import { NewsInstagramLinks } from '@/modules/content/components/news-instagram-links';
 import { resolveCommentAuthorNames } from '@/modules/content/lib/resolve-comment-authors';
 
 function formatDate(date: Date | null): string {
@@ -122,6 +123,7 @@ export default async function PublicNewsDetailPage({
           />
 
           <NewsImageGallery images={galleryImages} title={news.titulo} />
+          <NewsInstagramLinks urls={news.instagramUrls ?? []} />
 
           <section className="border-border bg-surface mx-auto mt-10 max-w-3xl rounded-2xl border p-5">
             <p className="text-accent text-[11px] font-semibold uppercase tracking-widest">

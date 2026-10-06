@@ -1,5 +1,17 @@
 import { z } from 'zod';
 
+const instagramUrlSchema = z
+  .string()
+  .url()
+  .refine((value) => {
+    try {
+      const host = new URL(value).hostname.toLowerCase();
+      return host === 'instagram.com' || host.endsWith('.instagram.com');
+    } catch {
+      return false;
+    }
+  }, 'Use um link válido do Instagram.');
+
 export const newsSchema = z.object({
   titulo: z.string().min(3).max(200),
   subtitulo: z.string().nullable(),
@@ -17,6 +29,12 @@ export const newsSchema = z.object({
   destaquePrincipal: z.boolean().optional(),
   /** Vínculo histórico opcional com um Evento/Sessão. */
   eventId: z.string().min(1).nullable().optional(),
+  /**
+   * Publicações externas no Instagram relacionadas à matéria. São referências
+   * editoriais públicas; quando a notícia está vinculada a um Evento, o Evento
+   * as apresenta automaticamente sem duplicar o dado na entidade histórica.
+   */
+  instagramUrls: z.array(instagramUrlSchema).max(10).optional(),
   /** Data em que a notícia foi (ou será) considerada publicada — editável para corrigir o caso de notícias importadas de outra fonte, cuja publicação original é anterior à importação. */
   dataPublicacao: z.coerce.date().nullable(),
 });

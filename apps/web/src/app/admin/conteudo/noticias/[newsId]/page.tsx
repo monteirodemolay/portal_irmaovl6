@@ -1,13 +1,14 @@
 import { notFound } from 'next/navigation';
 import { hasPermission } from '@vl6/domain';
 import { createServerContainer } from '@vl6/infra';
-import { Card, CardHeader, CardTitle, CardContent } from '@vl6/ui';
+import { Button, Card, CardHeader, CardTitle, CardContent, Textarea } from '@vl6/ui';
 import { requirePagePermission } from '@/lib/auth/require-permission';
 import {
   deleteNewsAction,
   toggleNewsPublishedAction,
   updateNewsAction,
 } from '@/modules/content/actions/content-actions';
+import { updateNewsInstagramLinksAction } from '@/modules/content/actions/news-instagram-actions';
 import { NewsForm } from '@/modules/content/components/news-form';
 import { ModerateCommentsPanel } from '@/modules/content/components/moderate-comments-panel';
 import { resolveCommentAuthorNames } from '@/modules/content/lib/resolve-comment-authors';
@@ -61,7 +62,40 @@ export default async function EditNewsPage({ params }: { params: Promise<{ newsI
           />
         </div>
       </div>
+
       <NewsForm action={updateNewsAction.bind(null, newsId)} news={news} events={eventOptions} />
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Publicações externas relacionadas</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form action={updateNewsInstagramLinksAction.bind(null, news.id)} className="max-w-4xl">
+            <label htmlFor="instagramUrls" className="text-sm font-medium">
+              Links do Instagram
+            </label>
+            <p className="text-muted mt-1 text-xs leading-relaxed">
+              Informe um link por linha. Estes links ficam vinculados à notícia e, quando ela estiver
+              relacionada a um Evento/Sessão, aparecem automaticamente também na memória desse
+              acontecimento no Acervo VL6. Não é necessário cadastrar novamente no Evento.
+            </p>
+            <Textarea
+              id="instagramUrls"
+              name="instagramUrls"
+              rows={4}
+              className="mt-3"
+              defaultValue={(news.instagramUrls ?? []).join('\n')}
+              placeholder={'https://www.instagram.com/p/...\nhttps://www.instagram.com/reel/...'}
+            />
+            <p className="text-muted mt-2 text-[11px]">
+              Aceita publicações e Reels do Instagram. Máximo de 10 links por notícia.
+            </p>
+            <Button type="submit" className="mt-3">
+              Salvar links externos
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
 
       {canModerate && (
         <Card>

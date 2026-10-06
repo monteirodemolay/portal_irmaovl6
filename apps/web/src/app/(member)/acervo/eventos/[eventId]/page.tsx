@@ -12,6 +12,7 @@ import { CoverPositionPicker } from '@/modules/archive/components/cover-position
 import { InstagramPreviewCard } from '@/modules/archive/components/publish-hub/publication-preview-cards';
 import { updateArchiveMediaFocalPointAction } from '@/modules/archive/actions/publish-hub-actions';
 import { loadEventAlbum } from '@/modules/archive/lib/load-event-album';
+import { NewsInstagramLinks } from '@/modules/content/components/news-instagram-links';
 
 function formatDate(date: Date): string {
   return new Intl.DateTimeFormat('pt-BR', { dateStyle: 'long' }).format(new Date(date));
@@ -135,36 +136,46 @@ export default async function EventAlbumPage({ params }: { params: Promise<{ eve
         <p className="max-w-2xl whitespace-pre-line text-sm leading-relaxed">{event.descricao}</p>
       )}
 
-      {relatedNews.length > 0 && (
-        <section className="border-border bg-surface rounded-2xl border p-5 sm:p-6">
-          <p className="text-accent text-[11px] font-semibold uppercase tracking-widest">
-            Memória editorial
+      <section className="border-border bg-surface rounded-2xl border p-5 sm:p-6">
+        <p className="text-accent text-[11px] font-semibold uppercase tracking-widest">
+          Conexões editoriais
+        </p>
+        <h2 className="font-display mt-1 text-xl font-semibold">Publicações relacionadas</h2>
+        <p className="text-muted mt-2 text-sm leading-6">
+          Este bloco é permanente no Evento. Notícias e publicações externas vinculadas ao
+          acontecimento aparecem aqui automaticamente, preservando a relação entre a memória
+          histórica e a divulgação editorial.
+        </p>
+
+        {relatedNews.length === 0 ? (
+          <p className="text-muted mt-4 rounded-xl border border-dashed p-4 text-sm">
+            Ainda não há notícia vinculada a este Evento.
           </p>
-          <h2 className="font-display mt-1 text-xl font-semibold">
-            Notícias sobre este acontecimento
-          </h2>
+        ) : (
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
             {relatedNews.map((news) => (
-              <Link
-                key={news.id}
-                href={`/noticias/${news.slug}`}
-                className="border-border hover:border-accent group rounded-xl border p-4 transition-colors"
-              >
+              <article key={news.id} className="border-border rounded-xl border p-4">
                 <p className="text-muted text-xs">
                   Publicada em{' '}
                   {news.dataPublicacao ? formatDate(news.dataPublicacao) : 'data não informada'}
                 </p>
-                <h3 className="font-display group-hover:text-accent mt-1 font-semibold leading-snug">
-                  {news.titulo}
-                </h3>
-                {news.subtitulo && (
-                  <p className="text-muted mt-2 line-clamp-2 text-xs leading-5">{news.subtitulo}</p>
-                )}
-              </Link>
+                <Link href={`/noticias/${news.slug}`} className="group block">
+                  <h3 className="font-display group-hover:text-accent mt-1 font-semibold leading-snug">
+                    {news.titulo}
+                  </h3>
+                  {news.subtitulo && (
+                    <p className="text-muted mt-2 line-clamp-2 text-xs leading-5">{news.subtitulo}</p>
+                  )}
+                  <span className="text-primary mt-3 inline-flex text-xs font-semibold group-hover:underline">
+                    Ler notícia no Portal →
+                  </span>
+                </Link>
+                <NewsInstagramLinks urls={news.instagramUrls ?? []} compact />
+              </article>
             ))}
           </div>
-        </section>
-      )}
+        )}
+      </section>
 
       {ceremonyGroups.length > 0 && (
         <Panel kicker="TRAJETÓRIA" title="Feitos maçônicos neste dia" icon={Milestone}>
