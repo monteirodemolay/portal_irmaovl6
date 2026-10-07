@@ -39,11 +39,14 @@ export default async function PublicationsPage() {
   await Promise.all([
     can('event:read')
       ? safe('Agenda', async () => {
-          const result = await c.useCases.listAllEvents.execute(ctx, { limit: 100 });
+          let cursor: string | undefined;
+          do {
+          const result = await c.useCases.listAllEvents.execute(ctx, { limit: 100, cursor });
           for (const e of result.items)
             items.push({
               id: `event:${e.id}`,
               title: e.titulo,
+              createdAt: iso(e.createdAt),
               type: 'Acontecimento',
               status: 'Cadastrado',
               href: `/admin/publicacoes/${e.id}`,
@@ -54,15 +57,18 @@ export default async function PublicationsPage() {
               expiresAt: null,
               destination: 'Agenda do Portal',
             });
+          cursor = result.hasMore ? (result.nextCursor ?? undefined) : undefined;
+          } while (cursor);
         })
       : null,
     can('announcement:read')
       ? safe('Avisos', async () => {
-          const result = await c.useCases.listAllActiveAnnouncements.execute(ctx);
+          const result = await c.useCases.listAllAnnouncements.execute(ctx);
           for (const a of result)
             items.push({
               id: `announcement:${a.id}`,
               title: a.titulo,
+              createdAt: iso(a.createdAt),
               type: 'Aviso',
               status: a.publicado ? 'Publicado no Portal' : 'Rascunho',
               href:
@@ -80,11 +86,14 @@ export default async function PublicationsPage() {
       : null,
     can('news:read')
       ? safe('Notícias', async () => {
-          const result = await c.useCases.listAllNews.execute(ctx, { limit: 100 });
+          let cursor: string | undefined;
+          do {
+          const result = await c.useCases.listAllNews.execute(ctx, { limit: 100, cursor });
           for (const n of result.items)
             items.push({
               id: `news:${n.id}`,
               title: n.titulo,
+              createdAt: iso(n.createdAt),
               type: 'Notícia',
               status: n.publicado ? 'Publicado no Portal' : 'Rascunho',
               href:
@@ -98,6 +107,8 @@ export default async function PublicationsPage() {
               expiresAt: null,
               destination: 'Notícias do Portal',
             });
+          cursor = result.hasMore ? (result.nextCursor ?? undefined) : undefined;
+          } while (cursor);
         })
       : null,
     can('communication:manage')
@@ -107,6 +118,7 @@ export default async function PublicationsPage() {
             items.push({
               id: `communication:${p.id}`,
               title: p.title,
+              createdAt: iso(p.createdAt),
               type: 'Arte e comunicação',
               status:
                 p.publicacaoStatus === 'published'
@@ -127,13 +139,16 @@ export default async function PublicationsPage() {
       : null,
     can('archiveItem:create')
       ? safe('Acervo', async () => {
+          let cursor: string | undefined;
+          do {
           const result = await c.repositories.archiveItem.findByTenant(ctx.tenantId, {
-            limit: 100,
+            limit: 100, cursor,
           });
           for (const a of result.items)
             items.push({
               id: `archive:${a.id}`,
               title: a.titulo,
+              createdAt: iso(a.createdAt),
               type: 'Acervo',
               status: a.publicacaoStatus,
               href: can('event:read')
@@ -146,6 +161,8 @@ export default async function PublicationsPage() {
               expiresAt: null,
               destination: 'Acervo do Portal',
             });
+          cursor = result.hasMore ? (result.nextCursor ?? undefined) : undefined;
+          } while (cursor);
         })
       : null,
   ]);
@@ -154,7 +171,6 @@ export default async function PublicationsPage() {
   );
   for (const item of items)
     if (item.eventId) item.happenedAt = events.get(item.eventId) ?? item.happenedAt;
-  items.sort((a, b) => a.title.localeCompare(b.title, 'pt-BR'));
   const createLinks = [
     {
       href: '/admin/publicacoes/novo',

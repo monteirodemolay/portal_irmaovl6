@@ -2,9 +2,11 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { filterEditorialItems, editorialDate } from './publication-filters';
 
 export interface EditorialItem {
   id: string;
+  createdAt?: string | null;
   title: string;
   type: string;
   status: string;
@@ -50,16 +52,14 @@ export function PublicationCenter({
   const [query, setQuery] = useState('');
   const [type, setType] = useState('Todos');
   const [status, setStatus] = useState('Todos');
+  const [year, setYear] = useState('Todos');
+  const [order, setOrder] = useState('newest');
   const [month, setMonth] = useState(() => dayKey(new Date().toISOString()).slice(0, 7));
   const [dateKind, setDateKind] = useState<'happenedAt' | 'publishedAt' | 'scheduledAt'>(
     'happenedAt',
   );
-  const filtered = items.filter(
-    (i) =>
-      i.title.toLocaleLowerCase('pt-BR').includes(query.toLocaleLowerCase('pt-BR')) &&
-      (type === 'Todos' || i.type === type) &&
-      (status === 'Todos' || i.status === status),
-  );
+  const years = [...new Set(items.map((i) => editorialDate(i)).filter((d): d is string => Boolean(d)).map((d) => dayKey(d).slice(0, 4)))].sort().reverse();
+  const filtered = filterEditorialItems(items, { query, type, status, year, order });
   const days = /^\d{4}-\d{2}$/.test(month)
     ? new Date(Number(month.slice(0, 4)), Number(month.slice(5)), 0).getDate()
     : 0;
@@ -131,7 +131,7 @@ export function PublicationCenter({
             </button>
           ))}
         </div>
-        <div className="mb-5 grid gap-3 sm:grid-cols-3">
+        <div className="mb-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
           <label className="text-sm">
             Pesquisar título
             <input
@@ -164,7 +164,29 @@ export function PublicationCenter({
               ))}
             </select>
           </label>
+          <label className="text-sm">
+            Ano
+            <select value={year} onChange={(e) => setYear(e.target.value)} className="border-border mt-1 w-full rounded-lg border p-2">
+              {['Todos', ...years].map((y) => <option key={y}>{y}</option>)}
+            </select>
+          </label>
+          <label className="text-sm">
+            Ordenação
+            <select value={order} onChange={(e) => setOrder(e.target.value)} className="border-border mt-1 w-full rounded-lg border p-2">
+              <option value="newest">Mais novas primeiro</option>
+              <option value="oldest">Mais antigas primeiro</option>
+            </select>
+          </label>
         </div>
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+          <p className="text-muted text-sm" role="status">{filtered.length} de {items.length} registros</p>
+          <button type="button" className="text-accent text-sm underline" onClick={() => { setQuery(''); setType('Todos'); setStatus('Todos'); setYear('Todos'); setOrder('newest'); }}>
+            Limpar filtros
+          </button>
+        </div>
+        <p className="text-muted mb-4 text-xs">
+          Ordenação e ano usam a data de publicação; quando ausente, a do acontecimento, planejamento ou cadastro.
+        </p>
         {view === 'lista' ? (
           <div className="divide-border divide-y">
             {filtered.map((i) => (
@@ -182,6 +204,7 @@ export function PublicationCenter({
                   <p className="text-muted mt-1 text-xs">
                     Acontecimento: {date(i.happenedAt)} · Publicação: {date(i.publishedAt)} ·
                     Planejamento: {date(i.scheduledAt)}
+                    {!i.publishedAt && !i.happenedAt && !i.scheduledAt && i.createdAt ? ` · Cadastro: ${date(i.createdAt)}` : ''}
                     {i.expiresAt ? ` · Exibição até: ${date(i.expiresAt)}` : ''}
                   </p>
                   {i.eventId && (
