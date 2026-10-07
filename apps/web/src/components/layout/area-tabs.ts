@@ -83,11 +83,6 @@ export const ADMIN_AREA_TABS: Record<AdminAreaKey, AreaTabDef[]> = {
       permission: 'archiveItem:delete',
     },
     {
-      href: '/admin/acervo/migracao',
-      label: 'Migração',
-      permission: 'archiveItem:create',
-    },
-    {
       href: '/admin/acervo/duplicidade',
       label: 'Duplicidade',
       permission: 'archiveMedia:manage',
@@ -102,6 +97,7 @@ export const ADMIN_AREA_TABS: Record<AdminAreaKey, AreaTabDef[]> = {
     { href: '/admin/configuracoes/geral', label: 'Geral', permission: null },
     { href: '/admin/configuracoes/integracoes', label: 'Integrações', permission: 'tenant:manage' },
     { href: '/admin/configuracoes/auditoria', label: 'Auditoria', permission: 'auditLog:read' },
+    { href: '/admin/configuracoes/manutencao', label: 'Manutenção', permission: null },
     {
       href: '/admin/configuracoes/termos-e-privacidade',
       label: 'Termos e Privacidade',

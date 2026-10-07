@@ -1,12 +1,6 @@
+import { redirect } from 'next/navigation';
 import { requirePagePermission } from '@/lib/auth/require-permission';
-import { CriptaDemonstracao } from './cripta-demonstracao';
-
-export const metadata = {
-  title: 'Cripta · demonstração | Portal do Irmão VL6',
-  robots: { index: false, follow: false },
-};
-
-export default async function Page() {
+export default async function LegacyPage() {
   await requirePagePermission('tenant:manage');
-  return <CriptaDemonstracao />;
+  redirect('/admin/cripta/demonstracao');
 }

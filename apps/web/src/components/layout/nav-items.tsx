@@ -7,18 +7,15 @@ import {
   GraduationCap,
   Globe,
   Handshake,
-  Image as GalleryIcon,
   LayoutDashboard,
   Megaphone,
   Newspaper,
   Lock,
-  Send,
   Settings,
   Users,
 } from '@vl6/ui';
-import { isAdminPathAllowed, isAdminTier } from '@/lib/auth/is-admin-tier';
+import { isAdminTier } from '@/lib/auth/is-admin-tier';
 import type { Dictionary } from '@/lib/i18n/get-dictionary';
-import { ADMIN_AREA_TABS, type AdminAreaKey } from './area-tabs';
 import type { AppShellNavFlyout, AppShellNavSection } from './app-shell';
 
 const ICON_SIZE = 18;
@@ -78,72 +75,6 @@ const PORTAL_ITEMS: Array<{
 // preservadas para compatibilidade, links salvos e migração incremental.
 const ACERVO_ITEM = { href: '/acervo', label: 'Acervo VL6', icon: Compass } as const;
 
-interface AdminNavItemDef {
-  href: string;
-  labelKey: keyof Dictionary['nav'];
-  icon: typeof LayoutDashboard;
-  /** Array = visível se QUALQUER uma bater (item que agrega várias abas com recursos distintos). */
-  permission: PermissionKey | PermissionKey[];
-}
-
-function hasAnyPermission(authContext: AuthContext, permission: PermissionKey | PermissionKey[]) {
-  const permissions = Array.isArray(permission) ? permission : [permission];
-  return permissions.some((p) => hasPermission(authContext, p));
-}
-
-/**
- * Monta o menu deslizante de uma área administrativa consolidada a partir
- * das MESMAS abas de `ADMIN_AREA_TABS` (fonte única de verdade também usada
- * pelo `AreaTabNav`) — o atalho pula direto pra aba certa, evitando cair na
- * tela-índice da área só pra escolher a aba em seguida.
- */
-function buildAreaFlyout(
-  authContext: AuthContext,
-  areaKey: AdminAreaKey,
-  title: string,
-  full: { href: string; label: string },
-): AppShellNavFlyout | undefined {
-  const links = ADMIN_AREA_TABS[areaKey]
-    .filter((tab) => !tab.permission || hasPermission(authContext, tab.permission))
-    .map((tab) => ({ href: tab.href, label: tab.label }));
-  if (links.length === 0) return undefined;
-  return { title, links, full };
-}
-
-const ADMIN_ITEMS: AdminNavItemDef[] = [
-  { href: '/admin', labelKey: 'dashboard', icon: LayoutDashboard, permission: 'tenant:read' },
-  {
-    href: '/admin/pessoas',
-    labelKey: 'pessoas',
-    icon: Users,
-    permission: ['member:read', 'user:read', 'boardTerm:read', 'role:read', 'branding:read'],
-  },
-  {
-    href: '/admin/conteudo',
-    labelKey: 'conteudo',
-    icon: Megaphone,
-    permission: ['announcement:read', 'news:read', 'event:read'],
-  },
-  {
-    href: '/admin/comunicacao',
-    labelKey: 'comunicacao',
-    icon: Send,
-    permission: 'communication:manage',
-  },
-  {
-    href: '/admin/acervo',
-    labelKey: 'acervo',
-    icon: GalleryIcon,
-    permission: ['file:read', 'libraryItem:read', 'gallery:read'],
-  },
-  {
-    href: '/admin/configuracoes',
-    labelKey: 'settings',
-    icon: Settings,
-    permission: 'tenant:read',
-  },
-];
-
 function navContent(Icon: typeof LayoutDashboard, label: string, badge?: number) {
   return (
     <>
@@ -167,7 +98,7 @@ function navContent(Icon: typeof LayoutDashboard, label: string, badge?: number)
 export function buildNavSections(
   authContext: AuthContext,
   role: Role | null,
-  dictionary: Dictionary,
+  _dictionary: Dictionary,
   unreadNotificationsCount = 0,
   isActiveCriptaMember = false,
 ): AppShellNavSection[] {
@@ -245,66 +176,20 @@ export function buildNavSections(
       },
     });
   }
-  if (
-    hasPermission(authContext, 'knowledge:manage') ||
-    hasPermission(authContext, 'tenant:manage')
-  ) {
-    memoryItems.push({
-      href: '/admin/conhecimento',
-      content: navContent(GraduationCap, 'Gestão do Conhecimento'),
-    });
-  }
   if (memoryItems.length) sections.push({ title: 'Memória e conhecimento', items: memoryItems });
 
-  const canManageCripta = hasPermission(authContext, 'tenant:manage');
-  if (isActiveCriptaMember || canManageCripta) {
+  if (isActiveCriptaMember) {
     const items = [];
     if (isActiveCriptaMember)
       items.push({ href: '/cripta', content: navContent(Lock, 'Minhas cartas') });
-    if (canManageCripta) {
-      items.push({ href: '/cripta-administracao', content: navContent(Lock, 'Administração') });
-      items.push({ href: '/cripta-projetor', content: navContent(Lock, 'Projetor') });
-    }
     sections.push({ title: 'Cripta', items });
   }
 
   if (isAdminTier(role)) {
-    const visibleAdminItems = ADMIN_ITEMS.filter(
-      (item) =>
-        hasAnyPermission(authContext, item.permission) && isAdminPathAllowed(role, item.href),
-    );
-    if (visibleAdminItems.length > 0) {
-      const adminAreaFlyouts: Partial<Record<string, AppShellNavFlyout | undefined>> = {
-        '/admin/pessoas': buildAreaFlyout(authContext, 'pessoas', 'Pessoas & Loja', {
-          href: '/admin/pessoas',
-          label: 'Ver Pessoas & Loja completo',
-        }),
-        '/admin/conteudo': buildAreaFlyout(authContext, 'conteudo', 'Conteúdo', {
-          href: '/admin/conteudo',
-          label: 'Ver Conteúdo completo',
-        }),
-        '/admin/acervo': buildAreaFlyout(authContext, 'acervo', 'Acervo (administração)', {
-          href: '/admin/acervo',
-          label: 'Ver Acervo completo',
-        }),
-        '/admin/configuracoes': buildAreaFlyout(
-          authContext,
-          'configuracoes',
-          'Configurações do Portal',
-          { href: '/admin/configuracoes', label: 'Ver Configurações completo' },
-        ),
-      };
-      sections.push({
-        title: 'Administração',
-        items: [
-          ...visibleAdminItems.map((item) => ({
-            href: item.href,
-            content: navContent(item.icon, dictionary.nav[item.labelKey]),
-            flyout: adminAreaFlyouts[item.href],
-          })),
-        ],
-      });
-    }
+    sections.push({
+      title: 'Administração',
+      items: [{ href: '/admin', content: navContent(LayoutDashboard, 'Central de Administração') }],
+    });
   }
 
   if (role?.chave === 'super_admin') {

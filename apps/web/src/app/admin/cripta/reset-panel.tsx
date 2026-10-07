@@ -201,7 +201,7 @@ export function ResetPanel() {
       )}
       {finished && (
         <Link
-          href="/cripta-administracao/inauguracao"
+          href="/admin/cripta/inauguracao"
           className="mt-4 inline-block font-semibold underline"
         >
           Começar nova inauguração →

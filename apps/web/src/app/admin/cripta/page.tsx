@@ -10,7 +10,6 @@ import { GuardianSharesPanel } from './guardian-shares-panel';
 import { RenewalPanel } from './renewal-panel';
 import { CleanupPanel } from './cleanup-panel';
 import { RestorePanel } from './restore-panel';
-import { ResetPanel } from './reset-panel';
 
 export const maxDuration = 300;
 
@@ -59,7 +58,7 @@ export default async function Page() {
           Fechamento, Reabertura) são operadas no Projetor, a tela projetada durante a sessão.
         </p>
         <Link
-          href="/cripta-projetor"
+          href="/admin/cripta/projetor"
           className="mt-4 inline-block rounded-xl border border-[#e3bd62]/60 px-4 py-2 text-sm font-semibold text-[#e3bd62] hover:bg-[#e3bd62]/10"
         >
           Abrir o Projetor para operar a cerimônia →
@@ -106,7 +105,7 @@ export default async function Page() {
           Processo excepcional · fora do ciclo anual
         </p>
         <Link
-          href="/cripta-administracao/abertura-individual"
+          href="/admin/cripta/abertura-individual"
           className="mt-2 block rounded-2xl border border-[#d8c8a4] bg-white p-6 shadow-sm transition hover:border-[#8a6a1f] hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#8a6a1f]"
         >
           <strong className="font-serif text-2xl">Abertura individual</strong>
@@ -118,19 +117,12 @@ export default async function Page() {
         </Link>
       </section>
 
-      <section>
-        <p className="text-xs font-semibold uppercase tracking-widest text-red-800">
-          Ferramenta de ensaio · apaga dados de verdade
-        </p>
-        <p className="mt-1 text-sm text-[#5e584c]">
-          Use só para repetir um percurso de teste do zero. Não é parte do ciclo anual normal — a
-          limpeza de cada ano é a etapa 7, operada no Projetor durante a Exportação, e concluída
-          aqui.
-        </p>
-        <div className="mt-3">
-          <ResetPanel />
-        </div>
-      </section>
+      <Link
+        href="/admin/cripta/manutencao"
+        className="border-border block rounded-xl border p-4 text-sm font-semibold"
+      >
+        Manutenção e ferramentas de ensaio →
+      </Link>
     </div>
   );
 }

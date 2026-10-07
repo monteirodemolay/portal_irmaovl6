@@ -3,7 +3,8 @@ import { notFound } from 'next/navigation';
 import { createServerContainer } from '@vl6/infra';
 import { DEFAULT_LOCALE } from '@vl6/shared';
 import { AppShell } from '@/components/layout/app-shell';
-import { buildNavSections } from '@/components/layout/nav-items';
+import Link from 'next/link';
+import { buildAdminNavSections } from '@/components/layout/admin-navigation';
 import { SidebarBrand } from '@/components/layout/sidebar-brand';
 import { SidebarInstitutionalLink } from '@/components/layout/sidebar-institutional-link';
 import { TopbarUser } from '@/components/layout/topbar-user';
@@ -45,15 +46,23 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       brand={
         <SidebarBrand
           crestUrl={current?.branding.brasaoUrl ?? null}
-          title="Portal do Irmão"
+          title="Central de Administração"
           subtitle={tenantName}
         />
       }
-      sections={buildNavSections(session.authContext, session.role, dictionary)}
+      sections={buildAdminNavSections(session.authContext, session.role)}
       sidebarFooter={
-        current?.tenant.site && (
-          <SidebarInstitutionalLink siteUrl={current.tenant.site} tenantName={tenantName} />
-        )
+        <div className="space-y-3">
+          <Link
+            href="/dashboard"
+            className="border-border block rounded-lg border px-4 py-3 text-sm font-medium"
+          >
+            ← Voltar ao Portal
+          </Link>
+          {current?.tenant.site && (
+            <SidebarInstitutionalLink siteUrl={current.tenant.site} tenantName={tenantName} />
+          )}
+        </div>
       }
       topbarLeft={
         <div className="hidden leading-tight sm:block">

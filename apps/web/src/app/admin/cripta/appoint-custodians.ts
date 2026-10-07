@@ -90,6 +90,6 @@ export async function appointCustodians(formData: FormData) {
         actorId: session.user.id,
       });
     });
-    revalidatePath('/cripta-administracao');
+    revalidatePath('/admin/cripta');
   });
 }
