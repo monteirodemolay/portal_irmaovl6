@@ -1,7 +1,7 @@
 # Inventário de Dados Pessoais e Auditoria LGPD — Portal do Irmão VL6
 
 > **Status:** rascunho técnico, gerado por auditoria direta do código-fonte (não é peça jurídica).
-> **Versão:** 2.3.0 · **Auditoria inicial:** 22/09/2026 · **Revisão:** 30/09/2026 · **Revisão:** 03/10/2026 (ficha da carta, registro de cerimônia, rastreamento das partes e lista de presença/exportação de elegíveis da Cripta) · **Autor:** Auditoria automatizada do repositório + consolidação.
+> **Versão:** 2.3.1 · **Auditoria inicial:** 22/09/2026 · **Revisão:** 30/09/2026 · **Revisão:** 03/10/2026 (ficha da carta, registro de cerimônia, rastreamento das partes e lista de presença/exportação de elegíveis da Cripta) · **Revisão:** 06/10/2026 (revisão assistida de pessoas no Acervo, com detecção local e efêmera de rostos, sem biometria persistida) · **Autor:** Auditoria automatizada do repositório + consolidação.
 > **Objetivo:** servir de base factual para a Política de Privacidade, os Termos de Uso e o sistema de versionamento vivo descritos em `docs/legal/` (a construir). Nada aqui deve ser copiado para uma peça jurídica sem revisão de um advogado especialista em Direito Digital/LGPD — este documento aponta _o que o sistema faz_, não _o que ele deveria dizer juridicamente_.
 >
 > Este inventário **não substitui revisão jurídica**. Vários pontos abaixo (bases legais, prazos de retenção, tratamento de dados de menores e de terceiros) exigem validação formal antes de virarem texto contratual.
@@ -28,6 +28,7 @@ Achados que mais importam para a Política de Privacidade e os Termos de Uso:
 6. Existe uma **API pública `/api/v1/members`** autenticada por API Key que expõe nome, e-mail, cidade e dados maçônicos de Irmãos a sistemas externos — é um canal de compartilhamento com terceiros a mapear formalmente.
 7. **Exclusão de conta não apaga o cadastro institucional (`Member`)** — o titular pode apagar sua conta de acesso, mas o registro maçônico permanece (decisão de produto documentada no próprio código como pendente de validação jurídica).
 8. Não foi encontrada nenhuma rotina de atendimento a direitos do titular (exportação/eliminação completa mediante solicitação) além da autoexclusão de conta — a Central de Solicitações prevista na área "Termos e Privacidade" precisará ser majoritariamente **operacional/manual** hoje, não automatizada.
+9. A revisão de fotografias do Acervo passou a poder usar **detecção local e efêmera da posição de rostos**, quando o navegador suporta a API nativa. O processamento ocorre no dispositivo do administrador, sem serviço externo, sem geração/persistência de embedding ou template biométrico e sem decisão automática de identidade; a vinculação a `Member.id` continua dependendo de confirmação humana.
 
 ---
 
@@ -121,7 +122,7 @@ Qualquer Irmão autenticado (`news:read`) pode comentar uma notícia publicada �
 - **Controle de acesso:** feito por rotas proxy autenticadas (`/api/files/[fileId]`, `/api/archive-media/[archiveMediaId]`, `/api/gallery-media/[mediaId]`) que verificam sessão + permissão + tenant antes de fazer stream do binário — a URL real do Blob nunca chega ao cliente **para esses casos**. Porém, **fotos de perfil, de familiares e capas usam URL direta do Blob** (campos `fotoUrl`/`capaUrl`), efetivamente públicas por design.
 - **Uploads mapeados:** foto de perfil do Irmão, anexos de situação maçônica (documentos), foto de familiar (inclui menores/falecidos), capa e arquivo digital de livro da Biblioteca, mídia do Acervo Histórico, contribuições da comunidade, capa de evento, logo de negócio, foto "hero" institucional.
 - **Importação automática de mídias de notícias institucionais:** quando uma notícia do site oficial `vl6.com.br` é vinculada administrativamente a um Evento/Sessão, fotos, vídeos diretos e documentos encontrados na área editorial da matéria podem ser copiados para o Vercel Blob e incorporados ao Acervo VL6. O vínculo preserva separadamente a data editorial da notícia e a data histórica do Evento. A importação é idempotente por hash SHA-256 e mantém o registro de origem pela própria notícia.
-- **Identificação de pessoas em fotos do Acervo é manual** (`ArchiveMedia.pessoasIdentificadas`, admin marca `Member.id`) — **não há reconhecimento facial automático** nem extração de EXIF (a compressão client-side em `<canvas>` descarta metadado, incidentalmente).
+- **Identificação assistida de pessoas em fotos do Acervo:** `ArchiveMedia.pessoasIdentificadas` continua armazenando somente `Member.id` confirmado por um administrador. A tela ampliada de revisão pode, em navegadores compatíveis, chamar a API nativa `FaceDetector` do próprio browser para localizar regiões faciais e desenhar caixas sobre a foto. As coordenadas existem apenas em memória durante a revisão, não são persistidas e não geram template/embedding biométrico. Não há API externa de reconhecimento nem envio adicional da fotografia a terceiros. Sugestões de nomes são contextuais: contam apenas pessoas já confirmadas manualmente em outras fotos do mesmo conjunto. **Não há reconhecimento automático de identidade** nem extração de EXIF.
 - **Direitos autorais/licenciamento: lacuna confirmada.** Existe apenas um campo `autor` (texto livre) em mídia do Acervo, arquivos e itens de Biblioteca — nenhum campo estruturado de licença, cessão de direitos ou autorização de uso. Contribuições enviadas por Irmãos ao Acervo não têm checkbox de autorização de uso/cessão no fluxo atual. **Este é o principal gap técnico a cobrir por cláusula contratual nos Termos de Uso.**
 - **QR Codes não carregam dado pessoal** — só codificam a URL da agenda (atalho de PWA) ou o ID de um exemplar físico da Biblioteca (etiqueta).
 - **Downloads:** o sistema mede contagem agregada de visualizações/downloads por arquivo, mas **não mantém log individual de quem baixou o quê**.
@@ -184,7 +185,7 @@ A mudança de local dos controles de visibilidade do Perfil para Configurações
 4. **Dados de saúde/óbito indiretos:** `dataFalecimento`, `mensagemHomenagem` (In Memoriam), anexos de `MemberSituationRecord` (podem incluir atestados/certidões).
 5. **Dado de relacionamento retido indefinidamente:** vínculo de cônjuge sincronizada com Fraternidade Feminina nunca é removido, mesmo após separação.
 6. **Compartilhamento com terceiros:** API `/api/v1/members` expõe nome, e-mail, cidade e dados maçônicos a integrações externas autenticadas por API Key — deve ser mapeado como transferência de dados a operadores/parceiros.
-7. **Imagem de pessoas em fotos históricas/galeria:** sem campo de consentimento de imagem por foto.
+7. **Imagem de pessoas em fotos históricas/galeria:** sem campo de consentimento de imagem por foto. A revisão assistida atual apenas detecta localmente regiões faciais e não persiste biometria; qualquer evolução futura para embeddings/comparação biométrica deverá passar por nova análise LGPD e atualização documental antes de ser ativada.
 
 ---
 
@@ -218,13 +219,14 @@ A mudança de local dos controles de visibilidade do Perfil para Configurações
 - [R7] Senha mínima de 6 caracteres no fluxo de autorreivindicação de conta.
 - [R8] CNPJ usado para cruzar/expor rede profissional entre Irmãos além da finalidade declarada de "achar colega".
 - [R9] Fotos de perfil/familiares em URL pública direta do Vercel Blob (não passam por proxy autenticado).
-- [R10] API pública `/api/v1/members` compartilha dados pessoais com integrações externas sem mapeamento formal como transferência a terceiros.
+- [R10] API pública `/api/v1/members` compartilha dados pessoais com integrações externas sem mapeamento formal como transferência a terceiros/operadores.
 
 **Baixos / de processo**
 
 - [R11] Senha temporária de convite/reset exibida em texto puro ao Admin, repassada por canal externo ao sistema.
 - [R12] Campos `ip`/`dispositivo` do log de auditoria nunca são preenchidos, apesar de existirem no schema — lacuna de rastreabilidade.
 - [R13] Comentários desatualizados no `firestore.rules` mencionando Cloud Functions inexistentes (risco de confusão em auditorias futuras, não de dados).
+- [R14] A API nativa `FaceDetector` não é suportada por todos os navegadores; o fluxo deve manter marcação manual como fallback e nunca transformar ausência de detecção em ausência de pessoas na fotografia.
 
 ---
 
@@ -236,7 +238,7 @@ A mudança de local dos controles de visibilidade do Perfil para Configurações
 - Perfil voluntário da Central VL6 "nasce vazio" e é opt-in por padrão, com registro formal de consentimento (`publicationConsents`) apartado do cadastro administrativo.
 - `FamilyPerson.menorDeIdade` já força visibilidade restrita por regra de schema.
 - Tokens OAuth do Google Calendar são armazenados cifrados (AES-256-GCM).
-- Identificação de pessoas em fotos é manual, nunca por reconhecimento facial automático.
+- A identificação de pessoas em fotos continua humana; a detecção assistida, quando disponível, roda localmente no navegador, sem serviço externo, sem persistência de coordenadas faciais e sem criação de template/embedding biométrico.
 - Notificações têm política de retenção explícita com exclusão física após período de carência.
 - MIME real dos arquivos é validado no servidor (não confia no tipo declarado pelo formulário).
 - Documentos sensíveis (Acervo, Arquivos, Biblioteca digital) passam por proxy autenticado que nunca expõe a URL pública do Blob ao cliente.
@@ -253,6 +255,7 @@ A mudança de local dos controles de visibilidade do Perfil para Configurações
 6. Mapear formalmente a API `/api/v1/members` como compartilhamento de dados com terceiros/operadores no capítulo de compartilhamento da política.
 7. Confirmar se o Sentry está ativo em produção (para constar como subprocessador).
 8. Decidir se a Central de Solicitações (Termos e Privacidade) será majoritariamente manual (via Secretaria) até que existam rotinas automatizadas de exportação/eliminação completa por titular.
+9. Antes de qualquer futura comparação facial por embeddings ou outra forma de reconhecimento biométrico, realizar nova avaliação de impacto LGPD, definir base legal, retenção/exclusão, controles de acesso e atualizar Política/Termos antes da ativação.
 
 ---
 
@@ -270,6 +273,7 @@ A mudança de local dos controles de visibilidade do Perfil para Configurações
 - Constelação: `packages/domain/src/modules/archive/entities/constellation-view.entity.ts`
 - Família e Legado: `packages/domain/src/modules/family-legacy/entities/family-person.entity.ts`, `paramasonic-entity-member.entity.ts`
 - Storage (Vercel Blob): `packages/infra/src/vercel/blob-storage-adapter.ts`, `apps/web/src/app/api/files/[fileId]/route.ts`, `apps/web/src/app/api/archive-media/[archiveMediaId]/route.ts`
+- Revisão assistida de pessoas: `apps/web/src/modules/archive/components/publish-hub/photo-people-review-modal.tsx`, `apps/web/src/modules/archive/components/publish-hub/people-picker.tsx`
 - Backup diário: `apps/web/src/app/api/cron/daily-backup/route.ts`
 - Notificações e retenção: `packages/domain/src/modules/notification/entities/notification.entity.ts`, `purge-expired-notifications.use-case.ts`
 - Cron jobs: `apps/web/src/app/api/cron/*`
