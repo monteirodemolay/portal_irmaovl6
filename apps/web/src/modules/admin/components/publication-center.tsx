@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import Link from 'next/link';
-import { filterEditorialItems, editorialDate } from './publication-filters';
+import { useState } from "react";
+import Link from "next/link";
+import { filterEditorialItems, editorialDate } from "./publication-filters";
 
 export interface EditorialItem {
   id: string;
@@ -24,17 +24,17 @@ export interface EditorialLink {
 }
 const date = (value: string | null) =>
   value
-    ? new Intl.DateTimeFormat('pt-BR', {
-        dateStyle: 'short',
-        timeZone: 'America/Sao_Paulo',
+    ? new Intl.DateTimeFormat("pt-BR", {
+        dateStyle: "short",
+        timeZone: "America/Sao_Paulo",
       }).format(new Date(value))
-    : '—';
+    : "—";
 const dayKey = (value: string) =>
-  new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'America/Sao_Paulo',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
+  new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Sao_Paulo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
   }).format(new Date(value));
 
 export function PublicationCenter({
@@ -46,34 +46,59 @@ export function PublicationCenter({
   createLinks: EditorialLink[];
   errors: string[];
 }) {
-  const completeLink = createLinks.find((link) => link.href === '/admin/publicacoes/novo');
-  const otherLinks = createLinks.filter((link) => link !== completeLink);
-  const [view, setView] = useState('lista');
-  const [query, setQuery] = useState('');
-  const [type, setType] = useState('Todos');
-  const [status, setStatus] = useState('Todos');
-  const [year, setYear] = useState('Todos');
-  const [order, setOrder] = useState('newest');
-  const [month, setMonth] = useState(() => dayKey(new Date().toISOString()).slice(0, 7));
-  const [dateKind, setDateKind] = useState<'happenedAt' | 'publishedAt' | 'scheduledAt'>(
-    'happenedAt',
+  const completeLink = createLinks.find(
+    (link) => link.href === "/admin/publicacoes/novo",
   );
-  const years = [...new Set(items.map((i) => editorialDate(i)).filter((d): d is string => Boolean(d)).map((d) => dayKey(d).slice(0, 4)))].sort().reverse();
-  const filtered = filterEditorialItems(items, { query, type, status, year, order });
+  const otherLinks = createLinks.filter((link) => link !== completeLink);
+  const [view, setView] = useState("lista");
+  const [query, setQuery] = useState("");
+  const [type, setType] = useState("Todos");
+  const [status, setStatus] = useState("Todos");
+  const [year, setYear] = useState("Todos");
+  const [order, setOrder] = useState("newest");
+  const [month, setMonth] = useState(() =>
+    dayKey(new Date().toISOString()).slice(0, 7),
+  );
+  const [dateKind, setDateKind] = useState<
+    "happenedAt" | "publishedAt" | "scheduledAt"
+  >("happenedAt");
+  const years = [
+    ...new Set(
+      items
+        .map((i) => editorialDate(i))
+        .filter((d): d is string => Boolean(d))
+        .map((d) => dayKey(d).slice(0, 4)),
+    ),
+  ]
+    .sort()
+    .reverse();
+  const filtered = filterEditorialItems(items, {
+    query,
+    type,
+    status,
+    year,
+    order,
+  });
   const days = /^\d{4}-\d{2}$/.test(month)
     ? new Date(Number(month.slice(0, 4)), Number(month.slice(5)), 0).getDate()
     : 0;
   const offset = days
-    ? new Date(Number(month.slice(0, 4)), Number(month.slice(5)) - 1, 1).getDay()
+    ? new Date(
+        Number(month.slice(0, 4)),
+        Number(month.slice(5)) - 1,
+        1,
+      ).getDay()
     : 0;
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="font-display text-3xl font-semibold">Publicações e Agenda</h1>
+          <h1 className="font-display text-3xl font-semibold">
+            Publicações e Agenda
+          </h1>
           <p className="text-muted mt-2">
-            Abra um acontecimento para editar sua notícia, preparar avisos e organizar os arquivos
-            no mesmo espaço.
+            Abra um acontecimento para editar sua notícia, preparar avisos e
+            organizar os arquivos no mesmo espaço.
           </p>
         </div>
         <div className="flex flex-wrap items-start gap-2">
@@ -88,9 +113,12 @@ export function PublicationCenter({
           {otherLinks.length > 0 && (
             <details className="border-border bg-surface rounded-xl border p-3">
               <summary className="cursor-pointer font-semibold">
-                {completeLink ? 'Outros conteúdos' : 'Criar'}
+                {completeLink ? "Outros conteúdos" : "Criar"}
               </summary>
-              <nav aria-label="Criar conteúdo" className="mt-3 flex flex-col gap-1">
+              <nav
+                aria-label="Criar conteúdo"
+                className="mt-3 flex flex-col gap-1"
+              >
                 {otherLinks.map((l) => (
                   <Link
                     key={l.href}
@@ -110,24 +138,28 @@ export function PublicationCenter({
           role="alert"
           className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900"
         >
-          Não foi possível carregar: {errors.join(', ')}. Os demais resultados continuam
-          disponíveis.{' '}
+          Não foi possível carregar: {errors.join(", ")}. Os demais resultados
+          continuam disponíveis.{" "}
           <Link href="/admin/publicacoes" className="underline">
             Tentar novamente
           </Link>
         </div>
       )}
       <div className="border-border bg-surface rounded-2xl border p-5">
-        <div className="mb-5 flex flex-wrap gap-2" role="group" aria-label="Visualização">
-          {['lista', 'calendario'].map((v) => (
+        <div
+          className="mb-5 flex flex-wrap gap-2"
+          role="group"
+          aria-label="Visualização"
+        >
+          {["lista", "calendario"].map((v) => (
             <button
               key={v}
               type="button"
               aria-pressed={view === v}
               onClick={() => setView(v)}
-              className={`rounded-lg border px-4 py-2 text-sm ${view === v ? 'bg-primary text-white' : 'border-border'}`}
+              className={`rounded-lg border px-4 py-2 text-sm ${view === v ? "bg-primary text-white" : "border-border"}`}
             >
-              {v === 'lista' ? 'Lista' : 'Calendário editorial'}
+              {v === "lista" ? "Lista" : "Calendário editorial"}
             </button>
           ))}
         </div>
@@ -147,7 +179,7 @@ export function PublicationCenter({
               onChange={(e) => setType(e.target.value)}
               className="border-border mt-1 w-full rounded-lg border p-2"
             >
-              {['Todos', ...new Set(items.map((i) => i.type))].map((t) => (
+              {["Todos", ...new Set(items.map((i) => i.type))].map((t) => (
                 <option key={t}>{t}</option>
               ))}
             </select>
@@ -159,38 +191,64 @@ export function PublicationCenter({
               onChange={(e) => setStatus(e.target.value)}
               className="border-border mt-1 w-full rounded-lg border p-2"
             >
-              {['Todos', ...new Set(items.map((i) => i.status))].map((t) => (
+              {["Todos", ...new Set(items.map((i) => i.status))].map((t) => (
                 <option key={t}>{t}</option>
               ))}
             </select>
           </label>
           <label className="text-sm">
             Ano
-            <select value={year} onChange={(e) => setYear(e.target.value)} className="border-border mt-1 w-full rounded-lg border p-2">
-              {['Todos', ...years].map((y) => <option key={y}>{y}</option>)}
+            <select
+              value={year}
+              onChange={(e) => setYear(e.target.value)}
+              className="border-border mt-1 w-full rounded-lg border p-2"
+            >
+              {["Todos", ...years].map((y) => (
+                <option key={y}>{y}</option>
+              ))}
             </select>
           </label>
           <label className="text-sm">
             Ordenação
-            <select value={order} onChange={(e) => setOrder(e.target.value)} className="border-border mt-1 w-full rounded-lg border p-2">
+            <select
+              value={order}
+              onChange={(e) => setOrder(e.target.value)}
+              className="border-border mt-1 w-full rounded-lg border p-2"
+            >
               <option value="newest">Mais novas primeiro</option>
               <option value="oldest">Mais antigas primeiro</option>
             </select>
           </label>
         </div>
         <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-          <p className="text-muted text-sm" role="status">{filtered.length} de {items.length} registros</p>
-          <button type="button" className="text-accent text-sm underline" onClick={() => { setQuery(''); setType('Todos'); setStatus('Todos'); setYear('Todos'); setOrder('newest'); }}>
+          <p className="text-muted text-sm" role="status">
+            {filtered.length} de {items.length} registros
+          </p>
+          <button
+            type="button"
+            className="text-accent text-sm underline"
+            onClick={() => {
+              setQuery("");
+              setType("Todos");
+              setStatus("Todos");
+              setYear("Todos");
+              setOrder("newest");
+            }}
+          >
             Limpar filtros
           </button>
         </div>
         <p className="text-muted mb-4 text-xs">
-          Ordenação e ano usam a data de publicação; quando ausente, a do acontecimento, planejamento ou cadastro.
+          Ordenação e ano usam a data de publicação; quando ausente, a do
+          acontecimento, planejamento ou cadastro.
         </p>
-        {view === 'lista' ? (
+        {view === "lista" ? (
           <div className="divide-border divide-y">
             {filtered.map((i) => (
-              <article key={i.id} className="flex flex-wrap items-start justify-between gap-3 py-4">
+              <article
+                key={i.id}
+                className="flex flex-wrap items-start justify-between gap-3 py-4"
+              >
                 <div className="min-w-0 flex-1">
                   <p className="text-muted text-xs">
                     {i.type} · {i.destination}
@@ -202,10 +260,15 @@ export function PublicationCenter({
                     {i.title}
                   </Link>
                   <p className="text-muted mt-1 text-xs">
-                    Acontecimento: {date(i.happenedAt)} · Publicação: {date(i.publishedAt)} ·
-                    Planejamento: {date(i.scheduledAt)}
-                    {!i.publishedAt && !i.happenedAt && !i.scheduledAt && i.createdAt ? ` · Cadastro: ${date(i.createdAt)}` : ''}
-                    {i.expiresAt ? ` · Exibição até: ${date(i.expiresAt)}` : ''}
+                    Acontecimento: {date(i.happenedAt)} · Publicação:{" "}
+                    {date(i.publishedAt)} · Planejamento: {date(i.scheduledAt)}
+                    {!i.publishedAt &&
+                    !i.happenedAt &&
+                    !i.scheduledAt &&
+                    i.createdAt
+                      ? ` · Cadastro: ${date(i.createdAt)}`
+                      : ""}
+                    {i.expiresAt ? ` · Exibição até: ${date(i.expiresAt)}` : ""}
                   </p>
                   {i.eventId && (
                     <Link
@@ -222,7 +285,9 @@ export function PublicationCenter({
               </article>
             ))}
             {filtered.length === 0 && (
-              <p className="text-muted py-6">Nenhum conteúdo encontrado para estes filtros.</p>
+              <p className="text-muted py-6">
+                Nenhum conteúdo encontrado para estes filtros.
+              </p>
             )}
           </div>
         ) : (
@@ -241,7 +306,9 @@ export function PublicationCenter({
                 Data
                 <select
                   value={dateKind}
-                  onChange={(e) => setDateKind(e.target.value as typeof dateKind)}
+                  onChange={(e) =>
+                    setDateKind(e.target.value as typeof dateKind)
+                  }
                   className="border-border ml-2 rounded-lg border p-2"
                 >
                   <option value="happenedAt">Acontecimento</option>
@@ -251,12 +318,15 @@ export function PublicationCenter({
               </label>
             </div>
             <p className="text-muted mb-4 text-sm">
-              A data do acontecimento não representa agendamento de publicação. O planejamento de
-              artes não confirma envio externo.
+              A data do acontecimento não representa agendamento de publicação.
+              O planejamento de artes não confirma envio externo.
             </p>
             <div className="grid grid-cols-1 gap-2 md:grid-cols-7">
-              {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map((d) => (
-                <div key={d} className="hidden text-center text-xs font-semibold md:block">
+              {["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"].map((d) => (
+                <div
+                  key={d}
+                  className="hidden text-center text-xs font-semibold md:block"
+                >
                   {d}
                 </div>
               ))}
@@ -264,10 +334,15 @@ export function PublicationCenter({
                 <div key={`empty-${i}`} className="hidden md:block" />
               ))}
               {Array.from({ length: days }, (_, n) => {
-                const key = `${month}-${String(n + 1).padStart(2, '0')}`;
-                const entries = filtered.filter((i) => i[dateKind] && dayKey(i[dateKind]!) === key);
+                const key = `${month}-${String(n + 1).padStart(2, "0")}`;
+                const entries = filtered.filter(
+                  (i) => i[dateKind] && dayKey(i[dateKind]!) === key,
+                );
                 return (
-                  <div key={key} className="border-border min-h-20 rounded-lg border p-2">
+                  <div
+                    key={key}
+                    className="border-border min-h-20 rounded-lg border p-2"
+                  >
                     <time className="text-muted text-xs" dateTime={key}>
                       {n + 1}
                     </time>
@@ -291,8 +366,9 @@ export function PublicationCenter({
         )}
       </div>
       <p className="text-muted text-sm">
-        Os conteúdos vinculados abrem no espaço único do acontecimento. Notícias e avisos avulsos
-        continuam disponíveis, com suas funções de edição e publicação.
+        Os conteúdos vinculados abrem no espaço único do acontecimento. Notícias
+        e avisos avulsos continuam disponíveis, com suas funções de edição e
+        publicação.
       </p>
     </div>
   );
