@@ -1,6 +1,6 @@
 # Termos de Uso — Portal do Irmão VL6
 
-> **Versão:** 2.1.0 · **Vigência a partir de:** 03/10/2026 · **Aprovada por:** Diretoria VL6
+> **Versão:** 2.1.1 · **Vigência a partir de:** 06/10/2026 · **Aprovada por:** Diretoria VL6
 > **Documento fonte:** `docs/legal/01-inventario-dados-lgpd.md`. Revisão v2.0.0 baseada no marco jurídico `24d0967` e no estado de Production `1c699dd7`, auditados em 30/09/2026.
 > Este documento é independente da Política de Privacidade (`docs/legal/02-politica-privacidade.md`) e deve ser lido em conjunto com ela.
 
@@ -102,6 +102,10 @@ Qualquer Irmão pode submeter fotografias, documentos ou relatos históricos par
 
 Materiais que já integrem notícias e publicações oficiais da própria Loja podem ser incorporados automaticamente ao Acervo Histórico quando a notícia for vinculada administrativamente ao Evento ou Sessão correspondente. Essa incorporação pode abranger fotografias, vídeos diretos e documentos da publicação original e tem por finalidade preservar a memória institucional, mantendo a proveniência da notícia e o contexto histórico do Evento. A automação não autoriza a importação irrestrita de conteúdo de terceiros nem substitui a revisão administrativa das relações históricas.
 
+### 8.2-B Revisão assistida de pessoas em fotografias
+
+A Administração pode utilizar a ferramenta de revisão ampliada do Acervo para marcar quem aparece nas fotografias. Em navegadores compatíveis, o próprio dispositivo pode **detectar localmente a posição de rostos** e destacar essas regiões apenas para facilitar a conferência visual. Essa função não reconhece automaticamente a identidade da pessoa, não produz nem persiste template/embedding biométrico, não envia a imagem a serviço externo e não substitui a decisão humana. Sugestões de nomes podem ser apresentadas com base em pessoas já confirmadas manualmente em outras fotos do mesmo Evento ou conjunto; o Administrador deve confirmar visualmente antes de vincular o Irmão à fotografia.
+
 ### 8.3 Biblioteca
 
 Obras digitais e físicas disponibilizadas na Biblioteca seguem as regras de circulação (prazo de empréstimo, disponibilidade) definidas pela administração. A autoria de cada obra é preservada e exibida quando informada.
@@ -170,13 +174,13 @@ Fica eleito o foro da comarca de Rio Verde, Estado de Goiás, sede da Loja Maç�
 
 ## 18. Data de vigência e versão
 
-- **Versão:** 2.1.0
-- **Data de vigência:** 03/10/2026
-- **Classificação desta versão:** Atualização informativa — direito do Irmão de rever modo de entrega e reter carta já selada a cada reabertura, sem justificativa; não exige novo aceite (ver `04-sistema-de-versionamento.md`)
+- **Versão:** 2.1.1
+- **Data de vigência:** 06/10/2026
+- **Classificação desta versão:** Atualização operacional e de transparência — revisão assistida de fotografias com detecção local de regiões faciais, sem reconhecimento biométrico e sempre sujeita à confirmação humana; não exige novo aceite (ver `04-sistema-de-versionamento.md`)
 
 ---
 
-_Estes Termos de Uso v2.1.0 consolidam a auditoria do Portal entre o marco jurídico `24d0967` e a Production `1c699dd7`, com a atualização de 03/10/2026 referente à Cripta Digital. A v1.0.0 permanece preservada como Marco Inicial no histórico do sistema._
+_Estes Termos de Uso v2.1.1 documentam a revisão assistida de pessoas em fotografias do Acervo sem alterar a finalidade institucional nem criar compartilhamento externo. A v1.0.0 permanece preservada como Marco Inicial no histórico do sistema._
 
 ## Conhecimento VL6 — complemento preparado para publicação
 
