@@ -101,4 +101,14 @@ describe('Arquivos no espaço único do acontecimento', () => {
     );
     expect(observed.event).not.toHaveBeenCalled();
   });
+  it('atualiza o painel de arquivos mantendo evento e lote, inclusive depois de falha de carregamento', async () => {
+    await render('item-existente');
+    const props = observed.upload.mock.calls[0]![0];
+    await act(async () => props.onBack());
+    expect(observed.refresh).toHaveBeenCalledOnce();
+    expect(observed.upload).toHaveBeenCalledTimes(2);
+    expect(observed.upload).toHaveBeenLastCalledWith(
+      expect.objectContaining({ event, initialArchiveItemId: 'item-existente' }),
+    );
+  });
 });

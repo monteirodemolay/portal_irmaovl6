@@ -47,6 +47,7 @@ export function PublishWizard({
   initialArchiveItemId = null,
 }: PublishWizardProps) {
   const router = useRouter();
+  const [uploadRevision, setUploadRevision] = useState(0);
   const [step, setStep] = useState<PublishWizardStep>(initialEvent ? 'arquivos' : 'evento');
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(initialEvent ?? null);
   const [archiveItemId, setArchiveItemId] = useState<string | null>(initialArchiveItemId);
@@ -96,10 +97,16 @@ export function PublishWizard({
 
       {step === 'arquivos' && selectedEvent && (
         <UploadStep
+          key={uploadRevision}
           event={selectedEvent}
           initialArchiveItemId={archiveItemId}
           eventLocked={Boolean(initialEvent)}
-          onBack={() => (initialEvent ? router.refresh() : setStep('evento'))}
+          onBack={() => {
+            if (initialEvent) {
+              setUploadRevision((revision) => revision + 1);
+              router.refresh();
+            } else setStep('evento');
+          }}
           onContinue={(itemId) => {
             setArchiveItemId(itemId);
             setStep('classificacao');
