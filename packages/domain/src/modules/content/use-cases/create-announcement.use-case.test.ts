@@ -31,7 +31,14 @@ describe('CreateAnnouncementUseCase', () => {
       idGenerator: new SequentialIdGenerator(),
     });
 
-    await useCase.execute(ctx, { ...baseInput, titulo: 'Aviso 1' });
+    const linked = await useCase.execute(ctx, {
+      ...baseInput,
+      titulo: 'Aviso 1',
+      eventId: 'evento-1',
+    });
+    expect(linked.ok).toBe(true);
+    if (linked.ok)
+      expect((await announcementRepository.findById(linked.value.id))?.eventId).toBe('evento-1');
     await useCase.execute(ctx, { ...baseInput, titulo: 'Aviso 2' });
     await useCase.execute(ctx, { ...baseInput, titulo: 'Aviso 3' });
 

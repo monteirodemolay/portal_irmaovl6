@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import type { ArchiveEventPublishState, ArchiveItem, BoardTerm, Event } from '@vl6/domain';
 import { ClassifyStep } from './classify-step';
 import { EventStep } from './event-step';
@@ -12,6 +13,8 @@ import { useArchiveItemWorkspace } from './use-archive-item-workspace';
 import { WizardStepper, type PublishWizardStep } from './wizard-chrome';
 
 export interface PublishWizardProps {
+  initialEvent?: Event;
+  initialArchiveItemId?: string | null;
   events: Event[];
   drafts: ArchiveItem[];
   boardTerms: BoardTerm[];
@@ -40,10 +43,14 @@ export function PublishWizard({
   drafts,
   boardTerms,
   eventPublishState,
+  initialEvent,
+  initialArchiveItemId = null,
 }: PublishWizardProps) {
-  const [step, setStep] = useState<PublishWizardStep>('evento');
-  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
-  const [archiveItemId, setArchiveItemId] = useState<string | null>(null);
+  const router = useRouter();
+  const [uploadRevision, setUploadRevision] = useState(0);
+  const [step, setStep] = useState<PublishWizardStep>(initialEvent ? 'arquivos' : 'evento');
+  const [selectedEvent, setSelectedEvent] = useState<Event | null>(initialEvent ?? null);
+  const [archiveItemId, setArchiveItemId] = useState<string | null>(initialArchiveItemId);
 
   function handleEventSelected(event: Event, existingArchiveItemId: string | null) {
     setSelectedEvent(event);
@@ -69,12 +76,13 @@ export function PublishWizard({
       'revisao',
       'publicacao',
     ];
+    if (initialEvent && target === 'evento') return;
     if (order.indexOf(target) <= order.indexOf(step)) setStep(target);
   }
 
   return (
     <div className="flex flex-col gap-5">
-      <WizardStepper current={step} onNavigate={handleNavigate} />
+      <WizardStepper current={step} onNavigate={handleNavigate} skipEvent={Boolean(initialEvent)} />
 
       {step === 'evento' && (
         <EventStep
@@ -89,9 +97,16 @@ export function PublishWizard({
 
       {step === 'arquivos' && selectedEvent && (
         <UploadStep
+          key={uploadRevision}
           event={selectedEvent}
           initialArchiveItemId={archiveItemId}
-          onBack={() => setStep('evento')}
+          eventLocked={Boolean(initialEvent)}
+          onBack={() => {
+            if (initialEvent) {
+              setUploadRevision((revision) => revision + 1);
+              router.refresh();
+            } else setStep('evento');
+          }}
           onContinue={(itemId) => {
             setArchiveItemId(itemId);
             setStep('classificacao');
@@ -117,20 +132,31 @@ export function PublishWizard({
             archiveItemId={archiveItemId}
             event={selectedEvent}
             activeSubStep={step}
+            doneLabel={initialEvent ? 'Continuar editando este acontecimento' : undefined}
             onBackToClassify={() => setStep('classificacao')}
             onContinueToReview={() => setStep('revisao')}
             onBackToOrganize={() => setStep('organizacao')}
             onContinueToPublish={() => setStep('publicacao')}
             onBackToReview={() => setStep('revisao')}
             onDone={() => {
-              setSelectedEvent(null);
-              setArchiveItemId(null);
-              setStep('evento');
+              if (initialEvent) {
+                router.refresh();
+                setStep('arquivos');
+              } else {
+                setSelectedEvent(null);
+                setArchiveItemId(null);
+                setStep('evento');
+              }
             }}
             onRestart={() => {
-              setSelectedEvent(null);
-              setArchiveItemId(null);
-              setStep('evento');
+              if (initialEvent) {
+                router.refresh();
+                setStep('arquivos');
+              } else {
+                setSelectedEvent(null);
+                setArchiveItemId(null);
+                setStep('evento');
+              }
             }}
           />
         )}
@@ -156,6 +182,7 @@ function WorkspaceSteps({
   onBackToReview,
   onDone,
   onRestart,
+  doneLabel,
 }: {
   archiveItemId: string;
   event: Event;
@@ -167,6 +194,7 @@ function WorkspaceSteps({
   onBackToReview: () => void;
   onDone: () => void;
   onRestart: () => void;
+  doneLabel?: string;
 }) {
   const workspace = useArchiveItemWorkspace(archiveItemId);
 
@@ -206,6 +234,7 @@ function WorkspaceSteps({
       eventDate={event.dataInicio}
       eventLocal={event.local}
       onBack={onBackToReview}
+      doneLabel={doneLabel}
       onDone={onDone}
       onRestart={onRestart}
     />

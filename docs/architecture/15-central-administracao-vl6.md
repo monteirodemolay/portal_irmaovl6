@@ -20,11 +20,15 @@ A experiência pública do Acervo, Biblioteca, Constelação e Conhecimento perm
 
 A lista e o calendário usam os casos de uso existentes, filtrados por permissão antes da consulta. O Acervo é consultado por `tenantId` da sessão. Falhas de uma fonte aparecem individualmente, sem transformar falha em lista vazia bem-sucedida. A consulta inicial limita notícias, eventos e itens do Acervo a 100 registros por fonte; a tela informa esse limite funcional e aponta às telas específicas para o histórico completo.
 
-O botão Criar leva ao formulário próprio de cada tipo, mantendo os campos específicos, revisão e efeitos da operação existente. As notícias usam `eventId`; artes usam `sourceId`; itens do Acervo usam `eventId`. O resumo não cria relacionamentos novos nem copia os acontecimentos. Os avisos continuam sem `eventId` nesta etapa.
+A opção “Publicação completa” abre `/admin/publicacoes/novo`: o formulário completo de evento cria o acontecimento uma única vez e continua em `/admin/publicacoes/[eventId]`. Essa página reúne edição do evento, notícias, avisos, organizador do Acervo e artes. Os painéis usam âncoras e permanecem montados, preservando o texto enquanto o administrador alterna de tarefa. Os salvamentos retornam estado e revalidam a página, sem redirecionar aos módulos separados.
 
-O calendário distingue acontecimento, publicação realizada e planejamento editorial. Artes publicadas são distribuição registrada manualmente; `scheduledFor` é planejamento e não uma integração automática. Nenhum envio ao Wix, Instagram ou WhatsApp foi adicionado. O Acervo conserva seu checklist, classificação e publicação própria.
+Os formulários e casos de uso originais são reutilizados. Notícias e avisos existentes sem vínculo podem ser associados, conservando seus IDs e campos. Avisos passam a ter `eventId` opcional: nenhuma migração ou associação por título é executada; edições antigas preservam o vínculo. Ações validam permissões, tenant da sessão, existência do evento e correspondência do conteúdo antes de alterar ou publicar. Não transferem silenciosamente conteúdo associado a outro evento.
 
-O fluxo transacional único demonstrado no protótipo não substitui os formulários reais nesta entrega. Publicações em lote, vínculo estrutural aviso–evento e repetição de uma transação envolvendo múltiplos serviços precisam de implementação de domínio específica; não são simulados na aplicação operacional.
+O wizard do Acervo aceita o evento e o lote já selecionados, pula a seleção do evento e conserva upload, classificação, organização, capa, revisão, publicação imediata, agendamento e registro de Instagram. Ao concluir no espaço único, atualiza os dados e retoma o mesmo evento/lote. Fotografias publicadas de acesso não administrativo podem ser escolhidas para a galeria da notícia por referência ao proxy de mídia, sem upload ou duplicação. Novos arquivos precisam ser publicados no painel de mídia antes de serem reutilizados dessa forma.
+
+Moderação de comentários, links externos da notícia e alcance do aviso são incorporados. A geração de arte reutiliza os dados do acontecimento e o caso de uso idempotente existente. Aprovação, geração dos arquivos e registro de distribuição continuam no componente original de comunicação. As rotas especializadas são preservadas, inclusive exclusão e históricos. Conteúdos avulsos continuam disponíveis.
+
+Publicações são operações independentes com as permissões e notificações existentes. Não há transação atômica entre evento, notícia, aviso, acervo e comunicação, nem envio automático a redes externas. O evento aparece na agenda ao ser cadastrado; notícias e avisos nascem em rascunho. Falha ao concluir publicação não anuncia sucesso: a página revalida para mostrar o estado realmente persistido. O calendário distingue data do acontecimento, publicação realizada e planejamento editorial.
 
 ## Compatibilidade da Cripta
 
@@ -36,14 +40,10 @@ Os gates de páginas, ações e APIs continuam ativos. O Bibliotecário mantém 
 
 ## Reversão e validação
 
-A alteração é reversível por revert do commit, sem rollback de dados. Antes de integrar: verificar RBAC de Bibliotecário e papéis personalizados, navegação móvel, criação/edição de cada conteúdo, redirecionamentos legados da Cripta e operações de cerimônia em ambiente de teste. Não operar reset ou cerimônia em dados reais para validar navegação. Não realizar publicação em produção antes da revisão da interface real.
+A alteração é reversível por revert do commit, sem rollback de dados. Antes de integrar: verificar RBAC de Bibliotecário e papéis personalizados, navegação móvel, criação/edição de cada conteúdo, redirecionamentos legados da Cripta e operações de cerimônia em ambiente de teste. Não operar reset ou cerimônia em dados reais para validar navegação. A publicação em produção segue a autorização explícita do usuário e os checks de código/build; a inspeção autenticada deve ser registrada separadamente quando não estiver disponível.
 
-## Verificações desta entrega
+## Verificações
 
-- TypeScript do web: aprovado.
-- ESLint dos componentes, rotas e testes alterados: aprovado.
-- 14 testes direcionados de acesso, API de guardiões e interação editorial: aprovados.
-- 64 destinos estáticos do diretório: nenhuma rota ausente; formulários e detalhes dinâmicos permanecem acessíveis por suas listagens.
-- 25 arquivos retirados dos caminhos antigos: todos realocados para a Cripta administrativa.
-- Build completo: bloqueado pela revisão automática devido ao envio ao endpoint externo do Sentry, sem conteúdo da transmissão estabelecido. Não há confirmação de build completo.
-- Navegação real autenticada e inspeção visual desktop/móvel: pendentes, navegador de testes indisponível neste ambiente.
+A central inicial foi publicada em produção pelo PR #209; o build remoto foi concluído na Vercel com as otimizações de memória do Next.js. Essas opções são preservadas. O build local com envio ao Sentry não foi repetido após bloqueio da revisão automática.
+
+A correção do fluxo único é coberta por testes de vínculo, preservação de campos, permissões, isolamento de tenant, falha parcial de publicação, retomada do mesmo evento/lote e seleção de fotografia existente sem novo upload. TypeScript, lint e o build remoto fazem parte da liberação. Navegação autenticada e inspeção visual desktop/móvel precisam de sessão de teste e não são presumidas a partir desses checks.

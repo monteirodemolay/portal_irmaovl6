@@ -29,6 +29,7 @@ export class UpdateAnnouncementUseCase {
     const updated: Announcement = {
       ...current,
       ...input,
+      eventId: input.eventId === undefined ? (current.eventId ?? null) : input.eventId,
       updatedAt: this.deps.clock.now(),
       updatedBy: ctx.uid,
     };

@@ -38,7 +38,7 @@ function buildAnnouncement(overrides: Partial<Announcement> = {}): Announcement 
 describe('UpdateAnnouncementUseCase', () => {
   it('atualiza os campos editáveis do aviso', async () => {
     const announcementRepository = new InMemoryAnnouncementRepository();
-    await announcementRepository.create(buildAnnouncement());
+    await announcementRepository.create(buildAnnouncement({ eventId: 'evento-1' }));
     const useCase = new UpdateAnnouncementUseCase({
       announcementRepository,
       clock: new FixedClock(new Date('2026-03-01')),
@@ -57,6 +57,8 @@ describe('UpdateAnnouncementUseCase', () => {
     if (!result.ok) return;
     expect(result.value.titulo).toBe('Novo título');
     expect(result.value.prioridade).toBe('alta');
+    expect(result.value.eventId).toBe('evento-1');
+    expect((await announcementRepository.findById('aviso-1'))?.eventId).toBe('evento-1');
   });
 
   it('retorna NotFoundError quando o aviso não existe no tenant', async () => {

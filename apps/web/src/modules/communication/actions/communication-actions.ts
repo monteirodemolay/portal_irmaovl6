@@ -129,6 +129,7 @@ export async function updatePublicationAction(
   if (!result.ok) return { error: result.error.message };
 
   revalidatePath(BASE_PATH);
+  revalidatePath('/admin/publicacoes', 'layout');
   return { error: null };
 }
 
@@ -166,6 +167,7 @@ export async function uploadPublicationAssetAction(
   if (!result.ok) return { error: result.error.message };
 
   revalidatePath(BASE_PATH);
+  revalidatePath('/admin/publicacoes', 'layout');
   return { error: null };
 }
 
@@ -174,6 +176,7 @@ export async function approvePublicationAction(publicationId: string): Promise<v
   const container = createServerContainer();
   await container.useCases.approvePublication.execute(session.authContext, publicationId);
   revalidatePath(BASE_PATH);
+  revalidatePath('/admin/publicacoes', 'layout');
 }
 
 export async function markPublicationAsPublishedAction(
@@ -188,6 +191,7 @@ export async function markPublicationAsPublishedAction(
     channels,
   );
   revalidatePath(BASE_PATH);
+  revalidatePath('/admin/publicacoes', 'layout');
 }
 
 /**
@@ -223,4 +227,5 @@ export async function archivePublicationAction(publicationId: string): Promise<v
   const container = createServerContainer();
   await container.useCases.archivePublication.execute(session.authContext, publicationId);
   revalidatePath(BASE_PATH);
+  revalidatePath('/admin/publicacoes', 'layout');
 }

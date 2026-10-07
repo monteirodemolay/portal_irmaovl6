@@ -14,7 +14,7 @@ import {
   type SessionType,
   type SessionWorkDegree,
 } from '@vl6/shared';
-import type { AttendanceResponse, Event } from '@vl6/domain';
+import { requirePermission, type AttendanceResponse, type Event } from '@vl6/domain';
 import { createServerContainer, type ServerContainer } from '@vl6/infra';
 import { requireSession } from '@/lib/auth/require-session';
 import {
@@ -28,6 +28,7 @@ import { scrapeNewsMetadata } from '@/lib/content/scrape-news-metadata';
 
 export interface AgendaActionState {
   error: string | null;
+  success?: string;
 }
 
 /**
@@ -262,11 +263,14 @@ function parseEventForm(formData: FormData, capaUrl: string | null) {
   });
 }
 
-export async function createEventAction(
+async function saveNewEvent(
+  workspace: boolean,
   _prevState: AgendaActionState,
   formData: FormData,
 ): Promise<AgendaActionState> {
   const session = await requireSession();
+  requirePermission(session.authContext, 'event:create');
+  if (workspace) requirePermission(session.authContext, 'event:read');
 
   const { capaUrl, error: coverError } = await resolveEventCoverUrl(
     formData,
@@ -291,18 +295,24 @@ export async function createEventAction(
   await notifyEventCreated(container, session.authContext.tenantId, result.value);
 
   revalidatePath('/admin/conteudo/agenda');
+  if (workspace) redirect(`/admin/publicacoes/${result.value.id}`);
   redirect('/admin/conteudo/agenda');
 }
 
-export async function updateEventAction(
+async function saveEvent(
+  workspace: boolean,
   eventId: string,
   _prevState: AgendaActionState,
   formData: FormData,
 ): Promise<AgendaActionState> {
   const session = await requireSession();
+  requirePermission(session.authContext, 'event:update');
+  if (workspace) requirePermission(session.authContext, 'event:read');
 
   const container = createServerContainer();
   const before = await container.repositories.event.findById(eventId);
+  if (!before || before.tenantId !== session.authContext.tenantId || before.deletedAt)
+    return { error: 'Acontecimento não encontrado.' };
 
   const { capaUrl, error: coverError } = await resolveEventCoverUrl(
     formData,
@@ -328,6 +338,11 @@ export async function updateEventAction(
 
   revalidatePath('/admin/conteudo/agenda');
   revalidatePath(`/admin/conteudo/agenda/${eventId}`);
+  if (workspace) {
+    revalidatePath(`/admin/publicacoes/${eventId}`);
+    revalidatePath('/admin/publicacoes');
+    return { error: null, success: 'Acontecimento salvo.' };
+  }
   redirect(`/admin/conteudo/agenda/${eventId}`);
 }
 
@@ -498,4 +513,25 @@ export async function confirmAttendanceAction(
 
   revalidatePath('/agenda');
   revalidatePath(`/eventos/${eventId}`);
+}
+
+export async function createEventAction(state: AgendaActionState, formData: FormData) {
+  return saveNewEvent(false, state, formData);
+}
+export async function updateEventAction(
+  eventId: string,
+  state: AgendaActionState,
+  formData: FormData,
+) {
+  return saveEvent(false, eventId, state, formData);
+}
+export async function createWorkspaceEventAction(state: AgendaActionState, formData: FormData) {
+  return saveNewEvent(true, state, formData);
+}
+export async function updateWorkspaceEventAction(
+  eventId: string,
+  state: AgendaActionState,
+  formData: FormData,
+) {
+  return saveEvent(true, eventId, state, formData);
 }

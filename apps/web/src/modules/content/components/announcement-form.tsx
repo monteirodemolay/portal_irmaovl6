@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState } from 'react';
+import { useId, useActionState } from 'react';
 import { useFormStatus } from 'react-dom';
 import type { Announcement } from '@vl6/domain';
 import { Button, Input, Select, Textarea } from '@vl6/ui';
@@ -16,30 +16,37 @@ function toDateInputValue(date: Date | null): string | undefined {
 export interface AnnouncementFormProps {
   action: (state: ContentActionState, formData: FormData) => Promise<ContentActionState>;
   announcement?: Announcement;
+  initialTitle?: string;
 }
 
-export function AnnouncementForm({ action, announcement }: AnnouncementFormProps) {
+export function AnnouncementForm({ action, announcement, initialTitle }: AnnouncementFormProps) {
+  const formId = useId();
   const [state, formAction] = useActionState<ContentActionState, FormData>(action, {
     error: null,
   });
 
   return (
     <form action={formAction} className="flex max-w-lg flex-col gap-4">
-      <FormField label="Título" htmlFor="titulo">
-        <Input id="titulo" name="titulo" required defaultValue={announcement?.titulo} />
+      <FormField label="Título" htmlFor={`${formId}-titulo`}>
+        <Input
+          id={`${formId}-titulo`}
+          name="titulo"
+          required
+          defaultValue={announcement?.titulo ?? initialTitle}
+        />
       </FormField>
-      <FormField label="Descrição" htmlFor="descricao">
+      <FormField label="Descrição" htmlFor={`${formId}-descricao`}>
         <Textarea
-          id="descricao"
+          id={`${formId}-descricao`}
           name="descricao"
           required
           rows={4}
           defaultValue={announcement?.descricao}
         />
       </FormField>
-      <FormField label="Prioridade" htmlFor="prioridade">
+      <FormField label="Prioridade" htmlFor={`${formId}-prioridade`}>
         <Select
-          id="prioridade"
+          id={`${formId}-prioridade`}
           name="prioridade"
           defaultValue={announcement?.prioridade ?? 'media'}
         >
@@ -50,11 +57,11 @@ export function AnnouncementForm({ action, announcement }: AnnouncementFormProps
       </FormField>
       <FormField
         label="Data de expiração (opcional)"
-        htmlFor="dataExpiracao"
+        htmlFor={`${formId}-dataExpiracao`}
         description="O aviso deixa de aparecer para os Irmãos após essa data."
       >
         <Input
-          id="dataExpiracao"
+          id={`${formId}-dataExpiracao`}
           name="dataExpiracao"
           type="date"
           defaultValue={toDateInputValue(announcement?.dataExpiracao ?? null)}
@@ -78,6 +85,11 @@ export function AnnouncementForm({ action, announcement }: AnnouncementFormProps
         />
         Exigir confirmação de ciência de cada Irmão na Central de Avisos
       </label>
+      {state.success && (
+        <p role="status" className="text-sm text-emerald-700">
+          {state.success}
+        </p>
+      )}
       {state.error && <p className="text-sm text-red-600">{state.error}</p>}
       <SubmitButton />
     </form>

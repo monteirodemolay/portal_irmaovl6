@@ -44,6 +44,8 @@ export function PublicationCenter({
   createLinks: EditorialLink[];
   errors: string[];
 }) {
+  const completeLink = createLinks.find((link) => link.href === '/admin/publicacoes/novo');
+  const otherLinks = createLinks.filter((link) => link !== completeLink);
   const [view, setView] = useState('lista');
   const [query, setQuery] = useState('');
   const [type, setType] = useState('Todos');
@@ -70,25 +72,38 @@ export function PublicationCenter({
         <div>
           <h1 className="font-display text-3xl font-semibold">Publicações e Agenda</h1>
           <p className="text-muted mt-2">
-            Planeje os acontecimentos e acompanhe cada conteúdo em seu destino.
+            Abra um acontecimento para editar sua notícia, preparar avisos e organizar os arquivos
+            no mesmo espaço.
           </p>
         </div>
-        {createLinks.length > 0 && (
-          <details className="border-border bg-surface rounded-xl border p-3">
-            <summary className="cursor-pointer font-semibold">Criar</summary>
-            <nav aria-label="Criar conteúdo" className="mt-3 flex flex-col gap-1">
-              {createLinks.map((l) => (
-                <Link
-                  key={l.href}
-                  href={l.href}
-                  className="hover:bg-accent/10 rounded-lg px-3 py-2 text-sm"
-                >
-                  {l.label}
-                </Link>
-              ))}
-            </nav>
-          </details>
-        )}
+        <div className="flex flex-wrap items-start gap-2">
+          {completeLink && (
+            <Link
+              href={completeLink.href}
+              className="bg-primary rounded-xl px-4 py-3 text-sm font-semibold text-white"
+            >
+              Nova publicação
+            </Link>
+          )}
+          {otherLinks.length > 0 && (
+            <details className="border-border bg-surface rounded-xl border p-3">
+              <summary className="cursor-pointer font-semibold">
+                {completeLink ? 'Outros conteúdos' : 'Criar'}
+              </summary>
+              <nav aria-label="Criar conteúdo" className="mt-3 flex flex-col gap-1">
+                {otherLinks.map((l) => (
+                  <Link
+                    key={l.href}
+                    href={l.href}
+                    className="hover:bg-accent/10 rounded-lg px-3 py-2 text-sm"
+                  >
+                    {l.label}
+                  </Link>
+                ))}
+              </nav>
+            </details>
+          )}
+        </div>
       </div>
       {errors.length > 0 && (
         <div
@@ -171,10 +186,10 @@ export function PublicationCenter({
                   </p>
                   {i.eventId && (
                     <Link
-                      href={`/admin/conteudo/agenda/${encodeURIComponent(i.eventId)}`}
+                      href={`/admin/publicacoes/${encodeURIComponent(i.eventId)}`}
                       className="text-accent mt-2 inline-block text-xs underline"
                     >
-                      Abrir acontecimento vinculado
+                      Editar tudo neste acontecimento
                     </Link>
                   )}
                 </div>
@@ -253,9 +268,8 @@ export function PublicationCenter({
         )}
       </div>
       <p className="text-muted text-sm">
-        Consulta dos registros disponíveis nesta carga. Use as telas específicas para o histórico
-        completo e as etapas próprias de revisão e publicação. Cada operação conserva suas regras e
-        notificações.
+        Os conteúdos vinculados abrem no espaço único do acontecimento. Notícias e avisos avulsos
+        continuam disponíveis, com suas funções de edição e publicação.
       </p>
     </div>
   );

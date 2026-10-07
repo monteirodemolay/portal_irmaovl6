@@ -68,7 +68,7 @@ export default async function EventDetailPage({
         {hasPermission(session.authContext, 'event:update') && (
           <div className="flex items-center gap-2">
             <Button asChild variant="outline" size="sm">
-              <Link href={`/admin/conteudo/agenda/${eventId}/editar`}>Editar</Link>
+              <Link href={`/admin/publicacoes/${eventId}`}>Editar publicação completa</Link>
             </Button>
             <DeleteButton
               action={deleteEventAction.bind(null, eventId)}

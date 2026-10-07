@@ -1,4 +1,5 @@
 import { defineConfig } from 'vitest/config';
+import { fileURLToPath } from 'node:url';
 
 /**
  * Testes unitários de módulos puros de `src/lib/**` (sem DOM/Next.js
@@ -7,6 +8,7 @@ import { defineConfig } from 'vitest/config';
  * o app rodando de verdade.
  */
 export default defineConfig({
+  resolve: { alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) } },
   test: {
     include: ['src/**/*.test.ts'],
   },
