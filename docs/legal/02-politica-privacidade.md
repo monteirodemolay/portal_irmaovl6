@@ -1,6 +1,6 @@
 # Política de Privacidade — Portal do Irmão VL6
 
-> **Versão:** 2.3.1 · **Vigência a partir de:** 06/10/2026 · **Aprovada por:** Diretoria VL6
+> **Versão:** 2.3.2 · **Vigência a partir de:** 06/10/2026 · **Aprovada por:** Diretoria VL6
 > **Documento fonte:** `docs/legal/01-inventario-dados-lgpd.md`. Revisão v2.0.0 baseada no marco jurídico `24d0967` e no estado de Production `1c699dd7`, auditados em 30/09/2026.
 > Este arquivo é a versão vigente. Alterações futuras geram uma nova versão, publicada pela Administração em Configurações → Termos e Privacidade — nunca sobrescrevem esta sem preservar a anterior — ver `docs/legal/04-sistema-de-versionamento.md`.
 
@@ -111,12 +111,12 @@ O registro de presença em Abertura e Fechamento pode incluir, além dos Irmãos
 Em conformidade com o dever de transparência, informamos que:
 
 - Os campos de "endereço IP" e "dispositivo" previstos no nosso sistema de auditoria **não estão, no momento da publicação desta política, sendo efetivamente preenchidos** em todos os registros — ou seja, nem todo evento de auditoria tem hoje o IP/dispositivo do responsável associado. Esse ponto está em avaliação técnica.
-- O Portal **não realiza reconhecimento facial automático**: a identificação de pessoas em fotografias do Acervo Histórico é feita manualmente por administradores autorizados.
+- O Portal **não realiza reconhecimento facial automático nem atribui identidade por algoritmo**. Na área administrativa de revisão do Acervo, navegadores compatíveis podem apenas **detectar localmente a posição de rostos** para facilitar a conferência visual; esse processamento ocorre no dispositivo do administrador, não envia a fotografia a serviço externo, não gera nem persiste embedding/template biométrico e não grava uma identidade automaticamente. As sugestões de nomes exibidas nessa tela são contextuais, baseadas exclusivamente em pessoas que já foram confirmadas manualmente em outras fotografias do mesmo conjunto. A identificação definitiva continua sendo ato humano do administrador.
 - O Portal **não utiliza cookies de rastreamento, publicidade ou analytics de terceiros**, e não compartilha dados para fins de marketing.
 
 ## 9. Dados que não coletamos
 
-O Portal não coleta, no seu funcionamento atual: geolocalização precisa, dados biométricos, dados de pagamento/financeiros de terceiros fora do módulo de indicação de negócios entre Irmãos, e não realiza rastreamento de comportamento entre sites (não há ferramentas de analytics ou publicidade instaladas). **O Portal não coleta CPF nem RG.** A identificação de cada Irmão para os efeitos da Loja é feita exclusivamente pela Carteira de Identidade Maçônica (CIM), descrita na Seção 8.2.
+O Portal não coleta, no seu funcionamento atual: geolocalização precisa, **dados biométricos persistentes ou templates faciais**, dados de pagamento/financeiros de terceiros fora do módulo de indicação de negócios entre Irmãos, e não realiza rastreamento de comportamento entre sites (não há ferramentas de analytics ou publicidade instaladas). A detecção local e efêmera da posição de rostos descrita na Seção 8.10 não produz cadastro biométrico e não é armazenada pelo Portal. **O Portal não coleta CPF nem RG.** A identificação de cada Irmão para os efeitos da Loja é feita exclusivamente pela Carteira de Identidade Maçônica (CIM), descrita na Seção 8.2.
 
 ## 10. Finalidades específicas por dado
 
@@ -211,7 +211,7 @@ São de responsabilidade de quem as envia (o próprio Irmão, no caso de sua fot
 
 ### 17.2 Acervo Histórico
 
-Fotografias, documentos e demais materiais do Acervo Histórico constituem patrimônio da Loja VL6. A identificação de pessoas em fotografias históricas é feita manualmente por administradores autorizados — o Portal não utiliza reconhecimento facial automatizado.
+Fotografias, documentos e demais materiais do Acervo Histórico constituem patrimônio da Loja VL6. A identificação de pessoas em fotografias históricas permanece sob responsabilidade de administradores autorizados e exige confirmação humana. Para auxiliar a revisão, a interface administrativa pode usar, quando o navegador oferecer suporte, **detecção local de regiões faciais**, executada no próprio dispositivo e de forma efêmera. Essa detecção apenas destaca onde há um rosto na imagem; não reconhece quem é a pessoa, não produz nem armazena vetor/embedding biométrico, não envia a fotografia a provedor externo e não confirma identidades. O Portal também pode apresentar **sugestões contextuais de nomes** já confirmados manualmente em outras fotos do mesmo Evento/álbum; clicar em uma sugestão equivale a uma nova confirmação humana naquela fotografia.
 
 Quando uma notícia institucional do site oficial da Loja (`vl6.com.br`) é vinculada por um administrador a um Evento ou Sessão do Acervo, o Portal pode importar automaticamente para o Acervo as fotografias, vídeos diretos e documentos que integrem a área editorial dessa notícia. Essa cópia tem finalidade exclusiva de preservação da memória institucional e não altera a data editorial da matéria: o contexto histórico permanece determinado pela data do Evento relacionado. Os arquivos incorporados seguem os mesmos controles de acesso, armazenamento, retenção e auditoria aplicáveis ao restante do Acervo.
 
@@ -255,13 +255,13 @@ A versão 1.0.0 constitui o **Marco Inicial** dos documentos jurídicos do Porta
 
 ## 23. Data de vigência e versão
 
-- **Versão:** 2.3.0
-- **Data de vigência:** 03/10/2026
-- **Classificação desta versão:** Atualização informativa — lista de presença completa (incluindo Irmãos sem conta vinculada) em Abertura/Fechamento, exportação operacional de lista de elegíveis para a Renovação de Guardiões, e notificação automática de nível crítico das partes; não exige novo aceite (ver `04-sistema-de-versionamento.md`)
+- **Versão:** 2.3.2
+- **Data de vigência:** 06/10/2026
+- **Classificação desta versão:** Atualização de transparência — revisão assistida de fotografias do Acervo com detecção local e efêmera de regiões faciais, sem reconhecimento biométrico, sem template/embedding persistido e sem compartilhamento com serviço externo; não exige novo aceite (ver `04-sistema-de-versionamento.md`)
 
 ---
 
-_Esta Política de Privacidade v2.3.0 consolida a auditoria do Portal entre o marco jurídico `24d0967` e a Production `1c699dd7`, com a atualização de 03/10/2026 referente à Cripta Digital. A v1.0.0 permanece preservada como Marco Inicial no histórico do sistema._
+_Esta Política de Privacidade v2.3.2 consolida a transparência sobre a revisão assistida de pessoas em fotografias do Acervo. A v1.0.0 permanece preservada como Marco Inicial no histórico do sistema._
 
 ## Conhecimento VL6 — complemento preparado para publicação
 
