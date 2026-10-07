@@ -79,6 +79,39 @@ export async function saveKnowledgeCourseAction(
     return { ok: false, error: actionError(e) };
   }
 }
+export async function knowledgeDeletionImpactAction(
+  id: string,
+): Promise<KnowledgeActionResult<{ version: number; affected: number }>> {
+  try {
+    const ctx = await requireKnowledgeManager();
+    return { ok: true, value: await ctx.repo.deletionImpact(ctx.session.authContext.tenantId, id) };
+  } catch (e) {
+    return { ok: false, error: actionError(e) };
+  }
+}
+export async function deleteKnowledgeCourseAction(
+  id: string,
+  version: number,
+  confirmedAffected: number,
+): Promise<KnowledgeActionResult<{ affected: number }>> {
+  try {
+    const ctx = await requireKnowledgeManager();
+    if (!Number.isInteger(confirmedAffected) || confirmedAffected < 0)
+      throw new KnowledgeOperationError('Confirmação de participantes inválida.');
+    const value = await ctx.repo.deleteCourse(
+      ctx.session.authContext.tenantId,
+      ctx.session.authContext.uid,
+      id,
+      version,
+      confirmedAffected,
+    );
+    revalidatePath('/conhecimento', 'layout');
+    revalidatePath('/admin/conhecimento', 'layout');
+    return { ok: true, value };
+  } catch (e) {
+    return { ok: false, error: actionError(e) };
+  }
+}
 export async function duplicateKnowledgeCourseAction(
   id: string,
 ): Promise<KnowledgeActionResult<{ id: string }>> {

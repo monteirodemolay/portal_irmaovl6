@@ -10,6 +10,8 @@ const mock = vi.hoisted(() => ({
   save: vi.fn(),
   submit: vi.fn(),
   saveCourse: vi.fn(),
+  impact: vi.fn(),
+  deleteCourse: vi.fn(),
 }));
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: mock.push, refresh: mock.refresh }),
@@ -18,6 +20,8 @@ vi.mock('../../../apps/web/src/modules/knowledge/actions/knowledge-actions', () 
   saveKnowledgePositionAction: mock.save,
   submitKnowledgeAnswersAction: mock.submit,
   saveKnowledgeCourseAction: mock.saveCourse,
+  knowledgeDeletionImpactAction: mock.impact,
+  deleteKnowledgeCourseAction: mock.deleteCourse,
   duplicateKnowledgeCourseAction: vi.fn(),
   reviewKnowledgeAttemptAction: vi.fn(),
   findKnowledgeUploadedAssetAction: vi.fn(),
@@ -166,6 +170,51 @@ describe('Conhecimento — interações das telas', () => {
     const payload = mock.submit.mock.calls[0]![0];
     expect(payload).toEqual({ courseId: 'c1', lessonId: 'l2', version: 1, answers: { q1: [0] } });
     expect(mock.push).toHaveBeenCalledWith('/conhecimento/resultado/c1/l2');
+  });
+  it.each([false, true])('admin exige confirmação de impacto, decisão %s', async (approved) => {
+    mock.impact.mockResolvedValue({ ok: true, value: { version: 1, affected: 2 } });
+    mock.deleteCourse.mockResolvedValue({ ok: true, value: { affected: 2 } });
+    const confirmation = vi.spyOn(window, 'confirm').mockReturnValue(approved);
+    render(
+      <KnowledgeAdmin
+        tenantId="tenant1"
+        courses={[course]}
+        progress={[]}
+        books={[]}
+        path={[]}
+        pending={[]}
+        members={[]}
+        versions={[]}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Excluir' }));
+    await waitFor(() =>
+      expect(confirmation).toHaveBeenCalledWith(expect.stringContaining('2 participante(s)')),
+    );
+    if (approved) await waitFor(() => expect(mock.deleteCourse).toHaveBeenCalledWith('c1', 1, 2));
+    else expect(mock.deleteCourse).not.toHaveBeenCalled();
+    confirmation.mockRestore();
+  });
+  it('admin exclui sem aviso de impacto quando não há participantes', async () => {
+    mock.impact.mockResolvedValue({ ok: true, value: { version: 1, affected: 0 } });
+    mock.deleteCourse.mockResolvedValue({ ok: true, value: { affected: 0 } });
+    const confirmation = vi.spyOn(window, 'confirm');
+    render(
+      <KnowledgeAdmin
+        tenantId="tenant1"
+        courses={[course]}
+        progress={[]}
+        books={[]}
+        path={[]}
+        pending={[]}
+        members={[]}
+        versions={[]}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Excluir' }));
+    await waitFor(() => expect(mock.deleteCourse).toHaveBeenCalledWith('c1', 1, 0));
+    expect(confirmation).not.toHaveBeenCalled();
+    confirmation.mockRestore();
   });
   it('admin organiza módulos e seleciona graus exatos', () => {
     render(

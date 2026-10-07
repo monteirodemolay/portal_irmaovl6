@@ -272,3 +272,7 @@ Seu desempenho permanece privado. Você acessa seus próprios registros; respons
 Os arquivos das novas aulas são guardados em armazenamento privado da Vercel e servidos mediante autenticação e verificação de grau. O Firestore mantém os registros do módulo em coleções próprias. Materiais recomendados da Biblioteca são vinculados por referência e seguem as condições de acesso do catálogo original. Links externos continuam sujeitos às regras do respectivo serviço.
 
 Os registros permanecem enquanto necessários à formação e à prestação de contas institucional, observados direitos do titular e obrigações aplicáveis. Arquivar uma formação não apaga automaticamente seus registros. Não existe purga automática nesta implantação. Solicitações sobre os dados podem ser feitas pelos canais já indicados nesta Política. Evite incluir dados sensíveis, informações de terceiros ou conteúdos ritualísticos reservados em respostas livres.
+
+## Complemento preparado — 07/10/2026 — Exclusão de formações
+
+A administração autorizada pode retirar uma formação do catálogo por exclusão lógica. Quando houver participação registrada, é exigida confirmação do impacto. O histórico individual e a auditoria continuam preservados sob as regras de retenção já descritas; a formação e seus certificados deixam de estar acessíveis na área do Irmão.

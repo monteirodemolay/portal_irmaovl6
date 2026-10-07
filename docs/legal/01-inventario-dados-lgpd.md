@@ -294,3 +294,7 @@ Armazenamento: Firestore em novas coleções `knowledgeCourses`, `knowledgeVersi
 Retenção: registros de formação e respostas permanecem enquanto necessários à finalidade e à prestação de contas institucional, sujeitos à análise de solicitações do titular e obrigações aplicáveis; não há prazo automático de purga implementado. Despublicação/arquivamento remove disponibilidade, mas não apaga automaticamente respostas, snapshots ou arquivos. Gestão da Loja deve definir e documentar sua política de retenção antes de ampliar o uso. Carga horária é estimada, não monitoramento de tempo em tela.
 
 Sem novo fornecedor além dos subprocessadores já documentados. A utilização do modo privado é específica ao novo módulo. Certificados são apresentados no ambiente autenticado; não criam verificação pública por nome. Respostas livres não devem conter segredos ritualísticos, dados sensíveis ou informações pessoais de terceiros desnecessárias à atividade.
+
+## Complemento preparado — 07/10/2026 — Exclusão de formações
+
+Exclusão administrativa de formação: lógica, restrita a `knowledge:manage`/`tenant:manage`, com confirmação do número de participantes quando existir progresso. O servidor revalida impacto e versão na transação. Progresso, respostas, versões e anexos permanecem sob a retenção já documentada; auditoria registra operador, data e quantidade afetada, sem novas informações pessoais. Não existe matrícula administrativa nesta versão: acesso por Grau e participação a partir do início da aula.

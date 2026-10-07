@@ -70,7 +70,6 @@ Sem o segredo privado, uploads e leitura de arquivos falham de modo fechado, com
 
 Não marcar como Production até confirmar esses passos com credenciais e sessões reais. O ambiente de desenvolvimento não contém credenciais do Firebase ou do armazenamento privado. Na consulta de configuração de 06/10/2026, o projeto Vercel `portal-irmaovl6-web` não possui `KNOWLEDGE_BLOB_READ_WRITE_TOKEN`; nenhuma configuração ou regra de produção foi alterada por esta implementação.
 
-
 ## Validação da implementação
 
 - `pnpm --filter @vl6/domain test -- --run src/modules/knowledge/knowledge.test.ts`: 17 testes de autorização, gabarito, correção, conclusão e publicação.
@@ -78,3 +77,9 @@ Não marcar como Production até confirmar esses passos com credenciais e sessõ
 - Type-check de web, domínio e infraestrutura aprovado; lint das rotas/componentes/actions do Conhecimento aprovado sem avisos.
 - Build Next validado localmente com upload/telemetria do Sentry desativados apenas na verificação. A configuração original de produção é preservada. Avisos do build relativos a ícones não utilizados no módulo Central já existiam na base e não foram alterados.
 - Os testes de persistência usam mocks das transações; não substituem teste no Firestore real. Não foi realizado aceite com contas institucionais de graus distintos nem confirmação visual em navegador: o download do navegador de testes falhou no ambiente. Esses pontos constam do roteiro de ativação.
+
+## Exclusão administrativa — 07/10/2026
+
+Na visão geral, `Excluir` consulta o impacto no servidor. Sem participação registrada, remove diretamente do catálogo. Com progresso de qualquer versão, exige confirmação explícita da quantidade afetada e da perda de acesso à formação, retomada e certificados. O servidor verifica novamente tenant, versão e quantidade em uma transação; se houver mudança, exige nova conferência. Exclusão lógica (`deletedAt`, `ativo=false`) preserva histórico, respostas, versões, anexos e vínculos bibliográficos sem alterar Acervo ou Biblioteca. Grava auditoria com ator/data/impacto. Edições concorrentes não podem restaurar o registro excluído.
+
+Não existe matrícula administrativa nesta versão: autorização é por Grau e publicação; participação é registrada ao iniciar uma aula. A exclusão não introduz cadastro de matrícula.

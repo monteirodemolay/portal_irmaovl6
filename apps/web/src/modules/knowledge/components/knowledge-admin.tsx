@@ -14,6 +14,8 @@ import {
 import { Card, PageHero, GraduationCap } from '@vl6/ui';
 import {
   saveKnowledgeCourseAction,
+  knowledgeDeletionImpactAction,
+  deleteKnowledgeCourseAction,
   duplicateKnowledgeCourseAction,
   reviewKnowledgeAttemptAction,
   findKnowledgeUploadedAssetAction,
@@ -392,6 +394,40 @@ export function KnowledgeAdmin({
                           }
                         >
                           {c.content.status === 'publicado' ? 'Despublicar' : 'Arquivar'}
+                        </button>
+                        <button
+                          className="k-button"
+                          disabled={busy}
+                          onClick={() =>
+                            start(async () => {
+                              setNotice('Conferindo participantes…');
+                              const impact = await knowledgeDeletionImpactAction(c.id);
+                              if (!impact.ok) {
+                                setNotice(impact.error);
+                                return;
+                              }
+                              if (
+                                impact.value.affected > 0 &&
+                                !window.confirm(
+                                  `Excluir “${c.content.title}”? Há ${impact.value.affected} participante(s) com atividade registrada. Eles perderão o acesso à formação, à retomada das aulas e aos certificados no Portal. O histórico será preservado para auditoria. Deseja continuar?`,
+                                )
+                              ) {
+                                setNotice('Exclusão cancelada.');
+                                return;
+                              }
+                              const result = await deleteKnowledgeCourseAction(
+                                c.id,
+                                impact.value.version,
+                                impact.value.affected,
+                              );
+                              if (result.ok) {
+                                setNotice('Formação excluída do catálogo. Histórico preservado.');
+                                router.refresh();
+                              } else setNotice(result.error);
+                            })
+                          }
+                        >
+                          Excluir
                         </button>
                       </div>
                     </td>
