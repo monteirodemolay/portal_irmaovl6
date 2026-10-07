@@ -117,3 +117,9 @@ Veja a [revisão de liberação de 29/09/2026](docs/architecture/cripta-revisao-
 ### Conhecimento VL6
 
 Formação continuada aditiva, com instruções por grau, aulas, atividades, avaliações e progresso privado. Vincula leituras ao catálogo existente sem modificar Acervo ou Biblioteca. Arquitetura, Firestore, protocolos de publicação e roteiro de implantação: [Conhecimento VL6](docs/architecture/14-conhecimento-vl6.md).
+
+### Central de Administração VL6
+
+A entrada administrativa é `/admin`, com Publicações e Agenda, Pessoas e Loja,
+Acervo e Biblioteca, Conhecimento, Cripta e Configurações e Auditoria.
+Consulte [arquitetura e compatibilidade](docs/architecture/15-central-administracao-vl6.md).

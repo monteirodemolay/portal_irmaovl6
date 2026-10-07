@@ -1,3 +1,6 @@
+import { ADMIN_TOOLS } from '@/modules/admin/lib/admin-tool-directory';
+import { AdminToolDirectory } from '@/modules/admin/components/admin-tool-directory';
+import { isAdminPathAllowed } from '@/lib/auth/is-admin-tier';
 import Link from 'next/link';
 import { hasPermission } from '@vl6/domain';
 import {
@@ -95,7 +98,7 @@ function FunnelRow({
 }
 
 /**
- * Painel de gestão da Loja — reconstrução do dashboard administrativo a
+ * Central de Administração VL6 — reconstrução do dashboard administrativo a
  * partir do mock-up fornecido pelo Administrador, mas com uma regra que
  * nunca é negociável neste Portal: todo número vem de uma consulta real
  * (agregada com `count()` sempre que possível), nunca inventado/
@@ -324,9 +327,9 @@ export default async function AdminDashboardPage() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="font-display text-2xl font-semibold">Painel de gestão da Loja</h1>
+        <h1 className="font-display text-2xl font-semibold">Central de Administração VL6</h1>
         <p className="text-muted">
-          {current?.tenant.nome} — visão consolidada de pessoas, conteúdo e segurança do Portal.
+          {current?.tenant.nome} — visão geral das pendências e do trabalho administrativo.
         </p>
       </div>
 
@@ -537,6 +540,13 @@ export default async function AdminDashboardPage() {
           </div>
         )}
       </div>
+      <AdminToolDirectory
+        tools={ADMIN_TOOLS.filter(
+          (tool) =>
+            isAdminPathAllowed(session.role, tool.href) &&
+            tool.permissions.some((permission) => can(permission)),
+        ).map(({ href, label, group }) => ({ href, label, group }))}
+      />
     </div>
   );
 }

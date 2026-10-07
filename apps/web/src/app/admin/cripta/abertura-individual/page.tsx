@@ -29,11 +29,11 @@ async function registerEvent(data: FormData) {
       reference.length < 5 ||
       reference.length > 160
     ) {
-      redirect('/cripta-administracao/abertura-individual?erro=campos');
+      redirect('/admin/cripta/abertura-individual?erro=campos');
     }
     const member = await createServerContainer().repositories.member.findById(memberId);
     if (!member || member.tenantId !== tenantId)
-      redirect('/cripta-administracao/abertura-individual?erro=irmao');
+      redirect('/admin/cripta/abertura-individual?erro=irmao');
     const event = {
       tenantId,
       memberId,
@@ -50,8 +50,8 @@ async function registerEvent(data: FormData) {
       .doc(randomUUID())
       .create(event);
   });
-  revalidatePath('/cripta-administracao/abertura-individual');
-  redirect('/cripta-administracao/abertura-individual?registro=feito');
+  revalidatePath('/admin/cripta/abertura-individual');
+  redirect('/admin/cripta/abertura-individual?registro=feito');
 }
 
 export default async function Page({
@@ -86,10 +86,7 @@ export default async function Page({
   const input = 'mt-2 w-full rounded-xl border border-[#c9b98f] bg-white p-3 text-[#17263f]';
   return (
     <div className="mx-auto max-w-5xl space-y-6 pb-12 text-[#17263f]">
-      <Link
-        href="/cripta-administracao"
-        className="inline-block text-sm font-semibold text-[#123c69]"
-      >
+      <Link href="/admin/cripta" className="inline-block text-sm font-semibold text-[#123c69]">
         ← Estado da Cripta
       </Link>
       <header className="rounded-[2rem] border border-[#c9a55a] bg-[#17263f] p-8 text-white sm:p-10">

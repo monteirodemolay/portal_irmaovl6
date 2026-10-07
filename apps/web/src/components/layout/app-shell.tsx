@@ -22,6 +22,7 @@ export interface AppShellNavFlyout {
 
 export interface AppShellNavItem {
   href: string;
+  activePaths?: string[];
   /** Ícone + rótulo já compostos (evita passar referência de componente através da fronteira RSC). */
   content: React.ReactNode;
   /**
@@ -129,7 +130,9 @@ export function AppShell({
   }, [mobileOpen]);
 
   function isActive(href: string): boolean {
-    return href === '/' ? pathname === '/' : pathname === href || pathname.startsWith(`${href}/`);
+    return href === '/' || href === '/admin'
+      ? pathname === href
+      : pathname === href || pathname.startsWith(`${href}/`);
   }
 
   const itemLinkClass = (active: boolean) =>
@@ -149,7 +152,7 @@ export function AppShell({
               </p>
             )}
             {section.items.map((item) => {
-              const active = isActive(item.href);
+              const active = isActive(item.href) || Boolean(item.activePaths?.some(isActive));
 
               if (!item.flyout) {
                 return (

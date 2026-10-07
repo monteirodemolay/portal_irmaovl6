@@ -27,6 +27,12 @@ const nextConfig: NextConfig = {
   // própria ação faz o Next rejeitar o corpo antes do código da aplicação
   // rodar, sem log nem tela de erro tratada (só a página de erro genérica).
   experimental: {
+    // Reduz o pico de memória do build no worker de 8 GB da Vercel.
+    webpackMemoryOptimizations: true,
+    webpackBuildWorker: true,
+    parallelServerCompiles: false,
+    parallelServerBuildTraces: false,
+    cpus: 1,
     serverActions: {
       bodySizeLimit: '20mb',
     },

@@ -11,14 +11,14 @@ import {
 } from '@/modules/cripta/lib/guardian-shares';
 import { currentWizardStatus } from '@/modules/cripta/lib/wizard-status';
 import { ceremonyStates } from '@/modules/cripta/lib/cycle-wizard';
-import { CeremonyCard } from '../cripta-administracao/ceremony-card';
-import { CycleWizardView } from '../cripta-administracao/cycle-wizard-view';
+import { CeremonyCard } from '../ceremony-card';
+import { CycleWizardView } from '../cycle-wizard-view';
 import { InaugurationStage } from './inauguration-stage';
-import { ComissaoForm } from '../cripta-administracao/comissao-form';
-import { OnlineOpeningControl } from '../cripta-administracao/online-opening-control';
-import { SealPanel } from '../cripta-administracao/seal-panel';
-import { ExportPanel } from '../cripta-administracao/export-panel';
-import { PhysicalUnitCheck } from '../cripta-administracao/physical-unit-check';
+import { ComissaoForm } from '../comissao-form';
+import { OnlineOpeningControl } from '../online-opening-control';
+import { SealPanel } from '../seal-panel';
+import { ExportPanel } from '../export-panel';
+import { PhysicalUnitCheck } from '../physical-unit-check';
 
 export const maxDuration = 300;
 
@@ -107,7 +107,7 @@ export default async function Page() {
           </p>
         )}
         <Link
-          href="/cripta-administracao"
+          href="/admin/cripta"
           className="mt-4 block text-sm font-semibold text-[#e3bd62] hover:underline"
         >
           ← Ver histórico e administração geral
