@@ -256,3 +256,12 @@ O próximo ciclo de auditoria deve começar no commit que efetivamente entrar em
 - Novo fornecedor: não. Firestore e Vercel já existentes; novo armazenamento privado específico sem mudança da Biblioteca.
 - Novo aceite recomendado: **sim**, por nova finalidade de tratamento e novas condições de uso.
 - Estado: **preparado no PR; não publicado nem aplicado a usuários**. Conferir a versão vigente no painel antes da publicação e ajustar o número se houver versão posterior. Registrar SHA de Production como marco somente após implantação confirmada.
+
+## Revisão preparada — 07/10/2026 — Exclusão administrativa de formações
+
+- Política/Termos preparados: **2.4.1**, alteração operacional de baixo impacto, complementar à preparação 2.4.0.
+- Motivo: exclusão lógica pelo administrador, confirmação de participantes, concorrência e trilha de auditoria.
+- Itens alterados: Inventário, Política, Termos e protocolo de Conhecimento.
+- Não cria dados, finalidade, fornecedor ou prazo de retenção novo.
+- Novo aceite por este ajuste: **não**; permanece a recomendação de aceite da implantação do Conhecimento (2.4.0).
+- Estado: documentação preparada; não publicada no painel jurídico nem aplicada aos usuários. Conferir a versão vigente antes de publicar.

@@ -23,9 +23,10 @@ const course = {
     ],
   }),
 };
-function database(records: Record<string, unknown> = {}) {
+function database(records: Record<string, unknown> = {}, participants = 0) {
   const tx = {
     get: vi.fn(async (ref: { key: string }) => ({
+      size: participants,
       exists: ref.key in records,
       data: () => records[ref.key],
     })),
@@ -37,6 +38,7 @@ function database(records: Record<string, unknown> = {}) {
     collection: (name: string) => {
       const c = {
         withConverter: () => c,
+        where: () => c,
         doc: (id?: string) => ({ key: `${name}/${id ?? ++sequence}` }),
       };
       return c;
@@ -129,6 +131,42 @@ describe('Conhecimento — transações de persistência', () => {
       { key: 'knowledgeVersions/1' },
       expect.objectContaining({ courseId: 'c1', version: 2 }),
     );
+  });
+  it('impede exclusão sem confirmar participantes e quando o impacto muda', async () => {
+    const { repo, tx } = database({ 'knowledgeCourses/c1': course }, 2);
+    await expect(repo.deleteCourse('loja', 'admin', 'c1', 1, 0)).rejects.toThrow(
+      'participantes mudaram',
+    );
+    await expect(repo.deleteCourse('loja', 'admin', 'c1', 1, 1)).rejects.toThrow();
+    expect(tx.set).not.toHaveBeenCalled();
+  });
+  it('exclui sem participantes e registra auditoria sem apagar histórico ou livros', async () => {
+    const { repo, tx } = database({ 'knowledgeCourses/c1': course });
+    await repo.deleteCourse('loja', 'admin', 'c1', 1, 0);
+    expect(tx.set).toHaveBeenCalledWith(
+      { key: 'knowledgeCourses/c1' },
+      expect.objectContaining({ ativo: false, deletedAt: expect.any(Date), version: 2 }),
+    );
+    expect(tx.create).toHaveBeenCalledOnce();
+    expect(tx.create).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        acao: 'delete',
+        valorNovo: expect.objectContaining({ affectedParticipants: 0, historyPreserved: true }),
+      }),
+    );
+  });
+  it('permite exclusão com impacto confirmado e bloqueia outra Loja e versão antiga', async () => {
+    const { repo, tx } = database({ 'knowledgeCourses/c1': course }, 2);
+    await expect(repo.deleteCourse('outra', 'admin', 'c1', 1, 2)).rejects.toThrow('indisponível');
+    await expect(repo.deleteCourse('loja', 'admin', 'c1', 0, 2)).rejects.toThrow();
+    expect(tx.set).not.toHaveBeenCalled();
+    expect(await repo.deleteCourse('loja', 'admin', 'c1', 1, 2)).toEqual({ affected: 2 });
+  });
+  it('uma edição concorrente não ressuscita uma formação excluída', async () => {
+    const { repo, tx } = database({ 'knowledgeCourses/c1': { ...course, deletedAt: new Date() } });
+    await expect(repo.saveCourse({ ...course, version: 2 } as never, 1)).rejects.toThrow();
+    expect(tx.set).not.toHaveBeenCalled();
   });
   it('callback repetido não duplica arquivo nem troca seu vínculo', async () => {
     const asset = { id: 'file1', tenantId: 'loja', courseId: 'c1', pathname: 'loja/c1/file' };

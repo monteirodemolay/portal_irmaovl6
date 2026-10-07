@@ -47,7 +47,7 @@ export class FirestoreKnowledgeRepository {
         before = old.data();
       if (
         (before?.version ?? 0) !== expectedVersion ||
-        (before && before.tenantId !== course.tenantId)
+        (before && (before.tenantId !== course.tenantId || before.deletedAt))
       )
         throw new KnowledgeOperationError(
           'Esta formação foi alterada por outro responsável. Atualize a página antes de salvar.',
@@ -74,6 +74,66 @@ export class FirestoreKnowledgeRepository {
         },
         timestamp: course.updatedAt,
       });
+    });
+  }
+  async deletionImpact(tenantId: string, courseId: string) {
+    const course = await this.findCourse(courseId);
+    if (!course || course.tenantId !== tenantId || course.deletedAt)
+      throw new KnowledgeOperationError('Formação indisponível.');
+    const participants = await this.progresses()
+      .where('tenantId', '==', tenantId)
+      .where('courseId', '==', courseId)
+      .get();
+    return { version: course.version, affected: participants.size };
+  }
+  async deleteCourse(
+    tenantId: string,
+    actorId: string,
+    courseId: string,
+    expectedVersion: number,
+    confirmedAffected: number,
+  ) {
+    return this.db.runTransaction(async (tx) => {
+      const ref = this.courses().doc(courseId);
+      const [snapshot, participants] = await Promise.all([
+        tx.get(ref),
+        tx.get(
+          this.progresses().where('tenantId', '==', tenantId).where('courseId', '==', courseId),
+        ),
+      ]);
+      const course = snapshot.data();
+      if (!course || course.tenantId !== tenantId || course.deletedAt)
+        throw new KnowledgeOperationError('Formação indisponível.');
+      if (course.version !== expectedVersion || participants.size !== confirmedAffected)
+        throw new KnowledgeOperationError(
+          'A formação ou seus participantes mudaram. Confira o impacto novamente antes de excluir.',
+        );
+      const now = new Date();
+      tx.set(ref, {
+        ...course,
+        version: course.version + 1,
+        deletedAt: now,
+        ativo: false,
+        updatedAt: now,
+        updatedBy: actorId,
+      });
+      tx.create(this.db.collection('auditLogs').doc(), {
+        tenantId,
+        entidade: 'knowledgeCourse',
+        entidadeId: courseId,
+        acao: 'delete',
+        usuarioId: actorId,
+        ip: null,
+        dispositivo: null,
+        valorAnterior: { version: course.version, status: course.content.status },
+        valorNovo: {
+          deletedAt: now,
+          affectedParticipants: participants.size,
+          historyPreserved: true,
+        },
+        timestamp: now,
+      });
+      return { affected: participants.size };
     });
   }
   async listProgress(tenantId: string, uid?: string) {

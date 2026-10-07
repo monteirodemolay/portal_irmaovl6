@@ -191,3 +191,7 @@ O acesso às instruções considera o grau registrado no cadastro e a regra de p
 Aulas e atividades podem registrar progresso, ponto de retomada de vídeo, respostas, tentativas e aproveitamento. Concluir uma aula é declaração do usuário de estudo do conteúdo, não prova de tempo assistido. Reflexões e estudos de situação podem exigir análise do responsável. Avaliações têm critérios apresentados na formação e retornos orientados ao aperfeiçoamento, sem competição ou exposição pública.
 
 Certificados institucionais, quando habilitados, dependem das etapas obrigatórias e dos critérios de avaliação. Não substituem titulação acadêmica, progressão de grau ou decisão institucional da Loja. Os relatórios são restritos ao próprio titular e aos responsáveis autorizados. Alterações relevantes geram versão nova da formação e podem exigir novo percurso de estudo.
+
+## Complemento preparado — 07/10/2026 — Exclusão de formações
+
+A exclusão de uma formação por responsável autorizado remove o acesso à formação, à retomada das aulas e aos certificados no Portal. Havendo participação registrada, o responsável deve confirmar o impacto antes de excluir. A operação preserva registros históricos para auditoria e não exclui livros vinculados da Biblioteca.
