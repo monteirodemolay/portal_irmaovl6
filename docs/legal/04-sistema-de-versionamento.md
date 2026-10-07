@@ -233,6 +233,19 @@ O próximo ciclo de auditoria deve começar no commit que efetivamente entrar em
 - **Nova finalidade:** não.
 - **Exige novo aceite:** **não**. Não cria finalidade, compartilhamento externo nem dado pessoal novo para o Irmão; só detalha como o conteúdo editorial já existente é armazenado.
 
+## 16. Registro de alteração — 06/10/2026
+
+### Política 2.3.2 / Termos 2.1.1 — Revisão assistida de pessoas no Acervo
+
+- **Classificação:** `mudanca_operacional` / `adequacao`.
+- **Impacto:** baixo.
+- **Motivo:** a revisão ampliada de fotografias do Acervo passou a usar, em navegadores compatíveis, a API nativa `FaceDetector` para localizar visualmente regiões faciais no próprio dispositivo do administrador. A identificação continua humana. O Portal não cria embedding/template biométrico, não persiste coordenadas dos rostos, não envia a fotografia a serviço externo de reconhecimento e não grava identidade automaticamente. Sugestões de nomes são apenas contextuais, derivadas de `pessoasIdentificadas` já confirmadas manualmente em outras fotos do mesmo conjunto.
+- **Itens alterados:** Inventário LGPD §1, §3.7, §4, §6, §7, §8 e §9; Política de Privacidade §8.10, §9, §17.2 e versão 2.3.2; Termos de Uso §8.2-B e versão 2.1.1.
+- **Novo terceiro/subprocessador:** não.
+- **Nova finalidade:** não; continua sendo catalogação e preservação da memória institucional por administradores autorizados.
+- **Dado biométrico persistido:** não.
+- **Exige novo aceite:** **não**, por se tratar de auxílio local e efêmero à revisão humana, sem criação de base biométrica, sem novo compartilhamento externo e sem alteração de finalidade. **Qualquer futura etapa que gere embeddings, templates ou comparação biométrica deverá ser tratada como nova revisão LGPD antes de ser habilitada.**
+
 ## Revisão preparada — 06/10/2026 — Conhecimento VL6
 
 - Política preparada: **2.4.0**, classificação `mudanca_lgpd`.
