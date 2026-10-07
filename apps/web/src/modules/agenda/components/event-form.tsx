@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState, useMemo, useState, useTransition } from 'react';
+import { useId, useActionState, useMemo, useState, useTransition } from 'react';
 import { useFormStatus } from 'react-dom';
 import type { Event } from '@vl6/domain';
 import {
@@ -64,14 +64,18 @@ export function EventForm({
   initialAttachments = [],
   paramasonicEntities = [],
   initialType,
+  action: workspaceAction,
 }: {
   /** Presente = modo edição (pré-preenche e salva via `updateEventAction`); ausente = criação. */
   event?: Event;
   initialAttachments?: ResolvedArchiveItem[];
   paramasonicEntities?: AgendaParamasonicEntityOption[];
   initialType?: EventKind;
+  action?: (state: AgendaActionState, formData: FormData) => Promise<AgendaActionState>;
 }) {
-  const action = event ? updateEventAction.bind(null, event.id) : createEventAction;
+  const action =
+    workspaceAction ?? (event ? updateEventAction.bind(null, event.id) : createEventAction);
+  const formId = useId();
   const [state, formAction] = useActionState<AgendaActionState, FormData>(action, EMPTY_STATE);
 
   const [tipo, setTipo] = useState(event?.tipo ?? initialType ?? '');
@@ -154,9 +158,9 @@ export function EventForm({
     <form action={formAction} className="flex max-w-lg flex-col gap-4">
       {!isRecesso && <ImportFromVl6Field onImported={handleImportedFromVl6} />}
 
-      <FormField label="Tipo" htmlFor="tipo">
+      <FormField label="Tipo" htmlFor={`${formId}-tipo`}>
         <Select
-          id="tipo"
+          id={`${formId}-tipo`}
           name="tipo"
           required
           value={tipo}
@@ -186,9 +190,9 @@ export function EventForm({
             Define em qual área institucional o compromisso será apresentado.
           </p>
         </div>
-        <FormField label="Contexto" htmlFor="agendaContext">
+        <FormField label="Contexto" htmlFor={`${formId}-agendaContext`}>
           <Select
-            id="agendaContext"
+            id={`${formId}-agendaContext`}
             name="agendaContext"
             value={agendaContext}
             onChange={(e) => setAgendaContext(e.target.value as 'loja' | 'paramaconica' | 'outro')}
@@ -201,11 +205,11 @@ export function EventForm({
         {agendaContext === 'paramaconica' && (
           <FormField
             label="Entidade Paramaçônica"
-            htmlFor="paramasonicEntityId"
+            htmlFor={`${formId}-paramasonicEntityId`}
             description="O evento continuará sendo único; este vínculo apenas define sua origem e seus filtros na Agenda."
           >
             <Select
-              id="paramasonicEntityId"
+              id={`${formId}-paramasonicEntityId`}
               name="paramasonicEntityId"
               required
               defaultValue={event?.paramasonicEntityId ?? ''}
@@ -239,9 +243,9 @@ export function EventForm({
             Classificação da Sessão
           </p>
 
-          <FormField label="Tipo da Sessão" htmlFor="sessionType">
+          <FormField label="Tipo da Sessão" htmlFor={`${formId}-sessionType`}>
             <Select
-              id="sessionType"
+              id={`${formId}-sessionType`}
               name="sessionType"
               required={isSessao}
               value={sessionType}
@@ -259,9 +263,9 @@ export function EventForm({
           </FormField>
 
           {sessionType && (
-            <FormField label="Natureza" htmlFor="sessionNature">
+            <FormField label="Natureza" htmlFor={`${formId}-sessionNature`}>
               <Select
-                id="sessionNature"
+                id={`${formId}-sessionNature`}
                 name="sessionNature"
                 value={sessionNature}
                 onChange={(e) => handleSessionNatureChange(e.target.value)}
@@ -281,11 +285,11 @@ export function EventForm({
           <div className="grid grid-cols-2 gap-3">
             <FormField
               label="Grau dos trabalhos"
-              htmlFor="degreeWork"
+              htmlFor={`${formId}-degreeWork`}
               description="Preenchido automaticamente quando a Natureza já implica um grau — ajuste se necessário."
             >
               <Select
-                id="degreeWork"
+                id={`${formId}-degreeWork`}
                 name="degreeWork"
                 value={degreeWork}
                 onChange={(e) => setDegreeWork(e.target.value as SessionWorkDegree)}
@@ -300,9 +304,9 @@ export function EventForm({
                 ))}
               </Select>
             </FormField>
-            <FormField label="Acesso" htmlFor="access">
+            <FormField label="Acesso" htmlFor={`${formId}-access`}>
               <Select
-                id="access"
+                id={`${formId}-access`}
                 name="access"
                 value={access}
                 onChange={(e) => setAccess(e.target.value as SessionAccessKind)}
@@ -390,9 +394,9 @@ export function EventForm({
         </div>
       )}
 
-      <FormField label="Título" htmlFor="titulo">
+      <FormField label="Título" htmlFor={`${formId}-titulo`}>
         <Input
-          id="titulo"
+          id={`${formId}-titulo`}
           name="titulo"
           required
           value={titulo}
@@ -402,9 +406,9 @@ export function EventForm({
           }}
         />
       </FormField>
-      <FormField label="Descrição (opcional)" htmlFor="descricao">
+      <FormField label="Descrição (opcional)" htmlFor={`${formId}-descricao`}>
         <Textarea
-          id="descricao"
+          id={`${formId}-descricao`}
           name="descricao"
           rows={3}
           value={descricao}
@@ -413,7 +417,7 @@ export function EventForm({
       </FormField>
       <FormField
         label="Imagem de capa (opcional)"
-        htmlFor="capaImagem"
+        htmlFor={`${formId}-capaImagem`}
         description='Formato quadrado (1:1), estilo Instagram — aparece revezando em "Eventos da Loja" no Início. Sem capa, o Evento continua exibido com as informações em texto sobre um fundo em degradê.'
       >
         <input type="hidden" name="capaUrlExterna" value={capaUrlExterna ?? ''} />
@@ -421,7 +425,7 @@ export function EventForm({
       </FormField>
       <FormField
         label={isRecesso ? 'Referência/local (opcional)' : 'Local'}
-        htmlFor="local"
+        htmlFor={`${formId}-local`}
         description={
           isRecesso
             ? 'Se ficar em branco, será identificado como Loja Maçônica Verdadeira Luz nº 06.'
@@ -429,15 +433,18 @@ export function EventForm({
         }
       >
         <Input
-          id="local"
+          id={`${formId}-local`}
           name="local"
           required={!isRecesso}
           defaultValue={event?.local ? normalizeEventLocation(event.local) : VL6_TEMPLE_LOCATION}
         />
       </FormField>
-      <FormField label={isRecesso ? 'Início do recesso' : 'Início'} htmlFor="dataInicio">
+      <FormField
+        label={isRecesso ? 'Início do recesso' : 'Início'}
+        htmlFor={`${formId}-dataInicio`}
+      >
         <Input
-          id="dataInicio"
+          id={`${formId}-dataInicio`}
           name="dataInicio"
           type="datetime-local"
           required
@@ -446,7 +453,7 @@ export function EventForm({
       </FormField>
       <FormField
         label={isRecesso ? 'Fim do recesso' : 'Fim (opcional)'}
-        htmlFor="dataFim"
+        htmlFor={`${formId}-dataFim`}
         description={
           isRecesso
             ? 'Obrigatório. Use a data em que o recesso termina.'
@@ -454,7 +461,7 @@ export function EventForm({
         }
       >
         <Input
-          id="dataFim"
+          id={`${formId}-dataFim`}
           name="dataFim"
           type="datetime-local"
           required={isRecesso}
@@ -463,11 +470,11 @@ export function EventForm({
       </FormField>
       <FormField
         label="Capacidade máxima (opcional)"
-        htmlFor="capacidadeMaxima"
+        htmlFor={`${formId}-capacidadeMaxima`}
         description="Confirmações além do limite entram em lista de espera automaticamente."
       >
         <Input
-          id="capacidadeMaxima"
+          id={`${formId}-capacidadeMaxima`}
           name="capacidadeMaxima"
           type="number"
           min={1}
@@ -486,25 +493,25 @@ export function EventForm({
 
       <FormField
         label="Traje (opcional)"
-        htmlFor="traje"
+        htmlFor={`${formId}-traje`}
         description='Ex.: "Social completo (terno escuro)".'
       >
-        <Input id="traje" name="traje" defaultValue={event?.traje ?? ''} />
+        <Input id={`${formId}-traje`} name="traje" defaultValue={event?.traje ?? ''} />
       </FormField>
       <FormField
         label="Chegada sugerida (opcional)"
-        htmlFor="chegadaSugerida"
+        htmlFor={`${formId}-chegadaSugerida`}
         description='Ex.: "19:30, para preparação".'
       >
         <Input
-          id="chegadaSugerida"
+          id={`${formId}-chegadaSugerida`}
           name="chegadaSugerida"
           defaultValue={event?.chegadaSugerida ?? ''}
         />
       </FormField>
-      <FormField label="Observações (opcional)" htmlFor="observacoes">
+      <FormField label="Observações (opcional)" htmlFor={`${formId}-observacoes`}>
         <Textarea
-          id="observacoes"
+          id={`${formId}-observacoes`}
           name="observacoes"
           rows={2}
           defaultValue={event?.observacoes ?? ''}
@@ -513,7 +520,7 @@ export function EventForm({
 
       <FormField
         label="Arquivos relacionados (opcional)"
-        htmlFor="arquivosRelacionados-input"
+        htmlFor={`${formId}-arquivosRelacionados-input`}
         description="Aponta para itens já existentes no Acervo VL6 — não faz upload aqui."
       >
         <AgendaAttachmentPicker
@@ -526,6 +533,11 @@ export function EventForm({
         />
       </FormField>
 
+      {state.success && (
+        <p role="status" className="text-sm text-emerald-700">
+          {state.success}
+        </p>
+      )}
       {state.error && <p className="text-sm text-red-600">{state.error}</p>}
       <SubmitButton isEditing={Boolean(event)} />
     </form>
@@ -625,6 +637,7 @@ function EventCoverField({
   /** Capa trazida pela importação do site VL6 (`capaUrlExterna`) — some se o Administrador escolher um arquivo próprio ou marcar "Remover". */
   importedPreviewUrl?: string | null;
 }) {
+  const formId = useId();
   const [preview, setPreview] = useState<string | null>(null);
   const [removed, setRemoved] = useState(false);
   const [sizeError, setSizeError] = useState<string | null>(null);
@@ -634,7 +647,7 @@ function EventCoverField({
     <div className="flex flex-col gap-1.5">
       <div className="flex items-center gap-3">
         <label
-          htmlFor="capaImagem"
+          htmlFor={`${formId}-capaImagem`}
           className="border-border bg-surface hover:border-primary group relative flex h-24 w-24 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-xl border-2 border-dashed transition-colors"
           title="Enviar imagem de capa"
         >
@@ -647,7 +660,7 @@ function EventCoverField({
             Trocar
           </span>
           <input
-            id="capaImagem"
+            id={`${formId}-capaImagem`}
             name="capaImagem"
             type="file"
             accept="image/jpeg,image/png,image/webp"

@@ -23,15 +23,18 @@ export type PublishWizardStep = (typeof WIZARD_STEPS)[number]['key'];
 export function WizardStepper({
   current,
   onNavigate,
+  skipEvent = false,
 }: {
   current: PublishWizardStep;
   onNavigate: (step: PublishWizardStep) => void;
+  skipEvent?: boolean;
 }) {
   const currentIndex = WIZARD_STEPS.findIndex((step) => step.key === current);
   return (
     <ol className="border-border bg-surface flex items-center justify-between rounded-xl border p-4">
-      {WIZARD_STEPS.map((step, index) => {
-        const isDone = index < currentIndex;
+      {WIZARD_STEPS.filter((step) => !skipEvent || step.key !== 'evento').map((step, index) => {
+        const isDone =
+          WIZARD_STEPS.findIndex((candidate) => candidate.key === step.key) < currentIndex;
         const isCurrent = step.key === current;
         return (
           <li key={step.key} className="relative flex flex-1 flex-col items-center gap-1.5">

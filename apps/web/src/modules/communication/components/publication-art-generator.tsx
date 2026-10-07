@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState, useTransition } from 'react';
+import { useId, useRef, useState, useTransition } from 'react';
 import { upload } from '@vercel/blob/client';
 import type { ArtTemplate, Publication } from '@vl6/domain';
 import {
@@ -96,6 +96,7 @@ export function PublicationArtGenerator({
   publication: Publication;
   template: ArtTemplate;
 }) {
+  const formId = useId();
   const [fields, setFields] = useState<Record<string, string>>(publication.fields);
   const [caption, setCaption] = useState(publication.caption ?? '');
   const [whatsappText, setWhatsappText] = useState(publication.whatsappText ?? '');
@@ -283,11 +284,11 @@ export function PublicationArtGenerator({
               <FormField
                 key={field.key}
                 label={field.label}
-                htmlFor={`field-${field.key}`}
+                htmlFor={`${formId}-field-${field.key}`}
                 description={KNOWN_FIELD_HINT[field.key]}
               >
                 <Input
-                  id={`field-${field.key}`}
+                  id={`${formId}-field-${field.key}`}
                   value={fields[field.key] ?? ''}
                   maxLength={field.maxLength ?? undefined}
                   disabled={!isEditable}
@@ -298,17 +299,17 @@ export function PublicationArtGenerator({
           </div>
         </div>
 
-        <FormField label="Legenda (Instagram)" htmlFor="caption">
+        <FormField label="Legenda (Instagram)" htmlFor={`${formId}-caption`}>
           <Textarea
-            id="caption"
+            id={`${formId}-caption`}
             value={caption}
             disabled={!isEditable}
             onChange={(e) => setCaption(e.target.value)}
           />
         </FormField>
-        <FormField label="Texto para WhatsApp" htmlFor="whatsappText">
+        <FormField label="Texto para WhatsApp" htmlFor={`${formId}-whatsappText`}>
           <Textarea
-            id="whatsappText"
+            id={`${formId}-whatsappText`}
             value={whatsappText}
             disabled={!isEditable}
             onChange={(e) => setWhatsappText(e.target.value)}

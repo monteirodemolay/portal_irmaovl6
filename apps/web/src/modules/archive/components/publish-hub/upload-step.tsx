@@ -65,6 +65,7 @@ export interface UploadStepProps {
   event: Event;
   initialArchiveItemId: string | null;
   onBack: () => void;
+  eventLocked?: boolean;
   onContinue: (archiveItemId: string) => void;
 }
 
@@ -81,7 +82,13 @@ export interface UploadStepProps {
  * por isso o primeiro upload roda sozinho antes do restante entrar no pool
  * de concorrência, evitando criar mais de um item para o mesmo lote.
  */
-export function UploadStep({ event, initialArchiveItemId, onBack, onContinue }: UploadStepProps) {
+export function UploadStep({
+  event,
+  initialArchiveItemId,
+  onBack,
+  onContinue,
+  eventLocked = false,
+}: UploadStepProps) {
   // Escolhido antes de soltar os arquivos — aplica a todo o lote que for
   // enviado a partir daqui. Padrão "só visualizável no site" (mais
   // restritivo); marcar libera baixar o arquivo original.
@@ -321,6 +328,7 @@ export function UploadStep({ event, initialArchiveItemId, onBack, onContinue }: 
         date={event.dataInicio}
         local={event.local}
         onChangeEvent={onBack}
+        changeLabel={eventLocked ? 'Atualizar arquivos' : 'Trocar evento'}
       />
       <div className="border-border bg-surface rounded-b-xl border border-t-0 p-6 shadow-sm">
         <StepTitle
@@ -339,7 +347,9 @@ export function UploadStep({ event, initialArchiveItemId, onBack, onContinue }: 
             Não foi possível carregar os arquivos já enviados deste rascunho. Ele pode ter sido
             excluído ou unificado com outro nesse meio-tempo —{' '}
             <button type="button" onClick={onBack} className="underline">
-              volte e escolha o Evento novamente
+              {eventLocked
+                ? 'atualize os arquivos deste acontecimento'
+                : 'volte e escolha o Evento novamente'}
             </button>
             .
           </p>

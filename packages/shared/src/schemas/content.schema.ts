@@ -41,6 +41,8 @@ export const newsSchema = z.object({
 export type NewsFormValues = z.infer<typeof newsSchema>;
 
 export const announcementSchema = z.object({
+  /** Opcional para preservar avisos antigos sem acontecimento. */
+  eventId: z.string().min(1).nullable().optional(),
   titulo: z.string().min(3).max(150),
   descricao: z.string().min(1).max(2000),
   prioridade: z.enum(['baixa', 'media', 'alta']),

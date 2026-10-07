@@ -15,6 +15,7 @@ export interface PublishStepProps {
   eventLocal: string;
   onBack: () => void;
   onDone: () => void;
+  doneLabel?: string;
   onRestart: () => void;
 }
 
@@ -177,6 +178,7 @@ export function PublishStep({
   onBack,
   onDone,
   onRestart,
+  doneLabel = 'Publicar outro evento',
 }: PublishStepProps) {
   const {
     summary,
@@ -230,7 +232,7 @@ export function PublishStep({
         />
 
         <Button type="button" variant="outline" onClick={onDone} className="mt-2">
-          Publicar outro evento
+          {doneLabel}
         </Button>
       </div>
     );

@@ -13,7 +13,7 @@ import {
   type NewsFormValues,
 } from '@vl6/shared';
 import type { NotificationPriority } from '@vl6/shared';
-import type { AnnouncementPriority, News } from '@vl6/domain';
+import { requirePermission, type AnnouncementPriority, type News } from '@vl6/domain';
 import { createServerContainer } from '@vl6/infra';
 import { requireSession } from '@/lib/auth/require-session';
 import { notifyAllActiveUsers } from '@/modules/notification/lib/notify-all-active-users';
@@ -31,6 +31,8 @@ const ANNOUNCEMENT_PRIORITY_TO_NOTIFICATION_PRIORITY: Record<
 
 export interface ContentActionState {
   error: string | null;
+  success?: string;
+  savedId?: string;
 }
 
 function slugify(value: string): string {
@@ -335,11 +337,16 @@ async function validateNewsEventLink(
   return null;
 }
 
-export async function createNewsAction(
+async function saveNewNews(
+  workspaceEventId: string | null,
   _prevState: ContentActionState,
   formData: FormData,
 ): Promise<ContentActionState> {
   const session = await requireSession();
+  if (workspaceEventId) {
+    requirePermission(session.authContext, 'event:read');
+    requirePermission(session.authContext, 'news:create');
+  }
 
   let input: NewsFormValues;
   try {
@@ -352,7 +359,7 @@ export async function createNewsAction(
       categoria: formData.get('categoria'),
       destaque: formData.get('destaque') === 'on' || formData.get('destaquePrincipal') === 'on',
       destaquePrincipal: formData.get('destaquePrincipal') === 'on',
-      eventId: formData.get('eventId') || null,
+      eventId: workspaceEventId ?? (formData.get('eventId') || null),
       dataPublicacao: formData.get('dataPublicacao') || null,
     });
   } catch {
@@ -367,6 +374,12 @@ export async function createNewsAction(
   );
   if (eventLinkError) return { error: eventLinkError };
 
+  if (workspaceEventId) {
+    requirePermission(session.authContext, 'event:read');
+    const event = await container.repositories.event.findById(workspaceEventId);
+    if (!event || event.tenantId !== session.authContext.tenantId || event.deletedAt)
+      return { error: 'Acontecimento não encontrado.' };
+  }
   const result = await container.useCases.createNews.execute(session.authContext, input);
   if (!result.ok) return { error: result.error.message };
 
@@ -390,15 +403,25 @@ export async function createNewsAction(
   revalidatePath('/acervo');
   revalidatePath('/acervo/pesquisar');
   revalidatePath('/acervo/linha-do-tempo');
+  if (workspaceEventId) {
+    revalidatePath(`/admin/publicacoes/${workspaceEventId}`);
+    revalidatePath('/admin/publicacoes');
+    return { error: null, savedId: result.value.id, success: 'Notícia salva em rascunho.' };
+  }
   redirect(`/admin/conteudo/noticias/${result.value.id}`);
 }
 
-export async function updateNewsAction(
+async function saveNews(
+  workspaceEventId: string | null,
   newsId: string,
   _prevState: ContentActionState,
   formData: FormData,
 ): Promise<ContentActionState> {
   const session = await requireSession();
+  if (workspaceEventId) {
+    requirePermission(session.authContext, 'event:read');
+    requirePermission(session.authContext, 'news:update');
+  }
 
   let input: NewsFormValues;
   try {
@@ -411,7 +434,7 @@ export async function updateNewsAction(
       categoria: formData.get('categoria'),
       destaque: formData.get('destaque') === 'on' || formData.get('destaquePrincipal') === 'on',
       destaquePrincipal: formData.get('destaquePrincipal') === 'on',
-      eventId: formData.get('eventId') || null,
+      eventId: workspaceEventId ?? (formData.get('eventId') || null),
       dataPublicacao: formData.get('dataPublicacao') || null,
     });
   } catch {
@@ -420,6 +443,14 @@ export async function updateNewsAction(
 
   const container = createServerContainer();
   const previousNews = await container.repositories.news.findById(newsId);
+  if (
+    workspaceEventId &&
+    (!previousNews ||
+      previousNews.tenantId !== session.authContext.tenantId ||
+      previousNews.eventId !== workspaceEventId ||
+      previousNews.deletedAt)
+  )
+    return { error: 'Notícia não vinculada a este acontecimento.' };
   const eventLinkError = await validateNewsEventLink(
     container,
     session.authContext.tenantId,
@@ -427,6 +458,12 @@ export async function updateNewsAction(
   );
   if (eventLinkError) return { error: eventLinkError };
 
+  if (workspaceEventId) {
+    requirePermission(session.authContext, 'event:read');
+    const event = await container.repositories.event.findById(workspaceEventId);
+    if (!event || event.tenantId !== session.authContext.tenantId || event.deletedAt)
+      return { error: 'Acontecimento não encontrado.' };
+  }
   const result = await container.useCases.updateNews.execute(session.authContext, newsId, input);
   if (!result.ok) return { error: result.error.message };
 
@@ -451,6 +488,11 @@ export async function updateNewsAction(
   revalidatePath('/acervo/pesquisar');
   revalidatePath('/acervo/linha-do-tempo');
   if (result.value.eventId) revalidatePath(`/acervo/eventos/${result.value.eventId}`);
+  if (workspaceEventId) {
+    revalidatePath(`/admin/publicacoes/${workspaceEventId}`);
+    revalidatePath('/admin/publicacoes');
+    return { error: null, savedId: result.value.id, success: 'Notícia salva.' };
+  }
   return { error: null };
 }
 
@@ -536,6 +578,9 @@ export async function toggleNewsPublishedAction(newsId: string, publicar: boolea
   if (!result.ok) throw new Error(result.error.message);
 
   revalidatePath('/admin/conteudo/noticias');
+  revalidatePath('/noticias');
+  revalidatePath('/dashboard');
+  if (result.value.eventId) revalidatePath(`/admin/publicacoes/${result.value.eventId}`);
   revalidatePath(`/admin/conteudo/noticias/${newsId}`);
 }
 
@@ -557,16 +602,22 @@ export async function hardDeleteNewsAction(newsId: string): Promise<void> {
   revalidatePath('/admin/conteudo/noticias');
 }
 
-export async function createAnnouncementAction(
+async function saveNewAnnouncement(
+  workspaceEventId: string | null,
   _prevState: ContentActionState,
   formData: FormData,
 ): Promise<ContentActionState> {
   const session = await requireSession();
+  if (workspaceEventId) {
+    requirePermission(session.authContext, 'event:read');
+    requirePermission(session.authContext, 'announcement:create');
+  }
 
   const dataExpiracao = formData.get('dataExpiracao');
   let input: AnnouncementFormValues;
   try {
     input = announcementSchema.parse({
+      ...(workspaceEventId ? { eventId: workspaceEventId } : {}),
       titulo: formData.get('titulo'),
       descricao: formData.get('descricao'),
       prioridade: formData.get('prioridade'),
@@ -579,24 +630,41 @@ export async function createAnnouncementAction(
   }
 
   const container = createServerContainer();
+  if (workspaceEventId) {
+    requirePermission(session.authContext, 'event:read');
+    const event = await container.repositories.event.findById(workspaceEventId);
+    if (!event || event.tenantId !== session.authContext.tenantId || event.deletedAt)
+      return { error: 'Acontecimento não encontrado.' };
+  }
   const result = await container.useCases.createAnnouncement.execute(session.authContext, input);
   if (!result.ok) return { error: result.error.message };
 
   revalidatePath('/admin/conteudo/avisos');
+  if (workspaceEventId) {
+    revalidatePath(`/admin/publicacoes/${workspaceEventId}`);
+    revalidatePath('/admin/publicacoes');
+    return { error: null, savedId: result.value.id, success: 'Aviso salvo em rascunho.' };
+  }
   redirect('/admin/conteudo/avisos');
 }
 
-export async function updateAnnouncementAction(
+async function saveAnnouncement(
+  workspaceEventId: string | null,
   announcementId: string,
   _prevState: ContentActionState,
   formData: FormData,
 ): Promise<ContentActionState> {
   const session = await requireSession();
+  if (workspaceEventId) {
+    requirePermission(session.authContext, 'event:read');
+    requirePermission(session.authContext, 'announcement:update');
+  }
 
   const dataExpiracao = formData.get('dataExpiracao');
   let input: AnnouncementFormValues;
   try {
     input = announcementSchema.parse({
+      ...(workspaceEventId ? { eventId: workspaceEventId } : {}),
       titulo: formData.get('titulo'),
       descricao: formData.get('descricao'),
       prioridade: formData.get('prioridade'),
@@ -609,6 +677,22 @@ export async function updateAnnouncementAction(
   }
 
   const container = createServerContainer();
+  if (workspaceEventId) {
+    const current = await container.repositories.announcement.findById(announcementId);
+    if (
+      !current ||
+      current.tenantId !== session.authContext.tenantId ||
+      current.eventId !== workspaceEventId ||
+      current.deletedAt
+    )
+      return { error: 'Aviso não vinculado a este acontecimento.' };
+  }
+  if (workspaceEventId) {
+    requirePermission(session.authContext, 'event:read');
+    const event = await container.repositories.event.findById(workspaceEventId);
+    if (!event || event.tenantId !== session.authContext.tenantId || event.deletedAt)
+      return { error: 'Acontecimento não encontrado.' };
+  }
   const result = await container.useCases.updateAnnouncement.execute(
     session.authContext,
     announcementId,
@@ -618,6 +702,11 @@ export async function updateAnnouncementAction(
 
   revalidatePath('/admin/conteudo/avisos');
   revalidatePath(`/admin/conteudo/avisos/${announcementId}`);
+  if (workspaceEventId) {
+    revalidatePath(`/admin/publicacoes/${workspaceEventId}`);
+    revalidatePath('/admin/publicacoes');
+    return { error: null, savedId: result.value.id, success: 'Aviso salvo.' };
+  }
   return { error: null };
 }
 
@@ -677,6 +766,9 @@ export async function toggleAnnouncementPublishedAction(
   }
 
   revalidatePath('/admin/conteudo/avisos');
+  revalidatePath('/avisos');
+  revalidatePath('/dashboard');
+  if (result.value.eventId) revalidatePath(`/admin/publicacoes/${result.value.eventId}`);
 }
 
 export async function createNewsCommentAction(
@@ -859,4 +951,51 @@ export async function moderateNewsCommentAction(
   revalidatePath('/admin/conteudo/noticias/comentarios');
   revalidatePath('/admin');
   revalidatePath(`/noticias`);
+}
+
+export async function createNewsAction(state: ContentActionState, formData: FormData) {
+  return saveNewNews(null, state, formData);
+}
+export async function updateNewsAction(id: string, state: ContentActionState, formData: FormData) {
+  return saveNews(null, id, state, formData);
+}
+export async function createAnnouncementAction(state: ContentActionState, formData: FormData) {
+  return saveNewAnnouncement(null, state, formData);
+}
+export async function updateAnnouncementAction(
+  id: string,
+  state: ContentActionState,
+  formData: FormData,
+) {
+  return saveAnnouncement(null, id, state, formData);
+}
+export async function createWorkspaceNewsAction(
+  eventId: string,
+  state: ContentActionState,
+  formData: FormData,
+) {
+  return saveNewNews(eventId, state, formData);
+}
+export async function updateWorkspaceNewsAction(
+  eventId: string,
+  id: string,
+  state: ContentActionState,
+  formData: FormData,
+) {
+  return saveNews(eventId, id, state, formData);
+}
+export async function createWorkspaceAnnouncementAction(
+  eventId: string,
+  state: ContentActionState,
+  formData: FormData,
+) {
+  return saveNewAnnouncement(eventId, state, formData);
+}
+export async function updateWorkspaceAnnouncementAction(
+  eventId: string,
+  id: string,
+  state: ContentActionState,
+  formData: FormData,
+) {
+  return saveAnnouncement(eventId, id, state, formData);
 }

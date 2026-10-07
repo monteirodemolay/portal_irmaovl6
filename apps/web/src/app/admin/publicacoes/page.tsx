@@ -46,7 +46,7 @@ export default async function PublicationsPage() {
               title: e.titulo,
               type: 'Acontecimento',
               status: 'Cadastrado',
-              href: `/admin/conteudo/agenda/${e.id}`,
+              href: `/admin/publicacoes/${e.id}`,
               eventId: e.id,
               happenedAt: iso(e.dataInicio),
               publishedAt: null,
@@ -65,8 +65,11 @@ export default async function PublicationsPage() {
               title: a.titulo,
               type: 'Aviso',
               status: a.publicado ? 'Publicado no Portal' : 'Rascunho',
-              href: `/admin/conteudo/avisos/${a.id}`,
-              eventId: null,
+              href:
+                can('event:read') && a.eventId
+                  ? `/admin/publicacoes/${a.eventId}#aviso`
+                  : `/admin/conteudo/avisos/${a.id}`,
+              eventId: can('event:read') ? (a.eventId ?? null) : null,
               happenedAt: null,
               publishedAt: a.publicado ? iso(a.dataPublicacao) : null,
               scheduledAt: null,
@@ -84,7 +87,10 @@ export default async function PublicationsPage() {
               title: n.titulo,
               type: 'Notícia',
               status: n.publicado ? 'Publicado no Portal' : 'Rascunho',
-              href: `/admin/conteudo/noticias/${n.id}`,
+              href:
+                can('event:read') && n.eventId
+                  ? `/admin/publicacoes/${n.eventId}#noticia`
+                  : `/admin/conteudo/noticias/${n.id}`,
               eventId: can('event:read') ? (n.eventId ?? null) : null,
               happenedAt: null,
               publishedAt: n.publicado ? iso(n.dataPublicacao) : null,
@@ -106,7 +112,10 @@ export default async function PublicationsPage() {
                 p.publicacaoStatus === 'published'
                   ? 'Distribuição registrada manualmente'
                   : PUBLICATION_STATUS_LABELS[p.publicacaoStatus],
-              href: `/admin/comunicacao/publicacoes/${p.id}`,
+              href:
+                can('event:read') && p.sourceType === 'agenda_event' && p.sourceId
+                  ? `/admin/publicacoes/${p.sourceId}#artes`
+                  : `/admin/comunicacao/publicacoes/${p.id}`,
               eventId: can('event:read') && p.sourceType === 'agenda_event' ? p.sourceId : null,
               happenedAt: null,
               publishedAt: iso(p.publishedAt),
@@ -127,7 +136,9 @@ export default async function PublicationsPage() {
               title: a.titulo,
               type: 'Acervo',
               status: a.publicacaoStatus,
-              href: '/admin/acervo/publicar',
+              href: can('event:read')
+                ? `/admin/publicacoes/${a.eventId}#arquivos`
+                : '/admin/acervo/publicar',
               eventId: can('event:read') ? a.eventId : null,
               happenedAt: null,
               publishedAt: null,
@@ -146,8 +157,8 @@ export default async function PublicationsPage() {
   items.sort((a, b) => a.title.localeCompare(b.title, 'pt-BR'));
   const createLinks = [
     {
-      href: '/admin/conteudo/agenda/novo',
-      label: 'Sessão ou evento',
+      href: '/admin/publicacoes/novo',
+      label: 'Publicação completa: acontecimento, notícia, aviso e arquivos',
       permission: 'event:create' as const,
     },
     {
@@ -174,7 +185,7 @@ export default async function PublicationsPage() {
     { href: '/admin/conteudo/frases/nova', label: 'Frase', permission: 'quote:create' as const },
     { href: '/admin/conteudo/links/novo', label: 'Link útil', permission: 'link:create' as const },
   ]
-    .filter((l) => can(l.permission))
+    .filter((l) => can(l.permission) && (l.href !== '/admin/publicacoes/novo' || can('event:read')))
     .map(({ href, label }) => ({ href, label }));
   return (
     <div className="space-y-6">

@@ -46,7 +46,7 @@ describe('Central editorial', () => {
     expect(host.querySelector('a[href="/admin/conteudo/noticias/n1"]')?.textContent).toContain(
       base.title,
     );
-    expect(host.querySelector('a[href="/admin/conteudo/agenda/event-1"]')).not.toBeNull();
+    expect(host.querySelector('a[href="/admin/publicacoes/event-1"]')).not.toBeNull();
   });
   it('filtra por tipo e mantém o formulário específico no menu Criar', async () => {
     await render([

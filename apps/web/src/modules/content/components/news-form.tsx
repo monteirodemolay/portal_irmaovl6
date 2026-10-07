@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState, useMemo, useState } from 'react';
+import { useId, useActionState, useMemo, useState } from 'react';
 import { useFormStatus } from 'react-dom';
 import { upload } from '@vercel/blob/client';
 import type { News } from '@vl6/domain';
@@ -121,16 +121,25 @@ export interface NewsFormProps {
   action: (state: ContentActionState, formData: FormData) => Promise<ContentActionState>;
   news?: News;
   events?: NewsEventOption[];
+  workspaceEvent?: NewsEventOption;
+  photos?: { id: string; url: string; label: string }[];
 }
 
-export function NewsForm({ action, news, events = [] }: NewsFormProps) {
+export function NewsForm({
+  action,
+  news,
+  events = [],
+  workspaceEvent,
+  photos = [],
+}: NewsFormProps) {
+  const formId = useId();
   const [state, formAction] = useActionState<ContentActionState, FormData>(action, { error: null });
   const [contentHtml, setContentHtml] = useState(news?.conteudoHtml ?? '');
-  const [title, setTitle] = useState(news?.titulo ?? '');
+  const [title, setTitle] = useState(news?.titulo ?? workspaceEvent?.titulo ?? '');
   const [publicationDate, setPublicationDate] = useState(
     toDateInputValue(news?.dataPublicacao ?? null) ?? '',
   );
-  const [selectedEventId, setSelectedEventId] = useState(news?.eventId ?? '');
+  const [selectedEventId, setSelectedEventId] = useState(workspaceEvent?.id ?? news?.eventId ?? '');
   const [coverUrl, setCoverUrl] = useState(news?.imagemCapaUrl ?? '');
   const [uploadingCount, setUploadingCount] = useState(0);
   const [uploadErrors, setUploadErrors] = useState<string[]>([]);
@@ -186,9 +195,9 @@ export function NewsForm({ action, news, events = [] }: NewsFormProps) {
 
   return (
     <form action={formAction} className="flex max-w-4xl flex-col gap-4">
-      <FormField label="Título" htmlFor="titulo">
+      <FormField label="Título" htmlFor={`${formId}-titulo`}>
         <Input
-          id="titulo"
+          id={`${formId}-titulo`}
           name="titulo"
           required
           value={title}
@@ -196,25 +205,30 @@ export function NewsForm({ action, news, events = [] }: NewsFormProps) {
         />
       </FormField>
 
-      <FormField label="Subtítulo" htmlFor="subtitulo">
-        <Input id="subtitulo" name="subtitulo" defaultValue={news?.subtitulo ?? ''} />
+      <FormField label="Subtítulo" htmlFor={`${formId}-subtitulo`}>
+        <Input id={`${formId}-subtitulo`} name="subtitulo" defaultValue={news?.subtitulo ?? ''} />
       </FormField>
 
       <FormField
         label="Slug"
-        htmlFor="slug"
+        htmlFor={`${formId}-slug`}
         description="Deixe em branco para gerar a partir do título."
       >
-        <Input id="slug" name="slug" defaultValue={news?.slug ?? ''} />
+        <Input id={`${formId}-slug`} name="slug" defaultValue={news?.slug ?? ''} />
       </FormField>
 
-      <FormField label="Categoria" htmlFor="categoria">
-        <Input id="categoria" name="categoria" required defaultValue={news?.categoria ?? ''} />
-      </FormField>
-
-      <FormField label="URL da imagem de capa" htmlFor="imagemCapaUrl">
+      <FormField label="Categoria" htmlFor={`${formId}-categoria`}>
         <Input
-          id="imagemCapaUrl"
+          id={`${formId}-categoria`}
+          name="categoria"
+          required
+          defaultValue={news?.categoria ?? ''}
+        />
+      </FormField>
+
+      <FormField label="URL da imagem de capa" htmlFor={`${formId}-imagemCapaUrl`}>
+        <Input
+          id={`${formId}-imagemCapaUrl`}
           name="imagemCapaUrl"
           value={coverUrl}
           onChange={(event) => setCoverUrl(event.target.value)}
@@ -255,11 +269,11 @@ export function NewsForm({ action, news, events = [] }: NewsFormProps) {
 
       <FormField
         label="Data de publicação"
-        htmlFor="dataPublicacao"
+        htmlFor={`${formId}-dataPublicacao`}
         description="Data editorial da matéria. Ela é independente da data histórica do acontecimento relacionado."
       >
         <Input
-          id="dataPublicacao"
+          id={`${formId}-dataPublicacao`}
           name="dataPublicacao"
           type="date"
           value={publicationDate}
@@ -267,84 +281,97 @@ export function NewsForm({ action, news, events = [] }: NewsFormProps) {
         />
       </FormField>
 
-      <section className="border-border bg-surface rounded-xl border p-4">
-        <div>
-          <h2 className="font-display text-lg font-semibold">Contexto histórico no Acervo VL6</h2>
-          <p className="text-muted mt-1 text-xs leading-relaxed">
-            Vincule a notícia ao Evento ou Sessão que realmente originou a matéria. A data editorial
-            permanece própria da notícia; a data histórica é sempre a data do Evento. Se não houver
-            correspondência, deixe sem vínculo: a matéria será publicada normalmente e continuará
-            pesquisável como memória editorial.
+      {workspaceEvent ? (
+        <div className="border-border rounded-xl border p-4">
+          <input type="hidden" name="eventId" value={workspaceEvent.id} />
+          <p className="text-sm">
+            Acontecimento vinculado: <strong>{workspaceEvent.titulo}</strong>
+          </p>
+          <p className="text-muted mt-1 text-xs">
+            Escolha as fotografias já publicadas no acervo deste acontecimento para utilizá-las sem
+            reenviar arquivos.
           </p>
         </div>
-
-        {suggestedEvents.length > 0 && (
-          <div className="mt-4">
-            <p className="text-xs font-semibold">Sugestões automáticas para conferência</p>
-            <div className="mt-2 grid gap-2">
-              {suggestedEvents.map((event) => (
-                <button
-                  key={event.id}
-                  type="button"
-                  onClick={() => setSelectedEventId(event.id)}
-                  className={
-                    'border-border hover:border-primary rounded-lg border p-3 text-left text-sm transition-colors ' +
-                    (selectedEventId === event.id ? 'border-primary bg-primary/5' : '')
-                  }
-                >
-                  <span className="font-semibold">{event.titulo}</span>
-                  <span className="text-muted mt-1 block text-xs">
-                    {formatEventOptionDate(event.dataInicio)} · {event.local}
-                  </span>
-                </button>
-              ))}
-            </div>
-            <p className="text-muted mt-2 text-[11px]">
-              A sugestão usa proximidade de data e palavras do título. O sistema nunca confirma o
-              vínculo sozinho.
+      ) : (
+        <section className="border-border bg-surface rounded-xl border p-4">
+          <div>
+            <h2 className="font-display text-lg font-semibold">Contexto histórico no Acervo VL6</h2>
+            <p className="text-muted mt-1 text-xs leading-relaxed">
+              Vincule a notícia ao Evento ou Sessão que realmente originou a matéria. A data
+              editorial permanece própria da notícia; a data histórica é sempre a data do Evento. Se
+              não houver correspondência, deixe sem vínculo: a matéria será publicada normalmente e
+              continuará pesquisável como memória editorial.
             </p>
           </div>
-        )}
 
-        <div className="mt-4">
-          <label htmlFor="eventId" className="mb-1.5 block text-sm font-medium">
-            Evento/Sessão relacionado
-          </label>
-          <select
-            id="eventId"
-            name="eventId"
-            value={selectedEventId}
-            onChange={(event) => setSelectedEventId(event.target.value)}
-            className="border-border bg-background text-foreground focus:border-primary h-11 w-full rounded-lg border px-3 text-sm outline-none"
-          >
-            <option value="">Sem evento relacionado — manter como memória editorial</option>
-            {events.map((event) => (
-              <option key={event.id} value={event.id}>
-                {formatEventOptionDate(event.dataInicio)} — {event.titulo}
-              </option>
-            ))}
-          </select>
-          <div className="mt-2 flex flex-wrap gap-3 text-xs">
-            {selectedEventId && (
-              <button
-                type="button"
-                onClick={() => setSelectedEventId('')}
-                className="text-muted hover:text-foreground underline"
-              >
-                Remover vínculo
-              </button>
-            )}
-            <a
-              href="/admin/conteudo/agenda/novo"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-primary font-semibold hover:underline"
+          {suggestedEvents.length > 0 && (
+            <div className="mt-4">
+              <p className="text-xs font-semibold">Sugestões automáticas para conferência</p>
+              <div className="mt-2 grid gap-2">
+                {suggestedEvents.map((event) => (
+                  <button
+                    key={event.id}
+                    type="button"
+                    onClick={() => setSelectedEventId(event.id)}
+                    className={
+                      'border-border hover:border-primary rounded-lg border p-3 text-left text-sm transition-colors ' +
+                      (selectedEventId === event.id ? 'border-primary bg-primary/5' : '')
+                    }
+                  >
+                    <span className="font-semibold">{event.titulo}</span>
+                    <span className="text-muted mt-1 block text-xs">
+                      {formatEventOptionDate(event.dataInicio)} · {event.local}
+                    </span>
+                  </button>
+                ))}
+              </div>
+              <p className="text-muted mt-2 text-[11px]">
+                A sugestão usa proximidade de data e palavras do título. O sistema nunca confirma o
+                vínculo sozinho.
+              </p>
+            </div>
+          )}
+
+          <div className="mt-4">
+            <label htmlFor={`${formId}-eventId`} className="mb-1.5 block text-sm font-medium">
+              Evento/Sessão relacionado
+            </label>
+            <select
+              id={`${formId}-eventId`}
+              name="eventId"
+              value={selectedEventId}
+              onChange={(event) => setSelectedEventId(event.target.value)}
+              className="border-border bg-background text-foreground focus:border-primary h-11 w-full rounded-lg border px-3 text-sm outline-none"
             >
-              Nenhum evento corresponde? Criar Evento/Sessão ↗
-            </a>
+              <option value="">Sem evento relacionado — manter como memória editorial</option>
+              {events.map((event) => (
+                <option key={event.id} value={event.id}>
+                  {formatEventOptionDate(event.dataInicio)} — {event.titulo}
+                </option>
+              ))}
+            </select>
+            <div className="mt-2 flex flex-wrap gap-3 text-xs">
+              {selectedEventId && (
+                <button
+                  type="button"
+                  onClick={() => setSelectedEventId('')}
+                  className="text-muted hover:text-foreground underline"
+                >
+                  Remover vínculo
+                </button>
+              )}
+              <a
+                href="/admin/conteudo/agenda/novo"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary font-semibold hover:underline"
+              >
+                Nenhum evento corresponde? Criar Evento/Sessão ↗
+              </a>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       <section className="border-border bg-surface rounded-xl border p-4">
         <div>
@@ -356,9 +383,47 @@ export function NewsForm({ action, news, events = [] }: NewsFormProps) {
           </p>
         </div>
 
+        {workspaceEvent && (
+          <div className="border-border mt-4 rounded-lg border p-3">
+            <p className="text-sm font-semibold">Fotos publicadas deste acontecimento</p>
+            {photos.length ? (
+              <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                {photos.map((photo) => (
+                  <button
+                    key={photo.id}
+                    type="button"
+                    className="border-border rounded-lg border p-3 text-left text-sm disabled:opacity-50"
+                    disabled={contentImages.includes(photo.url)}
+                    onClick={() =>
+                      setContentHtml((current) => appendGalleryImages(current, [photo.url]))
+                    }
+                  >
+                    <img
+                      src={`${photo.url}?track=0`}
+                      alt={photo.label}
+                      loading="lazy"
+                      className="mb-2 aspect-video w-full rounded-md object-cover"
+                    />
+                    {contentImages.includes(photo.url) ? '✓ Na notícia: ' : '+ Usar na notícia: '}
+                    {photo.label}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <p className="text-muted mt-2 text-xs">
+                Depois de publicar as fotos no painel de arquivos, clique em “Continuar editando
+                este acontecimento” para utilizá-las aqui.
+              </p>
+            )}
+            <a href="#arquivos" className="mt-2 inline-block text-xs underline">
+              Organizar os arquivos deste acontecimento
+            </a>
+          </div>
+        )}
+
         <div className="mt-4 flex flex-wrap items-center gap-3">
           <label
-            htmlFor="news-photo-upload"
+            htmlFor={`${formId}-news-photo-upload`}
             className={
               'border-border hover:border-primary inline-flex h-10 cursor-pointer items-center rounded-lg border px-4 text-sm font-medium transition-colors ' +
               (uploading ? 'pointer-events-none opacity-60' : '')
@@ -367,7 +432,7 @@ export function NewsForm({ action, news, events = [] }: NewsFormProps) {
             {uploading ? 'Enviando ' + uploadingCount + '…' : '+ Enviar fotos'}
           </label>
           <input
-            id="news-photo-upload"
+            id={`${formId}-news-photo-upload`}
             type="file"
             accept={ACCEPTED_IMAGE_TYPES}
             multiple
@@ -398,7 +463,9 @@ export function NewsForm({ action, news, events = [] }: NewsFormProps) {
                     variant="outline"
                     className="w-full"
                     disabled={coverUrl === url}
-                    onClick={() => setCoverUrl(url)}
+                    onClick={() =>
+                      setCoverUrl(url.startsWith('/') ? `${window.location.origin}${url}` : url)
+                    }
                   >
                     {coverUrl === url ? 'É a capa' : 'Usar como capa'}
                   </Button>
@@ -420,11 +487,11 @@ export function NewsForm({ action, news, events = [] }: NewsFormProps) {
 
       <FormField
         label="Conteúdo"
-        htmlFor="conteudoHtml"
+        htmlFor={`${formId}-conteudoHtml`}
         description="O HTML permanece disponível para ajustes finos. As imagens também podem ser gerenciadas visualmente acima."
       >
         <Textarea
-          id="conteudoHtml"
+          id={`${formId}-conteudoHtml`}
           name="conteudoHtml"
           required
           rows={14}
@@ -433,6 +500,11 @@ export function NewsForm({ action, news, events = [] }: NewsFormProps) {
         />
       </FormField>
 
+      {state.success && (
+        <p role="status" className="text-sm text-emerald-700">
+          {state.success}
+        </p>
+      )}
       {state.error && <p className="text-sm text-red-600">{state.error}</p>}
       <SubmitButton disabled={uploading} />
     </form>
