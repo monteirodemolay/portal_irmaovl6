@@ -1,0 +1,29 @@
+name: Validate Dashboard Overview
+on:
+  pull_request:
+    branches: [claude/portal-irmao-vl6-co6uvq]
+    paths:
+      - "apps/web/src/modules/admin/**"
+      - "apps/web/src/app/admin/page.tsx"
+      - "apps/web/src/app/api/admin/dashboard/**"
+      - ".github/workflows/validate-dashboard.yml"
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.0
+          run_install: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20.16.0
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm type-check
+      - run: pnpm --filter @vl6/web exec vitest run src/modules/admin/lib/dashboard-overview-model.test.ts src/modules/admin/lib/load-dashboard-overview.test.ts src/modules/admin/components/dashboard-overview.test.ts src/app/api/admin/dashboard/report/route.test.ts
+      - run: pnpm build
