@@ -1,4 +1,6 @@
 'use client';
+import { normalizeForSearch } from '@vl6/shared';
+
 import { useState, useTransition, useEffect, useRef } from 'react';
 import Link from '@/components/layout/context-link';
 import { useRouter } from 'next/navigation';
@@ -282,9 +284,8 @@ export function KnowledgeMember({
       (c) =>
         (view !== 'rapido' || c.content.quick) &&
         (category === 'Todos' || c.content.category === category) &&
-        (c.content.title + ' ' + c.content.description + ' ' + c.content.responsible)
-          .toLocaleLowerCase()
-          .includes(search.toLocaleLowerCase()),
+        normalizeForSearch((c.content.title + ' ' + c.content.description + ' ' + c.content.responsible))
+          .includes(normalizeForSearch(search)),
     );
     content = (
       <>

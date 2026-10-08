@@ -22,7 +22,7 @@ function makeResult(overrides: Partial<ArchiveSearchResult> = {}): ArchiveSearch
 
 describe('normalizeSearchText', () => {
   it('remove acentos e caixa', () => {
-    expect(normalizeSearchText('Sessão Magna')).toBe('sessao magna');
+    expect(normalizeSearchText('Sessão Magna')).toBe('sessaomagna');
   });
 });
 

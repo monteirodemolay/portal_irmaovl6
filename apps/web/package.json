@@ -58,6 +58,7 @@
     "@types/react-dom": "^19.0.2",
     "@vl6/config": "workspace:*",
     "autoprefixer": "^10.4.20",
+    "jsdom": "^30.0.1",
     "openapi3-ts": "^4.6.1",
     "postcss": "^8.4.49",
     "tailwindcss": "^3.4.17",

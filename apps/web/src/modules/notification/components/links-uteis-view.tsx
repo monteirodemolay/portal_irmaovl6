@@ -1,5 +1,7 @@
 'use client';
 
+import { normalizeForSearch as normalize } from '@vl6/shared';
+
 import { useMemo, useState, useTransition } from 'react';
 import {
   LINK_ACCESS_TYPE_LABELS,
@@ -53,18 +55,6 @@ function hostnameOf(url: string): string {
   } catch {
     return url;
   }
-}
-
-// Faixa Unicode "Combining Diacritical Marks" (U+0300-U+036F) construída via
-// code points, mesmo padrão de `sanitizeFileName` (archive-actions.ts) —
-// evita caracteres de combinação literais no código-fonte.
-const COMBINING_MARKS_PATTERN = new RegExp(
-  `[${String.fromCodePoint(0x0300)}-${String.fromCodePoint(0x036f)}]`,
-  'g',
-);
-
-function normalize(value: string): string {
-  return value.normalize('NFD').replace(COMBINING_MARKS_PATTERN, '').toLocaleLowerCase('pt-BR');
 }
 
 /**

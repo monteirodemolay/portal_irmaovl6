@@ -1,3 +1,4 @@
+import { LiveSearchForm } from '@/components/search/live-search-form';
 import Link from '@/components/layout/context-link';
 import {
   getMemberJourneyCargos,
@@ -7,6 +8,7 @@ import {
 } from '@vl6/domain';
 import { createServerContainer } from '@vl6/infra';
 import {
+  normalizeForSearch,
   getBoardPositionLabel,
   MEMBER_DEGREES,
   MEMBER_SITUATION_STATUS_LABELS,
@@ -68,7 +70,6 @@ export default async function ArchivePeoplePage({
     const result = await container.repositories.member.search(
       {
         tenantId,
-        nome: termo?.trim() || undefined,
         grau: grauFiltro || undefined,
         situacao: situacaoFiltro || undefined,
       },
@@ -144,9 +145,13 @@ export default async function ArchivePeoplePage({
     .map(([, facet]) => facet)
     .sort((a, b) => b.count - a.count);
 
-  const people = activeArea
+  const candidates = activeArea
     ? allPeople.filter((person) => person.area?.key === activeArea)
     : allPeople;
+
+  const people = candidates.filter((person) =>
+    normalizeForSearch(person.nomeCompleto).includes(normalizeForSearch(termo)),
+  );
 
   const hasActiveFilter = Boolean(termo || grauFiltro || situacaoFiltro || activeArea);
 
@@ -158,7 +163,11 @@ export default async function ArchivePeoplePage({
         backHref="/acervo"
       />
 
-      <form
+      <LiveSearchForm
+        suggestions={candidates.map((person) => ({
+          label: person.nomeCompleto,
+          href: `/acervo/pessoas/${person.memberId}`,
+        }))}
         method="get"
         className="border-border bg-surface flex flex-wrap items-end gap-3 rounded-xl border p-4"
       >
@@ -205,7 +214,7 @@ export default async function ArchivePeoplePage({
             </Button>
           )}
         </div>
-      </form>
+      </LiveSearchForm>
 
       {areaFacets.length > 0 && (
         <AcervoAreaFacetBar areaFacets={areaFacets} activeArea={activeArea} />

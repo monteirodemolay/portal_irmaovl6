@@ -1,3 +1,4 @@
+import { LiveSearchForm } from '@/components/search/live-search-form';
 import Link from '@/components/layout/context-link';
 import { hasPermission, resolveHeroPhoto } from '@vl6/domain';
 import { createServerContainer } from '@vl6/infra';
@@ -243,7 +244,7 @@ export default async function AcervoPage({
         photoPosicao={heroPhoto?.posicao}
         actions={
           <div className="flex w-full flex-col gap-4">
-            <form action="/acervo/pesquisar" method="get" role="search">
+            <LiveSearchForm autoNavigate={false} suggestions={allResults.map((item) => ({ label: item.title, href: item.href, text: item.description }))} action="/acervo/pesquisar" method="get" role="search">
               <label htmlFor="archive-search" className="sr-only">
                 Pesquisar no Acervo VL6
               </label>
@@ -265,7 +266,7 @@ export default async function AcervoPage({
                   Pesquisar no Acervo
                 </button>
               </div>
-            </form>
+            </LiveSearchForm>
             <nav aria-label="Atalhos do Acervo" className="flex flex-wrap gap-x-5 gap-y-2 text-xs">
               <Link href="/acervo/colecoes" className="text-white/70 hover:text-white">
                 Coleções

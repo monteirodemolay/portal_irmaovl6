@@ -1,11 +1,13 @@
 'use client';
+import { normalizeForSearch } from '@vl6/shared';
+
 import Link from 'next/link';
 import { useState } from 'react';
 import type { AdminTool } from '../lib/admin-tool-directory';
 export function AdminToolDirectory({ tools }: { tools: Omit<AdminTool, 'permissions'>[] }) {
   const [query, setQuery] = useState('');
   const filtered = tools.filter((t) =>
-    `${t.label} ${t.group}`.toLocaleLowerCase('pt-BR').includes(query.toLocaleLowerCase('pt-BR')),
+    normalizeForSearch(`${t.label} ${t.group}`).includes(normalizeForSearch(query)),
   );
   return (
     <section className="border-border bg-surface rounded-2xl border p-5">

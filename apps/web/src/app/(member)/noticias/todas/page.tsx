@@ -1,3 +1,6 @@
+import { LiveSearchForm } from '@/components/search/live-search-form';
+
+import { normalizeForSearch } from '@vl6/shared';
 import Link from '@/components/layout/context-link';
 import { notFound } from 'next/navigation';
 import { resolveHeroPhoto, type News } from '@vl6/domain';
@@ -102,7 +105,7 @@ export default async function AllNewsPage({
     ),
   ].sort((a, b) => b - a);
 
-  const normalizedQuery = query.toLocaleLowerCase('pt-BR');
+  const normalizedQuery = normalizeForSearch(query);
   const filtered = allNews
     .filter((item) => {
       if (selectedCategory && item.categoria !== selectedCategory) return false;
@@ -110,14 +113,9 @@ export default async function AllNewsPage({
         return false;
       if (!normalizedQuery) return true;
 
-      const haystack = [
-        item.titulo,
-        item.subtitulo ?? '',
-        item.categoria,
-        stripHtml(item.conteudoHtml),
-      ]
-        .join(' ')
-        .toLocaleLowerCase('pt-BR');
+      const haystack = normalizeForSearch(
+        [item.titulo, item.subtitulo ?? '', item.categoria, stripHtml(item.conteudoHtml)].join(' '),
+      );
       return haystack.includes(normalizedQuery);
     })
     .sort((a, b) => {
@@ -159,7 +157,19 @@ export default async function AllNewsPage({
       />
 
       <section className="border-border bg-surface rounded-2xl border p-4 sm:p-5">
-        <form
+        <LiveSearchForm
+          suggestions={allNews
+            .filter(
+              (item) =>
+                (!selectedCategory || item.categoria === selectedCategory) &&
+                (!selectedYear ||
+                  String(item.dataPublicacao?.getFullYear() ?? '') === selectedYear),
+            )
+            .map((item) => ({
+              label: item.titulo,
+              href: `/noticias/${item.slug}`,
+              text: item.subtitulo ?? '',
+            }))}
           action="/noticias/todas"
           method="get"
           className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_220px_150px_190px_auto]"
@@ -221,7 +231,7 @@ export default async function AllNewsPage({
           >
             Aplicar filtros
           </button>
-        </form>
+        </LiveSearchForm>
 
         <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
           <p className="text-muted text-sm">

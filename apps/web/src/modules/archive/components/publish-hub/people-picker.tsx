@@ -1,4 +1,6 @@
 'use client';
+import { normalizeForSearch } from '@vl6/shared';
+
 
 import { useState } from 'react';
 import { Input } from '@vl6/ui';
@@ -30,7 +32,7 @@ export function PeoplePicker({
           .filter(
             (option) =>
               !selectedIds.includes(option.id) &&
-              option.nomeCompleto.toLowerCase().includes(query.trim().toLowerCase()),
+              normalizeForSearch(option.nomeCompleto).includes(normalizeForSearch(query.trim())),
           )
           .slice(0, 8);
 

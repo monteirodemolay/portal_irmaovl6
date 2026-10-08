@@ -1,4 +1,6 @@
 'use client';
+import { normalizeForSearch } from '@vl6/shared';
+
 
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
@@ -1022,9 +1024,9 @@ function filterRoots(nodes: ExplorerNode[], query: string): ExplorerNode[] {
 }
 
 function filterNodes(nodes: ExplorerNode[], query: string): ExplorerNode[] {
-  const normalized = query.trim().toLocaleLowerCase('pt-BR');
+  const normalized = normalizeForSearch(query.trim());
   if (!normalized) return nodes;
-  return nodes.filter((node) => node.label.toLocaleLowerCase('pt-BR').includes(normalized));
+  return nodes.filter((node) => normalizeForSearch(node.label).includes(normalized));
 }
 
 function toDateInputValue(date: Date): string {

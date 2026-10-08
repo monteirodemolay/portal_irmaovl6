@@ -43,3 +43,4 @@ export * from './agenda/format-session-name';
 export * from './observability/logger';
 export * from './agenda/normalize-event-location';
 export * from './schemas/knowledge.schema';
+export * from './text/normalize-for-search';

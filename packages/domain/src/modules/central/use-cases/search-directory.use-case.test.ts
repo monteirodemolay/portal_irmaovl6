@@ -362,6 +362,7 @@ describe('SearchDirectoryUseCase', () => {
 
     const porTermo = await useCase.execute(ctx, { termo: 'advogado' });
     expect(porTermo.ok && porTermo.value.items).toHaveLength(0);
+    expect(porTermo.ok && porTermo.value.searchSuggestions.map((item) => item.text).join(' ')).not.toContain('Advogado');
 
     const porProfissao = await useCase.execute(ctx, { profissao: 'advogado' });
     expect(porProfissao.ok && porProfissao.value.items).toHaveLength(0);

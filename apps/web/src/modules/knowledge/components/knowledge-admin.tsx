@@ -1,4 +1,6 @@
 'use client';
+import { normalizeForSearch } from '@vl6/shared';
+
 import { useState, useTransition } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -136,7 +138,7 @@ function LibraryPicker({
       />
       <div style={{ maxHeight: 230, overflow: 'auto' }}>
         {books
-          .filter((b) => b.title.toLocaleLowerCase().includes(search.toLocaleLowerCase()))
+          .filter((b) => normalizeForSearch(b.title).includes(normalizeForSearch(search)))
           .map((b) => (
             <Toggle
               key={b.id}
@@ -334,9 +336,8 @@ export function KnowledgeAdmin({
                 .filter(
                   (c) =>
                     (status === 'Todos' || c.content.status === status) &&
-                    (c.content.title + ' ' + c.content.responsible)
-                      .toLocaleLowerCase()
-                      .includes(search.toLocaleLowerCase()),
+                    normalizeForSearch((c.content.title + ' ' + c.content.responsible))
+                      .includes(normalizeForSearch(search)),
                 )
                 .map((c) => (
                   <tr key={c.id}>

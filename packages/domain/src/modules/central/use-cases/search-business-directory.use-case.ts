@@ -1,3 +1,4 @@
+import { normalizeForSearch, type SearchSuggestion } from '@vl6/shared';
 import type { AuthContext } from '../../../shared/auth-context';
 import { requirePermission } from '../../../shared/auth-context';
 import { ok, type Result } from '../../../shared/result';
@@ -25,11 +26,13 @@ export interface SearchBusinessDirectoryInput {
   segmento?: string;
   cidade?: string;
   atendeOnline?: boolean;
+  ofereceDescontoIrmaos?: boolean;
 }
 
 export interface SearchBusinessDirectoryOutput {
   items: BusinessDirectoryEntryDTO[];
   totalEmpresas: number;
+  searchSuggestions: SearchSuggestion[];
   filterOptions: BusinessDirectoryFilterOptions;
 }
 
@@ -99,38 +102,57 @@ export class SearchBusinessDirectoryUseCase {
 
     let items = allItems;
 
-    const needle = input.termo?.trim().toLowerCase();
-    if (needle) {
-      items = items.filter((entry) =>
-        [
-          entry.nomeEmpresa,
-          entry.segmento,
-          entry.descricao,
-          entry.cidade,
-          entry.responsavel.nomeCompleto,
-          ...entry.produtosServicos,
-        ]
-          .filter((v): v is string => Boolean(v))
-          .join(' ')
-          .toLowerCase()
-          .includes(needle),
-      );
-    }
-
     if (input.segmento?.trim()) {
-      const needleSegmento = input.segmento.trim().toLowerCase();
-      items = items.filter((entry) => entry.segmento?.toLowerCase().includes(needleSegmento));
+      const needleSegmento = normalizeForSearch(input.segmento.trim());
+      items = items.filter((entry) => normalizeForSearch(entry.segmento).includes(needleSegmento));
     }
 
     if (input.cidade?.trim()) {
-      const needleCidade = input.cidade.trim().toLowerCase();
-      items = items.filter((entry) => entry.cidade?.toLowerCase().includes(needleCidade));
+      const needleCidade = normalizeForSearch(input.cidade.trim());
+      items = items.filter((entry) => normalizeForSearch(entry.cidade).includes(needleCidade));
     }
 
     if (input.atendeOnline) {
       items = items.filter((entry) => entry.formasAtendimento.includes('online'));
     }
 
-    return ok({ items, totalEmpresas: allItems.length, filterOptions });
+    if (input.ofereceDescontoIrmaos) {
+      items = items.filter((entry) => entry.ofereceDescontoIrmaos);
+    }
+
+    const searchSuggestions = items.map((dto) => ({
+      label: dto.nomeEmpresa,
+      href: `/irmaos/${dto.responsavel.memberId}`,
+      text: [
+        dto.nomeEmpresa,
+        dto.segmento,
+        dto.descricao,
+        dto.cidade,
+        dto.responsavel.nomeCompleto,
+        ...dto.produtosServicos,
+      ]
+        .filter(Boolean)
+        .join(' '),
+    }));
+
+    const needle = normalizeForSearch(input.termo?.trim());
+    if (needle) {
+      items = items.filter((entry) =>
+        normalizeForSearch(
+          [
+            entry.nomeEmpresa,
+            entry.segmento,
+            entry.descricao,
+            entry.cidade,
+            entry.responsavel.nomeCompleto,
+            ...entry.produtosServicos,
+          ]
+            .filter((v): v is string => Boolean(v))
+            .join(' '),
+        ).includes(needle),
+      );
+    }
+
+    return ok({ items, searchSuggestions, totalEmpresas: allItems.length, filterOptions });
   }
 }

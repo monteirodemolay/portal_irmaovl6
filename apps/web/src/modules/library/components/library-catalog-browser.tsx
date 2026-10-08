@@ -1,4 +1,6 @@
 'use client';
+import { normalizeForSearch } from '@vl6/shared';
+
 
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
@@ -20,13 +22,13 @@ export function LibraryCatalogBrowser({ rows }: { rows: CatalogRow[] }) {
   const [query, setQuery] = useState('');
 
   const filtered = useMemo(() => {
-    const term = query.trim().toLowerCase();
+    const term = normalizeForSearch(query.trim());
     if (!term) return rows;
     return rows.filter(
       (row) =>
-        row.titulo.toLowerCase().includes(term) ||
-        row.autor.toLowerCase().includes(term) ||
-        row.categoria.toLowerCase().includes(term),
+        normalizeForSearch(row.titulo).includes(term) ||
+        normalizeForSearch(row.autor).includes(term) ||
+        normalizeForSearch(row.categoria).includes(term),
     );
   }, [query, rows]);
 

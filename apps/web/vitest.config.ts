@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url';
  * o app rodando de verdade.
  */
 export default defineConfig({
+  esbuild: { jsx: 'automatic' },
   resolve: { alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) } },
   test: {
     include: ['src/**/*.test.ts'],
