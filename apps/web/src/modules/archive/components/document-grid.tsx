@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, type ReactNode } from 'react';
-import Link from 'next/link';
+import Link from '@/components/layout/context-link';
 import { ArchiveItemCard, MediaViewerModal, type MediaViewerItem } from '@vl6/ui';
 
 export interface DocumentGridItem {

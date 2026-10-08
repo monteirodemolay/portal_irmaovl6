@@ -1,6 +1,6 @@
 'use client';
 import { useState, useTransition, useEffect, useRef } from 'react';
-import Link from 'next/link';
+import Link from '@/components/layout/context-link';
 import { useRouter } from 'next/navigation';
 import type { KnowledgeMemberCourse, KnowledgeProgress } from '@vl6/domain';
 import { KNOWLEDGE_CATEGORIES } from '@vl6/shared';

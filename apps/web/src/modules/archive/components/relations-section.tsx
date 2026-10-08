@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import Link from '@/components/layout/context-link';
 import type { AuthContext } from '@vl6/domain';
 import { hasPermission } from '@vl6/domain';
 import type { ServerContainer } from '@vl6/infra';

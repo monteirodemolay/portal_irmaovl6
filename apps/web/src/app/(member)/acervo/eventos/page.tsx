@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import Link from '@/components/layout/context-link';
 import { createServerContainer } from '@vl6/infra';
 import { EVENT_KIND_LABELS, type EventKind } from '@vl6/shared';
 import { CalendarDays, EmptyState, FilterBar, Image as ImageIcon } from '@vl6/ui';

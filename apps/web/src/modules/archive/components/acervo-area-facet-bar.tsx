@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import Link from '@/components/layout/context-link';
 import type { AreaAtuacaoKey } from '@vl6/shared';
 import { AREA_ATUACAO_ICONS } from '@/modules/central/lib/area-atuacao-icons';
 

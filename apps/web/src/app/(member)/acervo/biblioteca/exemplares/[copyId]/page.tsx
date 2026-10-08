@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import Link from '@/components/layout/context-link';
 import { notFound } from 'next/navigation';
 import { createServerContainer } from '@vl6/infra';
 import { Badge, Button, Card, CardContent } from '@vl6/ui';

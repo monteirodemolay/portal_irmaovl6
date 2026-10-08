@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import Link from '@/components/layout/context-link';
 import { createServerContainer } from '@vl6/infra';
 import type { BoardTerm } from '@vl6/domain';
 import { Avatar, AvatarFallback, CalendarDays, EmptyState } from '@vl6/ui';

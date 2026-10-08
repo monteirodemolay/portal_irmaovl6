@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import Link from '@/components/layout/context-link';
 import type { ReactNode } from 'react';
 import { createServerContainer } from '@vl6/infra';
 import {

@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { Suspense, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useNavigationOrigin } from './context-link';
 import { ChevronRight, Menu, X, cn } from '@vl6/ui';
 
 export interface AppShellNavFlyoutLink {
@@ -60,7 +61,7 @@ export interface AppShellProps {
  * servidor e injetado via props/children, então nenhuma consulta ao
  * Firestore roda no client.
  */
-export function AppShell({
+function AppShellContent({
   brand,
   sections,
   sidebarFooter,
@@ -69,6 +70,21 @@ export function AppShell({
   children,
 }: AppShellProps) {
   const pathname = usePathname();
+  const origin = useNavigationOrigin();
+  const activePath = origin?.module ?? pathname;
+
+  useEffect(() => {
+    try {
+      const href = window.location.pathname + window.location.search + window.location.hash;
+      if (sessionStorage.getItem('vl6:restore') !== href) return;
+      sessionStorage.removeItem('vl6:restore');
+      const position = Number(sessionStorage.getItem('vl6:return:' + href) ?? 0);
+      const frame = requestAnimationFrame(() => window.scrollTo(0, position));
+      return () => cancelAnimationFrame(frame);
+    } catch {
+      /* Navigation works without browser storage. */
+    }
+  }, [pathname]);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [expandedHref, setExpandedHref] = useState<string | null>(null);
   // Item ativo (numa sub-rota do próprio flyout) abre o menu por padrão,
@@ -131,8 +147,8 @@ export function AppShell({
 
   function isActive(href: string): boolean {
     return href === '/' || href === '/admin'
-      ? pathname === href
-      : pathname === href || pathname.startsWith(`${href}/`);
+      ? activePath === href
+      : activePath === href || activePath.startsWith(`${href}/`);
   }
 
   const itemLinkClass = (active: boolean) =>
@@ -283,5 +299,13 @@ export function AppShell({
         </div>
       )}
     </div>
+  );
+}
+
+export function AppShell(props: AppShellProps) {
+  return (
+    <Suspense fallback={<div className="min-h-screen">{props.children}</div>}>
+      <AppShellContent {...props} />
+    </Suspense>
   );
 }

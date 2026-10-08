@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import Link from 'next/link';
+import Link from '@/components/layout/context-link';
 import { createServerContainer } from '@vl6/infra';
 import type { BoardTerm } from '@vl6/domain';
 import { Card, CardContent, EmptyState, FileText, Image as ImageIcon, Video } from '@vl6/ui';
