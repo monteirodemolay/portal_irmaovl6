@@ -4,6 +4,7 @@ import { createServerContainer } from '@vl6/infra';
 import { DEFAULT_LOCALE } from '@vl6/shared';
 import { AppShell } from '@/components/layout/app-shell';
 import Link from 'next/link';
+import { ArrowLeft } from '@vl6/ui';
 import { buildAdminNavSections } from '@/components/layout/admin-navigation';
 import { SidebarBrand } from '@/components/layout/sidebar-brand';
 import { SidebarInstitutionalLink } from '@/components/layout/sidebar-institutional-link';
@@ -55,9 +56,10 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         <div className="space-y-3">
           <Link
             href="/dashboard"
-            className="border-border block rounded-lg border px-4 py-3 text-sm font-medium"
+            className="flex min-h-12 w-full items-center gap-3 rounded-xl border border-white/25 bg-white/10 px-4 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:border-white/40 hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-primary active:bg-white/25"
           >
-            ← Voltar ao Portal
+            <ArrowLeft size={18} aria-hidden="true" className="shrink-0" />
+            <span>Voltar ao Portal</span>
           </Link>
           {current?.tenant.site && (
             <SidebarInstitutionalLink siteUrl={current.tenant.site} tenantName={tenantName} />
