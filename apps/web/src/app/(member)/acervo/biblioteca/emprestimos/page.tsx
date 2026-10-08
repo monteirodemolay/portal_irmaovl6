@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import Link from '@/components/layout/context-link';
 import type { LibraryItem, LibraryLoan } from '@vl6/domain';
 import { createServerContainer } from '@vl6/infra';
 import { Badge, Button, Card, CardContent, EmptyState } from '@vl6/ui';

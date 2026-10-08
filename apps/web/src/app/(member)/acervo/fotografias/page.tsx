@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import Link from '@/components/layout/context-link';
 import { createServerContainer } from '@vl6/infra';
 import { ArchiveItemCard, EmptyState, FilterBar, Image as GalleryIcon } from '@vl6/ui';
 import { requirePagePermission } from '@/lib/auth/require-permission';

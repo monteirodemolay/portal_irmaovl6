@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import Link from '@/components/layout/context-link';
 import { hasPermission } from '@vl6/domain';
 import { createServerContainer } from '@vl6/infra';
 import { EVENT_KIND_LABELS } from '@vl6/shared';

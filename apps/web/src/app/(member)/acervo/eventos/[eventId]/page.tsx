@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import Link from '@/components/layout/context-link';
 import { notFound } from 'next/navigation';
 import { hasPermission, getEventCeremonyMembers } from '@vl6/domain';
 import { createServerContainer } from '@vl6/infra';

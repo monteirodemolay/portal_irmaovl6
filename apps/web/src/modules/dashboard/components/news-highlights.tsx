@@ -1,6 +1,6 @@
 import type { News } from '@vl6/domain';
 import { Card, Newspaper } from '@vl6/ui';
-import Link from 'next/link';
+import Link from '@/components/layout/context-link';
 import { DashboardSectionHeading } from './dashboard-section-heading';
 
 function formatNewsDate(date: Date | null): string {

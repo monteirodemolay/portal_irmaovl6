@@ -1,4 +1,5 @@
-import Link from 'next/link';
+import { ContextReturn } from '@/components/layout/context-link';
+import Link from '@/components/layout/context-link';
 import { notFound } from 'next/navigation';
 import { createServerContainer } from '@vl6/infra';
 import { Badge, BookOpen, Button, Card, CardContent, Star } from '@vl6/ui';
@@ -42,7 +43,7 @@ export default async function LibraryItemPage({
   return (
     <div className="grid gap-6">
       <Button asChild variant="ghost" className="w-full sm:w-fit">
-        <Link href="/acervo/biblioteca">← Voltar ao catálogo</Link>
+        <ContextReturn fallbackHref="/acervo/biblioteca" fallbackLabel="Voltar ao catálogo" />
       </Button>
 
       <section className="grid gap-6 lg:grid-cols-[280px_1fr]">

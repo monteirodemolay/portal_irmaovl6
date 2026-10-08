@@ -1,4 +1,5 @@
-import Link from 'next/link';
+import { ContextReturn } from '@/components/layout/context-link';
+import Link from '@/components/layout/context-link';
 import { notFound } from 'next/navigation';
 import { createServerContainer } from '@vl6/infra';
 import { Badge } from '@vl6/ui';
@@ -79,9 +80,11 @@ export default async function PublicNewsDetailPage({
 
   return (
     <article className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-      <Link href="/noticias" className="text-primary text-sm font-medium hover:underline">
-        ← Voltar para Notícias
-      </Link>
+      <ContextReturn
+        fallbackHref="/noticias"
+        fallbackLabel="Voltar para Notícias"
+        title={news.titulo}
+      />
 
       <div className="mt-5 grid gap-8 xl:grid-cols-[minmax(0,1fr)_300px]">
         <main className="min-w-0">
