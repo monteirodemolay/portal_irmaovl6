@@ -19,3 +19,11 @@ Atualize o HTML e suas imagens mantendo o endereço público. Para publicação 
 ## Barra de controles
 
 A barra se oculta após 3 segundos sem interação. Mova o mouse para a parte inferior, toque nessa região no celular ou pressione **C** para exibi-la. **C** ou o botão **Ocultar** escondem a barra. As setas do teclado continuam funcionando com a barra oculta. O slide aproveita toda a altura disponível e o rodapé institucional permanece no slide.
+
+## Demonstrações com conteúdo fictício
+
+A tela Conhecimento e sua alternativa Biblioteca abrem demonstrações interativas. O botão Conhecer a Cripta abre uma demonstração com carta fictícia. As três áreas reutilizam o padrão visual e as ações existentes no código, com conteúdo ilustrativo identificado. Estado, carrinho, solicitações, avaliações e progresso ficam apenas em memória e voltam ao cenário inicial ao recarregar a apresentação. Nenhuma chamada é feita às APIs ou aos serviços do Portal. O download de exemplo gera um arquivo de texto local.
+
+Biblioteca: seis obras hipotéticas, formatos físico/digital/ambos, disponibilidade, rankings, detalhes, sinopse, parecer, leitura, download, avaliação, carrinho, seleção de sessão e histórico. Conhecimento: formações, jornada, aulas de texto, avaliação, progresso e referência à Biblioteca. Cripta: destinatário, apelido, título, mensagem, rascunho e revisão. A demonstração da Cripta não simula criptografia nem guarda definitiva.
+
+Referências de implementação: catálogo e detalhes em `app/(member)/acervo/biblioteca`, carrinho e avaliações em `modules/library/components`, formação e progresso em `modules/knowledge/components/knowledge-member.tsx`, escrita e revisão em `app/(member)/cripta/cripta-experience.tsx`.
