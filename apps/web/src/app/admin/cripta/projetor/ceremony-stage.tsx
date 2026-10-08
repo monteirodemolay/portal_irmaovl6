@@ -98,8 +98,14 @@ export function CeremonyStage({
             font-family: var(--font-body);
             border-radius: 1.5rem;
             min-height: 100vh;
+            overflow-y: auto;
           }
-          .cripta-stage:fullscreen { border-radius: 0; }
+          .cripta-stage:fullscreen {
+            border-radius: 0;
+            height: 100vh;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+          }
           .cripta-chrome { max-width: 980px; margin: 0 auto; padding: 18px 16px 48px; }
           .cripta-tag {
             display: inline-flex; align-items: center; gap: 8px;

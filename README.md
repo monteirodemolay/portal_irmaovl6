@@ -123,3 +123,7 @@ Formação continuada aditiva, com instruções por grau, aulas, atividades, ava
 A entrada administrativa é `/admin`, com Publicações e Agenda, Pessoas e Loja,
 Acervo e Biblioteca, Conhecimento, Cripta e Configurações e Auditoria.
 Consulte [arquitetura e compatibilidade](docs/architecture/15-central-administracao-vl6.md).
+
+### Dashboard integrado e relatórios
+
+A visão geral administrativa reúne panorama institucional, módulos, cobertura de acesso, pendências, agenda e auditoria por período em uma única página. Relatórios CSV/PDF preservam filtros, autorização e indicação de cobertura. Consulte [fontes, fórmulas e limites](docs/architecture/16-dashboard-visao-geral-vl6.md).
