@@ -10,7 +10,14 @@ import { updateCentralProfileAction, type CentralActionState } from '../../actio
 
 function formatDate(date: Date | null): string {
   if (!date) return '—';
-  return new Intl.DateTimeFormat('pt-BR', { dateStyle: 'long' }).format(new Date(date));
+  // Datas maçônicas são só calendário (guardadas como meia-noite UTC, sem
+  // hora real) — formatar sem `timeZone: 'UTC'` aqui (componente client,
+  // roda no fuso do navegador) mostra o dia anterior para todo Irmão a
+  // oeste de Greenwich, ex.: Brasil (UTC-3) via meia-noite UTC de 28/09
+  // vira 27/09 21h locais.
+  return new Intl.DateTimeFormat('pt-BR', { dateStyle: 'long', timeZone: 'UTC' }).format(
+    new Date(date),
+  );
 }
 
 export function GeralTab({
@@ -44,7 +51,8 @@ export function GeralTab({
               defaultValue={profile?.apresentacao ?? ''}
             />
           </FormField>
-          {state.error && <p className="text-sm text-red-600">{state.error}</p>}
+          {state.error && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{state.error}</p>}
+          {state.success && <p className="rounded-lg bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-700">✓ {state.success}</p>}
           <SubmitButton />
         </form>
       </FormSectionCard>

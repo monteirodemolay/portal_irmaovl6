@@ -84,7 +84,12 @@ export function PhotoPeopleReviewModal({
               Foto {activeIndex + 1} de {photos.length}
             </p>
           </div>
-          <Button type="button" variant="outline" onClick={onClose} className="border-white/30 text-white">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onClose}
+            className="border-white/30 text-white"
+          >
             Fechar
           </Button>
         </div>
@@ -126,7 +131,9 @@ export function PhotoPeopleReviewModal({
               onClick={() => onIndexChange(index)}
               className={
                 'h-16 w-20 shrink-0 overflow-hidden rounded-md border-2 ' +
-                (index === activeIndex ? 'border-white' : 'border-transparent opacity-60 hover:opacity-100')
+                (index === activeIndex
+                  ? 'border-white'
+                  : 'border-transparent opacity-60 hover:opacity-100')
               }
               aria-label={`Abrir foto ${index + 1}`}
             >
@@ -177,7 +184,9 @@ export function PhotoPeopleReviewModal({
       <div className="bg-surface fixed inset-x-0 bottom-0 z-[121] max-h-[42vh] overflow-y-auto border-t p-4 lg:hidden">
         <div className="mb-3 flex items-center justify-between">
           <p className="text-sm font-semibold">Quem aparece nesta foto?</p>
-          <span className="text-muted text-xs">{activeIndex + 1}/{photos.length}</span>
+          <span className="text-muted text-xs">
+            {activeIndex + 1}/{photos.length}
+          </span>
         </div>
         <PeoplePicker
           selectedIds={active.pessoasIdentificadas}

@@ -91,7 +91,9 @@ export default async function NewsPage({
           </Link>
           <div className="mt-1 flex flex-wrap gap-1.5">
             {Boolean(n.destaquePrincipal) && <Badge variant="accent">principal</Badge>}
-            {!n.destaquePrincipal && Boolean(n.destaque) && <Badge variant="outline">destaque</Badge>}
+            {!n.destaquePrincipal && Boolean(n.destaque) && (
+              <Badge variant="outline">destaque</Badge>
+            )}
           </div>
         </div>
       ),

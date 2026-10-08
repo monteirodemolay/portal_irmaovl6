@@ -93,9 +93,12 @@ export class FirestoreNewsRepository implements INewsRepository {
   }
 
   async incrementViews(id: string): Promise<void> {
-    await this.db.collection(COLLECTION).doc(id).update({
-      contagemVisualizacoes: FieldValue.increment(1),
-    });
+    await this.db
+      .collection(COLLECTION)
+      .doc(id)
+      .update({
+        contagemVisualizacoes: FieldValue.increment(1),
+      });
   }
 
   async hardDelete(id: string): Promise<void> {

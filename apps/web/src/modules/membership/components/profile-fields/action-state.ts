@@ -8,6 +8,7 @@
  */
 export interface ProfileFieldActionState {
   error: string | null;
+  success?: string | null;
 }
 
 export type ProfileFieldAction = (

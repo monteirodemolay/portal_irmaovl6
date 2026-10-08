@@ -3,6 +3,7 @@
 import { useActionState } from 'react';
 import { useFormStatus } from 'react-dom';
 import type { LegalDocumentKey } from '@vl6/domain';
+import type { PreparedLegalRevision } from '../lib/prepared-revisions';
 import { Button, Input, Select, Textarea } from '@vl6/ui';
 import { FormField } from '@/components/forms/form-field';
 import { CLASSIFICATION_LABELS, IMPACT_LABELS } from '../lib/labels';
@@ -18,6 +19,7 @@ export function PublishLegalDocumentVersionForm({
   proximaVersaoSugerida,
   conteudoAtual,
   responsavelPadrao,
+  preparedRevision = null,
 }: {
   documento: LegalDocumentKey;
   /** Próxima versão semver sugerida (ex.: incrementa o PATCH da vigente) — o admin pode alterar. */
@@ -25,12 +27,39 @@ export function PublishLegalDocumentVersionForm({
   /** Texto vigente, usado como ponto de partida da edição — nunca em branco. */
   conteudoAtual: string;
   responsavelPadrao: string;
+  preparedRevision?: PreparedLegalRevision | null;
 }) {
   const [state, formAction] = useActionState(publishLegalDocumentVersionAction, initialState);
 
   return (
     <form action={formAction} className="flex max-w-3xl flex-col gap-4">
       <input type="hidden" name="documento" value={documento} />
+
+      {preparedRevision && (
+        <section className="border-accent/40 bg-accent/5 rounded-2xl border p-5">
+          <p className="text-accent text-xs font-bold uppercase tracking-wide">
+            Revisão preparada automaticamente
+          </p>
+          <h2 className="font-display mt-1 text-lg font-semibold">
+            v{preparedRevision.versao} pronta para revisão e publicação
+          </h2>
+          <p className="text-muted mt-2 text-sm leading-6">
+            O sistema comparou o último marco jurídico com o estado de Production revisado e
+            preencheu abaixo o texto, a classificação, o impacto, o motivo e os itens alterados.
+            Revise o conteúdo e publique; não é necessário reconstruir o histórico manualmente.
+          </p>
+          <dl className="mt-4 grid gap-3 text-xs sm:grid-cols-2">
+            <div>
+              <dt className="text-muted font-semibold uppercase tracking-wide">Marco anterior</dt>
+              <dd className="mt-1 break-all font-mono">{preparedRevision.marcoBase}</dd>
+            </div>
+            <div>
+              <dt className="text-muted font-semibold uppercase tracking-wide">Production revisada</dt>
+              <dd className="mt-1 break-all font-mono">{preparedRevision.marcoAtual}</dd>
+            </div>
+          </dl>
+        </section>
+      )}
 
       <FormField
         label="Texto completo (Markdown)"
@@ -56,18 +85,13 @@ export function PublishLegalDocumentVersionForm({
           <Input id="versao" name="versao" required defaultValue={proximaVersaoSugerida} />
         </FormField>
         <FormField label="Responsável" htmlFor="responsavel">
-          <Input
-            id="responsavel"
-            name="responsavel"
-            required
-            defaultValue={responsavelPadrao}
-          />
+          <Input id="responsavel" name="responsavel" required defaultValue={responsavelPadrao} />
         </FormField>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
         <FormField label="Classificação da mudança" htmlFor="classificacao">
-          <Select id="classificacao" name="classificacao" defaultValue="correcao">
+          <Select id="classificacao" name="classificacao" defaultValue={preparedRevision?.classificacao ?? "correcao"}>
             {Object.entries(CLASSIFICATION_LABELS).map(([value, label]) => (
               <option key={value} value={value}>
                 {label}
@@ -76,7 +100,7 @@ export function PublishLegalDocumentVersionForm({
           </Select>
         </FormField>
         <FormField label="Impacto" htmlFor="impacto">
-          <Select id="impacto" name="impacto" defaultValue="baixo">
+          <Select id="impacto" name="impacto" defaultValue={preparedRevision?.impacto ?? "baixo"}>
             {Object.entries(IMPACT_LABELS).map(([value, label]) => (
               <option key={value} value={value}>
                 {label}
@@ -91,7 +115,7 @@ export function PublishLegalDocumentVersionForm({
         htmlFor="motivo"
         description="Explicação institucional do porquê desta mudança — fica registrada no histórico de versões."
       >
-        <Textarea id="motivo" name="motivo" required rows={3} />
+        <Textarea id="motivo" name="motivo" required rows={3} defaultValue={preparedRevision?.motivo ?? ""} />
       </FormField>
 
       <FormField
@@ -99,7 +123,7 @@ export function PublishLegalDocumentVersionForm({
         htmlFor="itensAlterados"
         description="Um item por linha — aparece como lista no histórico de versões."
       >
-        <Textarea id="itensAlterados" name="itensAlterados" required rows={3} />
+        <Textarea id="itensAlterados" name="itensAlterados" required rows={6} defaultValue={preparedRevision?.itensAlterados.join("\n") ?? ""} />
       </FormField>
 
       <FormField
@@ -107,11 +131,11 @@ export function PublishLegalDocumentVersionForm({
         htmlFor="diffResumo"
         description="Texto curto mostrado no aviso de aceite quando esta versão exige novo aceite. Deixe em branco para não exibir resumo."
       >
-        <Textarea id="diffResumo" name="diffResumo" rows={2} />
+        <Textarea id="diffResumo" name="diffResumo" rows={3} defaultValue={preparedRevision?.diffResumo ?? ""} />
       </FormField>
 
       <label className="flex items-center gap-2 text-sm">
-        <input type="checkbox" name="exigeNovoAceite" className="h-4 w-4" />
+        <input type="checkbox" name="exigeNovoAceite" className="h-4 w-4" defaultChecked={preparedRevision?.exigeNovoAceite ?? false} />
         Exigir novo aceite dos Irmãos (notifica todos os usuários ativos)
       </label>
 

@@ -5,6 +5,7 @@ import { ArrowLeft } from '@vl6/ui';
 import { requirePagePermission } from '@/lib/auth/require-permission';
 import { resolveLegalDocumentKey, LEGAL_DOCUMENT_TITLES } from '@/lib/legal/document-slug';
 import { PublishLegalDocumentVersionForm } from '@/modules/legal/components/publish-legal-document-version-form';
+import { getPreparedLegalRevision } from '@/modules/legal/lib/prepared-revisions';
 
 /** Incrementa o PATCH da versão vigente (ex.: "1.0.0" -> "1.0.1"); "1.0.0" se ainda não houver versão publicada. */
 function suggestNextVersion(current: string | null): string {
@@ -40,6 +41,11 @@ export default async function EditLegalDocumentPage({
   );
   const historico = result.ok ? result.value : [];
   const vigente = historico[0] ?? null;
+  const preparedRevision = getPreparedLegalRevision(
+    documento,
+    vigente?.versao ?? null,
+    vigente?.conteudoMarkdown ?? '',
+  );
 
   return (
     <div className="flex flex-col gap-6">
@@ -63,9 +69,10 @@ export default async function EditLegalDocumentPage({
 
       <PublishLegalDocumentVersionForm
         documento={documento}
-        proximaVersaoSugerida={suggestNextVersion(vigente?.versao ?? null)}
-        conteudoAtual={vigente?.conteudoMarkdown ?? ''}
+        proximaVersaoSugerida={preparedRevision?.versao ?? suggestNextVersion(vigente?.versao ?? null)}
+        conteudoAtual={preparedRevision?.conteudoMarkdown ?? vigente?.conteudoMarkdown ?? ''}
         responsavelPadrao={vigente?.responsavel ?? 'Diretoria VL6'}
+        preparedRevision={preparedRevision}
       />
     </div>
   );

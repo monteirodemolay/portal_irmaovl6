@@ -113,12 +113,7 @@ export async function GET(
 
   const [events, personalEvents, anniversaryEntries] = await Promise.all([
     container.useCases.listEventsInRange.execute(ctx, { from, to }),
-    container.repositories.personalEvent.listByUserInRange(
-      owner.tenantId,
-      owner.userId,
-      from,
-      to,
-    ),
+    container.repositories.personalEvent.listByUserInRange(owner.tenantId, owner.userId, from, to),
     container.useCases.listUpcomingAnniversaries.execute(ctx, { withinDays }),
   ]);
 

@@ -73,13 +73,15 @@ export default async function PublicNewsPage({
   const requestedPage = Math.max(1, Number.parseInt(params.pagina ?? '1', 10) || 1);
 
   const container = createServerContainer();
-  const page = await container.useCases.listPublishedNews.execute(current.tenant.id, { limit: 500 });
+  const page = await container.useCases.listPublishedNews.execute(current.tenant.id, {
+    limit: 500,
+  });
   const heroPhoto = resolveHeroPhoto(current.tenant, 'noticias');
   const canManageHeroPhoto = hasPermission(session.authContext, 'tenant:manage');
 
   const allNews = page.items;
-  const categories = [...new Set(allNews.map((item) => item.categoria).filter(Boolean))].sort((a, b) =>
-    a.localeCompare(b, 'pt-BR'),
+  const categories = [...new Set(allNews.map((item) => item.categoria).filter(Boolean))].sort(
+    (a, b) => a.localeCompare(b, 'pt-BR'),
   );
   const years = [
     ...new Set(
@@ -92,11 +94,13 @@ export default async function PublicNewsPage({
   const normalizedQuery = query.toLocaleLowerCase('pt-BR');
   const filtered = allNews.filter((item) => {
     if (selectedCategory && item.categoria !== selectedCategory) return false;
-    if (selectedYear && String(item.dataPublicacao?.getFullYear() ?? '') !== selectedYear) return false;
+    if (selectedYear && String(item.dataPublicacao?.getFullYear() ?? '') !== selectedYear)
+      return false;
     if (!normalizedQuery) return true;
-    const haystack = `${item.titulo} ${item.subtitulo ?? ''} ${stripHtml(item.conteudoHtml)}`.toLocaleLowerCase(
-      'pt-BR',
-    );
+    const haystack =
+      `${item.titulo} ${item.subtitulo ?? ''} ${stripHtml(item.conteudoHtml)}`.toLocaleLowerCase(
+        'pt-BR',
+      );
     return haystack.includes(normalizedQuery);
   });
 
@@ -139,7 +143,11 @@ export default async function PublicNewsPage({
         }
       />
 
-      <form action="/noticias" method="get" className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_180px_auto]">
+      <form
+        action="/noticias"
+        method="get"
+        className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_180px_auto]"
+      >
         <div className="border-border bg-surface flex items-center rounded-xl border px-4">
           <span className="text-muted mr-2 text-sm" aria-hidden="true">
             ⌕
@@ -149,7 +157,7 @@ export default async function PublicNewsPage({
             name="q"
             defaultValue={query}
             placeholder="Pesquisar notícias, sessões, irmãos ou temas..."
-            className="h-11 min-w-0 w-full bg-transparent text-sm outline-none"
+            className="h-11 w-full min-w-0 bg-transparent text-sm outline-none"
           />
           {selectedCategory && <input type="hidden" name="categoria" value={selectedCategory} />}
         </div>
@@ -158,7 +166,7 @@ export default async function PublicNewsPage({
           name="ano"
           defaultValue={selectedYear}
           aria-label="Filtrar notícias por ano"
-          className="border-border bg-surface text-foreground h-11 rounded-xl border px-3 text-sm outline-none focus:border-primary"
+          className="border-border bg-surface text-foreground focus:border-primary h-11 rounded-xl border px-3 text-sm outline-none"
         >
           <option value="">Todos os anos</option>
           {years.map((year) => (
@@ -170,7 +178,7 @@ export default async function PublicNewsPage({
 
         <button
           type="submit"
-          className="bg-primary text-white h-11 rounded-xl px-5 text-sm font-semibold"
+          className="bg-primary h-11 rounded-xl px-5 text-sm font-semibold text-white"
         >
           Filtrar
         </button>
@@ -180,7 +188,7 @@ export default async function PublicNewsPage({
         <Link
           href={buildHref({ category: null, query, year: selectedYear })}
           className={`whitespace-nowrap rounded-full border px-4 py-2 text-sm transition-colors ${
-            !selectedCategory ? 'bg-primary text-white border-primary' : 'border-border bg-surface'
+            !selectedCategory ? 'bg-primary border-primary text-white' : 'border-border bg-surface'
           }`}
         >
           Todas
@@ -191,7 +199,7 @@ export default async function PublicNewsPage({
             href={buildHref({ category, query, year: selectedYear })}
             className={`whitespace-nowrap rounded-full border px-4 py-2 text-sm transition-colors ${
               selectedCategory === category
-                ? 'bg-primary text-white border-primary'
+                ? 'bg-primary border-primary text-white'
                 : 'border-border bg-surface'
             }`}
           >
@@ -235,7 +243,7 @@ export default async function PublicNewsPage({
                   </Badge>
                 </div>
 
-                <h1 className="font-display text-balance text-[1.7rem] font-semibold leading-[1.08] text-foreground sm:text-3xl md:max-w-4xl md:text-4xl md:text-white">
+                <h1 className="font-display text-foreground text-balance text-[1.7rem] font-semibold leading-[1.08] sm:text-3xl md:max-w-4xl md:text-4xl md:text-white">
                   {primary.titulo}
                 </h1>
 
@@ -293,7 +301,7 @@ export default async function PublicNewsPage({
                   )}
                   <Link
                     href="/noticias/todas"
-                    className="border-primary text-primary hover:bg-primary hover:text-white rounded-lg border px-4 py-2 text-sm font-semibold transition-colors"
+                    className="border-primary text-primary hover:bg-primary rounded-lg border px-4 py-2 text-sm font-semibold transition-colors hover:text-white"
                   >
                     Todas as notícias
                   </Link>

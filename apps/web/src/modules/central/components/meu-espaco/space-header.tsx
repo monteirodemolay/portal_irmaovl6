@@ -45,7 +45,7 @@ export function SpaceHeader({
           <CompletionRing percent={completion} />
           <div className="max-w-[12rem]">
             <p className="text-sm font-semibold">
-              Seu espaço está {completion}% completo<span className="text-muted">*</span>
+              Seu perfil está {completion}% completo<span className="text-muted">*</span>
             </p>
             <p className="text-muted text-xs">
               Preencha apenas o que desejar. * Estimativa de preenchimento do perfil pessoal — não é

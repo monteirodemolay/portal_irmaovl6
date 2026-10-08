@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { hasPermission, type CeremonyMateKind } from '@vl6/domain';
+import { hasPermission, getEventCeremonyMembers } from '@vl6/domain';
 import { createServerContainer } from '@vl6/infra';
 import { CalendarDays, Download, EmptyState, FileArchive, MapPin, Milestone } from '@vl6/ui';
 import { requireSession } from '@/lib/auth/require-session';
@@ -12,16 +12,6 @@ import { CoverPositionPicker } from '@/modules/archive/components/cover-position
 import { InstagramPreviewCard } from '@/modules/archive/components/publish-hub/publication-preview-cards';
 import { updateArchiveMediaFocalPointAction } from '@/modules/archive/actions/publish-hub-actions';
 import { loadEventAlbum } from '@/modules/archive/lib/load-event-album';
-
-const CEREMONY_ORIGEM_FIELDS: {
-  tipo: CeremonyMateKind;
-  label: string;
-  origemField: 'origemIniciacaoMemberIds' | 'origemElevacaoMemberIds' | 'origemExaltacaoMemberIds';
-}[] = [
-  { tipo: 'iniciacao', label: 'Iniciados neste dia', origemField: 'origemIniciacaoMemberIds' },
-  { tipo: 'elevacao', label: 'Elevados neste dia', origemField: 'origemElevacaoMemberIds' },
-  { tipo: 'exaltacao', label: 'Exaltados neste dia', origemField: 'origemExaltacaoMemberIds' },
-];
 
 function formatDate(date: Date): string {
   return new Intl.DateTimeFormat('pt-BR', { dateStyle: 'long' }).format(new Date(date));
@@ -53,29 +43,14 @@ export default async function EventAlbumPage({ params }: { params: Promise<{ eve
   const hasDownloadableMedia = Boolean(album?.media.some((item) => item.allowDownload));
   const canAdjustCover = hasPermission(session.authContext, 'archiveMedia:update');
 
-  // Iniciados/Elevados/Exaltados neste dia — todo `ArchiveItem` vinculado a
-  // este Evento pode carregar `origem*MemberIds` de cerimônia (ver
-  // `ArchiveItem.origemIniciacaoMemberIds`/etc.), independente de já ter
-  // mídia publicada ou não. Fecha o laço pedido pelo Administrador: quem
-  // clica no Evento a partir do Perfil do Irmão precisa ver aqui quem mais
-  // foi feito no mesmo dia.
-  const archiveItems = await container.repositories.archiveItem.findByEventId(eventId);
-  const ceremonyGroups = (
-    await Promise.all(
-      CEREMONY_ORIGEM_FIELDS.map(async ({ tipo, label, origemField }) => {
-        const memberIds = [...new Set(archiveItems.flatMap((item) => item[origemField] ?? []))];
-        if (memberIds.length === 0) return null;
-        const members = await Promise.all(
-          memberIds.map((id) => container.repositories.member.findById(id)),
-        );
-        const membros = members.filter(
-          (m): m is NonNullable<typeof m> => m !== null && m.deletedAt === null,
-        );
-        if (membros.length === 0) return null;
-        return { tipo, label, membros };
-      }),
-    )
-  ).filter((group): group is NonNullable<typeof group> => group !== null);
+  const ceremonyGroups = await getEventCeremonyMembers(
+    {
+      archiveItemRepository: container.repositories.archiveItem,
+      eventRepository: container.repositories.event,
+      memberRepository: container.repositories.member,
+    },
+    event,
+  );
 
   return (
     <div className="flex flex-col gap-6">

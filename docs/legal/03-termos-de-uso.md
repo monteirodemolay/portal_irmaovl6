@@ -1,7 +1,7 @@
 # Termos de Uso — Portal do Irmão VL6
 
-> **Versão:** 1.0.0 · **Vigência a partir de:** 23/09/2026 · **Aprovada por:** Diretoria VL6
-> **Documento fonte:** redigido a partir de `docs/legal/01-inventario-dados-lgpd.md` (auditoria direta do código-fonte em 22/09/2026).
+> **Versão:** 2.1.0 · **Vigência a partir de:** 03/10/2026 · **Aprovada por:** Diretoria VL6
+> **Documento fonte:** `docs/legal/01-inventario-dados-lgpd.md`. Revisão v2.0.0 baseada no marco jurídico `24d0967` e no estado de Production `1c699dd7`, auditados em 30/09/2026.
 > Este documento é independente da Política de Privacidade (`docs/legal/02-politica-privacidade.md`) e deve ser lido em conjunto com ela.
 
 ---
@@ -73,7 +73,8 @@ A Loja VL6, como instituição responsável pelo Portal, compromete-se a manter 
 - Consulta ao Acervo Histórico e à Constelação VL6;
 - Divulgação voluntária de negócios e serviços profissionais no módulo Negócios, respeitados os critérios de moderação institucional;
 - Participação em Comunidades Paramaçônicas vinculadas, conforme perfil de acesso;
-- Uso das ferramentas de agenda, notificações e comunicação institucional.
+- Uso das ferramentas de agenda, notificações e comunicação institucional;
+- Comentar notícias institucionais publicadas no Portal, ciente de que o comentário só fica visível aos demais Irmãos depois de aprovado pela moderação, e que seu nome completo é exibido junto ao texto aprovado.
 
 ## 7. Uso proibido
 
@@ -117,6 +118,18 @@ A divulgação de negócios e serviços profissionais no módulo Negócios é se
 
 O acesso a áreas específicas de Comunidades Paramaçônicas (DeMolay, Filhas de Jó, Fraternidade Feminina e demais) é restrito a integrantes formalmente vinculados, com perfil de acesso reduzido e minimizado. A participação em Sessões maçônicas segue as regras de grau e regularidade estabelecidas pelo Regimento Interno da Loja, aplicando-se os controles de visibilidade previstos no Portal para cada tipo de sessão.
 
+## 10-A. Cripta Digital VL6
+
+A Cripta Digital é uma funcionalidade opcional e privada para que o Irmão escreva cartas pessoais e acrescente anexos destinados às pessoas que indicar. O autor é responsável pelo conteúdo enviado, pela legitimidade de inserir dados de terceiros e pela correta indicação dos destinatários.
+
+Durante a janela de escrita, o Irmão pode manter rascunhos e concluir cartas conforme os limites técnicos informados na interface. Ao selar uma carta, o usuário reconhece que o conteúdo entra no procedimento institucional de custódia e deixa de funcionar como um documento comum editável ou livremente reaberto pelo Portal. A qualquer reabertura futura do recebimento, o Irmão pode, sem necessidade de justificativa, rever o modo de entrega de uma carta já selada (entrega privada, leitura em sessão, ou ambas) ou reter sua entrega — sem que isso exija ou implique a leitura do conteúdo por qualquer pessoa.
+
+A Administração da Cripta acompanha estado, participação, integridade, cópias e ocorrências, mas não recebe autorização geral para ler o conteúdo das cartas. A abertura de carta selada depende do procedimento colegiado e offline dos Guardiões, conforme as regras vigentes da Loja e a hipótese institucional de entrega.
+
+É proibido tentar contornar a cifragem, acessar carta de outro Irmão, obter partes de chave sem autorização, copiar mídias de custódia, alterar manifestos, hashes ou registros de integridade, ou usar a Cripta para conteúdo ilícito ou que viole direitos de terceiros.
+
+Em casos de falecimento, quite-placet, desligamento ou outra situação excepcional, a devolução, entrega, exclusão ou abertura seguirá procedimento administrativo específico, com validação documental, autorização interna e registro de auditoria. O Portal não garante apagamento físico instantâneo de backups ou mídias externas quando a tecnologia utilizada não permitir comprovação dessa eliminação.
+
 ## 11. Condutas vedadas
 
 Além do disposto na Seção 7, são condutas vedadas: violação do Estatuto e do Regimento Interno da Loja por meio do uso do Portal; assédio ou conduta desrespeitosa contra outros Irmãos nas áreas de comunicação do Portal; uso de linguagem ou material incompatível com os princípios da Ordem Maçônica.
@@ -157,10 +170,10 @@ Fica eleito o foro da comarca de Rio Verde, Estado de Goiás, sede da Loja Maç�
 
 ## 18. Data de vigência e versão
 
-- **Versão:** 1.0.0
-- **Data de vigência:** 23/09/2026
-- **Classificação desta versão:** Publicação inicial (Mudança institucional)
+- **Versão:** 2.1.0
+- **Data de vigência:** 03/10/2026
+- **Classificação desta versão:** Atualização informativa — direito do Irmão de rever modo de entrega e reter carta já selada a cada reabertura, sem justificativa; não exige novo aceite (ver `04-sistema-de-versionamento.md`)
 
 ---
 
-_Estes Termos de Uso foram redigidos a partir da auditoria direta do código-fonte do Portal e aprovados pela Diretoria da Loja VL6 como sua versão 1.0.0, vigente a partir da data indicada no topo deste documento._
+_Estes Termos de Uso v2.1.0 consolidam a auditoria do Portal entre o marco jurídico `24d0967` e a Production `1c699dd7`, com a atualização de 03/10/2026 referente à Cripta Digital. A v1.0.0 permanece preservada como Marco Inicial no histórico do sistema._

@@ -4,6 +4,8 @@ import { useActionState, useMemo, useState, useTransition } from 'react';
 import { useFormStatus } from 'react-dom';
 import type { Event } from '@vl6/domain';
 import {
+  normalizeEventLocation,
+  VL6_TEMPLE_LOCATION,
   EVENT_KINDS,
   EVENT_KIND_LABELS,
   formatSessionName,
@@ -189,9 +191,7 @@ export function EventForm({
             id="agendaContext"
             name="agendaContext"
             value={agendaContext}
-            onChange={(e) =>
-              setAgendaContext(e.target.value as 'loja' | 'paramaconica' | 'outro')
-            }
+            onChange={(e) => setAgendaContext(e.target.value as 'loja' | 'paramaconica' | 'outro')}
           >
             <option value="loja">Loja Verdadeira Luz nº 06</option>
             <option value="paramaconica">Entidade Paramaçônica</option>
@@ -227,7 +227,8 @@ export function EventForm({
         <div className="border-accent/30 bg-accent/5 flex flex-col gap-1 rounded-lg border p-3">
           <p className="text-sm font-semibold">Período de Recesso Maçônico</p>
           <p className="text-muted text-xs">
-            Informe o primeiro e o último dia do recesso. O período aparecerá na Agenda Central e pode ser cadastrado novamente para o segundo recesso do ano.
+            Informe o primeiro e o último dia do recesso. O período aparecerá na Agenda Central e
+            pode ser cadastrado novamente para o segundo recesso do ano.
           </p>
         </div>
       )}
@@ -421,9 +422,18 @@ export function EventForm({
       <FormField
         label={isRecesso ? 'Referência/local (opcional)' : 'Local'}
         htmlFor="local"
-        description={isRecesso ? 'Se ficar em branco, será identificado como Loja Maçônica Verdadeira Luz nº 06.' : undefined}
+        description={
+          isRecesso
+            ? 'Se ficar em branco, será identificado como Loja Maçônica Verdadeira Luz nº 06.'
+            : undefined
+        }
       >
-        <Input id="local" name="local" required={!isRecesso} defaultValue={event?.local} />
+        <Input
+          id="local"
+          name="local"
+          required={!isRecesso}
+          defaultValue={event?.local ? normalizeEventLocation(event.local) : VL6_TEMPLE_LOCATION}
+        />
       </FormField>
       <FormField label={isRecesso ? 'Início do recesso' : 'Início'} htmlFor="dataInicio">
         <Input

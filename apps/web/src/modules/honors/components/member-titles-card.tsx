@@ -12,7 +12,11 @@ import {
 } from '../actions/honor-actions';
 
 function formatDate(date: Date | null): string {
-  return date ? new Intl.DateTimeFormat('pt-BR').format(new Date(date)) : 'data não registrada';
+  // Ver mesmo comentário em `honors-card.tsx` — data só de calendário,
+  // precisa de `timeZone: 'UTC'` explícito num componente client.
+  return date
+    ? new Intl.DateTimeFormat('pt-BR', { timeZone: 'UTC' }).format(new Date(date))
+    : 'data não registrada';
 }
 
 function SubmitButton() {

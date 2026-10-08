@@ -129,6 +129,36 @@ describe('AssignBoardPositionUseCase', () => {
     const history = await positionHistoryRepository.listByMemberId('m1');
     expect(history).toHaveLength(1);
     expect(history[0]?.cargo).toBe('secretario');
+    // Período do histórico é o da Gestão, não o momento do clique do
+    // Administrador (clock fixo em 2026-06-01, mas a Gestão começa em
+    // 2026-01-01) — achado do Administrador: "o pessoal sempre é
+    // Venerável dentro da Gestão que está inserto".
+    expect(history[0]?.dataInicio.toISOString().slice(0, 10)).toBe('2026-01-01');
+    expect(history[0]?.dataFim).toBeNull();
+  });
+
+  it('grava a data de fim já na criação quando a Gestão atribuída já terminou (backfill)', async () => {
+    const { useCase, boardTermRepository, memberRepository, positionHistoryRepository } =
+      buildUseCase();
+    const termEncerrada: BoardTerm = {
+      ...term,
+      id: 'term-encerrada',
+      periodoInicio: new Date('2018-06-01'),
+      periodoFim: new Date('2019-05-31'),
+    };
+    await boardTermRepository.create(termEncerrada);
+    await memberRepository.create(buildMember('m1'));
+
+    await useCase.execute(ctx, {
+      gestaoId: 'term-encerrada',
+      cargo: 'secretario',
+      memberId: 'm1',
+      ordem: 1,
+    });
+
+    const history = await positionHistoryRepository.listByMemberId('m1');
+    expect(history[0]?.dataInicio.toISOString().slice(0, 10)).toBe('2018-06-01');
+    expect(history[0]?.dataFim?.toISOString().slice(0, 10)).toBe('2019-05-31');
   });
 
   it('substitui o titular de um cargo de ocorrência única e encerra o histórico do antigo', async () => {
@@ -162,6 +192,44 @@ describe('AssignBoardPositionUseCase', () => {
 
     const newMember = await memberRepository.findById('m2');
     expect(newMember?.cargoAtualId).toBe(result.value.id);
+
+    // Substituição no meio do mandato é um evento real acontecendo agora —
+    // diferente da atribuição comum, o novo titular NÃO começa no início
+    // da Gestão (ele não estava no cargo desde então).
+    const newHistory = await positionHistoryRepository.listByMemberId('m2');
+    expect(newHistory[0]?.dataInicio.toISOString()).toBe('2026-06-01T00:00:00.000Z');
+  });
+
+  it('reatribuir o MESMO Irmão ao MESMO cargo na mesma Gestão não duplica o histórico', async () => {
+    const { useCase, boardTermRepository, memberRepository, positionHistoryRepository } =
+      buildUseCase();
+    await boardTermRepository.create(term);
+    await memberRepository.create(buildMember('m1'));
+
+    const first = await useCase.execute(ctx, {
+      gestaoId: 'term-1',
+      cargo: 'veneravel_mestre',
+      memberId: 'm1',
+      ordem: 1,
+    });
+    // Reenvio do formulário (ex.: correção de `ordem`) — mesmo Irmão, mesmo
+    // cargo, mesma Gestão. Achado do Administrador: isso fragmentava o
+    // "Venerável Mestre" em dois registros de histórico no Perfil.
+    const second = await useCase.execute(ctx, {
+      gestaoId: 'term-1',
+      cargo: 'veneravel_mestre',
+      memberId: 'm1',
+      ordem: 1,
+    });
+
+    expect(first.ok).toBe(true);
+    expect(second.ok).toBe(true);
+    if (!first.ok || !second.ok) return;
+    expect(second.value.id).toBe(first.value.id);
+
+    const history = await positionHistoryRepository.listByMemberId('m1');
+    expect(history).toHaveLength(1);
+    expect(history[0]?.dataFim).toBeNull();
   });
 
   it('permite múltiplos titulares para Diácono', async () => {
