@@ -7,6 +7,7 @@ import { letterRecordsCollection } from '@/modules/cripta/lib/letter-record';
 import { readCriptaPublicKey } from '@/modules/cripta/lib/cripta-crypto-state';
 import { CycleWizardView } from './cycle-wizard-view';
 import { CeremonyHistory } from './ceremony-history';
+import { GuardianFileCheckPanel } from './guardian-file-check-panel';
 import { GuardianSharesPanel } from './guardian-shares-panel';
 import { RenewalPanel } from './renewal-panel';
 import { CleanupPanel } from './cleanup-panel';
@@ -86,6 +87,7 @@ export default async function Page() {
       )}
 
       <GuardianSharesPanel />
+      <GuardianFileCheckPanel />
 
       {wizard.phase === 'exportar' && sealData?.status === 'sealed' && (
         <CleanupPanel

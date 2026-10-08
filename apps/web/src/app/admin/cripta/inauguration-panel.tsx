@@ -1,4 +1,5 @@
 'use client';
+import { guardianShareDigest } from '@/modules/cripta/lib/guardian-file-check';
 
 import { useState } from 'react';
 import { generateCriptaKeypair, type CriptaPublicKey } from '@/modules/cripta/lib/cripta-key';
@@ -151,6 +152,11 @@ export function InaugurationPanel({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          guardianShareDigests: await Promise.all(
+            generated.shares.map((share) =>
+              guardianShareDigest(share, generated.publicKey, TOTAL, THRESHOLD),
+            ),
+          ),
           publicKey: generated.publicKey,
           totalGuardians: TOTAL,
           threshold: THRESHOLD,
