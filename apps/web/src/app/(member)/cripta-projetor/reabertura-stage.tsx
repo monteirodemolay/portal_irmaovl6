@@ -3,9 +3,18 @@
 import { useEffect, useState } from 'react';
 import { CeremonyStage, Plaque, useStep } from './ceremony-stage';
 import { OnlineOpeningControl } from '../cripta-administracao/online-opening-control';
+import { RestorePanel } from '../cripta-administracao/restore-panel';
 
 type Phase = 'restaurar' | 'reabrir';
-const STEPS = 3; // contexto, restauração (aguardando), reabrir
+type Restoration = {
+  restoredDrafts: number;
+  skippedDrafts: number;
+  archivedLetters: number;
+  failed: Array<{ uid: string; error: string }>;
+  complete: boolean;
+  at: string;
+};
+const STEPS = 3; // contexto, restauração, reabrir
 
 function stepForPhase(phase: Phase): number {
   return phase === 'restaurar' ? 1 : 2;
@@ -18,6 +27,8 @@ export function ReaberturaStage({
   choices,
   openingDue,
   retainedLetterCount,
+  receiptCode,
+  restoration,
 }: {
   phase: Phase;
   masterName: string;
@@ -25,6 +36,8 @@ export function ReaberturaStage({
   choices: Array<{ id: string; name: string }>;
   openingDue: boolean;
   retainedLetterCount: number;
+  receiptCode: string | undefined;
+  restoration: Restoration | null | undefined;
 }) {
   const [step, setStep] = useState(() => stepForPhase(phase));
   useEffect(() => setStep(() => stepForPhase(phase)), [phase]);
@@ -44,6 +57,8 @@ export function ReaberturaStage({
         choices={choices}
         openingDue={openingDue}
         retainedLetterCount={retainedLetterCount}
+        receiptCode={receiptCode}
+        restoration={restoration}
       />
     </CeremonyStage>
   );
@@ -55,12 +70,16 @@ function Body({
   choices,
   openingDue,
   retainedLetterCount,
+  receiptCode,
+  restoration,
 }: {
   masterName: string;
   control: { commissionMemberIds?: string[]; nextOpeningDate?: string } | undefined;
   choices: Array<{ id: string; name: string }>;
   openingDue: boolean;
   retainedLetterCount: number;
+  receiptCode: string | undefined;
+  restoration: Restoration | null | undefined;
 }) {
   const current = useStep();
   return (
@@ -88,28 +107,20 @@ function Body({
         </Plaque>
       )}
 
-      {current === 1 && (
+      {current === 1 && receiptCode && (
         <Plaque>
-          <p className="cripta-step-label">Passo 1 · Na Administração</p>
-          <p className="cripta-eyebrow">Agora</p>
-          <h1 className="cripta-headline" style={{ fontSize: 'clamp(26px,4vw,40px)' }}>
-            Restaurando os rascunhos retidos
+          <p className="cripta-step-label">Passo 1 · Nesta mesma sessão</p>
+          <p className="cripta-eyebrow">Restauração</p>
+          <h1 className="cripta-headline" style={{ fontSize: 'clamp(24px,3.6vw,34px)' }}>
+            Restaurar os rascunhos para o novo ciclo
           </h1>
-          <hr className="cripta-rule" />
-          <p className="cripta-lede">
-            {retainedLetterCount > 0
-              ? `${retainedLetterCount} registro(s) retido(s) do ciclo anterior aguardam restauração.`
-              : 'Nenhum registro retido pendente.'}
-          </p>
-          <span className="cripta-pulse">
-            <span />
-            <span />
-            <span />
-          </span>
-          <div>
-            <button type="button" className="cripta-btn" onClick={() => window.location.reload()}>
-              Já restaurei — verificar de novo
-            </button>
+          <div className="cripta-form-shell">
+            <RestorePanel
+              receiptCode={receiptCode}
+              recorded={restoration ?? null}
+              retainedLetterCount={retainedLetterCount}
+              showAdvanceAfterRestore
+            />
           </div>
         </Plaque>
       )}

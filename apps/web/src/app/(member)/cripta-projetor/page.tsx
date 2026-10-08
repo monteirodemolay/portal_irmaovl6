@@ -107,6 +107,10 @@ export default async function Page() {
       choices={choices}
       openingDue={openingDue}
       retainedLetterCount={retainedLetterCount}
+      receiptCode={sealData?.code as string | undefined}
+      restoration={
+        sealData?.restoration?.receiptCode === sealData?.code ? sealData?.restoration : null
+      }
     />
   );
 }

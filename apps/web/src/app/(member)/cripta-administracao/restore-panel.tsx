@@ -11,9 +11,22 @@ type Restoration = {
   at: string;
 };
 
-type Props = { receiptCode: string; recorded: Restoration | null; retainedLetterCount: number };
+type Props = {
+  receiptCode: string;
+  recorded: Restoration | null;
+  retainedLetterCount: number;
+  /** The Projetor passes this only while this panel is the active "restaurar" step — gives the
+   * operator an explicit way to move on to reabrir once the restauração is complete, the same
+   * pattern already used by SealPanel's showAdvanceAfterSeal. */
+  showAdvanceAfterRestore?: boolean;
+};
 
-export function RestorePanel({ receiptCode, recorded, retainedLetterCount }: Props) {
+export function RestorePanel({
+  receiptCode,
+  recorded,
+  retainedLetterCount,
+  showAdvanceAfterRestore,
+}: Props) {
   const [file, setFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
@@ -111,6 +124,15 @@ export function RestorePanel({ receiptCode, recorded, retainedLetterCount }: Pro
                 </li>
               ))}
             </ul>
+          )}
+          {showAdvanceAfterRestore && result.complete && (
+            <button
+              type="button"
+              onClick={() => window.location.reload()}
+              className="mt-4 rounded-xl bg-[#123c69] px-4 py-3 font-semibold text-white"
+            >
+              Continuar para a Reabertura →
+            </button>
           )}
         </div>
       )}
