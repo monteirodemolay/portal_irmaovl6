@@ -14,6 +14,7 @@ import {
   MEMBER_DEGREES,
   MEMBER_SITUATION_STATUS_LABELS,
   MEMBER_SITUATION_STATUSES,
+  type SearchSuggestion,
   type AreaAtuacaoKey,
   type MemberDegree,
   type MemberSituationStatus,
@@ -94,7 +95,7 @@ export function CommunitySearchPanel({
   businessOptions: BusinessDirectoryFilterOptions;
   areaFacets: AreaFacet[];
   resultCount: number;
-  suggestions?: import('@vl6/shared').SearchSuggestion[];
+  suggestions?: SearchSuggestion[];
 }) {
   const hasAnyAdvancedOption =
     directoryOptions.profissoes.length > 0 ||
