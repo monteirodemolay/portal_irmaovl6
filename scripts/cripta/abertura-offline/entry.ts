@@ -1,3 +1,4 @@
+import { guardianShareDigest } from '../../../apps/web/src/modules/cripta/lib/guardian-file-check';
 /** Entry point bundled (by build.mjs, via esbuild) into index.html's inline <script>.
  * Reuses the exact same crypto modules the Portal itself uses for sealing letters and
  * splitting the Cripta's private key — nothing here is a reimplementation, so there is no
@@ -194,11 +195,14 @@ export async function reencryptAllLetters(
 export async function generateRenewedKey(
   totalGuardians: number,
   threshold: number,
-): Promise<{ publicKey: CriptaPublicKey; shares: Share[] }> {
+): Promise<{ publicKey: CriptaPublicKey; shares: Share[]; guardianShareDigests: string[] }> {
   const { publicKey, privateScalar } = await generateCriptaKeypair();
   const shares = splitSecret(privateScalar, totalGuardians, threshold);
   privateScalar.fill(0); // never kept once split, same discipline as the Inauguration panel
-  return { publicKey, shares };
+  const guardianShareDigests = await Promise.all(
+    shares.map((share) => guardianShareDigest(share, publicKey, totalGuardians, threshold)),
+  );
+  return { publicKey, shares, guardianShareDigests };
 }
 
 function randomHex(bytes: number): string {

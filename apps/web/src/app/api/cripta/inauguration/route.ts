@@ -1,3 +1,4 @@
+import { validGuardianDigests } from '@/modules/cripta/lib/guardian-file-check';
 import { criptaRoute } from '@/modules/cripta/lib/cripta-route';
 import { webcrypto } from 'node:crypto';
 import { createServerContainer, getAdminFirestore } from '@vl6/infra';
@@ -60,6 +61,8 @@ export const POST = criptaRoute(async function POST(request: Request) {
   const threshold = body?.threshold;
   const minutes = typeof body?.minutes === 'string' ? body.minutes.trim() : '';
   if (
+    (body?.guardianShareDigests !== undefined &&
+      !validGuardianDigests(body.guardianShareDigests, 5)) ||
     !isPublicKey(body?.publicKey) ||
     !Number.isInteger(totalGuardians) ||
     totalGuardians !== 5 ||
@@ -116,6 +119,7 @@ export const POST = criptaRoute(async function POST(request: Request) {
     threshold: threshold as number,
     guardianMemberIds: guardianMemberIds as string[],
     guardianShares: initialGuardianShares(guardianMemberIds as string[]),
+    guardianShareDigests: (body!.guardianShareDigests as string[] | undefined) ?? [],
     minutes,
     masterId: master.member.id,
     inauguratedAt,

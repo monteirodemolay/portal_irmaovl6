@@ -13,6 +13,7 @@ type RenewalResult = {
   totalGuardioes: number;
   ata: string;
   novosGuardioes: string[];
+  guardianShareDigests?: string[];
 };
 
 function isRenewalResult(value: unknown): value is RenewalResult {
@@ -69,6 +70,7 @@ export function RenewalPanel({ eligible }: { eligible: Member[] }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           newPublicKey: result.novaChavePublica,
+          guardianShareDigests: result.guardianShareDigests,
           guardianMemberIds: distinctChosen,
           minutes: result.ata,
           reason,

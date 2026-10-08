@@ -1,3 +1,4 @@
+import { validGuardianDigests } from '@/modules/cripta/lib/guardian-file-check';
 import { criptaRoute } from '@/modules/cripta/lib/cripta-route';
 import { webcrypto } from 'node:crypto';
 import { createServerContainer, getAdminFirestore } from '@vl6/infra';
@@ -67,6 +68,8 @@ export const POST = criptaRoute(async function POST(request: Request) {
 
   if (
     !isPublicKey(body?.newPublicKey) ||
+    (body?.guardianShareDigests !== undefined &&
+      !validGuardianDigests(body.guardianShareDigests, current.totalGuardians)) ||
     guardianMemberIds.length !== current.totalGuardians ||
     !guardianMemberIds.every((id): id is string => typeof id === 'string' && id.length > 0) ||
     new Set(guardianMemberIds).size !== guardianMemberIds.length ||
@@ -139,6 +142,7 @@ export const POST = criptaRoute(async function POST(request: Request) {
   const at = new Date().toISOString();
   const newState = {
     ...current,
+    guardianShareDigests: (body!.guardianShareDigests as string[] | undefined) ?? [], // Never retain old commitments.
     publicKey: body!.newPublicKey as CriptaPublicKey,
     guardianMemberIds: guardianMemberIds as string[],
     guardianShares: initialGuardianShares(guardianMemberIds as string[]),

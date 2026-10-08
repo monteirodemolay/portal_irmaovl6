@@ -2513,6 +2513,23 @@
     }
   });
 
+  // apps/web/src/modules/cripta/lib/guardian-file-check.ts
+  async function guardianShareDigest(share, key, total, threshold) {
+    const canonical = JSON.stringify([
+      "vl6-guardian-integrity-v1",
+      key.kty,
+      key.crv,
+      key.x,
+      key.y,
+      total,
+      threshold,
+      share.x,
+      btoa(String.fromCharCode(...share.y))
+    ]);
+    const hash = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(canonical));
+    return Array.from(new Uint8Array(hash), (byte) => byte.toString(16).padStart(2, "0")).join("");
+  }
+
   // apps/web/src/modules/cripta/lib/gf256.ts
   var EXP = new Uint8Array(510);
   var LOG = new Uint8Array(256);
@@ -2935,7 +2952,10 @@
     const { publicKey, privateScalar } = await generateCriptaKeypair();
     const shares = splitSecret(privateScalar, totalGuardians, threshold);
     privateScalar.fill(0);
-    return { publicKey, shares };
+    const guardianShareDigests = await Promise.all(
+      shares.map((share) => guardianShareDigest(share, publicKey, totalGuardians, threshold))
+    );
+    return { publicKey, shares, guardianShareDigests };
   }
   function randomHex(bytes) {
     return Array.from(
@@ -3235,6 +3255,7 @@ jszip/dist/jszip.min.js:
         format: 'vl6-cripta-renewal-result-v1',
         novoCodigo: renewed.code,
         novaChavePublica: newKey.publicKey,
+        guardianShareDigests: newKey.guardianShareDigests,
         inventoryDigest: renewed.inventoryDigest,
         totalCartas: renewed.letters,
         totalRascunhos: renewed.drafts,
