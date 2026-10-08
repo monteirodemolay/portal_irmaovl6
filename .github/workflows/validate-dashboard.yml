@@ -5,6 +5,7 @@ on:
     paths:
       - "apps/web/src/modules/admin/**"
       - "apps/web/src/app/admin/page.tsx"
+      - "apps/web/src/app/admin/cripta/**"
       - "apps/web/src/app/api/admin/dashboard/**"
       - ".github/workflows/validate-dashboard.yml"
 permissions:

@@ -4,12 +4,14 @@ import { requirePagePermission } from '@/lib/auth/require-permission';
 import { currentCriptaMaster } from '@/modules/cripta/lib/current-master';
 import { currentWizardStatus } from '@/modules/cripta/lib/wizard-status';
 import { letterRecordsCollection } from '@/modules/cripta/lib/letter-record';
+import { readCriptaPublicKey } from '@/modules/cripta/lib/cripta-crypto-state';
 import { CycleWizardView } from './cycle-wizard-view';
 import { CeremonyHistory } from './ceremony-history';
 import { GuardianSharesPanel } from './guardian-shares-panel';
 import { RenewalPanel } from './renewal-panel';
 import { CleanupPanel } from './cleanup-panel';
 import { RestorePanel } from './restore-panel';
+import { ResetPanel } from './reset-panel';
 
 export const maxDuration = 300;
 
@@ -28,14 +30,16 @@ export default async function Page() {
   const container = createServerContainer();
   const db = getAdminFirestore();
 
-  const [membersResult, governance, master, seal, wizard, retainedLetterCount] = await Promise.all([
-    container.repositories.member.search({ tenantId, situacao: 'ativo' }, { limit: 100 }),
-    db.collection('criptaGovernanceV1').doc(tenantId).get(),
-    currentCriptaMaster(tenantId),
-    db.collection('criptaSealsV1').doc(tenantId).get(),
-    currentWizardStatus(tenantId),
-    countRetainedLetterRecords(tenantId),
-  ]);
+  const [membersResult, governance, master, seal, wizard, retainedLetterCount, inauguration] =
+    await Promise.all([
+      container.repositories.member.search({ tenantId, situacao: 'ativo' }, { limit: 100 }),
+      db.collection('criptaGovernanceV1').doc(tenantId).get(),
+      currentCriptaMaster(tenantId),
+      db.collection('criptaSealsV1').doc(tenantId).get(),
+      currentWizardStatus(tenantId),
+      countRetainedLetterRecords(tenantId),
+      readCriptaPublicKey(tenantId),
+    ]);
 
   const members = membersResult.items;
   const control = governance.data();
@@ -66,6 +70,15 @@ export default async function Page() {
       </header>
 
       <CycleWizardView result={wizard} />
+      {inauguration && (
+        <div className="rounded-xl border border-green-300 bg-green-50 p-4 text-sm leading-6 text-green-950">
+          <strong>Inauguração concluída</strong> em{' '}
+          {new Date(inauguration.inauguratedAt).toLocaleString('pt-BR', {
+            timeZone: 'America/Sao_Paulo',
+          })}{' '}
+          · {inauguration.totalGuardians} Guardiões, limiar {inauguration.threshold}.
+        </div>
+      )}
       <CeremonyHistory wizard={wizard} />
       <ComissaoSummary control={control} name={name} />
       {wizard.phase === 'aberto' && (
@@ -117,12 +130,19 @@ export default async function Page() {
         </Link>
       </section>
 
-      <Link
-        href="/admin/cripta/manutencao"
-        className="border-border block rounded-xl border p-4 text-sm font-semibold"
-      >
-        Manutenção e ferramentas de ensaio →
-      </Link>
+      <section>
+        <p className="text-xs font-semibold uppercase tracking-widest text-red-800">
+          Ferramenta de ensaio · apaga dados de verdade
+        </p>
+        <p className="mt-1 text-sm text-[#5e584c]">
+          Use só para repetir um percurso de teste do zero. Não é parte do ciclo anual normal — a
+          limpeza de cada ano é a etapa 7, operada no Projetor durante a Exportação, e concluída
+          aqui.
+        </p>
+        <div className="mt-3">
+          <ResetPanel />
+        </div>
+      </section>
     </div>
   );
 }
