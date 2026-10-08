@@ -1,5 +1,4 @@
 import { ContextReturn } from '@/components/layout/context-link';
-import Link from '@/components/layout/context-link';
 import { notFound } from 'next/navigation';
 import { createServerContainer } from '@vl6/infra';
 import { Badge, BookOpen, Button, Card, CardContent, Star } from '@vl6/ui';

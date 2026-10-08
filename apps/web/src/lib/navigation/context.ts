@@ -9,10 +9,10 @@ export function resolveOrigin(value: string | null): NavigationOrigin | null {
   if (!value || !value.startsWith('/') || value.startsWith('//') || /[\\\r\n]/.test(value)) return null;
   const url = new URL(value, 'https://portal.invalid');
   if (url.origin !== 'https://portal.invalid') return null;
-  const module = modules.find(([path]) => url.pathname === path || url.pathname.startsWith(`${path}/`));
-  if (!module) return null;
+  const originModule = modules.find(([path]) => url.pathname === path || url.pathname.startsWith(`${path}/`));
+  if (!originModule) return null;
   url.searchParams.delete('from');
-  return { href: url.pathname + url.search + url.hash, module: module[0], label: module[1] };
+  return { href: url.pathname + url.search + url.hash, module: originModule[0], label: originModule[1] };
 }
 
 export function contextualHref(target: string, origin: NavigationOrigin | null): string {
