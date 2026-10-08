@@ -1,3 +1,4 @@
+import { normalizeForSearch as normalizeSearchText } from '@vl6/shared';
 export const ARCHIVE_SEARCH_KINDS = ['documento', 'biblioteca', 'fotografia', 'evento', 'noticia'] as const;
 export type ArchiveSearchKind = (typeof ARCHIVE_SEARCH_KINDS)[number];
 
@@ -51,12 +52,7 @@ export interface ArchiveSearchResult {
  * unitários fora de um Server Component) — mesma convenção de
  * `archive-item-id.ts`.
  */
-export function normalizeSearchText(value: string): string {
-  return value
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase();
-}
+export { normalizeForSearch as normalizeSearchText } from '@vl6/shared';
 
 export function matchesArchiveSearch(result: ArchiveSearchResult, query: string): boolean {
   if (!query) return true;

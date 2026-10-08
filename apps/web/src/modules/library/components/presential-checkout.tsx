@@ -1,4 +1,6 @@
 'use client';
+import { normalizeForSearch } from '@vl6/shared';
+
 
 import { type FormEvent, useEffect, useMemo, useRef, useState, useTransition } from 'react';
 import jsQR from 'jsqr';
@@ -151,22 +153,22 @@ export function PresentialCheckout({
   const itemById = useMemo(() => new Map(items.map((item) => [item.id, item])), [items]);
 
   const titleSuggestions = useMemo(() => {
-    const query = titleQuery.trim().toLowerCase();
+    const query = normalizeForSearch(titleQuery.trim());
     if (!query) return [];
     return physicalItems
       .filter(
         (item) =>
-          (item.titulo ?? '').toLowerCase().includes(query) &&
+          normalizeForSearch((item.titulo ?? '')).includes(query) &&
           (availableByItem.get(item.id) ?? 0) > 0,
       )
       .slice(0, 8);
   }, [titleQuery, physicalItems, availableByItem]);
 
   const memberSuggestions = useMemo(() => {
-    const query = memberQuery.trim().toLowerCase();
+    const query = normalizeForSearch(memberQuery.trim());
     if (!query) return [];
     return members
-      .filter((option) => option.nomeCompleto.toLowerCase().includes(query))
+      .filter((option) => normalizeForSearch(option.nomeCompleto).includes(query))
       .slice(0, 8);
   }, [memberQuery, members]);
 

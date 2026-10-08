@@ -1,3 +1,4 @@
+import { LocalSearchResults } from '@/components/search/local-search-results';
 import Link from '@/components/layout/context-link';
 import type { LibraryItem } from '@vl6/domain';
 import { createServerContainer } from '@vl6/infra';
@@ -65,7 +66,7 @@ export default async function LibraryCatalogPage() {
             <Ranking title="Top 5 — mais retirados" items={topLoans} value="loans" />
           </section>
 
-          <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          <LocalSearchResults items={items.map((item) => ({ id: item.id, text: `${item.titulo} ${item.autor ?? ''} ${categoryById.get(item.categoriaId) ?? ''}` }))}>
             {items.map((item) => {
               const physical = item.formato !== 'digital';
               const available = availableByItem.get(item.id) ?? 0;
@@ -122,7 +123,7 @@ export default async function LibraryCatalogPage() {
                 </Card>
               );
             })}
-          </section>
+          </LocalSearchResults>
         </>
       )}
     </div>

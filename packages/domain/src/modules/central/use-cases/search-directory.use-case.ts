@@ -1,3 +1,4 @@
+import { normalizeForSearch, type SearchSuggestion } from '@vl6/shared';
 import type { AreaAtuacaoKey, MemberDegree, MemberSituationStatus } from '@vl6/shared';
 import { getBoardPositionLabel } from '@vl6/shared';
 import type { AuthContext } from '../../../shared/auth-context';
@@ -60,6 +61,7 @@ export interface SearchDirectoryOutput {
   items: DirectoryMemberDTO[];
   metrics: DirectoryMetrics;
   areaFacets: AreaFacet[];
+  searchSuggestions: SearchSuggestion[];
   filterOptions: DirectoryFilterOptions;
 }
 
@@ -153,31 +155,10 @@ export class SearchDirectoryUseCase {
       items = items.filter((dto) => dto.grau === input.grau);
     }
 
-    const needle = input.termo?.trim().toLowerCase();
-    if (needle) {
-      items = items.filter((dto) => {
-        const haystack = [
-          dto.nomeCompleto,
-          dto.cargoAtual,
-          ...dto.comissoes.map((c) => c.nome),
-          dto.optional.profissional?.profissao,
-          dto.optional.profissional?.areaAtuacao,
-          dto.optional.profissional?.resumoProfissional,
-          ...(dto.optional.negocios?.map((n) => n.nomeEmpresa) ?? []),
-          ...(dto.optional.competencias ?? []),
-          ...(dto.optional.servicos ?? []),
-        ]
-          .filter((v): v is string => Boolean(v))
-          .join(' ')
-          .toLowerCase();
-        return haystack.includes(needle);
-      });
-    }
-
     if (input.profissao?.trim()) {
-      const needleProfissao = input.profissao.trim().toLowerCase();
+      const needleProfissao = normalizeForSearch(input.profissao.trim());
       items = items.filter((dto) =>
-        dto.optional.profissional?.profissao?.toLowerCase().includes(needleProfissao),
+        normalizeForSearch(dto.optional.profissional?.profissao).includes(needleProfissao),
       );
     }
 
@@ -188,54 +169,54 @@ export class SearchDirectoryUseCase {
     }
 
     if (input.competencia?.trim()) {
-      const needleCompetencia = input.competencia.trim().toLowerCase();
+      const needleCompetencia = normalizeForSearch(input.competencia.trim());
       items = items.filter((dto) =>
-        dto.optional.competencias?.some((c) => c.toLowerCase() === needleCompetencia),
+        dto.optional.competencias?.some((c) => normalizeForSearch(c) === needleCompetencia),
       );
     }
 
     if (input.servico?.trim()) {
-      const needleServico = input.servico.trim().toLowerCase();
+      const needleServico = normalizeForSearch(input.servico.trim());
       items = items.filter((dto) =>
-        dto.optional.servicos?.some((s) => s.toLowerCase() === needleServico),
+        dto.optional.servicos?.some((s) => normalizeForSearch(s) === needleServico),
       );
     }
 
     if (input.tag?.trim()) {
-      const needleTag = input.tag.trim().toLowerCase();
+      const needleTag = normalizeForSearch(input.tag.trim());
       items = items.filter(
         (dto) =>
-          dto.optional.competencias?.some((c) => c.toLowerCase() === needleTag) ||
-          dto.optional.servicos?.some((s) => s.toLowerCase() === needleTag),
+          dto.optional.competencias?.some((c) => normalizeForSearch(c) === needleTag) ||
+          dto.optional.servicos?.some((s) => normalizeForSearch(s) === needleTag),
       );
     }
 
     if (input.empresa?.trim()) {
-      const needleEmpresa = input.empresa.trim().toLowerCase();
+      const needleEmpresa = normalizeForSearch(input.empresa.trim());
       items = items.filter((dto) => {
         const empresas = (dto.optional.negocios?.map((n) => n.nomeEmpresa) ?? []).filter(
           (v): v is string => Boolean(v),
         );
-        return empresas.some((e) => e.toLowerCase().includes(needleEmpresa));
+        return empresas.some((e) => normalizeForSearch(e).includes(needleEmpresa));
       });
     }
 
     if (input.cidade?.trim()) {
-      const needleCidade = input.cidade.trim().toLowerCase();
+      const needleCidade = normalizeForSearch(input.cidade.trim());
       items = items.filter((dto) =>
-        dto.optional.cidadeExibicao?.toLowerCase().includes(needleCidade),
+        normalizeForSearch(dto.optional.cidadeExibicao).includes(needleCidade),
       );
     }
 
     if (input.cargo?.trim()) {
-      const needleCargo = input.cargo.trim().toLowerCase();
-      items = items.filter((dto) => dto.cargoAtual?.toLowerCase() === needleCargo);
+      const needleCargo = normalizeForSearch(input.cargo.trim());
+      items = items.filter((dto) => normalizeForSearch(dto.cargoAtual) === needleCargo);
     }
 
     if (input.comissao?.trim()) {
-      const needleComissao = input.comissao.trim().toLowerCase();
+      const needleComissao = normalizeForSearch(input.comissao.trim());
       items = items.filter((dto) =>
-        dto.comissoes.some((c) => c.nome.toLowerCase() === needleComissao),
+        dto.comissoes.some((c) => normalizeForSearch(c.nome) === needleComissao),
       );
     }
 
@@ -247,7 +228,47 @@ export class SearchDirectoryUseCase {
       items = items.filter((dto) => (dto.optional.negocios?.length ?? 0) > 0);
     }
 
-    return ok({ items, metrics, areaFacets, filterOptions });
+    const searchSuggestions = items.map((dto) => ({
+      label: dto.nomeCompleto,
+      href: `/irmaos/${dto.memberId}`,
+      text: [
+        dto.nomeCompleto,
+        dto.cargoAtual,
+        ...dto.comissoes.map((c) => c.nome),
+        dto.optional.profissional?.profissao,
+        dto.optional.profissional?.areaAtuacao,
+        dto.optional.profissional?.resumoProfissional,
+        ...(dto.optional.negocios?.map((n) => n.nomeEmpresa) ?? []),
+        ...(dto.optional.competencias ?? []),
+        ...(dto.optional.servicos ?? []),
+      ]
+        .filter(Boolean)
+        .join(' '),
+    }));
+
+    const needle = normalizeForSearch(input.termo?.trim());
+    if (needle) {
+      items = items.filter((dto) => {
+        const haystack = normalizeForSearch(
+          [
+            dto.nomeCompleto,
+            dto.cargoAtual,
+            ...dto.comissoes.map((c) => c.nome),
+            dto.optional.profissional?.profissao,
+            dto.optional.profissional?.areaAtuacao,
+            dto.optional.profissional?.resumoProfissional,
+            ...(dto.optional.negocios?.map((n) => n.nomeEmpresa) ?? []),
+            ...(dto.optional.competencias ?? []),
+            ...(dto.optional.servicos ?? []),
+          ]
+            .filter((v): v is string => Boolean(v))
+            .join(' '),
+        );
+        return haystack.includes(needle);
+      });
+    }
+
+    return ok({ items, searchSuggestions, metrics, areaFacets, filterOptions });
   }
 
   /** Busca o tenant inteiro em páginas — ver comentário de `FETCH_PAGE_LIMIT`. */

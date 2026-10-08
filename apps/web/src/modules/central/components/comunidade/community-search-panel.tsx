@@ -1,4 +1,6 @@
 'use client';
+import { LiveSearchForm } from '@/components/search/live-search-form';
+
 
 import { useState } from 'react';
 import Link from 'next/link';
@@ -12,6 +14,7 @@ import {
   MEMBER_DEGREES,
   MEMBER_SITUATION_STATUS_LABELS,
   MEMBER_SITUATION_STATUSES,
+  type SearchSuggestion,
   type AreaAtuacaoKey,
   type MemberDegree,
   type MemberSituationStatus,
@@ -84,6 +87,7 @@ export function CommunitySearchPanel({
   businessOptions,
   areaFacets,
   resultCount,
+  suggestions = [],
 }: {
   tipo: CommunityTipo;
   filters: CommunityFiltersValues;
@@ -91,6 +95,7 @@ export function CommunitySearchPanel({
   businessOptions: BusinessDirectoryFilterOptions;
   areaFacets: AreaFacet[];
   resultCount: number;
+  suggestions?: SearchSuggestion[];
 }) {
   const hasAnyAdvancedOption =
     directoryOptions.profissoes.length > 0 ||
@@ -189,7 +194,7 @@ export function CommunitySearchPanel({
         })}
       </nav>
 
-      <form method="get" action="/irmaos" className="flex flex-col gap-3">
+      <LiveSearchForm suggestions={suggestions} method="get" action="/irmaos" className="flex flex-col gap-3">
         <input type="hidden" name="tipo" value={tipo} />
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_auto]">
           <div className="relative">
@@ -433,7 +438,7 @@ export function CommunitySearchPanel({
             </button>
           </div>
         )}
-      </form>
+      </LiveSearchForm>
 
       {chips.length > 0 && (
         <div className="flex flex-wrap items-center gap-2">

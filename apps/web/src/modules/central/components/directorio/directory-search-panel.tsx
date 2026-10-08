@@ -1,4 +1,6 @@
 'use client';
+import { LiveSearchForm } from '@/components/search/live-search-form';
+
 
 import { useRef, useState } from 'react';
 import Link from 'next/link';
@@ -104,7 +106,7 @@ export function DirectorySearchPanel({
   }
 
   return (
-    <form method="get" className="flex flex-col gap-3">
+    <LiveSearchForm method="get" className="flex flex-col gap-3">
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_auto]">
         <div className="relative">
           <Search
@@ -260,6 +262,6 @@ export function DirectorySearchPanel({
           </button>
         </div>
       )}
-    </form>
+    </LiveSearchForm>
   );
 }

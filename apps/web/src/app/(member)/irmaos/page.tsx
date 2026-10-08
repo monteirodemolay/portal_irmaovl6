@@ -128,6 +128,7 @@ export default async function ComunidadeVL6Page({
           segmento: filters.segmento,
           cidade: filters.cidade,
           atendeOnline: filters.online,
+          ofereceDescontoIrmaos: filters.desconto,
         })
       : null,
   ]);
@@ -186,6 +187,10 @@ export default async function ComunidadeVL6Page({
             directoryOptions={directoryOptions}
             businessOptions={businessOptions}
             areaFacets={areaFacets}
+            suggestions={[
+              ...(directoryResult?.ok ? directoryResult.value.searchSuggestions : []),
+              ...(businessResult?.ok ? businessResult.value.searchSuggestions : []),
+            ]}
             resultCount={resultCount}
           />
 

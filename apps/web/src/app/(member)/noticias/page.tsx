@@ -1,3 +1,6 @@
+import { LiveSearchForm } from '@/components/search/live-search-form';
+
+import { normalizeForSearch } from '@vl6/shared';
 import Link from '@/components/layout/context-link';
 import { notFound } from 'next/navigation';
 import { hasPermission, resolveHeroPhoto, type News } from '@vl6/domain';
@@ -91,16 +94,15 @@ export default async function PublicNewsPage({
     ),
   ].sort((a, b) => b - a);
 
-  const normalizedQuery = query.toLocaleLowerCase('pt-BR');
+  const normalizedQuery = normalizeForSearch(query);
   const filtered = allNews.filter((item) => {
     if (selectedCategory && item.categoria !== selectedCategory) return false;
     if (selectedYear && String(item.dataPublicacao?.getFullYear() ?? '') !== selectedYear)
       return false;
     if (!normalizedQuery) return true;
-    const haystack =
-      `${item.titulo} ${item.subtitulo ?? ''} ${stripHtml(item.conteudoHtml)}`.toLocaleLowerCase(
-        'pt-BR',
-      );
+    const haystack = normalizeForSearch(
+      `${item.titulo} ${item.subtitulo ?? ''} ${stripHtml(item.conteudoHtml)}`,
+    );
     return haystack.includes(normalizedQuery);
   });
 
@@ -143,7 +145,18 @@ export default async function PublicNewsPage({
         }
       />
 
-      <form
+      <LiveSearchForm
+        suggestions={allNews
+          .filter(
+            (item) =>
+              (!selectedCategory || item.categoria === selectedCategory) &&
+              (!selectedYear || String(item.dataPublicacao?.getFullYear() ?? '') === selectedYear),
+          )
+          .map((item) => ({
+            label: item.titulo,
+            href: `/noticias/${item.slug}`,
+            text: item.subtitulo ?? '',
+          }))}
         action="/noticias"
         method="get"
         className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_180px_auto]"
@@ -182,7 +195,7 @@ export default async function PublicNewsPage({
         >
           Filtrar
         </button>
-      </form>
+      </LiveSearchForm>
 
       <div className="flex gap-2 overflow-x-auto pb-1">
         <Link

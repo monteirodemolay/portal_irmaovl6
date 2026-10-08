@@ -1,3 +1,4 @@
+import { LiveSearchForm } from '@/components/search/live-search-form';
 import Link from '@/components/layout/context-link';
 import type { ReactNode } from 'react';
 import { createServerContainer } from '@vl6/infra';
@@ -66,7 +67,7 @@ export default async function ArchiveSearchPage({
     <div className="flex flex-col gap-6">
       <AcervoPageHeader title="Pesquisar" backHref="/acervo" />
 
-      <form action="/acervo/pesquisar" method="get" role="search">
+      <LiveSearchForm suggestions={allResults.filter((item) => !validKind || item.kind === validKind).map((item) => ({ label: item.title, href: item.href, text: item.description }))} action="/acervo/pesquisar" method="get" role="search">
         {validKind && <input type="hidden" name="tipo" value={validKind} />}
         <label htmlFor="archive-search-full" className="sr-only">
           Pesquisar no Acervo VL6
@@ -87,7 +88,7 @@ export default async function ArchiveSearchPage({
             Pesquisar
           </button>
         </div>
-      </form>
+      </LiveSearchForm>
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <FilterBar

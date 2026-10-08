@@ -1,4 +1,6 @@
 'use client';
+import { normalizeForSearch } from '@vl6/shared';
+
 
 import { useMemo, useState } from 'react';
 import { Button, Card, CardContent, EmptyState, Input, cn } from '@vl6/ui';
@@ -28,10 +30,10 @@ export function LibraryLabelSheet({ labels }: { labels: LibraryLabelData[] }) {
   );
 
   const filtered = useMemo(() => {
-    const term = query.trim().toLowerCase();
+    const term = normalizeForSearch(query.trim());
     if (!term) return labels;
     return labels.filter(
-      (l) => l.titulo.toLowerCase().includes(term) || l.codigoTombo.toLowerCase().includes(term),
+      (l) => normalizeForSearch(l.titulo).includes(term) || normalizeForSearch(l.codigoTombo).includes(term),
     );
   }, [query, labels]);
 

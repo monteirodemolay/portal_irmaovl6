@@ -9,7 +9,7 @@ import type {
 } from '@vl6/domain';
 import {
   formatBrazilianPersonName,
-  normalizeNameForSearch,
+  normalizeForSearch,
   type MemberSituationStatus,
 } from '@vl6/shared';
 import { createEntityConverter } from '../converters/entity.converter';
@@ -177,13 +177,13 @@ export class FirestoreMemberRepository implements IMemberRepository {
       // Sem acento e minúsculo dos dois lados — buscar "Luis" precisa achar
       // "Luís" (achado do Administrador: a busca não encontrava o próprio
       // nome por causa do acento).
-      const needle = normalizeNameForSearch(filters.nome);
-      items = items.filter((m) => normalizeNameForSearch(m.nomeCompleto).includes(needle));
+      const needle = normalizeForSearch(filters.nome);
+      items = items.filter((m) => normalizeForSearch(m.nomeCompleto).includes(needle));
     }
     if (filters.cidade) {
-      const needle = normalizeNameForSearch(filters.cidade);
+      const needle = normalizeForSearch(filters.cidade);
       items = items.filter(
-        (m) => m.endereco?.cidade && normalizeNameForSearch(m.endereco.cidade).includes(needle),
+        (m) => m.endereco?.cidade && normalizeForSearch(m.endereco.cidade).includes(needle),
       );
     }
 

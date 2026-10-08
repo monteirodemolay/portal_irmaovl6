@@ -1,3 +1,4 @@
+import { normalizeForSearch } from '@vl6/shared';
 interface DatedEditorialItem {
   id: string;
   title: string;
@@ -39,9 +40,8 @@ export function filterEditorialItems<T extends DatedEditorialItem>(
     .filter((item) => {
       const value = editorialDate(item);
       return (
-        item.title
-          .toLocaleLowerCase("pt-BR")
-          .includes(filters.query.trim().toLocaleLowerCase("pt-BR")) &&
+        normalizeForSearch(item.title)
+          .includes(normalizeForSearch(filters.query.trim())) &&
         (filters.type === "Todos" || item.type === filters.type) &&
         (filters.status === "Todos" || item.status === filters.status) &&
         (filters.year === "Todos" ||
