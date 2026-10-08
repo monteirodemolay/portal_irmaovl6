@@ -27,3 +27,7 @@ A tela Conhecimento e sua alternativa Biblioteca abrem demonstrações interativ
 Biblioteca: seis obras hipotéticas, formatos físico/digital/ambos, disponibilidade, rankings, detalhes, sinopse, parecer, leitura, download, avaliação, carrinho, seleção de sessão e histórico. Conhecimento: formações, jornada, aulas de texto, avaliação, progresso e referência à Biblioteca. Cripta: destinatário, apelido, título, mensagem, rascunho e revisão. A demonstração da Cripta não simula criptografia nem guarda definitiva.
 
 Referências de implementação: catálogo e detalhes em `app/(member)/acervo/biblioteca`, carrinho e avaliações em `modules/library/components`, formação e progresso em `modules/knowledge/components/knowledge-member.tsx`, escrita e revisão em `app/(member)/cripta/cripta-experience.tsx`.
+
+## Brasão da Grande Loja
+
+A abertura e o encerramento usam o brasão fornecido em `logooficial2.jpg`, com fundo externo transparente. A faixa branca permanece visível. O arquivo é exibido inteiro com `object-fit: contain`, sem opacidade, filtros ou recorte CSS. Seu espaço de 136 × 136 mantém altura visual próxima dos brasões da Loja e da Gestão.
