@@ -120,7 +120,7 @@ describe("Dashboard: fontes autorizadas e populações", () => {
     const data = await loadDashboardOverview("2026-10-01", "2026-10-07");
     expect(data.audit.complete).toBe(false);
     expect(data.audit.items.some((a) => a.id === "private")).toBe(false);
-    expect(data.audit.items[0].actor).toBe("Responsável não identificado");
+    expect(data.audit.items[0]?.actor).toBe("Responsável não identificado");
     expect(chain.where.mock.calls[0]).toEqual(["tenantId", "==", "loja-a"]);
     expect(chain.select.mock.calls[0]).not.toContain("valorAnterior");
     expect(chain.select.mock.calls[0]).not.toContain("valorNovo");
@@ -166,9 +166,9 @@ describe("Dashboard: fontes autorizadas e populações", () => {
     ]);
     const data = await loadDashboardOverview("2026-10-01", "2026-10-07");
     expect(data.coverage).toEqual({ active: 3, linked: 1, unlinked: 2 });
-    expect(fixture.c.repositories.member.search.mock.calls[0][0].tenantId).toBe(
-      "loja-a",
-    );
+    expect(
+      fixture.c.repositories.member.search.mock.calls[0]?.[0]?.tenantId,
+    ).toBe("loja-a");
   });
   it("mantém o restante do painel quando uma fonte falha", async () => {
     fixture.permissions.push("member:read", "archiveItem:read");
@@ -196,8 +196,8 @@ describe("Dashboard: fontes autorizadas e populações", () => {
       {},
     ]);
     const data = await loadDashboardOverview("2026-10-01", "2026-10-07");
-    expect(data.tasks[0].count).toBe(2);
-    expect(data.tasks[0].href).toContain("comentarios");
+    expect(data.tasks[0]?.count).toBe(2);
+    expect(data.tasks[0]?.href).toContain("comentarios");
   });
   it("não chama empréstimo sem vencimento confirmado de atrasado", async () => {
     fixture.permissions.push("libraryItem:manage");
@@ -223,7 +223,7 @@ describe("Dashboard: fontes autorizadas e populações", () => {
     );
     const data = await loadDashboardOverview("2026-10-01", "2026-10-07");
     expect(
-      data.modules[0].metrics.find((m) => m.key === "overdue")?.value,
+      data.modules[0]?.metrics.find((m) => m.key === "overdue")?.value,
     ).toBe(1);
   });
   it("usa status publicado, versão atual e participantes distintos no Conhecimento", async () => {
@@ -241,11 +241,11 @@ describe("Dashboard: fontes autorizadas e populações", () => {
     ]);
     const data = await loadDashboardOverview("2026-10-01", "2026-10-07");
     expect(
-      data.modules[0].metrics.find((m) => m.key === "courses")?.value,
+      data.modules[0]?.metrics.find((m) => m.key === "courses")?.value,
     ).toBe(1);
     expect(
-      data.modules[0].metrics.find((m) => m.key === "participants")?.value,
+      data.modules[0]?.metrics.find((m) => m.key === "participants")?.value,
     ).toBe(1);
-    expect(data.tasks[0].count).toBe(1);
+    expect(data.tasks[0]?.count).toBe(1);
   });
 });

@@ -26,7 +26,7 @@ describe("Filtros de publicações", () => {
       "old",
       "none",
     ]);
-    expect(items[0].id).toBe("old");
+    expect(items[0]!.id).toBe("old");
   });
   it("inverte a ordem mantendo registros sem data no final", () => {
     expect(
@@ -51,7 +51,7 @@ describe("Filtros de publicações", () => {
   });
   it("considera o ano local e ignora datas inválidas", () => {
     const item = {
-      ...items[0],
+      ...items[0]!,
       publishedAt: "inválida",
       happenedAt: "2026-01-01T01:00:00Z",
     };
