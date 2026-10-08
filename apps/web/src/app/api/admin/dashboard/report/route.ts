@@ -6,7 +6,7 @@ import {
   View,
   renderToBuffer,
 } from "@react-pdf/renderer";
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { loadDashboardOverview } from "@/modules/admin/lib/load-dashboard-overview";
 import {
   csvCell,
