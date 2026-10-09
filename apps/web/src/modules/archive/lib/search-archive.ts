@@ -7,7 +7,6 @@ import { isAccessLevelVisible } from './access-level-visibility';
 import { archiveItemHref, buildArchiveItemId } from './archive-item-id';
 import type { ArchiveSearchResult } from './archive-search-match';
 
-/** "07 de setembro de 2026" — mesmo padrão pt-BR usado no restante do Acervo, fixando o fuso porque roda em Server Component. */
 function formatEventResultDate(dataInicio: Date): string {
   return new Intl.DateTimeFormat('pt-BR', {
     day: '2-digit',
@@ -27,16 +26,15 @@ export {
 } from './archive-search-match';
 
 /**
- * Busca federada do Acervo VL6 — documentos publicados, itens da Biblioteca
- * e álbuns da Galeria, sem indexador paralelo (doc 11.3), respeitando as
- * permissões da sessão. Compartilhada entre `/acervo` (prévia, até 12
- * resultados) e `/acervo/pesquisar` (lista completa) para não duplicar a
- * lógica de agregação — ver `docs/architecture/11-acervo-vl6.md`.
+ * Busca federada do Acervo VL6. O acontecimento é a fonte histórica; seus
+ * derivados aparecem como conteúdo sem criar duas memórias concorrentes.
  *
- * Eventos sem mídia continuam pertencendo à Linha do Tempo, mas não entram
- * nesta busca de conteúdo nem em "Adicionados recentemente". Só passam a
- * compor a descoberta do Acervo quando possuem ao menos uma mídia publicada
- * e visível para a sessão atual.
+ * - Evento sem mídia publicada: permanece na Linha do Tempo, não entra como
+ *   álbum/pesquisa de conteúdo.
+ * - Notícia vinculada a Evento sem mídia: continua pesquisável como memória
+ *   editorial, porque é o conteúdo disponível daquele fato.
+ * - Notícia vinculada a Evento que já possui mídia: não aparece como outro
+ *   card independente no Acervo; ela fica visível dentro da memória do Evento.
  */
 export async function loadArchiveSearchResults(
   authContext: AuthContext,
@@ -138,6 +136,8 @@ export async function loadArchiveSearchResults(
     ),
   ]);
 
+  const eventsWithVisibleContent = new Set<string>();
+
   const eventResults: ArchiveSearchResult[] = publishedArchiveItems.flatMap((item, index) => {
     const event = archiveItemEvents[index];
     if (!event || event.tenantId !== authContext.tenantId || event.deletedAt) return [];
@@ -146,10 +146,8 @@ export async function loadArchiveSearchResults(
         media.publicacaoStatus === 'publicado' && isAccessLevelVisible(media.accessLevel, visibility),
     );
 
-    // O acontecimento histórico existe independentemente de mídia e continua
-    // na Linha do Tempo. Porém, sem arquivo publicado, ele não é um item de
-    // conteúdo para descoberta, álbum ou "Adicionados recentemente".
     if (visibleMedia.length === 0) return [];
+    eventsWithVisibleContent.add(event.id);
 
     const captions = visibleMedia.map((media) => media.caption).filter(Boolean).join(' ');
     const coverPhoto =
@@ -170,25 +168,27 @@ export async function loadArchiveSearchResults(
     ];
   });
 
-  const newsResults: ArchiveSearchResult[] = newsPage.items.map((news) => ({
-    id: news.id,
-    kind: 'noticia',
-    title: news.titulo,
-    description: [
-      'Memória editorial',
-      news.dataPublicacao ? formatEventResultDate(news.dataPublicacao) : null,
-      news.categoria,
-    ]
-      .filter(Boolean)
-      .join(' · '),
-    href: `/noticias/${news.slug}`,
-    compositeId: `news_${news.id}`,
-    createdAt: news.dataPublicacao ?? news.createdAt,
-    catalogText: [news.subtitulo, news.conteudoHtml.replace(/<[^>]*>/g, ' ')]
-      .filter(Boolean)
-      .join(' '),
-    imageUrl: news.imagemCapaUrl,
-  }));
+  const newsResults: ArchiveSearchResult[] = newsPage.items
+    .filter((news) => !news.eventId || !eventsWithVisibleContent.has(news.eventId))
+    .map((news) => ({
+      id: news.id,
+      kind: 'noticia',
+      title: news.titulo,
+      description: [
+        'Memória editorial',
+        news.dataPublicacao ? formatEventResultDate(news.dataPublicacao) : null,
+        news.categoria,
+      ]
+        .filter(Boolean)
+        .join(' · '),
+      href: `/noticias/${news.slug}`,
+      compositeId: `news_${news.id}`,
+      createdAt: news.dataPublicacao ?? news.createdAt,
+      catalogText: [news.subtitulo, news.conteudoHtml.replace(/<[^>]*>/g, ' ')]
+        .filter(Boolean)
+        .join(' '),
+      imageUrl: news.imagemCapaUrl,
+    }));
 
   return [...documentResults, ...libraryResults, ...galleryResults, ...eventResults, ...newsResults];
 }
