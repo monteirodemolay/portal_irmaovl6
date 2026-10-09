@@ -5,6 +5,8 @@ import { normalizeNameForSearch, type FamilyVisibilityLevel } from '@vl6/shared'
 import { ArrowLeft, Card, CardContent, EmptyState, Lock } from '@vl6/ui';
 import { requireSession } from '@/lib/auth/require-session';
 import { PublicMemberProfileView } from '@/modules/central/components/public-member-profile-view';
+import { OwnerProfileInlineEditor } from '@/modules/central/components/owner-profile-inline-editor';
+import type { EditTab } from '@/modules/central/components/profile-shared';
 import type { ParamasonicAffiliationDisplay } from '@/modules/central/components/profile-trajectory-tab';
 import { RelationsSection } from '@/modules/archive/components/relations-section';
 import { isAccessLevelVisible } from '@/modules/archive/lib/access-level-visibility';
@@ -12,13 +14,26 @@ import type { PersonPhoto } from '@/modules/archive/components/person-photo-grid
 
 const PUBLIC_VISIBILITY_LEVELS: readonly FamilyVisibilityLevel[] = ['members', 'archive'];
 
+const EDIT_SECTIONS: readonly EditTab[] = [
+  'geral',
+  'pessoal',
+  'profissional',
+  'empresa',
+  'afiliacoes',
+  'contatos',
+  'redes',
+];
+
 export default async function IrmaoProfilePage({
   params,
+  searchParams,
 }: {
   params: Promise<{ memberId: string }>;
+  searchParams: Promise<{ editar?: string }>;
 }) {
   const session = await requireSession();
   const { memberId } = await params;
+  const { editar } = await searchParams;
 
   if (!hasPermission(session.authContext, 'memberDirectory:read')) {
     return (
@@ -46,6 +61,8 @@ export default async function IrmaoProfilePage({
     session.user.id,
   );
   const isOwnProfile = ownMember?.id === memberId;
+  const editingSection: EditTab | null =
+    isOwnProfile && EDIT_SECTIONS.includes(editar as EditTab) ? (editar as EditTab) : null;
 
   // Títulos e Condições Maçônicas (Fase 1 de Honrarias) — institucional,
   // sempre exibido na seção Trajetória, mesmo motivo de `trajetoria` (não
@@ -155,6 +172,12 @@ export default async function IrmaoProfilePage({
           profile={profile}
           canViewAcervo={canViewAcervo}
           isOwnProfile={isOwnProfile}
+          editingSection={editingSection}
+          ownerEditor={
+            editingSection ? (
+              <OwnerProfileInlineEditor memberId={memberId} section={editingSection} />
+            ) : null
+          }
           memberTitles={memberTitles}
           honors={honors}
           philosophicalJourneys={philosophicalJourneys}
