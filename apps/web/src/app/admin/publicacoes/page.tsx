@@ -180,7 +180,7 @@ export default async function PublicationsPage() {
                 href:
                   can("event:read") && a.eventId
                     ? `/admin/publicacoes/${a.eventId}#memoria`
-                    : "/admin/acervo/publicar",
+                    : "/admin/acervo",
                 eventId: can("event:read") ? a.eventId : null,
                 happenedAt: null,
                 publishedAt: null,
@@ -205,37 +205,12 @@ export default async function PublicationsPage() {
     if (item.eventId)
       item.happenedAt = events.get(item.eventId) ?? item.happenedAt;
 
-  // O acontecimento é a única entrada normal para conteúdo que pertence a um fato.
-  // Registros que podem existir legitimamente sem acontecimento ficam disponíveis
-  // como exceções independentes; as rotas técnicas permanecem na Administração avançada.
-  const createLinks = [
-    {
-      href: "/admin/publicacoes/novo",
-      label: "Registrar acontecimento",
-      permission: "event:create" as const,
-    },
-    {
-      href: "/admin/conteudo/notificacoes/nova",
-      label: "Notificação pessoal independente",
-      permission: "notification:manage" as const,
-    },
-    {
-      href: "/admin/conteudo/frases/nova",
-      label: "Frase independente",
-      permission: "quote:create" as const,
-    },
-    {
-      href: "/admin/conteudo/links/novo",
-      label: "Link útil independente",
-      permission: "link:create" as const,
-    },
-  ]
-    .filter(
-      (l) =>
-        can(l.permission) &&
-        (l.href !== "/admin/publicacoes/novo" || can("event:read")),
-    )
-    .map(({ href, label }) => ({ href, label }));
+  // Na operação cotidiana existe uma única criação primária: o acontecimento.
+  // Frases, links, notificações e manutenção de registros avulsos continuam
+  // disponíveis nos cadastros mestres/área avançada, sem disputar atenção aqui.
+  const createLinks = can("event:create") && can("event:read")
+    ? [{ href: "/admin/publicacoes/novo", label: "Registrar acontecimento" }]
+    : [];
 
   return (
     <div className="space-y-6">
