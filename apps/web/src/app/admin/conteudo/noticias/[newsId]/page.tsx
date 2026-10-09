@@ -3,11 +3,8 @@ import { hasPermission } from '@vl6/domain';
 import { createServerContainer } from '@vl6/infra';
 import { Button, Card, CardHeader, CardTitle, CardContent, Textarea } from '@vl6/ui';
 import { requirePagePermission } from '@/lib/auth/require-permission';
-import {
-  deleteNewsAction,
-  toggleNewsPublishedAction,
-  updateNewsAction,
-} from '@/modules/content/actions/content-actions';
+import { deleteNewsAction, updateNewsAction } from '@/modules/content/actions/content-actions';
+import { toggleNewsPublishedWithArchiveAction } from '@/modules/content/actions/news-publish-with-archive-action';
 import { updateNewsInstagramLinksAction } from '@/modules/content/actions/news-instagram-actions';
 import { NewsForm } from '@/modules/content/components/news-form';
 import { ModerateCommentsPanel } from '@/modules/content/components/moderate-comments-panel';
@@ -53,7 +50,7 @@ export default async function EditNewsPage({ params }: { params: Promise<{ newsI
         <div className="flex items-center gap-2">
           <PublishToggleButton
             published={news.publicado}
-            onToggle={toggleNewsPublishedAction.bind(null, news.id)}
+            onToggle={toggleNewsPublishedWithArchiveAction.bind(null, news.id)}
           />
           <DeleteButton
             action={deleteNewsAction.bind(null, newsId)}
