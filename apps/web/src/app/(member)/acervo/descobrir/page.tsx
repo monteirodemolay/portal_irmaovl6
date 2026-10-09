@@ -53,7 +53,7 @@ export default async function ArchiveDiscoverPage() {
             Novidades no Acervo
           </h2>
           <p className="text-muted mt-1 max-w-2xl text-sm">
-            Aqui aparecem apenas registros com conteúdo efetivamente disponível no Acervo. Acontecimentos sem mídias permanecem preservados na Linha do Tempo.
+            Aqui aparecem registros com conteúdo efetivamente disponível. Acontecimentos sem mídias permanecem preservados na Linha do Tempo, sem gerar álbum vazio.
           </p>
         </div>
 
