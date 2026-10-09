@@ -16,6 +16,10 @@ export type AdminAreaKey = 'pessoas' | 'conteudo' | 'acervo' | 'configuracoes';
  * MESMA que cada `page.tsx` de aba exige via `requirePagePermission` — a
  * barra só decide o que mostrar, a proteção real continua server-side na
  * própria rota da aba.
+ *
+ * O Acervo não usa mais estas abas como navegação visual principal, mas a
+ * ordem continua servindo de fallback para redirects antigos. Por isso as
+ * rotas de operação normal vêm antes das ferramentas técnicas/legadas.
  */
 export const ADMIN_AREA_TABS: Record<AdminAreaKey, AreaTabDef[]> = {
   pessoas: [
@@ -44,14 +48,12 @@ export const ADMIN_AREA_TABS: Record<AdminAreaKey, AreaTabDef[]> = {
     { href: '/admin/conteudo/links', label: 'Links Úteis', permission: 'link:read' },
   ],
   acervo: [
-    {
-      href: '/admin/acervo/publicar',
-      label: 'Publicar',
-      permission: 'archiveItem:create',
-    },
-    { href: '/admin/acervo/arquivos', label: 'Documentos', permission: 'file:read' },
     { href: '/admin/acervo/biblioteca', label: 'Biblioteca', permission: 'libraryItem:read' },
-    { href: '/admin/acervo/galeria', label: 'Fotografias', permission: 'gallery:read' },
+    {
+      href: '/admin/acervo/contribuicoes',
+      label: 'Contribuições',
+      permission: 'archiveContribution:manage',
+    },
     {
       href: '/admin/acervo/colecoes',
       label: 'Coleções',
@@ -68,14 +70,16 @@ export const ADMIN_AREA_TABS: Record<AdminAreaKey, AreaTabDef[]> = {
       permission: 'archiveExhibition:read',
     },
     {
+      href: '/admin/acervo/publicar',
+      label: 'Publicar',
+      permission: 'archiveItem:create',
+    },
+    { href: '/admin/acervo/arquivos', label: 'Documentos', permission: 'file:read' },
+    { href: '/admin/acervo/galeria', label: 'Fotografias', permission: 'gallery:read' },
+    {
       href: '/admin/acervo/catalogacao',
       label: 'Catalogação',
       permission: 'archiveCatalog:read',
-    },
-    {
-      href: '/admin/acervo/contribuicoes',
-      label: 'Contribuições',
-      permission: 'archiveContribution:manage',
     },
     {
       href: '/admin/acervo/lixeira',
