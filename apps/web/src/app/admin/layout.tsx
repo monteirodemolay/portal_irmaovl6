@@ -8,7 +8,7 @@ import { ArrowLeft } from '@vl6/ui';
 import { buildAdminNavSections } from '@/components/layout/admin-navigation';
 import { SidebarBrand } from '@/components/layout/sidebar-brand';
 import { SidebarInstitutionalLink } from '@/components/layout/sidebar-institutional-link';
-import { TopbarUser } from '@/components/layout/topbar-user';
+import { ServerTopbarUser } from '@/components/layout/server-topbar-user';
 import { isAdminPathAllowed, isAdminTier } from '@/lib/auth/is-admin-tier';
 import { requireSession } from '@/lib/auth/require-session';
 import { roleDisplayLabel } from '@/lib/auth/role-display-label';
@@ -28,8 +28,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   }
 
   const container = createServerContainer();
-  const [notificationsPage, unreadCount, current, member] = await Promise.all([
-    container.useCases.listMyNotifications.execute(session.authContext, { limit: 20 }),
+  const [unreadCount, current, member] = await Promise.all([
     container.repositories.notification.countUnreadByRecipient(
       session.authContext.tenantId,
       session.authContext.uid,
@@ -75,14 +74,14 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         </div>
       }
       topbarRight={
-        <TopbarUser
+        <ServerTopbarUser
+          authContext={session.authContext}
           displayName={displayName}
           fotoUrl={member?.fotoUrl ?? null}
           roleLabel={roleDisplayLabel(session.role)}
           email={session.user.email}
           grau={member?.grau ?? null}
           memberId={member?.id ?? null}
-          notifications={notificationsPage.items}
           unreadCount={unreadCount}
         />
       }

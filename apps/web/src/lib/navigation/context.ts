@@ -10,9 +10,10 @@ export function resolveOrigin(value: string | null): NavigationOrigin | null {
   const url = new URL(value, 'https://portal.invalid');
   if (url.origin !== 'https://portal.invalid') return null;
   const originModule = modules.find(([path]) => url.pathname === path || url.pathname.startsWith(`${path}/`));
-  if (!originModule) return null;
+  const archiveAlias = ['/downloads', '/biblioteca', '/arquivos', '/galeria'].some((path) => url.pathname === path || url.pathname.startsWith(path + '/'));
+  if (!originModule && !archiveAlias) return null;
   url.searchParams.delete('from');
-  return { href: url.pathname + url.search + url.hash, module: originModule[0], label: originModule[1] };
+  return { href: url.pathname + url.search + url.hash, module: originModule?.[0] ?? '/acervo', label: originModule?.[1] ?? 'Acervo VL6' };
 }
 
 export function contextualHref(target: string, origin: NavigationOrigin | null): string {
@@ -20,7 +21,7 @@ export function contextualHref(target: string, origin: NavigationOrigin | null):
   const url = new URL(target, 'https://portal.invalid');
   if (['/acervo/biblioteca/carrinho', '/acervo/biblioteca/emprestimos', '/irmaos/meu-espaco', '/irmaos/negocios', '/irmaos/galeria-de-honra'].includes(url.pathname)) return target;
   // Lists and explicit module changes start a new journey; details preserve it.
-  if (!/^\/(noticias|acervo\/(eventos|biblioteca|pessoas|gestoes)|irmaos|conhecimento\/formacoes)\/[^/]+/.test(url.pathname)) return target;
+  if (!/^\/(noticias|acervo\/(eventos|biblioteca|pessoas|gestoes)|irmaos|conhecimento\/(formacoes|formacao|aula|certificado))\/[^/]+/.test(url.pathname)) return target;
   url.searchParams.set('from', origin.href);
   return url.pathname + url.search + url.hash;
 }
