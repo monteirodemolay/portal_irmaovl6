@@ -27,10 +27,7 @@ function visible(
     .map(({ href, label, description }) => ({ href, label, description }));
 }
 
-/**
- * Navegação consolidada do ciclo Acontecimento → Conteúdo → Comunicação → Acervo.
- * As rotas antigas continuam acessíveis, mas deixam de ter o mesmo peso visual.
- */
+/** Navegação consolidada do ciclo Acontecimento → derivados → Acervo. */
 export function EditorialNav({
   authContext,
   role,
@@ -54,8 +51,14 @@ export function EditorialNav({
     {
       href: '/admin/publicacoes/novo',
       label: 'Registrar acontecimento',
-      description: 'Cadastre o fato uma única vez e continue pela Ficha Única.',
+      description: 'Cadastre o fato uma única vez; notícia, mídia e Acervo derivam da mesma ficha.',
       permission: 'event:create',
+    },
+    {
+      href: '/admin/conteudo/agenda',
+      label: 'Calendário e presença',
+      description: 'Visão cronológica dos fatos e controle de presença quando aplicável.',
+      permission: 'event:read',
     },
   ];
 
@@ -82,39 +85,33 @@ export function EditorialNav({
 
   const advanced: LinkDef[] = [
     {
-      href: '/admin/conteudo/agenda',
-      label: 'Agenda técnica',
-      description: 'Manutenção direta de eventos existentes e exceções de Agenda.',
-      permission: 'event:read',
-    },
-    {
-      href: '/admin/conteudo/avisos',
-      label: 'Avisos avulsos/legados',
-      description: 'Conferência de avisos fora da Ficha ou ainda sem vínculo.',
-      permission: 'announcement:read',
-    },
-    {
       href: '/admin/conteudo/noticias',
-      label: 'Notícias avulsas/legadas',
-      description: 'Revisão, importação e reconciliação de matérias fora da Ficha.',
+      label: 'Notícias sem vínculo ou legadas',
+      description: 'Revisão e reconciliação de matérias que ainda não apontam para um acontecimento.',
       permission: 'news:read',
     },
     {
+      href: '/admin/conteudo/avisos',
+      label: 'Avisos sem vínculo ou legados',
+      description: 'Conferência de avisos antigos ou realmente independentes de acontecimento.',
+      permission: 'announcement:read',
+    },
+    {
       href: '/admin/comunicacao',
-      label: 'Central técnica de comunicação',
-      description: 'Fila editorial, distribuição e registros não originados em Evento.',
+      label: 'Fila técnica de comunicação',
+      description: 'Distribuição e registros excepcionais que não nasceram de um acontecimento.',
       permission: 'communication:manage',
     },
     {
-      href: '/admin/acervo/publicar',
-      label: 'Publicação técnica do Acervo',
-      description: 'Uso excepcional para conteúdo histórico que não nasce pela Ficha.',
-      permission: 'archiveItem:create',
+      href: '/admin/acervo#migracao',
+      label: 'Saneamento do Acervo',
+      description: 'Migração e interligação de Galeria/Arquivos antigos à memória canônica.',
+      permission: ['archiveItem:create', 'gallery:read', 'file:read'],
     },
     {
       href: '/admin/conteudo/notificacoes/nova',
       label: 'Notificação independente',
-      description: 'Mensagem administrativa que não representa um acontecimento.',
+      description: 'Mensagem administrativa que não representa um acontecimento histórico.',
       permission: 'notification:manage',
     },
   ];
@@ -123,7 +120,7 @@ export function EditorialNav({
     {
       key: 'normal',
       title: 'Operação normal',
-      description: 'Caminho padrão do administrador. Comece sempre pelo acontecimento quando existir um fato datado.',
+      description: 'Caminho padrão: registre o fato no Calendário e trabalhe seus derivados pela Ficha Única.',
       items: visible(normal, authContext, role),
     },
     {
@@ -135,7 +132,7 @@ export function EditorialNav({
     {
       key: 'advanced',
       title: 'Administração avançada',
-      description: 'Legado, exceções e manutenção. Não é a porta de entrada normal para novos acontecimentos.',
+      description: 'Exceções, legado e saneamento. Fica recolhida para não competir com o fluxo principal.',
       items: visible(advanced, authContext, role),
     },
   ];
