@@ -61,12 +61,6 @@ export function ArchiveAdminNav({
 
   const master: LinkDef[] = [
     {
-      href: '/admin/acervo/colecoes',
-      label: 'Coleções',
-      description: 'Agrupamentos editoriais reutilizados sem duplicar o conteúdo original.',
-      permission: 'archiveCollection:read',
-    },
-    {
       href: '/admin/acervo/relacoes',
       label: 'Relações',
       description: 'Vínculos estruturados entre itens, pessoas, eventos e outros registros.',
@@ -135,7 +129,7 @@ export function ArchiveAdminNav({
     {
       key: 'master',
       title: 'Cadastro mestre',
-      description: 'Estruturas editoriais que organizam e referenciam itens já existentes.',
+      description: 'Estruturas que relacionam ou apresentam itens já existentes sem duplicá-los.',
       items: visible(master, authContext, role),
     },
     {
