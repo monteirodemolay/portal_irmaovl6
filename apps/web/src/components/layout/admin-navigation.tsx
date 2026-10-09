@@ -17,10 +17,10 @@ export function buildAdminNavSections(ctx: AuthContext, role: Role | null): AppS
   if (!isAdminTier(role)) return [];
   const any = (permissions: PermissionKey[]) => permissions.some((p) => hasPermission(ctx, p));
   const areas = [
-    { href: '/admin', label: 'Visão geral', icon: LayoutDashboard, allowed: true },
+    { href: '/admin', label: 'Início e controle', icon: LayoutDashboard, allowed: true },
     {
       href: '/admin/publicacoes',
-      label: 'Publicações e Agenda',
+      label: 'Registrar e publicar',
       icon: CalendarDays,
       allowed: any([
         'event:read',
@@ -46,7 +46,7 @@ export function buildAdminNavSections(ctx: AuthContext, role: Role | null): AppS
     },
     {
       href: '/admin/acervo',
-      label: 'Acervo e Biblioteca',
+      label: 'Memória e Biblioteca',
       icon: Compass,
       allowed: any([
         'file:read',
@@ -70,7 +70,7 @@ export function buildAdminNavSections(ctx: AuthContext, role: Role | null): AppS
     },
     {
       href: '/admin/configuracoes',
-      label: 'Configurações e Auditoria',
+      label: 'Configurações e auditoria',
       icon: Settings,
       allowed:
         hasPermission(ctx, 'tenant:read') ||
@@ -80,7 +80,7 @@ export function buildAdminNavSections(ctx: AuthContext, role: Role | null): AppS
   ];
   const sections: AppShellNavSection[] = [
     {
-      title: 'Central de Administração',
+      title: 'Administração facilitada',
       items: areas
         .filter((a) => a.allowed && isAdminPathAllowed(role, a.href))
         .map((a) => ({
