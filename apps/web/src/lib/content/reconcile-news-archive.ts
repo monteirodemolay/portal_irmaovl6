@@ -24,6 +24,14 @@ export interface NewsArchiveReconciliationReport {
   errors: Array<{ newsId: string; titulo: string; message: string }>;
 }
 
+export interface SingleNewsArchiveReconciliation {
+  status: 'already_synced' | 'synced' | 'unresolved' | 'error';
+  autoLinked: boolean;
+  importedMedia: number;
+  skippedMedia: number;
+  errors: string[];
+}
+
 async function loadAllEvents(container: ServerContainer, tenantId: string): Promise<Event[]> {
   const items: Event[] = [];
   let cursor: string | undefined;
@@ -54,16 +62,122 @@ async function loadPublishedNews(container: ServerContainer, tenantId: string): 
   return items.filter((news) => !news.deletedAt);
 }
 
-function originalSourceUrl(news: News): string | null {
+export function originalNewsSourceUrl(news: News): string | null {
   const match = news.conteudoHtml.match(SOURCE_URL_REGEX);
   return match?.[1]?.replace(/&amp;/g, '&') ?? null;
 }
 
 /**
+ * Reconcilia uma matéria publicada. O vínculo automático só acontece com
+ * evidência forte; em dúvida, retorna `unresolved` e não altera a história.
+ */
+export async function reconcileOnePublishedNewsArchive(
+  container: ServerContainer,
+  authContext: AuthContext,
+  original: News,
+  knownEvents?: Event[],
+): Promise<SingleNewsArchiveReconciliation> {
+  const events = knownEvents ?? (await loadAllEvents(container, authContext.tenantId));
+  const eventsById = new Map(events.map((event) => [event.id, event]));
+
+  if ((original.archiveSyncVersion ?? 0) >= NEWS_SYNC_VERSION && original.eventId) {
+    const linked = eventsById.get(original.eventId);
+    if (linked && !linked.deletedAt) {
+      return {
+        status: 'already_synced',
+        autoLinked: false,
+        importedMedia: 0,
+        skippedMedia: 0,
+        errors: [],
+      };
+    }
+  }
+
+  let news = original;
+  let linkedEvent = news.eventId ? eventsById.get(news.eventId) ?? null : null;
+  let autoLinked = false;
+
+  if (!linkedEvent) {
+    const match = findConfidentNewsEventMatch(news.titulo, news.dataPublicacao, events);
+    if (!match) {
+      return {
+        status: 'unresolved',
+        autoLinked: false,
+        importedMedia: 0,
+        skippedMedia: 0,
+        errors: [],
+      };
+    }
+
+    news = {
+      ...news,
+      eventId: match.event.id,
+      archiveSyncVersion: 0,
+      updatedAt: new Date(),
+      updatedBy: authContext.uid,
+    };
+    await container.repositories.news.update(news);
+    linkedEvent = eventsById.get(match.event.id) ?? null;
+    autoLinked = true;
+  }
+
+  if (!linkedEvent) {
+    return {
+      status: 'unresolved',
+      autoLinked,
+      importedMedia: 0,
+      skippedMedia: 0,
+      errors: [],
+    };
+  }
+
+  try {
+    const sync = await syncNewsMediaToArchive({
+      container,
+      authContext,
+      news,
+      // Reconsulta a matéria de origem quando disponível: o HTML salvo da
+      // notícia pode não conter vídeos/documentos que existiam no Wix.
+      sourceUrl: originalNewsSourceUrl(news),
+    });
+
+    if (sync.errors.length > 0) {
+      return {
+        status: 'error',
+        autoLinked,
+        importedMedia: sync.imported,
+        skippedMedia: sync.skipped,
+        errors: sync.errors,
+      };
+    }
+
+    await container.repositories.news.update({
+      ...news,
+      archiveSyncVersion: NEWS_SYNC_VERSION,
+      updatedAt: new Date(),
+      updatedBy: authContext.uid,
+    });
+    return {
+      status: 'synced',
+      autoLinked,
+      importedMedia: sync.imported,
+      skippedMedia: sync.skipped,
+      errors: [],
+    };
+  } catch (error) {
+    return {
+      status: 'error',
+      autoLinked,
+      importedMedia: 0,
+      skippedMedia: 0,
+      errors: [error instanceof Error ? error.message : 'Falha desconhecida na reconciliação.'],
+    };
+  }
+}
+
+/**
  * Mantém a cadeia Notícia → Evento → ArchiveItem → ArchiveMedia convergente.
- * O vínculo automático só acontece com alta confiança. Quando não há base
- * histórica suficiente, o registro é reportado como `unresolved` em vez de
- * criar Evento, data ou local fictícios.
+ * Executada como backfill/auto-reparo para notícias antigas. Não cria Eventos.
  */
 export async function reconcilePublishedNewsArchive(
   container: ServerContainer,
@@ -73,7 +187,6 @@ export async function reconcilePublishedNewsArchive(
     loadAllEvents(container, authContext.tenantId),
     loadPublishedNews(container, authContext.tenantId),
   ]);
-  const eventsById = new Map(events.map((event) => [event.id, event]));
   const report: NewsArchiveReconciliationReport = {
     scanned: 0,
     alreadySynced: 0,
@@ -85,75 +198,21 @@ export async function reconcilePublishedNewsArchive(
     errors: [],
   };
 
-  for (const original of newsItems) {
+  for (const news of newsItems) {
     report.scanned += 1;
-    if ((original.archiveSyncVersion ?? 0) >= NEWS_SYNC_VERSION && original.eventId) {
-      const linked = eventsById.get(original.eventId);
-      if (linked && !linked.deletedAt) {
-        report.alreadySynced += 1;
-        continue;
-      }
-    }
+    const item = await reconcileOnePublishedNewsArchive(container, authContext, news, events);
+    if (item.autoLinked) report.autoLinked += 1;
+    report.importedMedia += item.importedMedia;
+    report.skippedMedia += item.skippedMedia;
 
-    let news = original;
-    let linkedEvent = news.eventId ? eventsById.get(news.eventId) ?? null : null;
-    let wasAutoLinked = false;
-
-    if (!linkedEvent) {
-      const match = findConfidentNewsEventMatch(news.titulo, news.dataPublicacao, events);
-      if (!match) {
-        report.unresolved += 1;
-        continue;
-      }
-
-      const now = new Date();
-      news = {
-        ...news,
-        eventId: match.event.id,
-        archiveSyncVersion: 0,
-        updatedAt: now,
-        updatedBy: authContext.uid,
-      };
-      await container.repositories.news.update(news);
-      linkedEvent = eventsById.get(match.event.id) ?? null;
-      wasAutoLinked = true;
-      report.autoLinked += 1;
-    }
-
-    if (!linkedEvent) {
-      report.unresolved += 1;
-      continue;
-    }
-
-    try {
-      const sync = await syncNewsMediaToArchive({
-        container,
-        authContext,
-        news,
-        // Na primeira reconciliação, consulta novamente a matéria original
-        // para capturar também vídeos/documentos que não ficaram no HTML salvo.
-        sourceUrl: originalSourceUrl(news),
-      });
-
-      report.importedMedia += sync.imported;
-      report.skippedMedia += sync.skipped;
-      if (sync.errors.length > 0) {
-        report.errors.push({ newsId: news.id, titulo: news.titulo, message: sync.errors.join(' ') });
-        continue;
-      }
-
-      await container.repositories.news.update({
-        ...news,
-        archiveSyncVersion: NEWS_SYNC_VERSION,
-        updatedAt: wasAutoLinked ? news.updatedAt : new Date(),
-        updatedBy: authContext.uid,
-      });
-      report.synced += 1;
-    } catch (error) {
+    if (item.status === 'already_synced') report.alreadySynced += 1;
+    else if (item.status === 'synced') report.synced += 1;
+    else if (item.status === 'unresolved') report.unresolved += 1;
+    else {
       report.errors.push({
         newsId: news.id,
         titulo: news.titulo,
-        message: error instanceof Error ? error.message : 'Falha desconhecida na reconciliação.',
+        message: item.errors.join(' ') || 'Falha desconhecida na reconciliação.',
       });
     }
   }
