@@ -4,14 +4,11 @@ export default function PublicacoesLayout({ children }: { children: React.ReactN
   return (
     <AdminWorkspaceShell
       title="Gestão de Acontecimentos"
-      description="Cadastre o fato uma única vez e conduza, no mesmo ambiente, Agenda, notícia, aviso, comunicação, mídias, Acervo, relacionamentos, presença, histórico e ações administrativas."
+      description="O Calendário registra o fato. A Ficha Única concentra notícia, aviso, comunicação, mídias, Acervo, pessoas, presença, histórico e ações administrativas sem duplicar cadastros."
       items={[
-        { href: '/admin/publicacoes', label: 'Visão geral', exact: true },
-        { href: '/admin/publicacoes/novo', label: 'Novo acontecimento', exact: true },
-        { href: '/admin/conteudo/agenda', label: 'Agenda e presença' },
-        { href: '/admin/conteudo/noticias', label: 'Notícias' },
-        { href: '/admin/conteudo/avisos', label: 'Avisos' },
-        { href: '/admin/comunicacao', label: 'Comunicação' },
+        { href: '/admin/publicacoes', label: 'Acontecimentos', exact: true },
+        { href: '/admin/publicacoes/novo', label: 'Registrar acontecimento', exact: true },
+        { href: '/admin/conteudo/agenda', label: 'Calendário e presença' },
       ]}
     >
       {children}
