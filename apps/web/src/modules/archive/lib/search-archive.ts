@@ -29,12 +29,9 @@ export {
  * Busca federada do Acervo VL6. O acontecimento é a fonte histórica; seus
  * derivados aparecem como conteúdo sem criar duas memórias concorrentes.
  *
- * - Evento sem mídia publicada: permanece na Linha do Tempo, não entra como
- *   álbum/pesquisa de conteúdo.
- * - Notícia vinculada a Evento sem mídia: continua pesquisável como memória
- *   editorial, porque é o conteúdo disponível daquele fato.
- * - Notícia vinculada a Evento que já possui mídia: não aparece como outro
- *   card independente no Acervo; ela fica visível dentro da memória do Evento.
+ * Fontes legadas continuam preservadas, mas deixam de aparecer como um
+ * segundo registro assim que existe `ArchiveItem` canônico com o respectivo
+ * campo de proveniência. Assim a migração pode ser gradual e verificável.
  */
 export async function loadArchiveSearchResults(
   authContext: AuthContext,
@@ -60,7 +57,7 @@ export async function loadArchiveSearchResults(
       ? container.repositories.archiveCatalogEntry.listByTenant(authContext.tenantId)
       : Promise.resolve([]),
     canReadArchiveItem
-      ? container.repositories.archiveItem.findByTenant(authContext.tenantId, { limit: 200 })
+      ? container.repositories.archiveItem.findByTenant(authContext.tenantId, { limit: 500 })
       : Promise.resolve({ items: [], nextCursor: null, hasMore: false }),
     container.useCases.listPublishedNews.execute(authContext.tenantId, { limit: 500 }),
   ]);
@@ -74,13 +71,31 @@ export async function loadArchiveSearchResults(
       ]),
   );
 
+  const migratedFileIds = new Set(
+    archiveItemsPage.items
+      .filter((item) => !item.deletedAt)
+      .map((item) => item.origemFileAssetId)
+      .filter((id): id is string => Boolean(id)),
+  );
+  const migratedGalleryAlbumIds = new Set(
+    archiveItemsPage.items
+      .filter((item) => !item.deletedAt)
+      .map((item) => item.origemGalleryAlbumId)
+      .filter((id): id is string => Boolean(id)),
+  );
+
   const fileById = new Map(filesPage.items.map((file) => [file.id, file]));
   const libraryFileIds = new Set(
     libraryItems.map((item) => item.fileId).filter((id): id is string => Boolean(id)),
   );
 
   const documentResults: ArchiveSearchResult[] = filesPage.items
-    .filter((file) => file.publicado && !libraryFileIds.has(file.id))
+    .filter(
+      (file) =>
+        file.publicado &&
+        !libraryFileIds.has(file.id) &&
+        !migratedFileIds.has(file.id),
+    )
     .map((file) => ({
       id: file.id,
       kind: 'documento',
@@ -111,20 +126,23 @@ export async function loadArchiveSearchResults(
     ];
   });
 
-  const galleryResults: ArchiveSearchResult[] = albums.map((album) => ({
-    id: album.id,
-    kind: 'fotografia',
-    title: album.titulo,
-    description: `${album.categoria} · registro da Loja`,
-    href: archiveItemHref('gallery-album', album.id),
-    compositeId: buildArchiveItemId('gallery-album', album.id),
-    createdAt: album.createdAt,
-    catalogText: catalogTextByOrigemId.get(buildArchiveItemId('gallery-album', album.id)) ?? null,
-    imageUrl: album.capaUrl,
-  }));
+  const galleryResults: ArchiveSearchResult[] = albums
+    .filter((album) => !migratedGalleryAlbumIds.has(album.id))
+    .map((album) => ({
+      id: album.id,
+      kind: 'fotografia',
+      title: album.titulo,
+      description: `${album.categoria} · registro da Loja`,
+      href: archiveItemHref('gallery-album', album.id),
+      compositeId: buildArchiveItemId('gallery-album', album.id),
+      createdAt: album.createdAt,
+      catalogText: catalogTextByOrigemId.get(buildArchiveItemId('gallery-album', album.id)) ?? null,
+      imageUrl: album.capaUrl,
+    }));
 
   const publishedArchiveItems = archiveItemsPage.items.filter(
     (item) =>
+      !item.deletedAt &&
       item.publicacaoStatus === 'publicado' &&
       !item.origemNewsId &&
       isAccessLevelVisible(item.nivelAcesso, visibility),
@@ -143,7 +161,9 @@ export async function loadArchiveSearchResults(
     if (!event || event.tenantId !== authContext.tenantId || event.deletedAt) return [];
     const visibleMedia = (archiveItemMedias[index] ?? []).filter(
       (media) =>
-        media.publicacaoStatus === 'publicado' && isAccessLevelVisible(media.accessLevel, visibility),
+        !media.deletedAt &&
+        media.publicacaoStatus === 'publicado' &&
+        isAccessLevelVisible(media.accessLevel, visibility),
     );
 
     if (visibleMedia.length === 0) return [];
