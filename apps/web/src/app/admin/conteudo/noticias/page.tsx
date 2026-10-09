@@ -8,8 +8,8 @@ import {
   hardDeleteNewsAction,
   setNewsPrimaryHighlightAction,
   toggleNewsFeaturedAction,
-  toggleNewsPublishedAction,
 } from '@/modules/content/actions/content-actions';
+import { toggleNewsPublishedWithArchiveAction } from '@/modules/content/actions/news-publish-with-archive-action';
 import { PublishToggleButton } from '@/components/admin/publish-toggle-button';
 import { DeleteButton } from '@/components/admin/delete-button';
 import { ConcludedTabNav } from '@/components/admin/concluded-tab-nav';
@@ -127,7 +127,7 @@ export default async function NewsPage({
           )}
           <PublishToggleButton
             published={n.publicado}
-            onToggle={toggleNewsPublishedAction.bind(null, n.id)}
+            onToggle={toggleNewsPublishedWithArchiveAction.bind(null, n.id)}
           />
           <DeleteButton
             action={deleteNewsAction.bind(null, n.id)}

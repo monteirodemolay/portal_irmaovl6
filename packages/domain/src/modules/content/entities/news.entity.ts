@@ -23,6 +23,13 @@ export interface News extends BaseEntity {
    * Campo aditivo/opcional para compatibilidade com notícias legadas.
    */
   instagramUrls?: string[];
+  /**
+   * Versão da reconciliação automática Notícias → Evento → Acervo. Ausente/0
+   * indica registro legado ainda não conferido pelo reconciliador. O número
+   * permite evoluir a rotina no futuro e refazer o backfill sem criar outro
+   * campo ou perder idempotência.
+   */
+  archiveSyncVersion?: number;
   publicado: boolean;
   dataPublicacao: Date | null;
   contagemVisualizacoes: number;
