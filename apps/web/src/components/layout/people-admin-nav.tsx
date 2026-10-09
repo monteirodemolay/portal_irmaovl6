@@ -99,16 +99,16 @@ export function PeopleAdminNav({
 
   const groups: ClassifiedAdminNavGroup[] = [
     {
+      key: 'normal',
+      title: 'Extensões do cadastro',
+      description: 'Recursos de uso cotidiano que complementam o Irmão sem criar um segundo cadastro.',
+      items: visible(extensions, authContext, role),
+    },
+    {
       key: 'master',
       title: 'Cadastro mestre',
       description: 'Pessoas e entidades existem uma única vez e são reutilizadas em todo o Portal.',
       items: visible(master, authContext, role),
-    },
-    {
-      key: 'extensions',
-      title: 'Extensões do cadastro',
-      description: 'Recursos que complementam o Irmão sem criar um segundo cadastro.',
-      items: visible(extensions, authContext, role),
     },
     {
       key: 'advanced',
