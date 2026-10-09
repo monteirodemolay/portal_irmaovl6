@@ -28,12 +28,17 @@ export default async function EditLibraryItemPage({
 
   const allowPermanent = ['admin', 'super_admin'].includes(session.role?.chave ?? '');
   const hasActiveCopy = copies.some((copy) => copy.situacao !== 'baixado');
+
   return (
-    <div className="flex flex-col gap-6">
-      <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+    <section className="flex flex-col gap-6" aria-labelledby="library-item-data-title">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="font-display text-2xl font-semibold">Editar obra</h1>
-          <p className="text-muted text-sm">Atualize os dados bibliográficos e do exemplar.</p>
+          <h2 id="library-item-data-title" className="font-display text-xl font-semibold">
+            Dados e exemplar
+          </h2>
+          <p className="text-muted text-sm">
+            Edite os dados da obra na fonte única; QR, circulação e histórico usam este mesmo registro.
+          </p>
         </div>
         <div className="flex flex-wrap gap-2">
           {hasActiveCopy && (
@@ -49,7 +54,7 @@ export default async function EditLibraryItemPage({
             allowPermanent={allowPermanent}
           />
         </div>
-      </header>
+      </div>
       <LibraryItemForm
         categories={categories}
         fileAssets={filesPage.items}
@@ -57,6 +62,6 @@ export default async function EditLibraryItemPage({
         item={item}
         copy={copies[0] ?? null}
       />
-    </div>
+    </section>
   );
 }
