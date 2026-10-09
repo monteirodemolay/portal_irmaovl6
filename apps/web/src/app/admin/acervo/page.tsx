@@ -4,7 +4,6 @@ import { Archive, ArrowRight, Clock3, FilePlus2, History, ShieldCheck } from '@v
 import { requirePagePermission } from '@/lib/auth/require-permission';
 import {
   loadFileMigrationCandidatesAction,
-  loadLibraryMigrationCandidatesAction,
   loadMigrationCandidatesAction,
 } from '@/modules/archive/actions/migration-actions';
 import { loadRecentArchiveActivityAction } from '@/modules/archive/actions/metrics-actions';
@@ -24,18 +23,10 @@ export default async function AcervoIndexPage() {
   const session = await requirePagePermission('archiveItem:read');
   const container = createServerContainer();
 
-  const [
-    itemsPage,
-    galleryCandidates,
-    fileCandidates,
-    libraryCandidates,
-    eventsPage,
-    activity,
-  ] = await Promise.all([
+  const [itemsPage, galleryCandidates, fileCandidates, eventsPage, activity] = await Promise.all([
     container.repositories.archiveItem.findByTenant(session.authContext.tenantId, { limit: 500 }),
     loadMigrationCandidatesAction(),
     loadFileMigrationCandidatesAction(),
-    loadLibraryMigrationCandidatesAction(),
     container.useCases.listAllEvents.execute(session.authContext, { limit: 200 }),
     loadRecentArchiveActivityAction(),
   ]);
@@ -43,11 +34,10 @@ export default async function AcervoIndexPage() {
   const activeItems = itemsPage.items.filter((item) => !item.deletedAt);
   const publishedItems = activeItems.filter((item) => item.publicacaoStatus === 'publicado');
   const draftItems = activeItems.filter((item) => item.publicacaoStatus !== 'publicado');
-  const migrationPending =
-    galleryCandidates.length + fileCandidates.length + libraryCandidates.length;
+  const migrationPending = galleryCandidates.length + fileCandidates.length;
   const eventById = new Map(eventsPage.items.map((event) => [event.id, event]));
   const trackedItems = [...activeItems]
-    .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())
+    .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
     .slice(0, 12);
 
   return (
@@ -55,14 +45,12 @@ export default async function AcervoIndexPage() {
       <section className="border-border bg-surface rounded-2xl border p-6">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-3xl">
-            <p className="text-accent text-[11px] font-semibold uppercase tracking-widest">
-              Operação unificada
-            </p>
+            <p className="text-accent text-[11px] font-semibold uppercase tracking-widest">Operação unificada</p>
             <h1 className="font-display mt-1 text-3xl font-semibold">Central do Acervo VL6</h1>
             <p className="text-muted mt-3 text-sm leading-6">
               Um único ponto para inserir, acompanhar, revisar, migrar e preservar a memória. O acontecimento
-              é a origem histórica; notícias, mídias e documentos permanecem relacionados ao mesmo
-              registro, sem duplicação de cadastro.
+              é a origem histórica; notícias, mídias e documentos permanecem relacionados ao mesmo registro,
+              sem duplicação de cadastro.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -86,7 +74,7 @@ export default async function AcervoIndexPage() {
         <Stat label="Memórias" value={activeItems.length} detail="Itens canônicos atualmente vinculados ao Acervo." />
         <Stat label="Publicadas" value={publishedItems.length} detail="Conteúdo disponível para a experiência dos Irmãos." />
         <Stat label="Em preparação" value={draftItems.length} detail="Registros ainda em revisão ou complementação." />
-        <Stat label="Legado pendente" value={migrationPending} detail="Registros antigos que ainda precisam ser vinculados à fonte correta." />
+        <Stat label="Legado pendente" value={migrationPending} detail="Galeria e arquivos antigos aguardando vínculo quando pertencem a um acontecimento." />
       </section>
 
       <section>
@@ -135,35 +123,20 @@ export default async function AcervoIndexPage() {
       </section>
 
       <section className="grid gap-4 lg:grid-cols-3">
-        <Link
-          href="/admin/publicacoes"
-          className="border-border bg-surface hover:border-accent group rounded-2xl border p-5 transition-colors"
-        >
+        <Link href="/admin/publicacoes" className="border-border bg-surface hover:border-accent group rounded-2xl border p-5 transition-colors">
           <Archive className="text-accent" size={22} />
           <h2 className="font-display mt-4 text-lg font-semibold">Memórias por acontecimento</h2>
-          <p className="text-muted mt-2 text-sm leading-6">
-            Edite o fato histórico, suas publicações, pessoas, fotos, vídeos e documentos na Ficha Única.
-          </p>
+          <p className="text-muted mt-2 text-sm leading-6">Edite o fato histórico, suas publicações, pessoas, fotos, vídeos e documentos na Ficha Única.</p>
         </Link>
-        <a
-          href="#migracao"
-          className="border-border bg-surface hover:border-accent group rounded-2xl border p-5 transition-colors"
-        >
+        <a href="#migracao" className="border-border bg-surface hover:border-accent group rounded-2xl border p-5 transition-colors">
           <History className="text-accent" size={22} />
           <h2 className="font-display mt-4 text-lg font-semibold">Saneamento e migração</h2>
-          <p className="text-muted mt-2 text-sm leading-6">
-            Interligue Galeria e Arquivos antigos ao acontecimento correto, preservando proveniência e histórico.
-          </p>
+          <p className="text-muted mt-2 text-sm leading-6">Interligue Galeria e Arquivos antigos ao acontecimento correto, preservando proveniência e histórico.</p>
         </a>
-        <Link
-          href="/admin/acervo/lixeira"
-          className="border-border bg-surface hover:border-accent group rounded-2xl border p-5 transition-colors"
-        >
+        <Link href="/admin/acervo/lixeira" className="border-border bg-surface hover:border-accent group rounded-2xl border p-5 transition-colors">
           <ShieldCheck className="text-accent" size={22} />
           <h2 className="font-display mt-4 text-lg font-semibold">Exclusão verificável</h2>
-          <p className="text-muted mt-2 text-sm leading-6">
-            Exclusões lógicas, restauração e conferência permanecem disponíveis sem apagar silenciosamente a memória.
-          </p>
+          <p className="text-muted mt-2 text-sm leading-6">Exclusões lógicas, restauração e conferência permanecem disponíveis sem apagar silenciosamente a memória.</p>
         </Link>
       </section>
 
@@ -172,13 +145,12 @@ export default async function AcervoIndexPage() {
           <p className="text-accent text-[11px] font-semibold uppercase tracking-widest">Transição controlada</p>
           <h2 className="font-display text-2xl font-semibold">Interligar registros antigos</h2>
           <p className="text-muted mt-2 max-w-3xl text-sm leading-6">
-            O material legado não é escondido nem descartado. Ele é ligado ao acontecimento real e recebe um Item do Acervo canônico. Depois da migração, a experiência pública passa a usar somente o registro canônico, mantendo a origem disponível para auditoria.
+            O material legado não é escondido nem descartado. Quando pertence a um acontecimento, ele é ligado ao fato real e recebe um Item do Acervo canônico. Depois da migração, a experiência pública usa somente o registro canônico, mantendo a origem disponível para auditoria. Biblioteca e documentos institucionais independentes permanecem em seus próprios domínios.
           </p>
         </div>
         <MigrationManager
           galleryCandidates={galleryCandidates}
           fileCandidates={fileCandidates}
-          libraryCandidates={libraryCandidates}
           events={eventsPage.items}
         />
       </section>
@@ -189,9 +161,7 @@ export default async function AcervoIndexPage() {
             <p className="text-accent text-[11px] font-semibold uppercase tracking-widest">Rastreabilidade</p>
             <h2 className="font-display text-2xl font-semibold">Atividade recente</h2>
           </div>
-          <Link href="/admin/configuracoes/auditoria" className="text-muted hover:text-accent text-xs font-semibold">
-            Ver auditoria completa
-          </Link>
+          <Link href="/admin/configuracoes/auditoria" className="text-muted hover:text-accent text-xs font-semibold">Ver auditoria completa</Link>
         </div>
         <div className="border-border bg-surface divide-border divide-y rounded-2xl border">
           {activity.slice(0, 8).map((entry) => (
@@ -205,9 +175,7 @@ export default async function AcervoIndexPage() {
               </div>
             </div>
           ))}
-          {activity.length === 0 && (
-            <p className="text-muted p-5 text-sm">Ainda não há atividade do Acervo registrada na auditoria.</p>
-          )}
+          {activity.length === 0 && <p className="text-muted p-5 text-sm">Ainda não há atividade do Acervo registrada na auditoria.</p>}
         </div>
       </section>
     </div>
