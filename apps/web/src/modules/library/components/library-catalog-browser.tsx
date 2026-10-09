@@ -1,7 +1,6 @@
 'use client';
 import { normalizeForSearch } from '@vl6/shared';
 
-
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { Badge, Button, Card, CardContent, DataTable, EmptyState, Input } from '@vl6/ui';
@@ -35,8 +34,15 @@ export function LibraryCatalogBrowser({ rows }: { rows: CatalogRow[] }) {
   const columns: DataTableColumn<CatalogRow>[] = [
     {
       key: 'arquivo',
-      header: 'Arquivo',
-      cell: (row) => <span className="font-medium">{row.titulo}</span>,
+      header: 'Obra',
+      cell: (row) => (
+        <Link
+          href={`/admin/acervo/biblioteca/${row.id}`}
+          className="font-medium hover:underline"
+        >
+          {row.titulo}
+        </Link>
+      ),
     },
     { key: 'categoria', header: 'Categoria', cell: (row) => row.categoria },
     {
@@ -51,14 +57,9 @@ export function LibraryCatalogBrowser({ rows }: { rows: CatalogRow[] }) {
       key: 'acoes',
       header: 'Ações',
       cell: (row) => (
-        <div className="flex flex-wrap gap-2">
-          <Button asChild size="sm" variant="outline">
-            <Link href={`/admin/acervo/biblioteca/${row.id}/editar`}>Editar</Link>
-          </Button>
-          <Button asChild size="sm" variant="outline">
-            <Link href={`/admin/acervo/biblioteca/${row.id}/historico`}>Histórico</Link>
-          </Button>
-        </div>
+        <Button asChild size="sm" variant="outline">
+          <Link href={`/admin/acervo/biblioteca/${row.id}`}>Abrir ficha</Link>
+        </Button>
       ),
     },
   ];
@@ -96,7 +97,12 @@ export function LibraryCatalogBrowser({ rows }: { rows: CatalogRow[] }) {
                 <CardContent className="grid gap-3 p-4">
                   <div className="flex min-w-0 items-start justify-between gap-2">
                     <div className="min-w-0">
-                      <h2 className="break-words font-semibold">{row.titulo}</h2>
+                      <Link
+                        href={`/admin/acervo/biblioteca/${row.id}`}
+                        className="break-words font-semibold hover:underline"
+                      >
+                        {row.titulo}
+                      </Link>
                       <p className="text-muted text-sm">{row.categoria}</p>
                     </div>
                     <Badge variant="outline" className="shrink-0">
@@ -113,14 +119,9 @@ export function LibraryCatalogBrowser({ rows }: { rows: CatalogRow[] }) {
                       <dd className="font-medium">{row.usoLabel}</dd>
                     </div>
                   </dl>
-                  <div className="grid grid-cols-2 gap-2">
-                    <Button asChild size="sm" variant="outline" className="w-full">
-                      <Link href={`/admin/acervo/biblioteca/${row.id}/editar`}>Editar obra</Link>
-                    </Button>
-                    <Button asChild size="sm" variant="outline" className="w-full">
-                      <Link href={`/admin/acervo/biblioteca/${row.id}/historico`}>Histórico</Link>
-                    </Button>
-                  </div>
+                  <Button asChild size="sm" variant="outline" className="w-full">
+                    <Link href={`/admin/acervo/biblioteca/${row.id}`}>Abrir ficha da obra</Link>
+                  </Button>
                 </CardContent>
               </Card>
             ))}
