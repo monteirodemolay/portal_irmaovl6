@@ -8,8 +8,9 @@ import {
   type EditorialItem,
 } from "@/modules/admin/components/publication-center";
 import { EditorialNav } from "@/components/layout/editorial-nav";
+
 export const metadata = {
-  title: "Publicações e Agenda · Central de Administração VL6",
+  title: "Acontecimentos · Central de Administração VL6",
 };
 export const dynamic = "force-dynamic";
 
@@ -28,6 +29,7 @@ export default async function PublicationsPage() {
     ].some((p) => can(p as Parameters<typeof can>[0]))
   )
     notFound();
+
   const c = createServerContainer(),
     errors: string[] = [],
     items: EditorialItem[] = [];
@@ -40,6 +42,7 @@ export default async function PublicationsPage() {
       errors.push(label);
     }
   };
+
   await Promise.all([
     can("event:read")
       ? safe("Agenda", async () => {
@@ -174,9 +177,10 @@ export default async function PublicationsPage() {
                 createdAt: iso(a.createdAt),
                 type: "Acervo",
                 status: a.publicacaoStatus,
-                href: can("event:read")
-                  ? `/admin/publicacoes/${a.eventId}#arquivos`
-                  : "/admin/acervo/publicar",
+                href:
+                  can("event:read") && a.eventId
+                    ? `/admin/publicacoes/${a.eventId}#memoria`
+                    : "/admin/acervo/publicar",
                 eventId: can("event:read") ? a.eventId : null,
                 happenedAt: null,
                 publishedAt: null,
@@ -191,6 +195,7 @@ export default async function PublicationsPage() {
         })
       : null,
   ]);
+
   const events = new Map(
     items
       .filter((i) => i.type === "Acontecimento")
@@ -199,45 +204,29 @@ export default async function PublicationsPage() {
   for (const item of items)
     if (item.eventId)
       item.happenedAt = events.get(item.eventId) ?? item.happenedAt;
+
+  // O acontecimento é a única entrada normal para conteúdo que pertence a um fato.
+  // Registros que podem existir legitimamente sem acontecimento ficam disponíveis
+  // como exceções independentes; as rotas técnicas permanecem na Administração avançada.
   const createLinks = [
     {
       href: "/admin/publicacoes/novo",
-      label: "Publicação completa: acontecimento, notícia, aviso e arquivos",
+      label: "Registrar acontecimento",
       permission: "event:create" as const,
     },
     {
-      href: "/admin/conteudo/avisos/novo",
-      label: "Aviso",
-      permission: "announcement:create" as const,
-    },
-    {
-      href: "/admin/conteudo/noticias/nova",
-      label: "Notícia",
-      permission: "news:create" as const,
-    },
-    {
-      href: "/admin/acervo/publicar",
-      label: "Fotos, vídeos e documentos do Acervo",
-      permission: "archiveItem:create" as const,
-    },
-    {
-      href: "/admin/comunicacao/modelos",
-      label: "Arte a partir de modelo",
-      permission: "communication:manage" as const,
-    },
-    {
       href: "/admin/conteudo/notificacoes/nova",
-      label: "Notificação pessoal",
+      label: "Notificação pessoal independente",
       permission: "notification:manage" as const,
     },
     {
       href: "/admin/conteudo/frases/nova",
-      label: "Frase",
+      label: "Frase independente",
       permission: "quote:create" as const,
     },
     {
       href: "/admin/conteudo/links/novo",
-      label: "Link útil",
+      label: "Link útil independente",
       permission: "link:create" as const,
     },
   ]
@@ -247,6 +236,7 @@ export default async function PublicationsPage() {
         (l.href !== "/admin/publicacoes/novo" || can("event:read")),
     )
     .map(({ href, label }) => ({ href, label }));
+
   return (
     <div className="space-y-6">
       <EditorialNav authContext={ctx} role={session.role} />

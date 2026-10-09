@@ -1,10 +1,9 @@
-import { AdminStartCenter } from '@/modules/admin/components/admin-start-center';
-import { DashboardOverview } from '@/modules/admin/components/dashboard-overview';
+import { AdminControlCenter } from '@/modules/admin/components/admin-control-center';
 import { loadDashboardOverview } from '@/modules/admin/lib/load-dashboard-overview';
 import { overviewPeriod } from '@/modules/admin/lib/dashboard-overview-model';
 
 export const dynamic = 'force-dynamic';
-export const metadata = { title: 'Administração facilitada · VL6' };
+export const metadata = { title: 'Central de Controle · Administração VL6' };
 
 export default async function AdminDashboardPage({
   searchParams,
@@ -30,8 +29,7 @@ export default async function AdminDashboardPage({
           {warning}
         </p>
       )}
-      <AdminStartCenter tasks={data.tasks} />
-      <DashboardOverview key={`${data.from}:${data.to}:${data.updatedAt}`} data={data} />
+      <AdminControlCenter key={`${data.from}:${data.to}:${data.updatedAt}`} data={data} />
     </div>
   );
 }

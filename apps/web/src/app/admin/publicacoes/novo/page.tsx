@@ -6,7 +6,7 @@ import { requirePagePermission } from '@/lib/auth/require-permission';
 import { EventForm } from '@/modules/agenda/components/event-form';
 import { createWorkspaceEventAction } from '@/modules/agenda/actions/agenda-actions';
 
-export const metadata = { title: 'Nova publicação · VL6' };
+export const metadata = { title: 'Novo acontecimento · VL6' };
 
 export default async function NewPublicationPage() {
   const session = await requirePagePermission('event:create');
@@ -18,14 +18,30 @@ export default async function NewPublicationPage() {
   return (
     <div className="mx-auto w-full max-w-6xl space-y-6">
       <Link href="/admin/publicacoes" className="text-sm underline">
-        ← Publicações e Agenda
+        ← Todos os acontecimentos
       </Link>
-      <header>
-        <h1 className="font-display text-3xl font-semibold">Nova publicação</h1>
-        <p className="text-muted mt-2">
-          Cadastre o acontecimento uma vez. Em seguida, edite a notícia, prepare o aviso e organize
-          todos os arquivos neste mesmo espaço.
+      <header className="border-border bg-surface rounded-3xl border p-6 md:p-8">
+        <p className="text-accent text-sm font-semibold uppercase tracking-wide">Entrada única</p>
+        <h1 className="font-display mt-2 text-3xl font-semibold">Registrar acontecimento</h1>
+        <p className="text-muted mt-3 max-w-3xl">
+          Informe o fato uma única vez. Ao salvar, o Portal abrirá a Ficha Única para continuar
+          notícia, aviso, fotos, vídeos, documentos, divulgação, relacionamentos e memória sem
+          repetir o cadastro em outras áreas.
         </p>
+        <div className="mt-5 grid gap-2 text-sm sm:grid-cols-5">
+          {['1. Acontecimento', '2. Comunicação', '3. Mídias', '4. Acervo', '5. Memória'].map(
+            (label, index) => (
+              <div
+                key={label}
+                className={`rounded-xl border px-3 py-2 font-semibold ${
+                  index === 0 ? 'border-accent bg-accent/10 text-accent' : 'border-border text-muted'
+                }`}
+              >
+                {label}
+              </div>
+            ),
+          )}
+        </div>
       </header>
       <div className="border-border bg-surface rounded-2xl border p-6">
         <EventForm

@@ -27,6 +27,9 @@ operacionais e pontos pendentes. Consulte-o antes de tratar uma proposta antiga 
 | —   | [12-biblioteca-e-circulacao.md](./12-biblioteca-e-circulacao.md)         | Catalogação, exemplares e empréstimos                                      |
 | 12  | [12-comunidade-paramaconica.md](./12-comunidade-paramaconica.md)         | Papéis e exposição controlada de dados paramaçônicos                       |
 | 13  | [13-estado-atual-e-operacao.md](./13-estado-atual-e-operacao.md)         | Mapa do código e dos fluxos, status e procedimentos em 28/09/2026          |
+| 14  | [14-conhecimento-vl6.md](./14-conhecimento-vl6.md)                       | Formação continuada, progresso, avaliações e Biblioteca                    |
+| 15  | [15-ficha-unica-administrativa.md](./15-ficha-unica-administrativa.md)   | Ficha Única, ciclo administrativo, rotas e transição segura                |
+| 16  | [16-mapa-unificacao-backoffice.md](./16-mapa-unificacao-backoffice.md)   | Fontes da verdade, redundâncias, classificação de rotas e plano de unificação |
 | —   | [cripta-especificacao-funcional.md](./cripta-especificacao-funcional.md) | Especificação e limites da Cripta piloto                                   |
 | —   | [cripta-operacao-real.md](./cripta-operacao-real.md)                     | Segurança, guarda e condições para operação institucional                  |
 | —   | [cripta-manual-operacional.md](./cripta-manual-operacional.md)           | Procedimentos e ensaios da Cripta                                          |
@@ -44,10 +47,10 @@ As áreas mais sensíveis continuam sendo:
 2. **RBAC** — impacta a segurança de todo o sistema.
 3. **Roadmap** — separa entregas funcionais de capacidades futuras.
 4. **Acervo VL6** — deve evoluir de forma integrada, sem duplicar entidades existentes.
+5. **Administração** — a Ficha Única coordena módulos sem substituir suas regras de domínio.
+6. **Unificação do back-office** — toda nova tela deve declarar sua fonte da verdade, relações e política de exclusão antes de criar outro cadastro.
 
 ## Documentos legais relacionados
 
 - [Inventário de dados](../legal/01-inventario-dados-lgpd.md), [Política de privacidade](../legal/02-politica-privacidade.md), [Termos de Uso](../legal/03-termos-de-uso.md) e [sistema de versões/aceite](../legal/04-sistema-de-versionamento.md).
 - O inventário do documento 13 não substitui a revisão legal nem comprova por si só que uma alteração já esteja disponível em produção.
-
-- [14 — Conhecimento VL6](14-conhecimento-vl6.md): formação continuada, público por grau, progresso privado, avaliações, arquivos privados e vinculação à Biblioteca existente.
