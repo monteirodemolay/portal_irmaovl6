@@ -25,6 +25,7 @@ const primaryActions = [
     description:
       'Veja acontecimentos em andamento e continue notícia, aviso, Acervo e comunicação sem procurar telas separadas.',
     icon: ShieldCheck,
+    emphasis: false,
   },
   {
     href: '#plano-de-acao',
@@ -32,6 +33,7 @@ const primaryActions = [
     description:
       'Confira vínculos, cadastros incompletos e alertas identificados automaticamente pelo Portal.',
     icon: ArrowUpRight,
+    emphasis: false,
   },
   {
     href: '/admin/acervo',
@@ -39,6 +41,7 @@ const primaryActions = [
     description:
       'Acesse Acervo e Biblioteca quando precisar catalogar, revisar, organizar ou corrigir registros históricos.',
     icon: Archive,
+    emphasis: false,
   },
 ] as const;
 
