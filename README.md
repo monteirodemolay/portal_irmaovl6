@@ -2,7 +2,7 @@
 
 Portal autenticado da **Loja Maçônica Verdadeira Luz nº 06**, construído em monorepo multi-tenant (preparado para outras Lojas), com gestão institucional, serviços ao Irmão e preservação da memória da Loja. O site institucional público `www.vl6.com.br` permanece externo (Wix); o Portal opera em `portal.vl6.com.br`.
 
-**Referência técnica atualizada:** [Estado implementado e operação](./docs/architecture/13-estado-atual-e-operacao.md) · [Ficha Única Administrativa](./docs/architecture/15-ficha-unica-administrativa.md) · [Índice de arquitetura](./docs/architecture/00-README.md) · [Acervo VL6](./docs/architecture/11-acervo-vl6.md).
+**Referência técnica atualizada:** [Estado implementado e operação](./docs/architecture/13-estado-atual-e-operacao.md) · [Ficha Única Administrativa](./docs/architecture/15-ficha-unica-administrativa.md) · [Mapa de unificação do Back-office](./docs/architecture/16-mapa-unificacao-backoffice.md) · [Índice de arquitetura](./docs/architecture/00-README.md) · [Acervo VL6](./docs/architecture/11-acervo-vl6.md).
 
 ## Regra operacional da Administração
 
@@ -17,6 +17,8 @@ A Administração adota o **Acontecimento (`Event`) como registro central** para
 - telas antigas/especializadas permanecem disponíveis para manutenção avançada durante a transição e não devem ser removidas sem validação de paridade funcional, RBAC e dependências.
 
 Conteúdos que não pertencem a um fato — como uma notificação pessoal, frase ou link útil — podem continuar como registros independentes.
+
+A política de unificação do Back-office é: **cadastrar uma vez, relacionar sempre, editar na origem e nunca cortar relações silenciosamente na exclusão**. O documento 16 define a fonte oficial de cada dado, quais telas são canônicas, quais são apenas visões/manutenção e a sequência segura para reduzir redundâncias.
 
 ## O que existe no repositório
 
@@ -33,7 +35,7 @@ Conteúdos que não pertencem a um fato — como uma notificação pessoal, fras
 | Termos e Privacidade | Aceite autenticado, versões, histórico e publicação administrativa com possibilidade de solicitar novo aceite. |
 | Cripta | `/cripta` e `/cripta-administracao`: experiência **piloto restrita** para cartas, rascunhos, anexos e Wix privado; a custódia institucional anual e recuperação de chaves **não estão concluídas**. |
 
-Detalhes, decisões, restrições e próximos trabalhos constam em [13-estado-atual-e-operacao.md](./docs/architecture/13-estado-atual-e-operacao.md) e [15-ficha-unica-administrativa.md](./docs/architecture/15-ficha-unica-administrativa.md). A existência de código não substitui testes autenticados em produção; o histórico do roadmap não deve ser lido como uma lista integral de entregas concluídas.
+Detalhes, decisões, restrições e próximos trabalhos constam em [13-estado-atual-e-operacao.md](./docs/architecture/13-estado-atual-e-operacao.md), [15-ficha-unica-administrativa.md](./docs/architecture/15-ficha-unica-administrativa.md) e [16-mapa-unificacao-backoffice.md](./docs/architecture/16-mapa-unificacao-backoffice.md). A existência de código não substitui testes autenticados em produção; o histórico do roadmap não deve ser lido como uma lista integral de entregas concluídas.
 
 ## Stack e organização
 
@@ -123,4 +125,4 @@ pnpm --filter @vl6/scripts exec tsx normalize-temple-location.ts
 
 ## Documentação
 
-Comece pelo [índice arquitetural](./docs/architecture/00-README.md). A [visão geral](./docs/architecture/01-visao-geral.md) explica as decisões de fundação; [modelo de dados](./docs/architecture/03-modelo-dados.md), [RBAC](./docs/architecture/08-permissoes-rbac.md), [Acervo](./docs/architecture/11-acervo-vl6.md), [biblioteca](./docs/architecture/12-biblioteca-e-circulacao.md), [comunidade paramaçônica](./docs/architecture/12-comunidade-paramaconica.md), [Cripta](./docs/architecture/cripta-operacao-real.md), [estado atual](./docs/architecture/13-estado-atual-e-operacao.md) e [Ficha Única](./docs/architecture/15-ficha-unica-administrativa.md) complementam a referência.
+Comece pelo [índice arquitetural](./docs/architecture/00-README.md). A [visão geral](./docs/architecture/01-visao-geral.md) explica as decisões de fundação; [modelo de dados](./docs/architecture/03-modelo-dados.md), [RBAC](./docs/architecture/08-permissoes-rbac.md), [Acervo](./docs/architecture/11-acervo-vl6.md), [biblioteca](./docs/architecture/12-biblioteca-e-circulacao.md), [comunidade paramaçônica](./docs/architecture/12-comunidade-paramaconica.md), [Cripta](./docs/architecture/cripta-operacao-real.md), [estado atual](./docs/architecture/13-estado-atual-e-operacao.md), [Ficha Única](./docs/architecture/15-ficha-unica-administrativa.md) e [mapa de unificação do Back-office](./docs/architecture/16-mapa-unificacao-backoffice.md) complementam a referência.
