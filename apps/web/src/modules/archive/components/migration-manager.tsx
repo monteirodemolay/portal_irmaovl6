@@ -25,9 +25,7 @@ import { normalizeSearchText } from '../lib/archive-search-match';
 import {
   migrateFileAssetAction,
   migrateGalleryAlbumAction,
-  migrateLibraryItemAction,
   type FileMigrationCandidateView,
-  type LibraryMigrationCandidateView,
   type MigrationCandidateView,
 } from '../actions/migration-actions';
 
@@ -47,7 +45,6 @@ function formatBytes(bytes: number): string {
   return `${value.toFixed(1)} ${units[unitIndex]}`;
 }
 
-/** Formato comum consumido por `MigrationTypeManager`, independente do tipo legado de origem. */
 interface GenericMigrationCandidate {
   id: string;
   titulo: string;
@@ -64,30 +61,25 @@ interface MigrationActionState {
 export interface MigrationManagerProps {
   galleryCandidates: MigrationCandidateView[];
   fileCandidates: FileMigrationCandidateView[];
-  libraryCandidates: LibraryMigrationCandidateView[];
   events: Event[];
 }
 
 /**
- * Client component da tela de Migração — `/admin/acervo/migracao`. Três
- * abas, uma por domínio legado (Galeria — Fase 5; Arquivos e Biblioteca —
- * Fase C "Administração & métricas"), cada uma reaproveitando o mesmo fluxo
- * de seleção: escolher o registro pendente, escolher o Evento real (nenhum
- * dos três domínios legados tem vínculo de evento de fato) e confirmar num
- * diálogo explícito antes de migrar — nunca em lote/automático.
+ * Saneamento do legado orientado por Acontecimento. Biblioteca não entra
+ * aqui: obra bibliográfica é domínio próprio e não deve ser forçada a um
+ * Evento apenas para caber no Acervo. Galeria/Arquivos só são migrados
+ * quando o Administrador identifica o acontecimento histórico real.
  */
 export function MigrationManager({
   galleryCandidates,
   fileCandidates,
-  libraryCandidates,
   events,
 }: MigrationManagerProps) {
   return (
     <Tabs defaultValue="galeria">
       <TabsList>
-        <TabsTrigger value="galeria">Galeria ({galleryCandidates.length})</TabsTrigger>
-        <TabsTrigger value="arquivos">Arquivos ({fileCandidates.length})</TabsTrigger>
-        <TabsTrigger value="biblioteca">Biblioteca ({libraryCandidates.length})</TabsTrigger>
+        <TabsTrigger value="galeria">Galeria antiga ({galleryCandidates.length})</TabsTrigger>
+        <TabsTrigger value="arquivos">Arquivos antigos ({fileCandidates.length})</TabsTrigger>
       </TabsList>
 
       <TabsContent value="galeria" className="mt-4">
@@ -102,12 +94,18 @@ export function MigrationManager({
           migrateAction={migrateGalleryAlbumAction}
           nounSingular="álbum"
           emptyTitle="Nenhum álbum pendente de migração"
-          emptyDescription="Todos os álbuns da Galeria já têm um Item do Acervo correspondente, ou a Galeria ainda não tem álbuns cadastrados."
-          confirmNote="O álbum original na Galeria não é apagado nem alterado."
+          emptyDescription="Toda a Galeria antiga já está interligada ao Acervo canônico, ou não há álbuns legados."
+          confirmNote="O álbum original permanece como proveniência e deixa de aparecer como cópia concorrente nas telas públicas."
         />
       </TabsContent>
 
       <TabsContent value="arquivos" className="mt-4">
+        <div className="border-border bg-background mb-4 rounded-xl border p-4 text-sm">
+          <strong>Somente arquivos que pertencem a um acontecimento.</strong>{' '}
+          <span className="text-muted">
+            Atas, documentos institucionais e patrimônio documental independente continuam no domínio de Documentos; não inventamos um Evento para migrá-los.
+          </span>
+        </div>
         <MigrationTypeManager
           candidates={fileCandidates.map((file) => ({
             id: file.fileId,
@@ -118,26 +116,9 @@ export function MigrationManager({
           events={events}
           migrateAction={migrateFileAssetAction}
           nounSingular="arquivo"
-          emptyTitle="Nenhum arquivo pendente de migração"
-          emptyDescription="Todos os arquivos já têm um Item do Acervo correspondente, ou Arquivos ainda não tem nenhum cadastrado."
-          confirmNote="O arquivo original em Arquivos não é apagado nem alterado."
-        />
-      </TabsContent>
-
-      <TabsContent value="biblioteca" className="mt-4">
-        <MigrationTypeManager
-          candidates={libraryCandidates.map((item) => ({
-            id: item.libraryItemId,
-            titulo: item.titulo,
-            meta: `${item.categoriaNome} · ${formatBytes(item.tamanhoBytes)}`,
-            badge: item.tipoLabel,
-          }))}
-          events={events}
-          migrateAction={migrateLibraryItemAction}
-          nounSingular="item da Biblioteca"
-          emptyTitle="Nenhum item pendente de migração"
-          emptyDescription="Todos os itens da Biblioteca já têm um Item do Acervo correspondente, ou a Biblioteca ainda não tem nenhum cadastrado."
-          confirmNote="O item original na Biblioteca não é apagado nem alterado."
+          emptyTitle="Nenhum arquivo pendente de vínculo"
+          emptyDescription="Não há arquivos legados aguardando conferência."
+          confirmNote="O arquivo original permanece preservado como proveniência e não é apagado."
         />
       </TabsContent>
     </Tabs>
@@ -207,7 +188,7 @@ function MigrationTypeManager({
     <div className="grid gap-6 md:grid-cols-2">
       <Card>
         <CardContent className="flex flex-col gap-3 p-5">
-          <p className="font-medium">Pendentes ({candidates.length})</p>
+          <p className="font-medium">Aguardando vínculo ({candidates.length})</p>
           <ul className="flex flex-col gap-2">
             {candidates.map((candidate) => {
               const outcome = result[candidate.id];
@@ -226,9 +207,9 @@ function MigrationTypeManager({
                   </button>
                   {outcome?.ok && (
                     <p className="mt-1 text-xs text-emerald-700">
-                      Migrado.{' '}
-                      <Link href="/admin/acervo/publicar" className="underline">
-                        Continuar na Central de Publicação
+                      Interligado ao Acervo.{' '}
+                      <Link href="/admin/publicacoes" className="underline">
+                        Abrir acompanhamento
                       </Link>
                       .
                     </p>
@@ -247,7 +228,7 @@ function MigrationTypeManager({
         <CardContent className="flex flex-col gap-4 p-5">
           {!selected ? (
             <p className="text-muted text-sm">
-              Selecione um {nounSingular} à esquerda para escolher o Evento real e migrar.
+              Selecione um {nounSingular} para indicar o acontecimento real ao qual ele pertence.
             </p>
           ) : (
             <>
@@ -258,12 +239,12 @@ function MigrationTypeManager({
 
               <div className="flex flex-col gap-2">
                 <Input
-                  placeholder="Buscar evento por título ou local…"
+                  placeholder="Buscar acontecimento por título ou local…"
                   value={eventQuery}
                   onChange={(event) => setEventQuery(event.target.value)}
                 />
                 {filteredEvents.length === 0 ? (
-                  <EmptyState title="Nenhum evento encontrado" />
+                  <EmptyState title="Nenhum acontecimento encontrado" />
                 ) : (
                   <ul className="flex max-h-64 flex-col gap-2 overflow-y-auto">
                     {filteredEvents.map((event) => (
@@ -294,7 +275,7 @@ function MigrationTypeManager({
                 disabled={!selectedEventId || isPending}
                 onClick={() => setConfirmOpen(true)}
               >
-                Migrar este {nounSingular}
+                Interligar este {nounSingular}
               </Button>
             </>
           )}
@@ -304,10 +285,9 @@ function MigrationTypeManager({
       <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Confirmar migração</DialogTitle>
+            <DialogTitle>Confirmar vínculo e migração</DialogTitle>
             <DialogDescription>
-              Isto cria um novo Item do Acervo em rascunho para <strong>{selected?.titulo}</strong>,
-              vinculado ao evento selecionado. {confirmNote}
+              Será criado o registro canônico de <strong>{selected?.titulo}</strong> ligado ao acontecimento selecionado. {confirmNote}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -315,7 +295,7 @@ function MigrationTypeManager({
               Cancelar
             </Button>
             <Button type="button" disabled={isPending} onClick={confirmMigration}>
-              {isPending ? 'Migrando…' : 'Confirmar migração'}
+              {isPending ? 'Interligando…' : 'Confirmar vínculo'}
             </Button>
           </DialogFooter>
         </DialogContent>

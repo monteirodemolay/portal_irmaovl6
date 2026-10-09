@@ -57,14 +57,13 @@ export default async function ArchiveTimelinePage() {
     relatedNews: [],
   }));
 
-  const pastEvents = eventsPage.items.filter(
-    (event) => new Date(event.dataFim ?? event.dataInicio) < now,
-  );
+  // A Linha do Tempo representa fatos históricos, não datas editoriais.
+  // Eventos legados sem o campo explícito continuam visíveis; somente
+  // `exibirNaLinhaDoTempo === false` os retira da cronologia.
+  const pastEvents = eventsPage.items
+    .filter((event) => new Date(event.dataFim ?? event.dataInicio) < now)
+    .filter((event) => event.exibirNaLinhaDoTempo !== false);
 
-  // Uma consulta em lote sobre a lista já carregada (não N+1 por render) —
-  // mesmo padrão de `/acervo/eventos/page.tsx` (Fase 4) — decide se a
-  // entrada linka para o álbum público do Acervo VL6 e exibe a contagem de
-  // mídia publicada abaixo do título.
   const archiveSummaries = await Promise.all(
     pastEvents.map((event) => loadEventArchiveSummary(container, authContext.tenantId, event.id)),
   );
@@ -88,21 +87,10 @@ export default async function ArchiveTimelinePage() {
     };
   });
 
-  const editorialEntries: TimelineEntry[] = newsPage.items
-    .filter((news) => !news.eventId)
-    .map((news) => ({
-      date: news.dataPublicacao ?? news.createdAt,
-      kindLabel: 'Memória editorial',
-      titulo: news.titulo,
-      descricao: news.dataPublicacao
-        ? `Notícia publicada em ${formatDate(news.dataPublicacao)} · ${news.categoria}`
-        : news.categoria,
-      href: `/noticias/${news.slug}`,
-      archiveSummaryLabel: null,
-      relatedNews: [],
-    }));
-
-  const entries = [...termEntries, ...eventEntries, ...editorialEntries].sort(
+  // Notícias sem Acontecimento continuam disponíveis em Notícias, pesquisa
+  // integrada e memória editorial, mas não viram fatos cronológicos por sua
+  // data de publicação. Assim a Linha do Tempo preserva a data real do fato.
+  const entries = [...termEntries, ...eventEntries].sort(
     (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
   );
 
@@ -118,7 +106,7 @@ export default async function ArchiveTimelinePage() {
     <div className="flex flex-col gap-6">
       <AcervoPageHeader
         title="Linha do Tempo"
-        description="Gestões e eventos já realizados, em ordem cronológica — a alternativa textual completa à futura Constelação da Memória."
+        description="Gestões e acontecimentos já realizados, organizados pela data real em que ocorreram. Notícias relacionadas aparecem dentro do respectivo acontecimento."
         backHref="/acervo"
       />
 
@@ -126,7 +114,7 @@ export default async function ArchiveTimelinePage() {
         <EmptyState
           icon={<Compass size={22} />}
           title="Nenhum registro histórico ainda"
-          description="Gestões e eventos passados aparecerão aqui conforme forem cadastrados."
+          description="Gestões e acontecimentos passados aparecerão aqui conforme forem cadastrados."
         />
       ) : (
         <div className="flex flex-col gap-8">

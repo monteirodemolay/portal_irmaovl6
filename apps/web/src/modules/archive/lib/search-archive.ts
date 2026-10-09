@@ -7,7 +7,6 @@ import { isAccessLevelVisible } from './access-level-visibility';
 import { archiveItemHref, buildArchiveItemId } from './archive-item-id';
 import type { ArchiveSearchResult } from './archive-search-match';
 
-/** "07 de setembro de 2026" — mesmo padrão pt-BR usado no restante do Acervo, fixando o fuso porque roda em Server Component. */
 function formatEventResultDate(dataInicio: Date): string {
   return new Intl.DateTimeFormat('pt-BR', {
     day: '2-digit',
@@ -27,11 +26,12 @@ export {
 } from './archive-search-match';
 
 /**
- * Busca federada do Acervo VL6 — documentos publicados, itens da Biblioteca
- * e álbuns da Galeria, sem indexador paralelo (doc 11.3), respeitando as
- * permissões da sessão. Compartilhada entre `/acervo` (prévia, até 12
- * resultados) e `/acervo/pesquisar` (lista completa) para não duplicar a
- * lógica de agregação — ver `docs/architecture/11-acervo-vl6.md`.
+ * Busca federada do Acervo VL6. O acontecimento é a fonte histórica; seus
+ * derivados aparecem como conteúdo sem criar duas memórias concorrentes.
+ *
+ * Fontes legadas continuam preservadas, mas deixam de aparecer como um
+ * segundo registro assim que existe `ArchiveItem` canônico com o respectivo
+ * campo de proveniência. Assim a migração pode ser gradual e verificável.
  */
 export async function loadArchiveSearchResults(
   authContext: AuthContext,
@@ -57,13 +57,11 @@ export async function loadArchiveSearchResults(
       ? container.repositories.archiveCatalogEntry.listByTenant(authContext.tenantId)
       : Promise.resolve([]),
     canReadArchiveItem
-      ? container.repositories.archiveItem.findByTenant(authContext.tenantId, { limit: 200 })
+      ? container.repositories.archiveItem.findByTenant(authContext.tenantId, { limit: 500 })
       : Promise.resolve({ items: [], nextCursor: null, hasMore: false }),
     container.useCases.listPublishedNews.execute(authContext.tenantId, { limit: 500 }),
   ]);
 
-  // Só fichas publicadas entram na busca — rascunho não deve vazar conteúdo
-  // ainda em revisão, mesma regra do painel "Contexto Histórico".
   const catalogTextByOrigemId = new Map(
     catalogEntries
       .filter((entry) => entry.publicado)
@@ -73,13 +71,31 @@ export async function loadArchiveSearchResults(
       ]),
   );
 
+  const migratedFileIds = new Set(
+    archiveItemsPage.items
+      .filter((item) => !item.deletedAt)
+      .map((item) => item.origemFileAssetId)
+      .filter((id): id is string => Boolean(id)),
+  );
+  const migratedGalleryAlbumIds = new Set(
+    archiveItemsPage.items
+      .filter((item) => !item.deletedAt)
+      .map((item) => item.origemGalleryAlbumId)
+      .filter((id): id is string => Boolean(id)),
+  );
+
   const fileById = new Map(filesPage.items.map((file) => [file.id, file]));
   const libraryFileIds = new Set(
     libraryItems.map((item) => item.fileId).filter((id): id is string => Boolean(id)),
   );
 
   const documentResults: ArchiveSearchResult[] = filesPage.items
-    .filter((file) => file.publicado && !libraryFileIds.has(file.id))
+    .filter(
+      (file) =>
+        file.publicado &&
+        !libraryFileIds.has(file.id) &&
+        !migratedFileIds.has(file.id),
+    )
     .map((file) => ({
       id: file.id,
       kind: 'documento',
@@ -110,27 +126,23 @@ export async function loadArchiveSearchResults(
     ];
   });
 
-  const galleryResults: ArchiveSearchResult[] = albums.map((album) => ({
-    id: album.id,
-    kind: 'fotografia',
-    title: album.titulo,
-    description: `${album.categoria} · registro da Loja`,
-    href: archiveItemHref('gallery-album', album.id),
-    compositeId: buildArchiveItemId('gallery-album', album.id),
-    createdAt: album.createdAt,
-    catalogText: catalogTextByOrigemId.get(buildArchiveItemId('gallery-album', album.id)) ?? null,
-    imageUrl: album.capaUrl,
-  }));
+  const galleryResults: ArchiveSearchResult[] = albums
+    .filter((album) => !migratedGalleryAlbumIds.has(album.id))
+    .map((album) => ({
+      id: album.id,
+      kind: 'fotografia',
+      title: album.titulo,
+      description: `${album.categoria} · registro da Loja`,
+      href: archiveItemHref('gallery-album', album.id),
+      compositeId: buildArchiveItemId('gallery-album', album.id),
+      createdAt: album.createdAt,
+      catalogText: catalogTextByOrigemId.get(buildArchiveItemId('gallery-album', album.id)) ?? null,
+      imageUrl: album.capaUrl,
+    }));
 
-  // Só ArchiveItem publicado E visível pro nível de acesso da sessão entra
-  // na busca — rascunho não deve vazar conteúdo ainda em revisão (mesma
-  // regra já aplicada às fichas de catalogação acima), e nivelAcesso
-  // 'administracao' não deve vazar metadado nenhum pra quem não é admin,
-  // mesma regra que loadEventAlbum/resolveArchiveItem já aplicam pro
-  // álbum público — busca nunca pode ser um caminho mais permissivo do
-  // que abrir o item diretamente.
   const publishedArchiveItems = archiveItemsPage.items.filter(
     (item) =>
+      !item.deletedAt &&
       item.publicacaoStatus === 'publicado' &&
       !item.origemNewsId &&
       isAccessLevelVisible(item.nivelAcesso, visibility),
@@ -142,13 +154,21 @@ export async function loadArchiveSearchResults(
     ),
   ]);
 
+  const eventsWithVisibleContent = new Set<string>();
+
   const eventResults: ArchiveSearchResult[] = publishedArchiveItems.flatMap((item, index) => {
     const event = archiveItemEvents[index];
     if (!event || event.tenantId !== authContext.tenantId || event.deletedAt) return [];
     const visibleMedia = (archiveItemMedias[index] ?? []).filter(
       (media) =>
-        media.publicacaoStatus === 'publicado' && isAccessLevelVisible(media.accessLevel, visibility),
+        !media.deletedAt &&
+        media.publicacaoStatus === 'publicado' &&
+        isAccessLevelVisible(media.accessLevel, visibility),
     );
+
+    if (visibleMedia.length === 0) return [];
+    eventsWithVisibleContent.add(event.id);
+
     const captions = visibleMedia.map((media) => media.caption).filter(Boolean).join(' ');
     const coverPhoto =
       visibleMedia.find((media) => media.mediaType === 'foto' && media.isCover) ??
@@ -168,25 +188,27 @@ export async function loadArchiveSearchResults(
     ];
   });
 
-  const newsResults: ArchiveSearchResult[] = newsPage.items.map((news) => ({
-    id: news.id,
-    kind: 'noticia',
-    title: news.titulo,
-    description: [
-      'Memória editorial',
-      news.dataPublicacao ? formatEventResultDate(news.dataPublicacao) : null,
-      news.categoria,
-    ]
-      .filter(Boolean)
-      .join(' · '),
-    href: `/noticias/${news.slug}`,
-    compositeId: `news_${news.id}`,
-    createdAt: news.dataPublicacao ?? news.createdAt,
-    catalogText: [news.subtitulo, news.conteudoHtml.replace(/<[^>]*>/g, ' ')]
-      .filter(Boolean)
-      .join(' '),
-    imageUrl: news.imagemCapaUrl,
-  }));
+  const newsResults: ArchiveSearchResult[] = newsPage.items
+    .filter((news) => !news.eventId || !eventsWithVisibleContent.has(news.eventId))
+    .map((news) => ({
+      id: news.id,
+      kind: 'noticia',
+      title: news.titulo,
+      description: [
+        'Memória editorial',
+        news.dataPublicacao ? formatEventResultDate(news.dataPublicacao) : null,
+        news.categoria,
+      ]
+        .filter(Boolean)
+        .join(' · '),
+      href: `/noticias/${news.slug}`,
+      compositeId: `news_${news.id}`,
+      createdAt: news.dataPublicacao ?? news.createdAt,
+      catalogText: [news.subtitulo, news.conteudoHtml.replace(/<[^>]*>/g, ' ')]
+        .filter(Boolean)
+        .join(' '),
+      imageUrl: news.imagemCapaUrl,
+    }));
 
   return [...documentResults, ...libraryResults, ...galleryResults, ...eventResults, ...newsResults];
 }

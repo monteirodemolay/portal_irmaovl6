@@ -100,7 +100,6 @@ export default async function AcervoPage({
   const canReadFiles = hasPermission(authContext, 'file:read');
   const canReadLibrary = hasPermission(authContext, 'libraryItem:read');
   const canReadGallery = hasPermission(authContext, 'gallery:read');
-  const canReadCollections = hasPermission(authContext, 'archiveCollection:read');
   const canReadConstellation = hasPermission(authContext, 'archiveRelation:read');
   const canManageHeroPhoto = hasPermission(authContext, 'tenant:manage');
   const heroPhoto = resolveHeroPhoto(current.tenant, 'acervo');
@@ -114,7 +113,6 @@ export default async function AcervoPage({
     legacyAlbumCount,
     archiveDocuments,
     archiveEventCards,
-    collections,
     constellationRoots,
   ] = await Promise.all([
     loadArchiveSearchResults(authContext, container, role),
@@ -133,9 +131,6 @@ export default async function AcervoPage({
       : Promise.resolve([]),
     canReadGallery
       ? loadPublishedArchiveEventCards(container, authContext, role)
-      : Promise.resolve([]),
-    canReadCollections
-      ? container.useCases.listPublishedArchiveCollections.execute(authContext)
       : Promise.resolve([]),
     canReadConstellation
       ? container.useCases.getConstellationRoots.execute(authContext)
@@ -180,7 +175,7 @@ export default async function AcervoPage({
     {
       href: '/acervo/eventos',
       title: 'Eventos',
-      description: 'Sessões, solenidades e ações.',
+      description: 'Sessões, solenidades e ações com conteúdo preservado.',
       icon: CalendarDays,
     },
     {
@@ -198,7 +193,7 @@ export default async function AcervoPage({
     {
       href: '/acervo/descobrir',
       title: 'Descobrir',
-      description: 'Temas e registros relacionados.',
+      description: 'Conteúdos e registros relacionados.',
       icon: Compass,
     },
   ];
@@ -239,7 +234,7 @@ export default async function AcervoPage({
       <PageHero
         kicker="Centro digital de memória"
         title={`Encontre a história da ${current.tenant.nome}`}
-        description="Pesquise pessoas, gestões, eventos, fotografias, atas, livros e documentos em um único lugar."
+        description="Pesquise pessoas, gestões, eventos com conteúdo preservado, fotografias, atas, livros e documentos em um único lugar. Os demais acontecimentos permanecem registrados na Linha do Tempo."
         photoUrl={heroPhoto?.url}
         photoPosicao={heroPhoto?.posicao}
         actions={
@@ -268,9 +263,6 @@ export default async function AcervoPage({
               </div>
             </LiveSearchForm>
             <nav aria-label="Atalhos do Acervo" className="flex flex-wrap gap-x-5 gap-y-2 text-xs">
-              <Link href="/acervo/colecoes" className="text-white/70 hover:text-white">
-                Coleções
-              </Link>
               <Link href="/acervo/exposicoes" className="text-white/70 hover:text-white">
                 Exposições
               </Link>
@@ -383,7 +375,7 @@ export default async function AcervoPage({
                 </p>
                 <h3 className="font-display mt-2 text-xl font-semibold">Constelação VL6</h3>
                 <p className="mt-2 text-xs leading-5 text-white/65">
-                  Explore como pessoas, gestões, eventos, coleções e documentos se conectam.
+                  Explore como pessoas, gestões, acontecimentos e documentos se conectam.
                 </p>
                 {constellationRoots && constellationRoots.groups.length > 0 && (
                   <p className="mt-4 text-[11px] text-white/55">
@@ -409,63 +401,6 @@ export default async function AcervoPage({
           </Link>
         </aside>
       </section>
-
-      {collections.length > 0 && (
-        <section aria-labelledby="collections-title">
-          <div className="mb-4 flex items-end justify-between gap-4">
-            <div>
-              <p className="text-accent text-[11px] font-semibold uppercase tracking-widest">
-                Curadoria do Acervo
-              </p>
-              <h2 id="collections-title" className="font-display text-2xl font-semibold">
-                Coleções para começar
-              </h2>
-            </div>
-            <Link
-              href="/acervo/colecoes"
-              className="text-muted hover:text-accent text-xs font-medium"
-            >
-              Todas as coleções
-            </Link>
-          </div>
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            {collections.slice(0, 4).map((collection) => (
-              <Link
-                key={collection.id}
-                href={`/acervo/colecoes/${collection.slug}`}
-                className="border-border bg-surface hover:border-accent group overflow-hidden rounded-[16px] border shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
-              >
-                <div className="from-primary to-primary-dark h-32 overflow-hidden bg-gradient-to-br">
-                  {collection.capaUrl ? (
-                    <img
-                      src={collection.capaUrl}
-                      alt=""
-                      loading="lazy"
-                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                    />
-                  ) : (
-                    <div className="flex h-full items-end p-4">
-                      <Compass className="text-accent" size={26} />
-                    </div>
-                  )}
-                </div>
-                <div className="p-4">
-                  <h3 className="font-display font-semibold">{collection.titulo}</h3>
-                  {collection.descricaoEditorial && (
-                    <p className="text-muted mt-1 line-clamp-2 text-xs leading-5">
-                      {collection.descricaoEditorial}
-                    </p>
-                  )}
-                  <p className="text-muted mt-3 text-[11px]">
-                    {collection.itemIds.length}{' '}
-                    {collection.itemIds.length === 1 ? 'item relacionado' : 'itens relacionados'}
-                  </p>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </section>
-      )}
 
       <section aria-labelledby="content-title">
         <div className="mb-4">
@@ -505,6 +440,9 @@ export default async function AcervoPage({
               <h2 id="recent-title" className="font-display text-2xl font-semibold">
                 Adicionados recentemente
               </h2>
+              <p className="text-muted mt-1 text-xs">
+                Eventos só aparecem aqui quando possuem mídia ou outro conteúdo efetivamente publicado.
+              </p>
             </div>
             <Link
               href="/acervo/descobrir"

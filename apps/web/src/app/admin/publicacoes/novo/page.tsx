@@ -2,15 +2,24 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { hasPermission } from '@vl6/domain';
 import { createServerContainer } from '@vl6/infra';
+import { EVENT_KINDS, type EventKind } from '@vl6/shared';
 import { requirePagePermission } from '@/lib/auth/require-permission';
 import { EventForm } from '@/modules/agenda/components/event-form';
 import { createWorkspaceEventAction } from '@/modules/agenda/actions/agenda-actions';
 
 export const metadata = { title: 'Novo acontecimento · VL6' };
 
-export default async function NewPublicationPage() {
+export default async function NewPublicationPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ tipo?: string }>;
+}) {
   const session = await requirePagePermission('event:create');
   if (!hasPermission(session.authContext, 'event:read')) notFound();
+  const { tipo } = await searchParams;
+  const initialType: EventKind | undefined = EVENT_KINDS.includes(tipo as EventKind)
+    ? (tipo as EventKind)
+    : undefined;
   const c = createServerContainer();
   const entities = await c.repositories.paramasonicEntity.listByTenant(
     session.authContext.tenantId,
@@ -46,6 +55,7 @@ export default async function NewPublicationPage() {
       <div className="border-border bg-surface rounded-2xl border p-6">
         <EventForm
           action={createWorkspaceEventAction}
+          initialType={initialType}
           paramasonicEntities={entities.map((e) => ({
             id: e.id,
             label: e.unitNumber ? `${e.shortName} nº ${e.unitNumber}` : e.shortName,

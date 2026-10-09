@@ -28,8 +28,9 @@ function visible(
 }
 
 /**
- * O Acervo possui várias ferramentas históricas. Esta navegação deixa explícito
- * o que é trabalho cotidiano, o que é fonte mestre e o que é manutenção/legado.
+ * Navegação de apoio do Acervo. Galeria, Arquivos e publicação direta
+ * continuam existentes por compatibilidade, mas não são mais portas de
+ * entrada expostas: saneamento e migração acontecem pela Central do Acervo.
  */
 export function ArchiveAdminNav({
   authContext,
@@ -40,15 +41,21 @@ export function ArchiveAdminNav({
 }) {
   const normal: LinkDef[] = [
     {
+      href: '/admin/acervo',
+      label: 'Central do Acervo',
+      description: 'Acompanhamento, saneamento, auditoria e acesso às memórias canônicas.',
+      permission: ['archiveItem:read', 'archiveItem:create'],
+    },
+    {
       href: '/admin/publicacoes',
-      label: 'Memória por acontecimento',
-      description: 'Fotos, vídeos e documentos de fatos datados devem entrar pela Ficha Única.',
+      label: 'Acontecimentos e memórias',
+      description: 'Fotos, vídeos e documentos de fatos datados entram pela Ficha Única.',
       permission: ['event:read', 'archiveItem:create'],
     },
     {
       href: '/admin/acervo/biblioteca',
       label: 'Biblioteca',
-      description: 'Obras, exemplares, circulação e patrimônio bibliográfico.',
+      description: 'Domínio próprio para obras, exemplares, circulação e patrimônio bibliográfico.',
       permission: 'libraryItem:read',
     },
     {
@@ -61,12 +68,6 @@ export function ArchiveAdminNav({
 
   const master: LinkDef[] = [
     {
-      href: '/admin/acervo/colecoes',
-      label: 'Coleções',
-      description: 'Agrupamentos editoriais reutilizados sem duplicar o conteúdo original.',
-      permission: 'archiveCollection:read',
-    },
-    {
       href: '/admin/acervo/relacoes',
       label: 'Relações',
       description: 'Vínculos estruturados entre itens, pessoas, eventos e outros registros.',
@@ -75,29 +76,17 @@ export function ArchiveAdminNav({
     {
       href: '/admin/acervo/exposicoes',
       label: 'Exposições',
-      description: 'Curadorias e apresentações que referenciam itens já existentes.',
+      description: 'Apresentações curatoriais que referenciam itens já existentes, sem duplicá-los.',
       permission: 'archiveExhibition:read',
     },
   ];
 
   const advanced: LinkDef[] = [
     {
-      href: '/admin/acervo/publicar',
-      label: 'Publicar item diretamente',
-      description: 'Exceção para patrimônio sem acontecimento operacional apropriado.',
-      permission: 'archiveItem:create',
-    },
-    {
-      href: '/admin/acervo/arquivos',
-      label: 'Documentos legados',
-      description: 'Módulo anterior de arquivos; preservar e migrar com rastreabilidade.',
-      permission: 'file:read',
-    },
-    {
-      href: '/admin/acervo/galeria',
-      label: 'Fotografias legadas',
-      description: 'Galeria anterior; novos álbuns de acontecimentos devem nascer na Ficha.',
-      permission: 'gallery:read',
+      href: '/admin/acervo#migracao',
+      label: 'Saneamento e migração',
+      description: 'Interliga Galeria e Arquivos legados ao acontecimento correto com proveniência preservada.',
+      permission: ['archiveItem:create', 'gallery:read', 'file:read'],
     },
     {
       href: '/admin/acervo/catalogacao',
@@ -107,8 +96,8 @@ export function ArchiveAdminNav({
     },
     {
       href: '/admin/acervo/lixeira',
-      label: 'Lixeira',
-      description: 'Recuperação e revisão de itens arquivados/excluídos logicamente.',
+      label: 'Lixeira e restauração',
+      description: 'Recuperação e revisão de itens arquivados ou excluídos logicamente.',
       permission: 'archiveItem:delete',
     },
     {
@@ -119,8 +108,8 @@ export function ArchiveAdminNav({
     },
     {
       href: '/admin/acervo/metricas',
-      label: 'Métricas técnicas',
-      description: 'Indicadores detalhados do Acervo para diagnóstico e manutenção.',
+      label: 'Diagnóstico técnico',
+      description: 'Indicadores detalhados do Acervo para conferência e manutenção.',
       permission: 'archiveMedia:manage',
     },
   ];
@@ -129,19 +118,19 @@ export function ArchiveAdminNav({
     {
       key: 'normal',
       title: 'Operação normal',
-      description: 'Rotinas que fazem parte do trabalho cotidiano de memória e Biblioteca.',
+      description: 'Rotinas cotidianas do Acervo, centradas em acontecimentos e registros canônicos.',
       items: visible(normal, authContext, role),
     },
     {
       key: 'master',
       title: 'Cadastro mestre',
-      description: 'Estruturas editoriais que organizam e referenciam itens já existentes.',
+      description: 'Estruturas que relacionam ou apresentam itens existentes sem recriar o conteúdo.',
       items: visible(master, authContext, role),
     },
     {
       key: 'advanced',
       title: 'Administração avançada',
-      description: 'Ferramentas técnicas, módulos legados, lixeira, deduplicação e catalogação.',
+      description: 'Saneamento, restauração, deduplicação e catalogação. Rotas legadas continuam funcionando apenas por compatibilidade.',
       items: visible(advanced, authContext, role),
     },
   ];

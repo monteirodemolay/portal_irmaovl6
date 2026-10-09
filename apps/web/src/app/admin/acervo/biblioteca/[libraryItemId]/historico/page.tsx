@@ -1,8 +1,7 @@
-import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import type { LibraryLoanEventKind, LibraryOccurrenceReason } from '@vl6/domain';
 import { createServerContainer } from '@vl6/infra';
-import { Badge, Button, Card, CardContent, EmptyState } from '@vl6/ui';
+import { Badge, Card, CardContent, EmptyState } from '@vl6/ui';
 import { requirePagePermission } from '@/lib/auth/require-permission';
 
 const EVENT_LABEL: Record<LibraryLoanEventKind, string> = {
@@ -90,19 +89,15 @@ export default async function LibraryItemHistoryPage({
   ].sort((a, b) => b.occurredAt.getTime() - a.occurredAt.getTime());
 
   return (
-    <div className="flex flex-col gap-6">
-      <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h1 className="font-display text-2xl font-semibold">Histórico do exemplar</h1>
-          <p className="text-muted text-sm">
-            {item.titulo ?? 'Obra sem título'}
-            {copy ? ` · Tombo ${copy.codigoTombo}` : ''}
-          </p>
-        </div>
-        <Button asChild variant="outline" className="w-full sm:w-auto">
-          <Link href={`/admin/acervo/biblioteca/${item.id}/editar`}>Voltar à obra</Link>
-        </Button>
-      </header>
+    <section className="flex flex-col gap-6" aria-labelledby="library-item-history-title">
+      <div>
+        <h2 id="library-item-history-title" className="font-display text-xl font-semibold">
+          Histórico do exemplar
+        </h2>
+        <p className="text-muted text-sm">
+          {copy ? `Tombo ${copy.codigoTombo} · ` : ''}Empréstimos, devoluções e ocorrências vinculados a esta mesma obra.
+        </p>
+      </div>
 
       {!copy ? (
         <EmptyState
@@ -151,6 +146,6 @@ export default async function LibraryItemHistoryPage({
           ))}
         </ol>
       )}
-    </div>
+    </section>
   );
 }

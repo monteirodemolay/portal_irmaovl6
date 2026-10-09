@@ -1,10 +1,10 @@
 import { AdminWorkspaceShell } from '@/components/layout/admin-workspace-shell';
 
-export default function ConteudoLayout({ children }: { children: React.ReactNode }) {
+export default function PublicacoesLayout({ children }: { children: React.ReactNode }) {
   return (
     <AdminWorkspaceShell
       title="Gestão de Acontecimentos"
-      description="Notícias, avisos e demais conteúdos vinculados a fatos datados devem ser tratados dentro da Ficha Única. Estas rotas permanecem para manutenção de legado, exceções e conteúdo realmente independente."
+      description="O Calendário registra o fato. A Ficha Única concentra notícia, aviso, comunicação, mídias, Acervo, pessoas, presença, histórico e ações administrativas sem duplicar cadastros."
       items={[
         { href: '/admin/publicacoes', label: 'Acontecimentos', exact: true },
         { href: '/admin/publicacoes/novo', label: 'Registrar acontecimento', exact: true },

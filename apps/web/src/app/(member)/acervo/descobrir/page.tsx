@@ -5,7 +5,6 @@ import {
   ArchiveItemCard,
   BookOpen,
   CalendarDays,
-  Compass,
   EmptyState,
   FileText,
   Image as GalleryIcon,
@@ -31,11 +30,11 @@ const RECENT_LIMIT = 8;
 export default async function ArchiveDiscoverPage() {
   const session = await requireSession();
   const container = createServerContainer();
-
-  const [allResults, collections] = await Promise.all([
-    loadArchiveSearchResults(session.authContext, container, session.role),
-    container.useCases.listPublishedArchiveCollections.execute(session.authContext),
-  ]);
+  const allResults = await loadArchiveSearchResults(
+    session.authContext,
+    container,
+    session.role,
+  );
 
   const recentResults = [...allResults]
     .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
@@ -45,56 +44,6 @@ export default async function ArchiveDiscoverPage() {
     <div className="flex flex-col gap-9">
       <AcervoPageHeader title="Descobrir" backHref="/acervo" />
 
-      <section aria-labelledby="collections-title">
-        <div className="mb-4 flex items-end justify-between gap-4">
-          <div>
-            <p className="text-accent text-[11px] font-semibold uppercase tracking-widest">
-              Curadoria editorial
-            </p>
-            <h2 id="collections-title" className="font-display text-2xl font-semibold">
-              Coleções
-            </h2>
-          </div>
-          <Link
-            href="/acervo/colecoes"
-            className="text-muted hover:text-accent text-xs font-medium"
-          >
-            Ver todas
-          </Link>
-        </div>
-
-        {collections.length === 0 ? (
-          <EmptyState
-            icon={<Compass size={22} />}
-            title="Nenhuma coleção publicada ainda"
-            description="Coleções editoriais aparecerão aqui assim que forem publicadas."
-          />
-        ) : (
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            {collections.slice(0, 6).map((collection) => (
-              <Link
-                key={collection.id}
-                href={`/acervo/colecoes/${collection.slug}`}
-                className="border-border bg-surface hover:border-accent group flex flex-col rounded-[16px] border p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
-              >
-                <div className="bg-primary/5 text-primary group-hover:bg-primary group-hover:text-accent flex h-11 w-11 items-center justify-center rounded-[12px] transition-colors">
-                  <Compass size={22} strokeWidth={1.6} />
-                </div>
-                <h3 className="font-display mt-5 text-lg font-semibold">{collection.titulo}</h3>
-                {collection.descricaoEditorial && (
-                  <p className="text-muted mt-1 line-clamp-2 flex-1 text-xs leading-5">
-                    {collection.descricaoEditorial}
-                  </p>
-                )}
-                <p className="text-muted mt-4 text-xs">
-                  {collection.itemIds.length} {collection.itemIds.length === 1 ? 'item' : 'itens'}
-                </p>
-              </Link>
-            ))}
-          </div>
-        )}
-      </section>
-
       <section aria-labelledby="recent-title">
         <div className="mb-4">
           <p className="text-accent text-[11px] font-semibold uppercase tracking-widest">
@@ -103,6 +52,9 @@ export default async function ArchiveDiscoverPage() {
           <h2 id="recent-title" className="font-display text-2xl font-semibold">
             Novidades no Acervo
           </h2>
+          <p className="text-muted mt-1 max-w-2xl text-sm">
+            Aqui aparecem registros com conteúdo efetivamente disponível. Acontecimentos sem mídias permanecem preservados na Linha do Tempo, sem gerar álbum vazio.
+          </p>
         </div>
 
         {recentResults.length === 0 ? (
