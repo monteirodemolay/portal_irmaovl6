@@ -31,3 +31,7 @@ Referências de implementação: catálogo e detalhes em `app/(member)/acervo/bi
 ## Brasão da Grande Loja
 
 A abertura e o encerramento usam o brasão fornecido em `logooficial2.jpg`, com fundo externo transparente. A faixa branca permanece visível. O arquivo é exibido inteiro com `object-fit: contain`, sem opacidade, filtros ou recorte CSS. Seu espaço de 136 × 136 mantém altura visual próxima dos brasões da Loja e da Gestão.
+
+## Distribuição dos logotipos
+
+O logotipo do Portal VL6 aparece somente no cabeçalho de cada slide. Na abertura e no encerramento, a faixa institucional inferior apresenta uma única vez os brasões da Loja, da Gestão e da Grande Loja, preservando proporções e legibilidade. As demonstrações mantêm o logotipo do Portal apenas em seu próprio cabeçalho.
