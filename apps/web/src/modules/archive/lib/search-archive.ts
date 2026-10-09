@@ -32,6 +32,11 @@ export {
  * permissões da sessão. Compartilhada entre `/acervo` (prévia, até 12
  * resultados) e `/acervo/pesquisar` (lista completa) para não duplicar a
  * lógica de agregação — ver `docs/architecture/11-acervo-vl6.md`.
+ *
+ * Eventos sem mídia continuam pertencendo à Linha do Tempo, mas não entram
+ * nesta busca de conteúdo nem em "Adicionados recentemente". Só passam a
+ * compor a descoberta do Acervo quando possuem ao menos uma mídia publicada
+ * e visível para a sessão atual.
  */
 export async function loadArchiveSearchResults(
   authContext: AuthContext,
@@ -62,8 +67,6 @@ export async function loadArchiveSearchResults(
     container.useCases.listPublishedNews.execute(authContext.tenantId, { limit: 500 }),
   ]);
 
-  // Só fichas publicadas entram na busca — rascunho não deve vazar conteúdo
-  // ainda em revisão, mesma regra do painel "Contexto Histórico".
   const catalogTextByOrigemId = new Map(
     catalogEntries
       .filter((entry) => entry.publicado)
@@ -122,13 +125,6 @@ export async function loadArchiveSearchResults(
     imageUrl: album.capaUrl,
   }));
 
-  // Só ArchiveItem publicado E visível pro nível de acesso da sessão entra
-  // na busca — rascunho não deve vazar conteúdo ainda em revisão (mesma
-  // regra já aplicada às fichas de catalogação acima), e nivelAcesso
-  // 'administracao' não deve vazar metadado nenhum pra quem não é admin,
-  // mesma regra que loadEventAlbum/resolveArchiveItem já aplicam pro
-  // álbum público — busca nunca pode ser um caminho mais permissivo do
-  // que abrir o item diretamente.
   const publishedArchiveItems = archiveItemsPage.items.filter(
     (item) =>
       item.publicacaoStatus === 'publicado' &&
@@ -149,6 +145,12 @@ export async function loadArchiveSearchResults(
       (media) =>
         media.publicacaoStatus === 'publicado' && isAccessLevelVisible(media.accessLevel, visibility),
     );
+
+    // O acontecimento histórico existe independentemente de mídia e continua
+    // na Linha do Tempo. Porém, sem arquivo publicado, ele não é um item de
+    // conteúdo para descoberta, álbum ou "Adicionados recentemente".
+    if (visibleMedia.length === 0) return [];
+
     const captions = visibleMedia.map((media) => media.caption).filter(Boolean).join(' ');
     const coverPhoto =
       visibleMedia.find((media) => media.mediaType === 'foto' && media.isCover) ??
