@@ -2,23 +2,38 @@
 
 Portal autenticado da **Loja Maçônica Verdadeira Luz nº 06**, construído em monorepo multi-tenant (preparado para outras Lojas), com gestão institucional, serviços ao Irmão e preservação da memória da Loja. O site institucional público `www.vl6.com.br` permanece externo (Wix); o Portal opera em `portal.vl6.com.br`.
 
-**Referência técnica atualizada em 28/09/2026:** [Estado implementado e operação](./docs/architecture/13-estado-atual-e-operacao.md) · [Índice de arquitetura](./docs/architecture/00-README.md) · [Acervo VL6](./docs/architecture/11-acervo-vl6.md).
+**Referência técnica atualizada:** [Estado implementado e operação](./docs/architecture/13-estado-atual-e-operacao.md) · [Ficha Única Administrativa](./docs/architecture/15-ficha-unica-administrativa.md) · [Índice de arquitetura](./docs/architecture/00-README.md) · [Acervo VL6](./docs/architecture/11-acervo-vl6.md).
+
+## Regra operacional da Administração
+
+A Administração adota o **Acontecimento (`Event`) como registro central** para todo conteúdo que deriva de um fato datado. O fluxo comum é:
+
+`Acontecimento → Comunicação → Mídias → Acervo → Memória`
+
+- `/admin` é a **Central de Controle**;
+- `/admin/publicacoes` acompanha acontecimentos e registros editoriais;
+- `/admin/publicacoes/novo` é a entrada normal para novos fatos;
+- `/admin/publicacoes/[eventId]` é a **Ficha Única do Acontecimento**, concentrando dados, notícia, aviso, divulgação, fotos, vídeos, documentos, Acervo, relacionamentos, integridade, auditoria e análise de impacto;
+- telas antigas/especializadas permanecem disponíveis para manutenção avançada durante a transição e não devem ser removidas sem validação de paridade funcional, RBAC e dependências.
+
+Conteúdos que não pertencem a um fato — como uma notificação pessoal, frase ou link útil — podem continuar como registros independentes.
 
 ## O que existe no repositório
 
-| Núcleo                  | Funcionalidades e rotas                                                                                                                                                                                         |
-| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Identidade e Loja       | Login Firebase, recuperação de acesso, reivindicação em `/reivindicar`, perfil/diretório de Irmãos, administração de membros, gestões, usuários e papéis RBAC; painel multi-tenant `/plataforma`.               |
-| Agenda                  | `/agenda`: sessões, eventos, aniversariantes, paramaçônicas, recessos, compromissos/notas/tarefas pessoais, arquivos iCalendar e integração opcional com Google Calendar por OAuth.                             |
-| Conteúdo                | Notícias `/noticias` e `/noticias/todas`, avisos, notificações, administração editorial, destaques, filtros/paginação, importação e reimportação de notícias de `vl6.com.br`.                                   |
-| Acervo VL6              | `/acervo`: arquivos, biblioteca física/digital, fotografias, vídeos, documentos, coleções, eventos, gestões, pessoas, exposições, linha do tempo, contribuição/catálogo e experiências de descoberta.           |
-| Constelação             | `/acervo/constelacao`: central automática de lembranças por ano; apenas eventos ligados a **fotos ou vídeos publicados e acessíveis**; reprodução automática e `Surpreenda-me`, sem exigir montagem de trilhas. |
-| Biblioteca              | Catálogo, capas, exemplares, estantes, tombo/QR, carrinho, empréstimos, avaliações, circulação, devolução e baixas.                                                                                             |
-| Comunidade Paramaçônica | `/paramaconicas`, perfis e autorizações específicas, com recorte de dados separado da área privativa dos Irmãos.                                                                                                |
-| Termos e Privacidade    | Aceite autenticado, versões, histórico e publicação administrativa com possibilidade de solicitar novo aceite.                                                                                                  |
-| Cripta                  | `/cripta` e `/cripta-administracao`: experiência **piloto restrita** para cartas, rascunhos, anexos e Wix privado; a custódia institucional anual e recuperação de chaves **não estão concluídas**.             |
+| Núcleo | Funcionalidades e rotas |
+| --- | --- |
+| Identidade e Loja | Login Firebase, recuperação de acesso, reivindicação em `/reivindicar`, perfil/diretório de Irmãos, administração de membros, gestões, usuários e papéis RBAC; painel multi-tenant `/plataforma`. |
+| Administração | `/admin`: Central de Controle, pendências, indicadores e auditoria; `/admin/publicacoes/[eventId]`: Ficha Única para conduzir o ciclo completo de um acontecimento sem repetir cadastros. |
+| Agenda | `/agenda`: sessões, eventos, aniversariantes, paramaçônicas, recessos, compromissos/notas/tarefas pessoais, arquivos iCalendar e integração opcional com Google Calendar por OAuth. |
+| Conteúdo | Notícias `/noticias` e `/noticias/todas`, avisos, notificações, administração editorial, destaques, filtros/paginação, importação e reimportação de notícias de `vl6.com.br`. |
+| Acervo VL6 | `/acervo`: arquivos, biblioteca física/digital, fotografias, vídeos, documentos, coleções, eventos, gestões, pessoas, exposições, linha do tempo, contribuição/catálogo e experiências de descoberta. |
+| Constelação | `/acervo/constelacao`: central automática de lembranças por ano; apenas eventos ligados a **fotos ou vídeos publicados e acessíveis**; reprodução automática e `Surpreenda-me`, sem exigir montagem de trilhas. |
+| Biblioteca | Catálogo, capas, exemplares, estantes, tombo/QR, carrinho, empréstimos, avaliações, circulação, devolução e baixas. |
+| Comunidade Paramaçônica | `/paramaconicas`, perfis e autorizações específicas, com recorte de dados separado da área privativa dos Irmãos. |
+| Termos e Privacidade | Aceite autenticado, versões, histórico e publicação administrativa com possibilidade de solicitar novo aceite. |
+| Cripta | `/cripta` e `/cripta-administracao`: experiência **piloto restrita** para cartas, rascunhos, anexos e Wix privado; a custódia institucional anual e recuperação de chaves **não estão concluídas**. |
 
-Detalhes, decisões, restrições e próximos trabalhos constam em [13-estado-atual-e-operacao.md](./docs/architecture/13-estado-atual-e-operacao.md). A existência de código não substitui testes autenticados em produção; o histórico do roadmap não deve ser lido como uma lista integral de entregas concluídas.
+Detalhes, decisões, restrições e próximos trabalhos constam em [13-estado-atual-e-operacao.md](./docs/architecture/13-estado-atual-e-operacao.md) e [15-ficha-unica-administrativa.md](./docs/architecture/15-ficha-unica-administrativa.md). A existência de código não substitui testes autenticados em produção; o histórico do roadmap não deve ser lido como uma lista integral de entregas concluídas.
 
 ## Stack e organização
 
@@ -108,22 +123,4 @@ pnpm --filter @vl6/scripts exec tsx normalize-temple-location.ts
 
 ## Documentação
 
-Comece pelo [índice arquitetural](./docs/architecture/00-README.md). A [visão geral](./docs/architecture/01-visao-geral.md) explica as decisões de fundação; [modelo de dados](./docs/architecture/03-modelo-dados.md), [RBAC](./docs/architecture/08-permissoes-rbac.md), [Acervo](./docs/architecture/11-acervo-vl6.md), [biblioteca](./docs/architecture/12-biblioteca-e-circulacao.md), [comunidade paramaçônica](./docs/architecture/12-comunidade-paramaconica.md), [Cripta](./docs/architecture/cripta-operacao-real.md) e [estado atual](./docs/architecture/13-estado-atual-e-operacao.md) complementam a referência.
-
-### Cripta — preparação para cartas reais
-
-Veja a [revisão de liberação de 29/09/2026](docs/architecture/cripta-revisao-liberacao-2026-09-29.md), com correções, evidências e pendências. O recebimento institucional ainda não está liberado; o acesso continua restrito ao piloto.
-
-### Conhecimento VL6
-
-Formação continuada aditiva, com instruções por grau, aulas, atividades, avaliações e progresso privado. Vincula leituras ao catálogo existente sem modificar Acervo ou Biblioteca. Arquitetura, Firestore, protocolos de publicação e roteiro de implantação: [Conhecimento VL6](docs/architecture/14-conhecimento-vl6.md).
-
-### Central de Administração VL6
-
-A entrada administrativa é `/admin`, com Publicações e Agenda, Pessoas e Loja,
-Acervo e Biblioteca, Conhecimento, Cripta e Configurações e Auditoria.
-Consulte [arquitetura e compatibilidade](docs/architecture/15-central-administracao-vl6.md).
-
-### Dashboard integrado e relatórios
-
-A visão geral administrativa reúne panorama institucional, módulos, cobertura de acesso, pendências, agenda e auditoria por período em uma única página. Relatórios CSV/PDF preservam filtros, autorização e indicação de cobertura. Consulte [fontes, fórmulas e limites](docs/architecture/16-dashboard-visao-geral-vl6.md).
+Comece pelo [índice arquitetural](./docs/architecture/00-README.md). A [visão geral](./docs/architecture/01-visao-geral.md) explica as decisões de fundação; [modelo de dados](./docs/architecture/03-modelo-dados.md), [RBAC](./docs/architecture/08-permissoes-rbac.md), [Acervo](./docs/architecture/11-acervo-vl6.md), [biblioteca](./docs/architecture/12-biblioteca-e-circulacao.md), [comunidade paramaçônica](./docs/architecture/12-comunidade-paramaconica.md), [Cripta](./docs/architecture/cripta-operacao-real.md), [estado atual](./docs/architecture/13-estado-atual-e-operacao.md) e [Ficha Única](./docs/architecture/15-ficha-unica-administrativa.md) complementam a referência.
