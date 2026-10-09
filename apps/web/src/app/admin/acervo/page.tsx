@@ -45,6 +45,10 @@ export default async function AcervoIndexPage() {
   const draftItems = activeItems.filter((item) => item.publicacaoStatus !== 'publicado');
   const migrationPending =
     galleryCandidates.length + fileCandidates.length + libraryCandidates.length;
+  const eventById = new Map(eventsPage.items.map((event) => [event.id, event]));
+  const trackedItems = [...activeItems]
+    .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())
+    .slice(0, 12);
 
   return (
     <div className="flex flex-col gap-8">
@@ -56,7 +60,7 @@ export default async function AcervoIndexPage() {
             </p>
             <h1 className="font-display mt-1 text-3xl font-semibold">Central do Acervo VL6</h1>
             <p className="text-muted mt-3 text-sm leading-6">
-              Um único ponto para inserir, acompanhar, revisar e preservar a memória. O acontecimento
+              Um único ponto para inserir, acompanhar, revisar, migrar e preservar a memória. O acontecimento
               é a origem histórica; notícias, mídias e documentos permanecem relacionados ao mesmo
               registro, sem duplicação de cadastro.
             </p>
@@ -72,7 +76,7 @@ export default async function AcervoIndexPage() {
               href="/admin/publicacoes"
               className="border-border hover:border-accent inline-flex items-center gap-2 rounded-lg border px-4 py-2.5 text-sm font-semibold"
             >
-              Acompanhar memórias <ArrowRight size={16} />
+              Ver todos <ArrowRight size={16} />
             </Link>
           </div>
         </div>
@@ -83,6 +87,51 @@ export default async function AcervoIndexPage() {
         <Stat label="Publicadas" value={publishedItems.length} detail="Conteúdo disponível para a experiência dos Irmãos." />
         <Stat label="Em preparação" value={draftItems.length} detail="Registros ainda em revisão ou complementação." />
         <Stat label="Legado pendente" value={migrationPending} detail="Registros antigos que ainda precisam ser vinculados à fonte correta." />
+      </section>
+
+      <section>
+        <div className="mb-4 flex items-end justify-between gap-4">
+          <div>
+            <p className="text-accent text-[11px] font-semibold uppercase tracking-widest">Acompanhamento</p>
+            <h2 className="font-display text-2xl font-semibold">Memórias em gestão</h2>
+            <p className="text-muted mt-1 text-sm">
+              Abrir uma linha leva à Ficha Única do acontecimento, onde ficam edição, mídias, publicações, vínculos e exclusão segura.
+            </p>
+          </div>
+          <Link href="/admin/publicacoes" className="text-muted hover:text-accent shrink-0 text-xs font-semibold">
+            Ver lista completa
+          </Link>
+        </div>
+        <div className="border-border bg-surface divide-border divide-y overflow-hidden rounded-2xl border">
+          {trackedItems.map((item) => {
+            const event = eventById.get(item.eventId);
+            return (
+              <Link
+                key={item.id}
+                href={`/admin/publicacoes/${item.eventId}`}
+                className="hover:bg-primary/[0.025] flex items-center justify-between gap-4 p-4 transition-colors"
+              >
+                <div className="min-w-0">
+                  <p className="font-display truncate font-semibold">{event?.titulo ?? item.titulo}</p>
+                  <p className="text-muted mt-1 text-xs">
+                    {event
+                      ? `${new Intl.DateTimeFormat('pt-BR').format(event.dataInicio)} · ${event.local}`
+                      : 'Acontecimento de origem não localizado'}
+                  </p>
+                </div>
+                <div className="flex shrink-0 items-center gap-3">
+                  <span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${item.publicacaoStatus === 'publicado' ? 'bg-emerald-50 text-emerald-800' : 'bg-amber-50 text-amber-800'}`}>
+                    {item.publicacaoStatus === 'publicado' ? 'Publicado' : 'Em preparação'}
+                  </span>
+                  <ArrowRight className="text-muted" size={16} />
+                </div>
+              </Link>
+            );
+          })}
+          {trackedItems.length === 0 && (
+            <p className="text-muted p-5 text-sm">Nenhuma memória canônica foi criada ainda.</p>
+          )}
+        </div>
       </section>
 
       <section className="grid gap-4 lg:grid-cols-3">
