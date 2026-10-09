@@ -15,16 +15,33 @@ export default async function ArchiveAudiovisualPage() {
   const container = createServerContainer();
   const { authContext } = session;
 
-  const [filesPage, albums, publishedEvents] = await Promise.all([
+  const [filesPage, albums, publishedEvents, archiveItemsPage] = await Promise.all([
     container.useCases.listAllFileAssets.execute(authContext, { limit: 200 }),
     container.useCases.listGalleryAlbums.execute(authContext),
     loadPublishedArchiveEventCards(container, authContext, session.role),
+    container.repositories.archiveItem.findByTenant(authContext.tenantId, { limit: 500 }),
   ]);
 
-  const videoFiles = filesPage.items.filter((file) => file.publicado && file.tipo === 'video');
+  const migratedFileIds = new Set(
+    archiveItemsPage.items
+      .filter((item) => !item.deletedAt)
+      .map((item) => item.origemFileAssetId)
+      .filter((id): id is string => Boolean(id)),
+  );
+  const migratedAlbumIds = new Set(
+    archiveItemsPage.items
+      .filter((item) => !item.deletedAt)
+      .map((item) => item.origemGalleryAlbumId)
+      .filter((id): id is string => Boolean(id)),
+  );
+
+  const videoFiles = filesPage.items.filter(
+    (file) => file.publicado && file.tipo === 'video' && !migratedFileIds.has(file.id),
+  );
+  const legacyAlbums = albums.filter((album) => !migratedAlbumIds.has(album.id));
 
   const albumMedia = await Promise.all(
-    albums.map(async (album) => ({
+    legacyAlbums.map(async (album) => ({
       album,
       media: await container.useCases.listGalleryMediaByAlbum.execute(authContext, album.id),
     })),
@@ -33,9 +50,6 @@ export default async function ArchiveAudiovisualPage() {
     media.filter((item) => item.tipo === 'video').map((item) => ({ album, media: item })),
   );
 
-  // Conteúdo novo do Acervo: eventos publicados que possuem vídeo. O card
-  // abre a memória canônica do acontecimento, onde vídeo, fotos, notícia,
-  // Instagram, participantes e demais relações permanecem juntos.
   const eventVideos = publishedEvents
     .filter((card) => card.counts.video > 0)
     .sort((a, b) => b.dataInicio.getTime() - a.dataInicio.getTime());
@@ -46,7 +60,7 @@ export default async function ArchiveAudiovisualPage() {
     <div className="flex flex-col gap-6">
       <AcervoPageHeader
         title="Audiovisual"
-        description="Vídeos preservados no Acervo, reunindo o conteúdo atual por acontecimento e o material legado ainda em migração."
+        description="Vídeos preservados no Acervo. Registros já migrados aparecem somente pela memória canônica do acontecimento; o legado ainda pendente continua acessível até ser interligado."
         backHref="/acervo"
       />
 
