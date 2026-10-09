@@ -93,12 +93,15 @@ export function PublicationCenter({
     <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="font-display text-3xl font-semibold">
-            Publicações e Agenda
+          <p className="text-accent text-xs font-semibold uppercase tracking-[0.12em]">
+            Fluxo administrativo único
+          </p>
+          <h1 className="font-display mt-1 text-3xl font-semibold">
+            Acontecimentos
           </h1>
-          <p className="text-muted mt-2">
-            Abra um acontecimento para editar sua notícia, preparar avisos e
-            organizar os arquivos no mesmo espaço.
+          <p className="text-muted mt-2 max-w-3xl">
+            Registre o fato uma vez e conduza notícia, aviso, fotos, vídeos,
+            documentos, Acervo e memória pela Ficha Única do Acontecimento.
           </p>
         </div>
         <div className="flex flex-wrap items-start gap-2">
@@ -107,16 +110,19 @@ export function PublicationCenter({
               href={completeLink.href}
               className="bg-primary rounded-xl px-4 py-3 text-sm font-semibold text-white"
             >
-              Nova publicação
+              Registrar acontecimento
             </Link>
           )}
           {otherLinks.length > 0 && (
             <details className="border-border bg-surface rounded-xl border p-3">
               <summary className="cursor-pointer font-semibold">
-                {completeLink ? "Outros conteúdos" : "Criar"}
+                Registros independentes
               </summary>
+              <p className="text-muted mt-2 max-w-xs text-xs">
+                Use somente para conteúdos que não pertencem a um fato ou evento.
+              </p>
               <nav
-                aria-label="Criar conteúdo"
+                aria-label="Criar registro independente"
                 className="mt-3 flex flex-col gap-1"
               >
                 {otherLinks.map((l) => (
@@ -133,6 +139,29 @@ export function PublicationCenter({
           )}
         </div>
       </div>
+
+      <div className="border-border bg-surface rounded-2xl border p-4">
+        <p className="text-muted text-xs font-semibold uppercase tracking-wide">
+          Como o Portal passa a funcionar
+        </p>
+        <div className="mt-3 grid gap-2 sm:grid-cols-5">
+          {[
+            ["1", "Acontecimento"],
+            ["2", "Comunicação"],
+            ["3", "Mídias"],
+            ["4", "Acervo"],
+            ["5", "Memória"],
+          ].map(([step, label]) => (
+            <div key={step} className="rounded-xl border border-border px-3 py-3">
+              <span className="bg-primary inline-flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold text-white">
+                {step}
+              </span>
+              <p className="mt-2 text-sm font-semibold">{label}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
       {errors.length > 0 && (
         <div
           role="alert"
@@ -239,8 +268,8 @@ export function PublicationCenter({
           </button>
         </div>
         <p className="text-muted mb-4 text-xs">
-          Ordenação e ano usam a data de publicação; quando ausente, a do
-          acontecimento, planejamento ou cadastro.
+          A lista reúne os registros existentes para conferência. Quando houver
+          vínculo com um acontecimento, a gestão deve ser feita pela Ficha Única.
         </p>
         {view === "lista" ? (
           <div className="divide-border divide-y">
@@ -273,9 +302,9 @@ export function PublicationCenter({
                   {i.eventId && (
                     <Link
                       href={`/admin/publicacoes/${encodeURIComponent(i.eventId)}`}
-                      className="text-accent mt-2 inline-block text-xs underline"
+                      className="text-accent mt-2 inline-block text-xs font-semibold underline"
                     >
-                      Editar tudo neste acontecimento
+                      Abrir Ficha Única
                     </Link>
                   )}
                 </div>
@@ -366,9 +395,9 @@ export function PublicationCenter({
         )}
       </div>
       <p className="text-muted text-sm">
-        Os conteúdos vinculados abrem no espaço único do acontecimento. Notícias
-        e avisos avulsos continuam disponíveis, com suas funções de edição e
-        publicação.
+        Notícias, avisos, artes e mídias associados a fatos devem nascer ou ser
+        vinculados pela Ficha Única. Cadastros técnicos antigos permanecem
+        disponíveis apenas para manutenção e transição segura.
       </p>
     </div>
   );
