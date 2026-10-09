@@ -1,8 +1,11 @@
-import { DashboardOverview } from "@/modules/admin/components/dashboard-overview";
-import { loadDashboardOverview } from "@/modules/admin/lib/load-dashboard-overview";
-import { overviewPeriod } from "@/modules/admin/lib/dashboard-overview-model";
-export const dynamic = "force-dynamic";
-export const metadata = { title: "Visão geral · Central de Administração VL6" };
+import { AdminStartCenter } from '@/modules/admin/components/admin-start-center';
+import { DashboardOverview } from '@/modules/admin/components/dashboard-overview';
+import { loadDashboardOverview } from '@/modules/admin/lib/load-dashboard-overview';
+import { overviewPeriod } from '@/modules/admin/lib/dashboard-overview-model';
+
+export const dynamic = 'force-dynamic';
+export const metadata = { title: 'Administração facilitada · VL6' };
+
 export default async function AdminDashboardPage({
   searchParams,
 }: {
@@ -15,26 +18,20 @@ export default async function AdminDashboardPage({
   try {
     overviewPeriod(from, to);
   } catch {
-    warning =
-      "O intervalo informado é inválido ou excede um ano. Mostrando o mês atual.";
+    warning = 'O intervalo informado é inválido ou excede um ano. Mostrando o mês atual.';
     from = undefined;
     to = undefined;
   }
   const data = await loadDashboardOverview(from, to);
   return (
-    <>
+    <div className="space-y-6">
       {warning && (
-        <p
-          role="alert"
-          className="mb-4 rounded-lg bg-amber-50 p-3 text-sm text-amber-900"
-        >
+        <p role="alert" className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900">
           {warning}
         </p>
       )}
-      <DashboardOverview
-        key={`${data.from}:${data.to}:${data.updatedAt}`}
-        data={data}
-      />
-    </>
+      <AdminStartCenter tasks={data.tasks} />
+      <DashboardOverview key={`${data.from}:${data.to}:${data.updatedAt}`} data={data} />
+    </div>
   );
 }
