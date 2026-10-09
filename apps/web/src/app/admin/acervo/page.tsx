@@ -1,6 +1,6 @@
 import Link from '@/components/layout/context-link';
 import { createServerContainer } from '@vl6/infra';
-import { Archive, ArrowRight, Clock3, FilePlus2, History, ShieldCheck } from '@vl6/ui';
+import { Archive, History, ShieldCheck } from '@vl6/ui';
 import { requirePagePermission } from '@/lib/auth/require-permission';
 import {
   loadFileMigrationCandidatesAction,
@@ -58,13 +58,13 @@ export default async function AcervoIndexPage() {
               href="/admin/publicacoes/novo"
               className="bg-primary text-white hover:bg-primary/90 inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold"
             >
-              <FilePlus2 size={16} /> Registrar acontecimento
+              Registrar acontecimento
             </Link>
             <Link
               href="/admin/publicacoes"
               className="border-border hover:border-accent inline-flex items-center gap-2 rounded-lg border px-4 py-2.5 text-sm font-semibold"
             >
-              Ver todos <ArrowRight size={16} />
+              Ver todos <span aria-hidden="true">→</span>
             </Link>
           </div>
         </div>
@@ -111,7 +111,7 @@ export default async function AcervoIndexPage() {
                   <span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${item.publicacaoStatus === 'publicado' ? 'bg-emerald-50 text-emerald-800' : 'bg-amber-50 text-amber-800'}`}>
                     {item.publicacaoStatus === 'publicado' ? 'Publicado' : 'Em preparação'}
                   </span>
-                  <ArrowRight className="text-muted" size={16} />
+                  <span className="text-muted" aria-hidden="true">→</span>
                 </div>
               </Link>
             );
@@ -166,7 +166,7 @@ export default async function AcervoIndexPage() {
         <div className="border-border bg-surface divide-border divide-y rounded-2xl border">
           {activity.slice(0, 8).map((entry) => (
             <div key={entry.id} className="flex items-start gap-3 p-4">
-              <Clock3 className="text-accent mt-0.5 shrink-0" size={16} />
+              <span className="text-accent mt-0.5 shrink-0" aria-hidden="true">•</span>
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-medium">{entry.descricao}</p>
                 <p className="text-muted mt-0.5 text-xs">
