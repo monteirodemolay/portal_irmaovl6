@@ -21,32 +21,40 @@ export default async function ArchivePhotosPage({
   const params = await searchParams;
 
   const container = createServerContainer();
-  const [allAlbums, publishedEvents] = await Promise.all([
+  const [allAlbums, publishedEvents, archiveItemsPage] = await Promise.all([
     container.useCases.listGalleryAlbums.execute(session.authContext),
     loadPublishedArchiveEventCards(container, session.authContext, session.role),
+    container.repositories.archiveItem.findByTenant(session.authContext.tenantId, { limit: 500 }),
   ]);
   const eventCards = publishedEvents.filter((card) => card.counts.foto + card.counts.video > 0);
+  const migratedAlbumIds = new Set(
+    archiveItemsPage.items
+      .filter((item) => !item.deletedAt)
+      .map((item) => item.origemGalleryAlbumId)
+      .filter((id): id is string => Boolean(id)),
+  );
 
   function formatDate(date: Date): string {
     return new Intl.DateTimeFormat('pt-BR').format(new Date(date));
   }
 
-  // Duas fontes ainda coexistem — `GalleryAlbum` (legado) e `ArchiveItem`
-  // publicado pela Central de Publicação (Fase 2/3) — unificadas num só
-  // grid, ordenado por data, pra "publiquei um evento" sempre significar
-  // "aparece aqui automaticamente", sem depender de saber que existem dois
-  // sistemas por trás.
+  // Enquanto a migração não termina, a Galeria antiga continua disponível.
+  // Assim que um álbum recebe um ArchiveItem canônico com proveniência, sua
+  // cópia legada deixa de aparecer aqui e o Evento passa a ser a única
+  // memória navegável, sem apagar o registro original.
   const cards = [
-    ...allAlbums.map((album) => ({
-      key: `album-${album.id}`,
-      href: archiveItemHref('gallery-album', album.id),
-      thumbnailUrl: album.capaUrl,
-      kindLabel: album.categoria,
-      titulo: album.titulo,
-      descricao: formatDate(album.dataEvento),
-      categoria: album.categoria,
-      date: album.dataEvento,
-    })),
+    ...allAlbums
+      .filter((album) => !migratedAlbumIds.has(album.id))
+      .map((album) => ({
+        key: `album-${album.id}`,
+        href: archiveItemHref('gallery-album', album.id),
+        thumbnailUrl: album.capaUrl,
+        kindLabel: album.categoria,
+        titulo: album.titulo,
+        descricao: formatDate(album.dataEvento),
+        categoria: album.categoria,
+        date: album.dataEvento,
+      })),
     ...eventCards.map((card) => ({
       key: `event-${card.eventId}`,
       href: `/acervo/eventos/${card.eventId}`,
