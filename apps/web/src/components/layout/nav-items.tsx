@@ -16,7 +16,7 @@ import {
 } from '@vl6/ui';
 import { isAdminTier } from '@/lib/auth/is-admin-tier';
 import type { Dictionary } from '@/lib/i18n/get-dictionary';
-import type { AppShellNavFlyout, AppShellNavSection } from './app-shell';
+import type { AppShellModuleNavigation, AppShellNavSection } from './app-shell';
 
 const ICON_SIZE = 18;
 const ICON_STROKE = 1.75;
@@ -44,7 +44,7 @@ const PORTAL_ITEMS: Array<{
 }> = [
   { href: '/dashboard', label: 'Início', icon: LayoutDashboard },
   { href: '/agenda', label: 'Minha Agenda', icon: CalendarDays },
-  { href: '/avisos', label: 'Central de Notificações', icon: Megaphone },
+  { href: '/avisos', label: 'Notificações', icon: Megaphone },
   // Módulo "Irmãos" (docs/architecture) — Diretório institucional privado e
   // voluntário + "Meu Espaço" (autoatendimento), unificados em duas abas
   // internas sob uma única rota. A entrada exige `memberDirectory:read` para
@@ -102,32 +102,30 @@ export function buildNavSections(
   unreadNotificationsCount = 0,
   isActiveCriptaMember = false,
 ): AppShellNavSection[] {
-  const irmaosFlyout: AppShellNavFlyout = {
+  const irmaosNavigation: AppShellModuleNavigation = {
     title: 'Irmãos',
     description: 'Diretório e autoatendimento',
     links: [
-      { href: '/irmaos/meu-espaco', label: 'Meu Perfil (editar dados)' },
-      { href: '/irmaos/negocios', label: 'Meus Negócios & Serviços' },
+      { href: '/irmaos/meu-espaco', label: 'Meu Perfil' },
+      { href: '/irmaos/negocios', label: 'Meus Negócios' },
       { href: '/irmaos/galeria-de-honra', label: 'Galeria de Honra' },
       { href: '/configuracoes#perfil-diretorio', label: 'Privacidade e visibilidade' },
     ],
-    full: { href: '/irmaos', label: 'Ver diretório completo' },
-    fullPosition: 'first',
+    overview: { href: '/irmaos', label: 'Comunidade' },
   };
 
-  const acervoFlyout: AppShellNavFlyout = {
+  const acervoNavigation: AppShellModuleNavigation = {
     title: ACERVO_ITEM.label,
     description: 'Memória e conhecimento',
     links: [
-      { href: '/acervo/documentos', label: 'Documentos' },
-      { href: '/acervo/biblioteca', label: 'Biblioteca' },
-      { href: '/acervo/fotografias', label: 'Fotos e vídeos' },
-      { href: '/acervo/gestoes', label: 'Gestões' },
-      { href: '/downloads', label: 'Favoritos' },
+      ...(hasPermission(authContext, 'file:read') ? [{ href: '/acervo/documentos', label: 'Documentos', activePaths: ['/arquivos'] }] : []),
+      ...(hasPermission(authContext, 'libraryItem:read') ? [{ href: '/acervo/biblioteca', label: 'Biblioteca', activePaths: ['/biblioteca'] }] : []),
+      ...(hasPermission(authContext, 'gallery:read') ? [{ href: '/acervo/fotografias', label: 'Fotos e vídeos', activePaths: ['/galeria'] }] : []),
+      ...(hasPermission(authContext, 'boardTerm:read') ? [{ href: '/acervo/gestoes', label: 'Gestões' }] : []),
+      ...(hasPermission(authContext, 'libraryItem:read') ? [{ href: '/downloads', label: 'Favoritos' }] : []),
       { href: '/acervo/pesquisar', label: 'Pesquisar tudo' },
     ],
-    full: { href: ACERVO_ITEM.href, label: 'Abrir Acervo completo' },
-    fullPosition: 'first',
+    overview: { href: ACERVO_ITEM.href, label: 'Visão geral' },
   };
 
   const sections: AppShellNavSection[] = [
@@ -142,7 +140,7 @@ export function buildNavSections(
           item.label,
           item.href === '/avisos' ? unreadNotificationsCount : undefined,
         ),
-        flyout: item.href === '/irmaos' ? irmaosFlyout : undefined,
+        navigation: item.href === '/irmaos' ? irmaosNavigation : undefined,
       })),
     },
   ];
@@ -151,8 +149,9 @@ export function buildNavSections(
   if (hasPermission(authContext, 'archiveItem:read')) {
     memoryItems.push({
       href: ACERVO_ITEM.href,
+      activePaths: ['/downloads', '/biblioteca', '/arquivos', '/galeria'],
       content: navContent(ACERVO_ITEM.icon, ACERVO_ITEM.label),
-      flyout: acervoFlyout,
+      navigation: acervoNavigation,
     });
   }
   // Entrada aditiva: Acervo e Biblioteca mantêm rotas, menu e comportamentos.
@@ -161,14 +160,13 @@ export function buildNavSections(
     memoryItems.push({
       href: '/conhecimento',
       content: navContent(GraduationCap, 'Conhecimento VL6'),
-      flyout: {
+      navigation: {
         title: 'Conhecimento VL6',
         description: 'Formação continuada',
-        full: { href: '/conhecimento', label: 'Visão geral' },
-        fullPosition: 'first',
+        overview: { href: '/conhecimento', label: 'Visão geral' },
         links: [
           { href: '/conhecimento/minha-jornada', label: 'Minha jornada' },
-          { href: '/conhecimento/formacoes', label: 'Formações' },
+          { href: '/conhecimento/formacoes', label: 'Formações', activePaths: ['/conhecimento/formacao', '/conhecimento/aula', '/conhecimento/certificado'] },
           { href: '/conhecimento/rapido', label: 'Conhecimento rápido' },
           { href: '/conhecimento/atividades', label: 'Atividades' },
           { href: '/conhecimento/progresso', label: 'Meu progresso' },
@@ -199,11 +197,11 @@ export function buildNavSections(
         {
           href: '/plataforma',
           content: navContent(Building2, 'Painel da Plataforma'),
-          flyout: {
+          navigation: {
             title: 'Painel da Plataforma',
             description: 'Gestão multi-tenant',
-            links: [{ href: '/plataforma/lojas/nova', label: 'Cadastrar nova Loja' }],
-            full: { href: '/plataforma', label: 'Abrir Painel da Plataforma' },
+        links: [{ href: '/plataforma/lojas/nova', label: 'Cadastrar nova Loja' }],
+            overview: { href: '/plataforma', label: 'Abrir Painel da Plataforma' },
           },
         },
       ],

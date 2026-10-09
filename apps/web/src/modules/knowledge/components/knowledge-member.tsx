@@ -22,14 +22,6 @@ type Reference = {
   format: string;
   cover: string | null;
 };
-const links = [
-  ['Visão geral', ''],
-  ['Minha jornada', 'minha-jornada'],
-  ['Formações', 'formacoes'],
-  ['Em poucos minutos', 'rapido'],
-  ['Atividades', 'atividades'],
-  ['Meu progresso', 'progresso'],
-];
 const lessons = (c: Course) => c.content.modules.flatMap((m) => m.lessons);
 const percent = (c: Course, p?: KnowledgeProgress) =>
   Math.round(
@@ -670,19 +662,10 @@ export function KnowledgeMember({
         description={description}
         meta={`Conhecimento VL6 · ${degree === 'aprendiz' ? 'Aprendiz' : degree === 'companheiro' ? 'Companheiro' : 'Mestre'}`}
       />
-      <nav className="k-nav" aria-label="Conhecimento VL6">
-        {links.map(([label, id]) => (
-          <Link
-            key={id}
-            href={`/conhecimento${id ? '/' + id : ''}`}
-            aria-current={view === id ? 'page' : undefined}
-          >
-            {label}
-          </Link>
-        ))}
+      <div className="k-nav" aria-label="Atalhos de Conhecimento">
         {canManage && <Link href="/admin/conhecimento">Gestão do Conhecimento</Link>}
-        <Link href="/acervo/biblioteca">Biblioteca existente</Link>
-      </nav>
+        <Link href="/acervo/biblioteca">Biblioteca</Link>
+      </div>
       {content}
       {notice && (
         <div role="status" className="k-notice">
