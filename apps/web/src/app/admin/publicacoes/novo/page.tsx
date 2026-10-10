@@ -44,10 +44,10 @@ export default async function NewPublicationPage({
 
   const initialHomeDestination =
     initialType === 'sessao'
-      ? 'Próxima Sessão / Próximas Sessões'
+      ? 'Entra na fila de Sessões; as 3 mais próximas aparecem na Tela inicial (1 destaque + 2 na lista).'
       : initialType
-        ? 'Próximo Evento / Próximos Eventos'
-        : 'Sessão ou Evento, conforme o tipo escolhido';
+        ? 'Entra na fila de Eventos; os 3 mais próximos aparecem na Tela inicial (1 destaque + 2 na lista).'
+        : 'Ao escolher o tipo, ele entra na fila de Sessões ou Eventos. Os 3 mais próximos de cada tipo aparecem na Tela inicial.';
 
   return (
     <div className="mx-auto w-full max-w-6xl space-y-6 pb-8">
@@ -95,8 +95,8 @@ export default async function NewPublicationPage({
           {[
             ['Ao salvar', 'Agenda', 'O compromisso já fica registrado no calendário do Portal.'],
             ['Se estiver no futuro', 'Tela inicial', initialHomeDestination],
-            ['Quando publicar comunicação', 'Notícias / Avisos', 'Notícia publicada entra em Notícias e pode aparecer na Tela inicial; aviso ativo aparece em Avisos.'],
-            ['Depois do fato', 'Linha do Tempo / Acervo', 'O acontecimento vira registro histórico. Só vira memória navegável no Acervo quando houver conteúdo publicado.'],
+            ['Quando publicar comunicação', 'Notícias / Avisos', 'Notícia publicada entra em Notícias; as 3 mais recentes podem aparecer na Tela inicial. Aviso ativo aparece no bloco de Avisos.'],
+            ['Depois do fato', 'Linha do Tempo / Acervo', 'O acontecimento entra no histórico quando habilitado. Só vira memória navegável no Acervo quando houver conteúdo publicado.'],
           ].map(([when, destination, detail]) => (
             <div key={when} className="rounded-2xl border border-border p-4">
               <p className="text-muted text-xs font-semibold uppercase tracking-wide">{when}</p>
