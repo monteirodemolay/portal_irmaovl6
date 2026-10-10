@@ -295,6 +295,104 @@ export default async function PublicationWorkspacePage({
   ];
   const healthScore = Math.round((health.filter((item) => item.ok).length / health.length) * 100);
   const overallState = healthScore >= 85 ? 'Completo' : healthScore >= 55 ? 'Requer atenção' : 'Em construção';
+  const isFutureEvent = eventTime > Date.now();
+  const hasAnyMedia = archiveMedia.length > 0;
+  const hasPublishedMemory = publishedArchiveCount > 0;
+  const lifecycleState = isFutureEvent
+    ? 'Agendado'
+    : hasPublishedMemory
+      ? 'Memória publicada'
+      : hasCommunication || hasAnyMedia
+        ? 'Em complementação'
+        : 'Realizado · aguardando complementos';
+  const lifecycleDescription = isFutureEvent
+    ? 'O acontecimento já está na Agenda. Você pode aguardar a realização ou preparar conteúdos antecipadamente.'
+    : hasPublishedMemory
+      ? 'A memória já possui conteúdo publicado. Você pode continuar acrescentando materiais quando necessário.'
+      : 'O acontecimento já ocorreu. Complete somente o que existir: notícia, mídias, documentos, links e memória.';
+
+  const builderCards = [
+    {
+      key: 'dados',
+      title: 'Dados do acontecimento',
+      description: 'Data, horário, local e classificação que alimentam Agenda e Linha do Tempo.',
+      href: '#dados',
+      status: event.titulo && event.local && event.dataInicio ? 'Concluído' : 'Completar',
+      detail: 'Fonte oficial',
+      visible: true,
+      ready: Boolean(event.titulo && event.local && event.dataInicio),
+    },
+    {
+      key: 'noticia',
+      title: 'Notícia',
+      description: 'Escreva ou vincule a matéria deste acontecimento quando houver conteúdo editorial.',
+      href: '#noticia',
+      status: relatedNews.length ? `${relatedNews.length} vinculada(s)` : 'Adicionar quando precisar',
+      detail: isFutureEvent ? 'Opcional antes do evento' : 'Derivação editorial',
+      visible: newsReady,
+      ready: relatedNews.length > 0,
+    },
+    {
+      key: 'aviso',
+      title: 'Aviso',
+      description: 'Use para comunicações operacionais relacionadas ao acontecimento, sem criar outro registro principal.',
+      href: '#aviso',
+      status: relatedAnnouncements.length ? `${relatedAnnouncements.length} vinculado(s)` : 'Adicionar quando precisar',
+      detail: 'Comunicação opcional',
+      visible: announcementsReady,
+      ready: relatedAnnouncements.length > 0,
+    },
+    {
+      key: 'midias',
+      title: 'Fotos e vídeos',
+      description: 'Acrescente as mídias que realmente existirem. Sem mídia, nenhum álbum vazio será criado.',
+      href: '#memoria',
+      status: photoCount || videoCount ? `${photoCount} foto(s) · ${videoCount} vídeo(s)` : 'Adicionar quando houver',
+      detail: 'Memória visual',
+      visible: can('archiveItem:read'),
+      ready: photoCount + videoCount > 0,
+    },
+    {
+      key: 'documentos',
+      title: 'Documentos',
+      description: 'Anexe programas, convites, atas públicas ou outros documentos que pertençam a este fato.',
+      href: '#memoria',
+      status: documentCount ? `${documentCount} documento(s)` : 'Adicionar quando houver',
+      detail: 'Patrimônio documental',
+      visible: can('archiveItem:read'),
+      ready: documentCount > 0,
+    },
+    {
+      key: 'canais',
+      title: 'Instagram e Portal VL6',
+      description: 'Registre os links externos para manter publicação, evidência e memória conectadas ao mesmo acontecimento.',
+      href: '#comunicacao',
+      status: relatedNews.length ? 'Gerenciar canais' : 'Disponível com a notícia',
+      detail: 'Links de publicação',
+      visible: newsReady,
+      ready: relatedNews.length > 0,
+    },
+    {
+      key: 'acervo',
+      title: 'Publicar no Acervo',
+      description: 'Só publique a memória navegável quando houver conteúdo efetivamente preservado.',
+      href: '#memoria',
+      status: hasPublishedMemory ? `${publishedArchiveCount} publicado(s)` : hasAnyMedia ? 'Pronto para revisar' : 'Aguardando conteúdo',
+      detail: 'Memória canônica',
+      visible: can('archiveItem:read'),
+      ready: hasPublishedMemory,
+    },
+    {
+      key: 'historico',
+      title: 'Histórico e auditoria',
+      description: 'Confira alterações, responsáveis e rastreabilidade sem misturar manutenção com o trabalho cotidiano.',
+      href: '#historico',
+      status: audit.length ? `${audit.length} registro(s) recente(s)` : 'Sem alterações recentes',
+      detail: 'Verificabilidade',
+      visible: can('auditLog:read'),
+      ready: audit.length > 0,
+    },
+  ].filter((card) => card.visible);
 
   const option = {
     id: event.id,
@@ -326,7 +424,7 @@ export default async function PublicationWorkspacePage({
                 · {event.local}
               </p>
               <div className="mt-4 flex flex-wrap gap-2 text-xs font-semibold">
-                <span className="rounded-full bg-white/15 px-3 py-1.5">{overallState}</span>
+                <span className="rounded-full bg-white/15 px-3 py-1.5">{lifecycleState}</span>
                 {management && <span className="rounded-full bg-white/15 px-3 py-1.5">{management.nome}</span>}
                 {entity && (
                   <span className="rounded-full bg-white/15 px-3 py-1.5">
@@ -344,6 +442,7 @@ export default async function PublicationWorkspacePage({
         </div>
         <nav aria-label="Seções da ficha" className="flex gap-2 overflow-x-auto border-t border-white/10 bg-surface px-4 py-3 md:px-6">
           {[
+            ['#construir', 'Complementar'],
             ['#visao-geral', 'Visão geral'],
             ['#dados', 'Dados'],
             ['#comunicacao', 'Comunicação'],
@@ -364,6 +463,39 @@ export default async function PublicationWorkspacePage({
           Não foi possível carregar: {errors.join(', ')}. Os demais dados continuam disponíveis e nenhuma informação foi apagada.
         </p>
       )}
+
+      <section id="construir" className="border-border bg-surface scroll-mt-6 rounded-3xl border p-6 shadow-sm md:p-7">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div className="max-w-3xl">
+            <p className="text-accent text-xs font-semibold uppercase tracking-[0.14em]">Construção progressiva da memória</p>
+            <h2 className="font-display mt-1 text-2xl font-semibold md:text-3xl">O que você quer acrescentar agora?</h2>
+            <p className="text-muted mt-2 text-sm leading-6">O acontecimento já é o registro principal. Complete apenas os blocos que fizerem sentido, no momento em que o material existir. Tudo continua ligado à mesma data e à mesma ficha.</p>
+          </div>
+          <div className={`rounded-2xl border px-4 py-3 text-sm ${isFutureEvent ? 'border-sky-200 bg-sky-50 text-sky-900' : hasPublishedMemory ? 'border-emerald-200 bg-emerald-50 text-emerald-900' : 'border-amber-200 bg-amber-50 text-amber-950'}`}>
+            <p className="font-semibold">{lifecycleState}</p>
+            <p className="mt-1 max-w-sm text-xs leading-5 opacity-80">{lifecycleDescription}</p>
+          </div>
+        </div>
+
+        <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          {builderCards.map((card) => (
+            <a key={card.key} href={card.href} className="border-border bg-background hover:border-accent group flex min-h-[190px] flex-col rounded-2xl border p-5 transition hover:-translate-y-0.5 hover:shadow-md">
+              <div className="flex items-start justify-between gap-3">
+                <span className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold ${card.ready ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-700'}`}>{card.ready ? '✓ ' : '+ '}{card.status}</span>
+                <span className="text-muted text-lg transition group-hover:translate-x-0.5">→</span>
+              </div>
+              <h3 className="mt-5 text-lg font-semibold">{card.title}</h3>
+              <p className="text-muted mt-2 flex-1 text-sm leading-5">{card.description}</p>
+              <p className="text-accent mt-4 text-[11px] font-semibold uppercase tracking-wide">{card.detail}</p>
+            </a>
+          ))}
+        </div>
+
+        <div className="border-border mt-6 flex flex-col gap-2 border-t pt-5 text-sm md:flex-row md:items-center md:justify-between">
+          <p className="text-muted">Nada precisa ser criado por obrigação. Evento sem mídia continua na Linha do Tempo e não gera álbum vazio.</p>
+          <a href="#visao-geral" className="font-semibold underline">Ver integridade completa</a>
+        </div>
+      </section>
 
       <section id="visao-geral" className="scroll-mt-6 grid gap-5 xl:grid-cols-[1.35fr_0.65fr]">
         <div className="border-border bg-surface rounded-2xl border p-6">
