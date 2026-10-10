@@ -66,6 +66,7 @@ export default async function PublicationsPage() {
                 scheduledAt: null,
                 expiresAt: null,
                 destination: "Agenda do Portal",
+                showOnTimeline: e.exibirNaLinhaDoTempo !== false,
               });
             cursor = result.hasMore
               ? (result.nextCursor ?? undefined)
@@ -205,9 +206,6 @@ export default async function PublicationsPage() {
     if (item.eventId)
       item.happenedAt = events.get(item.eventId) ?? item.happenedAt;
 
-  // Na operação cotidiana existe uma única criação primária: o acontecimento.
-  // Frases, links, notificações e manutenção de registros avulsos continuam
-  // disponíveis nos cadastros mestres/área avançada, sem disputar atenção aqui.
   const createLinks = can("event:create") && can("event:read")
     ? [{ href: "/admin/publicacoes/novo", label: "Registrar acontecimento" }]
     : [];

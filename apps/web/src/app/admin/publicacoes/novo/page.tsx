@@ -42,6 +42,13 @@ export default async function NewPublicationPage({
     })(),
   ]);
 
+  const initialHomeDestination =
+    initialType === 'sessao'
+      ? 'Entra na fila de Sessões; as 3 mais próximas aparecem na Tela inicial (1 destaque + 2 na lista).'
+      : initialType
+        ? 'Entra na fila de Eventos; os 3 mais próximos aparecem na Tela inicial (1 destaque + 2 na lista).'
+        : 'Ao escolher o tipo, ele entra na fila de Sessões ou Eventos. Os 3 mais próximos de cada tipo aparecem na Tela inicial.';
+
   return (
     <div className="mx-auto w-full max-w-6xl space-y-6 pb-8">
       <Link href="/admin/publicacoes" className="inline-flex min-h-11 items-center text-sm font-semibold underline">
@@ -72,6 +79,33 @@ export default async function NewPublicationPage({
           ))}
         </div>
       </header>
+
+      <section className="border-border bg-surface rounded-3xl border p-5 md:p-6" aria-labelledby="placement-preview-title">
+        <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+          <div>
+            <p className="text-accent text-xs font-semibold uppercase tracking-[0.12em]">Prévia de distribuição</p>
+            <h2 id="placement-preview-title" className="font-display mt-1 text-2xl font-semibold">Onde isso vai aparecer</h2>
+          </div>
+          <Link href="/dashboard" className="text-accent text-sm font-semibold underline">Ver Tela inicial</Link>
+        </div>
+        <p className="text-muted mt-2 max-w-3xl text-sm">
+          O mesmo Acontecimento muda de contexto conforme a data e conforme você publica seus complementos. Nada precisa ser recadastrado.
+        </p>
+        <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          {[
+            ['Ao salvar', 'Agenda', 'O compromisso já fica registrado no calendário do Portal.'],
+            ['Se estiver no futuro', 'Tela inicial', initialHomeDestination],
+            ['Quando publicar comunicação', 'Notícias / Avisos', 'Notícia publicada entra em Notícias; as 3 mais recentes podem aparecer na Tela inicial. Aviso ativo aparece no bloco de Avisos.'],
+            ['Depois do fato', 'Linha do Tempo / Acervo', 'O acontecimento entra no histórico quando habilitado. Só vira memória navegável no Acervo quando houver conteúdo publicado.'],
+          ].map(([when, destination, detail]) => (
+            <div key={when} className="rounded-2xl border border-border p-4">
+              <p className="text-muted text-xs font-semibold uppercase tracking-wide">{when}</p>
+              <p className="mt-1 font-semibold">{destination}</p>
+              <p className="text-muted mt-2 text-xs leading-relaxed">{detail}</p>
+            </div>
+          ))}
+        </div>
+      </section>
 
       <EventFormExperience locationOptions={locationOptions}>
         <EventForm
