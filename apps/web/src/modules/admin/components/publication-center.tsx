@@ -17,6 +17,7 @@ export interface EditorialItem {
   scheduledAt: string | null;
   expiresAt: string | null;
   destination: string;
+  showOnTimeline?: boolean;
 }
 
 export interface EditorialLink {
@@ -93,21 +94,27 @@ function groupPlacements(group: EventGroup, now: number): Placement[] {
   if (isFuture) {
     placements.push({
       label: 'Tela inicial',
-      detail: 'Próxima sessão/evento conforme o tipo e a ordem da data',
+      detail: 'Entra na fila cronológica do seu tipo; os 3 mais próximos aparecem na Tela inicial (1 destaque + 2 na lista).',
       state: 'active',
     });
-  } else {
+  } else if (group.event.showOnTimeline !== false) {
     placements.push({
       label: 'Linha do Tempo',
       detail: 'Registro cronológico após a realização',
       state: 'history',
+    });
+  } else {
+    placements.push({
+      label: 'Linha do Tempo',
+      detail: 'Este acontecimento está configurado para não aparecer na Linha do Tempo.',
+      state: 'conditional',
     });
   }
 
   if (group.related.some((item) => item.type === 'Notícia' && isPublished(item))) {
     placements.push({
       label: 'Tela inicial · Notícias',
-      detail: 'Pode integrar Acontece na Verdadeira Luz',
+      detail: 'Elegível entre as 3 notícias publicadas mais recentes de “Acontece na Verdadeira Luz”.',
       state: 'active',
     });
     placements.push({
@@ -161,7 +168,7 @@ function itemPlacements(item: EditorialItem, now: number): Placement[] {
     return isPublished(item)
       ? [
           { label: 'Notícias', detail: 'Página de Notícias do Portal', state: 'active' },
-          { label: 'Tela inicial · Notícias', detail: 'Elegível entre as notícias recentes', state: 'active' },
+          { label: 'Tela inicial · Notícias', detail: 'Elegível entre as 3 notícias publicadas mais recentes', state: 'active' },
         ]
       : [{ label: 'Não visível', detail: 'A notícia está em rascunho', state: 'conditional' }];
   }
@@ -216,10 +223,10 @@ export function PublicationCenter({
   const [year, setYear] = useState('Todos');
   const [order, setOrder] = useState('newest');
   const [month, setMonth] = useState(() => dayKey(new Date().toISOString()).slice(0, 7));
+  const [now] = useState(() => Date.now());
 
   const filtered = filterEditorialItems(items, { query, type, status, year, order });
   const filteredIds = new Set(filtered.map((item) => item.id));
-  const now = Date.now();
 
   const groups = useMemo<EventGroup[]>(() => {
     const events = items.filter((item) => item.type === 'Acontecimento');
@@ -299,8 +306,8 @@ export function PublicationCenter({
         <h2 id="distribution-title" className="font-display mt-1 text-xl font-semibold">Onde cada conteúdo aparece</h2>
         <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
           {[
-            ['Acontecimento futuro', 'Agenda + Tela inicial', 'A sessão/evento mais próximo ganha destaque; os seguintes entram nas listas de próximos.'],
-            ['Notícia publicada', 'Notícias + Tela inicial', 'Integra a página de Notícias e pode aparecer em “Acontece na Verdadeira Luz”.'],
+            ['Acontecimento futuro', 'Agenda + Tela inicial', 'Por tipo, os 3 mais próximos ocupam a Tela inicial: 1 em destaque e 2 na lista. Os demais continuam na Agenda.'],
+            ['Notícia publicada', 'Notícias + Tela inicial', 'Integra Notícias; as 3 publicadas mais recentes podem aparecer em “Acontece na Verdadeira Luz”.'],
             ['Aviso publicado', 'Avisos da Tela inicial', 'Permanece enquanto estiver ativo e dentro do prazo configurado.'],
             ['Memória publicada', 'Acervo VL6', 'Só vira item navegável do Acervo quando existir conteúdo efetivamente publicado.'],
           ].map(([title, destination, detail]) => (
