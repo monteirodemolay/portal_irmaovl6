@@ -30,6 +30,12 @@ type EventGroup = {
   hasPublishedMemory: boolean;
 };
 
+type Placement = {
+  label: string;
+  detail: string;
+  state: 'active' | 'conditional' | 'history';
+};
+
 const formatDate = (value: string | null) =>
   value
     ? new Intl.DateTimeFormat('pt-BR', {
@@ -46,11 +52,151 @@ const dayKey = (value: string) =>
     day: '2-digit',
   }).format(new Date(value));
 
+function isPublished(item: EditorialItem) {
+  const value = item.status.toLocaleLowerCase('pt-BR');
+  return value.includes('public') || value.includes('distribuição registrada');
+}
+
+function isActiveAnnouncement(item: EditorialItem, now: number) {
+  if (item.type !== 'Aviso' || !isPublished(item)) return false;
+  if (!item.expiresAt) return true;
+  return new Date(item.expiresAt).getTime() >= now;
+}
+
 function statusTone(status: string) {
   const normalized = status.toLocaleLowerCase('pt-BR');
-  if (normalized.includes('public')) return 'bg-emerald-100 text-emerald-800 border-emerald-200';
+  if (normalized.includes('public') || normalized.includes('distribuição registrada')) {
+    return 'bg-emerald-100 text-emerald-800 border-emerald-200';
+  }
   if (normalized.includes('rascunho')) return 'bg-amber-100 text-amber-900 border-amber-200';
   return 'bg-slate-100 text-slate-700 border-slate-200';
+}
+
+function placementTone(state: Placement['state']) {
+  if (state === 'active') return 'border-emerald-200 bg-emerald-50 text-emerald-800';
+  if (state === 'history') return 'border-indigo-200 bg-indigo-50 text-indigo-800';
+  return 'border-slate-200 bg-slate-50 text-slate-700';
+}
+
+function groupPlacements(group: EventGroup, now: number): Placement[] {
+  const placements: Placement[] = [];
+  const isFuture = Boolean(
+    group.event.happenedAt && new Date(group.event.happenedAt).getTime() >= now,
+  );
+
+  placements.push({
+    label: 'Agenda',
+    detail: isFuture ? 'Compromisso futuro' : 'Registro do acontecimento',
+    state: 'active',
+  });
+
+  if (isFuture) {
+    placements.push({
+      label: 'Tela inicial',
+      detail: 'Próxima sessão/evento conforme o tipo e a ordem da data',
+      state: 'active',
+    });
+  } else {
+    placements.push({
+      label: 'Linha do Tempo',
+      detail: 'Registro cronológico após a realização',
+      state: 'history',
+    });
+  }
+
+  if (group.related.some((item) => item.type === 'Notícia' && isPublished(item))) {
+    placements.push({
+      label: 'Tela inicial · Notícias',
+      detail: 'Pode integrar Acontece na Verdadeira Luz',
+      state: 'active',
+    });
+    placements.push({
+      label: 'Notícias',
+      detail: 'Matéria publicada no Portal',
+      state: 'active',
+    });
+  } else {
+    placements.push({
+      label: 'Notícia',
+      detail: 'Só aparece quando houver matéria publicada',
+      state: 'conditional',
+    });
+  }
+
+  if (group.related.some((item) => isActiveAnnouncement(item, now))) {
+    placements.push({
+      label: 'Tela inicial · Avisos',
+      detail: 'Aviso ativo enquanto estiver publicado e no prazo',
+      state: 'active',
+    });
+  }
+
+  if (group.hasPublishedMemory) {
+    placements.push({
+      label: 'Acervo VL6',
+      detail: 'Memória navegável com conteúdo publicado',
+      state: 'active',
+    });
+  } else {
+    placements.push({
+      label: 'Acervo VL6',
+      detail: 'Só entra como memória navegável quando houver conteúdo publicado',
+      state: 'conditional',
+    });
+  }
+
+  if (group.related.some((item) => item.type === 'Arte e comunicação' && isPublished(item))) {
+    placements.push({
+      label: 'Comunicação externa',
+      detail: 'Distribuição externa registrada na Ficha',
+      state: 'active',
+    });
+  }
+
+  return placements;
+}
+
+function itemPlacements(item: EditorialItem, now: number): Placement[] {
+  if (item.type === 'Notícia') {
+    return isPublished(item)
+      ? [
+          { label: 'Notícias', detail: 'Página de Notícias do Portal', state: 'active' },
+          { label: 'Tela inicial · Notícias', detail: 'Elegível entre as notícias recentes', state: 'active' },
+        ]
+      : [{ label: 'Não visível', detail: 'A notícia está em rascunho', state: 'conditional' }];
+  }
+  if (item.type === 'Aviso') {
+    return isActiveAnnouncement(item, now)
+      ? [{ label: 'Tela inicial · Avisos', detail: 'Aviso ativo no Portal', state: 'active' }]
+      : [{ label: 'Não visível', detail: 'Rascunho, não publicado ou fora do prazo', state: 'conditional' }];
+  }
+  if (item.type === 'Acervo') {
+    return isPublished(item)
+      ? [{ label: 'Acervo VL6', detail: 'Conteúdo publicado e navegável', state: 'active' }]
+      : [{ label: 'Acervo em preparação', detail: 'Ainda não aparece para o Irmão', state: 'conditional' }];
+  }
+  if (item.type === 'Arte e comunicação') {
+    return isPublished(item)
+      ? [{ label: 'Comunicação externa', detail: 'Distribuição registrada', state: 'active' }]
+      : [{ label: 'Planejamento interno', detail: 'Ainda sem distribuição registrada', state: 'conditional' }];
+  }
+  return [{ label: item.destination, detail: 'Destino do registro', state: 'conditional' }];
+}
+
+function PlacementBadges({ placements, compact = false }: { placements: Placement[]; compact?: boolean }) {
+  return (
+    <div className="flex flex-wrap gap-1.5" aria-label="Onde aparece no Portal">
+      {placements.map((placement) => (
+        <span
+          key={`${placement.label}:${placement.detail}`}
+          title={placement.detail}
+          className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold ${placementTone(placement.state)} ${compact ? 'leading-tight' : ''}`}
+        >
+          {placement.label}
+        </span>
+      ))}
+    </div>
+  );
 }
 
 export function PublicationCenter({
@@ -86,13 +232,14 @@ export function PublicationCenter({
           event,
           related,
           hasPublishedMemory: related.some(
-            (item) =>
-              item.type === 'Acervo' &&
-              item.status.toLocaleLowerCase('pt-BR').includes('public'),
+            (item) => item.type === 'Acervo' && isPublished(item),
           ),
         };
       })
-      .filter((group) => filteredIds.has(group.event.id) || group.related.some((item) => filteredIds.has(item.id)))
+      .filter(
+        (group) =>
+          filteredIds.has(group.event.id) || group.related.some((item) => filteredIds.has(item.id)),
+      )
       .sort((a, b) => {
         const aTime = a.event.happenedAt ? new Date(a.event.happenedAt).getTime() : 0;
         const bTime = b.event.happenedAt ? new Date(b.event.happenedAt).getTime() : 0;
@@ -134,8 +281,7 @@ export function PublicationCenter({
           <p className="text-accent text-xs font-semibold uppercase tracking-[0.14em]">Operação cotidiana</p>
           <h1 className="font-display mt-1 text-3xl font-semibold md:text-4xl">Acontecimentos</h1>
           <p className="text-muted mt-2 max-w-3xl">
-            A Agenda é a origem. Depois do fato, abra a mesma ficha para acrescentar comunicação,
-            mídias e memória, sem recriar o registro.
+            A Agenda é a origem. Cada ficha mostra também onde o conteúdo está aparecendo ou poderá aparecer no Portal.
           </p>
         </div>
         {primaryCreate && (
@@ -148,12 +294,31 @@ export function PublicationCenter({
         )}
       </header>
 
+      <section className="border-border bg-surface rounded-2xl border p-5" aria-labelledby="distribution-title">
+        <p className="text-accent text-xs font-semibold uppercase tracking-[0.12em]">Distribuição automática</p>
+        <h2 id="distribution-title" className="font-display mt-1 text-xl font-semibold">Onde cada conteúdo aparece</h2>
+        <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          {[
+            ['Acontecimento futuro', 'Agenda + Tela inicial', 'A sessão/evento mais próximo ganha destaque; os seguintes entram nas listas de próximos.'],
+            ['Notícia publicada', 'Notícias + Tela inicial', 'Integra a página de Notícias e pode aparecer em “Acontece na Verdadeira Luz”.'],
+            ['Aviso publicado', 'Avisos da Tela inicial', 'Permanece enquanto estiver ativo e dentro do prazo configurado.'],
+            ['Memória publicada', 'Acervo VL6', 'Só vira item navegável do Acervo quando existir conteúdo efetivamente publicado.'],
+          ].map(([title, destination, detail]) => (
+            <div key={title} className="rounded-2xl border border-border p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted">{title}</p>
+              <p className="mt-1 font-semibold">{destination}</p>
+              <p className="mt-2 text-xs text-muted">{detail}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
       <section aria-label="Resumo dos acontecimentos" className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {[
-          ['Próximos', upcoming.length, 'Agenda já cadastrada e ordenada pela data', 'border-sky-200 bg-sky-50 text-sky-950'],
-          ['A complementar', awaiting.length, 'Já realizados e ainda sem memória publicada', 'border-amber-200 bg-amber-50 text-amber-950'],
-          ['Memórias publicadas', published.length, 'Acontecimentos já preservados no Acervo', 'border-emerald-200 bg-emerald-50 text-emerald-950'],
-          ['Independentes', independent.length, 'Registros sem vínculo com um acontecimento', 'border-slate-200 bg-slate-50 text-slate-900'],
+          ['Próximos', upcoming.length, 'Agenda cadastrada e ordenada pela data', 'border-sky-200 bg-sky-50 text-sky-950'],
+          ['A complementar', awaiting.length, 'Realizados e ainda sem memória publicada', 'border-amber-200 bg-amber-50 text-amber-950'],
+          ['Memórias publicadas', published.length, 'Acontecimentos preservados no Acervo', 'border-emerald-200 bg-emerald-50 text-emerald-950'],
+          ['Independentes', independent.length, 'Registros sem vínculo com acontecimento', 'border-slate-200 bg-slate-50 text-slate-900'],
         ].map(([label, count, detail, tone]) => (
           <div key={String(label)} className={`min-h-36 rounded-2xl border p-5 ${tone}`}>
             <p className="text-xs font-semibold uppercase tracking-wide opacity-70">{label}</p>
@@ -253,7 +418,12 @@ export function PublicationCenter({
                 </div>
                 <span className="text-muted text-sm">{upcoming.length}</span>
               </div>
-              <EventTileGrid groups={[...upcoming].sort((a, b) => new Date(a.event.happenedAt!).getTime() - new Date(b.event.happenedAt!).getTime())} />
+              <EventTileGrid
+                groups={[...upcoming].sort(
+                  (a, b) => new Date(a.event.happenedAt!).getTime() - new Date(b.event.happenedAt!).getTime(),
+                )}
+                now={now}
+              />
             </div>
           )}
 
@@ -266,28 +436,35 @@ export function PublicationCenter({
               <span className="text-muted text-sm">{awaiting.length}</span>
             </div>
             {awaiting.length ? (
-              <EventTileGrid groups={awaiting} />
+              <EventTileGrid groups={awaiting} now={now} />
             ) : (
-              <p className="border-border text-muted rounded-2xl border border-dashed p-6 text-sm">Nenhum acontecimento realizado está aguardando complementos nos filtros atuais.</p>
+              <p className="border-border text-muted rounded-2xl border border-dashed p-6 text-sm">
+                Nenhum acontecimento realizado está aguardando complementos nos filtros atuais.
+              </p>
             )}
           </div>
 
           {published.length > 0 && (
             <details className="border-border bg-surface rounded-2xl border p-5">
               <summary className="cursor-pointer font-semibold">Memórias publicadas · {published.length}</summary>
-              <div className="mt-4"><EventTileGrid groups={published} compact /></div>
+              <div className="mt-4"><EventTileGrid groups={published} compact now={now} /></div>
             </details>
           )}
 
           {independent.length > 0 && (
             <details className="border-border bg-surface rounded-2xl border p-5">
               <summary className="cursor-pointer font-semibold">Registros independentes e compatibilidade · {independent.length}</summary>
-              <p className="text-muted mt-2 text-sm">Use apenas quando o conteúdo realmente não pertence a um Acontecimento.</p>
+              <p className="text-muted mt-2 text-sm">
+                Use apenas quando o conteúdo realmente não pertence a um Acontecimento. O destino fica explícito abaixo.
+              </p>
               <div className="mt-4 divide-y divide-border">
                 {independent.map((item) => (
-                  <Link key={item.id} href={item.href} className="flex min-h-12 items-center justify-between gap-3 py-3 text-sm hover:underline">
-                    <span><strong>{item.title}</strong><span className="text-muted ml-2">{item.type}</span></span>
-                    <span className={`rounded-full border px-2.5 py-1 text-xs ${statusTone(item.status)}`}>{item.status}</span>
+                  <Link key={item.id} href={item.href} className="block py-4 hover:bg-slate-50/60">
+                    <div className="flex min-h-12 items-start justify-between gap-3">
+                      <span><strong>{item.title}</strong><span className="text-muted ml-2 text-sm">{item.type}</span></span>
+                      <span className={`rounded-full border px-2.5 py-1 text-xs ${statusTone(item.status)}`}>{item.status}</span>
+                    </div>
+                    <div className="mt-2"><PlacementBadges placements={itemPlacements(item, now)} compact /></div>
                   </Link>
                 ))}
               </div>
@@ -298,7 +475,7 @@ export function PublicationCenter({
 
       {view === 'lista' && (
         <div className="border-border bg-surface divide-y divide-border rounded-2xl border px-5">
-          {groups.map((group) => <EventListRow key={group.event.id} group={group} />)}
+          {groups.map((group) => <EventListRow key={group.event.id} group={group} now={now} />)}
           {groups.length === 0 && <p className="text-muted py-8 text-sm">Nenhum acontecimento encontrado.</p>}
         </div>
       )}
@@ -313,12 +490,16 @@ export function PublicationCenter({
             {Array.from({ length: offset }, (_, index) => <div key={`empty-${index}`} className="hidden md:block" />)}
             {Array.from({ length: days }, (_, index) => {
               const key = `${month}-${String(index + 1).padStart(2, '0')}`;
-              const dayGroups = groups.filter((group) => group.event.happenedAt && dayKey(group.event.happenedAt) === key);
+              const dayGroups = groups.filter(
+                (group) => group.event.happenedAt && dayKey(group.event.happenedAt) === key,
+              );
               return (
                 <div key={key} className="border-border min-h-24 rounded-xl border p-2">
                   <time className="text-muted text-xs" dateTime={key}>{index + 1}</time>
                   {dayGroups.map((group) => (
-                    <Link key={group.event.id} href={group.event.href} className="bg-accent/10 mt-1 block rounded-lg p-2 text-xs font-semibold">{group.event.title}</Link>
+                    <Link key={group.event.id} href={group.event.href} className="bg-accent/10 mt-1 block rounded-lg p-2 text-xs font-semibold">
+                      {group.event.title}
+                    </Link>
                   ))}
                 </div>
               );
@@ -330,7 +511,15 @@ export function PublicationCenter({
   );
 }
 
-function EventTileGrid({ groups, compact = false }: { groups: EventGroup[]; compact?: boolean }) {
+function EventTileGrid({
+  groups,
+  compact = false,
+  now,
+}: {
+  groups: EventGroup[];
+  compact?: boolean;
+  now: number;
+}) {
   return (
     <div className={`grid gap-3 ${compact ? 'md:grid-cols-3 xl:grid-cols-4' : 'md:grid-cols-2 xl:grid-cols-3'}`}>
       {groups.map((group) => {
@@ -351,7 +540,13 @@ function EventTileGrid({ groups, compact = false }: { groups: EventGroup[]; comp
                 {group.hasPublishedMemory ? 'Memória publicada' : 'Ficha aberta'}
               </span>
             </div>
-            <div className="mt-5 flex flex-wrap gap-2 text-xs">
+
+            <div className="mt-4">
+              <p className="text-muted mb-2 text-[11px] font-semibold uppercase tracking-wide">Onde aparece</p>
+              <PlacementBadges placements={groupPlacements(group, now)} compact />
+            </div>
+
+            <div className="mt-4 flex flex-wrap gap-2 text-xs">
               {counters.size ? [...counters.entries()].map(([label, count]) => (
                 <span key={label} className="rounded-lg bg-slate-100 px-2.5 py-1.5">{count} {label}</span>
               )) : <span className="text-muted">Pronto para receber complementos</span>}
@@ -364,13 +559,14 @@ function EventTileGrid({ groups, compact = false }: { groups: EventGroup[]; comp
   );
 }
 
-function EventListRow({ group }: { group: EventGroup }) {
+function EventListRow({ group, now }: { group: EventGroup; now: number }) {
   return (
     <article className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
-      <div className="min-w-0">
+      <div className="min-w-0 flex-1">
         <p className="text-muted text-xs">{formatDate(group.event.happenedAt)}</p>
         <Link href={group.event.href} className="font-display text-lg font-semibold hover:underline">{group.event.title}</Link>
         <p className="text-muted mt-1 text-xs">{group.related.length} registro(s) relacionado(s) na mesma ficha</p>
+        <div className="mt-2"><PlacementBadges placements={groupPlacements(group, now)} compact /></div>
       </div>
       <Link href={group.event.href} className="border-border min-h-11 shrink-0 rounded-xl border px-4 py-2.5 text-center text-sm font-semibold">Abrir ficha</Link>
     </article>
