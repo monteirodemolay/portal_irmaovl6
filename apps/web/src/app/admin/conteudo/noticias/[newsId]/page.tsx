@@ -1,4 +1,4 @@
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { hasPermission } from '@vl6/domain';
 import { createServerContainer } from '@vl6/infra';
 import { Button, Card, CardHeader, CardTitle, CardContent, Textarea } from '@vl6/ui';
@@ -12,13 +12,29 @@ import { resolveCommentAuthorNames } from '@/modules/content/lib/resolve-comment
 import { PublishToggleButton } from '@/components/admin/publish-toggle-button';
 import { DeleteButton } from '@/components/admin/delete-button';
 
-export default async function EditNewsPage({ params }: { params: Promise<{ newsId: string }> }) {
+export default async function EditNewsPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ newsId: string }>;
+  searchParams: Promise<{ manutencao?: string }>;
+}) {
   const session = await requirePagePermission('news:update');
   const { newsId } = await params;
 
   const container = createServerContainer();
   const news = await container.repositories.news.findById(newsId);
   if (!news || news.tenantId !== session.authContext.tenantId) notFound();
+  if (
+    news.eventId &&
+    !news.deletedAt &&
+    (await searchParams).manutencao !== '1' &&
+    hasPermission(session.authContext, 'event:read')
+  ) {
+    const event = await container.repositories.event.findById(news.eventId);
+    if (event && event.tenantId === session.authContext.tenantId && !event.deletedAt)
+      redirect(`/admin/publicacoes/${encodeURIComponent(event.id)}#noticia`);
+  }
 
   const eventsPage = await container.useCases.listAllEvents.execute(session.authContext, {
     limit: 500,
@@ -72,9 +88,9 @@ export default async function EditNewsPage({ params }: { params: Promise<{ newsI
               Links do Instagram
             </label>
             <p className="text-muted mt-1 text-xs leading-relaxed">
-              Informe um link por linha. Estes links ficam vinculados à notícia e, quando ela estiver
-              relacionada a um Evento/Sessão, aparecem automaticamente também na memória desse
-              acontecimento no Acervo VL6. Não é necessário cadastrar novamente no Evento.
+              Informe um link por linha. Estes links ficam vinculados à notícia e, quando ela
+              estiver relacionada a um Evento/Sessão, aparecem automaticamente também na memória
+              desse acontecimento no Acervo VL6. Não é necessário cadastrar novamente no Evento.
             </p>
             <Textarea
               id="instagramUrls"

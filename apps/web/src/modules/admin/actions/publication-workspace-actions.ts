@@ -7,9 +7,9 @@ import { announcementSchema, newsSchema } from '@vl6/shared';
 import { requireSession } from '@/lib/auth/require-session';
 import {
   toggleAnnouncementPublishedAction,
-  toggleNewsPublishedAction,
   type ContentActionState,
 } from '@/modules/content/actions/content-actions';
+import { toggleNewsPublishedWithArchiveAction } from '@/modules/content/actions/news-publish-with-archive-action';
 import { syncNewsMediaToArchive } from '@/lib/content/sync-news-media-to-archive';
 import { updateNewsInstagramLinksAction } from '@/modules/content/actions/news-instagram-actions';
 
@@ -160,7 +160,7 @@ export async function setWorkspacePublicationAction(
   )
     return { error: 'Conteúdo não vinculado a este acontecimento.' };
   try {
-    if (kind === 'news') await toggleNewsPublishedAction(id, published);
+    if (kind === 'news') await toggleNewsPublishedWithArchiveAction(id, published);
     else await toggleAnnouncementPublishedAction(id, published);
   } catch {
     // A publicação pode ter sido persistida antes de falhar uma notificação.

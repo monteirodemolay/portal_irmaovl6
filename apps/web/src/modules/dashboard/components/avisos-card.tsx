@@ -1,18 +1,10 @@
-import type { Announcement, AnnouncementPriority } from '@vl6/domain';
+import { HOME_ANNOUNCEMENT_LIMIT, sortHomeAnnouncements } from '../lib/home-editorial-selection';
+import type { Announcement } from '@vl6/domain';
 import { AlertTriangle, Badge, Card, Megaphone, Pin } from '@vl6/ui';
 import { DashboardSectionHeading } from './dashboard-section-heading';
 
-const PRIORITY_ORDER: Record<AnnouncementPriority, number> = { alta: 0, media: 1, baixa: 2 };
-
 function formatExpiration(date: Date): string {
   return new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: 'long' }).format(date);
-}
-
-function sortByPriority(announcements: Announcement[]): Announcement[] {
-  return [...announcements].sort((a, b) => {
-    if (a.destacar !== b.destacar) return a.destacar ? -1 : 1;
-    return PRIORITY_ORDER[a.prioridade] - PRIORITY_ORDER[b.prioridade];
-  });
 }
 
 /**
@@ -23,7 +15,7 @@ function sortByPriority(announcements: Announcement[]): Announcement[] {
  * mesma lista.
  */
 export function AvisosCard({ announcements }: { announcements: Announcement[] }) {
-  const sorted = sortByPriority(announcements);
+  const sorted = sortHomeAnnouncements(announcements);
   const [featured, ...rest] = sorted;
 
   return (
@@ -42,7 +34,7 @@ export function AvisosCard({ announcements }: { announcements: Announcement[] })
         // Notificações (que é pessoal, não institucional).
         <ul className="flex flex-col gap-3">
           <AvisoItem announcement={featured} destacado />
-          {rest.slice(0, 1).map((announcement) => (
+          {rest.slice(0, HOME_ANNOUNCEMENT_LIMIT - 1).map((announcement) => (
             <AvisoItem key={announcement.id} announcement={announcement} />
           ))}
         </ul>

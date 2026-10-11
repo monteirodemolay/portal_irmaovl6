@@ -40,6 +40,9 @@ vi.mock('@/modules/content/actions/content-actions', () => ({
 vi.mock('@/modules/content/actions/news-instagram-actions', () => ({
   updateNewsInstagramLinksAction: mocks.instagram,
 }));
+vi.mock('@/modules/content/actions/news-publish-with-archive-action', () => ({
+  toggleNewsPublishedWithArchiveAction: mocks.publishNews,
+}));
 vi.mock('@/lib/content/sync-news-media-to-archive', () => ({ syncNewsMediaToArchive: mocks.sync }));
 import {
   linkWorkspaceContentAction,
