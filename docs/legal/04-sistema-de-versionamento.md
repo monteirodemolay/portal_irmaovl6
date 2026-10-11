@@ -265,3 +265,12 @@ O próximo ciclo de auditoria deve começar no commit que efetivamente entrar em
 - Não cria dados, finalidade, fornecedor ou prazo de retenção novo.
 - Novo aceite por este ajuste: **não**; permanece a recomendação de aceite da implantação do Conhecimento (2.4.0).
 - Estado: documentação preparada; não publicada no painel jurídico nem aplicada aos usuários. Conferir a versão vigente antes de publicar.
+
+## Revisão preparada — 11/10/2026 — Retirada das telas de importação em lote
+
+- Termos preparados: ajuste informativo da §3 (forma de cadastro do Irmão). Política e Inventário: sem alteração, pois não descreviam a importação em lote.
+- Motivo: as três importações administrativas (planilha/PDF de Irmãos, nominata histórica de Gestões e nominata DeMolay Rio Verde 350) já foram executadas e as telas foram removidas da Central de Administração. Os dados importados permanecem nos cadastros de origem, sem alteração.
+- Efeito: reduz uma forma de coleta; novos cadastros passam a ser feitos apenas manualmente pela Secretaria.
+- Novo dado, finalidade, terceiro ou prazo de retenção: **não**.
+- Novo aceite: **não**; ajuste meramente informativo.
+- Estado: documentação preparada no PR; conferir a versão vigente dos Termos antes de publicar no painel jurídico.

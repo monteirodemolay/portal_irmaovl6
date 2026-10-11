@@ -604,7 +604,8 @@ export async function loadDashboardOverview(
     "Dica",
   );
   const operationTools = ADMIN_TOOLS.filter(
-    (tool) => allowed(tool.href) && tool.permissions.some(can),
+    (tool) =>
+      allowed(tool.href) && (tool.permissions.length === 0 || tool.permissions.some(can)),
   );
   const operationMetrics: OverviewMetric[] = [];
   if (

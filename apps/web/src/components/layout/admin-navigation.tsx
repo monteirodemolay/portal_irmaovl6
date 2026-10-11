@@ -5,10 +5,15 @@ import {
   GraduationCap,
   LayoutDashboard,
   Lock,
-  Settings,
   Users,
   Compass,
+  Upload,
+  Wrench,
 } from '@vl6/ui';
+import {
+  buildAdvancedGroups,
+  visibleUploadDestinations,
+} from '@/modules/admin/lib/admin-workspace';
 import { isAdminPathAllowed, isAdminTier } from '@/lib/auth/is-admin-tier';
 import type { AppShellNavSection } from './app-shell';
 
@@ -68,34 +73,56 @@ export function buildAdminNavSections(ctx: AuthContext, role: Role | null): AppS
       icon: Lock,
       allowed: hasPermission(ctx, 'tenant:manage'),
     },
-    {
-      href: '/admin/configuracoes',
-      label: 'Sistema e Auditoria',
-      icon: Settings,
-      allowed:
-        hasPermission(ctx, 'tenant:read') ||
-        hasPermission(ctx, 'auditLog:read') ||
-        hasPermission(ctx, 'legalDocument:manage'),
-    },
   ];
-  const sections: AppShellNavSection[] = [
-    {
-      title: 'Administração',
-      items: areas
-        .filter((a) => a.allowed && isAdminPathAllowed(role, a.href))
-        .map((a) => ({
-          href: a.href,
-          activePaths:
-            a.href === '/admin/publicacoes' ? ['/admin/conteudo', '/admin/comunicacao'] : undefined,
+  const canUpload = visibleUploadDestinations(ctx, role).length > 0;
+  const hasAdvanced = buildAdvancedGroups(ctx, role).length > 0;
+  const sections: AppShellNavSection[] = [];
+  if (canUpload)
+    sections.push({
+      items: [
+        {
+          href: '/admin/enviar',
+          content: (
+            <span className="bg-accent text-primary-dark -mx-1 flex flex-1 items-center gap-3 rounded-lg px-3 py-1.5 font-semibold shadow-sm">
+              <Upload size={18} strokeWidth={2} />
+              <span className="flex-1">Enviar arquivos</span>
+            </span>
+          ),
+        },
+      ],
+    });
+  sections.push({
+    title: 'Rotina',
+    items: areas
+      .filter((a) => a.allowed && isAdminPathAllowed(role, a.href))
+      .map((a) => ({
+        href: a.href,
+        activePaths:
+          a.href === '/admin/publicacoes' ? ['/admin/conteudo', '/admin/comunicacao'] : undefined,
+        content: (
+          <>
+            <a.icon size={18} strokeWidth={1.75} />
+            <span className="flex-1">{a.label}</span>
+          </>
+        ),
+      })),
+  });
+  if (hasAdvanced)
+    sections.push({
+      title: 'Uso eventual',
+      items: [
+        {
+          href: '/admin/avancado',
+          activePaths: ['/admin/configuracoes'],
           content: (
             <>
-              <a.icon size={18} strokeWidth={1.75} />
-              <span className="flex-1">{a.label}</span>
+              <Wrench size={18} strokeWidth={1.75} />
+              <span className="flex-1">Administração avançada</span>
             </>
           ),
-        })),
-    },
-  ];
+        },
+      ],
+    });
   if (role?.chave === 'super_admin')
     sections.push({
       title: 'Plataforma',

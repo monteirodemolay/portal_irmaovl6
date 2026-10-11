@@ -38,7 +38,9 @@ export function isAdminTier(role: Role | null): boolean {
 // `/admin/`), anulando a própria restrição. A raiz `/admin` (o dashboard)
 // é tratada à parte, como igualdade exata, dentro da função.
 const RESTRICTED_ADMIN_SUBTREES: Partial<Record<string, string[]>> = {
-  bibliotecario: ['/admin/acervo', '/admin/configuracoes'],
+  // `/admin/enviar` e `/admin/avancado` são só portas de navegação: listam
+  // destinos já filtrados por permissão e por este mesmo gate de caminho.
+  bibliotecario: ['/admin/acervo', '/admin/configuracoes', '/admin/enviar', '/admin/avancado'],
 };
 
 export function isAdminPathAllowed(role: Role | null, pathname: string): boolean {

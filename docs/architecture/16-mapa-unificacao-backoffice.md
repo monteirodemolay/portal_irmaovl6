@@ -281,3 +281,13 @@ O Administrador deve pensar em objetos reais, não em coleções técnicas:
 - **é uma operação excepcional** → Administração avançada.
 
 Todo o restante deve ser relacionamento, complemento, visualização, relatório ou manutenção sobre essas fontes.
+
+## 16.15 Implantação da Fase A — 11/10/2026
+
+- **Registro único de telas:** `apps/web/src/modules/admin/lib/admin-tool-directory.ts` (`ADMIN_TOOLS`) passa a definir, para cada tela, área, classe (`rotina` ou `avancado`), se é aba e a seção avançada. Menu lateral, abas de cada área, "Mais nesta área", `/admin/avancado`, Manutenção e o diretório da Central de Controle leem dessa mesma lista.
+- **Nenhuma tela sem entrada:** `admin-tool-directory.test.ts` percorre todas as `page.tsx` estáticas de `/admin` e falha se alguma não estiver no registro, não for tela de criação aberta pela tela-mãe (`ADMIN_CHILD_ROUTES`) ou não for redirect (`ADMIN_REDIRECT_ROUTES`).
+- **Menu lateral:** botão "Enviar arquivos" (`/admin/enviar`), áreas de Rotina e a seção "Uso eventual" com "Administração avançada" (`/admin/avancado`). Sistema e Auditoria passou a ser alcançado por ali.
+- **Casca de área única:** `AdminAreaWorkspace` substitui as listas de abas escritas à mão em Acontecimentos (Publicações, Conteúdo e Comunicação agora mostram as mesmas abas), Pessoas, Acervo e Sistema. Ferramentas de rotina sem aba aparecem em "Mais nesta área"; as avançadas, no atalho "Ferramentas avançadas".
+- **Enviar arquivos:** porta única que encaminha para os fluxos de envio já existentes (Acervo/Publicar, Biblioteca, Documentos), gravando no cadastro de origem.
+- **Importações encerradas:** removidas as telas de importação de Irmãos, nominata histórica e nominata DeMolay, com seus formulários e ações. Os casos de uso de domínio permanecem no pacote `@vl6/domain`, sem ponto de entrada.
+- **Permissões:** nenhuma permissão nova. O Bibliotecário passa a poder abrir `/admin/enviar` e `/admin/avancado`, que só listam destinos que ele já alcançava.
