@@ -1,3 +1,7 @@
+import {
+  HOME_NEWS_LIMIT,
+  selectHomeEvents,
+} from '@/modules/dashboard/lib/home-editorial-selection';
 import { hasPermission, resolveHeroPhoto } from '@vl6/domain';
 import { CalendarDays, Card, EmptyState, PageHero, Sparkles } from '@vl6/ui';
 import { createServerContainer } from '@vl6/infra';
@@ -21,8 +25,6 @@ import { UpcomingEventsPanel } from '@/modules/dashboard/components/upcoming-eve
 import { timeOfDayGreeting } from '@/modules/dashboard/lib/greeting';
 import { pickQuote } from '@/modules/dashboard/lib/masonic-quotes';
 import { findOnThisDayArchiveItem } from '@/modules/archive/lib/find-on-this-day-archive-item';
-
-const NEWS_HOME_LIMIT = 3;
 
 export default async function DashboardPage() {
   const [session, current] = await Promise.all([getCurrentSession(), getCurrentTenant()]);
@@ -76,7 +78,7 @@ export default async function DashboardPage() {
       ? container.useCases.getActiveBoard.execute(authContext)
       : Promise.resolve(null),
     container.useCases.listPublishedNews.execute(authContext.tenantId, {
-      limit: NEWS_HOME_LIMIT,
+      limit: HOME_NEWS_LIMIT,
     }),
   ]);
 
@@ -85,11 +87,12 @@ export default async function DashboardPage() {
   // acontece aqui, uma única vez, antes de qualquer card renderizar —
   // ver `packages/domain/.../event.entity.ts` pro histórico do bug que
   // motivou esse filtro (`tipo === 'sessao'` vs `events[0]`).
-  const upcomingSessions = events.filter((event) => event.tipo === 'sessao');
+  const homeEvents = selectHomeEvents(events);
+  const upcomingSessions = homeEvents.sessions;
   const featuredSession = upcomingSessions[0] ?? null;
   const agendaSessions = upcomingSessions.slice(1, 3);
 
-  const upcomingLodgeEvents = events.filter((event) => event.tipo !== 'sessao');
+  const upcomingLodgeEvents = homeEvents.events;
   const featuredLodgeEvent = upcomingLodgeEvents[0] ?? null;
   const agendaLodgeEvents = upcomingLodgeEvents.slice(1, 3);
 

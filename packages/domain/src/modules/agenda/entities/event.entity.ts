@@ -50,6 +50,8 @@ export interface Event extends BaseEntity {
   nivelAcesso: AccessLevel;
   /** Se `true`, o evento aparece na Linha do Tempo do Acervo VL6. */
   exibirNaLinhaDoTempo: boolean;
+  /** Vitrine de próximas sessões/eventos do Início; legado habilitado. Não altera Agenda ou derivados. */
+  exibirNaTelaInicial?: boolean;
   /**
    * @deprecated Mantido só por compatibilidade com dados já gravados e
    * `SESSION_DEGREE_LABELS` — misturava grau ("aprendiz") com tipo

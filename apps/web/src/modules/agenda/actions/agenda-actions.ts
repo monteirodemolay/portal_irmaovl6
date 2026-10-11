@@ -324,6 +324,9 @@ async function saveEvent(
   let input;
   try {
     input = parseEventForm(formData, capaUrl);
+    // Estes campos são mantidos na distribuição/classificação da Ficha, não neste formulário.
+    input.exibirNaLinhaDoTempo = before.exibirNaLinhaDoTempo;
+    input.nivelAcesso = before.nivelAcesso;
   } catch {
     return { error: 'Dados inválidos. Verifique os campos obrigatórios e as datas.' };
   }

@@ -1,4 +1,4 @@
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { hasPermission } from '@vl6/domain';
 import { createServerContainer } from '@vl6/infra';
 import { requirePagePermission } from '@/lib/auth/require-permission';
@@ -12,8 +12,10 @@ import { DeleteButton } from '@/components/admin/delete-button';
 
 export default async function EditAnnouncementPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ announcementId: string }>;
+  searchParams: Promise<{ manutencao?: string }>;
 }) {
   const session = await requirePagePermission('announcement:update');
   const { announcementId } = await params;
@@ -21,6 +23,16 @@ export default async function EditAnnouncementPage({
   const container = createServerContainer();
   const announcement = await container.repositories.announcement.findById(announcementId);
   if (!announcement || announcement.tenantId !== session.authContext.tenantId) notFound();
+  if (
+    announcement.eventId &&
+    !announcement.deletedAt &&
+    (await searchParams).manutencao !== '1' &&
+    hasPermission(session.authContext, 'event:read')
+  ) {
+    const event = await container.repositories.event.findById(announcement.eventId);
+    if (event && event.tenantId === session.authContext.tenantId && !event.deletedAt)
+      redirect(`/admin/publicacoes/${encodeURIComponent(event.id)}#aviso`);
+  }
 
   return (
     <div className="flex flex-col gap-6">
