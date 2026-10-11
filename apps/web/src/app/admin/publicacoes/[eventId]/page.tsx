@@ -14,6 +14,7 @@ import { notFound } from 'next/navigation';
 import { hasPermission, type News } from '@vl6/domain';
 import { createServerContainer } from '@vl6/infra';
 import { requirePagePermission } from '@/lib/auth/require-permission';
+import { EventFormExperience } from '@/modules/agenda/components/event-form-experience';
 import { EventForm } from '@/modules/agenda/components/event-form';
 import { updateWorkspaceEventAction } from '@/modules/agenda/actions/agenda-actions';
 import {
@@ -151,6 +152,25 @@ export default async function PublicationWorkspacePage({
       ? load('Avisos do Início', () => c.useCases.listActiveAnnouncements.execute(ctx.tenantId), [])
       : [],
   ]);
+
+  const locationOptions = can('event:update')
+    ? await load(
+        'Locais já cadastrados',
+        async () => {
+          const locations = new Set<string>();
+          let cursor: string | undefined;
+          do {
+            const page = await c.useCases.listAllEvents.execute(ctx, { limit: 100, cursor });
+            page.items.forEach((item) => {
+              if (item.local?.trim()) locations.add(item.local.trim());
+            });
+            cursor = page.hasMore ? (page.nextCursor ?? undefined) : undefined;
+          } while (cursor);
+          return [...locations];
+        },
+        [event.local].filter((value): value is string => Boolean(value)),
+      )
+    : [];
 
   const relatedNews = news.filter((n) => n.eventId === eventId);
   const relatedAnnouncements = announcements.filter((a) => a.eventId === eventId);
@@ -378,7 +398,8 @@ export default async function PublicationWorkspacePage({
       detail: constellationEligible ? 'Elegível para memória automática' : 'Ainda não elegível',
     },
   ];
-  const healthScore = Math.round((health.filter((item) => item.ok).length / health.length) * 100);
+  const essentialReady = Boolean(event.titulo && event.local && event.dataInicio);
+  const draftNews = relatedNews.some((item) => !item.publicado);
   const isFutureEvent = eventTime > Date.now();
   const hasAnyMedia = archiveMedia.length > 0;
   const hasPublishedMemory = publishedArchiveCount > 0;
@@ -389,12 +410,6 @@ export default async function PublicationWorkspacePage({
       : hasCommunication || hasAnyMedia
         ? 'Em complementação'
         : 'Realizado · aguardando complementos';
-  const lifecycleDescription = isFutureEvent
-    ? 'O acontecimento já está na Agenda. Você pode aguardar a realização ou preparar conteúdos antecipadamente.'
-    : hasPublishedMemory
-      ? 'A memória já possui conteúdo publicado. Você pode continuar acrescentando materiais quando necessário.'
-      : 'O acontecimento já ocorreu. Complete somente o que existir: notícia, mídias, documentos, links e memória.';
-
   const builderCards = [
     {
       key: 'distribuicao',
@@ -552,11 +567,8 @@ export default async function PublicationWorkspacePage({
               </div>
             </div>
             <div className="min-w-[190px] rounded-2xl bg-white/10 p-4 backdrop-blur-sm">
-              <p className="text-xs uppercase tracking-wide text-white/65">Integridade da ficha</p>
-              <p className="mt-1 text-4xl font-semibold">{healthScore}%</p>
-              <p className="mt-1 text-sm text-white/75">
-                {health.filter((item) => item.ok).length} de {health.length} etapas prontas
-              </p>
+              <p className="text-base font-semibold">{lifecycleState}</p>
+              <p className="mt-2 text-base text-white/90">Você pode salvar e continuar depois.</p>
             </div>
           </div>
         </div>
@@ -565,20 +577,15 @@ export default async function PublicationWorkspacePage({
           className="bg-surface flex gap-2 overflow-x-auto border-t border-white/10 px-4 py-3 md:px-6"
         >
           {[
-            ['#construir', 'Complementar'],
-            ['#visao-geral', 'Visão geral'],
-            ['#distribuicao', 'Distribuição'],
-            ['#dados', 'Dados'],
-            ['#comunicacao', 'Comunicação'],
-            ['#memoria', 'Memória e Acervo'],
-            ['#relacionamentos', 'Relacionamentos'],
-            ['#historico', 'Histórico'],
-            ['#acoes', 'Ações'],
+            ['#dados', '1. Dados'],
+            ['#comunicacao', '2. Texto'],
+            ['#memoria', '3. Fotos e arquivos'],
+            ['#distribuicao', '4. Conferir exibição'],
           ].map(([href, label]) => (
             <a
               key={href}
               href={href}
-              className="border-border hover:border-accent whitespace-nowrap rounded-xl border px-3 py-2 text-sm font-medium"
+              className="border-border hover:border-accent min-h-12 whitespace-nowrap rounded-xl border px-4 py-3 text-base font-semibold"
             >
               {label}
             </a>
@@ -596,216 +603,160 @@ export default async function PublicationWorkspacePage({
         </p>
       )}
 
-      <section
-        id="construir"
-        className="border-border bg-surface scroll-mt-6 rounded-3xl border p-6 shadow-sm md:p-7"
-      >
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-          <div className="max-w-3xl">
-            <p className="text-accent text-xs font-semibold uppercase tracking-[0.14em]">
-              Construção progressiva da memória
-            </p>
-            <h2 className="font-display mt-1 text-2xl font-semibold md:text-3xl">
-              O que você quer acrescentar agora?
-            </h2>
-            <p className="text-muted mt-2 text-sm leading-6">
-              O acontecimento já é o registro principal. Complete apenas os blocos que fizerem
-              sentido, no momento em que o material existir. Tudo continua ligado à mesma data e à
-              mesma ficha.
-            </p>
-          </div>
-          <div
-            className={`rounded-2xl border px-4 py-3 text-sm ${isFutureEvent ? 'border-sky-200 bg-sky-50 text-sky-900' : hasPublishedMemory ? 'border-emerald-200 bg-emerald-50 text-emerald-900' : 'border-amber-200 bg-amber-50 text-amber-950'}`}
-          >
-            <p className="font-semibold">{lifecycleState}</p>
-            <p className="mt-1 max-w-sm text-xs leading-5 opacity-80">{lifecycleDescription}</p>
-          </div>
-        </div>
-
-        <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          {builderCards.map((card) => (
-            <a
-              key={card.key}
-              href={card.href}
-              className="border-border bg-background hover:border-accent group flex min-h-[190px] flex-col rounded-2xl border p-5 transition hover:-translate-y-0.5 hover:shadow-md"
-            >
-              <div className="flex items-start justify-between gap-3">
-                <span
-                  className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold ${card.ready ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-700'}`}
-                >
-                  {card.ready ? '✓ ' : '+ '}
-                  {card.status}
-                </span>
-                <span className="text-muted text-lg transition group-hover:translate-x-0.5">→</span>
-              </div>
-              <h3 className="mt-5 text-lg font-semibold">{card.title}</h3>
-              <p className="text-muted mt-2 flex-1 text-sm leading-5">{card.description}</p>
-              <p className="text-accent mt-4 text-[11px] font-semibold uppercase tracking-wide">
-                {card.detail}
-              </p>
-            </a>
-          ))}
-        </div>
-
-        <div className="border-border mt-6 flex flex-col gap-2 border-t pt-5 text-sm md:flex-row md:items-center md:justify-between">
-          <p className="text-muted">
-            Nada precisa ser criado por obrigação. Evento sem mídia continua na Linha do Tempo e não
-            gera álbum vazio.
+      <section id="construir" className="border-border bg-surface rounded-2xl border p-6">
+        <h2 className="text-2xl font-semibold">Vamos por partes</h2>
+        <p className="text-muted mt-2 text-base leading-7">
+          Os dados deste acontecimento já estão salvos. Acrescente somente o que precisar. Notícia,
+          fotos e documentos são opcionais.
+        </p>
+        <div className="mt-5 rounded-xl border border-sky-200 bg-sky-50 p-5 text-sky-950">
+          <h3 className="text-lg font-semibold">Próximo passo</h3>
+          <p className="mt-2 text-base">
+            {!essentialReady
+              ? 'Confira o título, a data e o local.'
+              : draftNews
+                ? 'Há notícia em rascunho. Abra o texto, revise e publique quando estiver pronto.'
+                : isFutureEvent
+                  ? 'Confira onde a sessão ou o evento aparece. Você pode preparar um aviso ou uma notícia se precisar.'
+                  : 'Você pode escrever sobre o que aconteceu ou acrescentar fotos. Se já terminou, confira onde aparece.'}
           </p>
-          <a href="#visao-geral" className="font-semibold underline">
-            Ver integridade completa
+          <a
+            href={
+              !essentialReady ? '#dados' : draftNews && newsReady ? '#noticia' : '#distribuicao'
+            }
+            className="bg-primary mt-4 inline-flex min-h-12 items-center rounded-xl px-5 py-3 text-base font-semibold text-white"
+          >
+            {!essentialReady
+              ? 'Conferir dados'
+              : draftNews && newsReady
+                ? 'Revisar notícia'
+                : 'Conferir onde aparece'}{' '}
+            →
           </a>
         </div>
-      </section>
-
-      <section id="visao-geral" className="grid scroll-mt-6 gap-5 xl:grid-cols-[1.35fr_0.65fr]">
-        <div className="border-border bg-surface rounded-2xl border p-6">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <p className="text-muted text-xs font-semibold uppercase tracking-wide">
-                Fluxo único
-              </p>
-              <h2 className="font-display mt-1 text-2xl font-semibold">
-                Situação do acontecimento
-              </h2>
-            </div>
-            <Link href="#dados" className="text-sm font-semibold underline">
-              Editar dados
-            </Link>
-          </div>
-          <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {health.map((item) => (
-              <div
-                key={item.label}
-                className={`rounded-xl border p-4 ${statusClass(item.ok ? 'ok' : 'attention')}`}
-              >
-                <p className="font-semibold">
-                  {item.ok ? '✓ ' : '⚠ '}
-                  {item.label}
-                </p>
-                <p className="mt-1 text-xs opacity-80">{item.detail}</p>
-              </div>
-            ))}
-          </div>
-          <div className="border-border mt-6 grid gap-3 border-t pt-5 md:grid-cols-5">
-            {[
-              ['1', 'Acontecimento', true],
-              ['2', 'Comunicação', hasCommunication],
-              ['3', 'Mídias', archiveMedia.length > 0],
-              ['4', 'Acervo', publishedArchiveCount > 0],
-              ['5', 'Memória', constellationEligible],
-            ].map(([step, label, ok]) => (
+        <details className="mt-5">
+          <summary className="min-h-12 cursor-pointer py-3 text-base font-semibold">
+            Outras opções deste acontecimento
+          </summary>
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            {builderCards.map((card) => (
               <a
-                key={String(step)}
-                href={step === '1' ? '#dados' : step === '2' ? '#comunicacao' : '#memoria'}
-                className="hover:border-border group rounded-xl border border-transparent p-2"
+                key={card.key}
+                href={card.href}
+                className="border-border min-h-12 rounded-xl border p-4 text-base"
               >
-                <span
-                  className={`inline-flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold ${ok ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600'}`}
-                >
-                  {step}
-                </span>
-                <p className="mt-2 text-sm font-semibold">{label}</p>
+                <strong>{card.title}</strong>
+                <p className="text-muted mt-1">{card.status}</p>
               </a>
             ))}
           </div>
-        </div>
-
-        <aside className="border-border bg-surface rounded-2xl border p-6">
-          <p className="text-muted text-xs font-semibold uppercase tracking-wide">
-            Resumo operacional
-          </p>
-          <dl className="mt-4 space-y-4 text-sm">
-            <div className="flex items-center justify-between gap-4">
-              <dt className="text-muted">Notícias</dt>
-              <dd className="font-semibold">{relatedNews.length}</dd>
-            </div>
-            <div className="flex items-center justify-between gap-4">
-              <dt className="text-muted">Avisos</dt>
-              <dd className="font-semibold">{relatedAnnouncements.length}</dd>
-            </div>
-            <div className="flex items-center justify-between gap-4">
-              <dt className="text-muted">Fotos</dt>
-              <dd className="font-semibold">{photoCount}</dd>
-            </div>
-            <div className="flex items-center justify-between gap-4">
-              <dt className="text-muted">Vídeos</dt>
-              <dd className="font-semibold">{videoCount}</dd>
-            </div>
-            <div className="flex items-center justify-between gap-4">
-              <dt className="text-muted">Documentos</dt>
-              <dd className="font-semibold">{documentCount}</dd>
-            </div>
-            <div className="flex items-center justify-between gap-4">
-              <dt className="text-muted">Pessoas identificadas</dt>
-              <dd className="font-semibold">{identifiedPeople.size}</dd>
-            </div>
-          </dl>
-          <div className="mt-6 grid gap-2">
-            <a
-              href="#comunicacao"
-              className="bg-primary rounded-xl px-4 py-3 text-center text-sm font-semibold text-white"
-            >
-              Continuar comunicação
-            </a>
-            <a
-              href="#memoria"
-              className="border-border rounded-xl border px-4 py-3 text-center text-sm font-semibold"
-            >
-              Gerir fotos e vídeos
-            </a>
-          </div>
-        </aside>
+        </details>
       </section>
 
-      <section
-        id="distribuicao"
-        className="border-border bg-surface scroll-mt-6 rounded-2xl border p-6"
-      >
-        <p className="text-accent text-xs font-semibold uppercase tracking-wide">
-          Distribuição editorial
-        </p>
-        <h2 className="font-display mt-1 text-2xl font-semibold">
-          Onde este conteúdo será exibido?
-        </h2>
-        <p className="text-muted mt-2 text-sm">
-          Os estados vêm dos registros desta ficha. Cada destino informa sua regra e onde controlar
-          a publicação. Elegibilidade está sujeita ao acesso do leitor e à seleção da tela.
-        </p>
-        <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-          {destinations.map((destination) => (
-            <article key={destination.name} className="border-border rounded-xl border p-4">
-              <h3 className="font-semibold">{destination.name}</h3>
-              <p className="mt-2 rounded-lg bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-900">
-                {destination.state}
-              </p>
-              <p className="text-muted mt-3 text-sm">{destination.rule}</p>
-              {destination.state !== 'Não foi possível verificar' && (
-                <a
-                  href={destination.href}
-                  className="text-accent mt-3 inline-flex min-h-11 items-center text-sm font-semibold underline"
+      <details className="border-border bg-surface rounded-2xl border p-5">
+        <summary className="min-h-12 cursor-pointer py-3 text-base font-semibold">
+          Consultar resumo e detalhes do cadastro
+        </summary>
+        <section id="visao-geral" className="grid scroll-mt-6 gap-5 xl:grid-cols-[1.35fr_0.65fr]">
+          <div className="border-border bg-surface rounded-2xl border p-6">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-muted text-xs font-semibold uppercase tracking-wide">
+                  Fluxo único
+                </p>
+                <h2 className="font-display mt-1 text-2xl font-semibold">
+                  Situação do acontecimento
+                </h2>
+              </div>
+              <Link href="#dados" className="text-sm font-semibold underline">
+                Editar dados
+              </Link>
+            </div>
+            <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {health.map((item) => (
+                <div
+                  key={item.label}
+                  className={`rounded-xl border p-4 ${statusClass(item.ok ? 'ok' : 'empty')}`}
                 >
-                  Gerenciar na ficha →
+                  <p className="font-semibold">
+                    {item.ok ? '✓ ' : ''}
+                    {item.label}
+                  </p>
+                  <p className="mt-1 text-xs opacity-80">{item.detail}</p>
+                </div>
+              ))}
+            </div>
+            <div className="border-border mt-6 grid gap-3 border-t pt-5 md:grid-cols-5">
+              {[
+                ['1', 'Acontecimento', true],
+                ['2', 'Comunicação', hasCommunication],
+                ['3', 'Mídias', archiveMedia.length > 0],
+                ['4', 'Acervo', publishedArchiveCount > 0],
+                ['5', 'Memória', constellationEligible],
+              ].map(([step, label, ok]) => (
+                <a
+                  key={String(step)}
+                  href={step === '1' ? '#dados' : step === '2' ? '#comunicacao' : '#memoria'}
+                  className="hover:border-border group rounded-xl border border-transparent p-2"
+                >
+                  <span
+                    className={`inline-flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold ${ok ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600'}`}
+                  >
+                    {step}
+                  </span>
+                  <p className="mt-2 text-sm font-semibold">{label}</p>
                 </a>
-              )}
-            </article>
-          ))}
-        </div>
-        <div id="distribuicao-controles" className="scroll-mt-6">
-          {can('event:update') ? (
-            <EventDistributionControls
-              eventId={eventId}
-              home={event.exibirNaTelaInicial !== false}
-              timeline={event.exibirNaLinhaDoTempo !== false}
-            />
-          ) : (
-            <p className="text-muted mt-5 text-sm">
-              Você pode consultar os destinos. A edição da distribuição requer permissão para editar
-              o Acontecimento.
+              ))}
+            </div>
+          </div>
+
+          <aside className="border-border bg-surface rounded-2xl border p-6">
+            <p className="text-muted text-xs font-semibold uppercase tracking-wide">
+              Resumo operacional
             </p>
-          )}
-        </div>
-      </section>
+            <dl className="mt-4 space-y-4 text-sm">
+              <div className="flex items-center justify-between gap-4">
+                <dt className="text-muted">Notícias</dt>
+                <dd className="font-semibold">{relatedNews.length}</dd>
+              </div>
+              <div className="flex items-center justify-between gap-4">
+                <dt className="text-muted">Avisos</dt>
+                <dd className="font-semibold">{relatedAnnouncements.length}</dd>
+              </div>
+              <div className="flex items-center justify-between gap-4">
+                <dt className="text-muted">Fotos</dt>
+                <dd className="font-semibold">{photoCount}</dd>
+              </div>
+              <div className="flex items-center justify-between gap-4">
+                <dt className="text-muted">Vídeos</dt>
+                <dd className="font-semibold">{videoCount}</dd>
+              </div>
+              <div className="flex items-center justify-between gap-4">
+                <dt className="text-muted">Documentos</dt>
+                <dd className="font-semibold">{documentCount}</dd>
+              </div>
+              <div className="flex items-center justify-between gap-4">
+                <dt className="text-muted">Pessoas identificadas</dt>
+                <dd className="font-semibold">{identifiedPeople.size}</dd>
+              </div>
+            </dl>
+            <div className="mt-6 grid gap-2">
+              <a
+                href="#comunicacao"
+                className="bg-primary rounded-xl px-4 py-3 text-center text-sm font-semibold text-white"
+              >
+                Continuar comunicação
+              </a>
+              <a
+                href="#memoria"
+                className="border-border rounded-xl border px-4 py-3 text-center text-sm font-semibold"
+              >
+                Gerir fotos e vídeos
+              </a>
+            </div>
+          </aside>
+        </section>
+      </details>
 
       <section id="dados" className="border-border bg-surface scroll-mt-6 rounded-2xl border p-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
@@ -826,20 +777,25 @@ export default async function PublicationWorkspacePage({
           )}
         </div>
         {can('event:update') ? (
-          <details className="mt-5" open={healthScore < 55}>
+          <details className="mt-5" open={!essentialReady}>
             <summary className="border-border cursor-pointer rounded-xl border px-4 py-3 font-semibold">
               Editar dados e classificação
             </summary>
             <div className="mt-5">
-              <EventForm
-                event={event}
-                action={updateWorkspaceEventAction.bind(null, eventId)}
-                initialAttachments={attachments}
-                paramasonicEntities={entities.map((e) => ({
-                  id: e.id,
-                  label: e.unitNumber ? `${e.shortName} nº ${e.unitNumber}` : e.shortName,
-                }))}
-              />
+              <EventFormExperience
+                locationOptions={locationOptions}
+                cancelHref={`/admin/publicacoes/${eventId}`}
+              >
+                <EventForm
+                  event={event}
+                  action={updateWorkspaceEventAction.bind(null, eventId)}
+                  initialAttachments={attachments}
+                  paramasonicEntities={entities.map((e) => ({
+                    id: e.id,
+                    label: e.unitNumber ? `${e.shortName} nº ${e.unitNumber}` : e.shortName,
+                  }))}
+                />
+              </EventFormExperience>
             </div>
           </details>
         ) : (
@@ -1129,6 +1085,63 @@ export default async function PublicationWorkspacePage({
           </div>
         </section>
       )}
+
+      <section
+        id="distribuicao"
+        className="border-border bg-surface scroll-mt-6 rounded-2xl border p-6"
+      >
+        <p className="text-accent text-xs font-semibold uppercase tracking-wide">
+          Distribuição editorial
+        </p>
+        <h2 className="font-display mt-1 text-2xl font-semibold">
+          Onde este conteúdo será exibido?
+        </h2>
+        <p className="text-muted mt-2 text-base">
+          Confira abaixo onde aparece e quem pode acessar. Salvar um texto não o publica. Os estados
+          vêm dos registros desta ficha. Cada destino informa sua regra e onde controlar a
+          publicação. Elegibilidade está sujeita ao acesso do leitor e à seleção da tela.
+        </p>
+        <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+          {destinations.map((destination) => (
+            <article key={destination.name} className="border-border rounded-xl border p-4">
+              <h3 className="font-semibold">{destination.name}</h3>
+              <p className="mt-2 rounded-lg bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-900">
+                {destination.state}
+              </p>
+              <p className="text-muted mt-3 text-sm">{destination.rule}</p>
+              {destination.state !== 'Não foi possível verificar' && (
+                <a
+                  href={destination.href}
+                  className="text-accent mt-3 inline-flex min-h-11 items-center text-sm font-semibold underline"
+                >
+                  {destination.href === '#noticia'
+                    ? 'Abrir notícia'
+                    : destination.href === '#memoria'
+                      ? 'Abrir fotos e arquivos'
+                      : destination.href === '#aviso'
+                        ? 'Abrir aviso'
+                        : 'Conferir configuração'}{' '}
+                  →
+                </a>
+              )}
+            </article>
+          ))}
+        </div>
+        <div id="distribuicao-controles" className="scroll-mt-6">
+          {can('event:update') ? (
+            <EventDistributionControls
+              eventId={eventId}
+              home={event.exibirNaTelaInicial !== false}
+              timeline={event.exibirNaLinhaDoTempo !== false}
+            />
+          ) : (
+            <p className="text-muted mt-5 text-sm">
+              Você pode consultar os destinos. A edição da distribuição requer permissão para editar
+              o Acontecimento.
+            </p>
+          )}
+        </div>
+      </section>
 
       <section
         id="relacionamentos"

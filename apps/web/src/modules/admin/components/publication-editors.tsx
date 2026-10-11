@@ -208,6 +208,11 @@ export function WorkspaceNewsEditor({
         if (target.closest('form button[type="button"]')) editor.setDirty(true);
       }}
     >
+      <p className="mb-4 rounded-xl bg-slate-50 p-4 text-base text-slate-900">
+        {news
+          ? 'Revise o texto e salve as alterações antes de publicar. Salvar não publica a notícia.'
+          : 'Primeiro escreva e salve o rascunho. Depois você poderá revisar e publicar. Salvar não coloca a notícia no Portal.'}
+      </p>
       <NewsForm action={editor.action} news={news} workspaceEvent={event} photos={photos} />
       {news && canPublish && (
         <PublicationButton
