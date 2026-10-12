@@ -26,10 +26,8 @@ import {
 } from '@vl6/infra';
 import {
   requirePermission,
-  type BackfillDataFalecimentoResult,
   type Member,
   type MemberSituationAttachment,
-  type SeedMemberSituationHistoryReportRow,
 } from '@vl6/domain';
 import { generateTemporaryPassword } from '@/lib/auth/generate-temporary-password';
 import { requireSession } from '@/lib/auth/require-session';
@@ -1053,68 +1051,6 @@ export async function correctDeathDateAction(
   revalidatePath('/admin/pessoas/irmaos');
   if (memberId) revalidatePath(`/admin/pessoas/irmaos/${memberId}`);
   return { error: null, success: true };
-}
-
-export interface SeedSituationHistoryState {
-  error: string | null;
-  report: SeedMemberSituationHistoryReportRow[] | null;
-}
-
-/**
- * Migração assistida — cria o primeiro registro de Situação Maçônica pra
- * todo Irmão que ainda não tem nenhum, a partir do `situacao` legado.
- * Idempotente: rodar de novo só cobre quem ficou de fora da vez anterior.
- */
-export async function seedMemberSituationHistoryAction(): Promise<SeedSituationHistoryState> {
-  const session = await requireSession();
-  const container = createServerContainer();
-
-  try {
-    const report = await container.useCases.seedMemberSituationHistory.execute(session.authContext);
-    revalidatePath('/admin/pessoas/irmaos');
-    revalidatePath('/admin/pessoas/situacao-migracao');
-    return { error: null, report };
-  } catch (error) {
-    logger.error('Falha na migração da Situação Maçônica', {
-      route: 'seedMemberSituationHistoryAction',
-      ...errorToLogContext(error),
-    });
-    Sentry.captureException(error, { tags: { route: 'seedMemberSituationHistoryAction' } });
-    return { error: 'Não foi possível concluir a migração. Tente novamente.', report: null };
-  }
-}
-
-export interface BackfillDataFalecimentoState {
-  error: string | null;
-  result: BackfillDataFalecimentoResult | null;
-}
-
-/**
- * Corrige `Member.dataFalecimento` de quem está In Memoriam mas ficou com
- * o campo em branco — o "Selo de Trajetória" (`LodgeTenureBadge`) só para
- * de contar tempo de Loja quando essa data existe. Seguro rodar de novo:
- * só mexe em quem ainda está com `dataFalecimento: null`.
- */
-export async function backfillDataFalecimentoAction(): Promise<BackfillDataFalecimentoState> {
-  const session = await requireSession();
-  const container = createServerContainer();
-
-  try {
-    const result = await container.useCases.backfillDataFalecimento.execute(session.authContext);
-    if (!result.ok) {
-      return { error: result.error.message, result: null };
-    }
-    revalidatePath('/admin/pessoas/irmaos');
-    revalidatePath('/admin/pessoas/situacao-migracao');
-    return { error: null, result: result.value };
-  } catch (error) {
-    logger.error('Falha ao corrigir dataFalecimento', {
-      route: 'backfillDataFalecimentoAction',
-      ...errorToLogContext(error),
-    });
-    Sentry.captureException(error, { tags: { route: 'backfillDataFalecimentoAction' } });
-    return { error: 'Não foi possível concluir a correção. Tente novamente.', result: null };
-  }
 }
 
 export async function softDeleteMemberAction(memberId: string): Promise<void> {

@@ -89,12 +89,6 @@ export function PeopleAdminNav({
       description: 'Autorização e RBAC do Portal.',
       permission: 'role:read',
     },
-    {
-      href: '/admin/pessoas/situacao-migracao',
-      label: 'Migração de situação',
-      description: 'Ferramenta de manutenção e reconciliação histórica.',
-      permission: 'member:update',
-    },
   ];
 
   const groups: ClassifiedAdminNavGroup[] = [
