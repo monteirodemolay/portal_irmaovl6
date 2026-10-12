@@ -107,7 +107,7 @@ export function PortalSurfacesPanel({
               type="search"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Notícias, honrarias, livros…"
+              placeholder="Filtrar seções…"
               className="border-border bg-surface min-h-11 w-56 rounded-lg border py-2 pl-9 pr-3 text-sm"
             />
           </label>

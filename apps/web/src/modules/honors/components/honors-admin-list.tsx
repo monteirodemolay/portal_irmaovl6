@@ -65,7 +65,7 @@ export function HonorsAdminList({ rows, canManage }: { rows: HonorRow[]; canMana
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Homenageado, título, instituição"
+            placeholder="Nome ou título…"
             className={`${field} pl-9`}
           />
         </label>

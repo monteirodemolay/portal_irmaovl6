@@ -160,8 +160,11 @@ export function AdminCommandPalette({ tools }: { tools: PaletteTool[] }) {
             </DialogDescription>
             <input
               autoFocus
-              type="search"
+              type="text"
+              inputMode="search"
+              autoComplete="off"
               role="combobox"
+              aria-label="Buscar na Administração"
               aria-expanded
               aria-controls={listId}
               aria-activedescendant={results[active] ? `${listId}-${active}` : undefined}
