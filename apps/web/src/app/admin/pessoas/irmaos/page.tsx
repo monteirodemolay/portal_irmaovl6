@@ -212,9 +212,6 @@ export default async function MembersPage({
               (mesmo sendo uma pasta estática como "relatorio"/"importar"/"novo"),
               então um <Link> aqui abriria o drawer de edição em vez da página. */}
           <Button asChild variant="outline">
-            <a href="/admin/pessoas/situacao-migracao">Migrar Situação Maçônica</a>
-          </Button>
-          <Button asChild variant="outline">
             <a href={`/admin/pessoas/irmaos/relatorio?${filtersQuery}`}>Gerar relatório</a>
           </Button>
           <Button asChild variant="outline">
