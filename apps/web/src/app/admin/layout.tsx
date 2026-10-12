@@ -8,6 +8,7 @@ import { ArrowLeft } from '@vl6/ui';
 import { buildAdminNavSections } from '@/components/layout/admin-navigation';
 import { SidebarBrand } from '@/components/layout/sidebar-brand';
 import { SidebarInstitutionalLink } from '@/components/layout/sidebar-institutional-link';
+import { SidebarPresentationLink } from '@/components/layout/sidebar-presentation-link';
 import { ServerTopbarUser } from '@/components/layout/server-topbar-user';
 import { isAdminPathAllowed, isAdminTier } from '@/lib/auth/is-admin-tier';
 import { requireSession } from '@/lib/auth/require-session';
@@ -60,6 +61,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             <ArrowLeft size={18} aria-hidden="true" className="shrink-0" />
             <span>Voltar ao Portal</span>
           </Link>
+          <SidebarPresentationLink />
           {current?.tenant.site && (
             <SidebarInstitutionalLink siteUrl={current.tenant.site} tenantName={tenantName} />
           )}

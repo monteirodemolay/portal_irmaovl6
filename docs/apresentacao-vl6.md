@@ -6,7 +6,9 @@ https://portal.vl6.com.br/apresentacao-vl6.html
 
 Arquivo: `apps/web/public/apresentacao-vl6.html`.
 
-A página contém 12 slides, 18 imagens estáticas, controles por clique e teclado, índice, ampliação de imagens, efeitos e roteiro do apresentador. Não consulta APIs, dados de usuários ou coleções do Portal. As capturas são imagens estáticas da apresentação aprovada. O arquivo é público e não requer sessão do Portal.
+Acesso no Portal: link "Apresentação do Portal" no rodapé do menu da Central de Administração (abre em nova aba). Por enquanto não aparece no menu dos Irmãos. O endereço continua público para a incorporação no Wix.
+
+A página contém 21 slides, 18 imagens estáticas, controles por clique e teclado, índice, ampliação de imagens, efeitos e roteiro do apresentador. Não consulta APIs, dados de usuários ou coleções do Portal. As capturas são imagens estáticas da apresentação aprovada. O arquivo é público e não requer sessão do Portal.
 
 ## Wix
 
@@ -35,3 +37,14 @@ A abertura e o encerramento usam o brasão fornecido em `logooficial2.jpg`, com 
 ## Distribuição dos logotipos
 
 O logotipo do Portal VL6 aparece somente no cabeçalho de cada slide. Na abertura e no encerramento, a faixa institucional inferior apresenta uma única vez os brasões da Loja, da Gestão e da Grande Loja, preservando proporções e legibilidade. As demonstrações mantêm o logotipo do Portal apenas em seu próprio cabeçalho.
+
+## Estrutura (11/10/2026)
+
+Além dos formatos `hero`, `impact`, `screen`, `interlude` e `closing`, a apresentação usa:
+
+- `statement`: frase de propósito ou compromisso, sem imagem (slides 2 e 19).
+- `modules`: mapa de todos os módulos; cada nome leva ao slide correspondente (slide 4).
+- `feature`: texto à esquerda e quatro recursos à direita, para módulos sem captura de tela (Comunicação, Comunidade paramaçônica, Explorar o Acervo, Segurança, Celular e acessibilidade).
+- `curiosities`: seis curiosidades verificáveis no código (slide 18).
+
+Cada slide tem um `id`. Os atalhos (`data-jump`) apontam para o `id`, não para o número, para que incluir ou remover slides não quebre a navegação.
