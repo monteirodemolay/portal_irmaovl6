@@ -17,25 +17,13 @@
 - Excluir um Irmão é sempre soft delete; o histórico de cargos e presenças
   permanece intacto para fins de auditoria/histórico da Loja.
 
-### Importação em massa (.xlsx / .pdf)
+### Importação em massa (encerrada)
 
-- `/admin/pessoas/irmaos/importar` (permissão `member:create`) aceita uma
-  planilha `.xlsx` (mesmas colunas da exportação — Nome, CIM, Grau,
-  Situação, E-mail, Cidade) ou um relatório `.pdf` de "Relatório do módulo
-  Irmãos" de outro sistema (Nome, CIM, Loja, Grau); o `.pdf` nunca traz
-  e-mail e todo Irmão importado dele entra com `situacao: 'regular'` — os
-  poucos marcados por cor no relatório original (Desligado, Irregular
-  etc.) precisam de ajuste manual depois, pela ação "Situação" na tela de
-  cada Irmão.
-- Fluxo em três passos, sem gravação até confirmação explícita: (1)
-  analisar o arquivo — cada linha é classificada como pronta ou com
-  problema (nome ausente, grau/situação inválidos, CIM duplicada dentro do
-  próprio arquivo ou já cadastrada no tenant), nada é gravado; (2) o
-  Administrador revisa a lista completa e escolhe, linha a linha (ou
-  "selecionar todos"), quais Irmãos entram; (3) só as linhas selecionadas
-  passam pelo mesmo `RegisterMemberUseCase` do cadastro manual (uma
-  chamada por linha), e o resultado final mostra quantos foram criados e
-  quais falharam e por quê.
+- A importação de Irmãos por planilha/PDF (`/admin/pessoas/irmaos/importar`),
+  a da nominata histórica (`/admin/pessoas/gestoes/importar-nominata`) e a
+  da nominata DeMolay Rio Verde 350 já foram executadas e suas telas foram
+  removidas em 11/10/2026. Os dados importados continuam nos cadastros de
+  origem. Novos cadastros são feitos individualmente.
 
 ### Autorreivindicação de acesso (`/reivindicar`)
 

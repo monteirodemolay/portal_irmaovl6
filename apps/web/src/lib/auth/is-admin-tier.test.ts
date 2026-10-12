@@ -25,6 +25,8 @@ describe('Central de Administração: restrições de prefixo', () => {
       '/admin/acervo/biblioteca',
       '/admin/acervo/publicar',
       '/admin/configuracoes/geral',
+      '/admin/enviar',
+      '/admin/avancado',
     ])
       expect(isAdminPathAllowed(librarian, path)).toBe(true);
     for (const path of [

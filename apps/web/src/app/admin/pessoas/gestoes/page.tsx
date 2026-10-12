@@ -21,11 +21,6 @@ export default async function BoardTermsPage() {
         <h1 className="font-display text-2xl font-semibold">Gestões / Diretoria</h1>
         <div className="flex flex-col items-end gap-2">
           <div className="flex gap-2">
-            <Button asChild variant="outline">
-              <Link href="/admin/pessoas/gestoes/importar-nominata">
-                Importar Nominata Histórica
-              </Link>
-            </Button>
             <Button asChild>
               <Link href="/admin/pessoas/gestoes/nova">Nova Gestão</Link>
             </Button>

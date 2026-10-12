@@ -26,7 +26,7 @@ O uso de qualquer funcionalidade do Portal implica a aceitação integral e irre
 
 ### 3.1 Cadastro administrativo
 
-O cadastro do Irmão no Diretório é realizado pela Secretaria da Loja, manualmente ou por importação em lote, a partir de registros institucionais.
+O cadastro do Irmão no Diretório é realizado pela Secretaria da Loja, manualmente, a partir de registros institucionais. Parte dos cadastros existentes foi carregada por importação em lote, recurso que já cumpriu sua finalidade e foi retirado do Portal.
 
 ### 3.2 Reivindicação de acesso ("Reivindicar conta")
 

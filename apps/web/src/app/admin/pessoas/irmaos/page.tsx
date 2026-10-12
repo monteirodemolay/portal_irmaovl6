@@ -218,9 +218,6 @@ export default async function MembersPage({
             <a href={`/admin/pessoas/irmaos/relatorio?${filtersQuery}`}>Gerar relatório</a>
           </Button>
           <Button asChild variant="outline">
-            <a href={`/admin/pessoas/irmaos/importar`}>Importar planilha</a>
-          </Button>
-          <Button asChild variant="outline">
             <a href={`/admin/pessoas/irmaos/duplicados`}>Duplicados</a>
           </Button>
           <Button asChild variant="outline">

@@ -4,7 +4,11 @@ import { normalizeForSearch } from '@vl6/shared';
 import Link from 'next/link';
 import { useState } from 'react';
 import type { AdminTool } from '../lib/admin-tool-directory';
-export function AdminToolDirectory({ tools }: { tools: Omit<AdminTool, 'permissions'>[] }) {
+export function AdminToolDirectory({
+  tools,
+}: {
+  tools: Pick<AdminTool, 'href' | 'label' | 'group'>[];
+}) {
   const [query, setQuery] = useState('');
   const filtered = tools.filter((t) =>
     normalizeForSearch(`${t.label} ${t.group}`).includes(normalizeForSearch(query)),

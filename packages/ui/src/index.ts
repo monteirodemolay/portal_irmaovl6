@@ -35,6 +35,8 @@ export * from './components/constellation-graph';
 // nomes de componentes deste barrel (ex.: `Badge`). Adicione aqui só os
 // ícones realmente usados por algum consumidor.
 export {
+  Upload,
+  Wrench,
   WifiOff,
   RotateCcw,
   ArrowLeft,
