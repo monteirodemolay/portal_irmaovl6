@@ -12,6 +12,8 @@ export interface Announcement extends BaseEntity {
   destacar: boolean;
   dataPublicacao: Date | null;
   dataExpiracao: Date | null;
+  /** Escolha explícita no cadastro. Ausente no legado: deve ser definida antes de republicar. */
+  notificarIrmaos?: boolean;
   /** Central de Avisos — cada notificação disparada na publicação exige ciência do destinatário. */
   requiresAcknowledgement: boolean;
 }

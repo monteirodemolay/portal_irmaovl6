@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { AuthContext } from '../../../shared/auth-context';
-import { ForbiddenError, NotFoundError } from '../../../shared/result';
+import { ForbiddenError, NotFoundError, ValidationError } from '../../../shared/result';
 import { FixedClock, InMemoryAnnouncementRepository } from '../../../test/fakes';
 import type { Announcement } from '../entities/announcement.entity';
 import { PublishAnnouncementUseCase } from './publish-announcement.use-case';
@@ -31,6 +31,7 @@ function buildAnnouncement(overrides: Partial<Announcement> = {}): Announcement 
     dataPublicacao: null,
     dataExpiracao: null,
     requiresAcknowledgement: false,
+    notificarIrmaos: false,
     createdAt: new Date('2026-01-01'),
     updatedAt: new Date('2026-01-01'),
     createdBy: 'admin-1',
@@ -99,5 +100,16 @@ describe('PublishAnnouncementUseCase', () => {
     expect(result.value.publicado).toBe(false);
     expect(result.value.dataPublicacao).toEqual(new Date('2026-01-15T00:00:00Z'));
     expect(result.value.status).toBe('draft');
+  });
+  it('aviso legado sem escolha exige edição antes de publicar', async () => {
+    const { useCase, announcementRepository } = buildUseCase();
+    const legacy = buildAnnouncement();
+    delete legacy.notificarIrmaos;
+    await announcementRepository.create(legacy);
+    const result = await useCase.execute(ctx, legacy.id, true);
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error).toBeInstanceOf(ValidationError);
+    expect((await announcementRepository.findById(legacy.id))?.publicado).toBe(false);
   });
 });

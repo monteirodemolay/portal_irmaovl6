@@ -1,6 +1,6 @@
 'use client';
 
-import { useId, useActionState } from 'react';
+import { useId, useActionState, useState } from 'react';
 import { useFormStatus } from 'react-dom';
 import type { Announcement } from '@vl6/domain';
 import { Button, Input, Select, Textarea } from '@vl6/ui';
@@ -30,6 +30,7 @@ export function AnnouncementForm({
   initialExpiration,
 }: AnnouncementFormProps) {
   const formId = useId();
+  const [notificationChoice, setNotificationChoice] = useState('');
   const [state, formAction] = useActionState<ContentActionState, FormData>(action, {
     error: null,
   });
@@ -78,6 +79,37 @@ export function AnnouncementForm({
           }
         />
       </FormField>
+      <div className="border-border bg-background rounded-lg border p-4 text-sm">
+        <p className="font-medium">Exibir na página inicial</p>
+        <p className="text-muted mt-1 text-xs">
+          Todo aviso publicado aparece na inicial enquanto estiver vigente, independentemente da
+          notificação.
+        </p>
+      </div>
+      <FormField
+        label="Também incluir nas notificações dos Irmãos?"
+        htmlFor={`${formId}-notificarIrmaos`}
+        description="Escolha obrigatória em cada salvamento. Nenhuma opção vem marcada."
+      >
+        <Select
+          id={`${formId}-notificarIrmaos`}
+          name="notificarIrmaos"
+          required
+          value={notificationChoice}
+          onChange={(event) => setNotificationChoice(event.target.value)}
+        >
+          <option value="" disabled>
+            Selecione Sim ou Não
+          </option>
+          <option value="sim">Sim — publicar na inicial e notificar os Irmãos</option>
+          <option value="nao">Não — publicar somente na inicial</option>
+        </Select>
+        {announcement && typeof announcement.notificarIrmaos === 'boolean' && (
+          <p className="text-muted mt-1 text-xs">
+            Escolha salva anteriormente: {announcement.notificarIrmaos ? 'Sim' : 'Não'}.
+          </p>
+        )}
+      </FormField>
       <label className="flex items-center gap-2 text-sm">
         <input
           type="checkbox"
@@ -92,6 +124,7 @@ export function AnnouncementForm({
           type="checkbox"
           name="requiresAcknowledgement"
           className="h-4 w-4"
+          disabled={notificationChoice !== 'sim'}
           defaultChecked={announcement?.requiresAcknowledgement}
         />
         Exigir confirmação de ciência de cada Irmão na Central de Avisos

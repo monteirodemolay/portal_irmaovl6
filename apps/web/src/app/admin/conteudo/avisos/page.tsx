@@ -95,6 +95,16 @@ export default async function AnnouncementsPage({
     },
     { key: 'destaque', header: 'Destaque', cell: (a) => (a.destacar ? 'Sim' : '—') },
     {
+      key: 'notificarIrmaos',
+      header: 'Notificar',
+      cell: (a) =>
+        typeof a.notificarIrmaos === 'boolean'
+          ? a.notificarIrmaos
+            ? 'Sim'
+            : 'Não'
+          : 'Escolha pendente',
+    },
+    {
       key: 'status',
       header: 'Status',
       cell: (a) => (
@@ -111,10 +121,16 @@ export default async function AnnouncementsPage({
           <Button asChild variant="outline" size="sm">
             <Link href={`${BASE_PATH}/${a.id}`}>Editar</Link>
           </Button>
-          <PublishToggleButton
-            published={a.publicado}
-            onToggle={toggleAnnouncementPublishedAction.bind(null, a.id)}
-          />
+          {!a.publicado && typeof a.notificarIrmaos !== 'boolean' ? (
+            <Button asChild variant="accent" size="sm">
+              <Link href={`${BASE_PATH}/${a.id}`}>Definir notificação</Link>
+            </Button>
+          ) : (
+            <PublishToggleButton
+              published={a.publicado}
+              onToggle={toggleAnnouncementPublishedAction.bind(null, a.id)}
+            />
+          )}
           <DeleteButton
             action={deleteAnnouncementAction.bind(null, a.id)}
             confirmMessage={`Excluir "${a.titulo}"? Fica registrado em Concluídos.`}

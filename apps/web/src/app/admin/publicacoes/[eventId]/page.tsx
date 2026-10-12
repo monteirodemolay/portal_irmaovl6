@@ -1,6 +1,5 @@
 import {
   HOME_NEWS_LIMIT,
-  HOME_ANNOUNCEMENT_LIMIT,
   selectHomeEvents,
   sortHomeAnnouncements,
 } from '@/modules/dashboard/lib/home-editorial-selection';
@@ -329,10 +328,7 @@ export default async function PublicationWorkspacePage({
 
   const homeSelection = selectHomeEvents(homeEvents);
   const homeTypeEvents = event.tipo === 'sessao' ? homeSelection.sessions : homeSelection.events;
-  const homeSelectedAnnouncements = sortHomeAnnouncements(homeAnnouncements).slice(
-    0,
-    HOME_ANNOUNCEMENT_LIMIT,
-  );
+  const homeSelectedAnnouncements = sortHomeAnnouncements(homeAnnouncements).slice(0);
   const homeVerified =
     can('news:read') &&
     can('announcement:read') &&
