@@ -7,6 +7,9 @@ import Link from 'next/link';
 import { ArrowLeft } from '@vl6/ui';
 import { buildAdminNavSections } from '@/components/layout/admin-navigation';
 import { SidebarBrand } from '@/components/layout/sidebar-brand';
+import { AdminCommandPalette } from '@/modules/admin/components/admin-command-palette';
+import { ADMIN_TOOLS } from '@/modules/admin/lib/admin-tool-directory';
+import { canUseAdminTool } from '@/modules/admin/lib/admin-workspace';
 import { SidebarInstitutionalLink } from '@/components/layout/sidebar-institutional-link';
 import { SidebarPresentationLink } from '@/components/layout/sidebar-presentation-link';
 import { ServerTopbarUser } from '@/components/layout/server-topbar-user';
@@ -41,6 +44,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const dictionary = getDictionary(current?.locale ?? DEFAULT_LOCALE);
   const tenantName = current?.tenant.nome ?? 'Portal do Irmão';
   const displayName = resolveMemberDisplayName(member, session.user.email);
+  const paletteTools = ADMIN_TOOLS.filter((tool) =>
+    canUseAdminTool(tool, session.authContext, session.role),
+  ).map(({ href, label, group, description }) => ({ href, label, group, description }));
 
   return (
     <AppShell
@@ -56,7 +62,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         <div className="space-y-3">
           <Link
             href="/dashboard"
-            className="flex min-h-12 w-full items-center gap-3 rounded-xl border border-white/25 bg-white/10 px-4 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:border-white/40 hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-primary active:bg-white/25"
+            className="focus-visible:ring-offset-primary flex min-h-12 w-full items-center gap-3 rounded-xl border border-white/25 bg-white/10 px-4 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:border-white/40 hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 active:bg-white/25"
           >
             <ArrowLeft size={18} aria-hidden="true" className="shrink-0" />
             <span>Voltar ao Portal</span>
@@ -68,11 +74,14 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         </div>
       }
       topbarLeft={
-        <div className="hidden leading-tight sm:block">
-          <p className="text-muted text-[11px] font-medium uppercase tracking-wide">
-            {dictionary.nav.adminPanelTitle}
-          </p>
-          <p className="font-display truncate text-sm font-semibold">{tenantName}</p>
+        <div className="flex items-center gap-3">
+          <div className="hidden leading-tight sm:block">
+            <p className="text-muted text-[11px] font-medium uppercase tracking-wide">
+              {dictionary.nav.adminPanelTitle}
+            </p>
+            <p className="font-display truncate text-sm font-semibold">{tenantName}</p>
+          </div>
+          <AdminCommandPalette tools={paletteTools} />
         </div>
       }
       topbarRight={
