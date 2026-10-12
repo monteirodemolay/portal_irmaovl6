@@ -74,7 +74,7 @@ export function resolveEventDistribution({
             : future
               ? 'Acontecimento oculto no Início'
               : 'Agenda do Início encerrada',
-      rule: 'Seleção atual: até três próximos por tipo, três notícias recentes e dois avisos por destaque/prioridade. O controle abaixo afeta a vitrine do acontecimento; notícias e avisos seguem suas publicações.',
+      rule: 'Seleção atual: até três próximos por tipo, três notícias recentes e todos os avisos vigentes por destaque/prioridade. O controle abaixo afeta a vitrine do acontecimento; notícias e avisos seguem suas publicações.',
       href: '#distribuicao-controles',
     },
     {
@@ -161,7 +161,7 @@ export function resolveEventDistribution({
           : announcements.length
             ? 'Avisos em rascunho ou expirados'
             : 'Sem aviso vinculado',
-      rule: 'Publicação manual do aviso; validade, destaque e notificações seguem as regras existentes. Notícia publicada tem finalidade pública: use aviso para comunicação interna.',
+      rule: 'Publicação manual do aviso; validade e destaque vêm do aviso; notificações dependem da escolha explícita no cadastro. Notícia publicada tem finalidade pública: use aviso para comunicação interna.',
       href: '#aviso',
     },
   ];

@@ -48,6 +48,8 @@ export const announcementSchema = z.object({
   prioridade: z.enum(['baixa', 'media', 'alta']),
   destacar: z.boolean(),
   dataExpiracao: z.coerce.date().nullable(),
+  /** Ausente somente nos registros legados; os formulários exigem escolha explícita. */
+  notificarIrmaos: z.boolean().optional(),
   // Central de Avisos (docs/architecture) — quando marcado, cada
   // notificação disparada na publicação exige confirmação de ciência
   // separada da leitura (`Notification.requiresAcknowledgement`).

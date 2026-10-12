@@ -23,7 +23,7 @@ export function AgendaPanel({ events }: { events: Event[] }) {
             scope="sessions"
             className="text-accent shrink-0 text-xs font-medium hover:underline"
           >
-            mais sessões
+            Ver todas
           </AgendaOpenButton>
         }
       />

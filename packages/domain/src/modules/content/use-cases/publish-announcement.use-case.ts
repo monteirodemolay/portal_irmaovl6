@@ -1,7 +1,7 @@
 import type { AuthContext } from '../../../shared/auth-context';
 import { requirePermission } from '../../../shared/auth-context';
 import type { IClock } from '../../../shared/ports';
-import { NotFoundError, ok, err, type Result } from '../../../shared/result';
+import { NotFoundError, ValidationError, ok, err, type Result } from '../../../shared/result';
 import type { Announcement } from '../entities/announcement.entity';
 import type { IAnnouncementRepository } from '../repositories/announcement.repository';
 
@@ -23,6 +23,13 @@ export class PublishAnnouncementUseCase {
     const current = await this.deps.announcementRepository.findById(announcementId);
     if (!current || current.tenantId !== ctx.tenantId) {
       return err(new NotFoundError('Announcement', announcementId));
+    }
+    if (publicar && typeof current.notificarIrmaos !== 'boolean') {
+      return err(
+        new ValidationError(
+          'Edite o aviso e escolha se deseja notificar os Irmãos antes de publicar.',
+        ),
+      );
     }
 
     const now = this.deps.clock.now();

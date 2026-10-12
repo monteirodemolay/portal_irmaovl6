@@ -1,87 +1,96 @@
 'use client';
 
-import { useState } from 'react';
-import { ChevronRight, cn, EmptyState } from '@vl6/ui';
+import { ChevronRight, Clock, MapPin, cn, EmptyState } from '@vl6/ui';
 import { formatEventDate } from '@/modules/dashboard/lib/format-event-date';
 import { useAgenda } from './agenda-provider';
 
-const INITIAL_VISIBLE_COUNT = 6;
+const monthFormatter = new Intl.DateTimeFormat('pt-BR', {
+  month: 'long',
+  year: 'numeric',
+  timeZone: 'America/Sao_Paulo',
+});
 
 export function AgendaEventList() {
   const { filteredEvents: events, selectedEventId, scope, openAgenda } = useAgenda();
   const onlySessions = scope === 'sessions';
-  const [showAll, setShowAll] = useState(false);
-
-  const visibleEvents = showAll ? events : events.slice(0, INITIAL_VISIBLE_COUNT);
+  const groups = new Map<string, typeof events>();
+  for (const event of events) {
+    const month = monthFormatter.format(event.dataInicio);
+    const group = groups.get(month) ?? [];
+    group.push(event);
+    groups.set(month, group);
+  }
 
   return (
-    // `shrink-0` é essencial aqui: como este card usa `overflow-hidden` (só
-    // pra manter os cantos arredondados), o flexbox trata sua altura mínima
-    // automática como 0 (spec: item com overflow não-visível não protege
-    // conteúdo do encolhimento) — sem isso, a coluna da esquerda do drawer
-    // (flex-col com `AgendaCalendar` logo abaixo) espremia esta lista até
-    // sobrar só 1 evento visível, cortado, mesmo com várias Sessões
-    // futuras cadastradas (achado do Administrador: "os outros eventos
-    // ficam escondidos").
-    <div className="border-border flex shrink-0 flex-col overflow-hidden rounded-xl border bg-white">
-      <p className="text-muted px-4 pb-2.5 pt-4 text-[10px] font-bold uppercase tracking-wide">
-        {onlySessions ? 'Próximas sessões' : 'Próximos eventos'}
-      </p>
-
+    <section className="border-border bg-surface flex shrink-0 flex-col rounded-xl border p-4">
+      <div className="text-muted mb-4 flex items-center justify-between gap-3 text-xs">
+        <h3 className="font-semibold">
+          {onlySessions
+            ? 'Todas as próximas sessões'
+            : scope === 'events'
+              ? 'Todos os próximos eventos'
+              : 'Programação futura'}
+        </h3>
+        <span>{events.length} compromisso(s)</span>
+      </div>
       {events.length === 0 ? (
-        <div className="px-4 pb-4">
-          <EmptyState
-            title={onlySessions ? 'Nenhuma sessão programada' : 'Nenhum evento programado'}
-          />
-        </div>
+        <EmptyState
+          title={onlySessions ? 'Nenhuma sessão programada' : 'Nenhum evento programado'}
+          description="Novos compromissos aparecerão aqui assim que forem cadastrados na Agenda."
+        />
       ) : (
-        <ul className="flex flex-col px-2.5 pb-2.5">
-          {visibleEvents.map((event) => {
-            const { day, month, weekdayShort } = formatEventDate(event.dataInicio, event.dataFim);
-            const active = event.id === selectedEventId;
-            return (
-              <li key={event.id}>
-                <button
-                  type="button"
-                  onClick={() => openAgenda(event.id)}
-                  className={cn(
-                    'grid w-full grid-cols-[52px_minmax(0,1fr)_16px] items-center gap-2.5 rounded-lg px-2 py-2.5 text-left transition-colors',
-                    active
-                      ? 'border-accent/60 from-accent/15 to-surface border bg-gradient-to-r'
-                      : 'hover:bg-background border border-transparent',
-                  )}
-                >
-                  <div className="border-border/70 border-r text-center">
-                    <p className="font-display text-xl font-semibold leading-none">{day}</p>
-                    <p className="mt-1 text-[9px] font-bold leading-none text-amber-700">{month}</p>
-                    <p className="text-muted mt-0.5 text-[9px] leading-none">{weekdayShort}</p>
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-muted text-[10px]">
-                      {new Intl.DateTimeFormat('pt-BR', { timeStyle: 'short' }).format(
-                        event.dataInicio,
+        Array.from(groups, ([month, items]) => (
+          <div key={month} className="mb-4 last:mb-0">
+            <h4 className="text-accent border-border mb-2 border-b pb-2 text-xs font-semibold capitalize">
+              {month}
+            </h4>
+            <ul className="flex flex-col gap-1">
+              {items.map((event) => {
+                const {
+                  day,
+                  month: shortMonth,
+                  timeRange,
+                } = formatEventDate(event.dataInicio, event.dataFim);
+                const active = event.id === selectedEventId;
+                return (
+                  <li key={event.id}>
+                    <button
+                      type="button"
+                      onClick={() => openAgenda(event.id)}
+                      aria-current={active ? 'true' : undefined}
+                      className={cn(
+                        'grid w-full grid-cols-[52px_minmax(0,1fr)_16px] items-center gap-3 rounded-lg px-2 py-3 text-left transition-colors',
+                        active ? 'bg-accent/15' : 'hover:bg-background',
                       )}
-                    </p>
-                    <p className="truncate text-xs font-semibold">{event.titulo}</p>
-                    <p className="text-muted mt-0.5 truncate text-[10px]">{event.local}</p>
-                  </div>
-                  <ChevronRight size={13} className="text-muted" />
-                </button>
-              </li>
-            );
-          })}
-        </ul>
+                    >
+                      <span className="bg-primary flex min-h-[66px] flex-col items-center justify-center rounded-xl text-white">
+                        <span className="text-xl font-semibold leading-none">{day}</span>
+                        <span className="mt-1 text-[11px] font-medium text-amber-200">
+                          {shortMonth}
+                        </span>
+                      </span>
+                      <span className="min-w-0">
+                        <span className="block break-words text-sm font-semibold">
+                          {event.titulo}
+                        </span>
+                        <span className="text-muted mt-1 flex items-center gap-1.5 text-xs">
+                          <Clock size={12} className="shrink-0" />
+                          {timeRange}
+                        </span>
+                        <span className="text-muted mt-1 flex items-start gap-1.5 text-xs">
+                          <MapPin size={12} className="mt-0.5 shrink-0" />
+                          <span className="break-words">{event.local}</span>
+                        </span>
+                      </span>
+                      <ChevronRight size={16} className="text-muted" />
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        ))
       )}
-
-      {events.length > INITIAL_VISIBLE_COUNT && (
-        <button
-          type="button"
-          onClick={() => setShowAll((value) => !value)}
-          className="border-border text-muted hover:text-foreground mx-2.5 mb-2.5 h-8 rounded-lg border text-xs font-semibold"
-        >
-          {showAll ? 'Ver menos' : 'Ver todos os eventos'}
-        </button>
-      )}
-    </div>
+    </section>
   );
 }

@@ -615,6 +615,10 @@ async function saveNewAnnouncement(
 
   const dataExpiracao = formData.get('dataExpiracao');
   let input: AnnouncementFormValues;
+  const notificationChoice = formData.get('notificarIrmaos');
+  if (notificationChoice !== 'sim' && notificationChoice !== 'nao') {
+    return { error: 'Escolha Sim ou Não para notificar os Irmãos.' };
+  }
   try {
     input = announcementSchema.parse({
       ...(workspaceEventId ? { eventId: workspaceEventId } : {}),
@@ -623,7 +627,9 @@ async function saveNewAnnouncement(
       prioridade: formData.get('prioridade'),
       destacar: formData.get('destacar') === 'on',
       dataExpiracao: dataExpiracao ? dataExpiracao : null,
-      requiresAcknowledgement: formData.get('requiresAcknowledgement') === 'on',
+      notificarIrmaos: notificationChoice === 'sim',
+      requiresAcknowledgement:
+        notificationChoice === 'sim' && formData.get('requiresAcknowledgement') === 'on',
     });
   } catch {
     return { error: 'Dados inválidos. Verifique os campos obrigatórios.' };
@@ -662,6 +668,10 @@ async function saveAnnouncement(
 
   const dataExpiracao = formData.get('dataExpiracao');
   let input: AnnouncementFormValues;
+  const notificationChoice = formData.get('notificarIrmaos');
+  if (notificationChoice !== 'sim' && notificationChoice !== 'nao') {
+    return { error: 'Escolha Sim ou Não para notificar os Irmãos.' };
+  }
   try {
     input = announcementSchema.parse({
       ...(workspaceEventId ? { eventId: workspaceEventId } : {}),
@@ -670,7 +680,9 @@ async function saveAnnouncement(
       prioridade: formData.get('prioridade'),
       destacar: formData.get('destacar') === 'on',
       dataExpiracao: dataExpiracao ? dataExpiracao : null,
-      requiresAcknowledgement: formData.get('requiresAcknowledgement') === 'on',
+      notificarIrmaos: notificationChoice === 'sim',
+      requiresAcknowledgement:
+        notificationChoice === 'sim' && formData.get('requiresAcknowledgement') === 'on',
     });
   } catch {
     return { error: 'Dados inválidos. Verifique os campos obrigatórios.' };
@@ -702,6 +714,7 @@ async function saveAnnouncement(
 
   revalidatePath('/admin/conteudo/avisos');
   revalidatePath(`/admin/conteudo/avisos/${announcementId}`);
+  revalidatePath('/dashboard');
   if (workspaceEventId) {
     revalidatePath(`/admin/publicacoes/${workspaceEventId}`);
     revalidatePath('/admin/publicacoes');
@@ -720,6 +733,7 @@ export async function deleteAnnouncementAction(announcementId: string): Promise<
   if (!result.ok) throw new Error(result.error.message);
 
   revalidatePath('/admin/conteudo/avisos');
+  revalidatePath('/dashboard');
 }
 
 export async function hardDeleteAnnouncementAction(announcementId: string): Promise<void> {
@@ -732,6 +746,7 @@ export async function hardDeleteAnnouncementAction(announcementId: string): Prom
   if (!result.ok) throw new Error(result.error.message);
 
   revalidatePath('/admin/conteudo/avisos');
+  revalidatePath('/dashboard');
 }
 
 export async function toggleAnnouncementPublishedAction(
@@ -747,7 +762,7 @@ export async function toggleAnnouncementPublishedAction(
   );
   if (!result.ok) throw new Error(result.error.message);
 
-  if (publicar) {
+  if (publicar && result.value.notificarIrmaos === true) {
     // `dedupeKey` por destinatário no formato `announcement:{id}:user:{uid}`
     // — além de idempotência, é a chave que o relatório de alcance
     // (`getAnnouncementReachReportAction`) usa pra encontrar todas as
@@ -767,6 +782,7 @@ export async function toggleAnnouncementPublishedAction(
 
   revalidatePath('/admin/conteudo/avisos');
   revalidatePath('/avisos');
+  revalidatePath('/', 'layout');
   revalidatePath('/dashboard');
   if (result.value.eventId) revalidatePath(`/admin/publicacoes/${result.value.eventId}`);
 }

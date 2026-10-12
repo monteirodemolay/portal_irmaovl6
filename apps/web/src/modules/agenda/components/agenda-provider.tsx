@@ -3,6 +3,7 @@
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
 import type { Event } from '@vl6/domain';
 import { AgendaDrawer } from './agenda-drawer';
+import { selectAgendaEvents } from '../lib/select-agenda-events';
 
 /** Sessão ('sessions') ou os demais tipos de Evento ('events') — nunca os dois misturados quando um filtro está ativo. */
 export type AgendaScope = 'sessions' | 'events';
@@ -44,13 +45,11 @@ export function AgendaProvider({
   children: ReactNode;
 }) {
   const [isOpen, setIsOpen] = useState(false);
-  const [selectedEventId, setSelectedEventId] = useState<string | null>(events[0]?.id ?? null);
+  const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [scope, setScope] = useState<AgendaScope | undefined>(undefined);
 
   const applyScope = useCallback((activeScope: AgendaScope | undefined, pool: Event[]) => {
-    if (activeScope === 'sessions') return pool.filter((event) => event.tipo === 'sessao');
-    if (activeScope === 'events') return pool.filter((event) => event.tipo !== 'sessao');
-    return pool;
+    return selectAgendaEvents(pool, activeScope);
   }, []);
 
   const filteredEvents = useMemo(() => applyScope(scope, events), [applyScope, events, scope]);
@@ -64,8 +63,9 @@ export function AgendaProvider({
       const nextScope = options ? options.scope : scope;
       setScope(nextScope);
       const pool = applyScope(nextScope, events);
-      // Sem id: sempre volta pra "visão geral" (o próximo evento em foco, já dentro do filtro ativo).
-      setSelectedEventId(eventId ?? pool[0]?.id ?? null);
+      // "Ver todos" abre a coleção, nunca a ficha do primeiro/último evento.
+      // A Agenda completa mantém sua visualização de calendário e ficha.
+      setSelectedEventId(eventId ?? (nextScope ? null : (pool[0]?.id ?? null)));
       setIsOpen(true);
     },
     [applyScope, events, scope],

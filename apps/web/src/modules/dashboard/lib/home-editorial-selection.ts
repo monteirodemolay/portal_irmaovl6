@@ -2,7 +2,6 @@ import type { Announcement, Event } from '@vl6/domain';
 
 export const HOME_NEWS_LIMIT = 3;
 export const HOME_EVENTS_PER_TYPE = 3;
-export const HOME_ANNOUNCEMENT_LIMIT = 2;
 
 /** Mesma seleção na vitrine do Irmão e na conferência administrativa da Ficha. */
 export function selectHomeEvents(events: Event[]) {
