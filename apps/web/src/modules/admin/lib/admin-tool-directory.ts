@@ -6,12 +6,7 @@ import type { PermissionKey } from '@vl6/shared';
  * área"; o que é de uso eventual vai para `/admin/avancado`.
  */
 export type AdminWorkspaceArea =
-  | 'acontecimentos'
-  | 'pessoas'
-  | 'acervo'
-  | 'conhecimento'
-  | 'cripta'
-  | 'sistema';
+  'acontecimentos' | 'pessoas' | 'acervo' | 'conhecimento' | 'cripta' | 'sistema';
 
 /**
  * - `rotina`: operação do dia a dia; aparece como aba (`tab`) ou em
@@ -313,6 +308,15 @@ export const ADMIN_TOOLS: AdminTool[] = [
     description: 'Listagens para impressão e exportação.',
     group: 'Pessoas e Loja',
     permissions: ['member:read'],
+    area: 'pessoas',
+    tier: 'rotina',
+  },
+  {
+    href: '/admin/pessoas/honrarias',
+    label: 'Honrarias',
+    description: 'Galeria de Honra: o que está lançado e o que falta completar.',
+    group: 'Pessoas e Loja',
+    permissions: ['honor:read'],
     area: 'pessoas',
     tier: 'rotina',
   },

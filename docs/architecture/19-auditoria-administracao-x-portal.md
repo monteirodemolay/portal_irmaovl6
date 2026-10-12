@@ -36,13 +36,17 @@ A Administração está alinhada ao que o Portal apresenta? Dá para navegar, in
 - Não foi possível validar visualmente em produção nem contra o Firestore real; a validação foi por tipos e testes unitários.
 - Os 5 testes de `publication-center.test.ts` estavam desatualizados em relação à tela redesenhada (Painel/Lista/Calendário) e barravam o push; foram reescritos para o modelo atual de fichas por acontecimento. O cenário de "agendamento editorial" não existe mais na tela e foi trocado por um teste de separação entre futuros e realizados.
 
+## Segunda etapa (12/10/2026)
+
+- **Honrarias** (`/admin/pessoas/honrarias`, permissão `honor:read`): lista exatamente o que a Galeria de Honra exibe, com busca sem acento, filtros por tipo, ano e pendência (sem data, sem número do ato, sem diploma), totais e atalho "Editar na ficha" (exige `honor:manage`). Entra na Central de Controle como métrica "Honrarias na Galeria" e no painel Portal × Administração, que deixou de apontar lacuna.
+- **Preenchimento automático no cadastro de acontecimento** (`suggestEventDefaults`): ao escolher o tipo e digitar o título, a tela oferece repetir local, traje, chegada sugerida, capacidade e confirmação de presença do acontecimento anterior mais parecido (mesmo título sem números > título parecido do mesmo tipo > último do mesmo tipo). Só age ao clicar em **Preencher**; traje, chegada e capacidade não sobrescrevem o que já foi digitado; data e título nunca mudam. A gestão já era preenchida pela data (`FindBoardTermForDateUseCase`). Recesso e aniversário não recebem sugestão. Usa os 300 acontecimentos mais recentes.
+
 ## Próximos passos sugeridos
 
-1. Tela de Honrarias (lista de todas, com filtro por tipo e homenageado), para fechar a lacuna nº 4.
-2. Métricas "no Portal" para Negócios, Links, Exposições e Coleções.
-3. Índice de busca para o histórico completo de acontecimentos e notícias.
-4. Rotinas de preenchimento automático: sugerir local, gestão e tipo a partir do último acontecimento semelhante.
+1. Métricas "no Portal" para Negócios, Links, Exposições e Coleções.
+2. Índice de busca para o histórico completo de acontecimentos e notícias.
+3. Estender o preenchimento por semelhança a notícias e avisos derivados do acontecimento.
 
 ## Termos e Privacidade
 
-Esta alteração não coleta dado novo, não envia dado a terceiros e não muda quem acessa dado pessoal: a busca devolve nome e situação de Irmãos apenas a quem já tem `member:read` e acesso a `/admin/pessoas/irmaos`. `docs/legal/` não precisou de atualização e não exige novo aceite.
+Esta alteração não coleta dado novo, não envia dado a terceiros e não muda quem acessa dado pessoal: a busca devolve nome e situação de Irmãos apenas a quem já tem `member:read` e acesso a `/admin/pessoas/irmaos`; a tela de Honrarias mostra a quem tem `honor:read` os mesmos dados que a Galeria de Honra já exibe a esse perfil; o preenchimento automático só reaproveita dados de acontecimentos (não pessoais). `docs/legal/` não precisou de atualização e não exige novo aceite.

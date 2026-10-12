@@ -56,12 +56,7 @@ export interface GoogleCalendarEventSummary {
 }
 
 export type AgendaAnniversaryKind =
-  | 'iniciacao'
-  | 'elevacao'
-  | 'exaltacao'
-  | 'nascimento'
-  | 'conjuge'
-  | 'filho';
+  'iniciacao' | 'elevacao' | 'exaltacao' | 'nascimento' | 'conjuge' | 'filho';
 
 /**
  * Ocorrência calculada em tempo de request a partir do cadastro do Irmão.
@@ -135,83 +130,74 @@ export function toCalendarItems(
   });
 
   const items: CalendarItem[] = [
-    ...persistedVl6.map(
-      (event): CalendarItem => ({
-        id: event.id,
-        source: 'vl6',
-        category: eventCategory(event),
-        titulo: event.titulo,
-        inicio: event.dataInicio,
-        fim: event.dataFim,
-        local: event.local,
-        contextLabel:
-          event.agendaContext === 'paramaconica' && event.paramasonicEntityId
-            ? (paramasonicEntityNames[event.paramasonicEntityId] ?? 'Entidade Paramaçônica')
-            : event.agendaContext === 'outro'
-              ? 'Outra atividade'
-              : 'Verdadeira Luz nº 06',
-        isInformational: event.tipo === 'aniversario' || event.tipo === 'recesso',
-        isBirthday: event.tipo === 'aniversario',
-        session:
-          event.tipo === 'sessao' && event.sessionType && event.sessionNature
-            ? {
-                sessionType: event.sessionType,
-                sessionNature: event.sessionNature,
-                degreeWork: event.degreeWork ?? null,
-                access: event.access ?? null,
-              }
-            : null,
-      }),
-    ),
-    ...anniversaries.map(
-      (item): CalendarItem => ({
-        id: item.id,
-        source: 'vl6',
-        category:
-          item.kind === 'nascimento' || item.kind === 'conjuge' || item.kind === 'filho'
-            ? 'aniversario'
-            : 'outra',
-        titulo: item.titulo,
-        inicio: item.inicio,
-        fim: null,
-        local: null,
-        contextLabel: item.kind === 'nascimento' ? 'Irmãos' : 'Datas e vínculos',
-        isInformational: true,
-        isBirthday:
-          item.kind === 'nascimento' || item.kind === 'conjuge' || item.kind === 'filho',
-        session: null,
-      }),
-    ),
-    ...personal.map(
-      (event): CalendarItem => ({
-        id: event.id,
-        source: 'personal',
-        category: 'personal',
-        titulo: event.titulo,
-        inicio: event.dataInicio,
-        fim: event.dataFim,
-        local: event.local,
-        contextLabel: 'Pessoal',
-        isInformational: false,
-        isBirthday: false,
-        session: null,
-      }),
-    ),
-    ...google.map(
-      (event): CalendarItem => ({
-        id: event.id,
-        source: 'google',
-        category: 'google',
-        titulo: event.titulo,
-        inicio: event.inicio,
-        fim: event.fim,
-        local: event.local,
-        contextLabel: 'Google Agenda',
-        isInformational: false,
-        isBirthday: false,
-        session: null,
-      }),
-    ),
+    ...persistedVl6.map((event): CalendarItem => ({
+      id: event.id,
+      source: 'vl6',
+      category: eventCategory(event),
+      titulo: event.titulo,
+      inicio: event.dataInicio,
+      fim: event.dataFim,
+      local: event.local,
+      contextLabel:
+        event.agendaContext === 'paramaconica' && event.paramasonicEntityId
+          ? (paramasonicEntityNames[event.paramasonicEntityId] ?? 'Entidade Paramaçônica')
+          : event.agendaContext === 'outro'
+            ? 'Outra atividade'
+            : 'Verdadeira Luz nº 06',
+      isInformational: event.tipo === 'aniversario' || event.tipo === 'recesso',
+      isBirthday: event.tipo === 'aniversario',
+      session:
+        event.tipo === 'sessao' && event.sessionType && event.sessionNature
+          ? {
+              sessionType: event.sessionType,
+              sessionNature: event.sessionNature,
+              degreeWork: event.degreeWork ?? null,
+              access: event.access ?? null,
+            }
+          : null,
+    })),
+    ...anniversaries.map((item): CalendarItem => ({
+      id: item.id,
+      source: 'vl6',
+      category:
+        item.kind === 'nascimento' || item.kind === 'conjuge' || item.kind === 'filho'
+          ? 'aniversario'
+          : 'outra',
+      titulo: item.titulo,
+      inicio: item.inicio,
+      fim: null,
+      local: null,
+      contextLabel: item.kind === 'nascimento' ? 'Irmãos' : 'Datas e vínculos',
+      isInformational: true,
+      isBirthday: item.kind === 'nascimento' || item.kind === 'conjuge' || item.kind === 'filho',
+      session: null,
+    })),
+    ...personal.map((event): CalendarItem => ({
+      id: event.id,
+      source: 'personal',
+      category: 'personal',
+      titulo: event.titulo,
+      inicio: event.dataInicio,
+      fim: event.dataFim,
+      local: event.local,
+      contextLabel: 'Pessoal',
+      isInformational: false,
+      isBirthday: false,
+      session: null,
+    })),
+    ...google.map((event): CalendarItem => ({
+      id: event.id,
+      source: 'google',
+      category: 'google',
+      titulo: event.titulo,
+      inicio: event.inicio,
+      fim: event.fim,
+      local: event.local,
+      contextLabel: 'Google Agenda',
+      isInformational: false,
+      isBirthday: false,
+      session: null,
+    })),
   ];
 
   return items.sort((a, b) => a.inicio.getTime() - b.inicio.getTime());

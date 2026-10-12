@@ -8,10 +8,7 @@
  */
 
 export type PortalSurfaceGroup =
-  | 'Início e comunicação'
-  | 'Comunidade'
-  | 'Acervo e memória'
-  | 'Conhecimento e Cripta';
+  'Início e comunicação' | 'Comunidade' | 'Acervo e memória' | 'Conhecimento e Cripta';
 
 /**
  * - `manual`: só aparece no Portal depois de cadastrado na Administração.
@@ -130,11 +127,11 @@ export const PORTAL_SURFACES: PortalSurface[] = [
     label: 'Galeria de Honra',
     group: 'Comunidade',
     publicHref: '/irmaos/galeria-de-honra',
-    feedHref: '/admin/pessoas/irmaos',
-    feedLabel: 'Irmãos (aba Honrarias da ficha)',
+    feedHref: '/admin/pessoas/honrarias',
+    feedLabel: 'Honrarias',
     mode: 'manual',
-    how: 'Honrarias e condecorações são lançadas dentro da ficha de cada Irmão.',
-    gap: 'Não há tela própria para conferir todas as honrarias de uma vez; hoje só se vê a vitrine no Portal.',
+    how: 'Mostra tudo o que está em Honrarias; o lançamento é feito na ficha do Irmão homenageado.',
+    visibleMetric: 'honors',
     keywords: ['honrarias', 'condecorações', 'títulos', 'homenageados'],
   },
   {

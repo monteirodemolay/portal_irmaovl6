@@ -36,9 +36,7 @@ describe('Alinhamento Portal × Administração', () => {
   });
 
   it('as justificativas apontam para pastas que existem', () => {
-    const stale = Object.keys(PORTAL_NOT_ADMIN_FED).filter(
-      (key) => !memberSections.includes(key),
-    );
+    const stale = Object.keys(PORTAL_NOT_ADMIN_FED).filter((key) => !memberSections.includes(key));
     expect(stale).toEqual([]);
   });
 
@@ -102,11 +100,12 @@ describe('Contagens do mapa', () => {
     expect(surfaceStatus(surface('noticias'), { visible: 12, hidden: 0 }, false).label).toBe(
       'Sem acesso para alimentar',
     );
-    expect(surfaceStatus(surface('linha-do-tempo'), { visible: null, hidden: null }, true).label).toBe(
-      'Automático',
-    );
-    expect(surfaceStatus(surface('honra'), { visible: null, hidden: null }, true).label).toBe(
-      'Lacuna conhecida',
-    );
+    expect(
+      surfaceStatus(surface('linha-do-tempo'), { visible: null, hidden: null }, true).label,
+    ).toBe('Automático');
+    expect(
+      surfaceStatus({ ...surface('noticias'), gap: 'Falta tela.' }, { visible: 1, hidden: 0 }, true)
+        .label,
+    ).toBe('Lacuna conhecida');
   });
 });

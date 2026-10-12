@@ -35,7 +35,13 @@ export function searchLocal(
   for (const source of sources) {
     const title = normalizeForSearch(source.title);
     const rest = normalizeForSearch([source.detail ?? '', ...(source.keywords ?? [])].join(' '));
-    const score = title.startsWith(needle) ? 0 : title.includes(needle) ? 1 : rest.includes(needle) ? 2 : -1;
+    const score = title.startsWith(needle)
+      ? 0
+      : title.includes(needle)
+        ? 1
+        : rest.includes(needle)
+          ? 2
+          : -1;
     if (score >= 0) ranked.push({ score, source });
   }
   return ranked
@@ -51,7 +57,12 @@ export function searchLocal(
 }
 
 /** Filtra registros já carregados por título, preservando a ordem recebida. */
-export function filterByTitle<T>(items: T[], query: string, title: (item: T) => string, limit = 5): T[] {
+export function filterByTitle<T>(
+  items: T[],
+  query: string,
+  title: (item: T) => string,
+  limit = 5,
+): T[] {
   const needle = normalizeForSearch(query.trim());
   if (!needle) return [];
   return items.filter((item) => normalizeForSearch(title(item)).includes(needle)).slice(0, limit);

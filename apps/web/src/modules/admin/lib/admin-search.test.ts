@@ -2,9 +2,24 @@ import { describe, expect, it } from 'vitest';
 import { filterByTitle, searchLocal, type LocalSearchSource } from './admin-search';
 
 const sources: LocalSearchSource[] = [
-  { kind: 'Ferramenta', title: 'Notícias', detail: 'Publicar e revisar', href: '/admin/conteudo/noticias' },
-  { kind: 'Ferramenta', title: 'Moderação de comentários', href: '/admin/conteudo/noticias/comentarios', keywords: ['notícias'] },
-  { kind: 'Seção do Portal', title: 'Galeria de Honra', href: '/admin/pessoas/irmaos', keywords: ['honrarias'] },
+  {
+    kind: 'Ferramenta',
+    title: 'Notícias',
+    detail: 'Publicar e revisar',
+    href: '/admin/conteudo/noticias',
+  },
+  {
+    kind: 'Ferramenta',
+    title: 'Moderação de comentários',
+    href: '/admin/conteudo/noticias/comentarios',
+    keywords: ['notícias'],
+  },
+  {
+    kind: 'Seção do Portal',
+    title: 'Galeria de Honra',
+    href: '/admin/pessoas/irmaos',
+    keywords: ['honrarias'],
+  },
   { kind: 'Ferramenta', title: 'Biblioteca', href: '/admin/acervo/biblioteca' },
 ];
 
