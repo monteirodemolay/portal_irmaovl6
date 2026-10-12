@@ -12,8 +12,7 @@ interface DatedEditorialItem {
 export function editorialDate(item: DatedEditorialItem): string | null {
   return (
     [item.publishedAt, item.happenedAt, item.scheduledAt, item.createdAt].find(
-      (value): value is string =>
-        Boolean(value) && Number.isFinite(Date.parse(value!)),
+      (value): value is string => Boolean(value) && Number.isFinite(Date.parse(value!)),
     ) ?? null
   );
 }
@@ -28,9 +27,9 @@ export function filterEditorialItems<T extends DatedEditorialItem>(
   },
 ): T[] {
   const yearOf = (value: string) =>
-    new Intl.DateTimeFormat("en-CA", {
-      timeZone: "America/Sao_Paulo",
-      year: "numeric",
+    new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'America/Sao_Paulo',
+      year: 'numeric',
     }).format(new Date(value));
   const timestamp = (item: T) => {
     const value = editorialDate(item);
@@ -40,12 +39,10 @@ export function filterEditorialItems<T extends DatedEditorialItem>(
     .filter((item) => {
       const value = editorialDate(item);
       return (
-        normalizeForSearch(item.title)
-          .includes(normalizeForSearch(filters.query.trim())) &&
-        (filters.type === "Todos" || item.type === filters.type) &&
-        (filters.status === "Todos" || item.status === filters.status) &&
-        (filters.year === "Todos" ||
-          Boolean(value && yearOf(value) === filters.year))
+        normalizeForSearch(item.title).includes(normalizeForSearch(filters.query.trim())) &&
+        (filters.type === 'Todos' || item.type === filters.type) &&
+        (filters.status === 'Todos' || item.status === filters.status) &&
+        (filters.year === 'Todos' || Boolean(value && yearOf(value) === filters.year))
       );
     })
     .sort((a, b) => {
@@ -55,8 +52,8 @@ export function filterEditorialItems<T extends DatedEditorialItem>(
       if (second === null && first !== null) return -1;
       const difference = first !== null && second !== null ? second - first : 0;
       return (
-        (filters.order === "oldest" ? -difference : difference) ||
-        a.title.localeCompare(b.title, "pt-BR") ||
+        (filters.order === 'oldest' ? -difference : difference) ||
+        a.title.localeCompare(b.title, 'pt-BR') ||
         a.id.localeCompare(b.id)
       );
     });

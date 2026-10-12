@@ -26,7 +26,7 @@ function buildEvent(overrides: Partial<Event> = {}): Event {
     boardTermId: null,
     nivelAcesso: 'irmaos',
     exibirNaLinhaDoTempo: true,
-      grau: null,
+    grau: null,
     createdAt: new Date('2026-01-01'),
     updatedAt: new Date('2026-01-01'),
     createdBy: 'admin-1',
@@ -62,7 +62,9 @@ function buildPersonalEvent(overrides: Partial<PersonalEvent> = {}): PersonalEve
   };
 }
 
-function buildGoogleEvent(overrides: Partial<GoogleCalendarEventSummary> = {}): GoogleCalendarEventSummary {
+function buildGoogleEvent(
+  overrides: Partial<GoogleCalendarEventSummary> = {},
+): GoogleCalendarEventSummary {
   return {
     id: 'g1',
     titulo: 'Reunião de trabalho',
@@ -162,8 +164,20 @@ describe('toCalendarItems', () => {
 describe('detectOverlaps', () => {
   it('detecta dois itens com horários sobrepostos', () => {
     const items = toCalendarItems(
-      [buildEvent({ id: 'e1', dataInicio: new Date('2026-08-18T19:00:00Z'), dataFim: new Date('2026-08-18T21:00:00Z') })],
-      [buildPersonalEvent({ id: 'pe1', dataInicio: new Date('2026-08-18T20:00:00Z'), dataFim: new Date('2026-08-18T22:00:00Z') })],
+      [
+        buildEvent({
+          id: 'e1',
+          dataInicio: new Date('2026-08-18T19:00:00Z'),
+          dataFim: new Date('2026-08-18T21:00:00Z'),
+        }),
+      ],
+      [
+        buildPersonalEvent({
+          id: 'pe1',
+          dataInicio: new Date('2026-08-18T20:00:00Z'),
+          dataFim: new Date('2026-08-18T22:00:00Z'),
+        }),
+      ],
       [],
     );
 
@@ -175,8 +189,20 @@ describe('detectOverlaps', () => {
 
   it('não marca itens sem sobreposição', () => {
     const items = toCalendarItems(
-      [buildEvent({ id: 'e1', dataInicio: new Date('2026-08-18T19:00:00Z'), dataFim: new Date('2026-08-18T20:00:00Z') })],
-      [buildPersonalEvent({ id: 'pe1', dataInicio: new Date('2026-08-18T21:00:00Z'), dataFim: new Date('2026-08-18T22:00:00Z') })],
+      [
+        buildEvent({
+          id: 'e1',
+          dataInicio: new Date('2026-08-18T19:00:00Z'),
+          dataFim: new Date('2026-08-18T20:00:00Z'),
+        }),
+      ],
+      [
+        buildPersonalEvent({
+          id: 'pe1',
+          dataInicio: new Date('2026-08-18T21:00:00Z'),
+          dataFim: new Date('2026-08-18T22:00:00Z'),
+        }),
+      ],
       [],
     );
 
@@ -193,7 +219,13 @@ describe('detectOverlaps', () => {
           dataFim: new Date('2026-08-18T23:59:00Z'),
         }),
       ],
-      [buildPersonalEvent({ id: 'pe1', dataInicio: new Date('2026-08-18T10:00:00Z'), dataFim: new Date('2026-08-18T11:00:00Z') })],
+      [
+        buildPersonalEvent({
+          id: 'pe1',
+          dataInicio: new Date('2026-08-18T10:00:00Z'),
+          dataFim: new Date('2026-08-18T11:00:00Z'),
+        }),
+      ],
       [],
     );
 
@@ -209,7 +241,13 @@ describe('detectOverlaps', () => {
           dataFim: null,
         }),
       ],
-      [buildPersonalEvent({ id: 'pe1', dataInicio: new Date('2026-08-18T20:30:00Z'), dataFim: new Date('2026-08-18T21:00:00Z') })],
+      [
+        buildPersonalEvent({
+          id: 'pe1',
+          dataInicio: new Date('2026-08-18T20:30:00Z'),
+          dataFim: new Date('2026-08-18T21:00:00Z'),
+        }),
+      ],
       [],
     );
 

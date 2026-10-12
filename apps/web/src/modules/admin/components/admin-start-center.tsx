@@ -64,10 +64,10 @@ export function AdminStartCenter({ tasks }: { tasks: OverviewTask[] }) {
   return (
     <section className="space-y-4" aria-labelledby="admin-start-title">
       <div className="border-border bg-surface overflow-hidden rounded-2xl border">
-        <div className="border-b border-border bg-primary px-5 py-5 text-white sm:px-6">
+        <div className="border-border bg-primary border-b px-5 py-5 text-white sm:px-6">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-accent">
+              <p className="text-accent text-xs font-semibold uppercase tracking-[0.18em]">
                 Administração facilitada
               </p>
               <h2 id="admin-start-title" className="font-display mt-2 text-2xl font-semibold">
@@ -80,12 +80,14 @@ export function AdminStartCenter({ tasks }: { tasks: OverviewTask[] }) {
             </div>
             <div className="rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-right">
               <strong className="font-display block text-2xl tabular-nums">{total}</strong>
-              <span className="text-xs text-white/75">itens sinalizados nas filas prioritárias</span>
+              <span className="text-xs text-white/75">
+                itens sinalizados nas filas prioritárias
+              </span>
             </div>
           </div>
         </div>
 
-        <div className="grid gap-3 p-4 sm:grid-cols-2 xl:grid-cols-4 sm:p-6">
+        <div className="grid gap-3 p-4 sm:grid-cols-2 sm:p-6 xl:grid-cols-4">
           {primaryActions.map((action) => {
             const Icon = action.icon;
             return (
@@ -138,8 +140,9 @@ export function AdminStartCenter({ tasks }: { tasks: OverviewTask[] }) {
             )}
           </div>
           <p className="text-muted mt-4 text-xs leading-relaxed">
-            Datas, local, gestão e vínculos devem nascer do acontecimento. Notícias e mídias deixam de
-            ser ilhas e passam a compor automaticamente a mesma memória sempre que houver vínculo seguro.
+            Datas, local, gestão e vínculos devem nascer do acontecimento. Notícias e mídias deixam
+            de ser ilhas e passam a compor automaticamente a mesma memória sempre que houver vínculo
+            seguro.
           </p>
         </div>
 
@@ -189,7 +192,9 @@ export function AdminStartCenter({ tasks }: { tasks: OverviewTask[] }) {
                 </span>
                 <span className="min-w-0">
                   <strong className="block text-sm">{task.label}</strong>
-                  <span className="text-muted mt-1 block text-xs leading-relaxed">{task.detail}</span>
+                  <span className="text-muted mt-1 block text-xs leading-relaxed">
+                    {task.detail}
+                  </span>
                 </span>
               </Link>
             ))}

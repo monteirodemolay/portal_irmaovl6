@@ -16,6 +16,7 @@ import {
 } from '@vl6/ui';
 import { AUDIT_ACTION_LABELS } from '@/lib/audit/audit-action-label';
 import { AdminToolDirectory } from './admin-tool-directory';
+import { PortalSurfacesPanel } from './portal-surfaces-panel';
 import {
   DASHBOARD_TIMEZONE,
   type DashboardOverviewData,
@@ -49,17 +50,21 @@ function MetricCard({ metric }: { metric: OverviewMetric }) {
   return (
     <Link
       href={metric.href}
-      className={`${panel} block p-4 transition-colors hover:border-accent hover:bg-accent/5`}
+      className={`${panel} hover:border-accent hover:bg-accent/5 block p-4 transition-colors`}
     >
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-muted text-xs font-medium uppercase tracking-wide">{metric.label}</p>
-          <p className="font-display mt-2 text-3xl font-semibold tabular-nums">{number(metric.value)}</p>
+          <p className="font-display mt-2 text-3xl font-semibold tabular-nums">
+            {number(metric.value)}
+          </p>
         </div>
         <ArrowUpRight size={16} className="text-muted" />
       </div>
       <p className="text-muted mt-3 text-xs leading-relaxed">
-        {metric.state === 'ready' ? metric.detail : 'Consulta indisponível; o valor não representa zero.'}
+        {metric.state === 'ready'
+          ? metric.detail
+          : 'Consulta indisponível; o valor não representa zero.'}
       </p>
     </Link>
   );
@@ -70,7 +75,7 @@ function ModuleCard({ module }: { module: OverviewModule }) {
   return (
     <Link
       href={module.href}
-      className={`${panel} block p-5 transition-colors hover:border-accent hover:bg-accent/5`}
+      className={`${panel} hover:border-accent hover:bg-accent/5 block p-5 transition-colors`}
     >
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
@@ -84,7 +89,9 @@ function ModuleCard({ module }: { module: OverviewModule }) {
       <div className="mt-5 grid grid-cols-2 gap-4">
         {module.metrics.slice(0, 4).map((metric) => (
           <div key={metric.key}>
-            <p className="font-display text-xl font-semibold tabular-nums">{number(metric.value)}</p>
+            <p className="font-display text-xl font-semibold tabular-nums">
+              {number(metric.value)}
+            </p>
             <p className="text-muted mt-1 text-xs leading-relaxed">{metric.label}</p>
           </div>
         ))}
@@ -103,13 +110,15 @@ function TaskRow({ task }: { task: OverviewTask }) {
   return (
     <Link
       href={task.href}
-      className={`flex items-start gap-3 rounded-xl border p-3 transition-colors hover:border-accent ${tone}`}
+      className={`hover:border-accent flex items-start gap-3 rounded-xl border p-3 transition-colors ${tone}`}
     >
       <span className="min-w-10 rounded-lg bg-white/70 px-2 py-1.5 text-center text-sm font-semibold tabular-nums">
         {number(task.count)}
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block text-[11px] font-semibold uppercase tracking-wide opacity-70">{task.kind}</span>
+        <span className="block text-[11px] font-semibold uppercase tracking-wide opacity-70">
+          {task.kind}
+        </span>
         <strong className="mt-0.5 block text-sm">{task.label}</strong>
         <span className="mt-1 block text-xs leading-relaxed opacity-80">{task.detail}</span>
       </span>
@@ -183,19 +192,22 @@ export function AdminControlCenter({ data }: { data: DashboardOverviewData }) {
 
   return (
     <div className="space-y-6">
-      <header className="overflow-hidden rounded-2xl border border-primary/15 bg-primary text-white shadow-sm">
+      <header className="border-primary/15 bg-primary overflow-hidden rounded-2xl border text-white shadow-sm">
         <div className="grid gap-6 px-6 py-7 lg:grid-cols-[1.45fr_1fr] lg:px-8 lg:py-8">
           <div>
-            <div className="flex items-center gap-2 text-accent">
+            <div className="text-accent flex items-center gap-2">
               <LayoutDashboard size={18} />
-              <p className="text-xs font-semibold uppercase tracking-[0.18em]">Central de Controle</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em]">
+                Central de Controle
+              </p>
             </div>
             <h1 className="font-display mt-3 text-3xl font-semibold sm:text-4xl">
               Administração VL6
             </h1>
             <p className="mt-3 max-w-2xl text-sm leading-relaxed text-white/80">
-              Um único lugar para registrar, acompanhar, corrigir e auditar o que acontece no Portal.
-              O trabalho começa no acontecimento e segue pelos conteúdos relacionados até a memória da Loja.
+              Um único lugar para registrar, acompanhar, corrigir e auditar o que acontece no
+              Portal. O trabalho começa no acontecimento e segue pelos conteúdos relacionados até a
+              memória da Loja.
             </p>
             <div className="mt-5 flex flex-wrap gap-2">
               <Link
@@ -215,12 +227,18 @@ export function AdminControlCenter({ data }: { data: DashboardOverviewData }) {
           <div className="grid grid-cols-2 gap-3 self-end">
             <div className="rounded-xl border border-white/15 bg-white/10 p-4">
               <p className="text-xs text-white/65">Pendências prioritárias</p>
-              <p className="font-display mt-2 text-3xl font-semibold tabular-nums">{number(pendingTotal)}</p>
+              <p className="font-display mt-2 text-3xl font-semibold tabular-nums">
+                {number(pendingTotal)}
+              </p>
             </div>
             <div className="rounded-xl border border-white/15 bg-white/10 p-4">
               <p className="text-xs text-white/65">Próximos acontecimentos</p>
               <p className="font-display mt-2 text-3xl font-semibold tabular-nums">
-                {number(data.modules.find((m) => m.icon === 'publication')?.metrics.find((m) => m.key === 'upcoming')?.value ?? 0)}
+                {number(
+                  data.modules
+                    .find((m) => m.icon === 'publication')
+                    ?.metrics.find((m) => m.key === 'upcoming')?.value ?? 0,
+                )}
               </p>
             </div>
             <div className="col-span-2 rounded-xl border border-white/15 bg-white/10 p-4">
@@ -232,8 +250,12 @@ export function AdminControlCenter({ data }: { data: DashboardOverviewData }) {
       </header>
 
       {data.failures.length > 0 && (
-        <div role="alert" className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
-          Algumas fontes não responderam: {data.failures.join(', ')}. Os demais indicadores continuam válidos.
+        <div
+          role="alert"
+          className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900"
+        >
+          Algumas fontes não responderam: {data.failures.join(', ')}. Os demais indicadores
+          continuam válidos.
           <button type="button" onClick={() => router.refresh()} className="ml-2 underline">
             Tentar novamente
           </button>
@@ -243,7 +265,9 @@ export function AdminControlCenter({ data }: { data: DashboardOverviewData }) {
       <section aria-labelledby="acoes-principais">
         <div className="mb-3 flex items-end justify-between gap-3">
           <div>
-            <h2 id="acoes-principais" className="font-display text-xl font-semibold">Ações principais</h2>
+            <h2 id="acoes-principais" className="font-display text-xl font-semibold">
+              Ações principais
+            </h2>
             <p className="text-muted mt-1 text-xs">Fluxos frequentes, sem procurar várias telas.</p>
           </div>
         </div>
@@ -255,11 +279,15 @@ export function AdminControlCenter({ data }: { data: DashboardOverviewData }) {
                 key={action.href}
                 href={action.href}
                 className={`${panel} block p-4 transition-colors ${
-                  action.primary ? 'border-accent bg-accent/10' : 'hover:border-accent hover:bg-accent/5'
+                  action.primary
+                    ? 'border-accent bg-accent/10'
+                    : 'hover:border-accent hover:bg-accent/5'
                 }`}
               >
                 <div className="flex items-start justify-between gap-3">
-                  <span className="bg-primary/5 text-primary rounded-xl p-2"><Icon size={19} /></span>
+                  <span className="bg-primary/5 text-primary rounded-xl p-2">
+                    <Icon size={19} />
+                  </span>
                   <ArrowUpRight size={15} className="text-muted" />
                 </div>
                 <h3 className="mt-4 font-semibold">{action.title}</h3>
@@ -270,48 +298,31 @@ export function AdminControlCenter({ data }: { data: DashboardOverviewData }) {
         </div>
       </section>
 
-      <section className={`${panel} p-5 sm:p-6`} aria-labelledby="fluxo-central">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <p className="text-accent text-xs font-semibold uppercase tracking-widest">Modelo operacional</p>
-            <h2 id="fluxo-central" className="font-display mt-1 text-xl font-semibold">Um fato, uma cadeia de memória</h2>
-            <p className="text-muted mt-2 max-w-3xl text-sm leading-relaxed">
-              Data, local, gestão e contexto pertencem ao acontecimento central. Notícias, avisos, fotos, vídeos e documentos são dependentes dele e devem reaproveitar esses dados.
-            </p>
-          </div>
-          <Link href="/admin/publicacoes" className="text-accent text-sm font-medium underline">Abrir ciclo editorial</Link>
-        </div>
-        <div className="mt-5 grid gap-2 sm:grid-cols-5">
-          {['Acontecimento', 'Comunicação', 'Mídias', 'Acervo', 'Memória'].map((label, index) => (
-            <div key={label} className="border-border rounded-xl border p-3">
-              <span className="bg-accent text-primary inline-flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold">{index + 1}</span>
-              <p className="mt-3 text-sm font-semibold">{label}</p>
-              <p className="text-muted mt-1 text-xs">
-                {[
-                  'Fato, data, local e gestão',
-                  'Notícia, aviso e divulgação',
-                  'Fotos, vídeos e documentos',
-                  'Catálogo, relações e coleções',
-                  'Linha do tempo e Constelação',
-                ][index]}
-              </p>
-            </div>
-          ))}
-        </div>
-      </section>
+      <PortalSurfacesPanel
+        modules={data.modules}
+        allowedHrefs={data.tools.map((tool) => tool.href)}
+      />
 
       <div className="grid gap-4 xl:grid-cols-[1.2fr_1fr]">
         <section id="fila-operacional" className={`${panel} scroll-mt-6 p-5 sm:p-6`}>
           <div className="flex items-start justify-between gap-4">
             <div>
-              <p className="text-accent text-xs font-semibold uppercase tracking-widest">Fila operacional</p>
+              <p className="text-accent text-xs font-semibold uppercase tracking-widest">
+                Fila operacional
+              </p>
               <h2 className="font-display mt-1 text-xl font-semibold">O que precisa de atenção</h2>
-              <p className="text-muted mt-1 text-xs">Pendências e alertas calculados a partir das fontes disponíveis.</p>
+              <p className="text-muted mt-1 text-xs">
+                Pendências e alertas calculados a partir das fontes disponíveis.
+              </p>
             </div>
-            <span className="bg-accent/10 text-accent rounded-xl px-3 py-2 text-sm font-semibold tabular-nums">{number(pendingTotal)}</span>
+            <span className="bg-accent/10 text-accent rounded-xl px-3 py-2 text-sm font-semibold tabular-nums">
+              {number(pendingTotal)}
+            </span>
           </div>
           <div className="mt-4 space-y-2">
-            {priorityTasks.map((task) => <TaskRow key={`${task.href}-${task.label}`} task={task} />)}
+            {priorityTasks.map((task) => (
+              <TaskRow key={`${task.href}-${task.label}`} task={task} />
+            ))}
             {!priorityTasks.length && (
               <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
                 Nenhuma pendência foi identificada nas fontes disponíveis para seu acesso.
@@ -326,16 +337,22 @@ export function AdminControlCenter({ data }: { data: DashboardOverviewData }) {
               <p className="text-accent text-xs font-semibold uppercase tracking-widest">Agenda</p>
               <h2 className="font-display mt-1 text-xl font-semibold">Próximos acontecimentos</h2>
             </div>
-            <Link href="/admin/publicacoes" className="text-accent text-xs underline">Ver agenda</Link>
+            <Link href="/admin/publicacoes" className="text-accent text-xs underline">
+              Ver agenda
+            </Link>
           </div>
-          <div className="mt-4 divide-y divide-border">
+          <div className="divide-border mt-4 divide-y">
             {data.agenda.map((event) => (
               <Link key={event.id} href={event.href} className="block py-3 first:pt-0 last:pb-0">
-                <time dateTime={event.at} className="text-accent text-xs font-medium">{date(event.at)}</time>
+                <time dateTime={event.at} className="text-accent text-xs font-medium">
+                  {date(event.at)}
+                </time>
                 <p className="mt-1 text-sm font-semibold">{event.title}</p>
               </Link>
             ))}
-            {!data.agenda.length && <p className="text-muted text-sm">Nenhum próximo acontecimento retornado.</p>}
+            {!data.agenda.length && (
+              <p className="text-muted text-sm">Nenhum próximo acontecimento retornado.</p>
+            )}
           </div>
         </section>
       </div>
@@ -343,7 +360,9 @@ export function AdminControlCenter({ data }: { data: DashboardOverviewData }) {
       <section aria-labelledby="panorama-portal">
         <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
           <div>
-            <h2 id="panorama-portal" className="font-display text-xl font-semibold">Panorama do Portal</h2>
+            <h2 id="panorama-portal" className="font-display text-xl font-semibold">
+              Panorama do Portal
+            </h2>
             <p className="text-muted mt-1 text-xs">Indicadores atuais por área administrativa.</p>
           </div>
           <form
@@ -358,26 +377,56 @@ export function AdminControlCenter({ data }: { data: DashboardOverviewData }) {
               router.push(`/admin?${new URLSearchParams({ from, to })}`);
             }}
           >
-            <label className="text-xs">De<input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="border-border bg-surface mt-1 block rounded-lg border p-2" /></label>
-            <label className="text-xs">Até<input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="border-border bg-surface mt-1 block rounded-lg border p-2" /></label>
-            <button className="border-border bg-surface rounded-lg border px-3 py-2 text-sm">Aplicar</button>
+            <label className="text-xs">
+              De
+              <input
+                type="date"
+                value={from}
+                onChange={(e) => setFrom(e.target.value)}
+                className="border-border bg-surface mt-1 block rounded-lg border p-2"
+              />
+            </label>
+            <label className="text-xs">
+              Até
+              <input
+                type="date"
+                value={to}
+                onChange={(e) => setTo(e.target.value)}
+                className="border-border bg-surface mt-1 block rounded-lg border p-2"
+              />
+            </label>
+            <button className="border-border bg-surface rounded-lg border px-3 py-2 text-sm">
+              Aplicar
+            </button>
           </form>
         </div>
-        {periodError && <p role="alert" className="mb-3 text-sm text-red-700">{periodError}</p>}
+        {periodError && (
+          <p role="alert" className="mb-3 text-sm text-red-700">
+            {periodError}
+          </p>
+        )}
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          {data.priority.map((metric) => <MetricCard key={metric.key} metric={metric} />)}
+          {data.priority.map((metric) => (
+            <MetricCard key={metric.key} metric={metric} />
+          ))}
         </div>
       </section>
 
       <section aria-labelledby="modulos-operacionais">
         <div className="mb-4 flex items-end justify-between gap-3">
           <div>
-            <h2 id="modulos-operacionais" className="font-display text-xl font-semibold">Áreas sob acompanhamento</h2>
-            <p className="text-muted mt-1 text-xs">Abra uma área para aprofundar cadastro, conteúdo e integridade.</p>
+            <h2 id="modulos-operacionais" className="font-display text-xl font-semibold">
+              Áreas sob acompanhamento
+            </h2>
+            <p className="text-muted mt-1 text-xs">
+              Abra uma área para aprofundar cadastro, conteúdo e integridade.
+            </p>
           </div>
         </div>
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-          {data.modules.map((module) => <ModuleCard key={module.title} module={module} />)}
+          {data.modules.map((module) => (
+            <ModuleCard key={module.title} module={module} />
+          ))}
         </div>
       </section>
 
@@ -385,9 +434,13 @@ export function AdminControlCenter({ data }: { data: DashboardOverviewData }) {
         <section className={`${panel} p-5 sm:p-6`}>
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
-              <p className="text-accent text-xs font-semibold uppercase tracking-widest">Rastreabilidade</p>
+              <p className="text-accent text-xs font-semibold uppercase tracking-widest">
+                Rastreabilidade
+              </p>
               <h2 className="font-display mt-1 text-xl font-semibold">Atividade administrativa</h2>
-              <p className="text-muted mt-1 text-xs">Quem fez, o que mudou e quando, dentro da cobertura de auditoria disponível.</p>
+              <p className="text-muted mt-1 text-xs">
+                Quem fez, o que mudou e quando, dentro da cobertura de auditoria disponível.
+              </p>
             </div>
             <select
               value={auditFilter}
@@ -396,49 +449,87 @@ export function AdminControlCenter({ data }: { data: DashboardOverviewData }) {
             >
               <option value="all">Todas as ações</option>
               {data.audit.counts.map((item) => (
-                <option key={item.action} value={item.action}>{item.label}</option>
+                <option key={item.action} value={item.action}>
+                  {item.label}
+                </option>
               ))}
             </select>
           </div>
           {data.audit.state === 'ready' ? (
             <>
               {!data.audit.complete && (
-                <p className="mt-4 rounded-lg bg-amber-50 p-3 text-xs text-amber-900">Amostra parcial: o limite da consulta foi atingido. Reduza o período para conferência completa.</p>
+                <p className="mt-4 rounded-lg bg-amber-50 p-3 text-xs text-amber-900">
+                  Amostra parcial: o limite da consulta foi atingido. Reduza o período para
+                  conferência completa.
+                </p>
               )}
               <div className="mt-4 overflow-x-auto">
                 <table className="w-full text-left text-sm">
-                  <thead><tr className="border-border border-b text-muted"><th className="p-2">Data</th><th className="p-2">Ação</th><th className="p-2">Responsável</th></tr></thead>
+                  <thead>
+                    <tr className="border-border text-muted border-b">
+                      <th className="p-2">Data</th>
+                      <th className="p-2">Ação</th>
+                      <th className="p-2">Responsável</th>
+                    </tr>
+                  </thead>
                   <tbody>
                     {auditItems.slice(0, 10).map((item) => (
                       <tr key={item.id} className="border-border border-b last:border-0">
                         <td className="whitespace-nowrap p-2 text-xs">{date(item.at)}</td>
-                        <td className="p-2"><span className="font-medium">{actionLabel(item.action)}</span><small className="text-muted block">{item.entity} · {item.entityId}</small></td>
+                        <td className="p-2">
+                          <span className="font-medium">{actionLabel(item.action)}</span>
+                          <small className="text-muted block">
+                            {item.entity} · {item.entityId}
+                          </small>
+                        </td>
                         <td className="p-2 text-xs">{item.actor}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
-                {!auditItems.length && <p className="text-muted py-4 text-sm">Nenhum evento retornado para este filtro.</p>}
+                {!auditItems.length && (
+                  <p className="text-muted py-4 text-sm">
+                    Nenhum evento retornado para este filtro.
+                  </p>
+                )}
               </div>
             </>
           ) : (
-            <p className="text-muted mt-4 text-sm">{data.audit.state === 'forbidden' ? 'Auditoria restrita para este perfil.' : 'Consulta de auditoria indisponível.'}</p>
+            <p className="text-muted mt-4 text-sm">
+              {data.audit.state === 'forbidden'
+                ? 'Auditoria restrita para este perfil.'
+                : 'Consulta de auditoria indisponível.'}
+            </p>
           )}
         </section>
 
         <section className={`${panel} p-5 sm:p-6`}>
-          <p className="text-accent text-xs font-semibold uppercase tracking-widest">Prestação de contas</p>
+          <p className="text-accent text-xs font-semibold uppercase tracking-widest">
+            Prestação de contas
+          </p>
           <h2 className="font-display mt-1 text-xl font-semibold">Relatórios administrativos</h2>
           <p className="text-muted mt-2 text-sm leading-relaxed">
-            Exporte o panorama atual, as pendências e a movimentação autorizada do período selecionado.
+            Exporte o panorama atual, as pendências e a movimentação autorizada do período
+            selecionado.
           </p>
           <div className="mt-5 grid gap-2">
-            <a href={report('pdf')} className="bg-primary text-white rounded-xl px-4 py-3 text-center text-sm font-semibold">Emitir relatório PDF</a>
-            <a href={report('csv')} className="border-border rounded-xl border px-4 py-3 text-center text-sm font-medium">Exportar CSV</a>
+            <a
+              href={report('pdf')}
+              className="bg-primary rounded-xl px-4 py-3 text-center text-sm font-semibold text-white"
+            >
+              Emitir relatório PDF
+            </a>
+            <a
+              href={report('csv')}
+              className="border-border rounded-xl border px-4 py-3 text-center text-sm font-medium"
+            >
+              Exportar CSV
+            </a>
           </div>
           <div className="border-border mt-5 border-t pt-4">
             <p className="text-muted text-xs leading-relaxed">
-              Período: {data.from} a {data.to}. A auditoria registra apenas operações cobertas pelas fontes e permissões existentes; ela não reconstrói estados anteriores do cadastro.
+              Período: {data.from} a {data.to}. A auditoria registra apenas operações cobertas pelas
+              fontes e permissões existentes; ela não reconstrói estados anteriores do cadastro.
             </p>
           </div>
         </section>
@@ -447,16 +538,34 @@ export function AdminControlCenter({ data }: { data: DashboardOverviewData }) {
       <section className={`${panel} p-5 sm:p-6`}>
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <p className="text-accent text-xs font-semibold uppercase tracking-widest">Administração avançada</p>
+            <p className="text-accent text-xs font-semibold uppercase tracking-widest">
+              Administração avançada
+            </p>
             <h2 className="font-display mt-1 text-xl font-semibold">Ferramentas específicas</h2>
-            <p className="text-muted mt-1 text-xs">Use apenas quando precisar de manutenção, revisão detalhada ou operação especializada.</p>
+            <p className="text-muted mt-1 text-xs">
+              Use apenas quando precisar de manutenção, revisão detalhada ou operação especializada.
+            </p>
           </div>
           <div className="flex gap-2">
-            <Link href="/admin/conhecimento" className="border-border rounded-lg border px-3 py-2 text-xs"><GraduationCap size={14} className="mr-1 inline" />Conhecimento</Link>
-            <Link href="/admin/configuracoes" className="border-border rounded-lg border px-3 py-2 text-xs"><Settings size={14} className="mr-1 inline" />Configurações</Link>
+            <Link
+              href="/admin/conhecimento"
+              className="border-border rounded-lg border px-3 py-2 text-xs"
+            >
+              <GraduationCap size={14} className="mr-1 inline" />
+              Conhecimento
+            </Link>
+            <Link
+              href="/admin/configuracoes"
+              className="border-border rounded-lg border px-3 py-2 text-xs"
+            >
+              <Settings size={14} className="mr-1 inline" />
+              Configurações
+            </Link>
           </div>
         </div>
-        <div className="mt-5"><AdminToolDirectory tools={data.tools} /></div>
+        <div className="mt-5">
+          <AdminToolDirectory tools={data.tools} />
+        </div>
       </section>
     </div>
   );

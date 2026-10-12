@@ -52,10 +52,13 @@ describe('Central de Administração: nenhuma tela sem entrada', () => {
   });
 
   it('toda ferramenta registrada aponta para uma tela que existe', () => {
-    const catchAllKnowledge = existsSync(join(ADMIN_DIR, 'conhecimento', '[[...path]]', 'page.tsx'));
+    const catchAllKnowledge = existsSync(
+      join(ADMIN_DIR, 'conhecimento', '[[...path]]', 'page.tsx'),
+    );
     const missing = ADMIN_TOOLS.map((tool) => tool.href).filter(
       (href) =>
-        !existsSync(pageFile(href)) && !(catchAllKnowledge && href.startsWith('/admin/conhecimento')),
+        !existsSync(pageFile(href)) &&
+        !(catchAllKnowledge && href.startsWith('/admin/conhecimento')),
     );
     expect(missing).toEqual([]);
   });
@@ -70,7 +73,9 @@ describe('Central de Administração: nenhuma tela sem entrada', () => {
       expect(existsSync(pageFile(href)), href).toBe(true);
       const parentSource = readFileSync(pageFile(parent), 'utf8');
       const lastSegment = href.split('/').pop()!;
-      expect(parentSource.includes(href) || parentSource.includes(`/${lastSegment}`), href).toBe(true);
+      expect(parentSource.includes(href) || parentSource.includes(`/${lastSegment}`), href).toBe(
+        true,
+      );
     }
   });
 

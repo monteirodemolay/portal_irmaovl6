@@ -6,10 +6,14 @@ import { EVENT_KINDS, normalizeEventLocation, type EventKind } from '@vl6/shared
 import { requirePagePermission } from '@/lib/auth/require-permission';
 import { EventForm } from '@/modules/agenda/components/event-form';
 import { EventFormExperience } from '@/modules/agenda/components/event-form-experience';
+import type { EventTemplate } from '@/modules/agenda/lib/suggest-event-defaults';
 import { createWorkspaceEventAction } from '@/modules/agenda/actions/agenda-actions';
 
 export const metadata = { title: 'Novo acontecimento · VL6' };
 export const dynamic = 'force-dynamic';
+
+/** Os mais recentes bastam para repetir rotinas; limita o que vai ao navegador. */
+const TEMPLATE_LIMIT = 300;
 
 export default async function NewPublicationPage({
   searchParams,
@@ -23,6 +27,7 @@ export default async function NewPublicationPage({
     ? (tipo as EventKind)
     : undefined;
   const c = createServerContainer();
+  const templates: EventTemplate[] = [];
   const [entities, locationOptions] = await Promise.all([
     c.repositories.paramasonicEntity.listByTenant(session.authContext.tenantId),
     (async () => {
@@ -35,6 +40,18 @@ export default async function NewPublicationPage({
         });
         result.items.forEach((event) => {
           if (event.local?.trim()) locations.add(normalizeEventLocation(event.local));
+          if (templates.length < TEMPLATE_LIMIT)
+            templates.push({
+              id: event.id,
+              tipo: event.tipo,
+              titulo: event.titulo,
+              dataInicio: event.dataInicio.toISOString(),
+              local: event.local?.trim() ? normalizeEventLocation(event.local) : '',
+              traje: event.traje,
+              chegadaSugerida: event.chegadaSugerida,
+              capacidadeMaxima: event.capacidadeMaxima,
+              exigeConfirmacaoPresenca: event.exigeConfirmacaoPresenca,
+            });
         });
         cursor = result.hasMore ? (result.nextCursor ?? undefined) : undefined;
       } while (cursor);
@@ -44,14 +61,21 @@ export default async function NewPublicationPage({
 
   return (
     <div className="mx-auto w-full max-w-6xl space-y-6 pb-8">
-      <Link href="/admin/publicacoes" className="inline-flex min-h-11 items-center text-sm font-semibold underline">
+      <Link
+        href="/admin/publicacoes"
+        className="inline-flex min-h-11 items-center text-sm font-semibold underline"
+      >
         ← Acontecimentos
       </Link>
 
       <header className="border-border bg-surface overflow-hidden rounded-3xl border shadow-sm">
         <div className="bg-primary px-6 py-7 text-white md:px-8">
-          <p className="text-sm font-semibold uppercase tracking-[0.14em] text-white/70">Entrada única</p>
-          <h1 className="font-display mt-2 text-3xl font-semibold md:text-4xl">Registrar acontecimento</h1>
+          <p className="text-sm font-semibold uppercase tracking-[0.14em] text-white/70">
+            Entrada única
+          </p>
+          <h1 className="font-display mt-2 text-3xl font-semibold md:text-4xl">
+            Registrar acontecimento
+          </h1>
           <p className="mt-3 max-w-3xl text-sm text-white/80 md:text-base">
             Cadastre agora somente o que você já sabe. O Acontecimento entra na Agenda e, depois,
             você completa notícia, fotos, vídeos, documentos e Acervo pela mesma Ficha.
@@ -64,7 +88,10 @@ export default async function NewPublicationPage({
             ['Quando houver', 'Mídias', 'Fotos, vídeos e documentos'],
             ['Quando estiver pronto', 'Memória', 'Acervo e preservação histórica'],
           ].map(([eyebrow, title, detail], index) => (
-            <div key={title} className={`rounded-2xl border p-4 ${index === 0 ? 'border-accent bg-accent/10' : 'border-border'}`}>
+            <div
+              key={title}
+              className={`rounded-2xl border p-4 ${index === 0 ? 'border-accent bg-accent/10' : 'border-border'}`}
+            >
               <p className="text-muted text-xs font-semibold uppercase tracking-wide">{eyebrow}</p>
               <p className="mt-1 font-semibold">{title}</p>
               <p className="text-muted mt-1 text-xs">{detail}</p>
@@ -73,7 +100,7 @@ export default async function NewPublicationPage({
         </div>
       </header>
 
-      <EventFormExperience locationOptions={locationOptions}>
+      <EventFormExperience locationOptions={locationOptions} templates={templates}>
         <EventForm
           action={createWorkspaceEventAction}
           initialType={initialType}
