@@ -79,6 +79,10 @@ export async function loadDashboardOverview(
     loans,
     knowledge,
     honors,
+    linkLists,
+    collections,
+    exhibitions,
+    businessPending,
     auditRaw,
   ] = await Promise.all([
     safe('Identificação da Loja', getCurrentTenant),
@@ -180,6 +184,46 @@ export async function loadDashboardOverview(
       : null,
     can('honor:read')
       ? safe('Honrarias', async () => (await c.useCases.listHonorGallery.execute(ctx)).length)
+      : null,
+    can('link:read')
+      ? safe('Links úteis', async () => {
+          const [all, active] = await Promise.all([
+            c.repositories.link.listAll(tenantId),
+            c.repositories.link.listActive(tenantId),
+          ]);
+          return { active: active.length, inactive: Math.max(0, all.length - active.length) };
+        })
+      : null,
+    can('archiveCollection:read')
+      ? safe('Coleções', async () => {
+          const [all, published] = await Promise.all([
+            c.repositories.archiveCollection.listByTenant(tenantId),
+            c.repositories.archiveCollection.listPublishedByTenant(tenantId),
+          ]);
+          return {
+            published: published.length,
+            hidden: Math.max(0, all.length - published.length),
+          };
+        })
+      : null,
+    can('archiveExhibition:read')
+      ? safe('Exposições', async () => {
+          const [all, published] = await Promise.all([
+            c.repositories.archiveExhibition.listByTenant(tenantId),
+            c.repositories.archiveExhibition.listPublishedByTenant(tenantId),
+          ]);
+          return {
+            published: published.length,
+            hidden: Math.max(0, all.length - published.length),
+          };
+        })
+      : null,
+    can('memberCentral:manage')
+      ? safe('Negócios', async () => {
+          const result = await c.useCases.listBusinessSubmissions.execute(ctx);
+          if (!result.ok) throw new Error('Consulta indisponível');
+          return result.value.length;
+        })
       : null,
     can('auditLog:read')
       ? safe('Auditoria do período', async () => {
@@ -492,6 +536,77 @@ export async function loadDashboardOverview(
         ),
       ],
     });
+  {
+    const extras: OverviewMetric[] = [];
+    if (can('link:read') && allowed('/admin/conteudo/links'))
+      extras.push(
+        metric(
+          'linksActive',
+          'Links úteis ativos',
+          linkLists?.active ?? null,
+          'Links exibidos em Links úteis.',
+          '/admin/conteudo/links',
+        ),
+        metric(
+          'linksInactive',
+          'Links úteis inativos',
+          linkLists?.inactive ?? null,
+          'Cadastrados, mas fora do Portal.',
+          '/admin/conteudo/links',
+        ),
+      );
+    if (can('archiveCollection:read') && allowed('/admin/acervo/colecoes'))
+      extras.push(
+        metric(
+          'collections',
+          'Coleções publicadas',
+          collections?.published ?? null,
+          'Coleções visíveis no Acervo.',
+          '/admin/acervo/colecoes',
+        ),
+        metric(
+          'collectionsHidden',
+          'Coleções em rascunho',
+          collections?.hidden ?? null,
+          'Não publicadas.',
+          '/admin/acervo/colecoes',
+        ),
+      );
+    if (can('archiveExhibition:read') && allowed('/admin/acervo/exposicoes'))
+      extras.push(
+        metric(
+          'exhibitions',
+          'Exposições publicadas',
+          exhibitions?.published ?? null,
+          'Exposições visíveis no Acervo.',
+          '/admin/acervo/exposicoes',
+        ),
+        metric(
+          'exhibitionsHidden',
+          'Exposições em rascunho',
+          exhibitions?.hidden ?? null,
+          'Não publicadas.',
+          '/admin/acervo/exposicoes',
+        ),
+      );
+    if (can('memberCentral:manage') && allowed('/admin/pessoas/negocios'))
+      extras.push(
+        metric(
+          'businessPending',
+          'Negócios aguardando revisão',
+          businessPending,
+          'Enviados pelos Irmãos; só aparecem no Diretório depois de aprovados.',
+          '/admin/pessoas/negocios',
+        ),
+      );
+    if (extras.length)
+      modules.push({
+        title: 'Complementos do Portal',
+        href: '/admin/publicacoes',
+        icon: 'publication',
+        metrics: extras,
+      });
+  }
   const addTask = (
     permission: boolean,
     count: number | null,

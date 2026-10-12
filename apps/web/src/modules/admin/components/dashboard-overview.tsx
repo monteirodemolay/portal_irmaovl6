@@ -1,22 +1,15 @@
-"use client";
-import { useState } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import {
-  Archive,
-  ArrowUpRight,
-  CalendarDays,
-  Library,
-  Users,
-  ShieldCheck,
-} from "@vl6/ui";
-import { AdminToolDirectory } from "./admin-tool-directory";
-import { AUDIT_ACTION_LABELS } from "@/lib/audit/audit-action-label";
+'use client';
+import { useState } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { Archive, ArrowUpRight, CalendarDays, Library, Users, ShieldCheck } from '@vl6/ui';
+import { AdminToolDirectory } from './admin-tool-directory';
+import { AUDIT_ACTION_LABELS } from '@/lib/audit/audit-action-label';
 import {
   DASHBOARD_TIMEZONE,
   type DashboardOverviewData,
   type OverviewMetric,
-} from "../lib/dashboard-overview-model";
+} from '../lib/dashboard-overview-model';
 
 const icons = {
   people: Users,
@@ -27,16 +20,16 @@ const icons = {
   operation: ShieldCheck,
 };
 const number = (value: number | null) =>
-  value === null ? "—" : new Intl.NumberFormat("pt-BR").format(value);
+  value === null ? '—' : new Intl.NumberFormat('pt-BR').format(value);
 const date = (at: string) =>
-  new Intl.DateTimeFormat("pt-BR", {
+  new Intl.DateTimeFormat('pt-BR', {
     timeZone: DASHBOARD_TIMEZONE,
-    dateStyle: "short",
-    timeStyle: "short",
+    dateStyle: 'short',
+    timeStyle: 'short',
   }).format(new Date(at));
 const actionLabel = (action: string) =>
   AUDIT_ACTION_LABELS[action as keyof typeof AUDIT_ACTION_LABELS] ?? action;
-const panel = "border-border bg-surface rounded-2xl border p-5 sm:p-6";
+const panel = 'border-border bg-surface rounded-2xl border p-5 sm:p-6';
 function Value({ metric }: { metric: OverviewMetric }) {
   return (
     <div>
@@ -44,11 +37,11 @@ function Value({ metric }: { metric: OverviewMetric }) {
         {number(metric.value)}
       </span>
       <span className="text-muted text-xs">{metric.label}</span>
-      {metric.state !== "ready" && (
+      {metric.state !== 'ready' && (
         <span className="mt-1 block text-xs text-amber-700">
-          {metric.state === "unsupported"
-            ? "Relatório específico / fonte não consolidada"
-            : "Consulta indisponível"}
+          {metric.state === 'unsupported'
+            ? 'Relatório específico / fonte não consolidada'
+            : 'Consulta indisponível'}
         </span>
       )}
     </div>
@@ -91,7 +84,7 @@ function Bar({
     <button
       type="button"
       onClick={onClick}
-      className="block w-full rounded-lg py-2 text-left hover:bg-accent/5"
+      className="hover:bg-accent/5 block w-full rounded-lg py-2 text-left"
     >
       {content}
     </button>
@@ -101,36 +94,32 @@ export function DashboardOverview({ data }: { data: DashboardOverviewData }) {
   const router = useRouter(),
     [from, setFrom] = useState(data.from),
     [to, setTo] = useState(data.to),
-    [error, setError] = useState(""),
+    [error, setError] = useState(''),
     [selectedModule, setSelectedModule] = useState<string | null>(null),
-    [action, setAction] = useState("all"),
+    [action, setAction] = useState('all'),
     [page, setPage] = useState(0),
     [dismissed, setDismissed] = useState<string[]>([]);
   const tasks = data.tasks.filter((t) => !dismissed.includes(t.href + t.label));
   const sortedTasks = [...tasks].sort(
     (a, b) =>
-      ["Alerta", "Pendência", "Dica"].indexOf(a.kind) -
-      ["Alerta", "Pendência", "Dica"].indexOf(b.kind),
+      ['Alerta', 'Pendência', 'Dica'].indexOf(a.kind) -
+      ['Alerta', 'Pendência', 'Dica'].indexOf(b.kind),
   );
   const selected = data.modules.find((m) => m.title === selectedModule);
-  const history = data.audit.items.filter(
-    (a) => action === "all" || a.action === action,
-  );
+  const history = data.audit.items.filter((a) => action === 'all' || a.action === action);
   const query = new URLSearchParams({ from: data.from, to: data.to, action });
   const report = (format: string) =>
     `/api/admin/dashboard/report?${query.toString()}&format=${format}`;
   const goReport = () => {
-    const el = document.getElementById(
-      "dashboard-reports",
-    ) as HTMLDetailsElement | null;
+    const el = document.getElementById('dashboard-reports') as HTMLDetailsElement | null;
     if (el) {
       el.open = true;
-      el.scrollIntoView({ behavior: "smooth" });
+      el.scrollIntoView({ behavior: 'smooth' });
     }
   };
   return (
     <div className="space-y-6">
-      <header className="bg-primary text-white flex flex-wrap items-center justify-between gap-6 rounded-2xl border-t-4 border-accent p-6 sm:p-8">
+      <header className="bg-primary border-accent flex flex-wrap items-center justify-between gap-6 rounded-2xl border-t-4 p-6 text-white sm:p-8">
         <div>
           <p className="text-xs font-medium uppercase tracking-widest opacity-80">
             {data.tenantName}
@@ -139,8 +128,8 @@ export function DashboardOverview({ data }: { data: DashboardOverviewData }) {
             Uma visão completa do Portal
           </h1>
           <p className="mt-3 max-w-xl text-sm leading-relaxed opacity-90">
-            Pessoas, conhecimento e memória da Loja. Veja o que temos, o que
-            aconteceu e o que precisa de atenção.
+            Pessoas, conhecimento e memória da Loja. Veja o que temos, o que aconteceu e o que
+            precisa de atenção.
           </p>
         </div>
         <button
@@ -156,13 +145,9 @@ export function DashboardOverview({ data }: { data: DashboardOverviewData }) {
           role="alert"
           className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900"
         >
-          Consultas indisponíveis: {data.failures.join(", ")}. Os demais
-          indicadores continuam disponíveis.{" "}
-          <button
-            onClick={() => router.refresh()}
-            type="button"
-            className="underline"
-          >
+          Consultas indisponíveis: {data.failures.join(', ')}. Os demais indicadores continuam
+          disponíveis.{' '}
+          <button onClick={() => router.refresh()} type="button" className="underline">
             Tentar novamente
           </button>
         </div>
@@ -172,17 +157,15 @@ export function DashboardOverview({ data }: { data: DashboardOverviewData }) {
         onSubmit={(e) => {
           e.preventDefault();
           if (!from || !to || from > to) {
-            setError("Informe um intervalo válido.");
+            setError('Informe um intervalo válido.');
             return;
           }
-          setError("");
+          setError('');
           router.push(`/admin?${new URLSearchParams({ from, to })}`);
         }}
       >
         <div>
-          <h2 className="font-display text-xl font-semibold">
-            Panorama institucional
-          </h2>
+          <h2 className="font-display text-xl font-semibold">Panorama institucional</h2>
           <p className="text-muted mt-1 text-xs">
             Situação atual · atualizado em {date(data.updatedAt)}
           </p>
@@ -220,34 +203,23 @@ export function DashboardOverview({ data }: { data: DashboardOverviewData }) {
       )}
       <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
         {data.priority.map((m) => (
-          <Link
-            key={m.key}
-            href={m.href}
-            className={`${panel} hover:border-accent`}
-          >
+          <Link key={m.key} href={m.href} className={`${panel} hover:border-accent`}>
             <p className="text-muted text-sm">{m.label}</p>
             <p className="font-display my-3 text-3xl font-semibold tabular-nums">
               {number(m.value)}
             </p>
             <p className="text-muted text-xs leading-relaxed">
-              {m.state === "ready"
-                ? m.detail
-                : "Consulta indisponível; não representa zero."}
+              {m.state === 'ready' ? m.detail : 'Consulta indisponível; não representa zero.'}
             </p>
           </Link>
         ))}
       </div>
       <section aria-labelledby="dashboard-modules">
         <div className="mb-4 flex flex-wrap justify-between gap-2">
-          <h2
-            id="dashboard-modules"
-            className="font-display text-xl font-semibold"
-          >
+          <h2 id="dashboard-modules" className="font-display text-xl font-semibold">
             O que temos no Portal
           </h2>
-          <span className="text-muted text-xs">
-            Totais atuais · selecione para aprofundar
-          </span>
+          <span className="text-muted text-xs">Totais atuais · selecione para aprofundar</span>
         </div>
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {data.modules.map((m) => {
@@ -258,10 +230,8 @@ export function DashboardOverview({ data }: { data: DashboardOverviewData }) {
                 key={m.title}
                 aria-expanded={selectedModule === m.title}
                 aria-controls="dashboard-module-detail"
-                onClick={() =>
-                  setSelectedModule(selectedModule === m.title ? null : m.title)
-                }
-                className={`${panel} text-left transition-colors hover:border-accent`}
+                onClick={() => setSelectedModule(selectedModule === m.title ? null : m.title)}
+                className={`${panel} hover:border-accent text-left transition-colors`}
               >
                 <div className="mb-5 flex items-center gap-3">
                   <span className="bg-accent/10 text-accent rounded-xl p-2">
@@ -282,27 +252,16 @@ export function DashboardOverview({ data }: { data: DashboardOverviewData }) {
             );
           })}
         </div>
-        <div
-          id="dashboard-module-detail"
-          hidden={!selected}
-          className={`${panel} mt-3`}
-        >
+        <div id="dashboard-module-detail" hidden={!selected} className={`${panel} mt-3`}>
           {selected && (
             <>
-              <h3 className="font-display text-lg font-semibold">
-                {selected.title}
-              </h3>
+              <h3 className="font-display text-lg font-semibold">{selected.title}</h3>
               <div className="mt-4 grid gap-4 sm:grid-cols-2">
                 {selected.metrics.map((v) => (
                   <div key={v.key}>
                     <Value metric={v} />
-                    <p className="text-muted my-2 text-xs leading-relaxed">
-                      {v.detail}
-                    </p>
-                    <Link
-                      href={v.href}
-                      className="text-accent text-xs underline"
-                    >
+                    <p className="text-muted my-2 text-xs leading-relaxed">{v.detail}</p>
+                    <Link href={v.href} className="text-accent text-xs underline">
                       Consultar registros
                     </Link>
                   </div>
@@ -314,14 +273,12 @@ export function DashboardOverview({ data }: { data: DashboardOverviewData }) {
       </section>
       <div className="grid gap-4 lg:grid-cols-2">
         <section className={panel}>
-          <h2 className="font-display text-lg font-semibold">
-            Cadastro e situação institucional
-          </h2>
+          <h2 className="font-display text-lg font-semibold">Cadastro e situação institucional</h2>
           {data.coverage ? (
             <>
               <p className="text-muted my-3 text-xs">
-                Base comum: {data.coverage.active} Irmãos ativos. Conta ativa e
-                vínculo recíproco verificados.
+                Base comum: {data.coverage.active} Irmãos ativos. Conta ativa e vínculo recíproco
+                verificados.
               </p>
               <Bar
                 label="Ativos com acesso válido"
@@ -338,15 +295,12 @@ export function DashboardOverview({ data }: { data: DashboardOverviewData }) {
             </>
           ) : (
             <p className="text-muted my-3 text-sm">
-              Cobertura exige leitura autorizada e consulta válida de membros e
-              contas.
+              Cobertura exige leitura autorizada e consulta válida de membros e contas.
             </p>
           )}
           {data.situations.length > 0 && (
             <details className="mt-4">
-              <summary className="text-sm">
-                Distribuição por situação maçônica
-              </summary>
+              <summary className="text-sm">Distribuição por situação maçônica</summary>
               <div className="mt-3">
                 {data.situations.map((s) => (
                   <Bar
@@ -360,9 +314,7 @@ export function DashboardOverview({ data }: { data: DashboardOverviewData }) {
           )}
         </section>
         <section id="plano-de-acao" className={`${panel} scroll-mt-6`}>
-          <h2 className="font-display text-lg font-semibold">
-            Dicas e próximos passos
-          </h2>
+          <h2 className="font-display text-lg font-semibold">Dicas e próximos passos</h2>
           <p className="text-muted mt-2 text-xs">
             Filas independentes · quantidades não são somadas.
           </p>
@@ -378,21 +330,14 @@ export function DashboardOverview({ data }: { data: DashboardOverviewData }) {
                 <div className="min-w-0 flex-1">
                   <p className="text-muted text-xs">{t.kind}</p>
                   <h3 className="mt-1 text-sm font-medium">{t.label}</h3>
-                  <p className="text-muted mt-1 text-xs leading-relaxed">
-                    {t.detail}
-                  </p>
-                  <Link
-                    href={t.href}
-                    className="text-accent mt-2 inline-block text-xs underline"
-                  >
+                  <p className="text-muted mt-1 text-xs leading-relaxed">{t.detail}</p>
+                  <Link href={t.href} className="text-accent mt-2 inline-block text-xs underline">
                     Conferir →
                   </Link>
-                  {t.kind === "Dica" && (
+                  {t.kind === 'Dica' && (
                     <button
                       type="button"
-                      onClick={() =>
-                        setDismissed([...dismissed, t.href + t.label])
-                      }
+                      onClick={() => setDismissed([...dismissed, t.href + t.label])}
                       className="text-muted ml-4 text-xs underline"
                     >
                       Agora não
@@ -403,26 +348,24 @@ export function DashboardOverview({ data }: { data: DashboardOverviewData }) {
             ))
           ) : (
             <p className="text-muted mt-4 text-sm">
-              Nenhuma pendência identificada nas fontes disponíveis para seu
-              acesso. Confira eventuais falhas de consulta acima.
+              Nenhuma pendência identificada nas fontes disponíveis para seu acesso. Confira
+              eventuais falhas de consulta acima.
             </p>
           )}
         </section>
       </div>
       <div className="grid gap-4 lg:grid-cols-2">
         <section className={panel}>
-          <h2 className="font-display text-lg font-semibold">
-            Movimentação no período
-          </h2>
+          <h2 className="font-display text-lg font-semibold">Movimentação no período</h2>
           <p className="text-muted my-3 text-xs">
             {data.from} a {data.to} · {DASHBOARD_TIMEZONE}
           </p>
-          {data.audit.state === "ready" ? (
+          {data.audit.state === 'ready' ? (
             <>
               {!data.audit.complete && (
                 <p className="mb-3 text-sm text-amber-700">
-                  Amostra parcial: limite de 2.000 eventos atingido. Reduza o
-                  período para conferir a composição completa.
+                  Amostra parcial: limite de 2.000 eventos atingido. Reduza o período para conferir
+                  a composição completa.
                 </p>
               )}
               {data.audit.counts.map((v) => (
@@ -439,26 +382,21 @@ export function DashboardOverview({ data }: { data: DashboardOverviewData }) {
                 />
               ))}
               <p className="text-muted mt-3 text-xs">
-                Eventos administrativos de entidades conhecidas; não são
-                acessos, engajamento ou registros únicos. Operações não
-                auditadas não podem ser reconstruídas.
+                Eventos administrativos de entidades conhecidas; não são acessos, engajamento ou
+                registros únicos. Operações não auditadas não podem ser reconstruídas.
               </p>
             </>
           ) : (
             <p className="text-muted text-sm">
-              {data.audit.state === "forbidden"
-                ? "Auditoria restrita pela permissão."
-                : "Consulta de auditoria indisponível."}
+              {data.audit.state === 'forbidden'
+                ? 'Auditoria restrita pela permissão.'
+                : 'Consulta de auditoria indisponível.'}
             </p>
           )}
         </section>
         <section className={panel}>
-          <h2 className="font-display text-lg font-semibold">
-            Agenda e continuidade
-          </h2>
-          <p className="text-muted my-3 text-xs">
-            Próximos acontecimentos registrados
-          </p>
+          <h2 className="font-display text-lg font-semibold">Agenda e continuidade</h2>
+          <p className="text-muted my-3 text-xs">Próximos acontecimentos registrados</p>
           {data.agenda.map((e) => (
             <Link
               key={e.id}
@@ -473,30 +411,23 @@ export function DashboardOverview({ data }: { data: DashboardOverviewData }) {
           ))}
           {!data.agenda.length && (
             <p className="text-muted text-sm">
-              Nenhum próximo acontecimento retornado nas fontes disponíveis para
-              seu acesso.
+              Nenhum próximo acontecimento retornado nas fontes disponíveis para seu acesso.
             </p>
           )}
           <p className="text-muted mt-4 text-xs">
-            Notícias, avisos e arquivos continuam no espaço unificado de
-            Publicações e Agenda.
+            Notícias, avisos e arquivos continuam no espaço unificado de Publicações e Agenda.
           </p>
         </section>
       </div>
-      {data.audit.state === "ready" && (
+      {data.audit.state === 'ready' && (
         <section className={panel}>
-          <h2 className="font-display text-lg font-semibold">
-            O que mudou recentemente
-          </h2>
+          <h2 className="font-display text-lg font-semibold">O que mudou recentemente</h2>
           <p className="text-muted mt-2 text-xs">
             Últimos eventos do período · mais recentes primeiro
           </p>
           <ul className="divide-border mt-4 divide-y">
             {data.audit.items.slice(0, 5).map((a) => (
-              <li
-                key={a.id}
-                className="flex flex-wrap justify-between gap-3 py-3"
-              >
+              <li key={a.id} className="flex flex-wrap justify-between gap-3 py-3">
                 <div>
                   <p className="text-sm">
                     {actionLabel(a.action)} · {a.entity}
@@ -521,8 +452,8 @@ export function DashboardOverview({ data }: { data: DashboardOverviewData }) {
           Relatórios e prestação de contas
         </summary>
         <p className="text-muted my-4 text-sm">
-          O relatório inclui panorama atual, pendências atuais e histórico do
-          período autorizado. Não reconstrói a situação passada do cadastro.
+          O relatório inclui panorama atual, pendências atuais e histórico do período autorizado.
+          Não reconstrói a situação passada do cadastro.
         </p>
         <div className="flex flex-wrap items-end gap-3">
           <label className="text-sm">
@@ -543,20 +474,14 @@ export function DashboardOverview({ data }: { data: DashboardOverviewData }) {
               ))}
             </select>
           </label>
-          <a
-            href={report("csv")}
-            className="border-border rounded-lg border px-4 py-2 text-sm"
-          >
+          <a href={report('csv')} className="border-border rounded-lg border px-4 py-2 text-sm">
             Exportar CSV
           </a>
-          <a
-            href={report("pdf")}
-            className="bg-primary text-white rounded-lg px-4 py-2 text-sm"
-          >
+          <a href={report('pdf')} className="bg-primary rounded-lg px-4 py-2 text-sm text-white">
             Emitir PDF
           </a>
         </div>
-        {data.audit.state === "ready" && (
+        {data.audit.state === 'ready' && (
           <>
             <div className="mt-5 overflow-x-auto">
               <table className="w-full text-left text-sm">
@@ -573,9 +498,7 @@ export function DashboardOverview({ data }: { data: DashboardOverviewData }) {
                       <td className="p-2">{date(a.at)}</td>
                       <td className="p-2">
                         {actionLabel(a.action)} · {a.entity}
-                        <small className="text-muted block">
-                          Registro: {a.entityId}
-                        </small>
+                        <small className="text-muted block">Registro: {a.entityId}</small>
                       </td>
                       <td className="p-2">{a.actor}</td>
                     </tr>
@@ -593,8 +516,8 @@ export function DashboardOverview({ data }: { data: DashboardOverviewData }) {
                 Anterior
               </button>
               <span role="status">
-                Página {page + 1} · {history.length} eventos{" "}
-                {data.audit.complete ? "retornados" : "na amostra parcial"}
+                Página {page + 1} · {history.length} eventos{' '}
+                {data.audit.complete ? 'retornados' : 'na amostra parcial'}
               </span>
               <button
                 type="button"
@@ -616,10 +539,9 @@ export function DashboardOverview({ data }: { data: DashboardOverviewData }) {
           <AdminToolDirectory tools={data.tools} />
         </div>
         <p className="text-muted mt-4 text-xs leading-relaxed">
-          Acervo, Biblioteca e Conhecimento mantêm seus relatórios. Auditoria
-          administrativa não mede utilização. Bytes únicos, histórico de
-          integrações e aceites consolidados exigem fontes próprias; nenhum
-          valor é inferido. A Cripta permanece acessível pela ferramenta
+          Acervo, Biblioteca e Conhecimento mantêm seus relatórios. Auditoria administrativa não
+          mede utilização. Bytes únicos, histórico de integrações e aceites consolidados exigem
+          fontes próprias; nenhum valor é inferido. A Cripta permanece acessível pela ferramenta
           autorizada, sem cartas ou destinatários neste Dashboard.
         </p>
       </details>

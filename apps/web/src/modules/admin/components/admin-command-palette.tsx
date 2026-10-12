@@ -31,6 +31,7 @@ export function AdminCommandPalette({ tools }: { tools: PaletteTool[] }) {
   const [partial, setPartial] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [failed, setFailed] = useState(false);
+  const [truncated, setTruncated] = useState(false);
   const [active, setActive] = useState(0);
   const listId = 'admin-search-results';
   const requestId = useRef(0);
@@ -83,9 +84,14 @@ export function AdminCommandPalette({ tools }: { tools: PaletteTool[] }) {
       try {
         const response = await fetch(`/api/admin/search?q=${encodeURIComponent(term)}`);
         if (!response.ok) throw new Error('falha');
-        const body = (await response.json()) as { hits: AdminSearchHit[]; partial: string[] };
+        const body = (await response.json()) as {
+          hits: AdminSearchHit[];
+          partial: string[];
+          truncated?: boolean;
+        };
         if (current !== requestId.current) return;
         setRecords(body.hits);
+        setTruncated(Boolean(body.truncated));
         setPartial(body.partial);
         setFailed(false);
       } catch {
@@ -208,10 +214,12 @@ export function AdminCommandPalette({ tools }: { tools: PaletteTool[] }) {
                 : `Sem resposta de: ${partial.join(', ')}. Os demais resultados são válidos.`}
             </p>
           )}
-          <p className="text-muted border-border border-t px-4 py-2 text-[11px]">
-            Acontecimentos e notícias: entre os 100 mais recentes. Para o histórico completo, use os
-            filtros em Acontecimentos.
-          </p>
+          {truncated && (
+            <p className="text-muted border-border border-t px-4 py-2 text-[11px]">
+              Busca em acontecimentos e notícias limitada aos 3.000 registros mais recentes de cada
+              tipo. Para mais antigos, use os filtros em Acontecimentos.
+            </p>
+          )}
         </DialogContent>
       </Dialog>
     </>

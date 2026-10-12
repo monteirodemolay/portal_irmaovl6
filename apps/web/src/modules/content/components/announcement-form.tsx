@@ -17,9 +17,18 @@ export interface AnnouncementFormProps {
   action: (state: ContentActionState, formData: FormData) => Promise<ContentActionState>;
   announcement?: Announcement;
   initialTitle?: string;
+  /** Rascunho sugerido para um aviso novo; ignorado ao editar. */
+  initialDescription?: string;
+  initialExpiration?: string;
 }
 
-export function AnnouncementForm({ action, announcement, initialTitle }: AnnouncementFormProps) {
+export function AnnouncementForm({
+  action,
+  announcement,
+  initialTitle,
+  initialDescription,
+  initialExpiration,
+}: AnnouncementFormProps) {
   const formId = useId();
   const [state, formAction] = useActionState<ContentActionState, FormData>(action, {
     error: null,
@@ -41,7 +50,7 @@ export function AnnouncementForm({ action, announcement, initialTitle }: Announc
           name="descricao"
           required
           rows={4}
-          defaultValue={announcement?.descricao}
+          defaultValue={announcement?.descricao ?? initialDescription}
         />
       </FormField>
       <FormField label="Prioridade" htmlFor={`${formId}-prioridade`}>
@@ -64,7 +73,9 @@ export function AnnouncementForm({ action, announcement, initialTitle }: Announc
           id={`${formId}-dataExpiracao`}
           name="dataExpiracao"
           type="date"
-          defaultValue={toDateInputValue(announcement?.dataExpiracao ?? null)}
+          defaultValue={
+            announcement ? toDateInputValue(announcement.dataExpiracao ?? null) : initialExpiration
+          }
         />
       </FormField>
       <label className="flex items-center gap-2 text-sm">

@@ -232,11 +232,14 @@ export function WorkspaceAnnouncementEditor({
   title,
   announcement,
   canPublish,
+  draft,
 }: {
   eventId: string;
   title: string;
   announcement?: Announcement;
   canPublish: boolean;
+  /** Texto e expiração sugeridos a partir do acontecimento (só aviso novo). */
+  draft?: { descricao: string; dataExpiracao: string };
 }) {
   const editor = useSavedEditor(
     announcement
@@ -245,7 +248,13 @@ export function WorkspaceAnnouncementEditor({
   );
   return (
     <div onChange={() => editor.setDirty(true)}>
-      <AnnouncementForm action={editor.action} announcement={announcement} initialTitle={title} />
+      <AnnouncementForm
+        action={editor.action}
+        announcement={announcement}
+        initialTitle={title}
+        initialDescription={draft?.descricao}
+        initialExpiration={draft?.dataExpiracao}
+      />
       {announcement && canPublish && (
         <PublicationButton
           eventId={eventId}

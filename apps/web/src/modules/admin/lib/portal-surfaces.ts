@@ -97,6 +97,8 @@ export const PORTAL_SURFACES: PortalSurface[] = [
     feedLabel: 'Links úteis',
     mode: 'manual',
     how: 'Links cadastrados; sugestões dos Irmãos esperam decisão na mesma tela.',
+    visibleMetric: 'linksActive',
+    hidden: { metric: 'linksInactive' },
     keywords: ['sites', 'sugestão'],
   },
   {
@@ -120,6 +122,7 @@ export const PORTAL_SURFACES: PortalSurface[] = [
     feedLabel: 'Negócios',
     mode: 'manual',
     how: 'Negócios cadastrados pelos Irmãos; a Administração modera e corrige.',
+    hidden: { metric: 'businessPending' },
     keywords: ['empresa', 'comércio'],
   },
   {
@@ -225,6 +228,8 @@ export const PORTAL_SURFACES: PortalSurface[] = [
     feedLabel: 'Exposições',
     mode: 'manual',
     how: 'Seleções de itens já existentes no Acervo, sem duplicar conteúdo.',
+    visibleMetric: 'exhibitions',
+    hidden: { metric: 'exhibitionsHidden' },
     keywords: ['curadoria'],
   },
   {
@@ -236,6 +241,8 @@ export const PORTAL_SURFACES: PortalSurface[] = [
     feedLabel: 'Coleções',
     mode: 'manual',
     how: 'Agrupamentos temáticos de itens do Acervo.',
+    visibleMetric: 'collections',
+    hidden: { metric: 'collectionsHidden' },
   },
   {
     key: 'contribuir',

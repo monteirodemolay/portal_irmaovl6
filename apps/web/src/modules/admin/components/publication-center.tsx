@@ -87,12 +87,14 @@ export function PublicationCenter({
           related,
           hasPublishedMemory: related.some(
             (item) =>
-              item.type === 'Acervo' &&
-              item.status.toLocaleLowerCase('pt-BR').includes('public'),
+              item.type === 'Acervo' && item.status.toLocaleLowerCase('pt-BR').includes('public'),
           ),
         };
       })
-      .filter((group) => filteredIds.has(group.event.id) || group.related.some((item) => filteredIds.has(item.id)))
+      .filter(
+        (group) =>
+          filteredIds.has(group.event.id) || group.related.some((item) => filteredIds.has(item.id)),
+      )
       .sort((a, b) => {
         const aTime = a.event.happenedAt ? new Date(a.event.happenedAt).getTime() : 0;
         const bTime = b.event.happenedAt ? new Date(b.event.happenedAt).getTime() : 0;
@@ -118,7 +120,9 @@ export function PublicationCenter({
         .filter((value): value is string => Boolean(value))
         .map((value) => dayKey(value).slice(0, 4)),
     ),
-  ].sort().reverse();
+  ]
+    .sort()
+    .reverse();
 
   const days = /^\d{4}-\d{2}$/.test(month)
     ? new Date(Number(month.slice(0, 4)), Number(month.slice(5)), 0).getDate()
@@ -131,7 +135,9 @@ export function PublicationCenter({
     <div className="space-y-6">
       <header className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
         <div>
-          <p className="text-accent text-xs font-semibold uppercase tracking-[0.14em]">Operação cotidiana</p>
+          <p className="text-accent text-xs font-semibold uppercase tracking-[0.14em]">
+            Operação cotidiana
+          </p>
           <h1 className="font-display mt-1 text-3xl font-semibold md:text-4xl">Acontecimentos</h1>
           <p className="text-muted mt-2 max-w-3xl">
             A Agenda é a origem. Depois do fato, abra a mesma ficha para acrescentar comunicação,
@@ -148,12 +154,35 @@ export function PublicationCenter({
         )}
       </header>
 
-      <section aria-label="Resumo dos acontecimentos" className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <section
+        aria-label="Resumo dos acontecimentos"
+        className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4"
+      >
         {[
-          ['Próximos', upcoming.length, 'Agenda já cadastrada e ordenada pela data', 'border-sky-200 bg-sky-50 text-sky-950'],
-          ['A complementar', awaiting.length, 'Já realizados e ainda sem memória publicada', 'border-amber-200 bg-amber-50 text-amber-950'],
-          ['Memórias publicadas', published.length, 'Acontecimentos já preservados no Acervo', 'border-emerald-200 bg-emerald-50 text-emerald-950'],
-          ['Independentes', independent.length, 'Registros sem vínculo com um acontecimento', 'border-slate-200 bg-slate-50 text-slate-900'],
+          [
+            'Próximos',
+            upcoming.length,
+            'Agenda já cadastrada e ordenada pela data',
+            'border-sky-200 bg-sky-50 text-sky-950',
+          ],
+          [
+            'A complementar',
+            awaiting.length,
+            'Já realizados e ainda sem memória publicada',
+            'border-amber-200 bg-amber-50 text-amber-950',
+          ],
+          [
+            'Memórias publicadas',
+            published.length,
+            'Acontecimentos já preservados no Acervo',
+            'border-emerald-200 bg-emerald-50 text-emerald-950',
+          ],
+          [
+            'Independentes',
+            independent.length,
+            'Registros sem vínculo com um acontecimento',
+            'border-slate-200 bg-slate-50 text-slate-900',
+          ],
         ].map(([label, count, detail, tone]) => (
           <div key={String(label)} className={`min-h-36 rounded-2xl border p-5 ${tone}`}>
             <p className="text-xs font-semibold uppercase tracking-wide opacity-70">{label}</p>
@@ -164,7 +193,10 @@ export function PublicationCenter({
       </section>
 
       {errors.length > 0 && (
-        <div role="alert" className="rounded-2xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
+        <div
+          role="alert"
+          className="rounded-2xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900"
+        >
           Não foi possível carregar: {errors.join(', ')}. Os demais dados continuam disponíveis.
         </div>
       )}
@@ -172,11 +204,13 @@ export function PublicationCenter({
       <section className="border-border bg-surface rounded-2xl border p-4 md:p-5">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div className="flex flex-wrap gap-2" role="group" aria-label="Visualização">
-            {([
-              ['painel', 'Painel'],
-              ['lista', 'Lista'],
-              ['calendario', 'Calendário'],
-            ] as const).map(([key, label]) => (
+            {(
+              [
+                ['painel', 'Painel'],
+                ['lista', 'Lista'],
+                ['calendario', 'Calendário'],
+              ] as const
+            ).map(([key, label]) => (
               <button
                 key={key}
                 type="button"
@@ -201,26 +235,52 @@ export function PublicationCenter({
           </label>
         </div>
 
-        <details className="mt-4 border-t border-border pt-4">
+        <details className="border-border mt-4 border-t pt-4">
           <summary className="cursor-pointer text-sm font-semibold">Filtros e ordenação</summary>
           <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <label className="text-sm">Tipo
-              <select value={type} onChange={(event) => setType(event.target.value)} className="border-border mt-1 min-h-11 w-full rounded-xl border p-2">
-                {['Todos', ...new Set(items.map((item) => item.type))].map((value) => <option key={value}>{value}</option>)}
+            <label className="text-sm">
+              Tipo
+              <select
+                value={type}
+                onChange={(event) => setType(event.target.value)}
+                className="border-border mt-1 min-h-11 w-full rounded-xl border p-2"
+              >
+                {['Todos', ...new Set(items.map((item) => item.type))].map((value) => (
+                  <option key={value}>{value}</option>
+                ))}
               </select>
             </label>
-            <label className="text-sm">Situação
-              <select value={status} onChange={(event) => setStatus(event.target.value)} className="border-border mt-1 min-h-11 w-full rounded-xl border p-2">
-                {['Todos', ...new Set(items.map((item) => item.status))].map((value) => <option key={value}>{value}</option>)}
+            <label className="text-sm">
+              Situação
+              <select
+                value={status}
+                onChange={(event) => setStatus(event.target.value)}
+                className="border-border mt-1 min-h-11 w-full rounded-xl border p-2"
+              >
+                {['Todos', ...new Set(items.map((item) => item.status))].map((value) => (
+                  <option key={value}>{value}</option>
+                ))}
               </select>
             </label>
-            <label className="text-sm">Ano
-              <select value={year} onChange={(event) => setYear(event.target.value)} className="border-border mt-1 min-h-11 w-full rounded-xl border p-2">
-                {['Todos', ...years].map((value) => <option key={value}>{value}</option>)}
+            <label className="text-sm">
+              Ano
+              <select
+                value={year}
+                onChange={(event) => setYear(event.target.value)}
+                className="border-border mt-1 min-h-11 w-full rounded-xl border p-2"
+              >
+                {['Todos', ...years].map((value) => (
+                  <option key={value}>{value}</option>
+                ))}
               </select>
             </label>
-            <label className="text-sm">Ordenação
-              <select value={order} onChange={(event) => setOrder(event.target.value)} className="border-border mt-1 min-h-11 w-full rounded-xl border p-2">
+            <label className="text-sm">
+              Ordenação
+              <select
+                value={order}
+                onChange={(event) => setOrder(event.target.value)}
+                className="border-border mt-1 min-h-11 w-full rounded-xl border p-2"
+              >
                 <option value="newest">Mais recentes primeiro</option>
                 <option value="oldest">Mais antigos primeiro</option>
               </select>
@@ -253,41 +313,72 @@ export function PublicationCenter({
                 </div>
                 <span className="text-muted text-sm">{upcoming.length}</span>
               </div>
-              <EventTileGrid groups={[...upcoming].sort((a, b) => new Date(a.event.happenedAt!).getTime() - new Date(b.event.happenedAt!).getTime())} />
+              <EventTileGrid
+                groups={[...upcoming].sort(
+                  (a, b) =>
+                    new Date(a.event.happenedAt!).getTime() -
+                    new Date(b.event.happenedAt!).getTime(),
+                )}
+              />
             </div>
           )}
 
           <div>
             <div className="mb-3 flex items-end justify-between gap-3">
               <div>
-                <p className="text-muted text-xs font-semibold uppercase tracking-wide">Após o evento</p>
-                <h2 className="font-display text-2xl font-semibold">Continuar construção da memória</h2>
+                <p className="text-muted text-xs font-semibold uppercase tracking-wide">
+                  Após o evento
+                </p>
+                <h2 className="font-display text-2xl font-semibold">
+                  Continuar construção da memória
+                </h2>
               </div>
               <span className="text-muted text-sm">{awaiting.length}</span>
             </div>
             {awaiting.length ? (
               <EventTileGrid groups={awaiting} />
             ) : (
-              <p className="border-border text-muted rounded-2xl border border-dashed p-6 text-sm">Nenhum acontecimento realizado está aguardando complementos nos filtros atuais.</p>
+              <p className="border-border text-muted rounded-2xl border border-dashed p-6 text-sm">
+                Nenhum acontecimento realizado está aguardando complementos nos filtros atuais.
+              </p>
             )}
           </div>
 
           {published.length > 0 && (
             <details className="border-border bg-surface rounded-2xl border p-5">
-              <summary className="cursor-pointer font-semibold">Memórias publicadas · {published.length}</summary>
-              <div className="mt-4"><EventTileGrid groups={published} compact /></div>
+              <summary className="cursor-pointer font-semibold">
+                Memórias publicadas · {published.length}
+              </summary>
+              <div className="mt-4">
+                <EventTileGrid groups={published} compact />
+              </div>
             </details>
           )}
 
           {independent.length > 0 && (
             <details className="border-border bg-surface rounded-2xl border p-5">
-              <summary className="cursor-pointer font-semibold">Registros independentes e compatibilidade · {independent.length}</summary>
-              <p className="text-muted mt-2 text-sm">Use apenas quando o conteúdo realmente não pertence a um Acontecimento.</p>
-              <div className="mt-4 divide-y divide-border">
+              <summary className="cursor-pointer font-semibold">
+                Registros independentes e compatibilidade · {independent.length}
+              </summary>
+              <p className="text-muted mt-2 text-sm">
+                Use apenas quando o conteúdo realmente não pertence a um Acontecimento.
+              </p>
+              <div className="divide-border mt-4 divide-y">
                 {independent.map((item) => (
-                  <Link key={item.id} href={item.href} className="flex min-h-12 items-center justify-between gap-3 py-3 text-sm hover:underline">
-                    <span><strong>{item.title}</strong><span className="text-muted ml-2">{item.type}</span></span>
-                    <span className={`rounded-full border px-2.5 py-1 text-xs ${statusTone(item.status)}`}>{item.status}</span>
+                  <Link
+                    key={item.id}
+                    href={item.href}
+                    className="flex min-h-12 items-center justify-between gap-3 py-3 text-sm hover:underline"
+                  >
+                    <span>
+                      <strong>{item.title}</strong>
+                      <span className="text-muted ml-2">{item.type}</span>
+                    </span>
+                    <span
+                      className={`rounded-full border px-2.5 py-1 text-xs ${statusTone(item.status)}`}
+                    >
+                      {item.status}
+                    </span>
                   </Link>
                 ))}
               </div>
@@ -297,28 +388,54 @@ export function PublicationCenter({
       )}
 
       {view === 'lista' && (
-        <div className="border-border bg-surface divide-y divide-border rounded-2xl border px-5">
-          {groups.map((group) => <EventListRow key={group.event.id} group={group} />)}
-          {groups.length === 0 && <p className="text-muted py-8 text-sm">Nenhum acontecimento encontrado.</p>}
+        <div className="border-border bg-surface divide-border divide-y rounded-2xl border px-5">
+          {groups.map((group) => (
+            <EventListRow key={group.event.id} group={group} />
+          ))}
+          {groups.length === 0 && (
+            <p className="text-muted py-8 text-sm">Nenhum acontecimento encontrado.</p>
+          )}
         </div>
       )}
 
       {view === 'calendario' && (
         <section className="border-border bg-surface rounded-2xl border p-5">
-          <label className="text-sm font-medium">Mês
-            <input type="month" value={month} onChange={(event) => setMonth(event.target.value)} className="border-border ml-3 min-h-11 rounded-xl border p-2" />
+          <label className="text-sm font-medium">
+            Mês
+            <input
+              type="month"
+              value={month}
+              onChange={(event) => setMonth(event.target.value)}
+              className="border-border ml-3 min-h-11 rounded-xl border p-2"
+            />
           </label>
           <div className="mt-5 grid grid-cols-1 gap-2 md:grid-cols-7">
-            {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map((day) => <div key={day} className="hidden text-center text-xs font-semibold md:block">{day}</div>)}
-            {Array.from({ length: offset }, (_, index) => <div key={`empty-${index}`} className="hidden md:block" />)}
+            {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map((day) => (
+              <div key={day} className="hidden text-center text-xs font-semibold md:block">
+                {day}
+              </div>
+            ))}
+            {Array.from({ length: offset }, (_, index) => (
+              <div key={`empty-${index}`} className="hidden md:block" />
+            ))}
             {Array.from({ length: days }, (_, index) => {
               const key = `${month}-${String(index + 1).padStart(2, '0')}`;
-              const dayGroups = groups.filter((group) => group.event.happenedAt && dayKey(group.event.happenedAt) === key);
+              const dayGroups = groups.filter(
+                (group) => group.event.happenedAt && dayKey(group.event.happenedAt) === key,
+              );
               return (
                 <div key={key} className="border-border min-h-24 rounded-xl border p-2">
-                  <time className="text-muted text-xs" dateTime={key}>{index + 1}</time>
+                  <time className="text-muted text-xs" dateTime={key}>
+                    {index + 1}
+                  </time>
                   {dayGroups.map((group) => (
-                    <Link key={group.event.id} href={group.event.href} className="bg-accent/10 mt-1 block rounded-lg p-2 text-xs font-semibold">{group.event.title}</Link>
+                    <Link
+                      key={group.event.id}
+                      href={group.event.href}
+                      className="bg-accent/10 mt-1 block rounded-lg p-2 text-xs font-semibold"
+                    >
+                      {group.event.title}
+                    </Link>
                   ))}
                 </div>
               );
@@ -332,10 +449,14 @@ export function PublicationCenter({
 
 function EventTileGrid({ groups, compact = false }: { groups: EventGroup[]; compact?: boolean }) {
   return (
-    <div className={`grid gap-3 ${compact ? 'md:grid-cols-3 xl:grid-cols-4' : 'md:grid-cols-2 xl:grid-cols-3'}`}>
+    <div
+      className={`grid gap-3 ${compact ? 'md:grid-cols-3 xl:grid-cols-4' : 'md:grid-cols-2 xl:grid-cols-3'}`}
+    >
       {groups.map((group) => {
         const counters = new Map<string, number>();
-        group.related.forEach((item) => counters.set(item.type, (counters.get(item.type) ?? 0) + 1));
+        group.related.forEach((item) =>
+          counters.set(item.type, (counters.get(item.type) ?? 0) + 1),
+        );
         return (
           <Link
             key={group.event.id}
@@ -344,17 +465,29 @@ function EventTileGrid({ groups, compact = false }: { groups: EventGroup[]; comp
           >
             <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="text-muted text-xs font-semibold uppercase tracking-wide">{formatDate(group.event.happenedAt)}</p>
-                <h3 className="font-display mt-2 text-xl font-semibold leading-tight group-hover:underline">{group.event.title}</h3>
+                <p className="text-muted text-xs font-semibold uppercase tracking-wide">
+                  {formatDate(group.event.happenedAt)}
+                </p>
+                <h3 className="font-display mt-2 text-xl font-semibold leading-tight group-hover:underline">
+                  {group.event.title}
+                </h3>
               </div>
-              <span className={`shrink-0 rounded-full border px-2.5 py-1 text-[11px] font-semibold ${group.hasPublishedMemory ? 'border-emerald-200 bg-emerald-100 text-emerald-800' : 'border-slate-200 bg-slate-100 text-slate-700'}`}>
+              <span
+                className={`shrink-0 rounded-full border px-2.5 py-1 text-[11px] font-semibold ${group.hasPublishedMemory ? 'border-emerald-200 bg-emerald-100 text-emerald-800' : 'border-slate-200 bg-slate-100 text-slate-700'}`}
+              >
                 {group.hasPublishedMemory ? 'Memória publicada' : 'Ficha aberta'}
               </span>
             </div>
             <div className="mt-5 flex flex-wrap gap-2 text-xs">
-              {counters.size ? [...counters.entries()].map(([label, count]) => (
-                <span key={label} className="rounded-lg bg-slate-100 px-2.5 py-1.5">{count} {label}</span>
-              )) : <span className="text-muted">Pronto para receber complementos</span>}
+              {counters.size ? (
+                [...counters.entries()].map(([label, count]) => (
+                  <span key={label} className="rounded-lg bg-slate-100 px-2.5 py-1.5">
+                    {count} {label}
+                  </span>
+                ))
+              ) : (
+                <span className="text-muted">Pronto para receber complementos</span>
+              )}
             </div>
             <p className="text-accent mt-5 text-sm font-semibold">Abrir Ficha Única →</p>
           </Link>
@@ -369,10 +502,22 @@ function EventListRow({ group }: { group: EventGroup }) {
     <article className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
       <div className="min-w-0">
         <p className="text-muted text-xs">{formatDate(group.event.happenedAt)}</p>
-        <Link href={group.event.href} className="font-display text-lg font-semibold hover:underline">{group.event.title}</Link>
-        <p className="text-muted mt-1 text-xs">{group.related.length} registro(s) relacionado(s) na mesma ficha</p>
+        <Link
+          href={group.event.href}
+          className="font-display text-lg font-semibold hover:underline"
+        >
+          {group.event.title}
+        </Link>
+        <p className="text-muted mt-1 text-xs">
+          {group.related.length} registro(s) relacionado(s) na mesma ficha
+        </p>
       </div>
-      <Link href={group.event.href} className="border-border min-h-11 shrink-0 rounded-xl border px-4 py-2.5 text-center text-sm font-semibold">Abrir ficha</Link>
+      <Link
+        href={group.event.href}
+        className="border-border min-h-11 shrink-0 rounded-xl border px-4 py-2.5 text-center text-sm font-semibold"
+      >
+        Abrir ficha
+      </Link>
     </article>
   );
 }

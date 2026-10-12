@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from 'next/server';
-import { hasPermission } from '@vl6/domain';
+import { hasPermission, type Event, type News } from '@vl6/domain';
 import { createServerContainer } from '@vl6/infra';
+import { createTtlCache, loadPagesUpTo } from '@/modules/admin/lib/record-index';
 import { getCurrentSession } from '@/lib/auth/get-current-session';
 import { isAdminPathAllowed, isAdminTier } from '@/lib/auth/is-admin-tier';
 import {
@@ -12,15 +13,19 @@ import {
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-const RECENT_WINDOW = 100;
+const INDEX_CAP = 3000;
+const INDEX_TTL_MS = 60_000;
+const eventIndex = createTtlCache<{ items: Event[]; truncated: boolean }>(INDEX_TTL_MS);
+const newsIndex = createTtlCache<{ items: News[]; truncated: boolean }>(INDEX_TTL_MS);
 
 /**
  * Busca de registros para a janela Ctrl+K da Administração. Cada fonte só é
  * consultada se a sessão tem a permissão de leitura E o caminho administrativo
  * de destino liberado; nada vindo do navegador define o tenant.
  *
- * Irmãos: busca por nome em todo o cadastro. Acontecimentos e notícias: entre
- * os 100 mais recentes (as telas de Acontecimentos têm filtros completos).
+ * Irmãos: busca por nome em todo o cadastro. Acontecimentos e notícias:
+ * histórico completo até `INDEX_CAP` registros por tipo (mais recentes
+ * primeiro), com cache de 1 minuto por instância para não reler a cada tecla.
  */
 export async function GET(request: NextRequest) {
   const query = (request.nextUrl.searchParams.get('q') ?? '').trim().slice(0, 80);
@@ -55,12 +60,22 @@ export async function GET(request: NextRequest) {
       : null,
     allowed('event:read', '/admin/publicacoes')
       ? safe('Acontecimentos', () =>
-          container.repositories.event.listAll(tenantId, { limit: RECENT_WINDOW }),
+          eventIndex.get(tenantId, () =>
+            loadPagesUpTo(
+              (cursor) => container.repositories.event.listAll(tenantId, { limit: 100, cursor }),
+              INDEX_CAP,
+            ),
+          ),
         )
       : null,
     allowed('news:read', '/admin/publicacoes')
       ? safe('Notícias', () =>
-          container.repositories.news.listAll(tenantId, { limit: RECENT_WINDOW }),
+          newsIndex.get(tenantId, () =>
+            loadPagesUpTo(
+              (cursor) => container.repositories.news.listAll(tenantId, { limit: 100, cursor }),
+              INDEX_CAP,
+            ),
+          ),
         )
       : null,
   ]);
@@ -94,5 +109,8 @@ export async function GET(request: NextRequest) {
     })),
   ];
 
-  return NextResponse.json({ hits, partial: failed }, { headers });
+  return NextResponse.json(
+    { hits, partial: failed, truncated: Boolean(events?.truncated || news?.truncated) },
+    { headers },
+  );
 }

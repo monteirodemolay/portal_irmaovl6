@@ -12,6 +12,7 @@ import {
 import { EventDistributionControls } from '@/modules/admin/components/event-distribution-controls';
 import { notFound } from 'next/navigation';
 import { hasPermission, type News } from '@vl6/domain';
+import { buildAnnouncementDraft } from '@/modules/admin/lib/announcement-draft';
 import { createServerContainer } from '@vl6/infra';
 import { requirePagePermission } from '@/lib/auth/require-permission';
 import { EventFormExperience } from '@/modules/agenda/components/event-form-experience';
@@ -965,6 +966,7 @@ export default async function PublicationWorkspacePage({
                       eventId={eventId}
                       title={event.titulo}
                       canPublish={false}
+                      draft={buildAnnouncementDraft(event)}
                     />
                   </div>
                 </details>
