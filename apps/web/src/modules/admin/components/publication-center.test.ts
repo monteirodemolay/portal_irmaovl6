@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
-import { afterEach, describe, expect, it } from "vitest";
-import React, { act, createElement } from "react";
-import { createRoot, type Root } from "react-dom/client";
-import { PublicationCenter, type EditorialItem } from "./publication-center";
+import { afterEach, describe, expect, it } from 'vitest';
+import React, { act, createElement } from 'react';
+import { createRoot, type Root } from 'react-dom/client';
+import { PublicationCenter, type EditorialItem } from './publication-center';
 
 Object.assign(globalThis, { React, IS_REACT_ACT_ENVIRONMENT: true });
 let root: Root | undefined;
@@ -12,21 +12,29 @@ afterEach(async () => {
   host?.remove();
   root = undefined;
 });
-const base: EditorialItem = {
-  id: "news:n1",
-  title: "Notícia de instrução",
-  type: "Notícia",
-  status: "Rascunho",
-  href: "/admin/conteudo/noticias/n1",
-  eventId: "event-1",
-  happenedAt: new Date().toISOString(),
+const day = 24 * 60 * 60 * 1000;
+const event = (id: string, title: string, happenedAt: string): EditorialItem => ({
+  id: `event:${id}`,
+  title,
+  type: 'Acontecimento',
+  status: 'Realizado',
+  href: `/admin/publicacoes/${id}`,
+  eventId: id,
+  happenedAt,
   publishedAt: null,
   scheduledAt: null,
   expiresAt: null,
-  destination: "Notícias do Portal",
-};
+  destination: 'Agenda',
+});
+const related = (eventId: string, type: string, status = 'Rascunho'): EditorialItem => ({
+  ...event(eventId, `${type} de ${eventId}`, new Date().toISOString()),
+  id: `${type}:${eventId}`,
+  type,
+  status,
+  href: `/admin/conteudo/${type.toLowerCase()}/${eventId}`,
+});
 async function render(items: EditorialItem[], errors: string[] = []) {
-  host = document.createElement("div");
+  host = document.createElement('div');
   document.body.append(host);
   root = createRoot(host);
   await act(async () =>
@@ -34,116 +42,91 @@ async function render(items: EditorialItem[], errors: string[] = []) {
       createElement(PublicationCenter, {
         items,
         errors,
-        createLinks: [
-          { href: "/admin/conteudo/agenda/novo", label: "Sessão ou evento" },
-        ],
+        createLinks: [{ href: '/admin/conteudo/agenda/novo', label: 'Sessão ou evento' }],
       }),
     ),
   );
 }
-describe("Central editorial", () => {
-  it("mantém falha parcial visível sem esconder os itens disponíveis", async () => {
-    await render([base], ["Avisos"]);
-    expect(host.querySelector('[role="alert"]')?.textContent).toContain(
-      "Avisos",
+async function open(label: string) {
+  await act(async () => {
+    [...host.querySelectorAll('button')].find((b) => b.textContent === label)!.click();
+  });
+}
+async function pick(select: HTMLSelectElement, value: string) {
+  await act(async () => {
+    select.value = value;
+    select.dispatchEvent(new Event('change', { bubbles: true }));
+  });
+}
+const selectWith = (value: string) =>
+  [...host.querySelectorAll('select')].find((s) => [...s.options].some((o) => o.value === value))!;
+const past = (days: number) => new Date(Date.now() - days * day).toISOString();
+const future = (days: number) => new Date(Date.now() + days * day).toISOString();
+
+describe('Central editorial', () => {
+  it('mantém falha parcial visível sem esconder os itens disponíveis', async () => {
+    await render([event('e1', 'Sessão Magna', future(3))], ['Avisos']);
+    expect(host.querySelector('[role="alert"]')?.textContent).toContain('Avisos');
+    expect(host.querySelector('a[href="/admin/publicacoes/e1"]')?.textContent).toContain(
+      'Sessão Magna',
     );
-    expect(
-      host.querySelector('a[href="/admin/conteudo/noticias/n1"]')?.textContent,
-    ).toContain(base.title);
-    expect(
-      host.querySelector('a[href="/admin/publicacoes/event-1"]'),
-    ).not.toBeNull();
   });
-  it("filtra por tipo e mantém o formulário específico no menu Criar", async () => {
+
+  it('filtra por tipo mantendo só as fichas com itens daquele tipo', async () => {
     await render([
-      base,
-      {
-        ...base,
-        id: "art:p1",
-        title: "Arte externa",
-        type: "Arte",
-        eventId: null,
-      },
+      event('e1', 'Com notícia', past(5)),
+      related('e1', 'Notícia'),
+      event('e2', 'Com arte', past(6)),
+      related('e2', 'Arte'),
     ]);
-    const select = [...host.querySelectorAll("select")][0]!;
-    await act(async () => {
-      select.value = "Notícia";
-      select.dispatchEvent(new Event("change", { bubbles: true }));
-    });
-    expect(host.textContent).toContain(base.title);
-    expect(host.textContent).not.toContain("Arte externa");
-    expect(
-      host.querySelector('a[href="/admin/conteudo/agenda/novo"]')?.textContent,
-    ).toBe("Sessão ou evento");
+    await open('Lista');
+    expect(host.querySelectorAll('article')).toHaveLength(2);
+    await pick(selectWith('Notícia'), 'Notícia');
+    expect(host.querySelectorAll('article')).toHaveLength(1);
+    expect(host.textContent).toContain('Com notícia');
+    expect(host.textContent).not.toContain('Com arte');
   });
-  it("não transforma acontecimento futuro em agendamento editorial", async () => {
-    await render([base]);
-    await act(async () => {
-      [...host.querySelectorAll("button")]
-        .find((b) => b.textContent === "Calendário editorial")!
-        .click();
-    });
-    expect(
-      host.querySelector('a[href="/admin/conteudo/noticias/n1"]'),
-    ).not.toBeNull();
-    const dateSelect = [...host.querySelectorAll("select")].find((s) =>
-      [...s.options].some((o) => o.value === "scheduledAt"),
-    )!;
-    await act(async () => {
-      dateSelect.value = "scheduledAt";
-      dateSelect.dispatchEvent(new Event("change", { bubbles: true }));
-    });
-    expect(
-      host.querySelector('a[href="/admin/conteudo/noticias/n1"]'),
-    ).toBeNull();
-  });
-  it("mostra ordem decrescente, filtra ano e restaura filtros", async () => {
+
+  it('separa acontecimento futuro de realizado aguardando complementos', async () => {
     await render([
-      {
-        ...base,
-        id: "old",
-        title: "Z antigo",
-        happenedAt: "2024-02-01T12:00:00Z",
-      },
-      {
-        ...base,
-        id: "new",
-        title: "A recente",
-        happenedAt: "2026-02-01T12:00:00Z",
-      },
+      event('futuro', 'Sessão futura', future(10)),
+      event('feito', 'Sessão realizada', past(10)),
     ]);
-    expect(
-      [...host.querySelectorAll("article")].map((a) => a.textContent),
-    ).toEqual([
-      expect.stringContaining("A recente"),
-      expect.stringContaining("Z antigo"),
-    ]);
-    const year = [...host.querySelectorAll("select")].find((s) =>
-      [...s.options].some((o) => o.value === "2024"),
-    )!;
-    await act(async () => {
-      year.value = "2024";
-      year.dispatchEvent(new Event("change", { bubbles: true }));
-    });
-    expect(host.querySelectorAll("article")).toHaveLength(1);
-    expect(host.querySelector("article")?.textContent).toContain("Z antigo");
-    await act(async () => {
-      [...host.querySelectorAll("button")]
-        .find((b) => b.textContent === "Limpar filtros")!
-        .click();
-    });
-    expect(host.querySelectorAll("article")).toHaveLength(2);
-    const order = [...host.querySelectorAll("select")].find((s) =>
-      [...s.options].some((o) => o.value === "oldest"),
-    )!;
-    await act(async () => {
-      order.value = "oldest";
-      order.dispatchEvent(new Event("change", { bubbles: true }));
-    });
-    expect(host.querySelector("article")?.textContent).toContain("Z antigo");
+    const block = (heading: string) =>
+      [...host.querySelectorAll('h2')].find((h) => h.textContent === heading)!.parentElement!
+        .parentElement!.parentElement!.textContent ?? '';
+    const proximos = block('Próximos acontecimentos');
+    const complementar = block('Continuar construção da memória');
+    expect(proximos).toContain('Sessão futura');
+    expect(proximos).not.toContain('Sessão realizada');
+    expect(complementar).toContain('Sessão realizada');
   });
-  it("apresenta ausência de dados", async () => {
+
+  it('mostra ordem decrescente, filtra ano e restaura filtros', async () => {
+    await render([
+      event('old', 'Z antigo', '2024-02-01T12:00:00Z'),
+      event('new', 'A recente', '2026-02-01T12:00:00Z'),
+    ]);
+    await open('Lista');
+    expect([...host.querySelectorAll('article')].map((a) => a.textContent)).toEqual([
+      expect.stringContaining('A recente'),
+      expect.stringContaining('Z antigo'),
+    ]);
+    await pick(selectWith('2024'), '2024');
+    expect(host.querySelectorAll('article')).toHaveLength(1);
+    expect(host.querySelector('article')?.textContent).toContain('Z antigo');
+    await open('Limpar filtros');
+    expect(host.querySelectorAll('article')).toHaveLength(2);
+    await pick(selectWith('oldest'), 'oldest');
+    expect(host.querySelector('article')?.textContent).toContain('Z antigo');
+  });
+
+  it('apresenta ausência de dados nas duas visões', async () => {
     await render([]);
-    expect(host.textContent).toContain("Nenhum conteúdo encontrado");
+    expect(host.textContent).toContain(
+      'Nenhum acontecimento realizado está aguardando complementos',
+    );
+    await open('Lista');
+    expect(host.textContent).toContain('Nenhum acontecimento encontrado');
   });
 });

@@ -34,7 +34,7 @@ A Administração está alinhada ao que o Portal apresenta? Dá para navegar, in
 - Contagens "No Portal" refletem as métricas da Central (ex.: notícias publicadas, avisos publicados); não medem visibilidade por perfil de acesso. Seções sem métrica confiável mostram só os botões.
 - A busca de acontecimentos e notícias olha os 100 mais recentes, não o histórico completo. Busca completa exige índice próprio.
 - Não foi possível validar visualmente em produção nem contra o Firestore real; a validação foi por tipos e testes unitários.
-- Os 5 testes de `publication-center.test.ts` já falhavam antes desta tarefa.
+- Os 5 testes de `publication-center.test.ts` estavam desatualizados em relação à tela redesenhada (Painel/Lista/Calendário) e barravam o push; foram reescritos para o modelo atual de fichas por acontecimento. O cenário de "agendamento editorial" não existe mais na tela e foi trocado por um teste de separação entre futuros e realizados.
 
 ## Próximos passos sugeridos
 
