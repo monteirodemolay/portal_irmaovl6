@@ -11,6 +11,9 @@ import {
 } from '../lib/admin-search';
 import { PORTAL_SURFACES } from '../lib/portal-surfaces';
 
+/** Disparado por botões de busca fora da barra superior (ex.: Central de Controle). */
+export const OPEN_ADMIN_SEARCH_EVENT = 'vl6:open-admin-search';
+
 export interface PaletteTool {
   href: string;
   label: string;
@@ -65,8 +68,13 @@ export function AdminCommandPalette({ tools }: { tools: PaletteTool[] }) {
         setOpen((value) => !value);
       }
     }
+    const onOpen = () => setOpen(true);
     window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    window.addEventListener(OPEN_ADMIN_SEARCH_EVENT, onOpen);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      window.removeEventListener(OPEN_ADMIN_SEARCH_EVENT, onOpen);
+    };
   }, []);
 
   useEffect(() => {

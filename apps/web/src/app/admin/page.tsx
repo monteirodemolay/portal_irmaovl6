@@ -1,5 +1,7 @@
 import { AdminControlCenter } from '@/modules/admin/components/admin-control-center';
 import { loadDashboardOverview } from '@/modules/admin/lib/load-dashboard-overview';
+import { requireSession } from '@/lib/auth/require-session';
+import { buildQuickAdd } from '@/modules/admin/lib/quick-add';
 import { overviewPeriod } from '@/modules/admin/lib/dashboard-overview-model';
 
 export const dynamic = 'force-dynamic';
@@ -22,6 +24,8 @@ export default async function AdminDashboardPage({
     to = undefined;
   }
   const data = await loadDashboardOverview(from, to);
+  const session = await requireSession();
+  const quickAdd = buildQuickAdd(session.authContext, session.role);
   return (
     <div className="space-y-6">
       {warning && (
@@ -29,7 +33,11 @@ export default async function AdminDashboardPage({
           {warning}
         </p>
       )}
-      <AdminControlCenter key={`${data.from}:${data.to}:${data.updatedAt}`} data={data} />
+      <AdminControlCenter
+        key={`${data.from}:${data.to}:${data.updatedAt}`}
+        data={data}
+        quickAdd={quickAdd}
+      />
     </div>
   );
 }
