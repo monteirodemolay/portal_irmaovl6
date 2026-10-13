@@ -47,6 +47,18 @@ A Administração está alinhada ao que o Portal apresenta? Dá para navegar, in
 - **Busca no histórico**: acontecimentos e notícias passam a ser varridos até 3.000 registros mais recentes de cada tipo, com cache de 1 minuto por instância; a janela avisa quando corta (`record-index.ts`).
 - **Rascunho do aviso a partir do acontecimento** (`buildAnnouncementDraft`): ao preparar um aviso novo na Ficha, descrição (data, hora, local, chegada, traje, presença) e expiração (dia do acontecimento, fuso de São Paulo) já vêm preenchidas e editáveis. Nada é publicado sozinho; avisos já existentes não são alterados. A notícia já recebia título, data e local do acontecimento, então não mudou.
 
+## Quarta etapa (13/10/2026): Central simplificada
+
+Retorno do usuário após ver o sistema: "são tantas informações e telas; precisávamos deixar mais simples e facilitado". Mudanças na Central de Controle:
+
+- A tela abre com uma pergunta e quatro botões grandes: **Acontecimento**, **Aviso**, **Notícia** e **Foto, vídeo ou documento** (`buildQuickAdd`). Só aparece o que o perfil pode criar. Notícias e avisos ligados a um acontecimento continuam nascendo da Ficha dele.
+- Uma barra de busca à vista, que abre a mesma janela do Ctrl+K.
+- Em seguida, só "O que precisa de atenção" e "Próximos acontecimentos".
+- O painel Portal × Administração, o panorama, as áreas, a atividade administrativa, os relatórios e o diretório de ferramentas ficaram dentro de um bloco recolhido, "Painéis, relatórios e todas as ferramentas".
+- Removidos da Central o texto explicativo do cabeçalho, o bloco "Ações principais" (duplicava os botões) e os quadros de números do topo.
+
+Verificado em ambiente local (emulador) em tela de computador e de celular (390 px).
+
 ## Próximos passos sugeridos
 
 1. Contagem de Negócios aprovados (exige método de contagem no repositório).
