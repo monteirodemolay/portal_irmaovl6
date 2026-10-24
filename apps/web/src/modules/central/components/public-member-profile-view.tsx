@@ -16,6 +16,8 @@ import { ProfileOverviewTab } from './profile-overview-tab';
 import { type ParamasonicAffiliationDisplay } from './profile-trajectory-tab';
 import { ProfileAcervoTab } from './profile-acervo-tab';
 import { InMemoriamProfileView } from './in-memoriam-profile-view';
+import { OwnerProfileEditBar } from './owner-profile-edit-bar';
+import type { EditTab } from './profile-shared';
 
 /**
  * Perfil único do Irmão — layout de 3 colunas (identidade fixa à esquerda,
@@ -40,6 +42,8 @@ export function PublicMemberProfileView({
   paramasonicAffiliations = [],
   acervoPhotos = [],
   acervoRelationsSlot = null,
+  editingSection = null,
+  ownerEditor = null,
   layout = 'full',
 }: {
   profile: PublicMemberProfileDTO;
@@ -59,6 +63,10 @@ export function PublicMemberProfileView({
   acervoPhotos?: PersonPhoto[];
   /** `RelationsSection` (Server Component, precisa de `container`/`authContext`) já renderizado pela página. */
   acervoRelationsSlot?: ReactNode;
+  /** Seção em edição pelo próprio titular. */
+  editingSection?: EditTab | null;
+  /** Formulário contextual já carregado pela página do Perfil. */
+  ownerEditor?: ReactNode;
   /**
    * `'full'` (padrão) — página cheia (`/irmaos/[memberId]`). `'compact'` —
    * "Ver como os outros veem" (Dialog, sempre mais estreito que a página
@@ -127,6 +135,7 @@ export function PublicMemberProfileView({
   return (
     <div className="flex flex-col gap-6">
       <ProfileHero profile={profile} isOwnProfile={isOwnProfile} />
+      {isOwnProfile && layout === 'full' && <OwnerProfileEditBar current={editingSection} />}
 
       <ProfileShell
         layout={layout}
@@ -135,7 +144,9 @@ export function PublicMemberProfileView({
           <>
             <ProfileStatsStrip profile={profile} memberTitles={memberTitles} honors={honors} />
             <PresentationCard profile={profile} isOwnProfile={isOwnProfile} />
+            {editingSection === 'geral' && ownerEditor}
             <RegistrationDataCard profile={profile} />
+            {editingSection === 'pessoal' && ownerEditor}
             {hasVivenciaContato && (
               <div id="visao-geral" className="scroll-mt-24">
                 <ProfileOverviewTab
@@ -146,6 +157,9 @@ export function PublicMemberProfileView({
                 />
               </div>
             )}
+            {editingSection &&
+              ['profissional', 'empresa', 'afiliacoes', 'contatos', 'redes'].includes(editingSection) &&
+              ownerEditor}
             <RegistryRecordsCard
               profile={profile}
               canViewAcervo={canViewAcervo}

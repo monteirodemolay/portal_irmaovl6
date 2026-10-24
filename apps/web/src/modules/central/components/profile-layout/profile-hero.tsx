@@ -61,7 +61,7 @@ export function ProfileHero({
           <StatusBadge profile={profile} />
           {canEdit && (
             <Link
-              href="/irmaos/meu-espaco#perfil-editor"
+              href="?editar=geral#editor-geral"
               className="mt-1 text-xs font-medium text-white/70 underline-offset-2 hover:text-white hover:underline"
             >
               Editar meu perfil

@@ -92,7 +92,7 @@ export function getCurrentAssignment(trajetoria: PublicMemberProfileDTO['trajeto
  * Adapta o `Panel` institucional compartilhado (`@/components/membership/
  * institutional-panel`, mesma peça visual usada pela Pessoa do Acervo VL6)
  * pro vocabulário específico da Central VL6: `editTab` vira o link "Editar"
- * pra aba certa de Meu Espaço, sem cada seção precisar montar esse `Link`
+ * para a edição contextual da própria página do Perfil, sem cada seção precisar montar esse `Link`
  * na mão. Compartilhado entre as 4 seções do Perfil único (Visão Geral /
  * Trajetória e Honrarias / Família e Legado / Acervo, empilhadas numa
  * página só) — antes vivia só dentro de `public-member-profile-view.tsx`.
@@ -118,7 +118,7 @@ export function Panel({
         trailing ??
         (editTab && (
           <Link
-            href={`/irmaos/meu-espaco#${editTab}`}
+            href={`?editar=${editTab}#editor-${editTab}`}
             className="text-accent shrink-0 text-xs font-semibold hover:underline"
           >
             Editar

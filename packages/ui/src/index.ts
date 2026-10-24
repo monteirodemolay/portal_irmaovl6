@@ -111,6 +111,7 @@ export {
   Landmark,
   Factory,
   Palette,
+  Pencil,
   SlidersHorizontal,
   Tag,
   IdCard,

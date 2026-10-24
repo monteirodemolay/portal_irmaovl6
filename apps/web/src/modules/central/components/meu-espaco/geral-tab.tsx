@@ -24,10 +24,12 @@ export function GeralTab({
   member,
   profile,
   myCommittees,
+  showInstitutional = true,
 }: {
   member: Member;
   profile: MemberCentralProfile | null;
   myCommittees: Committee[];
+  showInstitutional?: boolean;
 }) {
   const [state, formAction] = useActionState<CentralActionState, FormData>(
     updateCentralProfileAction,
@@ -57,7 +59,8 @@ export function GeralTab({
         </form>
       </FormSectionCard>
 
-      <Card>
+      {showInstitutional && (
+        <Card>
         <CardHeader>
           <CardTitle className="text-base">Dados maçônicos</CardTitle>
         </CardHeader>
@@ -77,9 +80,10 @@ export function GeralTab({
             </div>
           </dl>
         </CardContent>
-      </Card>
+        </Card>
+      )}
 
-      {myCommittees.length > 0 && (
+      {showInstitutional && myCommittees.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Minhas Comissões</CardTitle>
