@@ -68,3 +68,17 @@ Verificado em ambiente local (emulador) em tela de computador e de celular (390 
 ## Termos e Privacidade
 
 Esta alteração não coleta dado novo, não envia dado a terceiros e não muda quem acessa dado pessoal: a busca devolve nome e situação de Irmãos apenas a quem já tem `member:read` e acesso a `/admin/pessoas/irmaos`; a tela de Honrarias mostra a quem tem `honor:read` os mesmos dados que a Galeria de Honra já exibe a esse perfil; o preenchimento automático e o rascunho do aviso só reaproveitam dados de acontecimentos (não pessoais). `docs/legal/` não precisou de atualização e não exige novo aceite.
+
+## Correção dos atalhos da Central (26/10/2026)
+
+- Acontecimento exige `event:create` e `event:read`, como a página de destino.
+- Notícia exige `news:create` e `event:read`, sem exigir criação de evento para completar ficha existente.
+- Notícia e Aviso abrem seleção pesquisável do acontecimento; links abrem os módulos da mesma Ficha. Cadastro de acontecimento novo só aparece com ambas as permissões necessárias. Aviso avulso permanece para recados sem vínculo.
+- Sem leitura da Agenda, a etapa de Aviso não consulta nem envia acontecimentos ao navegador. Cada destino mantém suas verificações de servidor e o gate administrativo por papel.
+- Falha na consulta da Agenda é apresentada como indisponibilidade/lista parcial, não como ausência de registros.
+- A CI inclui testes de permissões, destinos concretos, acesso direto à etapa, paginação com contexto da Loja e falha parcial.
+- Termos/Privacidade: não há novo dado, finalidade, terceiro ou ampliação de acesso; a correção alinha navegação às permissões já exigidas. `docs/legal/` não requer nova versão nem aceite.
+
+### Homologação pendente antes de mesclar
+
+A alteração ainda precisa ser conferida em prévia com dados representativos e perfis reais (administrador, bibliotecário, editor personalizado e membro comum). Validar busca/seleção, vínculos na mesma ficha, notícia/aviso/mídias, auditoria, relatórios, falhas, teclado e celular físico. Medir abertura da Central e primeira busca: painéis recolhidos continuam consultados integralmente; a seleção percorre a Agenda em páginas de 100 e deve ser medida com o volume real. Não registrar esse roteiro como executado sem evidência. Depois de homologar, mesclar e conferir produção com possibilidade de reversão.

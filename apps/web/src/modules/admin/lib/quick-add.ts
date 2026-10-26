@@ -22,23 +22,23 @@ const CANDIDATES: Candidate[] = [
     title: 'Acontecimento',
     hint: 'Sessão, evento, palestra ou confraternização',
     href: '/admin/publicacoes/novo',
-    permissions: ['event:create'],
+    permissions: ['event:create', 'event:read'],
     gatePath: '/admin/publicacoes/novo',
   },
   {
     key: 'aviso',
     title: 'Aviso',
-    hint: 'Um recado para os Irmãos',
-    href: '/admin/conteudo/avisos/novo',
+    hint: 'Vincular a um acontecimento ou criar recado avulso',
+    href: '/admin/publicacoes/preparar?conteudo=aviso',
     permissions: ['announcement:create'],
     gatePath: '/admin/conteudo/avisos',
   },
   {
     key: 'noticia',
     title: 'Notícia',
-    hint: 'Texto com fotos sobre algo que aconteceu',
-    href: '/admin/conteudo/noticias/nova',
-    permissions: ['news:create'],
+    hint: 'Localizar o acontecimento e completar sua notícia',
+    href: '/admin/publicacoes/preparar?conteudo=noticia',
+    permissions: ['news:create', 'event:read'],
     gatePath: '/admin/conteudo/noticias',
   },
 ];
@@ -50,7 +50,9 @@ const CANDIDATES: Candidate[] = [
  */
 export function buildQuickAdd(ctx: AuthContext, role: Role | null): QuickAddOption[] {
   const options: QuickAddOption[] = CANDIDATES.filter((c) =>
-    canAccessAdminHref(c.gatePath, c.permissions, ctx, role),
+    c.permissions.every((permission) =>
+      canAccessAdminHref(c.gatePath, [permission], ctx, role),
+    ) && canAccessAdminHref(c.href.split('?')[0], [], ctx, role),
   ).map(({ key, title, hint, href }) => ({ key, title, hint, href }));
   if (visibleUploadDestinations(ctx, role).length > 0) {
     options.push({
