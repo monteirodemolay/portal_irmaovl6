@@ -72,9 +72,9 @@ Esta alteração não coleta dado novo, não envia dado a terceiros e não muda 
 ## Correção dos atalhos da Central (26/10/2026)
 
 - Acontecimento exige `event:create` e `event:read`, como a página de destino.
-- Notícia exige `news:create` e `event:read`, sem exigir criação de evento para completar ficha existente.
+- Notícia exige `news:create`, `news:read` e `event:read`, sem exigir criação de evento para completar ficha existente.
 - Notícia e Aviso abrem seleção pesquisável do acontecimento; links abrem os módulos da mesma Ficha. Cadastro de acontecimento novo só aparece com ambas as permissões necessárias. Aviso avulso permanece para recados sem vínculo.
-- Sem leitura da Agenda, a etapa de Aviso não consulta nem envia acontecimentos ao navegador. Cada destino mantém suas verificações de servidor e o gate administrativo por papel.
+- Sem leitura da Agenda ou dos avisos, a etapa de Aviso não consulta nem envia acontecimentos ao navegador. Cada destino mantém suas verificações de servidor e o gate administrativo por papel.
 - Falha na consulta da Agenda é apresentada como indisponibilidade/lista parcial, não como ausência de registros.
 - A CI inclui testes de permissões, destinos concretos, acesso direto à etapa, paginação com contexto da Loja e falha parcial.
 - Termos/Privacidade: não há novo dado, finalidade, terceiro ou ampliação de acesso; a correção alinha navegação às permissões já exigidas. `docs/legal/` não requer nova versão nem aceite.

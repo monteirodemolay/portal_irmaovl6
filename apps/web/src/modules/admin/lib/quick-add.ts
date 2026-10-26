@@ -38,7 +38,7 @@ const CANDIDATES: Candidate[] = [
     title: 'Notícia',
     hint: 'Localizar o acontecimento e completar sua notícia',
     href: '/admin/publicacoes/preparar?conteudo=noticia',
-    permissions: ['news:create', 'event:read'],
+    permissions: ['news:create', 'news:read', 'event:read'],
     gatePath: '/admin/conteudo/noticias',
   },
 ];

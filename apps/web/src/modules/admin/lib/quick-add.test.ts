@@ -10,11 +10,12 @@ const keys = (permissions: string[], role = admin) => buildQuickAdd(ctx(permissi
 describe('buildQuickAdd', () => {
   it('exige leitura e criação para evento; notícia pode completar evento existente', () => {
     expect(keys(['event:create', 'news:create'])).toEqual([]);
-    expect(keys(['event:read', 'news:create'])).toEqual(['noticia']);
+    expect(keys(['event:read', 'news:create'])).toEqual([]);
+    expect(keys(['event:read', 'news:create', 'news:read'])).toEqual(['noticia']);
     expect(keys(['event:read', 'event:create'])).toEqual(['acontecimento']);
   });
   it('administrador completo vê as quatro opções', () => {
-    expect(keys(['event:manage', 'announcement:create', 'news:create', 'archiveItem:create'])).toEqual(['acontecimento', 'aviso', 'noticia', 'arquivos']);
+    expect(keys(['event:manage', 'announcement:create', 'news:create', 'news:read', 'archiveItem:create'])).toEqual(['acontecimento', 'aviso', 'noticia', 'arquivos']);
   });
   it('manage implica criação e leitura do recurso', () => {
     expect(keys(['event:manage', 'news:manage'])).toEqual(['acontecimento', 'noticia']);
@@ -27,12 +28,12 @@ describe('buildQuickAdd', () => {
     expect(keys(['event:manage', 'news:create', 'announcement:create', 'libraryItem:create'], librarian)).toEqual(['arquivos']);
   });
   it('papel personalizado segue as permissões do destino', () => {
-    const custom = { chave: 'editor', sistemico: false, permissoes: ['news:create', 'event:read'] } as unknown as Role;
-    expect(keys(['news:create', 'event:read'], custom)).toEqual(['noticia']);
+    const custom = { chave: 'editor', sistemico: false, permissoes: ['news:create', 'news:read', 'event:read'] } as unknown as Role;
+    expect(keys(['news:create', 'news:read', 'event:read'], custom)).toEqual(['noticia']);
     expect(keys([])).toEqual([]);
   });
   it('destinos existem e comunicação abre seleção, sem criar outro evento', () => {
-    const options = buildQuickAdd(ctx(['event:manage', 'announcement:create', 'news:create', 'file:create']), admin);
+    const options = buildQuickAdd(ctx(['event:manage', 'announcement:create', 'news:create', 'news:read', 'file:create']), admin);
     expect(options.find((o) => o.key === 'noticia')?.href).toBe('/admin/publicacoes/preparar?conteudo=noticia');
     expect(options.find((o) => o.key === 'aviso')?.href).toBe('/admin/publicacoes/preparar?conteudo=aviso');
     for (const option of options) expect(existsSync(resolve(process.cwd(), 'src/app', option.href.split('?')[0].slice(1), 'page.tsx'))).toBe(true);
