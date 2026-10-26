@@ -8,5 +8,5 @@ import { requirePagePermission } from '@/lib/auth/require-permission';
  */
 export default async function NewNewsPage() {
   await requirePagePermission('news:create');
-  redirect('/admin/publicacoes/novo');
+  redirect('/admin/publicacoes/preparar?conteudo=noticia');
 }

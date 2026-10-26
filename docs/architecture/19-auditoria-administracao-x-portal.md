@@ -47,6 +47,18 @@ A Administração está alinhada ao que o Portal apresenta? Dá para navegar, in
 - **Busca no histórico**: acontecimentos e notícias passam a ser varridos até 3.000 registros mais recentes de cada tipo, com cache de 1 minuto por instância; a janela avisa quando corta (`record-index.ts`).
 - **Rascunho do aviso a partir do acontecimento** (`buildAnnouncementDraft`): ao preparar um aviso novo na Ficha, descrição (data, hora, local, chegada, traje, presença) e expiração (dia do acontecimento, fuso de São Paulo) já vêm preenchidas e editáveis. Nada é publicado sozinho; avisos já existentes não são alterados. A notícia já recebia título, data e local do acontecimento, então não mudou.
 
+## Quarta etapa (13/10/2026): Central simplificada
+
+Retorno do usuário após ver o sistema: "são tantas informações e telas; precisávamos deixar mais simples e facilitado". Mudanças na Central de Controle:
+
+- A tela abre com uma pergunta e quatro botões grandes: **Acontecimento**, **Aviso**, **Notícia** e **Foto, vídeo ou documento** (`buildQuickAdd`). Só aparece o que o perfil pode criar. Notícias e avisos ligados a um acontecimento continuam nascendo da Ficha dele.
+- Uma barra de busca à vista, que abre a mesma janela do Ctrl+K.
+- Em seguida, só "O que precisa de atenção" e "Próximos acontecimentos".
+- O painel Portal × Administração, o panorama, as áreas, a atividade administrativa, os relatórios e o diretório de ferramentas ficaram dentro de um bloco recolhido, "Painéis, relatórios e todas as ferramentas".
+- Removidos da Central o texto explicativo do cabeçalho, o bloco "Ações principais" (duplicava os botões) e os quadros de números do topo.
+
+Verificado em ambiente local (emulador) em tela de computador e de celular (390 px).
+
 ## Próximos passos sugeridos
 
 1. Contagem de Negócios aprovados (exige método de contagem no repositório).
@@ -56,3 +68,17 @@ A Administração está alinhada ao que o Portal apresenta? Dá para navegar, in
 ## Termos e Privacidade
 
 Esta alteração não coleta dado novo, não envia dado a terceiros e não muda quem acessa dado pessoal: a busca devolve nome e situação de Irmãos apenas a quem já tem `member:read` e acesso a `/admin/pessoas/irmaos`; a tela de Honrarias mostra a quem tem `honor:read` os mesmos dados que a Galeria de Honra já exibe a esse perfil; o preenchimento automático e o rascunho do aviso só reaproveitam dados de acontecimentos (não pessoais). `docs/legal/` não precisou de atualização e não exige novo aceite.
+
+## Correção dos atalhos da Central (26/10/2026)
+
+- Acontecimento exige `event:create` e `event:read`, como a página de destino.
+- Notícia exige `news:create`, `news:read` e `event:read`, sem exigir criação de evento para completar ficha existente.
+- Notícia e Aviso abrem seleção pesquisável do acontecimento; links abrem os módulos da mesma Ficha. Cadastro de acontecimento novo só aparece com ambas as permissões necessárias. Aviso avulso permanece para recados sem vínculo.
+- Sem leitura da Agenda ou dos avisos, a etapa de Aviso não consulta nem envia acontecimentos ao navegador. Cada destino mantém suas verificações de servidor e o gate administrativo por papel.
+- Falha na consulta da Agenda é apresentada como indisponibilidade/lista parcial, não como ausência de registros.
+- A CI inclui testes de permissões, destinos concretos, acesso direto à etapa, paginação com contexto da Loja e falha parcial.
+- Termos/Privacidade: não há novo dado, finalidade, terceiro ou ampliação de acesso; a correção alinha navegação às permissões já exigidas. `docs/legal/` não requer nova versão nem aceite.
+
+### Homologação pendente antes de mesclar
+
+A alteração ainda precisa ser conferida em prévia com dados representativos e perfis reais (administrador, bibliotecário, editor personalizado e membro comum). Validar busca/seleção, vínculos na mesma ficha, notícia/aviso/mídias, auditoria, relatórios, falhas, teclado e celular físico. Medir abertura da Central e primeira busca: painéis recolhidos continuam consultados integralmente; a seleção percorre a Agenda em páginas de 100 e deve ser medida com o volume real. Não registrar esse roteiro como executado sem evidência. Depois de homologar, mesclar e conferir produção com possibilidade de reversão.
