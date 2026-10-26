@@ -52,7 +52,7 @@ export function buildQuickAdd(ctx: AuthContext, role: Role | null): QuickAddOpti
   const options: QuickAddOption[] = CANDIDATES.filter((c) =>
     c.permissions.every((permission) =>
       canAccessAdminHref(c.gatePath, [permission], ctx, role),
-    ) && canAccessAdminHref(c.href.split('?')[0], [], ctx, role),
+    ) && canAccessAdminHref((c.href.split('?')[0] ?? ''), [], ctx, role),
   ).map(({ key, title, hint, href }) => ({ key, title, hint, href }));
   if (visibleUploadDestinations(ctx, role).length > 0) {
     options.push({

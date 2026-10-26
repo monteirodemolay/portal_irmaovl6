@@ -36,6 +36,6 @@ describe('buildQuickAdd', () => {
     const options = buildQuickAdd(ctx(['event:manage', 'announcement:create', 'news:create', 'news:read', 'file:create']), admin);
     expect(options.find((o) => o.key === 'noticia')?.href).toBe('/admin/publicacoes/preparar?conteudo=noticia');
     expect(options.find((o) => o.key === 'aviso')?.href).toBe('/admin/publicacoes/preparar?conteudo=aviso');
-    for (const option of options) expect(existsSync(resolve(process.cwd(), 'src/app', option.href.split('?')[0].slice(1), 'page.tsx'))).toBe(true);
+    for (const option of options) expect(existsSync(resolve(process.cwd(), 'src/app', (option.href.split('?')[0] ?? '').slice(1), 'page.tsx'))).toBe(true);
   });
 });
