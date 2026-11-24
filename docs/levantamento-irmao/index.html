@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Portal VL6 — Área do Irmão</title>
+<style>
+:root{--bg:#f4f6fa;--surface:#fff;--ink:#0b1b33;--muted:#5b6b82;--line:#dfe5ee;--navy:#0a1d3a;--navy2:#13294d;--gold:#d4af37;--ok:#1f7a4d;--okbg:#e3f4ea;--warn:#8a5a00;--warnbg:#fff1d6;--pilot:#6a3fa0;--pilotbg:#efe6fa;--gap:#a12b2b;--gapbg:#fde6e6}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#0a1220;--surface:#121c2e;--ink:#e8edf5;--muted:#9fb0c7;--line:#243553;--okbg:#12362a;--warnbg:#3b2d10;--pilotbg:#2a1f40;--gapbg:#3d1a1a;--ok:#6fd6a0;--warn:#f0c46a;--pilot:#c9a8f5;--gap:#f29a9a}}
+*{box-sizing:border-box}html,body{margin:0}
+body{font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--ink);line-height:1.5}
+.app{display:grid;grid-template-columns:280px 1fr;min-height:100vh}
+nav{background:var(--navy);color:#dbe5f5;padding:20px 12px;position:sticky;top:0;height:100vh;overflow:auto}
+nav h1{font:700 17px Georgia,serif;color:#fff;margin:4px 10px 2px}
+nav small{display:block;margin:0 10px 16px;color:#8fa3c4;font-size:12px}
+nav button{display:flex;gap:8px;align-items:center;width:100%;text-align:left;background:none;border:0;color:inherit;font:inherit;font-size:14px;padding:9px 10px;border-radius:8px;cursor:pointer}
+nav button:hover{background:var(--navy2)}nav button[aria-current=true]{background:var(--gold);color:#0a1d3a;font-weight:600}
+.dot{width:8px;height:8px;border-radius:50%;flex:none}
+.d-pronto{background:#4cc58a}.d-parcial{background:#f0b84a}.d-piloto{background:#b48be8}
+main{padding:28px clamp(16px,3vw,44px);max-width:1180px;width:100%}
+.top{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:6px}
+h2{font:700 30px Georgia,serif;margin:0}
+.route{font:13px ui-monospace,monospace;color:var(--muted)}
+.badge{display:inline-block;font-size:12px;font-weight:700;padding:3px 10px;border-radius:99px}
+.b-Pronto,.b-pronto{background:var(--okbg);color:var(--ok)}.b-Parcial,.b-parcial{background:var(--warnbg);color:var(--warn)}.b-Piloto,.b-piloto{background:var(--pilotbg);color:var(--pilot)}.b-Lacuna{background:var(--gapbg);color:var(--gap)}
+.lead{color:var(--muted);font-size:16px;margin:4px 0 18px}
+.grid{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:22px;align-items:start}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px 20px}
+.card h3{margin:0 0 10px;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+ul.acoes{list-style:none;margin:0;padding:0}
+ul.acoes li{display:flex;gap:10px;align-items:flex-start;padding:7px 0;border-top:1px solid var(--line);font-size:14.5px}
+ul.acoes li:first-child{border-top:0}
+ul.acoes .badge{margin-top:1px;min-width:58px;text-align:center}
+.shot{margin:0}.shot img{width:100%;border-radius:10px;border:1px solid var(--line);cursor:zoom-in;display:block}
+.shot figcaption{font-size:13px;color:var(--muted);margin-top:6px}
+.thumbs{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+.thumbs button{border:2px solid var(--line);background:var(--surface);border-radius:8px;padding:0;cursor:pointer;width:88px;overflow:hidden}
+.thumbs button[aria-current=true]{border-color:var(--gold)}.thumbs img{width:100%;display:block}
+.note{background:var(--warnbg);color:var(--warn);border-radius:10px;padding:10px 14px;font-size:14px;margin-top:12px}
+.who{font-size:14.5px}
+.pager{display:flex;justify-content:space-between;margin:22px 0 0}
+.pager button,.btn{font:inherit;font-weight:600;background:var(--navy);color:#fff;border:0;border-radius:10px;padding:10px 16px;cursor:pointer}
+.pager button:disabled{opacity:.35;cursor:default}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:16px 0}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 16px}.stat b{font:700 28px Georgia,serif;display:block}.stat span{font-size:13px;color:var(--muted)}
+.mods{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px}
+.mod{text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:0;cursor:pointer;overflow:hidden;font:inherit;color:inherit}
+.mod:hover{border-color:var(--gold)}.mod img{width:100%;height:130px;object-fit:cover;object-position:top;display:block;border-bottom:1px solid var(--line)}
+.mod div{padding:10px 14px}.mod strong{display:block}.mod small{color:var(--muted)}
+.lb{position:fixed;inset:0;background:rgba(4,10,22,.92);display:none;align-items:center;justify-content:center;z-index:20;padding:20px}
+.lb.on{display:flex}.lb img{max-width:100%;max-height:100%;border-radius:8px}
+.menu{display:none}
+@media (max-width:860px){.app{grid-template-columns:1fr}nav{position:static;height:auto;display:none}nav.open{display:block}.menu{display:inline-block;margin:12px 16px 0}.grid{grid-template-columns:1fr}}
+@media print{nav,.pager,.menu{display:none}.app{display:block}}
+:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+</style>
+</head>
+<body>
+<button class="btn menu" id="menu" aria-expanded="false">☰ Módulos</button>
+<div class="app">
+<nav id="nav" aria-label="Módulos"></nav>
+<main id="main" tabindex="-1"></main>
+</div>
+<div class="lb" id="lb" role="dialog" aria-label="Imagem ampliada"><img alt=""></div>
+<script>
+const M=[{"id": "inicio", "titulo": "Início", "rota": "/dashboard", "status": "pronto", "resumo": "Painel de entrada do Irmão: o que importa hoje, num só lugar.", "acoes": [["Pronto", "Saudação por horário, gestão vigente e citação do dia"], ["Pronto", "Cards da próxima Sessão e do próximo Evento da Loja"], ["Pronto", "Confirmar presença ou “Não poderei ir” direto no card"], ["Pronto", "Adicionar a sessão à própria agenda"], ["Pronto", "Painéis de próximas sessões/eventos, avisos importantes e Central de Avisos"], ["Pronto", "“Neste dia” do Acervo, aniversariantes e notícias em destaque"], ["Pronto", "Atalhos para Acervo, Biblioteca, Galeria e Constelação com contagens"]], "quem": "Todo Irmão com cadastro vinculado. Cada card some se o perfil não tem a permissão correspondente.", "shots": [["01-dashboard", "Início do Irmão"]], "notas": []}, {"id": "agenda", "titulo": "Minha Agenda", "rota": "/agenda · /eventos/[id]", "status": "pronto", "resumo": "Agenda unificada: Loja, pessoal e Google numa só visão.", "acoes": [["Pronto", "Visões Hoje, Semana, Mês e Lista"], ["Pronto", "Filtros por categoria: sessões, eventos, aniversariantes, recessos, paramaçônicas, outras datas, pessoal e Google"], ["Pronto", "Detalhar sessões por tipo, natureza, grau de trabalho e acesso"], ["Pronto", "Confirmar, recusar ou entrar na lista de espera de um evento"], ["Pronto", "Novo compromisso pessoal com lembrete"], ["Pronto", "Minhas tarefas e minhas anotações pessoais"], ["Pronto", "Alerta de conflito de horário"], ["Pronto", "Baixar o evento em .ics e assinar o calendário da Loja (webcal), com token pessoal revogável"], ["Piloto", "Conectar Google Agenda (importa eventos e sincroniza compromissos pessoais): depende de credenciais Google configuradas no servidor"]], "quem": "Todo Irmão com cadastro vinculado. Eventos do Google são somente leitura.", "shots": [["02-agenda", "Minha Agenda — visão mensal, filtros, tarefas e anotações"]], "notas": ["Janela padrão é o ano civil corrente; em dezembro inclui janeiro seguinte."]}, {"id": "avisos", "titulo": "Notificações", "rota": "/avisos", "status": "pronto", "resumo": "Central de avisos com controle de leitura e ciência.", "acoes": [["Pronto", "Abas: Todas, Não lidas, Lidas, Importantes, Exigem ciência e Arquivadas"], ["Pronto", "Marcar como lida/não lida, importante, arquivar e excluir"], ["Pronto", "Marcar todas como lidas"], ["Pronto", "Dar ciência em comunicados que exigem confirmação"], ["Pronto", "Contador de não lidas no menu e no sino"], ["Parcial", "Canais externos (e-mail, push, WhatsApp, Telegram) configuráveis em Configurações; a entrega real depende da integração de cada canal"]], "quem": "Todo Irmão autenticado.", "shots": [["03-avisos", "Central de Notificações"]], "notas": []}, {"id": "irmaos", "titulo": "Irmãos (Comunidade)", "rota": "/irmaos · /irmaos/meu-espaco · /irmaos/galeria-de-honra", "status": "pronto", "resumo": "Diretório voluntário, perfil pessoal, negócios e honrarias.", "acoes": [["Pronto", "Buscar Irmãos e negócios com filtros: situação, grau, área de atuação, segmento e cidade"], ["Pronto", "Ver perfil de outro Irmão, respeitando a privacidade que ele definiu"], ["Pronto", "Visão In Memoriam para Irmãos falecidos (leitura)"], ["Pronto", "Meu Perfil: dados pessoais, família, profissional, empresa, afiliações, contatos e redes"], ["Pronto", "Foto própria e anel de completude do perfil"], ["Pronto", "Privacidade por bloco, “ver como os outros veem” e retirar-se do diretório"], ["Pronto", "Cadastrar Meus Negócios (passa por revisão antes de publicar)"], ["Pronto", "Legado Familiar: adicionar familiar, confirmar/recusar vínculo, editar parentesco"], ["Pronto", "Galeria de Honra: consulta de honrarias com filtro por tipo"], ["Parcial", "Consulta automática de CNPJ depende de serviço externo"]], "quem": "Exige permissão de diretório (membros da Loja). Paramaçônicas não veem o Diretório.", "shots": [["04-irmaos", "Comunidade — diretório de Irmãos e negócios"], ["05-meu-espaco", "Meu Perfil"], ["07-galeria-de-honra", "Galeria de Honra"]], "notas": ["O Irmão não cria nem edita mensagem memorial; isso é feito pela administração."]}, {"id": "paramaconicas", "titulo": "Paramaçônicas", "rota": "/paramaconicas", "status": "pronto", "resumo": "Comunidade paramaçônica ligada à Loja.", "acoes": [["Pronto", "Consultar entidades paramaçônicas e seus integrantes"], ["Pronto", "Filtrar por tipo de entidade e navegar pelos integrantes"], ["Pronto", "Ver vínculos familiares e itens do Acervo relacionados"], ["Pronto", "Somente leitura para o Irmão"]], "quem": "Perfis com permissão de comunidade paramaçônica (inclui o convidado paramaçônico, com exposição reduzida).", "shots": [["08-paramaconicas", "Comunidade Paramaçônica"]], "notas": []}, {"id": "noticias", "titulo": "Notícias", "rota": "/noticias · /noticias/todas · /noticias/[slug]", "status": "pronto", "resumo": "Notícias da Loja publicadas no próprio Portal.", "acoes": [["Pronto", "Destaque editorial, busca ao vivo, filtros por categoria e ano, paginação"], ["Pronto", "Leitura da notícia com galeria de imagens, links do Instagram, evento vinculado e notícias relacionadas"], ["Pronto", "Comentar notícias (aparece depois de aprovado pela moderação)"]], "quem": "Qualquer usuário autenticado.", "shots": [["09-noticias", "Notícias — destaque"], ["10-noticias-todas", "Todas as notícias"], ["11-noticia", "Leitura de uma notícia"]], "notas": []}, {"id": "links", "titulo": "Links Úteis", "rota": "/links-uteis", "status": "pronto", "resumo": "Biblioteca de atalhos da Loja e da família maçônica.", "acoes": [["Pronto", "Buscar e filtrar por categoria"], ["Pronto", "Marcar links favoritos"], ["Pronto", "Sugerir um novo link (vai para aprovação da administração)"]], "quem": "Perfis com leitura de links (membros da Loja).", "shots": [["12-links-uteis", "Links Úteis"]], "notas": []}, {"id": "config", "titulo": "Configurações", "rota": "/configuracoes · /irmaos/configuracoes/termos-e-privacidade", "status": "parcial", "resumo": "Conta, privacidade, notificações e aceite de termos.", "acoes": [["Pronto", "Trocar senha e ativar verificação em duas etapas (MFA)"], ["Pronto", "Definir visibilidade do perfil no diretório"], ["Pronto", "Escolher canais de notificação"], ["Pronto", "Aceitar Termos de Uso e Política de Privacidade; histórico de versões aceitas"], ["Pronto", "Excluir a própria conta"], ["Pronto", "Aparência e acessibilidade (guardadas no dispositivo)"], ["Piloto", "Conectar/desconectar Google Agenda: depende de credenciais no servidor"], ["Lacuna", "Não há exportação dos próprios dados pelo Irmão; correção/exportação é pedida à Secretaria"]], "quem": "Todo Irmão autenticado. No primeiro acesso, termos pendentes são exigidos por um aviso de boas-vindas.", "shots": [["13-configuracoes", "Configurações pessoais"], ["14-termos-privacidade", "Termos e Privacidade"]], "notas": []}, {"id": "acervo", "titulo": "Acervo VL6", "rota": "/acervo/*", "status": "pronto", "resumo": "Memória da Loja: pessoas, gestões, eventos, fotos, vídeos e documentos.", "acoes": [["Pronto", "Busca geral no Acervo, com sugestões e filtro por tipo"], ["Pronto", "Descobrir: conteúdos e registros relacionados"], ["Pronto", "Constelação VL6: lembranças em fotos e vídeos por ano, com exploração de trilhas"], ["Pronto", "Linha do Tempo de gestões e acontecimentos"], ["Pronto", "Eventos com conteúdo preservado e álbum de cada evento"], ["Pronto", "Pessoas: trajetórias, com filtros por grau, situação e área"], ["Pronto", "Gestões: veneráveis e diretorias por período"], ["Pronto", "Exposições temáticas"], ["Pronto", "Fotografias, Audiovisual e Documentos, com filtros e download quando permitido"], ["Pronto", "Página de cada item, aberta em janela sobre a lista"], ["Pronto", "Contribuir com a memória: enviar relato ou arquivo e acompanhar o status em “Minhas contribuições” (só publica após moderação)"]], "quem": "Perfis com leitura do Acervo (membros da Loja). Constelação exige permissão de relações do Acervo.", "shots": [["15-acervo", "Acervo — visão geral"], ["16-acervo-pesquisar", "Pesquisar"], ["17-acervo-descobrir", "Descobrir"], ["18-acervo-constelacao", "Constelação VL6"], ["19-acervo-linha-do-tempo", "Linha do Tempo"], ["20-acervo-eventos", "Eventos"], ["21-acervo-pessoas", "Pessoas"], ["22-acervo-gestoes", "Gestões"], ["24-acervo-exposicoes", "Exposições"], ["25-acervo-fotografias", "Fotos e vídeos"], ["26-acervo-audiovisual", "Audiovisual"], ["27-acervo-documentos", "Documentos"], ["28-acervo-contribuir", "Contribuir"]], "notas": ["Nos prints, várias telas aparecem vazias porque o ambiente de demonstração não tem acervo cadastrado.", "Constelação cobre só eventos com foto ou vídeo publicado e tem limites de carga; não representa todo o acervo.", "A permissão do papel Membro para enviar contribuições não foi confirmada nas regras; validar na prática."]}, {"id": "biblioteca", "titulo": "Biblioteca e Favoritos", "rota": "/acervo/biblioteca/* · /downloads", "status": "pronto", "resumo": "Catálogo físico e digital, com empréstimo para retirada em sessão.", "acoes": [["Pronto", "Catálogo com busca e rankings: mais baixados e mais emprestados"], ["Pronto", "Ficha da obra: sinopse, avaliação e ficha do exemplar (destino do QR)"], ["Pronto", "Ler online e baixar arquivo digital, quando a obra permite"], ["Pronto", "Favoritar obras; tela Favoritos com leitura e download"], ["Pronto", "Solicitar empréstimo escolhendo a sessão de retirada"], ["Pronto", "Carrinho de empréstimos (pedido em pacote)"], ["Pronto", "Meus empréstimos: status, prazo e retirada"], ["Pronto", "Reportar ocorrência em obra retirada ou atrasada"], ["Lacuna", "Não há reserva nem fila de espera: só empréstimo com retirada em evento"]], "quem": "Perfis com leitura da Biblioteca. Etiquetas, balcão e baixas são do bibliotecário/administração.", "shots": [["29-biblioteca", "Biblioteca"], ["30-biblioteca-carrinho", "Carrinho de empréstimos"], ["31-biblioteca-emprestimos", "Meus empréstimos"], ["32-favoritos", "Favoritos"]], "notas": ["O catálogo aparece vazio nos prints porque o ambiente de demonstração não tem obras cadastradas."]}, {"id": "conhecimento", "titulo": "Conhecimento VL6", "rota": "/conhecimento/*", "status": "pronto", "resumo": "Formação continuada com trilhas, aulas, avaliações e certificado.", "acoes": [["Pronto", "Visão geral, Minha jornada e Meu progresso (horas, média, % por formação)"], ["Pronto", "Formações com busca e filtros por tema"], ["Pronto", "Conhecimento rápido: conteúdos curtos"], ["Pronto", "Assistir aulas (texto, vídeo, imagem) e retomar de onde parou"], ["Pronto", "Livros de referência ligados à Biblioteca"], ["Pronto", "Responder avaliações com nota mínima e limite de tentativas; ver resultado"], ["Pronto", "Certificado institucional com impressão/PDF ao concluir as etapas obrigatórias"], ["Parcial", "Questões abertas ficam “em revisão” até um revisor corrigir; depende da ação da administração"], ["Lacuna", "Sem relatório exportável do próprio progresso"]], "quem": "Só Irmão ativo e vinculado. Cada formação é liberada por grau (lista de graus ou grau mínimo) e por período de vigência.", "shots": [["33-conhecimento", "Visão geral"], ["34-conhecimento-jornada", "Minha jornada"], ["35-conhecimento-formacoes", "Formações"], ["36-conhecimento-rapido", "Conhecimento rápido"], ["37-conhecimento-atividades", "Atividades"], ["38-conhecimento-progresso", "Meu progresso"]], "notas": ["Nos prints não há formações publicadas; as telas mostram o estado vazio."]}, {"id": "app", "titulo": "Termos, Offline e aplicativo (PWA)", "rota": "/termos/[documento] · /offline", "status": "parcial", "resumo": "Páginas institucionais e instalação no celular.", "acoes": [["Pronto", "Página dos Termos de Uso e da Política de Privacidade na versão vigente"], ["Pronto", "Instalar o Portal como aplicativo (nome, cores e logo da Loja)"], ["Pronto", "Apresentação do Portal (link no menu)"], ["Parcial", "Offline: reabre páginas já visitadas em modo leitura; nenhuma ação (presença, empréstimo) funciona sem internet e não há fila de sincronização"]], "quem": "Termos: qualquer pessoa. Instalação: qualquer Irmão pelo navegador.", "shots": [["39-termos-uso", "Termos de Uso"], ["40-offline", "Tela offline"]], "notas": []}], C={"Pronto": 74, "Piloto": 2, "Parcial": 4, "Lacuna": 3}, TOT=83, NS=38;
+const $=s=>document.querySelector(s), esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const SL={pronto:'Pronto',parcial:'Parcial',piloto:'Piloto'};
+let cur=-1, shot=0;
+function nav(){ $('#nav').innerHTML='<h1>Portal VL6</h1><small>Levantamento — Área do Irmão</small>'+
+ `<button data-i="-1" aria-current="${cur===-1}">Visão geral</button>`+
+ M.map((m,i)=>`<button data-i="${i}" aria-current="${cur===i}"><span class="dot d-${m.status}"></span>${esc(m.titulo)}</button>`).join('');
+ $('#nav').querySelectorAll('button').forEach(b=>b.onclick=()=>go(+b.dataset.i)); }
+function overview(){
+ return `<div class="top"><h2>Área do Irmão — o que já existe</h2></div>
+ <p class="lead">Levantamento do que o Irmão acessa no Portal, a partir do código. Fora do escopo: Administração e Cripta.</p>
+ <div class="stats">
+  <div class="stat"><b>${M.length}</b><span>módulos</span></div>
+  <div class="stat"><b>${TOT}</b><span>funções mapeadas</span></div>
+  <div class="stat"><b>${C.Pronto||0}</b><span>prontas no código</span></div>
+  <div class="stat"><b>${(C.Parcial||0)+(C.Piloto||0)}</b><span>parciais ou piloto</span></div>
+  <div class="stat"><b>${C.Lacuna||0}</b><span>lacunas conhecidas</span></div>
+  <div class="stat"><b>${NS}</b><span>telas com print</span></div>
+ </div>
+ <div class="card" style="margin-bottom:18px"><h3>Como ler</h3>
+  <p class="who"><span class="badge b-Pronto">Pronto</span> implementado no código. <span class="badge b-Parcial">Parcial</span> funciona com limite. <span class="badge b-Piloto">Piloto</span> depende de configuração externa. <span class="badge b-Lacuna">Lacuna</span> não existe hoje.<br>
+  “Pronto” significa implementado no código, não validado em produção. Os prints usam dados fictícios; telas vazias indicam que o ambiente de demonstração não tinha conteúdo cadastrado.</p></div>
+ <div class="mods">${M.map((m,i)=>`<button class="mod" data-i="${i}"><img src="prints/${m.shots[0][0]}.jpg" alt="" loading="lazy"><div><strong>${esc(m.titulo)}</strong><small>${esc(m.resumo)}</small><br><span class="badge b-${m.status}">${SL[m.status]}</span></div></button>`).join('')}</div>
+ <div class="card" style="margin-top:18px"><h3>Pontos de atenção gerais</h3><ul class="acoes">
+  <li><span class="badge b-Piloto">Piloto</span>Google Agenda e canais externos de aviso exigem credenciais/integrações no servidor.</li>
+  <li><span class="badge b-Parcial">Parcial</span>Uso offline é só leitura de páginas já visitadas.</li>
+  <li><span class="badge b-Lacuna">Lacuna</span>Sem exportação dos próprios dados (LGPD) pelo Irmão; hoje é pedido à Secretaria.</li>
+  <li><span class="badge b-Lacuna">Lacuna</span>Biblioteca sem reserva/fila de espera.</li>
+  <li><span class="badge b-Parcial">Parcial</span>Papel Membro: permissão para enviar contribuições ao Acervo precisa de validação na prática.</li></ul></div>`; }
+function module(i){ const m=M[i]; shot=Math.min(shot,m.shots.length-1); const s=m.shots[shot];
+ return `<div class="top"><h2>${esc(m.titulo)}</h2><span class="badge b-${m.status}">${SL[m.status]}</span></div>
+ <div class="route">${esc(m.rota)}</div><p class="lead">${esc(m.resumo)}</p>
+ <div class="grid">
+  <div><div class="card"><h3>O que o Irmão pode fazer</h3><ul class="acoes">${m.acoes.map(a=>`<li><span class="badge b-${a[0]}">${a[0]}</span><span>${esc(a[1])}</span></li>`).join('')}</ul></div>
+   <div class="card" style="margin-top:14px"><h3>Quem acessa</h3><div class="who">${esc(m.quem)}</div></div>
+   ${m.notas.map(n=>`<div class="note">${esc(n)}</div>`).join('')}</div>
+  <div><figure class="shot"><img id="big" src="prints/${s[0]}.jpg" alt="${esc(s[1])}"><figcaption>${esc(s[1])}</figcaption></figure>
+   ${m.shots.length>1?`<div class="thumbs">${m.shots.map((t,k)=>`<button data-k="${k}" aria-current="${k===shot}" title="${esc(t[1])}"><img src="prints/${t[0]}.jpg" alt="${esc(t[1])}" loading="lazy"></button>`).join('')}</div>`:''}</div>
+ </div>
+ <div class="pager"><button id="prev" ${i<0?'disabled':''}>← ${i>0?esc(M[i-1].titulo):'Visão geral'}</button><button id="next" ${i>=M.length-1?'disabled':''}>${i<M.length-1?esc(M[i+1].titulo):''} →</button></div>`; }
+function render(){ const main=$('#main'); main.innerHTML=cur<0?overview():module(cur); nav();
+ main.querySelectorAll('.mod').forEach(b=>b.onclick=()=>go(+b.dataset.i));
+ main.querySelectorAll('.thumbs button').forEach(b=>b.onclick=()=>{shot=+b.dataset.k;render();});
+ const big=$('#big'); if(big) big.onclick=()=>{$('#lb img').src=big.src;$('#lb').classList.add('on');};
+ const p=$('#prev'),n=$('#next'); if(p)p.onclick=()=>go(cur-1); if(n)n.onclick=()=>go(cur+1);
+ try{history.replaceState(null,'','#'+(cur<0?'geral':M[cur].id));}catch(e){} }
+function go(i){ if(i<-1||i>=M.length)return; cur=i; shot=0; render(); $('#nav').classList.remove('open'); window.scrollTo(0,0); }
+$('#lb').onclick=()=>$('#lb').classList.remove('on');
+document.addEventListener('keydown',e=>{ if(e.key==='Escape')$('#lb').classList.remove('on');
+ if(e.key==='ArrowRight')go(cur+1); if(e.key==='ArrowLeft')go(cur-1); });
+$('#menu').onclick=()=>{const o=$('#nav').classList.toggle('open');$('#menu').setAttribute('aria-expanded',o);};
+const h=location.hash.slice(1); const hi=M.findIndex(m=>m.id===h); cur=hi;
+render();
+</script>
+</body>
+</html>
